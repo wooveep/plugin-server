@@ -1,8 +1,11 @@
 # 构建阶段：处理插件和元数据
 ARG PYTHON_IMAGE=higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/python:3.11-alpine
 ARG NGINX_IMAGE=higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/nginx:alpine
+ARG USE_LOCAL_PLUGINS=false
 
 FROM $PYTHON_IMAGE AS builder
+
+ARG USE_LOCAL_PLUGINS
 
 # 安装系统依赖
 RUN apk add --no-cache \
@@ -24,9 +27,14 @@ WORKDIR /workspace
 
 # 复制脚本
 COPY pull_plugins.py plugins.properties ./
+COPY local-plugins /local-plugins
 
 # 执行构建操作
-RUN python3 pull_plugins.py --download-v2
+RUN if [ "$USE_LOCAL_PLUGINS" = "true" ] && [ -d /local-plugins ] && [ -n "$(ls -A /local-plugins 2>/dev/null)" ]; then \
+      mkdir -p /workspace/plugins && cp -a /local-plugins/. /workspace/plugins/; \
+    else \
+      python3 pull_plugins.py --download-v2; \
+    fi
 
 # 运行阶段：最终镜像
 FROM $NGINX_IMAGE
