@@ -33,7 +33,7 @@ COPY local-plugins /local-plugins
 RUN if [ "$USE_LOCAL_PLUGINS" = "true" ] && [ -d /local-plugins ] && [ -n "$(ls -A /local-plugins 2>/dev/null)" ]; then \
       mkdir -p /workspace/plugins && cp -a /local-plugins/. /workspace/plugins/; \
     else \
-      python3 pull_plugins.py --download-v2; \
+      python3 pull_plugins.py; \
     fi
 
 # 运行阶段：最终镜像

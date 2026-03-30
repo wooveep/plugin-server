@@ -97,8 +97,6 @@ def main():
     parser = argparse.ArgumentParser(description='处理插件配置文件')
     parser.add_argument('properties_path', nargs='?', default=None,
                         help='properties文件路径（默认：脚本所在目录下的plugins.properties）')
-    parser.add_argument('--download-v2', action='store_true',
-                        help='是否下载 2.0.0 版本插件')
     args = parser.parse_args()
 
     # 用户未提供路径时，使用默认逻辑
@@ -119,18 +117,10 @@ def main():
 
     for plugin_name, plugin_url in properties.items():
         print(f"\n正在处理插件: {plugin_name}")
-        # 处理原始版本（1.0.0）
-        success = process_plugin(base_path, plugin_name, plugin_url, "1.0.0")
+        version = plugin_url.rsplit(':', 1)[-1]
+        success = process_plugin(base_path, plugin_name, plugin_url, version)
         if not success:
-            failed_plugins.append(f"{plugin_name}:1.0.0")
-        
-        # 如果指定了 --download-v2 参数，则额外处理 2.0.0 版本
-        if args.download_v2:
-            v2_url = plugin_url.replace(":1.0.0", ":2.0.0")
-            print(f"\n正在处理插件 {plugin_name} 的 2.0.0 版本")
-            success = process_plugin(base_path, plugin_name, v2_url, "2.0.0")
-            if not success:
-                failed_plugins.append(f"{plugin_name}:2.0.0")
+            failed_plugins.append(f"{plugin_name}:{version}")
 
     if failed_plugins:
         print("\n以下插件未成功处理:")
