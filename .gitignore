@@ -35,6 +35,11 @@ local-plugins/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+.logs/
+logs/
+*.log.*
+tmp/
+.tmp/
 
 # Unit test / coverage reports
 htmlcov/
