@@ -1,3 +1,12 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: higress-plugin-server
+  namespace: higress-system
+type: Opaque
+stringData:
+  upload-token: change-me
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,8 +23,14 @@ spec:
         app: higress-plugin-server
     spec:
       containers:
-        - name: nginx
+        - name: plugin-server
           image: {image-address}
+          env:
+            - name: PLUGIN_SERVER_UPLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: higress-plugin-server
+                  key: upload-token
           ports:
             - containerPort: 8080
           resources:

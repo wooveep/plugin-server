@@ -1,6 +1,5 @@
 # 构建阶段：处理插件和元数据
 ARG PYTHON_IMAGE=higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/python:3.11-alpine
-ARG NGINX_IMAGE=higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/nginx:alpine
 ARG ALPINE_MIRROR=""
 
 FROM $PYTHON_IMAGE AS builder
@@ -36,16 +35,16 @@ COPY pull_plugins.py plugins.properties ./
 RUN python3 pull_plugins.py --download-v2
 
 # 运行阶段：最终镜像
-FROM $NGINX_IMAGE
+FROM $PYTHON_IMAGE
 
 # 从构建阶段复制生成的文件
-COPY --from=builder /workspace/plugins /usr/share/nginx/html/plugins
+COPY --from=builder /workspace/plugins /usr/share/plugin-server/plugins
 
-# 复制 Nginx 配置
-COPY nginx.conf /etc/nginx/nginx.conf
+# 复制上传/下载服务
+COPY plugin_server.py /usr/local/bin/plugin_server.py
 
 # 暴露端口
 EXPOSE 8080
 
-# 启动 Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# 启动插件服务
+CMD ["python3", "/usr/local/bin/plugin_server.py"]

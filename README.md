@@ -2,6 +2,11 @@
 
 HTTP server for Higress Wasm plugins
 
+运行时支持两个能力：
+
+- 下载插件：`GET /plugins/{name}/{version}/plugin.wasm`
+- 上传插件：`PUT /plugins/{name}/{version}/plugin.wasm`
+
 ## 构建插件服务器镜像并推送
 
 ### 构建本地架构镜像
@@ -39,12 +44,61 @@ docker buildx build \
 ## 本地启动插件服务器
 
 ```bash
-docker run -d --name higress-plugin-server --rm -p 8080:8080 higress-plugin-server:1.0.0
+docker run -d \
+  --name higress-plugin-server \
+  --rm \
+  -p 8080:8080 \
+  -e PLUGIN_SERVER_UPLOAD_TOKEN=change-me \
+  higress-plugin-server:1.0.0
+```
+
+## 上传已构建插件
+
+上传接口使用 Bearer Token 鉴权，Token 来自服务端环境变量 `PLUGIN_SERVER_UPLOAD_TOKEN`。
+如果需要在容器重启后保留上传的插件，请为 `/usr/share/plugin-server/plugins` 配置持久化卷。
+
+### 使用 curl
+
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer change-me" \
+  -H "Content-Type: application/wasm" \
+  --data-binary @./plugin.wasm \
+  http://localhost:8080/plugins/demo/1.2.3/plugin.wasm
+```
+
+上传成功后，服务端会写入：
+
+```text
+plugins/demo/1.2.3/plugin.wasm
+plugins/demo/1.2.3/metadata.txt
+```
+
+### 使用本地 CLI
+
+```bash
+python3 upload_plugin.py \
+  --server http://localhost:8080 \
+  --token change-me \
+  --file ./plugin.wasm \
+  --name demo \
+  --version 1.2.3
 ```
 
 ## K8s 部署 plugin-server
 
+部署前请把示例 Secret 中的 `change-me` 替换为实际上传 Token。
+
 ```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: higress-plugin-server
+  namespace: higress-system
+type: Opaque
+stringData:
+  upload-token: change-me
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -76,6 +130,12 @@ spec:
           ports:
             - containerPort: 8080
               protocol: TCP
+          env:
+            - name: PLUGIN_SERVER_UPLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: higress-plugin-server
+                  key: upload-token
           resources:
             requests:
               memory: "128Mi"
