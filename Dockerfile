@@ -28,8 +28,9 @@ RUN set -eux; \
 # 创建工作目录
 WORKDIR /workspace
 
-# 复制脚本
+# 复制脚本和本地插件缓存
 COPY pull_plugins.py plugins.properties ./
+COPY plugins ./plugins
 
 # 执行构建操作
 RUN python3 pull_plugins.py --download-v2

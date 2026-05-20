@@ -147,6 +147,12 @@ def process_plugin(base_path, plugin_name, plugin_url, version):
 
     plugin_dir = os.path.join(plugins_base_path, plugin_name, version)
     os.makedirs(plugin_dir, exist_ok=True)
+    local_wasm_path = os.path.join(plugin_dir, 'plugin.wasm')
+
+    if os.path.isfile(local_wasm_path):
+        print(f"{plugin_name} ({version}) 使用本地插件: {local_wasm_path}")
+        generate_metadata(plugin_dir, plugin_name)
+        return True
 
     temp_download_dir = os.path.join(plugins_base_path, f"{plugin_name}_{version}_temp")
     os.makedirs(temp_download_dir, exist_ok=True)
