@@ -37,8 +37,12 @@ func CheckCacheForKey(key string, ctx wrapper.HttpContext, c config.PluginConfig
 	queryKey := activeCacheProvider.GetCacheKeyPrefix() + keyMaterial.EntryKey
 	log.Debugf("[%s] [CheckCacheForKey] querying cache with key: %s", PLUGIN_NAME, queryKey)
 
+	if handleL1StructuredCacheHit(queryKey, key, ctx, log, stream, c) {
+		return nil
+	}
+
 	err := activeCacheProvider.Get(queryKey, func(response resp.Value) {
-		if handleCacheHitResponse(key, response, ctx, log, stream, c) {
+		if handleCacheHitResponse(queryKey, key, response, ctx, log, stream, c) {
 			return
 		}
 		if ctx.GetBoolContext(CACHE_DISABLE_LEGACY_CONTEXT_KEY, false) {
@@ -69,7 +73,7 @@ func CheckCacheForKey(key string, ctx wrapper.HttpContext, c config.PluginConfig
 
 // handleCacheResponse processes cache response and handles cache hits and misses.
 func handleCacheResponse(key string, response resp.Value, ctx wrapper.HttpContext, log logs.Log, stream bool, c config.PluginConfig, useSimilaritySearch bool) {
-	if handleCacheHitResponse(key, response, ctx, log, stream, c) {
+	if handleCacheHitResponse("", key, response, ctx, log, stream, c) {
 		return
 	}
 
@@ -88,7 +92,7 @@ func handleCacheResponse(key string, response resp.Value, ctx wrapper.HttpContex
 	}
 }
 
-func handleCacheHitResponse(key string, response resp.Value, ctx wrapper.HttpContext, log logs.Log, stream bool, c config.PluginConfig) bool {
+func handleCacheHitResponse(cacheEntryKey string, key string, response resp.Value, ctx wrapper.HttpContext, log logs.Log, stream bool, c config.PluginConfig) bool {
 	if err := response.Error(); err != nil || response.IsNull() {
 		return false
 	}
@@ -114,6 +118,7 @@ func handleCacheHitResponse(key string, response resp.Value, ctx wrapper.HttpCon
 		} else {
 			log.Infof("[%s] structured cache hit for key: %s", PLUGIN_NAME, key)
 		}
+		populateL1StructuredCache(cacheEntryKey, *decoded.StructuredEntry, c, log)
 		if !stream {
 			processStructuredCacheHit(key, *decoded.StructuredEntry, ctx, log)
 			return true
@@ -124,6 +129,82 @@ func handleCacheHitResponse(key string, response resp.Value, ctx wrapper.HttpCon
 		processCacheHit(key, decoded.LegacyValue, stream, ctx, c, log)
 	}
 	return true
+}
+
+func handleL1StructuredCacheHit(cacheEntryKey string, key string, ctx wrapper.HttpContext, log logs.Log, stream bool, c config.PluginConfig) bool {
+	l1Cache := configuredStructuredL1Cache(c)
+	if l1Cache == nil {
+		return false
+	}
+	entry, ok := l1Cache.Get(cacheEntryKey)
+	if !ok {
+		return false
+	}
+
+	freshness := StructuredCacheEntryFreshnessAt(entry, time.Now().Unix())
+	if freshness == StructuredCacheFreshnessExpired {
+		log.Infof("[%s] l1 structured cache entry expired for key: %s", PLUGIN_NAME, key)
+		l1Cache.Delete(cacheEntryKey)
+		return false
+	}
+	if freshness == StructuredCacheFreshnessStale && !c.StaleWhileRevalidateEnabled() {
+		log.Infof("[%s] l1 structured cache entry stale for key: %s", PLUGIN_NAME, key)
+		l1Cache.Delete(cacheEntryKey)
+		return false
+	}
+	if freshness == StructuredCacheFreshnessStale {
+		log.Infof("[%s] stale l1 structured cache hit for key: %s", PLUGIN_NAME, key)
+	} else {
+		log.Infof("[%s] l1 structured cache hit for key: %s", PLUGIN_NAME, key)
+	}
+	if !stream {
+		processStructuredCacheHit(key, entry, ctx, log)
+		return true
+	}
+	processStructuredStreamingCacheHit(key, entry, ctx, log)
+	return true
+}
+
+func populateL1StructuredCache(cacheEntryKey string, entry StructuredCacheEntry, c config.PluginConfig, log logs.Log) {
+	l1Cache := configuredStructuredL1Cache(c)
+	if l1Cache == nil || cacheEntryKey == "" {
+		return
+	}
+	if !validatedStructuredEntryForL1(entry, time.Now().Unix()) {
+		log.Debugf("[%s] skip l1 structured cache population for invalid structured metadata, key: %s", PLUGIN_NAME, cacheEntryKey)
+		return
+	}
+	l1Cache.Put(cacheEntryKey, entry)
+	log.Debugf("[%s] populated l1 structured cache for key: %s", PLUGIN_NAME, cacheEntryKey)
+}
+
+func validatedStructuredEntryForL1(entry StructuredCacheEntry, nowUnix int64) bool {
+	if entry.Version != StructuredCacheEntryVersion {
+		return false
+	}
+	if strings.TrimSpace(entry.Answer.Content) == "" ||
+		strings.TrimSpace(entry.Scope.Type) == "" ||
+		strings.TrimSpace(entry.RequestFingerprint.Hash) == "" {
+		return false
+	}
+	if entry.SoftExpiresAt <= 0 || entry.HardExpiresAt <= 0 {
+		return false
+	}
+	if entry.SoftExpiresAt > entry.HardExpiresAt {
+		return false
+	}
+	return StructuredCacheEntryFreshnessAt(entry, nowUnix) != StructuredCacheFreshnessExpired
+}
+
+func configuredStructuredL1Cache(c config.PluginConfig) *structuredL1Cache {
+	if !c.L1Cache.Enabled {
+		return nil
+	}
+	l1Cache, ok := c.GetL1CacheStore().(*structuredL1Cache)
+	if !ok {
+		return nil
+	}
+	return l1Cache
 }
 
 func redisCacheValueString(response resp.Value) string {

@@ -61,6 +61,9 @@ func parseConfig(json gjson.Result, c *config.PluginConfig, log log.Log) error {
 		log.Errorf("complete config failed: %v", err)
 		return err
 	}
+	if c.L1Cache.Enabled {
+		c.SetL1CacheStore(newStructuredL1Cache(c.L1Cache.MaxEntries, c.L1Cache.TTLSeconds))
+	}
 	return nil
 }
 

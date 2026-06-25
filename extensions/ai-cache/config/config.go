@@ -30,6 +30,10 @@ const (
 	DEFAULT_TENANT_HEADER        = "x-mse-tenant"
 	DEFAULT_CONSUMER_HEADER      = "x-mse-consumer"
 	DEFAULT_CACHE_POLICY_VERSION = "v1"
+	DEFAULT_L1_CACHE_MAX_ENTRIES = 128
+	DEFAULT_L1_CACHE_TTL_SECONDS = 30
+	MAX_L1_CACHE_MAX_ENTRIES     = 1024
+	MAX_L1_CACHE_TTL_SECONDS     = 60
 )
 
 type PluginConfig struct {
@@ -67,6 +71,24 @@ type PluginConfig struct {
 	Provider           string
 	CachePolicyVersion string
 	CacheMode          string
+
+	// @Title zh-CN L1 网关内存缓存
+	// @Description zh-CN 可选短 TTL 本地内存缓存，仅作为 Redis 结构化缓存命中的优化层。
+	L1Cache L1CacheConfig `json:"l1Cache,omitempty"`
+
+	l1CacheStore any
+}
+
+type L1CacheConfig struct {
+	// @Title zh-CN 启用 L1 缓存
+	// @Description zh-CN 是否启用网关本地内存缓存。默认关闭。
+	Enabled bool `json:"enabled,omitempty"`
+	// @Title zh-CN L1 最大条目数
+	// @Description zh-CN L1 内存缓存最多保存的结构化条目数。
+	MaxEntries int `json:"maxEntries,omitempty"`
+	// @Title zh-CN L1 TTL 秒数
+	// @Description zh-CN L1 内存缓存条目的短 TTL 秒数。
+	TTLSeconds int `json:"ttlSeconds,omitempty"`
 }
 
 func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
@@ -103,6 +125,23 @@ func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
 		c.CachePolicyVersion = DEFAULT_CACHE_POLICY_VERSION
 	}
 	c.CacheMode = normalizeCacheMode(firstJSONValue(json, "cacheMode", "cache_mode"))
+	c.l1CacheStore = nil
+	c.L1Cache = L1CacheConfig{}
+	if l1Config := firstJSONResult(json, "l1Cache", "l1_cache"); l1Config.Exists() {
+		c.L1Cache.Enabled = firstJSONBool(l1Config, false, "enabled")
+		if c.L1Cache.Enabled {
+			if value := firstJSONResult(l1Config, "maxEntries", "max_entries"); value.Exists() {
+				c.L1Cache.MaxEntries = int(value.Int())
+			} else {
+				c.L1Cache.MaxEntries = DEFAULT_L1_CACHE_MAX_ENTRIES
+			}
+			if value := firstJSONResult(l1Config, "ttlSeconds", "ttl_seconds"); value.Exists() {
+				c.L1Cache.TTLSeconds = int(value.Int())
+			} else {
+				c.L1Cache.TTLSeconds = DEFAULT_L1_CACHE_TTL_SECONDS
+			}
+		}
+	}
 	c.CacheKeyFrom = json.Get("cacheKeyFrom").String()
 	if c.CacheKeyFrom == "" {
 		c.CacheKeyFrom = "messages.@reverse.0.content"
@@ -195,6 +234,23 @@ func (c *PluginConfig) Validate() error {
 		c.Provider == "" {
 		return fmt.Errorf("provider is required when cache provider is configured")
 	}
+	if c.L1Cache.Enabled {
+		if c.cacheProviderConfig.GetProviderType() == "" {
+			return fmt.Errorf("l1Cache requires cache provider")
+		}
+		if c.L1Cache.MaxEntries <= 0 {
+			return fmt.Errorf("invalid l1Cache maxEntries: %d", c.L1Cache.MaxEntries)
+		}
+		if c.L1Cache.MaxEntries > MAX_L1_CACHE_MAX_ENTRIES {
+			return fmt.Errorf("l1Cache maxEntries must be less than or equal to %d", MAX_L1_CACHE_MAX_ENTRIES)
+		}
+		if c.L1Cache.TTLSeconds <= 0 {
+			return fmt.Errorf("invalid l1Cache ttlSeconds: %d", c.L1Cache.TTLSeconds)
+		}
+		if c.L1Cache.TTLSeconds > MAX_L1_CACHE_TTL_SECONDS {
+			return fmt.Errorf("l1Cache ttlSeconds must be less than or equal to %d", MAX_L1_CACHE_TTL_SECONDS)
+		}
+	}
 
 	// If semantic cache is enabled, ensure necessary components are configured
 	// if c.EnableSemanticCache {
@@ -207,12 +263,28 @@ func (c *PluginConfig) Validate() error {
 }
 
 func firstJSONValue(json gjson.Result, keys ...string) string {
-	for _, key := range keys {
-		if value := json.Get(key); value.Exists() {
-			return value.String()
-		}
+	result := firstJSONResult(json, keys...)
+	if result.Exists() {
+		return result.String()
 	}
 	return ""
+}
+
+func firstJSONResult(json gjson.Result, keys ...string) gjson.Result {
+	for _, key := range keys {
+		if value := json.Get(key); value.Exists() {
+			return value
+		}
+	}
+	return gjson.Result{}
+}
+
+func firstJSONBool(json gjson.Result, defaultValue bool, keys ...string) bool {
+	result := firstJSONResult(json, keys...)
+	if result.Exists() {
+		return result.Bool()
+	}
+	return defaultValue
 }
 
 func normalizeCacheMode(value string) string {
@@ -268,6 +340,14 @@ func (c *PluginConfig) GetVectorProviderConfig() vector.ProviderConfig {
 
 func (c *PluginConfig) GetCacheProvider() cache.Provider {
 	return c.cacheProvider
+}
+
+func (c *PluginConfig) SetL1CacheStore(store any) {
+	c.l1CacheStore = store
+}
+
+func (c *PluginConfig) GetL1CacheStore() any {
+	return c.l1CacheStore
 }
 
 func (c *PluginConfig) CacheHardTTLSeconds() int {

@@ -246,6 +246,57 @@ var invalidCacheModeConfig = func() json.RawMessage {
 	return data
 }()
 
+var l1CacheEnabledConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":        "redis",
+			"serviceName": "redis.static",
+			"servicePort": 6379,
+		},
+		"l1Cache": map[string]interface{}{
+			"enabled":    true,
+			"maxEntries": 16,
+			"ttlSeconds": 10,
+		},
+		"provider": "dashscope",
+	})
+	return data
+}()
+
+var invalidL1CacheConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":        "redis",
+			"serviceName": "redis.static",
+			"servicePort": 6379,
+		},
+		"l1Cache": map[string]interface{}{
+			"enabled":    true,
+			"maxEntries": 0,
+			"ttlSeconds": 10,
+		},
+		"provider": "dashscope",
+	})
+	return data
+}()
+
+var oversizedL1CacheConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":        "redis",
+			"serviceName": "redis.static",
+			"servicePort": 6379,
+		},
+		"l1Cache": map[string]interface{}{
+			"enabled":    true,
+			"maxEntries": 1025,
+			"ttlSeconds": 61,
+		},
+		"provider": "dashscope",
+	})
+	return data
+}()
+
 // 测试配置：缺少必需字段
 var missingRequiredFieldsConfig = func() json.RawMessage {
 	data, _ := json.Marshal(map[string]interface{}{
@@ -331,6 +382,9 @@ func TestParseConfig(t *testing.T) {
 
 			// 验证语义缓存默认值
 			require.False(t, config.EnableSemanticCache)
+			require.False(t, config.L1Cache.Enabled)
+			require.Equal(t, 0, config.L1Cache.MaxEntries)
+			require.Equal(t, 0, config.L1Cache.TTLSeconds)
 		})
 
 		// 测试完整配置解析
@@ -499,6 +553,24 @@ func TestParseConfig(t *testing.T) {
 			require.Equal(t, "policy-20260625", config.CachePolicyVersion)
 		})
 
+		t.Run("l1 cache config", func(t *testing.T) {
+			host, status := test.NewTestHost(l1CacheEnabledConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			configRaw, err := host.GetMatchConfig()
+			require.NoError(t, err)
+			require.NotNil(t, configRaw)
+
+			config, ok := configRaw.(*config.PluginConfig)
+			require.True(t, ok, "config should be of type *PluginConfig")
+
+			require.True(t, config.L1Cache.Enabled)
+			require.Equal(t, 16, config.L1Cache.MaxEntries)
+			require.Equal(t, 10, config.L1Cache.TTLSeconds)
+			require.NotNil(t, config.GetL1CacheStore())
+		})
+
 		// 测试无效的缓存键策略
 		t.Run("invalid cache key strategy", func(t *testing.T) {
 			host, status := test.NewTestHost(invalidCacheKeyStrategyConfig)
@@ -527,6 +599,18 @@ func TestParseConfig(t *testing.T) {
 
 		t.Run("invalid cache mode", func(t *testing.T) {
 			host, status := test.NewTestHost(invalidCacheModeConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusFailed, status)
+		})
+
+		t.Run("invalid l1 cache config", func(t *testing.T) {
+			host, status := test.NewTestHost(invalidL1CacheConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusFailed, status)
+		})
+
+		t.Run("oversized l1 cache config", func(t *testing.T) {
+			host, status := test.NewTestHost(oversizedL1CacheConfig)
 			defer host.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, status)
 		})

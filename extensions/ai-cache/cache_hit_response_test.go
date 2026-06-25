@@ -215,10 +215,92 @@ func TestStructuredCacheHitResponse(t *testing.T) {
 			require.GreaterOrEqual(t, len(redisCalls), 1)
 			require.Contains(t, string(redisCalls[len(redisCalls)-1].Query), "higress-ai-cache:今天天气怎么样？")
 		})
+
+		t.Run("l1 cache replays structured redis hit before redis lookup", func(t *testing.T) {
+			host, status := test.NewTestHost(l1CacheConfig(2, 60))
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			requestStructuredCacheHitForPrompt(t, host, "今天天气怎么样？", false)
+			host.CallOnRedisCall(0, test.CreateRedisRespArray([]interface{}{structuredHitPayload(t, 4102444800, 4102448400)}))
+			require.NotNil(t, host.GetLocalResponse())
+			host.CompleteHttp()
+
+			requestStructuredCacheHitForPrompt(t, host, "今天天气怎么样？", false)
+			require.Empty(t, host.GetRedisCalloutAttributes())
+			localResponse := host.GetLocalResponse()
+			require.NotNil(t, localResponse)
+			require.Equal(t, uint32(200), localResponse.StatusCode)
+			require.Contains(t, string(localResponse.Data), `"model":"qwen-plus"`)
+			require.NotContains(t, string(localResponse.Data), "from-cache")
+		})
+
+		t.Run("l1 cache evicts oldest structured entry when bounded", func(t *testing.T) {
+			host, status := test.NewTestHost(l1CacheConfig(1, 60))
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			requestStructuredCacheHitForPrompt(t, host, "问题 A", false)
+			host.CallOnRedisCall(0, test.CreateRedisRespArray([]interface{}{structuredHitPayload(t, 4102444800, 4102448400)}))
+			require.NotNil(t, host.GetLocalResponse())
+			host.CompleteHttp()
+
+			requestStructuredCacheHitForPrompt(t, host, "问题 B", false)
+			host.CallOnRedisCall(0, test.CreateRedisRespArray([]interface{}{structuredHitPayload(t, 4102444800, 4102448400)}))
+			require.NotNil(t, host.GetLocalResponse())
+			host.CompleteHttp()
+
+			requestStructuredCacheHitForPrompt(t, host, "问题 B", false)
+			require.Empty(t, host.GetRedisCalloutAttributes())
+			require.NotNil(t, host.GetLocalResponse())
+			host.CompleteHttp()
+
+			requestStructuredCacheHitForPrompt(t, host, "问题 A", false)
+			redisCalls := host.GetRedisCalloutAttributes()
+			require.Len(t, redisCalls, 1)
+			require.Contains(t, string(redisCalls[0].Query), "higress-ai-cache:{aiscope:")
+		})
+
+		t.Run("l1 cache is not populated from legacy string hit", func(t *testing.T) {
+			host, status := test.NewTestHost(l1CacheConfig(2, 60))
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			requestStructuredCacheHitForPrompt(t, host, "今天天气怎么样？", false)
+			host.CallOnRedisCall(0, test.CreateRedisRespArray([]interface{}{"legacy answer"}))
+			require.NotNil(t, host.GetLocalResponse())
+			host.CompleteHttp()
+
+			requestStructuredCacheHitForPrompt(t, host, "今天天气怎么样？", false)
+			redisCalls := host.GetRedisCalloutAttributes()
+			require.Len(t, redisCalls, 1)
+			require.Contains(t, string(redisCalls[0].Query), "higress-ai-cache:{aiscope:")
+		})
+
+		t.Run("l1 cache is not populated from structured hit without expiry", func(t *testing.T) {
+			host, status := test.NewTestHost(l1CacheConfig(2, 60))
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			requestStructuredCacheHitForPrompt(t, host, "今天天气怎么样？", false)
+			host.CallOnRedisCall(0, test.CreateRedisRespArray([]interface{}{structuredHitPayload(t, 0, 0)}))
+			require.NotNil(t, host.GetLocalResponse())
+			host.CompleteHttp()
+
+			requestStructuredCacheHitForPrompt(t, host, "今天天气怎么样？", false)
+			redisCalls := host.GetRedisCalloutAttributes()
+			require.Len(t, redisCalls, 1)
+			require.Contains(t, string(redisCalls[0].Query), "higress-ai-cache:{aiscope:")
+		})
 	})
 }
 
 func requestStructuredCacheHit(t *testing.T, host test.TestHost, stream bool) {
+	t.Helper()
+	requestStructuredCacheHitForPrompt(t, host, "今天天气怎么样？", stream)
+}
+
+func requestStructuredCacheHitForPrompt(t *testing.T, host test.TestHost, prompt string, stream bool) {
 	t.Helper()
 	host.CallOnHttpRequestHeaders([][2]string{
 		{":authority", "example.com"},
@@ -232,7 +314,7 @@ func requestStructuredCacheHit(t *testing.T, host test.TestHost, stream bool) {
 		"messages": [
 			{
 				"role": "user",
-				"content": "今天天气怎么样？"
+				"content": "` + prompt + `"
 			}
 		],
 		"stream": false
@@ -243,7 +325,7 @@ func requestStructuredCacheHit(t *testing.T, host test.TestHost, stream bool) {
 			"messages": [
 				{
 					"role": "user",
-					"content": "今天天气怎么样？"
+					"content": "` + prompt + `"
 				}
 			],
 			"stream": true
@@ -301,6 +383,32 @@ func staleReplayConfig() json.RawMessage {
 			"cacheTTL":             3600,
 			"cacheSoftTTL":         1800,
 			"cacheKeyPrefix":       "higress-ai-cache:",
+		},
+		"provider":               "dashscope",
+		"cacheScope":             "global",
+		"cacheKeyStrategy":       "lastQuestion",
+		"cacheKeyFrom":           "messages.@reverse.0.content",
+		"cacheValueFrom":         "choices.0.message.content",
+		"cacheStreamValueFrom":   "choices.0.delta.content",
+		"responseTemplate":       `{"id":"from-cache","choices":[{"index":0,"message":{"role":"assistant","content":"%s"},"finish_reason":"stop"}],"model":"from-cache","object":"chat.completion","usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}`,
+		"streamResponseTemplate": `data:{"id":"from-cache","choices":[{"index":0,"delta":{"role":"assistant","content":"%s"},"finish_reason":"stop"}],"model":"from-cache","object":"chat.completion","usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}` + "\n\ndata:[DONE]\n\n",
+	})
+	return data
+}
+
+func l1CacheConfig(maxEntries int, ttlSeconds int) json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":           "redis",
+			"serviceName":    "redis.static",
+			"servicePort":    6379,
+			"cacheTTL":       3600,
+			"cacheKeyPrefix": "higress-ai-cache:",
+		},
+		"l1Cache": map[string]interface{}{
+			"enabled":    true,
+			"maxEntries": maxEntries,
+			"ttlSeconds": ttlSeconds,
 		},
 		"provider":               "dashscope",
 		"cacheScope":             "global",
