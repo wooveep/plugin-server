@@ -1,6 +1,124 @@
 package main
 
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
+
 const StructuredCacheEntryVersion = 1
+
+type RedisCacheEntryKind string
+
+const (
+	RedisCacheEntryKindStructured RedisCacheEntryKind = "structured"
+	RedisCacheEntryKindLegacy     RedisCacheEntryKind = "legacy"
+	RedisCacheEntryKindEmpty      RedisCacheEntryKind = "empty"
+)
+
+type RedisCacheEntryPayload struct {
+	Kind            RedisCacheEntryKind
+	StructuredEntry *StructuredCacheEntry
+	LegacyValue     string
+}
+
+type redisCacheEntryProbe struct {
+	Version *int `json:"version"`
+	Answer  *struct {
+		Content string `json:"content"`
+	} `json:"answer"`
+	Scope *struct {
+		Type string `json:"type"`
+	} `json:"scope"`
+	RequestFingerprint *struct {
+		Hash string `json:"hash"`
+	} `json:"request_fingerprint"`
+}
+
+func (p redisCacheEntryProbe) hasStructuredCacheEntryShape() bool {
+	return p.Version != nil &&
+		p.Answer != nil &&
+		strings.TrimSpace(p.Answer.Content) != "" &&
+		p.Scope != nil &&
+		strings.TrimSpace(p.Scope.Type) != "" &&
+		p.RequestFingerprint != nil &&
+		strings.TrimSpace(p.RequestFingerprint.Hash) != ""
+}
+
+func (p RedisCacheEntryPayload) IsAuthoritative() bool {
+	return p.Kind == RedisCacheEntryKindStructured && p.StructuredEntry != nil
+}
+
+func DecodeRedisCacheEntryPayload(payload string) (RedisCacheEntryPayload, error) {
+	trimmed := strings.TrimSpace(payload)
+	if trimmed == "" {
+		return RedisCacheEntryPayload{Kind: RedisCacheEntryKindEmpty}, nil
+	}
+
+	var probe redisCacheEntryProbe
+	if err := json.Unmarshal([]byte(trimmed), &probe); err != nil {
+		return RedisCacheEntryPayload{
+			Kind:        RedisCacheEntryKindLegacy,
+			LegacyValue: payload,
+		}, nil
+	}
+	if !probe.hasStructuredCacheEntryShape() {
+		return RedisCacheEntryPayload{
+			Kind:        RedisCacheEntryKindLegacy,
+			LegacyValue: payload,
+		}, nil
+	}
+	if *probe.Version != StructuredCacheEntryVersion {
+		return RedisCacheEntryPayload{}, fmt.Errorf("unsupported structured cache entry version: %d", *probe.Version)
+	}
+
+	var entry StructuredCacheEntry
+	if err := json.Unmarshal([]byte(trimmed), &entry); err != nil {
+		return RedisCacheEntryPayload{}, err
+	}
+	return RedisCacheEntryPayload{
+		Kind:            RedisCacheEntryKindStructured,
+		StructuredEntry: &entry,
+	}, nil
+}
+
+func EncodeRedisCacheEntryPayload(entry StructuredCacheEntry) (string, error) {
+	if entry.Version != StructuredCacheEntryVersion {
+		return "", fmt.Errorf("unsupported structured cache entry version: %d", entry.Version)
+	}
+	data, err := json.Marshal(entry)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func CacheHitTextFromRedisPayload(payload string) (string, bool, error) {
+	decoded, err := DecodeRedisCacheEntryPayload(payload)
+	if err != nil {
+		return "", false, err
+	}
+	if decoded.IsAuthoritative() {
+		return decoded.StructuredEntry.Answer.Content, true, nil
+	}
+	return decoded.LegacyValue, false, nil
+}
+
+func NewStructuredCacheEntryForAnswer(key string, answer string) StructuredCacheEntry {
+	return StructuredCacheEntry{
+		Version: StructuredCacheEntryVersion,
+		Answer: StructuredCacheAnswer{
+			Role:    "assistant",
+			Content: answer,
+		},
+		Scope: StructuredCacheScope{
+			Type: "legacy",
+		},
+		RequestFingerprint: RequestFingerprint{
+			Hash: key,
+		},
+	}
+}
 
 type StructuredCacheEntry struct {
 	Version            int                     `json:"version"`
@@ -27,10 +145,10 @@ type StructuredCacheAnswer struct {
 }
 
 type StructuredCacheUsage struct {
-	PromptTokens        int                         `json:"prompt_tokens"`
-	CompletionTokens    int                         `json:"completion_tokens"`
-	TotalTokens         int                         `json:"total_tokens"`
-	PromptTokensDetails StructuredPromptTokenDetail `json:"prompt_tokens_details,omitempty"`
+	PromptTokens        int                          `json:"prompt_tokens"`
+	CompletionTokens    int                          `json:"completion_tokens"`
+	TotalTokens         int                          `json:"total_tokens"`
+	PromptTokensDetails *StructuredPromptTokenDetail `json:"prompt_tokens_details,omitempty"`
 }
 
 type StructuredPromptTokenDetail struct {

@@ -39,8 +39,18 @@ func CheckCacheForKey(key string, ctx wrapper.HttpContext, c config.PluginConfig
 // handleCacheResponse processes cache response and handles cache hits and misses.
 func handleCacheResponse(key string, response resp.Value, ctx wrapper.HttpContext, log logs.Log, stream bool, c config.PluginConfig, useSimilaritySearch bool) {
 	if err := response.Error(); err == nil && !response.IsNull() {
-		log.Infof("[%s] cache hit for key: %s", PLUGIN_NAME, key)
-		processCacheHit(key, response.String(), stream, ctx, c, log)
+		cacheHitText, authoritative, err := CacheHitTextFromRedisPayload(response.String())
+		if err != nil {
+			log.Warnf("[%s] [handleCacheResponse] invalid structured cache entry for key: %s, error: %v", PLUGIN_NAME, key, err)
+			proxywasm.ResumeHttpRequest()
+			return
+		}
+		if authoritative {
+			log.Infof("[%s] structured cache hit for key: %s", PLUGIN_NAME, key)
+		} else {
+			log.Infof("[%s] legacy cache hit for key: %s", PLUGIN_NAME, key)
+		}
+		processCacheHit(key, cacheHitText, stream, ctx, c, log)
 		return
 	}
 
@@ -213,8 +223,13 @@ func cacheResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, v
 	activeCacheProvider := c.GetCacheProvider()
 	if activeCacheProvider != nil {
 		queryKey := activeCacheProvider.GetCacheKeyPrefix() + key
-		_ = activeCacheProvider.Set(queryKey, value, nil)
-		log.Debugf("[%s] [cacheResponse] cache set success, key: %s, length of value: %d", PLUGIN_NAME, queryKey, len(value))
+		payload, err := EncodeRedisCacheEntryPayload(NewStructuredCacheEntryForAnswer(key, value))
+		if err != nil {
+			log.Errorf("[%s] [cacheResponse] failed to encode structured cache entry for key: %s, error: %v", PLUGIN_NAME, key, err)
+			return
+		}
+		_ = activeCacheProvider.Set(queryKey, payload, nil)
+		log.Debugf("[%s] [cacheResponse] cache set success, key: %s, length of value: %d", PLUGIN_NAME, queryKey, len(payload))
 	}
 }
 

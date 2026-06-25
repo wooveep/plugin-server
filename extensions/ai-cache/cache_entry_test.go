@@ -48,6 +48,7 @@ func TestStructuredCacheEntryJSONContract(t *testing.T) {
 	require.Equal(t, StructuredCacheEntryVersion, entry.Version)
 	require.Equal(t, "cached answer", entry.Answer.Content)
 	require.Equal(t, "qwen-plus", entry.Model)
+	require.NotNil(t, entry.Usage.PromptTokensDetails)
 	require.Equal(t, 12, entry.Usage.PromptTokensDetails.CachedTokens)
 	require.Equal(t, "route-1", entry.Route.ID)
 	require.Equal(t, "qwen", entry.Provider.Name)
@@ -64,4 +65,136 @@ func TestStructuredCacheEntryJSONContract(t *testing.T) {
 	require.Contains(t, string(encoded), `"soft_expires_at":1782378600`)
 	require.Contains(t, string(encoded), `"hard_expires_at":1782382200`)
 	require.NotContains(t, string(encoded), "from-cache")
+}
+
+func TestDecodeRedisCacheEntryPayloadClassifiesStructuredEntry(t *testing.T) {
+	payload := `{
+		"version":1,
+		"answer":{"role":"assistant","content":"cached answer"},
+		"model":"qwen-plus",
+		"usage":{"prompt_tokens":1,"completion_tokens":2,"total_tokens":3},
+		"finish_reason":"stop",
+		"route":{"name":"chat"},
+		"provider":{"name":"qwen","model":"qwen-plus"},
+		"scope":{"type":"tenant","tenant":"deep"},
+		"policy_version":"pv-1",
+		"request_fingerprint":{"hash":"req"},
+		"semantic":{"text_hash":"sem"},
+		"created_at":1782375000,
+		"soft_expires_at":1782378600,
+		"hard_expires_at":1782382200
+	}`
+
+	result, err := DecodeRedisCacheEntryPayload(payload)
+	require.NoError(t, err)
+	require.True(t, result.IsAuthoritative())
+	require.Equal(t, RedisCacheEntryKindStructured, result.Kind)
+	require.NotNil(t, result.StructuredEntry)
+	require.Equal(t, "cached answer", result.StructuredEntry.Answer.Content)
+	require.Empty(t, result.LegacyValue)
+}
+
+func TestDecodeRedisCacheEntryPayloadClassifiesLegacyFallback(t *testing.T) {
+	result, err := DecodeRedisCacheEntryPayload("legacy answer text")
+	require.NoError(t, err)
+	require.False(t, result.IsAuthoritative())
+	require.Equal(t, RedisCacheEntryKindLegacy, result.Kind)
+	require.Nil(t, result.StructuredEntry)
+	require.Equal(t, "legacy answer text", result.LegacyValue)
+}
+
+func TestDecodeRedisCacheEntryPayloadKeepsLegacyJSONWithVersionFallback(t *testing.T) {
+	payloads := []string{
+		`{"version":1,"message":"legacy answer"}`,
+		`{"version":2,"message":"legacy answer"}`,
+		`{"version":1,"answer":{"content":"legacy answer"}}`,
+	}
+
+	for _, payload := range payloads {
+		result, err := DecodeRedisCacheEntryPayload(payload)
+		require.NoError(t, err)
+		require.False(t, result.IsAuthoritative())
+		require.Equal(t, RedisCacheEntryKindLegacy, result.Kind)
+		require.Equal(t, payload, result.LegacyValue)
+
+		text, authoritative, err := CacheHitTextFromRedisPayload(payload)
+		require.NoError(t, err)
+		require.False(t, authoritative)
+		require.Equal(t, payload, text)
+	}
+}
+
+func TestCacheHitTextFromRedisPayloadUsesStructuredAnswer(t *testing.T) {
+	payload := `{
+		"version":1,
+		"answer":{"role":"assistant","content":"structured answer"},
+		"model":"qwen-plus",
+		"usage":{"prompt_tokens":1,"completion_tokens":2,"total_tokens":3},
+		"finish_reason":"stop",
+		"scope":{"type":"tenant","tenant":"deep"},
+		"request_fingerprint":{"hash":"req"},
+		"soft_expires_at":1782378600,
+		"hard_expires_at":1782382200
+	}`
+
+	text, authoritative, err := CacheHitTextFromRedisPayload(payload)
+	require.NoError(t, err)
+	require.True(t, authoritative)
+	require.Equal(t, "structured answer", text)
+}
+
+func TestCacheHitTextFromRedisPayloadKeepsLegacyFallback(t *testing.T) {
+	text, authoritative, err := CacheHitTextFromRedisPayload("legacy answer")
+	require.NoError(t, err)
+	require.False(t, authoritative)
+	require.Equal(t, "legacy answer", text)
+}
+
+func TestEncodeRedisCacheEntryPayloadRejectsUnsupportedVersion(t *testing.T) {
+	entry := StructuredCacheEntry{
+		Version:            StructuredCacheEntryVersion + 1,
+		Answer:             StructuredCacheAnswer{Role: "assistant", Content: "cached answer"},
+		Model:              "qwen-plus",
+		Usage:              StructuredCacheUsage{PromptTokens: 1, CompletionTokens: 2, TotalTokens: 3},
+		Scope:              StructuredCacheScope{Type: "tenant", Tenant: "deep"},
+		RequestFingerprint: RequestFingerprint{Hash: "req"},
+		SoftExpiresAt:      1782378600,
+		HardExpiresAt:      1782382200,
+	}
+
+	_, err := EncodeRedisCacheEntryPayload(entry)
+	require.Error(t, err)
+}
+
+func TestEncodeRedisCacheEntryPayloadWritesStructuredJSON(t *testing.T) {
+	entry := StructuredCacheEntry{
+		Version:            StructuredCacheEntryVersion,
+		Answer:             StructuredCacheAnswer{Role: "assistant", Content: "cached answer"},
+		Model:              "qwen-plus",
+		Usage:              StructuredCacheUsage{PromptTokens: 1, CompletionTokens: 2, TotalTokens: 3},
+		Scope:              StructuredCacheScope{Type: "tenant", Tenant: "deep"},
+		RequestFingerprint: RequestFingerprint{Hash: "req"},
+		SoftExpiresAt:      1782378600,
+		HardExpiresAt:      1782382200,
+	}
+
+	payload, err := EncodeRedisCacheEntryPayload(entry)
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"version":1,
+		"answer":{"role":"assistant","content":"cached answer"},
+		"model":"qwen-plus",
+		"usage":{"prompt_tokens":1,"completion_tokens":2,"total_tokens":3},
+		"finish_reason":"",
+		"route":{},
+		"provider":{},
+		"upstream":{},
+		"scope":{"type":"tenant","tenant":"deep"},
+		"policy_version":"",
+		"request_fingerprint":{"hash":"req"},
+		"semantic":{},
+		"created_at":0,
+		"soft_expires_at":1782378600,
+		"hard_expires_at":1782382200
+	}`, payload)
 }

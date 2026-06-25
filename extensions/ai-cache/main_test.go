@@ -1353,6 +1353,14 @@ data: [DONE]`,
 			// 应该返回ActionContinue
 			require.Equal(t, types.ActionContinue, action)
 
+			redisCalls := host.GetRedisCalloutAttributes()
+			require.GreaterOrEqual(t, len(redisCalls), 1,
+				"expected a SET redis callout after response body, got %d", len(redisCalls))
+			setQuery := string(redisCalls[len(redisCalls)-1].Query)
+			require.Contains(t, setQuery, `"version":1`)
+			require.Contains(t, setQuery, `"answer"`)
+			require.Contains(t, setQuery, "今天北京天气晴朗，温度25度")
+
 			// 模拟Redis存储操作
 			storeResp := test.CreateRedisRespArray([]interface{}{"OK"})
 			host.CallOnRedisCall(0, storeResp)
