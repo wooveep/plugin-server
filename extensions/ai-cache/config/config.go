@@ -14,6 +14,14 @@ const (
 	CACHE_KEY_STRATEGY_LAST_QUESTION = "lastQuestion"
 	CACHE_KEY_STRATEGY_ALL_QUESTIONS = "allQuestions"
 	CACHE_KEY_STRATEGY_DISABLED      = "disabled"
+
+	CACHE_SCOPE_TENANT   = "tenant"
+	CACHE_SCOPE_CONSUMER = "consumer"
+	CACHE_SCOPE_GLOBAL   = "global"
+
+	DEFAULT_TENANT_HEADER        = "x-mse-tenant"
+	DEFAULT_CONSUMER_HEADER      = "x-mse-consumer"
+	DEFAULT_CACHE_POLICY_VERSION = "v1"
 )
 
 type PluginConfig struct {
@@ -44,6 +52,12 @@ type PluginConfig struct {
 	// @Title zh-CN 缓存键策略
 	// @Description zh-CN 决定如何生成缓存键的策略。可选值: "lastQuestion" (使用最后一个问题), "allQuestions" (拼接所有问题) 或 "disabled" (禁用缓存)
 	CacheKeyStrategy string
+
+	CacheScope         string
+	TenantHeader       string
+	ConsumerHeader     string
+	Provider           string
+	CachePolicyVersion string
 }
 
 func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
@@ -61,6 +75,23 @@ func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
 	c.CacheKeyStrategy = json.Get("cacheKeyStrategy").String()
 	if c.CacheKeyStrategy == "" {
 		c.CacheKeyStrategy = CACHE_KEY_STRATEGY_LAST_QUESTION // set default value
+	}
+	c.CacheScope = firstJSONValue(json, "cacheScope", "cache_scope")
+	if c.CacheScope == "" {
+		c.CacheScope = CACHE_SCOPE_TENANT
+	}
+	c.TenantHeader = firstJSONValue(json, "tenantHeader", "tenant_header")
+	if c.TenantHeader == "" {
+		c.TenantHeader = DEFAULT_TENANT_HEADER
+	}
+	c.ConsumerHeader = firstJSONValue(json, "consumerHeader", "consumer_header")
+	if c.ConsumerHeader == "" {
+		c.ConsumerHeader = DEFAULT_CONSUMER_HEADER
+	}
+	c.Provider = firstJSONValue(json, "provider")
+	c.CachePolicyVersion = firstJSONValue(json, "cachePolicyVersion", "cache_policy_version")
+	if c.CachePolicyVersion == "" {
+		c.CachePolicyVersion = DEFAULT_CACHE_POLICY_VERSION
 	}
 	c.CacheKeyFrom = json.Get("cacheKeyFrom").String()
 	if c.CacheKeyFrom == "" {
@@ -131,6 +162,16 @@ func (c *PluginConfig) Validate() error {
 		c.CacheKeyStrategy != CACHE_KEY_STRATEGY_DISABLED {
 		return fmt.Errorf("invalid CacheKeyStrategy: %s", c.CacheKeyStrategy)
 	}
+	if c.CacheScope != CACHE_SCOPE_TENANT &&
+		c.CacheScope != CACHE_SCOPE_CONSUMER &&
+		c.CacheScope != CACHE_SCOPE_GLOBAL {
+		return fmt.Errorf("invalid CacheScope: %s", c.CacheScope)
+	}
+	if c.CacheKeyStrategy != CACHE_KEY_STRATEGY_DISABLED &&
+		c.cacheProviderConfig.GetProviderType() != "" &&
+		c.Provider == "" {
+		return fmt.Errorf("provider is required when cache provider is configured")
+	}
 
 	// If semantic cache is enabled, ensure necessary components are configured
 	// if c.EnableSemanticCache {
@@ -140,6 +181,15 @@ func (c *PluginConfig) Validate() error {
 	// 	// if only configure cache, just warn the user
 	// }
 	return nil
+}
+
+func firstJSONValue(json gjson.Result, keys ...string) string {
+	for _, key := range keys {
+		if value := json.Get(key); value.Exists() {
+			return value.String()
+		}
+	}
+	return ""
 }
 
 func (c *PluginConfig) Complete(log log.Log) error {

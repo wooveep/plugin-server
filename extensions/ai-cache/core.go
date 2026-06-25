@@ -22,10 +22,30 @@ func CheckCacheForKey(key string, ctx wrapper.HttpContext, c config.PluginConfig
 		return performSimilaritySearch(key, ctx, c, log, key, stream)
 	}
 
-	queryKey := activeCacheProvider.GetCacheKeyPrefix() + key
+	keyMaterial := ScopedCacheKeyMaterialForLookup(ctx, c, key)
+	if !keyMaterial.Valid {
+		log.Warnf("[%s] [CheckCacheForKey] bypass cache for key: %s, reason: %s", PLUGIN_NAME, key, keyMaterial.BypassReason)
+		proxywasm.ResumeHttpRequest()
+		return nil
+	}
+	queryKey := activeCacheProvider.GetCacheKeyPrefix() + keyMaterial.EntryKey
 	log.Debugf("[%s] [CheckCacheForKey] querying cache with key: %s", PLUGIN_NAME, queryKey)
 
 	err := activeCacheProvider.Get(queryKey, func(response resp.Value) {
+		if handleCacheHitResponse(key, response, ctx, log, stream, c) {
+			return
+		}
+		legacyQueryKey := activeCacheProvider.GetCacheKeyPrefix() + key
+		if legacyQueryKey != queryKey {
+			log.Debugf("[%s] [CheckCacheForKey] scoped cache miss, querying legacy key: %s", PLUGIN_NAME, legacyQueryKey)
+			if err := activeCacheProvider.Get(legacyQueryKey, func(legacyResponse resp.Value) {
+				handleCacheResponse(key, legacyResponse, ctx, log, stream, c, useSimilaritySearch)
+			}); err != nil {
+				log.Errorf("[%s] [CheckCacheForKey] failed to retrieve legacy key: %s from cache, error: %v", PLUGIN_NAME, key, err)
+				handleCacheResponse(key, response, ctx, log, stream, c, useSimilaritySearch)
+			}
+			return
+		}
 		handleCacheResponse(key, response, ctx, log, stream, c, useSimilaritySearch)
 	})
 	if err != nil {
@@ -38,19 +58,7 @@ func CheckCacheForKey(key string, ctx wrapper.HttpContext, c config.PluginConfig
 
 // handleCacheResponse processes cache response and handles cache hits and misses.
 func handleCacheResponse(key string, response resp.Value, ctx wrapper.HttpContext, log logs.Log, stream bool, c config.PluginConfig, useSimilaritySearch bool) {
-	if err := response.Error(); err == nil && !response.IsNull() {
-		cacheHitText, authoritative, err := CacheHitTextFromRedisPayload(response.String())
-		if err != nil {
-			log.Warnf("[%s] [handleCacheResponse] invalid structured cache entry for key: %s, error: %v", PLUGIN_NAME, key, err)
-			proxywasm.ResumeHttpRequest()
-			return
-		}
-		if authoritative {
-			log.Infof("[%s] structured cache hit for key: %s", PLUGIN_NAME, key)
-		} else {
-			log.Infof("[%s] legacy cache hit for key: %s", PLUGIN_NAME, key)
-		}
-		processCacheHit(key, cacheHitText, stream, ctx, c, log)
+	if handleCacheHitResponse(key, response, ctx, log, stream, c) {
 		return
 	}
 
@@ -67,6 +75,25 @@ func handleCacheResponse(key string, response resp.Value, ctx wrapper.HttpContex
 	} else {
 		proxywasm.ResumeHttpRequest()
 	}
+}
+
+func handleCacheHitResponse(key string, response resp.Value, ctx wrapper.HttpContext, log logs.Log, stream bool, c config.PluginConfig) bool {
+	if err := response.Error(); err != nil || response.IsNull() {
+		return false
+	}
+	cacheHitText, authoritative, err := CacheHitTextFromRedisPayload(response.String())
+	if err != nil {
+		log.Warnf("[%s] [handleCacheResponse] invalid structured cache entry for key: %s, error: %v", PLUGIN_NAME, key, err)
+		proxywasm.ResumeHttpRequest()
+		return true
+	}
+	if authoritative {
+		log.Infof("[%s] structured cache hit for key: %s", PLUGIN_NAME, key)
+	} else {
+		log.Infof("[%s] legacy cache hit for key: %s", PLUGIN_NAME, key)
+	}
+	processCacheHit(key, cacheHitText, stream, ctx, c, log)
+	return true
 }
 
 // processCacheHit handles a successful cache hit.
@@ -222,8 +249,13 @@ func cacheResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, v
 
 	activeCacheProvider := c.GetCacheProvider()
 	if activeCacheProvider != nil {
-		queryKey := activeCacheProvider.GetCacheKeyPrefix() + key
-		payload, err := EncodeRedisCacheEntryPayload(NewStructuredCacheEntryForAnswer(key, value))
+		keyMaterial := ScopedCacheKeyMaterialForLookup(ctx, c, key)
+		if !keyMaterial.Valid {
+			log.Warnf("[%s] [cacheResponse] skip cache write for key: %s, reason: %s", PLUGIN_NAME, key, keyMaterial.BypassReason)
+			return
+		}
+		queryKey := activeCacheProvider.GetCacheKeyPrefix() + keyMaterial.EntryKey
+		payload, err := EncodeRedisCacheEntryPayload(NewStructuredCacheEntryForAnswer(value, keyMaterial))
 		if err != nil {
 			log.Errorf("[%s] [cacheResponse] failed to encode structured cache entry for key: %s, error: %v", PLUGIN_NAME, key, err)
 			return

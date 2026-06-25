@@ -14,15 +14,16 @@ import (
 )
 
 const (
-	PLUGIN_NAME                 = "ai-cache"
-	CACHE_KEY_CONTEXT_KEY       = "cacheKey"
-	CACHE_KEY_EMBEDDING_KEY     = "cacheKeyEmbedding"
-	CACHE_CONTENT_CONTEXT_KEY   = "cacheContent"
-	PARTIAL_MESSAGE_CONTEXT_KEY = "partialMessage"
-	TOOL_CALLS_CONTEXT_KEY      = "toolCalls"
-	STREAM_CONTEXT_KEY          = "stream"
-	SKIP_CACHE_HEADER           = "x-higress-skip-ai-cache"
-	ERROR_PARTIAL_MESSAGE_KEY   = "errorPartialMessage"
+	PLUGIN_NAME                    = "ai-cache"
+	CACHE_KEY_CONTEXT_KEY          = "cacheKey"
+	CACHE_KEY_MATERIAL_CONTEXT_KEY = "cacheKeyMaterial"
+	CACHE_KEY_EMBEDDING_KEY        = "cacheKeyEmbedding"
+	CACHE_CONTENT_CONTEXT_KEY      = "cacheContent"
+	PARTIAL_MESSAGE_CONTEXT_KEY    = "partialMessage"
+	TOOL_CALLS_CONTEXT_KEY         = "toolCalls"
+	STREAM_CONTEXT_KEY             = "stream"
+	SKIP_CACHE_HEADER              = "x-higress-skip-ai-cache"
+	ERROR_PARTIAL_MESSAGE_KEY      = "errorPartialMessage"
 
 	DEFAULT_MAX_BODY_BYTES uint32 = 100 * 1024 * 1024
 )
@@ -122,6 +123,15 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 		ctx.DontReadResponseBody()
 		return types.ActionContinue
 	}
+
+	keyMaterial := BuildScopedCacheKeyMaterial(c, bodyJson, key)
+	if !keyMaterial.Valid {
+		log.Warnf("[onHttpRequestBody] bypass cache: %s", keyMaterial.BypassReason)
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
+	ctx.SetContext(CACHE_KEY_MATERIAL_CONTEXT_KEY, keyMaterial)
+	log.Debugf("[onHttpRequestBody] scoped cache key: %s", keyMaterial.EntryKey)
 
 	if err := CheckCacheForKey(key, ctx, c, log, stream, true); err != nil {
 		log.Errorf("[onHttpRequestBody] check cache for key: %s failed, error: %v", key, err)

@@ -104,19 +104,19 @@ func CacheHitTextFromRedisPayload(payload string) (string, bool, error) {
 	return decoded.LegacyValue, false, nil
 }
 
-func NewStructuredCacheEntryForAnswer(key string, answer string) StructuredCacheEntry {
+func NewStructuredCacheEntryForAnswer(answer string, keyMaterial ScopedCacheKeyMaterial) StructuredCacheEntry {
 	return StructuredCacheEntry{
 		Version: StructuredCacheEntryVersion,
 		Answer: StructuredCacheAnswer{
 			Role:    "assistant",
 			Content: answer,
 		},
-		Scope: StructuredCacheScope{
-			Type: "legacy",
-		},
-		RequestFingerprint: RequestFingerprint{
-			Hash: key,
-		},
+		Model:              keyMaterial.Provider.Model,
+		Route:              keyMaterial.Route,
+		Provider:           keyMaterial.Provider,
+		Scope:              keyMaterial.Scope,
+		PolicyVersion:      keyMaterial.PolicyVersion,
+		RequestFingerprint: keyMaterial.RequestFingerprint,
 	}
 }
 

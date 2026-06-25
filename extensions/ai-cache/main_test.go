@@ -21,6 +21,8 @@ var basicRedisConfig = func() json.RawMessage {
 			"cacheTTL":       3600,
 			"cacheKeyPrefix": "higress-ai-cache:",
 		},
+		"provider":               "dashscope",
+		"cacheScope":             "global",
 		"cacheKeyStrategy":       "lastQuestion",
 		"cacheKeyFrom":           "messages.@reverse.0.content",
 		"cacheValueFrom":         "choices.0.message.content",
@@ -59,6 +61,7 @@ var completeConfig = func() json.RawMessage {
 			"apiKey":       "test-dashvector-key",
 			"collectionID": "test-collection",
 		},
+		"provider":               "dashscope",
 		"cacheKeyStrategy":       "lastQuestion",
 		"cacheKeyFrom":           "messages.@reverse.0.content",
 		"cacheValueFrom":         "choices.0.message.content",
@@ -78,6 +81,7 @@ var minimalConfig = func() json.RawMessage {
 			"serviceName": "redis.static",
 			"servicePort": 6379,
 		},
+		"provider": "dashscope",
 	})
 	return data
 }()
@@ -91,6 +95,8 @@ var cacheOnlyConfig = func() json.RawMessage {
 			"servicePort": 6379,
 			"timeout":     10000,
 		},
+		"provider":            "dashscope",
+		"cacheScope":          "global",
 		"cacheKeyStrategy":    "allQuestions",
 		"cacheKeyFrom":        "messages.@reverse.0.content",
 		"cacheValueFrom":      "choices.0.message.content",
@@ -143,6 +149,7 @@ var disabledCacheConfig = func() json.RawMessage {
 			"serviceName": "redis.static",
 			"servicePort": 6379,
 		},
+		"provider":         "dashscope",
 		"cacheKeyStrategy": "disabled",
 	})
 	return data
@@ -156,7 +163,33 @@ var invalidCacheKeyStrategyConfig = func() json.RawMessage {
 			"serviceName": "redis.static",
 			"servicePort": 6379,
 		},
+		"provider":         "dashscope",
 		"cacheKeyStrategy": "invalidStrategy",
+	})
+	return data
+}()
+
+var missingProviderConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":        "redis",
+			"serviceName": "redis.static",
+			"servicePort": 6379,
+		},
+	})
+	return data
+}()
+
+// 测试配置：无效的缓存作用域
+var invalidCacheScopeConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":        "redis",
+			"serviceName": "redis.static",
+			"servicePort": 6379,
+		},
+		"provider":   "dashscope",
+		"cacheScope": "unsafe-shared",
 	})
 	return data
 }()
@@ -186,9 +219,27 @@ var redisAdvancedConfig = func() json.RawMessage {
 			"cacheKeyPrefix": "custom-prefix:",
 			"database":       1,
 		},
+		"provider":         "dashscope",
 		"cacheKeyStrategy": "lastQuestion",
 		"cacheKeyFrom":     "messages.@reverse.0.content",
 		"cacheValueFrom":   "choices.0.message.content",
+	})
+	return data
+}()
+
+// 测试配置：作用域缓存配置
+var scopedCacheConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":        "redis",
+			"serviceName": "redis.static",
+			"servicePort": 6379,
+		},
+		"cache_scope":          "consumer",
+		"tenant_header":        "x-tenant-id",
+		"consumer_header":      "x-consumer-id",
+		"provider":             "dashscope",
+		"cache_policy_version": "policy-20260625",
 	})
 	return data
 }()
@@ -213,6 +264,10 @@ func TestParseConfig(t *testing.T) {
 			require.Equal(t, "messages.@reverse.0.content", config.CacheKeyFrom)
 			require.Equal(t, "choices.0.message.content", config.CacheValueFrom)
 			require.Equal(t, "choices.0.delta.content", config.CacheStreamValueFrom)
+			require.Equal(t, "global", config.CacheScope)
+			require.Equal(t, "x-mse-tenant", config.TenantHeader)
+			require.Equal(t, "x-mse-consumer", config.ConsumerHeader)
+			require.Equal(t, "v1", config.CachePolicyVersion)
 
 			// 验证响应模板
 			require.Contains(t, config.ResponseTemplate, "from-cache")
@@ -266,6 +321,10 @@ func TestParseConfig(t *testing.T) {
 			require.Equal(t, "messages.@reverse.0.content", config.CacheKeyFrom)
 			require.Equal(t, "choices.0.message.content", config.CacheValueFrom)
 			require.Equal(t, "choices.0.delta.content", config.CacheStreamValueFrom)
+			require.Equal(t, "tenant", config.CacheScope)
+			require.Equal(t, "x-mse-tenant", config.TenantHeader)
+			require.Equal(t, "x-mse-consumer", config.ConsumerHeader)
+			require.Equal(t, "v1", config.CachePolicyVersion)
 			require.False(t, config.EnableSemanticCache)
 		})
 
@@ -358,11 +417,42 @@ func TestParseConfig(t *testing.T) {
 			require.Equal(t, "messages.@reverse.0.content", config.CacheKeyFrom)
 		})
 
+		t.Run("scoped cache config", func(t *testing.T) {
+			host, status := test.NewTestHost(scopedCacheConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			configRaw, err := host.GetMatchConfig()
+			require.NoError(t, err)
+			require.NotNil(t, configRaw)
+
+			config, ok := configRaw.(*config.PluginConfig)
+			require.True(t, ok, "config should be of type *PluginConfig")
+
+			require.Equal(t, "consumer", config.CacheScope)
+			require.Equal(t, "x-tenant-id", config.TenantHeader)
+			require.Equal(t, "x-consumer-id", config.ConsumerHeader)
+			require.Equal(t, "dashscope", config.Provider)
+			require.Equal(t, "policy-20260625", config.CachePolicyVersion)
+		})
+
 		// 测试无效的缓存键策略
 		t.Run("invalid cache key strategy", func(t *testing.T) {
 			host, status := test.NewTestHost(invalidCacheKeyStrategyConfig)
 			defer host.Reset()
 			// 由于无效的缓存键策略，配置应该失败
+			require.Equal(t, types.OnPluginStartStatusFailed, status)
+		})
+
+		t.Run("missing provider config", func(t *testing.T) {
+			host, status := test.NewTestHost(missingProviderConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusFailed, status)
+		})
+
+		t.Run("invalid cache scope", func(t *testing.T) {
+			host, status := test.NewTestHost(invalidCacheScopeConfig)
+			defer host.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, status)
 		})
 
@@ -504,6 +594,8 @@ func TestOnHttpRequestBody(t *testing.T) {
 						"serviceName": "redis.static",
 						"servicePort": 6379,
 					},
+					"provider":         "dashscope",
+					"cacheScope":       "global",
 					"cacheKeyStrategy": "allQuestions",
 					"cacheKeyFrom":     "messages.@reverse.0.content",
 					"cacheValueFrom":   "choices.0.message.content",
@@ -977,8 +1069,10 @@ data: {"id":"0b8ed3c9-3710-920b-abd9-581a0a77fd28","object":"chat.completion.chu
 			// 且写入的值是前面 content chunk 累积出的完整文本。
 			setCall := redisCalls[len(redisCalls)-1]
 			setQuery := string(setCall.Query)
-			require.Contains(t, setQuery, "higress-ai-cache:介绍天津",
-				"SET command should target the cache key derived from the request, got query: %q", setQuery)
+			require.Contains(t, setQuery, "higress-ai-cache:{aiscope:",
+				"SET command should target the scoped cache key derived from the request, got query: %q", setQuery)
+			require.NotContains(t, setQuery, "higress-ai-cache:介绍天津",
+				"SET command must not use the raw prompt as the Redis key, got query: %q", setQuery)
 			require.Contains(t, setQuery, "天津是历史文化名城",
 				"SET command should contain the accumulated value, got query: %q", setQuery)
 		})
@@ -1053,8 +1147,10 @@ data: [DONE]
 			// 断言 SET value 必须是完整累积文本，而非被 [DONE] 截断后的 "天津"
 			setCall := redisCalls[len(redisCalls)-1]
 			setQuery := string(setCall.Query)
-			require.Contains(t, setQuery, "higress-ai-cache:介绍天津",
-				"SET command should target the cache key derived from the request, got query: %q", setQuery)
+			require.Contains(t, setQuery, "higress-ai-cache:{aiscope:",
+				"SET command should target the scoped cache key derived from the request, got query: %q", setQuery)
+			require.NotContains(t, setQuery, "higress-ai-cache:介绍天津",
+				"SET command must not use the raw prompt as the Redis key, got query: %q", setQuery)
 			require.Contains(t, setQuery, "天津是历史文化名城",
 				"SET command should contain the full accumulated value (final chunk content must not be dropped by [DONE]), got query: %q", setQuery)
 		})
@@ -1130,12 +1226,59 @@ func TestExternalServiceCalls(t *testing.T) {
 				"stream": false
 			}`
 			host.CallOnHttpRequestBody([]byte(requestBody))
+			redisCalls := host.GetRedisCalloutAttributes()
+			require.GreaterOrEqual(t, len(redisCalls), 1)
+			getQuery := string(redisCalls[len(redisCalls)-1].Query)
+			require.Contains(t, getQuery, "higress-ai-cache:{aiscope:")
+			require.NotContains(t, getQuery, "今天天气怎么样？")
 
 			// 模拟Redis缓存命中响应
 			cacheHitResp := test.CreateRedisRespArray([]interface{}{`{"temperature": 25, "condition": "晴朗", "humidity": 60}`})
 			host.CallOnRedisCall(0, cacheHitResp)
 
 			// 完成HTTP请求
+			host.CompleteHttp()
+		})
+
+		t.Run("legacy raw key fallback flow", func(t *testing.T) {
+			host, status := test.NewTestHost(basicRedisConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+				{"x-mse-tenant", "tenant-a"},
+			})
+
+			requestBody := `{
+				"model": "qwen-turbo",
+				"messages": [
+					{
+						"role": "user",
+						"content": "今天天气怎么样？"
+					}
+				],
+				"stream": false
+			}`
+			host.CallOnHttpRequestBody([]byte(requestBody))
+
+			redisCalls := host.GetRedisCalloutAttributes()
+			require.GreaterOrEqual(t, len(redisCalls), 1)
+			scopedGetQuery := string(redisCalls[len(redisCalls)-1].Query)
+			require.Contains(t, scopedGetQuery, "higress-ai-cache:{aiscope:")
+
+			host.CallOnRedisCall(0, test.CreateRedisRespNull())
+
+			redisCalls = host.GetRedisCalloutAttributes()
+			require.GreaterOrEqual(t, len(redisCalls), 1)
+			legacyGetQuery := string(redisCalls[len(redisCalls)-1].Query)
+			require.Contains(t, legacyGetQuery, "higress-ai-cache:今天天气怎么样？")
+
+			cacheHitResp := test.CreateRedisRespArray([]interface{}{"legacy answer"})
+			host.CallOnRedisCall(0, cacheHitResp)
 			host.CompleteHttp()
 		})
 
@@ -1164,6 +1307,8 @@ func TestExternalServiceCalls(t *testing.T) {
 						"threshold":         0.8,
 						"thresholdRelation": "gt",
 					},
+					"provider":            "dashscope",
+					"cacheScope":          "global",
 					"enableSemanticCache": true,
 					"cacheKeyStrategy":    "lastQuestion",
 					"cacheKeyFrom":        "messages.@reverse.0.content",
@@ -1197,8 +1342,9 @@ func TestExternalServiceCalls(t *testing.T) {
 			}`
 			host.CallOnHttpRequestBody([]byte(requestBody))
 
-			// 模拟Redis缓存未命中（返回null）
+			// 模拟 scoped Redis 缓存未命中（返回 null）和 legacy raw-key 兼容查询未命中
 			cacheMissResp := test.CreateRedisRespNull()
+			host.CallOnRedisCall(0, cacheMissResp)
 			host.CallOnRedisCall(0, cacheMissResp)
 
 			// 模拟DashScope embedding服务响应
@@ -1250,6 +1396,8 @@ func TestExternalServiceCalls(t *testing.T) {
 						"serviceName": "redis.static",
 						"servicePort": 6379,
 					},
+					"provider":         "dashscope",
+					"cacheScope":       "global",
 					"cacheKeyStrategy": "lastQuestion",
 					"cacheKeyFrom":     "messages.@reverse.0.content",
 					"cacheValueFrom":   "choices.0.message.content",
@@ -1320,8 +1468,9 @@ data: [DONE]`,
 			}`
 			host.CallOnHttpRequestBody([]byte(requestBody))
 
-			// 模拟Redis缓存未命中
+			// 模拟 scoped Redis 缓存未命中和 legacy raw-key 兼容查询未命中
 			cacheMissResp := test.CreateRedisRespNull()
+			host.CallOnRedisCall(0, cacheMissResp)
 			host.CallOnRedisCall(0, cacheMissResp)
 
 			// 设置响应头
@@ -1357,6 +1506,8 @@ data: [DONE]`,
 			require.GreaterOrEqual(t, len(redisCalls), 1,
 				"expected a SET redis callout after response body, got %d", len(redisCalls))
 			setQuery := string(redisCalls[len(redisCalls)-1].Query)
+			require.Contains(t, setQuery, "higress-ai-cache:{aiscope:")
+			require.NotContains(t, setQuery, "今天天气怎么样？")
 			require.Contains(t, setQuery, `"version":1`)
 			require.Contains(t, setQuery, `"answer"`)
 			require.Contains(t, setQuery, "今天北京天气晴朗，温度25度")
