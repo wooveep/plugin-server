@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
 const StructuredCacheEntryVersion = 1
@@ -20,6 +22,20 @@ type RedisCacheEntryPayload struct {
 	Kind            RedisCacheEntryKind
 	StructuredEntry *StructuredCacheEntry
 	LegacyValue     string
+}
+
+type OpenAINonStreamingCacheHitResponse struct {
+	ID      string                  `json:"id"`
+	Object  string                  `json:"object"`
+	Model   string                  `json:"model"`
+	Choices []StructuredCacheChoice `json:"choices"`
+	Usage   StructuredCacheUsage    `json:"usage"`
+}
+
+type StructuredCacheChoice struct {
+	Index        int                   `json:"index"`
+	Message      StructuredCacheAnswer `json:"message"`
+	FinishReason string                `json:"finish_reason"`
 }
 
 type redisCacheEntryProbe struct {
@@ -104,6 +120,100 @@ func CacheHitTextFromRedisPayload(payload string) (string, bool, error) {
 	return decoded.LegacyValue, false, nil
 }
 
+func BuildOpenAINonStreamingCacheHitResponse(entry StructuredCacheEntry, requestID string) ([]byte, error) {
+	model := strings.TrimSpace(entry.Model)
+	if model == "" {
+		model = strings.TrimSpace(entry.Provider.Model)
+	}
+	if model == "" {
+		model = strings.TrimSpace(entry.Upstream.Model)
+	}
+	if model == "" {
+		model = "unknown-model"
+	}
+
+	role := strings.TrimSpace(entry.Answer.Role)
+	if role == "" {
+		role = "assistant"
+	}
+
+	finishReason := strings.TrimSpace(entry.FinishReason)
+	if finishReason == "" {
+		finishReason = "stop"
+	}
+
+	usage := entry.Usage
+	if usage.PromptTokens > 0 && usage.PromptTokensDetails == nil {
+		usage.PromptTokensDetails = &StructuredPromptTokenDetail{CachedTokens: usage.PromptTokens}
+	}
+
+	choices := entry.Choices
+	if len(choices) == 0 {
+		choices = []StructuredCacheChoice{
+			{
+				Index: 0,
+				Message: StructuredCacheAnswer{
+					Role:    role,
+					Content: entry.Answer.Content,
+				},
+				FinishReason: finishReason,
+			},
+		}
+	}
+
+	responseID := "chatcmpl-cache"
+	if requestID = strings.TrimSpace(requestID); requestID != "" {
+		responseID += "-" + requestID
+	} else if entry.RequestFingerprint.Hash != "" {
+		responseID += "-" + entry.RequestFingerprint.Hash
+	}
+
+	return json.Marshal(OpenAINonStreamingCacheHitResponse{
+		ID:      responseID,
+		Object:  "chat.completion",
+		Model:   model,
+		Choices: choices,
+		Usage:   usage,
+	})
+}
+
+func NewStructuredCacheEntryForOpenAIResponse(responseBody []byte, answer string, keyMaterial ScopedCacheKeyMaterial) StructuredCacheEntry {
+	entry := NewStructuredCacheEntryForAnswer(answer, keyMaterial)
+	body := gjson.ParseBytes(responseBody)
+	if model := strings.TrimSpace(body.Get("model").String()); model != "" {
+		entry.Model = model
+		entry.Provider.Model = model
+	}
+	if usageRaw := body.Get("usage").Raw; usageRaw != "" {
+		_ = json.Unmarshal([]byte(usageRaw), &entry.Usage)
+	}
+
+	choices := body.Get("choices").Array()
+	if len(choices) > 0 {
+		entry.Choices = make([]StructuredCacheChoice, 0, len(choices))
+		for _, choice := range choices {
+			cacheChoice := StructuredCacheChoice{
+				Index: int(choice.Get("index").Int()),
+				Message: StructuredCacheAnswer{
+					Role:    normalizeOr(choice.Get("message.role").String(), "assistant"),
+					Content: choice.Get("message.content").String(),
+				},
+				FinishReason: choice.Get("finish_reason").String(),
+			}
+			entry.Choices = append(entry.Choices, cacheChoice)
+		}
+		firstChoice := entry.Choices[0]
+		if strings.TrimSpace(firstChoice.Message.Content) != "" {
+			entry.Answer = firstChoice.Message
+		}
+		if strings.TrimSpace(firstChoice.FinishReason) != "" {
+			entry.FinishReason = firstChoice.FinishReason
+		}
+	}
+
+	return entry
+}
+
 func NewStructuredCacheEntryForAnswer(answer string, keyMaterial ScopedCacheKeyMaterial) StructuredCacheEntry {
 	return StructuredCacheEntry{
 		Version: StructuredCacheEntryVersion,
@@ -124,6 +234,7 @@ type StructuredCacheEntry struct {
 	Version            int                     `json:"version"`
 	Answer             StructuredCacheAnswer   `json:"answer"`
 	Model              string                  `json:"model"`
+	Choices            []StructuredCacheChoice `json:"choices,omitempty"`
 	Usage              StructuredCacheUsage    `json:"usage"`
 	FinishReason       string                  `json:"finish_reason"`
 	Route              StructuredRouteFacts    `json:"route"`
@@ -152,7 +263,7 @@ type StructuredCacheUsage struct {
 }
 
 type StructuredPromptTokenDetail struct {
-	CachedTokens int `json:"cached_tokens,omitempty"`
+	CachedTokens int `json:"cached_tokens"`
 }
 
 type StructuredRouteFacts struct {

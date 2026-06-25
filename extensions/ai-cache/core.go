@@ -81,19 +81,56 @@ func handleCacheHitResponse(key string, response resp.Value, ctx wrapper.HttpCon
 	if err := response.Error(); err != nil || response.IsNull() {
 		return false
 	}
-	cacheHitText, authoritative, err := CacheHitTextFromRedisPayload(response.String())
+	payload := redisCacheValueString(response)
+	decoded, err := DecodeRedisCacheEntryPayload(payload)
 	if err != nil {
 		log.Warnf("[%s] [handleCacheResponse] invalid structured cache entry for key: %s, error: %v", PLUGIN_NAME, key, err)
 		proxywasm.ResumeHttpRequest()
 		return true
 	}
-	if authoritative {
+	if decoded.IsAuthoritative() {
 		log.Infof("[%s] structured cache hit for key: %s", PLUGIN_NAME, key)
+		if !stream {
+			processStructuredCacheHit(key, *decoded.StructuredEntry, ctx, log)
+			return true
+		}
+		processCacheHit(key, decoded.StructuredEntry.Answer.Content, stream, ctx, c, log)
 	} else {
 		log.Infof("[%s] legacy cache hit for key: %s", PLUGIN_NAME, key)
+		processCacheHit(key, decoded.LegacyValue, stream, ctx, c, log)
 	}
-	processCacheHit(key, cacheHitText, stream, ctx, c, log)
 	return true
+}
+
+func redisCacheValueString(response resp.Value) string {
+	if values := response.Array(); len(values) == 1 {
+		return values[0].String()
+	}
+	return response.String()
+}
+
+func processStructuredCacheHit(key string, entry StructuredCacheEntry, ctx wrapper.HttpContext, log logs.Log) {
+	if strings.TrimSpace(entry.Answer.Content) == "" {
+		log.Warnf("[%s] [processStructuredCacheHit] cached response for key %s is empty", PLUGIN_NAME, key)
+		proxywasm.ResumeHttpRequest()
+		return
+	}
+
+	log.Debugf("[%s] [processStructuredCacheHit] cached structured response for key %s", PLUGIN_NAME, key)
+
+	requestID := getProxyWasmPropertyString([]string{"x_request_id"})
+	responseBody, err := BuildOpenAINonStreamingCacheHitResponse(entry, requestID)
+	if err != nil {
+		log.Errorf("[%s] [processStructuredCacheHit] failed to build cache hit response for key: %s, error: %v", PLUGIN_NAME, key, err)
+		proxywasm.ResumeHttpRequest()
+		return
+	}
+
+	ctx.SetContext(CACHE_KEY_CONTEXT_KEY, nil)
+	ctx.SetUserAttribute("cache_status", "hit")
+	ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
+
+	proxywasm.SendHttpResponseWithDetail(200, "ai-cache.hit", [][2]string{{"content-type", "application/json; charset=utf-8"}}, responseBody, -1)
 }
 
 // processCacheHit handles a successful cache hit.
@@ -255,7 +292,12 @@ func cacheResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, v
 			return
 		}
 		queryKey := activeCacheProvider.GetCacheKeyPrefix() + keyMaterial.EntryKey
-		payload, err := EncodeRedisCacheEntryPayload(NewStructuredCacheEntryForAnswer(value, keyMaterial))
+		entry := NewStructuredCacheEntryForAnswer(value, keyMaterial)
+		if responseBody, ok := ctx.GetContext(CACHE_RESPONSE_BODY_CONTEXT_KEY).([]byte); ok {
+			entry = NewStructuredCacheEntryForOpenAIResponse(responseBody, value, keyMaterial)
+			ctx.SetContext(CACHE_RESPONSE_BODY_CONTEXT_KEY, nil)
+		}
+		payload, err := EncodeRedisCacheEntryPayload(entry)
 		if err != nil {
 			log.Errorf("[%s] [cacheResponse] failed to encode structured cache entry for key: %s, error: %v", PLUGIN_NAME, key, err)
 			return

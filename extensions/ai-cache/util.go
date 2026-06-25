@@ -68,6 +68,7 @@ func processNonStreamLastChunk(ctx wrapper.HttpContext, c config.PluginConfig, c
 	if strings.TrimSpace(value) == "" {
 		return "", fmt.Errorf("[processNonStreamLastChunk] parse value from response body failed, body:%s", body)
 	}
+	ctx.SetContext(CACHE_RESPONSE_BODY_CONTEXT_KEY, body)
 	return value, nil
 }
 

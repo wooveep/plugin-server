@@ -919,7 +919,15 @@ func TestOnHttpResponseBody(t *testing.T) {
 					}
 				],
 				"model": "qwen-turbo",
-				"object": "chat.completion"
+				"object": "chat.completion",
+				"usage": {
+					"prompt_tokens": 16,
+					"completion_tokens": 9,
+					"total_tokens": 25,
+					"prompt_tokens_details": {
+						"cached_tokens": 0
+					}
+				}
 			}`
 
 			// 调用响应体处理
@@ -1493,7 +1501,15 @@ data: [DONE]`,
 					}
 				],
 				"model": "qwen-turbo",
-				"object": "chat.completion"
+				"object": "chat.completion",
+				"usage": {
+					"prompt_tokens": 16,
+					"completion_tokens": 9,
+					"total_tokens": 25,
+					"prompt_tokens_details": {
+						"cached_tokens": 0
+					}
+				}
 			}`
 
 			// 调用响应体处理，这会触发缓存存储
@@ -1510,6 +1526,10 @@ data: [DONE]`,
 			require.NotContains(t, setQuery, "今天天气怎么样？")
 			require.Contains(t, setQuery, `"version":1`)
 			require.Contains(t, setQuery, `"answer"`)
+			require.Contains(t, setQuery, `"model":"qwen-turbo"`)
+			require.Contains(t, setQuery, `"choices"`)
+			require.Contains(t, setQuery, `"usage":{"prompt_tokens":16,"completion_tokens":9,"total_tokens":25,"prompt_tokens_details":{"cached_tokens":0}}`)
+			require.Contains(t, setQuery, `"finish_reason":"stop"`)
 			require.Contains(t, setQuery, "今天北京天气晴朗，温度25度")
 
 			// 模拟Redis存储操作

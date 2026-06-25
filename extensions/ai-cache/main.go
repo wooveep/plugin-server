@@ -14,16 +14,17 @@ import (
 )
 
 const (
-	PLUGIN_NAME                    = "ai-cache"
-	CACHE_KEY_CONTEXT_KEY          = "cacheKey"
-	CACHE_KEY_MATERIAL_CONTEXT_KEY = "cacheKeyMaterial"
-	CACHE_KEY_EMBEDDING_KEY        = "cacheKeyEmbedding"
-	CACHE_CONTENT_CONTEXT_KEY      = "cacheContent"
-	PARTIAL_MESSAGE_CONTEXT_KEY    = "partialMessage"
-	TOOL_CALLS_CONTEXT_KEY         = "toolCalls"
-	STREAM_CONTEXT_KEY             = "stream"
-	SKIP_CACHE_HEADER              = "x-higress-skip-ai-cache"
-	ERROR_PARTIAL_MESSAGE_KEY      = "errorPartialMessage"
+	PLUGIN_NAME                     = "ai-cache"
+	CACHE_KEY_CONTEXT_KEY           = "cacheKey"
+	CACHE_KEY_MATERIAL_CONTEXT_KEY  = "cacheKeyMaterial"
+	CACHE_KEY_EMBEDDING_KEY         = "cacheKeyEmbedding"
+	CACHE_CONTENT_CONTEXT_KEY       = "cacheContent"
+	CACHE_RESPONSE_BODY_CONTEXT_KEY = "cacheResponseBody"
+	PARTIAL_MESSAGE_CONTEXT_KEY     = "partialMessage"
+	TOOL_CALLS_CONTEXT_KEY          = "toolCalls"
+	STREAM_CONTEXT_KEY              = "stream"
+	SKIP_CACHE_HEADER               = "x-higress-skip-ai-cache"
+	ERROR_PARTIAL_MESSAGE_KEY       = "errorPartialMessage"
 
 	DEFAULT_MAX_BODY_BYTES uint32 = 100 * 1024 * 1024
 )

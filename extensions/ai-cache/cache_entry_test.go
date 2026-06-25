@@ -150,6 +150,178 @@ func TestCacheHitTextFromRedisPayloadKeepsLegacyFallback(t *testing.T) {
 	require.Equal(t, "legacy answer", text)
 }
 
+func TestBuildOpenAINonStreamingCacheHitResponsePreservesStructuredFacts(t *testing.T) {
+	payload, err := BuildOpenAINonStreamingCacheHitResponse(StructuredCacheEntry{
+		Version: StructuredCacheEntryVersion,
+		Answer: StructuredCacheAnswer{
+			Role:    "assistant",
+			Content: `hello "cache"`,
+		},
+		Model: "qwen-plus",
+		Usage: StructuredCacheUsage{
+			PromptTokens:     9,
+			CompletionTokens: 4,
+			TotalTokens:      13,
+		},
+		FinishReason: "stop",
+		RequestFingerprint: RequestFingerprint{
+			Hash: "request-hash",
+		},
+	}, "request-id")
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"id":"chatcmpl-cache-request-id",
+		"object":"chat.completion",
+		"model":"qwen-plus",
+		"choices":[
+			{
+				"index":0,
+				"message":{"role":"assistant","content":"hello \"cache\""},
+				"finish_reason":"stop"
+			}
+		],
+		"usage":{
+			"prompt_tokens":9,
+			"completion_tokens":4,
+			"total_tokens":13,
+			"prompt_tokens_details":{"cached_tokens":9}
+		}
+	}`, string(payload))
+	require.NotContains(t, string(payload), "from-cache")
+	require.NotContains(t, string(payload), "upstream_invoked")
+}
+
+func TestBuildOpenAINonStreamingCacheHitResponseKeepsExplicitCachedTokensZero(t *testing.T) {
+	payload, err := BuildOpenAINonStreamingCacheHitResponse(StructuredCacheEntry{
+		Version: StructuredCacheEntryVersion,
+		Answer: StructuredCacheAnswer{
+			Role:    "assistant",
+			Content: "cached answer",
+		},
+		Model: "qwen-plus",
+		Usage: StructuredCacheUsage{
+			PromptTokens:     9,
+			CompletionTokens: 4,
+			TotalTokens:      13,
+			PromptTokensDetails: &StructuredPromptTokenDetail{
+				CachedTokens: 0,
+			},
+		},
+		FinishReason: "stop",
+	}, "request-id")
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"id":"chatcmpl-cache-request-id",
+		"object":"chat.completion",
+		"model":"qwen-plus",
+		"choices":[
+			{
+				"index":0,
+				"message":{"role":"assistant","content":"cached answer"},
+				"finish_reason":"stop"
+			}
+		],
+		"usage":{
+			"prompt_tokens":9,
+			"completion_tokens":4,
+			"total_tokens":13,
+			"prompt_tokens_details":{"cached_tokens":0}
+		}
+	}`, string(payload))
+}
+
+func TestBuildOpenAINonStreamingCacheHitResponsePreservesStructuredChoices(t *testing.T) {
+	payload, err := BuildOpenAINonStreamingCacheHitResponse(StructuredCacheEntry{
+		Version: StructuredCacheEntryVersion,
+		Answer: StructuredCacheAnswer{
+			Role:    "assistant",
+			Content: "first answer",
+		},
+		Model: "qwen-plus",
+		Choices: []StructuredCacheChoice{
+			{
+				Index:        0,
+				Message:      StructuredCacheAnswer{Role: "assistant", Content: "first answer"},
+				FinishReason: "stop",
+			},
+			{
+				Index:        1,
+				Message:      StructuredCacheAnswer{Role: "assistant", Content: "second answer"},
+				FinishReason: "length",
+			},
+		},
+		Usage:        StructuredCacheUsage{PromptTokens: 9, CompletionTokens: 4, TotalTokens: 13},
+		FinishReason: "stop",
+	}, "request-id")
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"id":"chatcmpl-cache-request-id",
+		"object":"chat.completion",
+		"model":"qwen-plus",
+		"choices":[
+			{
+				"index":0,
+				"message":{"role":"assistant","content":"first answer"},
+				"finish_reason":"stop"
+			},
+			{
+				"index":1,
+				"message":{"role":"assistant","content":"second answer"},
+				"finish_reason":"length"
+			}
+		],
+		"usage":{
+			"prompt_tokens":9,
+			"completion_tokens":4,
+			"total_tokens":13,
+			"prompt_tokens_details":{"cached_tokens":9}
+		}
+	}`, string(payload))
+}
+
+func TestNewStructuredCacheEntryForOpenAIResponsePreservesReplayFacts(t *testing.T) {
+	entry := NewStructuredCacheEntryForOpenAIResponse([]byte(`{
+		"id":"chatcmpl-123",
+		"object":"chat.completion",
+		"model":"qwen-plus",
+		"choices":[
+			{
+				"index":0,
+				"message":{"role":"assistant","content":"first answer"},
+				"finish_reason":"stop"
+			},
+			{
+				"index":1,
+				"message":{"role":"assistant","content":"second answer"},
+				"finish_reason":"length"
+			}
+		],
+		"usage":{
+			"prompt_tokens":9,
+			"completion_tokens":4,
+			"total_tokens":13,
+			"prompt_tokens_details":{"cached_tokens":0}
+		}
+	}`), "first answer", ScopedCacheKeyMaterial{
+		Route:              StructuredRouteFacts{Name: "chat"},
+		Provider:           StructuredProviderFacts{Name: "qwen", Model: "qwen-plus"},
+		Scope:              StructuredCacheScope{Type: "global"},
+		PolicyVersion:      "v1",
+		RequestFingerprint: RequestFingerprint{Hash: "request-hash"},
+	})
+
+	require.Equal(t, "qwen-plus", entry.Model)
+	require.Equal(t, "qwen-plus", entry.Provider.Model)
+	require.Equal(t, "stop", entry.FinishReason)
+	require.Equal(t, "first answer", entry.Answer.Content)
+	require.Len(t, entry.Choices, 2)
+	require.Equal(t, "second answer", entry.Choices[1].Message.Content)
+	require.Equal(t, "length", entry.Choices[1].FinishReason)
+	require.Equal(t, 9, entry.Usage.PromptTokens)
+	require.NotNil(t, entry.Usage.PromptTokensDetails)
+	require.Equal(t, 0, entry.Usage.PromptTokensDetails.CachedTokens)
+}
+
 func TestEncodeRedisCacheEntryPayloadRejectsUnsupportedVersion(t *testing.T) {
 	entry := StructuredCacheEntry{
 		Version:            StructuredCacheEntryVersion + 1,

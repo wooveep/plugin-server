@@ -648,28 +648,28 @@
     "hash": "a530f91593f9164cda9527469d6f5bd9"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/core.go": {
-    "mtime": 1782377618.4011955,
-    "hash": "848f18bbb609ef5fb62f7198a539e40a"
+    "mtime": 1782378613.4441009,
+    "hash": "52ad965e427c108b37aa37a1a7cb9b40"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/main.go": {
-    "mtime": 1782377618.4011955,
-    "hash": "eee43a784aa56e7cd3bafe2a6757fa42"
+    "mtime": 1782378646.5720706,
+    "hash": "3330ddf324bdbd4cd322fbab753baaa7"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/main_test.go": {
-    "mtime": 1782377678.2825265,
-    "hash": "3333f8042db4f34dbc6af82523741493"
+    "mtime": 1782378687.6045024,
+    "hash": "c639084167141804bef3501317ac05db"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/util.go": {
-    "mtime": 1782308076.3974063,
-    "hash": "097db16e973769b05e4650355c96a25c"
+    "mtime": 1782378607.7681437,
+    "hash": "1d63247fbf35f49ee81c96f15ec55a2a"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache_entry_test.go": {
-    "mtime": 1782376625.8480415,
-    "hash": "444029d8d4a973123de6e5556912be1c"
+    "mtime": 1782378633.5800393,
+    "hash": "27c76d15e2ce90e4e8850c13577ad2a2"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache_entry.go": {
-    "mtime": 1782377042.7074428,
-    "hash": "76c7a895e16d399596394abe7a089279"
+    "mtime": 1782378682.9244292,
+    "hash": "701d7b0dfd4ac70f30620e4c482dc216"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache_key_test.go": {
     "mtime": 1782377443.890468,
@@ -678,6 +678,10 @@
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache_key.go": {
     "mtime": 1782377623.0464034,
     "hash": "ffb95f671ae5de6a8ad3ceffc0836350"
+  },
+  "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache_hit_response_test.go": {
+    "mtime": 1782378221.1541295,
+    "hash": "f3a4a11010733e66d1316f3bcaebe2e8"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache/provider.go": {
     "mtime": 1782308076.3934062,
@@ -764,12 +768,12 @@
     "hash": "d07161712e052a25e67a858bc03c278a"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/AGENTS.md": {
-    "mtime": 1782377226.6311238,
-    "hash": "89d387268662933c4c914f5500bf4c08"
+    "mtime": 1782378159.903562,
+    "hash": "9fd8d6b06aac4cec6bf81811a005b59b"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/CLAUDE.md": {
-    "mtime": 1782377226.6311238,
-    "hash": "7a2809b534486a4f57d2897793398a7c"
+    "mtime": 1782378159.903562,
+    "hash": "aaf8da0053c91b1536c2010b507a71c2"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/examples/http-call/README.md": {
     "mtime": 1778636908.7349434,
