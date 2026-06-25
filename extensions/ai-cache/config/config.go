@@ -27,13 +27,19 @@ const (
 	CACHE_SCOPE_CONSUMER = "consumer"
 	CACHE_SCOPE_GLOBAL   = "global"
 
-	DEFAULT_TENANT_HEADER        = "x-mse-tenant"
-	DEFAULT_CONSUMER_HEADER      = "x-mse-consumer"
-	DEFAULT_CACHE_POLICY_VERSION = "v1"
-	DEFAULT_L1_CACHE_MAX_ENTRIES = 128
-	DEFAULT_L1_CACHE_TTL_SECONDS = 30
-	MAX_L1_CACHE_MAX_ENTRIES     = 1024
-	MAX_L1_CACHE_TTL_SECONDS     = 60
+	DEFAULT_TENANT_HEADER              = "x-mse-tenant"
+	DEFAULT_CONSUMER_HEADER            = "x-mse-consumer"
+	DEFAULT_CACHE_POLICY_VERSION       = "v1"
+	DEFAULT_L1_CACHE_MAX_ENTRIES       = 128
+	DEFAULT_L1_CACHE_TTL_SECONDS       = 30
+	MAX_L1_CACHE_MAX_ENTRIES           = 1024
+	MAX_L1_CACHE_TTL_SECONDS           = 60
+	DEFAULT_COLLAPSE_WAIT_ATTEMPTS     = 1
+	DEFAULT_COLLAPSE_WAIT_MILLISECONDS = 2500
+	DEFAULT_COLLAPSE_LOCK_TTL_SECONDS  = 5
+	MAX_COLLAPSE_WAIT_ATTEMPTS         = 5
+	MAX_COLLAPSE_WAIT_MILLISECONDS     = 30000
+	MAX_COLLAPSE_LOCK_TTL_SECONDS      = 30
 )
 
 type PluginConfig struct {
@@ -76,7 +82,12 @@ type PluginConfig struct {
 	// @Description zh-CN 可选短 TTL 本地内存缓存，仅作为 Redis 结构化缓存命中的优化层。
 	L1Cache L1CacheConfig `json:"l1Cache,omitempty"`
 
-	l1CacheStore any
+	// @Title zh-CN 请求折叠
+	// @Description zh-CN 对相同 scoped cache key 的并发 miss 进行本地 singleflight，可选 Redis 分布式锁。
+	RequestCollapse RequestCollapseConfig `json:"requestCollapse,omitempty"`
+
+	l1CacheStore         any
+	requestCollapseStore any
 }
 
 type L1CacheConfig struct {
@@ -89,6 +100,27 @@ type L1CacheConfig struct {
 	// @Title zh-CN L1 TTL 秒数
 	// @Description zh-CN L1 内存缓存条目的短 TTL 秒数。
 	TTLSeconds int `json:"ttlSeconds,omitempty"`
+}
+
+type RequestCollapseConfig struct {
+	// @Title zh-CN 启用请求折叠
+	// @Description zh-CN 启用后，相同 scoped cache key 的并发 miss 会折叠到一个上游请求。
+	Enabled bool `json:"enabled,omitempty"`
+	// @Title zh-CN 启用 Redis 分布式锁
+	// @Description zh-CN 开启后，使用 scoped lock key 进行跨网关实例请求折叠。
+	DistributedLock bool `json:"distributedLock,omitempty"`
+	// @Title zh-CN 允许陈旧缓存兜底
+	// @Description zh-CN 等待折叠结果超限时，允许回放未硬过期的结构化 stale 条目。
+	StaleFallback bool `json:"staleFallback,omitempty"`
+	// @Title zh-CN 等待复查次数
+	// @Description zh-CN follower 或分布式锁失败后最多复查 Redis 结构化条目的次数。
+	WaitAttempts int `json:"waitAttempts,omitempty"`
+	// @Title zh-CN 单次等待毫秒数
+	// @Description zh-CN follower 或分布式锁失败后每次等待新缓存写入通知的最大毫秒数。
+	WaitMilliseconds int `json:"waitMilliseconds,omitempty"`
+	// @Title zh-CN 锁 TTL 秒数
+	// @Description zh-CN Redis 分布式锁的短 TTL，避免上游请求异常时长期阻塞。
+	LockTTLSeconds int `json:"lockTTLSeconds,omitempty"`
 }
 
 func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
@@ -139,6 +171,30 @@ func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
 				c.L1Cache.TTLSeconds = int(value.Int())
 			} else {
 				c.L1Cache.TTLSeconds = DEFAULT_L1_CACHE_TTL_SECONDS
+			}
+		}
+	}
+	c.requestCollapseStore = nil
+	c.RequestCollapse = RequestCollapseConfig{}
+	if collapseConfig := firstJSONResult(json, "requestCollapse", "request_collapse"); collapseConfig.Exists() {
+		c.RequestCollapse.Enabled = firstJSONBool(collapseConfig, false, "enabled")
+		if c.RequestCollapse.Enabled {
+			c.RequestCollapse.DistributedLock = firstJSONBool(collapseConfig, false, "distributedLock", "distributed_lock")
+			c.RequestCollapse.StaleFallback = firstJSONBool(collapseConfig, false, "staleFallback", "stale_fallback")
+			if value := firstJSONResult(collapseConfig, "waitAttempts", "wait_attempts"); value.Exists() {
+				c.RequestCollapse.WaitAttempts = int(value.Int())
+			} else {
+				c.RequestCollapse.WaitAttempts = DEFAULT_COLLAPSE_WAIT_ATTEMPTS
+			}
+			if value := firstJSONResult(collapseConfig, "waitMilliseconds", "wait_milliseconds"); value.Exists() {
+				c.RequestCollapse.WaitMilliseconds = int(value.Int())
+			} else {
+				c.RequestCollapse.WaitMilliseconds = DEFAULT_COLLAPSE_WAIT_MILLISECONDS
+			}
+			if value := firstJSONResult(collapseConfig, "lockTTLSeconds", "lock_ttl_seconds"); value.Exists() {
+				c.RequestCollapse.LockTTLSeconds = int(value.Int())
+			} else {
+				c.RequestCollapse.LockTTLSeconds = DEFAULT_COLLAPSE_LOCK_TTL_SECONDS
 			}
 		}
 	}
@@ -251,6 +307,31 @@ func (c *PluginConfig) Validate() error {
 			return fmt.Errorf("l1Cache ttlSeconds must be less than or equal to %d", MAX_L1_CACHE_TTL_SECONDS)
 		}
 	}
+	if c.RequestCollapse.Enabled {
+		if c.cacheProviderConfig.GetProviderType() == "" {
+			return fmt.Errorf("requestCollapse requires cache provider")
+		}
+		if c.RequestCollapse.WaitAttempts <= 0 {
+			return fmt.Errorf("invalid requestCollapse waitAttempts: %d", c.RequestCollapse.WaitAttempts)
+		}
+		if c.RequestCollapse.WaitAttempts > MAX_COLLAPSE_WAIT_ATTEMPTS {
+			return fmt.Errorf("requestCollapse waitAttempts must be less than or equal to %d", MAX_COLLAPSE_WAIT_ATTEMPTS)
+		}
+		if c.RequestCollapse.WaitMilliseconds <= 0 {
+			return fmt.Errorf("invalid requestCollapse waitMilliseconds: %d", c.RequestCollapse.WaitMilliseconds)
+		}
+		if c.RequestCollapse.WaitMilliseconds > MAX_COLLAPSE_WAIT_MILLISECONDS {
+			return fmt.Errorf("requestCollapse waitMilliseconds must be less than or equal to %d", MAX_COLLAPSE_WAIT_MILLISECONDS)
+		}
+		if c.RequestCollapse.DistributedLock {
+			if c.RequestCollapse.LockTTLSeconds <= 0 {
+				return fmt.Errorf("invalid requestCollapse lockTTLSeconds: %d", c.RequestCollapse.LockTTLSeconds)
+			}
+			if c.RequestCollapse.LockTTLSeconds > MAX_COLLAPSE_LOCK_TTL_SECONDS {
+				return fmt.Errorf("requestCollapse lockTTLSeconds must be less than or equal to %d", MAX_COLLAPSE_LOCK_TTL_SECONDS)
+			}
+		}
+	}
 
 	// If semantic cache is enabled, ensure necessary components are configured
 	// if c.EnableSemanticCache {
@@ -348,6 +429,14 @@ func (c *PluginConfig) SetL1CacheStore(store any) {
 
 func (c *PluginConfig) GetL1CacheStore() any {
 	return c.l1CacheStore
+}
+
+func (c *PluginConfig) SetRequestCollapseStore(store any) {
+	c.requestCollapseStore = store
+}
+
+func (c *PluginConfig) GetRequestCollapseStore() any {
+	return c.requestCollapseStore
 }
 
 func (c *PluginConfig) CacheHardTTLSeconds() int {

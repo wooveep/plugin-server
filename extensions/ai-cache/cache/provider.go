@@ -180,5 +180,8 @@ type Provider interface {
 	Init(username string, password string, timeout uint32) error
 	Get(key string, cb wrapper.RedisResponseCallback) error
 	Set(key string, value string, cb wrapper.RedisResponseCallback) error
+	Command(cmds []interface{}, cb wrapper.RedisResponseCallback) error
+	SetNX(key string, value string, ttlSeconds int, cb wrapper.RedisResponseCallback) error
+	Unlock(key string, value string, cb wrapper.RedisResponseCallback) error
 	GetCacheKeyPrefix() string
 }

@@ -14,22 +14,24 @@ import (
 )
 
 const (
-	PLUGIN_NAME                      = "ai-cache"
-	CACHE_KEY_CONTEXT_KEY            = "cacheKey"
-	CACHE_KEY_MATERIAL_CONTEXT_KEY   = "cacheKeyMaterial"
-	CACHE_KEY_EMBEDDING_KEY          = "cacheKeyEmbedding"
-	CACHE_CONTENT_CONTEXT_KEY        = "cacheContent"
-	CACHE_RESPONSE_BODY_CONTEXT_KEY  = "cacheResponseBody"
-	CACHE_STREAM_FACTS_CONTEXT_KEY   = "cacheStreamFacts"
-	CACHE_REQUEST_MODE_CONTEXT_KEY   = "cacheRequestMode"
-	CACHE_BYPASS_REASON_CONTEXT_KEY  = "cacheBypassReason"
-	CACHE_DISABLE_LEGACY_CONTEXT_KEY = "cacheDisableLegacyFallback"
-	PARTIAL_MESSAGE_CONTEXT_KEY      = "partialMessage"
-	TOOL_CALLS_CONTEXT_KEY           = "toolCalls"
-	STREAM_CONTEXT_KEY               = "stream"
-	SKIP_CACHE_HEADER                = "x-higress-skip-ai-cache"
-	CACHE_MODE_HEADER                = "x-higress-ai-cache-mode"
-	ERROR_PARTIAL_MESSAGE_KEY        = "errorPartialMessage"
+	PLUGIN_NAME                              = "ai-cache"
+	CACHE_KEY_CONTEXT_KEY                    = "cacheKey"
+	CACHE_KEY_MATERIAL_CONTEXT_KEY           = "cacheKeyMaterial"
+	CACHE_KEY_EMBEDDING_KEY                  = "cacheKeyEmbedding"
+	CACHE_CONTENT_CONTEXT_KEY                = "cacheContent"
+	CACHE_RESPONSE_BODY_CONTEXT_KEY          = "cacheResponseBody"
+	CACHE_STREAM_FACTS_CONTEXT_KEY           = "cacheStreamFacts"
+	CACHE_REQUEST_MODE_CONTEXT_KEY           = "cacheRequestMode"
+	CACHE_BYPASS_REASON_CONTEXT_KEY          = "cacheBypassReason"
+	CACHE_DISABLE_LEGACY_CONTEXT_KEY         = "cacheDisableLegacyFallback"
+	CACHE_REQUEST_COLLAPSE_LEASE_CONTEXT_KEY = "cacheRequestCollapseLease"
+	CACHE_WRITE_PENDING_CONTEXT_KEY          = "cacheWritePending"
+	PARTIAL_MESSAGE_CONTEXT_KEY              = "partialMessage"
+	TOOL_CALLS_CONTEXT_KEY                   = "toolCalls"
+	STREAM_CONTEXT_KEY                       = "stream"
+	SKIP_CACHE_HEADER                        = "x-higress-skip-ai-cache"
+	CACHE_MODE_HEADER                        = "x-higress-ai-cache-mode"
+	ERROR_PARTIAL_MESSAGE_KEY                = "errorPartialMessage"
 
 	DEFAULT_MAX_BODY_BYTES uint32 = 100 * 1024 * 1024
 )
@@ -45,6 +47,7 @@ func init() {
 		wrapper.ProcessRequestBodyBy(onHttpRequestBody),
 		wrapper.ProcessResponseHeadersBy(onHttpResponseHeaders),
 		wrapper.ProcessStreamingResponseBodyBy(onHttpResponseBody),
+		wrapper.ProcessStreamDoneBy(onHttpStreamDone),
 	)
 }
 
@@ -63,6 +66,9 @@ func parseConfig(json gjson.Result, c *config.PluginConfig, log log.Log) error {
 	}
 	if c.L1Cache.Enabled {
 		c.SetL1CacheStore(newStructuredL1Cache(c.L1Cache.MaxEntries, c.L1Cache.TTLSeconds))
+	}
+	if c.RequestCollapse.Enabled {
+		c.SetRequestCollapseStore(newRequestCollapseStore())
 	}
 	return nil
 }
@@ -139,7 +145,7 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 	}
 
 	ctx.SetContext(CACHE_KEY_CONTEXT_KEY, key)
-	log.Debugf("[onHttpRequestBody] key: %s", key)
+	log.Debugf("[onHttpRequestBody] parsed cache key, cache_id=%s", cacheLogID(key))
 	if key == "" {
 		log.Debug("[onHttpRequestBody] parse key from request body failed")
 		ctx.DontReadResponseBody()
@@ -169,7 +175,7 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 		return types.ActionContinue
 	}
 	ctx.SetContext(CACHE_KEY_MATERIAL_CONTEXT_KEY, keyMaterial)
-	log.Debugf("[onHttpRequestBody] scoped cache key: %s", keyMaterial.EntryKey)
+	log.Debugf("[onHttpRequestBody] scoped cache key ready, cache_id=%s", cacheLogID(keyMaterial.EntryKey))
 
 	if cacheMode == config.CACHE_MODE_SHADOW {
 		ctx.SetUserAttribute("cache_status", "shadow")
@@ -178,7 +184,7 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 	}
 
 	if err := CheckCacheForKey(key, ctx, c, log, stream, shouldUseSimilaritySearch(cacheMode, c)); err != nil {
-		log.Errorf("[onHttpRequestBody] check cache for key: %s failed, error: %v", key, err)
+		log.Errorf("[onHttpRequestBody] check cache failed, cache_id=%s, error: %v", cacheLogID(keyMaterial.EntryKey), err)
 		return types.ActionContinue
 	}
 
@@ -203,6 +209,7 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log l
 			ctx.SetUserAttribute("cache_status", "skip")
 			ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
 			ctx.DontReadResponseBody()
+			releaseRequestCollapse(ctx, c, log)
 			return types.ActionContinue
 		}
 		ctx.SetUserAttribute("cache_status", "miss")
@@ -223,6 +230,7 @@ func onHttpResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chunk []
 	log.Debugf("[onHttpResponseBody] chunk: %s", string(chunk))
 
 	if ctx.GetContext(TOOL_CALLS_CONTEXT_KEY) != nil || ctx.GetContext(ERROR_PARTIAL_MESSAGE_KEY) != nil {
+		releaseRequestCollapse(ctx, c, log)
 		return chunk
 	}
 
@@ -256,26 +264,45 @@ func onHttpResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chunk []
 
 	if err != nil {
 		log.Errorf("[onHttpResponseBody] process last chunk failed, error: %v", err)
+		releaseRequestCollapse(ctx, c, log)
 		return chunk
 	}
 
 	if ctx.GetContext(TOOL_CALLS_CONTEXT_KEY) != nil {
 		log.Warnf("[onHttpResponseBody] bypass cache write: response contains tool calls")
 		ctx.SetContext(CACHE_BYPASS_REASON_CONTEXT_KEY, "response contains tool calls")
+		releaseRequestCollapse(ctx, c, log)
 		return chunk
 	}
 	if shouldBypassCacheWrite(ctx, c) {
+		releaseRequestCollapse(ctx, c, log)
 		return chunk
 	}
 	if strings.TrimSpace(value) == "" {
 		log.Warnf("[onHttpResponseBody] bypass cache write: missing final assistant content")
 		ctx.SetContext(CACHE_BYPASS_REASON_CONTEXT_KEY, "missing final assistant content")
+		releaseRequestCollapse(ctx, c, log)
 		return chunk
 	}
 
-	cacheResponse(ctx, c, key.(string), value, log)
+	cacheWritePending := cacheResponse(ctx, c, key.(string), value, log, func(success bool) {
+		ctx.SetContext(CACHE_WRITE_PENDING_CONTEXT_KEY, nil)
+		releaseRequestCollapseWithNotify(ctx, c, log, success)
+	})
+	if !cacheWritePending {
+		releaseRequestCollapseWithNotify(ctx, c, log, false)
+	}
 	uploadEmbeddingAndAnswer(ctx, c, key.(string), value, log)
 	return chunk
+}
+
+func onHttpStreamDone(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) {
+	if ctx.GetBoolContext(CACHE_WRITE_PENDING_CONTEXT_KEY, false) {
+		ctx.SetContext(CACHE_WRITE_PENDING_CONTEXT_KEY, nil)
+		releaseRequestCollapse(ctx, c, log)
+		return
+	}
+	releaseRequestCollapse(ctx, c, log)
 }
 
 func normalizeRequestCacheMode(value string) string {

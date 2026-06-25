@@ -297,6 +297,41 @@ var oversizedL1CacheConfig = func() json.RawMessage {
 	return data
 }()
 
+var requestCollapseEnabledConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":        "redis",
+			"serviceName": "redis.static",
+			"servicePort": 6379,
+		},
+		"requestCollapse": map[string]interface{}{
+			"enabled":         true,
+			"distributedLock": true,
+			"staleFallback":   true,
+		},
+		"provider": "dashscope",
+	})
+	return data
+}()
+
+var invalidRequestCollapseConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":        "redis",
+			"serviceName": "redis.static",
+			"servicePort": 6379,
+		},
+		"requestCollapse": map[string]interface{}{
+			"enabled":          true,
+			"waitAttempts":     0,
+			"waitMilliseconds": 0,
+			"lockTTLSeconds":   0,
+		},
+		"provider": "dashscope",
+	})
+	return data
+}()
+
 // 测试配置：缺少必需字段
 var missingRequiredFieldsConfig = func() json.RawMessage {
 	data, _ := json.Marshal(map[string]interface{}{
@@ -385,6 +420,7 @@ func TestParseConfig(t *testing.T) {
 			require.False(t, config.L1Cache.Enabled)
 			require.Equal(t, 0, config.L1Cache.MaxEntries)
 			require.Equal(t, 0, config.L1Cache.TTLSeconds)
+			require.False(t, config.RequestCollapse.Enabled)
 		})
 
 		// 测试完整配置解析
@@ -571,6 +607,27 @@ func TestParseConfig(t *testing.T) {
 			require.NotNil(t, config.GetL1CacheStore())
 		})
 
+		t.Run("request collapse config", func(t *testing.T) {
+			host, status := test.NewTestHost(requestCollapseEnabledConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			configRaw, err := host.GetMatchConfig()
+			require.NoError(t, err)
+			require.NotNil(t, configRaw)
+
+			config, ok := configRaw.(*config.PluginConfig)
+			require.True(t, ok, "config should be of type *PluginConfig")
+
+			require.True(t, config.RequestCollapse.Enabled)
+			require.True(t, config.RequestCollapse.DistributedLock)
+			require.True(t, config.RequestCollapse.StaleFallback)
+			require.Equal(t, 1, config.RequestCollapse.WaitAttempts)
+			require.Equal(t, 2500, config.RequestCollapse.WaitMilliseconds)
+			require.Equal(t, 5, config.RequestCollapse.LockTTLSeconds)
+			require.NotNil(t, config.GetRequestCollapseStore())
+		})
+
 		// 测试无效的缓存键策略
 		t.Run("invalid cache key strategy", func(t *testing.T) {
 			host, status := test.NewTestHost(invalidCacheKeyStrategyConfig)
@@ -611,6 +668,12 @@ func TestParseConfig(t *testing.T) {
 
 		t.Run("oversized l1 cache config", func(t *testing.T) {
 			host, status := test.NewTestHost(oversizedL1CacheConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusFailed, status)
+		})
+
+		t.Run("invalid request collapse config", func(t *testing.T) {
+			host, status := test.NewTestHost(invalidRequestCollapseConfig)
 			defer host.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, status)
 		})

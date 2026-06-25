@@ -62,6 +62,19 @@ func (rp *redisProvider) Set(key string, value string, cb wrapper.RedisResponseC
 	}
 }
 
+func (rp *redisProvider) Command(cmds []interface{}, cb wrapper.RedisResponseCallback) error {
+	return rp.client.Command(cmds, cb)
+}
+
+func (rp *redisProvider) SetNX(key string, value string, ttlSeconds int, cb wrapper.RedisResponseCallback) error {
+	return rp.client.SetNX(key, value, ttlSeconds, cb)
+}
+
+func (rp *redisProvider) Unlock(key string, value string, cb wrapper.RedisResponseCallback) error {
+	const unlockScript = `if redis.call("GET", KEYS[1]) == ARGV[1] then return redis.call("DEL", KEYS[1]) else return 0 end`
+	return rp.client.Eval(unlockScript, 1, []interface{}{key}, []interface{}{value}, cb)
+}
+
 func (rp *redisProvider) GetCacheKeyPrefix() string {
 	return rp.config.cacheKeyPrefix
 }

@@ -30,12 +30,13 @@ func CheckCacheForKey(key string, ctx wrapper.HttpContext, c config.PluginConfig
 
 	keyMaterial := ScopedCacheKeyMaterialForLookup(ctx, c, key)
 	if !keyMaterial.Valid {
-		log.Warnf("[%s] [CheckCacheForKey] bypass cache for key: %s, reason: %s", PLUGIN_NAME, key, keyMaterial.BypassReason)
+		log.Warnf("[%s] [CheckCacheForKey] bypass cache, cache_id=%s, reason: %s", PLUGIN_NAME, cacheLogID(key), keyMaterial.BypassReason)
 		proxywasm.ResumeHttpRequest()
 		return nil
 	}
 	queryKey := activeCacheProvider.GetCacheKeyPrefix() + keyMaterial.EntryKey
-	log.Debugf("[%s] [CheckCacheForKey] querying cache with key: %s", PLUGIN_NAME, queryKey)
+	entryID := cacheLogID(queryKey)
+	log.Debugf("[%s] [CheckCacheForKey] querying cache, cache_id=%s", PLUGIN_NAME, entryID)
 
 	if handleL1StructuredCacheHit(queryKey, key, ctx, log, stream, c) {
 		return nil
@@ -46,29 +47,47 @@ func CheckCacheForKey(key string, ctx wrapper.HttpContext, c config.PluginConfig
 			return
 		}
 		if ctx.GetBoolContext(CACHE_DISABLE_LEGACY_CONTEXT_KEY, false) {
-			log.Debugf("[%s] [CheckCacheForKey] scoped cache miss, legacy fallback disabled for key: %s", PLUGIN_NAME, key)
-			handleCacheResponse(key, response, ctx, log, stream, c, useSimilaritySearch)
+			log.Debugf("[%s] [CheckCacheForKey] scoped cache miss, legacy fallback disabled, cache_id=%s", PLUGIN_NAME, entryID)
+			handleFinalCacheMiss(queryKey, activeCacheProvider.GetCacheKeyPrefix()+keyMaterial.LockKey, key, response, ctx, log, stream, c, useSimilaritySearch)
 			return
 		}
 		legacyQueryKey := activeCacheProvider.GetCacheKeyPrefix() + key
 		if legacyQueryKey != queryKey {
-			log.Debugf("[%s] [CheckCacheForKey] scoped cache miss, querying legacy key: %s", PLUGIN_NAME, legacyQueryKey)
+			log.Debugf("[%s] [CheckCacheForKey] scoped cache miss, querying legacy key, cache_id=%s, legacy_cache_id=%s", PLUGIN_NAME, entryID, cacheLogID(legacyQueryKey))
 			if err := activeCacheProvider.Get(legacyQueryKey, func(legacyResponse resp.Value) {
-				handleCacheResponse(key, legacyResponse, ctx, log, stream, c, useSimilaritySearch)
+				if handleCacheHitResponse("", key, legacyResponse, ctx, log, stream, c) {
+					return
+				}
+				handleFinalCacheMiss(queryKey, activeCacheProvider.GetCacheKeyPrefix()+keyMaterial.LockKey, key, response, ctx, log, stream, c, useSimilaritySearch)
 			}); err != nil {
-				log.Errorf("[%s] [CheckCacheForKey] failed to retrieve legacy key: %s from cache, error: %v", PLUGIN_NAME, key, err)
-				handleCacheResponse(key, response, ctx, log, stream, c, useSimilaritySearch)
+				log.Errorf("[%s] [CheckCacheForKey] failed to retrieve legacy cache entry, legacy_cache_id=%s, error: %v", PLUGIN_NAME, cacheLogID(legacyQueryKey), err)
+				handleFinalCacheMiss(queryKey, activeCacheProvider.GetCacheKeyPrefix()+keyMaterial.LockKey, key, response, ctx, log, stream, c, useSimilaritySearch)
 			}
 			return
 		}
-		handleCacheResponse(key, response, ctx, log, stream, c, useSimilaritySearch)
+		handleFinalCacheMiss(queryKey, activeCacheProvider.GetCacheKeyPrefix()+keyMaterial.LockKey, key, response, ctx, log, stream, c, useSimilaritySearch)
 	})
 	if err != nil {
-		log.Errorf("[%s] [CheckCacheForKey] failed to retrieve key: %s from cache, error: %v", PLUGIN_NAME, key, err)
+		log.Errorf("[%s] [CheckCacheForKey] failed to retrieve cache entry, cache_id=%s, error: %v", PLUGIN_NAME, entryID, err)
 		return err
 	}
 
 	return nil
+}
+
+func handleFinalCacheMiss(cacheEntryKey string, lockKey string, key string, response resp.Value, ctx wrapper.HttpContext, log logs.Log, stream bool, c config.PluginConfig, useSimilaritySearch bool) {
+	if useSimilaritySearch && c.EnableSemanticCache {
+		handleCacheResponse(key, response, ctx, log, stream, c, useSimilaritySearch)
+		return
+	}
+	if requestCacheMode(ctx) == config.CACHE_MODE_NO_STORE {
+		handleCacheResponse(key, response, ctx, log, stream, c, useSimilaritySearch)
+		return
+	}
+	if handleRequestCollapseMiss(cacheEntryKey, lockKey, key, response, ctx, log, stream, c) {
+		return
+	}
+	handleCacheResponse(key, response, ctx, log, stream, c, useSimilaritySearch)
 }
 
 // handleCacheResponse processes cache response and handles cache hits and misses.
@@ -77,14 +96,15 @@ func handleCacheResponse(key string, response resp.Value, ctx wrapper.HttpContex
 		return
 	}
 
-	log.Infof("[%s] [handleCacheResponse] cache miss for key: %s", PLUGIN_NAME, key)
+	cacheID := cacheLogID(key)
+	log.Infof("[%s] [handleCacheResponse] cache miss, cache_id=%s", PLUGIN_NAME, cacheID)
 	if err := response.Error(); err != nil {
-		log.Errorf("[%s] [handleCacheResponse] error retrieving key: %s from cache, error: %v", PLUGIN_NAME, key, err)
+		log.Errorf("[%s] [handleCacheResponse] error retrieving cache entry, cache_id=%s, error: %v", PLUGIN_NAME, cacheID, err)
 	}
 
 	if useSimilaritySearch && c.EnableSemanticCache {
 		if err := performSimilaritySearch(key, ctx, c, log, key, stream); err != nil {
-			log.Errorf("[%s] [handleCacheResponse] failed to perform similarity search for key: %s, error: %v", PLUGIN_NAME, key, err)
+			log.Errorf("[%s] [handleCacheResponse] failed to perform similarity search, cache_id=%s, error: %v", PLUGIN_NAME, cacheID, err)
 			proxywasm.ResumeHttpRequest()
 		}
 	} else {
@@ -96,27 +116,28 @@ func handleCacheHitResponse(cacheEntryKey string, key string, response resp.Valu
 	if err := response.Error(); err != nil || response.IsNull() {
 		return false
 	}
+	cacheID := cacheEntryLogID(cacheEntryKey, key)
 	payload := redisCacheValueString(response)
 	decoded, err := DecodeRedisCacheEntryPayload(payload)
 	if err != nil {
-		log.Warnf("[%s] [handleCacheResponse] invalid structured cache entry for key: %s, error: %v", PLUGIN_NAME, key, err)
+		log.Warnf("[%s] [handleCacheResponse] invalid structured cache entry, cache_id=%s, error: %v", PLUGIN_NAME, cacheID, err)
 		proxywasm.ResumeHttpRequest()
 		return true
 	}
 	if decoded.IsAuthoritative() {
 		freshness := StructuredCacheEntryFreshnessAt(*decoded.StructuredEntry, time.Now().Unix())
 		if freshness == StructuredCacheFreshnessExpired {
-			log.Infof("[%s] structured cache entry expired for key: %s", PLUGIN_NAME, key)
+			log.Infof("[%s] structured cache entry expired, cache_id=%s", PLUGIN_NAME, cacheID)
 			return false
 		}
 		if freshness == StructuredCacheFreshnessStale && !c.StaleWhileRevalidateEnabled() {
-			log.Infof("[%s] structured cache entry stale for key: %s", PLUGIN_NAME, key)
+			log.Infof("[%s] structured cache entry stale, cache_id=%s", PLUGIN_NAME, cacheID)
 			return false
 		}
 		if freshness == StructuredCacheFreshnessStale {
-			log.Infof("[%s] stale structured cache hit for key: %s", PLUGIN_NAME, key)
+			log.Infof("[%s] stale structured cache hit, cache_id=%s", PLUGIN_NAME, cacheID)
 		} else {
-			log.Infof("[%s] structured cache hit for key: %s", PLUGIN_NAME, key)
+			log.Infof("[%s] structured cache hit, cache_id=%s", PLUGIN_NAME, cacheID)
 		}
 		populateL1StructuredCache(cacheEntryKey, *decoded.StructuredEntry, c, log)
 		if !stream {
@@ -125,7 +146,7 @@ func handleCacheHitResponse(cacheEntryKey string, key string, response resp.Valu
 		}
 		processStructuredStreamingCacheHit(key, *decoded.StructuredEntry, ctx, log)
 	} else {
-		log.Infof("[%s] legacy cache hit for key: %s", PLUGIN_NAME, key)
+		log.Infof("[%s] legacy cache hit, cache_id=%s", PLUGIN_NAME, cacheID)
 		processCacheHit(key, decoded.LegacyValue, stream, ctx, c, log)
 	}
 	return true
@@ -142,20 +163,21 @@ func handleL1StructuredCacheHit(cacheEntryKey string, key string, ctx wrapper.Ht
 	}
 
 	freshness := StructuredCacheEntryFreshnessAt(entry, time.Now().Unix())
+	cacheID := cacheEntryLogID(cacheEntryKey, key)
 	if freshness == StructuredCacheFreshnessExpired {
-		log.Infof("[%s] l1 structured cache entry expired for key: %s", PLUGIN_NAME, key)
+		log.Infof("[%s] l1 structured cache entry expired, cache_id=%s", PLUGIN_NAME, cacheID)
 		l1Cache.Delete(cacheEntryKey)
 		return false
 	}
 	if freshness == StructuredCacheFreshnessStale && !c.StaleWhileRevalidateEnabled() {
-		log.Infof("[%s] l1 structured cache entry stale for key: %s", PLUGIN_NAME, key)
+		log.Infof("[%s] l1 structured cache entry stale, cache_id=%s", PLUGIN_NAME, cacheID)
 		l1Cache.Delete(cacheEntryKey)
 		return false
 	}
 	if freshness == StructuredCacheFreshnessStale {
-		log.Infof("[%s] stale l1 structured cache hit for key: %s", PLUGIN_NAME, key)
+		log.Infof("[%s] stale l1 structured cache hit, cache_id=%s", PLUGIN_NAME, cacheID)
 	} else {
-		log.Infof("[%s] l1 structured cache hit for key: %s", PLUGIN_NAME, key)
+		log.Infof("[%s] l1 structured cache hit, cache_id=%s", PLUGIN_NAME, cacheID)
 	}
 	if !stream {
 		processStructuredCacheHit(key, entry, ctx, log)
@@ -171,11 +193,11 @@ func populateL1StructuredCache(cacheEntryKey string, entry StructuredCacheEntry,
 		return
 	}
 	if !validatedStructuredEntryForL1(entry, time.Now().Unix()) {
-		log.Debugf("[%s] skip l1 structured cache population for invalid structured metadata, key: %s", PLUGIN_NAME, cacheEntryKey)
+		log.Debugf("[%s] skip l1 structured cache population for invalid structured metadata, cache_id=%s", PLUGIN_NAME, cacheLogID(cacheEntryKey))
 		return
 	}
 	l1Cache.Put(cacheEntryKey, entry)
-	log.Debugf("[%s] populated l1 structured cache for key: %s", PLUGIN_NAME, cacheEntryKey)
+	log.Debugf("[%s] populated l1 structured cache, cache_id=%s", PLUGIN_NAME, cacheLogID(cacheEntryKey))
 }
 
 func validatedStructuredEntryForL1(entry StructuredCacheEntry, nowUnix int64) bool {
@@ -215,18 +237,19 @@ func redisCacheValueString(response resp.Value) string {
 }
 
 func processStructuredCacheHit(key string, entry StructuredCacheEntry, ctx wrapper.HttpContext, log logs.Log) {
+	cacheID := cacheLogID(key)
 	if strings.TrimSpace(entry.Answer.Content) == "" {
-		log.Warnf("[%s] [processStructuredCacheHit] cached response for key %s is empty", PLUGIN_NAME, key)
+		log.Warnf("[%s] [processStructuredCacheHit] cached response is empty, cache_id=%s", PLUGIN_NAME, cacheID)
 		proxywasm.ResumeHttpRequest()
 		return
 	}
 
-	log.Debugf("[%s] [processStructuredCacheHit] cached structured response for key %s", PLUGIN_NAME, key)
+	log.Debugf("[%s] [processStructuredCacheHit] cached structured response, cache_id=%s", PLUGIN_NAME, cacheID)
 
 	requestID := getProxyWasmPropertyString([]string{"x_request_id"})
 	responseBody, err := BuildOpenAINonStreamingCacheHitResponse(entry, requestID)
 	if err != nil {
-		log.Errorf("[%s] [processStructuredCacheHit] failed to build cache hit response for key: %s, error: %v", PLUGIN_NAME, key, err)
+		log.Errorf("[%s] [processStructuredCacheHit] failed to build cache hit response, cache_id=%s, error: %v", PLUGIN_NAME, cacheID, err)
 		proxywasm.ResumeHttpRequest()
 		return
 	}
@@ -239,18 +262,19 @@ func processStructuredCacheHit(key string, entry StructuredCacheEntry, ctx wrapp
 }
 
 func processStructuredStreamingCacheHit(key string, entry StructuredCacheEntry, ctx wrapper.HttpContext, log logs.Log) {
+	cacheID := cacheLogID(key)
 	if strings.TrimSpace(entry.Answer.Content) == "" {
-		log.Warnf("[%s] [processStructuredStreamingCacheHit] cached response for key %s is empty", PLUGIN_NAME, key)
+		log.Warnf("[%s] [processStructuredStreamingCacheHit] cached response is empty, cache_id=%s", PLUGIN_NAME, cacheID)
 		proxywasm.ResumeHttpRequest()
 		return
 	}
 
-	log.Debugf("[%s] [processStructuredStreamingCacheHit] cached structured response for key %s", PLUGIN_NAME, key)
+	log.Debugf("[%s] [processStructuredStreamingCacheHit] cached structured response, cache_id=%s", PLUGIN_NAME, cacheID)
 
 	requestID := getProxyWasmPropertyString([]string{"x_request_id"})
 	responseBody, err := BuildOpenAIStreamingCacheHitResponse(entry, requestID)
 	if err != nil {
-		log.Errorf("[%s] [processStructuredStreamingCacheHit] failed to build cache hit response for key: %s, error: %v", PLUGIN_NAME, key, err)
+		log.Errorf("[%s] [processStructuredStreamingCacheHit] failed to build cache hit response, cache_id=%s, error: %v", PLUGIN_NAME, cacheID, err)
 		proxywasm.ResumeHttpRequest()
 		return
 	}
@@ -264,13 +288,14 @@ func processStructuredStreamingCacheHit(key string, entry StructuredCacheEntry, 
 
 // processCacheHit handles a successful cache hit.
 func processCacheHit(key string, response string, stream bool, ctx wrapper.HttpContext, c config.PluginConfig, log logs.Log) {
+	cacheID := cacheLogID(key)
 	if strings.TrimSpace(response) == "" {
-		log.Warnf("[%s] [processCacheHit] cached response for key %s is empty", PLUGIN_NAME, key)
+		log.Warnf("[%s] [processCacheHit] cached response is empty, cache_id=%s", PLUGIN_NAME, cacheID)
 		proxywasm.ResumeHttpRequest()
 		return
 	}
 
-	log.Debugf("[%s] [processCacheHit] cached response for key %s: %s", PLUGIN_NAME, key, response)
+	log.Debugf("[%s] [processCacheHit] cached response, cache_id=%s, length=%d", PLUGIN_NAME, cacheID, len(response))
 
 	// Escape the response to ensure consistent formatting
 	escapedResponse := strings.Trim(strconv.Quote(response), "\"")
@@ -336,7 +361,7 @@ func performEmbeddingQuery(key string, ctx wrapper.HttpContext, c config.PluginC
 	return activeEmbeddingProvider.GetEmbedding(key, ctx, func(textEmbedding []float64, err error) {
 		log.Debugf("[%s] [performEmbeddingQuery] GetEmbedding success, length of embedding: %d, error: %v", PLUGIN_NAME, len(textEmbedding), err)
 		if err != nil {
-			handleInternalError(err, fmt.Sprintf("[%s] [performEmbeddingQuery] error getting embedding for key: %s", PLUGIN_NAME, key), log)
+			handleInternalError(err, fmt.Sprintf("[%s] [performEmbeddingQuery] error getting embedding, cache_id=%s", PLUGIN_NAME, cacheLogID(key)), log)
 			return
 		}
 		ctx.SetContext(CACHE_KEY_EMBEDDING_KEY, textEmbedding)
@@ -345,30 +370,32 @@ func performEmbeddingQuery(key string, ctx wrapper.HttpContext, c config.PluginC
 			handleQueryResults(key, results, ctx, log, stream, c, err)
 		})
 		if err != nil {
-			handleInternalError(err, fmt.Sprintf("[%s] [performEmbeddingQuery] error querying vector database for key: %s", PLUGIN_NAME, key), log)
+			handleInternalError(err, fmt.Sprintf("[%s] [performEmbeddingQuery] error querying vector database, cache_id=%s", PLUGIN_NAME, cacheLogID(key)), log)
 		}
 	})
 }
 
 // handleQueryResults processes the results of similarity search and determines next actions.
 func handleQueryResults(key string, results []vector.QueryResult, ctx wrapper.HttpContext, log logs.Log, stream bool, c config.PluginConfig, err error) {
+	cacheID := cacheLogID(key)
 	if err != nil {
-		handleInternalError(err, fmt.Sprintf("[%s] [handleQueryResults] error querying vector database for key: %s", PLUGIN_NAME, key), log)
+		handleInternalError(err, fmt.Sprintf("[%s] [handleQueryResults] error querying vector database, cache_id=%s", PLUGIN_NAME, cacheID), log)
 		return
 	}
 
 	if len(results) == 0 {
-		log.Warnf("[%s] [handleQueryResults] no similar keys found for key: %s", PLUGIN_NAME, key)
+		log.Warnf("[%s] [handleQueryResults] no similar keys found, cache_id=%s", PLUGIN_NAME, cacheID)
 		proxywasm.ResumeHttpRequest()
 		return
 	}
 
 	mostSimilarData := results[0]
-	log.Debugf("[%s] [handleQueryResults] for key: %s, the most similar key found: %s with score: %f", PLUGIN_NAME, key, mostSimilarData.Text, mostSimilarData.Score)
+	candidateID := cacheLogID(mostSimilarData.Text)
+	log.Debugf("[%s] [handleQueryResults] most similar candidate found, cache_id=%s, candidate_id=%s, score=%f", PLUGIN_NAME, cacheID, candidateID, mostSimilarData.Score)
 	simThreshold := c.GetVectorProviderConfig().Threshold
 	simThresholdRelation := c.GetVectorProviderConfig().ThresholdRelation
 	if compare(simThresholdRelation, mostSimilarData.Score, simThreshold) {
-		log.Infof("[%s] key accepted: %s with score: %f", PLUGIN_NAME, mostSimilarData.Text, mostSimilarData.Score)
+		log.Infof("[%s] semantic candidate accepted, cache_id=%s, candidate_id=%s, score=%f", PLUGIN_NAME, cacheID, candidateID, mostSimilarData.Score)
 		if mostSimilarData.Answer != "" {
 			// direct return the answer if available
 			cacheCompatibilityResponse(ctx, c, key, mostSimilarData.Answer, log)
@@ -378,12 +405,12 @@ func handleQueryResults(key string, results []vector.QueryResult, ctx wrapper.Ht
 				CheckCacheForKey(mostSimilarData.Text, ctx, c, log, stream, false)
 			} else {
 				// Otherwise, do not check the cache, directly return
-				log.Infof("[%s] cache hit for key: %s, but no corresponding answer found in the vector database", PLUGIN_NAME, mostSimilarData.Text)
+				log.Infof("[%s] semantic cache candidate has no answer and no cache provider, candidate_id=%s", PLUGIN_NAME, candidateID)
 				proxywasm.ResumeHttpRequest()
 			}
 		}
 	} else {
-		log.Infof("[%s] score not meet the threshold %f: %s with score %f", PLUGIN_NAME, simThreshold, mostSimilarData.Text, mostSimilarData.Score)
+		log.Infof("[%s] semantic score below threshold, cache_id=%s, candidate_id=%s, threshold=%f, score=%f", PLUGIN_NAME, cacheID, candidateID, simThreshold, mostSimilarData.Score)
 		proxywasm.ResumeHttpRequest()
 	}
 }
@@ -408,8 +435,9 @@ func handleInternalError(err error, message string, log logs.Log) {
 
 // Caches non-authoritative compatibility values that cannot provide structured usage/model facts.
 func cacheCompatibilityResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, value string, log logs.Log) {
+	cacheID := cacheLogID(key)
 	if strings.TrimSpace(value) == "" {
-		log.Warnf("[%s] [cacheCompatibilityResponse] cached value for key %s is empty", PLUGIN_NAME, key)
+		log.Warnf("[%s] [cacheCompatibilityResponse] cached value is empty, cache_id=%s", PLUGIN_NAME, cacheID)
 		return
 	}
 
@@ -417,28 +445,29 @@ func cacheCompatibilityResponse(ctx wrapper.HttpContext, c config.PluginConfig, 
 	if activeCacheProvider != nil {
 		keyMaterial := ScopedCacheKeyMaterialForLookup(ctx, c, key)
 		if !keyMaterial.Valid {
-			log.Warnf("[%s] [cacheCompatibilityResponse] skip cache write for key: %s, reason: %s", PLUGIN_NAME, key, keyMaterial.BypassReason)
+			log.Warnf("[%s] [cacheCompatibilityResponse] skip cache write, cache_id=%s, reason: %s", PLUGIN_NAME, cacheID, keyMaterial.BypassReason)
 			return
 		}
 		queryKey := activeCacheProvider.GetCacheKeyPrefix() + keyMaterial.EntryKey
 		_ = activeCacheProvider.Set(queryKey, value, nil)
-		log.Debugf("[%s] [cacheCompatibilityResponse] compatibility cache set success, key: %s, length of value: %d", PLUGIN_NAME, queryKey, len(value))
+		log.Debugf("[%s] [cacheCompatibilityResponse] compatibility cache set success, cache_id=%s, length of value: %d", PLUGIN_NAME, cacheLogID(queryKey), len(value))
 	}
 }
 
-// Caches the response value
-func cacheResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, value string, log logs.Log) {
+// Caches the response value. It returns true when an async cache write was dispatched.
+func cacheResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, value string, log logs.Log, onStored func(bool)) bool {
+	cacheID := cacheLogID(key)
 	if strings.TrimSpace(value) == "" {
-		log.Warnf("[%s] [cacheResponse] cached value for key %s is empty", PLUGIN_NAME, key)
-		return
+		log.Warnf("[%s] [cacheResponse] cached value is empty, cache_id=%s", PLUGIN_NAME, cacheID)
+		return false
 	}
 
 	activeCacheProvider := c.GetCacheProvider()
 	if activeCacheProvider != nil {
 		keyMaterial := ScopedCacheKeyMaterialForLookup(ctx, c, key)
 		if !keyMaterial.Valid {
-			log.Warnf("[%s] [cacheResponse] skip cache write for key: %s, reason: %s", PLUGIN_NAME, key, keyMaterial.BypassReason)
-			return
+			log.Warnf("[%s] [cacheResponse] skip cache write, cache_id=%s, reason: %s", PLUGIN_NAME, cacheID, keyMaterial.BypassReason)
+			return false
 		}
 		queryKey := activeCacheProvider.GetCacheKeyPrefix() + keyMaterial.EntryKey
 		entry := NewStructuredCacheEntryForAnswer(value, keyMaterial)
@@ -452,12 +481,30 @@ func cacheResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, v
 		ApplyStructuredCacheEntryExpiry(&entry, time.Now().Unix(), c.CacheSoftTTLSeconds(), c.CacheHardTTLSeconds())
 		payload, err := EncodeRedisCacheEntryPayload(entry)
 		if err != nil {
-			log.Errorf("[%s] [cacheResponse] failed to encode structured cache entry for key: %s, error: %v", PLUGIN_NAME, key, err)
-			return
+			log.Errorf("[%s] [cacheResponse] failed to encode structured cache entry, cache_id=%s, error: %v", PLUGIN_NAME, cacheLogID(queryKey), err)
+			return false
 		}
-		_ = activeCacheProvider.Set(queryKey, payload, nil)
-		log.Debugf("[%s] [cacheResponse] cache set success, key: %s, length of value: %d", PLUGIN_NAME, queryKey, len(payload))
+		ctx.SetContext(CACHE_WRITE_PENDING_CONTEXT_KEY, true)
+		if err := activeCacheProvider.Set(queryKey, payload, func(response resp.Value) {
+			if response.Error() != nil {
+				log.Warnf("[%s] [cacheResponse] cache set failed, cache_id=%s, error: %v", PLUGIN_NAME, cacheLogID(queryKey), response.Error())
+				if onStored != nil {
+					onStored(false)
+				}
+				return
+			}
+			log.Debugf("[%s] [cacheResponse] cache set success, cache_id=%s, length of value: %d", PLUGIN_NAME, cacheLogID(queryKey), len(payload))
+			if onStored != nil {
+				onStored(true)
+			}
+		}); err != nil {
+			ctx.SetContext(CACHE_WRITE_PENDING_CONTEXT_KEY, nil)
+			log.Warnf("[%s] [cacheResponse] cache set dispatch failed, cache_id=%s, error: %v", PLUGIN_NAME, cacheLogID(queryKey), err)
+			return false
+		}
+		return true
 	}
+	return false
 }
 
 // Handles embedding upload if available
@@ -481,10 +528,10 @@ func uploadEmbeddingAndAnswer(ctx wrapper.HttpContext, c config.PluginConfig, ke
 
 	// Attempt to upload answer embedding first
 	if ansEmbUploader, ok := activeVectorProvider.(vector.AnswerAndEmbeddingUploader); ok {
-		log.Infof("[%s] uploading answer embedding for key: %s", PLUGIN_NAME, key)
+		log.Infof("[%s] uploading answer embedding, cache_id=%s", PLUGIN_NAME, cacheLogID(key))
 		err := ansEmbUploader.UploadAnswerAndEmbedding(key, emb, value, ctx, log, nil)
 		if err != nil {
-			log.Warnf("[%s] [uploadEmbeddingAndAnswer] failed to upload answer embedding for key: %s, error: %v", PLUGIN_NAME, key, err)
+			log.Warnf("[%s] [uploadEmbeddingAndAnswer] failed to upload answer embedding, cache_id=%s, error: %v", PLUGIN_NAME, cacheLogID(key), err)
 		} else {
 			return // If successful, return early
 		}
@@ -492,12 +539,23 @@ func uploadEmbeddingAndAnswer(ctx wrapper.HttpContext, c config.PluginConfig, ke
 
 	// If answer embedding upload fails, attempt normal embedding upload
 	if embUploader, ok := activeVectorProvider.(vector.EmbeddingUploader); ok {
-		log.Infof("[%s] uploading embedding for key: %s", PLUGIN_NAME, key)
+		log.Infof("[%s] uploading embedding, cache_id=%s", PLUGIN_NAME, cacheLogID(key))
 		err := embUploader.UploadEmbedding(key, emb, ctx, log, nil)
 		if err != nil {
-			log.Warnf("[%s] [uploadEmbeddingAndAnswer] failed to upload embedding for key: %s, error: %v", PLUGIN_NAME, key, err)
+			log.Warnf("[%s] [uploadEmbeddingAndAnswer] failed to upload embedding, cache_id=%s, error: %v", PLUGIN_NAME, cacheLogID(key), err)
 		}
 	}
+}
+
+func cacheLogID(key string) string {
+	return collapseLogKey(key)
+}
+
+func cacheEntryLogID(cacheEntryKey string, key string) string {
+	if cacheEntryKey != "" {
+		return cacheLogID(cacheEntryKey)
+	}
+	return cacheLogID(key)
 }
 
 // 主要用于相似度/距离/点积判断
