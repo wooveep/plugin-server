@@ -94,7 +94,7 @@ func handleCacheHitResponse(key string, response resp.Value, ctx wrapper.HttpCon
 			processStructuredCacheHit(key, *decoded.StructuredEntry, ctx, log)
 			return true
 		}
-		processCacheHit(key, decoded.StructuredEntry.Answer.Content, stream, ctx, c, log)
+		processStructuredStreamingCacheHit(key, *decoded.StructuredEntry, ctx, log)
 	} else {
 		log.Infof("[%s] legacy cache hit for key: %s", PLUGIN_NAME, key)
 		processCacheHit(key, decoded.LegacyValue, stream, ctx, c, log)
@@ -131,6 +131,30 @@ func processStructuredCacheHit(key string, entry StructuredCacheEntry, ctx wrapp
 	ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
 
 	proxywasm.SendHttpResponseWithDetail(200, "ai-cache.hit", [][2]string{{"content-type", "application/json; charset=utf-8"}}, responseBody, -1)
+}
+
+func processStructuredStreamingCacheHit(key string, entry StructuredCacheEntry, ctx wrapper.HttpContext, log logs.Log) {
+	if strings.TrimSpace(entry.Answer.Content) == "" {
+		log.Warnf("[%s] [processStructuredStreamingCacheHit] cached response for key %s is empty", PLUGIN_NAME, key)
+		proxywasm.ResumeHttpRequest()
+		return
+	}
+
+	log.Debugf("[%s] [processStructuredStreamingCacheHit] cached structured response for key %s", PLUGIN_NAME, key)
+
+	requestID := getProxyWasmPropertyString([]string{"x_request_id"})
+	responseBody, err := BuildOpenAIStreamingCacheHitResponse(entry, requestID)
+	if err != nil {
+		log.Errorf("[%s] [processStructuredStreamingCacheHit] failed to build cache hit response for key: %s, error: %v", PLUGIN_NAME, key, err)
+		proxywasm.ResumeHttpRequest()
+		return
+	}
+
+	ctx.SetContext(CACHE_KEY_CONTEXT_KEY, nil)
+	ctx.SetUserAttribute("cache_status", "hit")
+	ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
+
+	proxywasm.SendHttpResponseWithDetail(200, "ai-cache.hit", [][2]string{{"content-type", "text/event-stream; charset=utf-8"}}, responseBody, -1)
 }
 
 // processCacheHit handles a successful cache hit.
@@ -296,6 +320,9 @@ func cacheResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, v
 		if responseBody, ok := ctx.GetContext(CACHE_RESPONSE_BODY_CONTEXT_KEY).([]byte); ok {
 			entry = NewStructuredCacheEntryForOpenAIResponse(responseBody, value, keyMaterial)
 			ctx.SetContext(CACHE_RESPONSE_BODY_CONTEXT_KEY, nil)
+		} else if streamFacts, ok := ctx.GetContext(CACHE_STREAM_FACTS_CONTEXT_KEY).(StructuredStreamingCacheFacts); ok && streamFacts.HasReplayFacts() {
+			entry = NewStructuredCacheEntryForOpenAIStreamingResponse(streamFacts, value, keyMaterial)
+			ctx.SetContext(CACHE_STREAM_FACTS_CONTEXT_KEY, nil)
 		}
 		payload, err := EncodeRedisCacheEntryPayload(entry)
 		if err != nil {

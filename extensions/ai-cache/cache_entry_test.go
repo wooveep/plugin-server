@@ -279,6 +279,40 @@ func TestBuildOpenAINonStreamingCacheHitResponsePreservesStructuredChoices(t *te
 	}`, string(payload))
 }
 
+func TestBuildOpenAIStreamingCacheHitResponsePreservesStructuredFacts(t *testing.T) {
+	payload, err := BuildOpenAIStreamingCacheHitResponse(StructuredCacheEntry{
+		Version: StructuredCacheEntryVersion,
+		Answer: StructuredCacheAnswer{
+			Role:    "assistant",
+			Content: `hello "cache"`,
+		},
+		Model: "qwen-plus",
+		Choices: []StructuredCacheChoice{
+			{
+				Index:        0,
+				Message:      StructuredCacheAnswer{Role: "assistant", Content: `hello "cache"`},
+				FinishReason: "stop",
+			},
+		},
+		Usage: StructuredCacheUsage{
+			PromptTokens:     9,
+			CompletionTokens: 4,
+			TotalTokens:      13,
+			PromptTokensDetails: &StructuredPromptTokenDetail{
+				CachedTokens: 9,
+			},
+		},
+		FinishReason: "stop",
+	}, "request-id")
+	require.NoError(t, err)
+	require.Equal(t, "data: {\"id\":\"chatcmpl-cache-request-id\",\"object\":\"chat.completion.chunk\",\"model\":\"qwen-plus\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"hello \\\"cache\\\"\"},\"finish_reason\":null}]}\n\n"+
+		"data: {\"id\":\"chatcmpl-cache-request-id\",\"object\":\"chat.completion.chunk\",\"model\":\"qwen-plus\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n"+
+		"data: {\"id\":\"chatcmpl-cache-request-id\",\"object\":\"chat.completion.chunk\",\"model\":\"qwen-plus\",\"choices\":[],\"usage\":{\"prompt_tokens\":9,\"completion_tokens\":4,\"total_tokens\":13,\"prompt_tokens_details\":{\"cached_tokens\":9}}}\n\n"+
+		"data: [DONE]\n\n", string(payload))
+	require.NotContains(t, string(payload), "from-cache")
+	require.NotContains(t, string(payload), "upstream_invoked")
+}
+
 func TestNewStructuredCacheEntryForOpenAIResponsePreservesReplayFacts(t *testing.T) {
 	entry := NewStructuredCacheEntryForOpenAIResponse([]byte(`{
 		"id":"chatcmpl-123",
@@ -314,6 +348,59 @@ func TestNewStructuredCacheEntryForOpenAIResponsePreservesReplayFacts(t *testing
 	require.Equal(t, "qwen-plus", entry.Provider.Model)
 	require.Equal(t, "stop", entry.FinishReason)
 	require.Equal(t, "first answer", entry.Answer.Content)
+	require.Len(t, entry.Choices, 2)
+	require.Equal(t, "second answer", entry.Choices[1].Message.Content)
+	require.Equal(t, "length", entry.Choices[1].FinishReason)
+	require.Equal(t, 9, entry.Usage.PromptTokens)
+	require.NotNil(t, entry.Usage.PromptTokensDetails)
+	require.Equal(t, 0, entry.Usage.PromptTokensDetails.CachedTokens)
+}
+
+func TestNewStructuredCacheEntryForOpenAIStreamingResponsePreservesReplayFacts(t *testing.T) {
+	var facts StructuredStreamingCacheFacts
+	facts.MergeOpenAIStreamingChunkJSON(`{
+		"id":"chatcmpl-123",
+		"object":"chat.completion.chunk",
+		"model":"qwen-plus",
+		"choices":[
+			{"index":0,"delta":{"role":"assistant","content":"first "},"finish_reason":null},
+			{"index":1,"delta":{"role":"assistant","content":"second "},"finish_reason":null}
+		]
+	}`)
+	facts.MergeOpenAIStreamingChunkJSON(`{
+		"id":"chatcmpl-123",
+		"object":"chat.completion.chunk",
+		"model":"qwen-plus",
+		"choices":[
+			{"index":0,"delta":{"content":"answer"},"finish_reason":"stop"},
+			{"index":1,"delta":{"content":"answer"},"finish_reason":"length"}
+		]
+	}`)
+	facts.MergeOpenAIStreamingChunkJSON(`{
+		"id":"chatcmpl-123",
+		"object":"chat.completion.chunk",
+		"model":"qwen-plus",
+		"choices":[],
+		"usage":{
+			"prompt_tokens":9,
+			"completion_tokens":4,
+			"total_tokens":13,
+			"prompt_tokens_details":{"cached_tokens":0}
+		}
+	}`)
+
+	entry := NewStructuredCacheEntryForOpenAIStreamingResponse(facts, "first answer", ScopedCacheKeyMaterial{
+		Route:              StructuredRouteFacts{Name: "chat"},
+		Provider:           StructuredProviderFacts{Name: "qwen", Model: "configured-model"},
+		Scope:              StructuredCacheScope{Type: "global"},
+		PolicyVersion:      "v1",
+		RequestFingerprint: RequestFingerprint{Hash: "request-hash"},
+	})
+
+	require.Equal(t, "qwen-plus", entry.Model)
+	require.Equal(t, "qwen-plus", entry.Provider.Model)
+	require.Equal(t, "first answer", entry.Answer.Content)
+	require.Equal(t, "stop", entry.FinishReason)
 	require.Len(t, entry.Choices, 2)
 	require.Equal(t, "second answer", entry.Choices[1].Message.Content)
 	require.Equal(t, "length", entry.Choices[1].FinishReason)

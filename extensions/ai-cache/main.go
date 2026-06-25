@@ -20,6 +20,7 @@ const (
 	CACHE_KEY_EMBEDDING_KEY         = "cacheKeyEmbedding"
 	CACHE_CONTENT_CONTEXT_KEY       = "cacheContent"
 	CACHE_RESPONSE_BODY_CONTEXT_KEY = "cacheResponseBody"
+	CACHE_STREAM_FACTS_CONTEXT_KEY  = "cacheStreamFacts"
 	PARTIAL_MESSAGE_CONTEXT_KEY     = "partialMessage"
 	TOOL_CALLS_CONTEXT_KEY          = "toolCalls"
 	STREAM_CONTEXT_KEY              = "stream"

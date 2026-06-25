@@ -648,28 +648,28 @@
     "hash": "a530f91593f9164cda9527469d6f5bd9"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/core.go": {
-    "mtime": 1782378613.4441009,
-    "hash": "52ad965e427c108b37aa37a1a7cb9b40"
+    "mtime": 1782379468.7375743,
+    "hash": "35b42e68c5a6267cb6a5350883ce5184"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/main.go": {
-    "mtime": 1782378646.5720706,
-    "hash": "3330ddf324bdbd4cd322fbab753baaa7"
+    "mtime": 1782379468.733574,
+    "hash": "7cfbb26d287d5c1ee4040d26e8433214"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/main_test.go": {
-    "mtime": 1782378687.6045024,
-    "hash": "c639084167141804bef3501317ac05db"
+    "mtime": 1782379496.2598007,
+    "hash": "bf30eb6952905b9e5b6fed36c14ff231"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/util.go": {
-    "mtime": 1782378607.7681437,
-    "hash": "1d63247fbf35f49ee81c96f15ec55a2a"
+    "mtime": 1782379468.7375743,
+    "hash": "cdfa66213a8379e1faff2d0c5e14db90"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache_entry_test.go": {
-    "mtime": 1782378633.5800393,
-    "hash": "27c76d15e2ce90e4e8850c13577ad2a2"
+    "mtime": 1782379488.35116,
+    "hash": "81934a3d9efd57d03792f7aba3fe116a"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache_entry.go": {
-    "mtime": 1782378682.9244292,
-    "hash": "701d7b0dfd4ac70f30620e4c482dc216"
+    "mtime": 1782379561.7451305,
+    "hash": "1732b0d713b4f7cf3eea71e56f8e75f3"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache_key_test.go": {
     "mtime": 1782377443.890468,
@@ -680,8 +680,8 @@
     "hash": "ffb95f671ae5de6a8ad3ceffc0836350"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache_hit_response_test.go": {
-    "mtime": 1782378221.1541295,
-    "hash": "f3a4a11010733e66d1316f3bcaebe2e8"
+    "mtime": 1782379078.9117887,
+    "hash": "7063423cb811c6c084f45a1da1c40b96"
   },
   "/home/cloudyi/CodeWorkspace/higress-plugin/wasm-go/extensions/ai-cache/cache/provider.go": {
     "mtime": 1782308076.3934062,

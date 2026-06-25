@@ -134,6 +134,7 @@ func processSSEMessage(ctx wrapper.HttpContext, c config.PluginConfig, sseMessag
 			done = true
 			break
 		}
+		captureStructuredStreamingCacheFacts(ctx, bodyJson)
 
 		// Extract values from JSON fields
 		responseBody := gjson.Get(bodyJson, c.CacheStreamValueFrom)
@@ -170,4 +171,12 @@ func processSSEMessage(ctx wrapper.HttpContext, c config.PluginConfig, sseMessag
 		return v.(string), nil
 	}
 	return "", nil
+}
+
+func captureStructuredStreamingCacheFacts(ctx wrapper.HttpContext, bodyJSON string) {
+	facts, _ := ctx.GetContext(CACHE_STREAM_FACTS_CONTEXT_KEY).(StructuredStreamingCacheFacts)
+	facts.MergeOpenAIStreamingChunkJSON(bodyJSON)
+	if facts.HasReplayFacts() {
+		ctx.SetContext(CACHE_STREAM_FACTS_CONTEXT_KEY, facts)
+	}
 }

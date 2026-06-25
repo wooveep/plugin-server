@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/tidwall/gjson"
@@ -36,6 +37,31 @@ type StructuredCacheChoice struct {
 	Index        int                   `json:"index"`
 	Message      StructuredCacheAnswer `json:"message"`
 	FinishReason string                `json:"finish_reason"`
+}
+
+type OpenAIStreamingCacheHitChunk struct {
+	ID      string                       `json:"id"`
+	Object  string                       `json:"object"`
+	Model   string                       `json:"model"`
+	Choices []OpenAIStreamingChunkChoice `json:"choices"`
+	Usage   *StructuredCacheUsage        `json:"usage,omitempty"`
+}
+
+type OpenAIStreamingChunkChoice struct {
+	Index        int                       `json:"index"`
+	Delta        OpenAIStreamingChunkDelta `json:"delta"`
+	FinishReason *string                   `json:"finish_reason"`
+}
+
+type OpenAIStreamingChunkDelta struct {
+	Role    string `json:"role,omitempty"`
+	Content string `json:"content,omitempty"`
+}
+
+type StructuredStreamingCacheFacts struct {
+	Model   string
+	Choices []StructuredCacheChoice
+	Usage   StructuredCacheUsage
 }
 
 type redisCacheEntryProbe struct {
@@ -121,6 +147,99 @@ func CacheHitTextFromRedisPayload(payload string) (string, bool, error) {
 }
 
 func BuildOpenAINonStreamingCacheHitResponse(entry StructuredCacheEntry, requestID string) ([]byte, error) {
+	model := cacheHitModel(entry)
+	choices := cacheHitChoices(entry)
+	usage := entry.Usage
+	if usage.PromptTokens > 0 && usage.PromptTokensDetails == nil {
+		usage.PromptTokensDetails = &StructuredPromptTokenDetail{CachedTokens: usage.PromptTokens}
+	}
+
+	return json.Marshal(OpenAINonStreamingCacheHitResponse{
+		ID:      cacheHitResponseID(entry, requestID),
+		Object:  "chat.completion",
+		Model:   model,
+		Choices: choices,
+		Usage:   usage,
+	})
+}
+
+func BuildOpenAIStreamingCacheHitResponse(entry StructuredCacheEntry, requestID string) ([]byte, error) {
+	model := cacheHitModel(entry)
+	responseID := cacheHitResponseID(entry, requestID)
+	choices := cacheHitChoices(entry)
+
+	contentChoices := make([]OpenAIStreamingChunkChoice, 0, len(choices))
+	finalChoices := make([]OpenAIStreamingChunkChoice, 0, len(choices))
+	for _, choice := range choices {
+		contentChoices = append(contentChoices, OpenAIStreamingChunkChoice{
+			Index: choice.Index,
+			Delta: OpenAIStreamingChunkDelta{
+				Role:    normalizeOr(choice.Message.Role, "assistant"),
+				Content: choice.Message.Content,
+			},
+			FinishReason: nil,
+		})
+		finishReason := normalizeOr(choice.FinishReason, entry.FinishReason)
+		if finishReason == "" {
+			finishReason = "stop"
+		}
+		finalChoices = append(finalChoices, OpenAIStreamingChunkChoice{
+			Index:        choice.Index,
+			Delta:        OpenAIStreamingChunkDelta{},
+			FinishReason: &finishReason,
+		})
+	}
+
+	var out strings.Builder
+	if err := writeSSEJSON(&out, OpenAIStreamingCacheHitChunk{
+		ID:      responseID,
+		Object:  "chat.completion.chunk",
+		Model:   model,
+		Choices: contentChoices,
+	}); err != nil {
+		return nil, err
+	}
+
+	finalChunk := OpenAIStreamingCacheHitChunk{
+		ID:      responseID,
+		Object:  "chat.completion.chunk",
+		Model:   model,
+		Choices: finalChoices,
+	}
+	usage := entry.Usage
+	if usage.PromptTokens > 0 && usage.PromptTokensDetails == nil {
+		usage.PromptTokensDetails = &StructuredPromptTokenDetail{CachedTokens: usage.PromptTokens}
+	}
+	if err := writeSSEJSON(&out, finalChunk); err != nil {
+		return nil, err
+	}
+	if hasStructuredUsage(usage) {
+		if err := writeSSEJSON(&out, OpenAIStreamingCacheHitChunk{
+			ID:      responseID,
+			Object:  "chat.completion.chunk",
+			Model:   model,
+			Choices: []OpenAIStreamingChunkChoice{},
+			Usage:   &usage,
+		}); err != nil {
+			return nil, err
+		}
+	}
+	out.WriteString("data: [DONE]\n\n")
+	return []byte(out.String()), nil
+}
+
+func writeSSEJSON(out *strings.Builder, value any) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	out.WriteString("data: ")
+	out.Write(data)
+	out.WriteString("\n\n")
+	return nil
+}
+
+func cacheHitModel(entry StructuredCacheEntry) string {
 	model := strings.TrimSpace(entry.Model)
 	if model == "" {
 		model = strings.TrimSpace(entry.Provider.Model)
@@ -131,7 +250,10 @@ func BuildOpenAINonStreamingCacheHitResponse(entry StructuredCacheEntry, request
 	if model == "" {
 		model = "unknown-model"
 	}
+	return model
+}
 
+func cacheHitChoices(entry StructuredCacheEntry) []StructuredCacheChoice {
 	role := strings.TrimSpace(entry.Answer.Role)
 	if role == "" {
 		role = "assistant"
@@ -140,11 +262,6 @@ func BuildOpenAINonStreamingCacheHitResponse(entry StructuredCacheEntry, request
 	finishReason := strings.TrimSpace(entry.FinishReason)
 	if finishReason == "" {
 		finishReason = "stop"
-	}
-
-	usage := entry.Usage
-	if usage.PromptTokens > 0 && usage.PromptTokensDetails == nil {
-		usage.PromptTokensDetails = &StructuredPromptTokenDetail{CachedTokens: usage.PromptTokens}
 	}
 
 	choices := entry.Choices
@@ -160,21 +277,108 @@ func BuildOpenAINonStreamingCacheHitResponse(entry StructuredCacheEntry, request
 			},
 		}
 	}
+	return choices
+}
 
+func cacheHitResponseID(entry StructuredCacheEntry, requestID string) string {
 	responseID := "chatcmpl-cache"
 	if requestID = strings.TrimSpace(requestID); requestID != "" {
 		responseID += "-" + requestID
 	} else if entry.RequestFingerprint.Hash != "" {
 		responseID += "-" + entry.RequestFingerprint.Hash
 	}
+	return responseID
+}
 
-	return json.Marshal(OpenAINonStreamingCacheHitResponse{
-		ID:      responseID,
-		Object:  "chat.completion",
-		Model:   model,
-		Choices: choices,
-		Usage:   usage,
+func hasStructuredUsage(usage StructuredCacheUsage) bool {
+	return usage.PromptTokens != 0 ||
+		usage.CompletionTokens != 0 ||
+		usage.TotalTokens != 0 ||
+		usage.PromptTokensDetails != nil
+}
+
+func (facts StructuredStreamingCacheFacts) HasReplayFacts() bool {
+	return strings.TrimSpace(facts.Model) != "" ||
+		len(facts.Choices) > 0 ||
+		hasStructuredUsage(facts.Usage)
+}
+
+func (facts *StructuredStreamingCacheFacts) MergeOpenAIStreamingChunkJSON(bodyJSON string) {
+	bodyJSON = strings.TrimSpace(bodyJSON)
+	if bodyJSON == "" || !strings.HasPrefix(bodyJSON, "{") {
+		return
+	}
+
+	body := gjson.Parse(bodyJSON)
+	if model := strings.TrimSpace(body.Get("model").String()); model != "" {
+		facts.Model = model
+	}
+	if usageRaw := strings.TrimSpace(body.Get("usage").Raw); usageRaw != "" && usageRaw != "null" {
+		var usage StructuredCacheUsage
+		if err := json.Unmarshal([]byte(usageRaw), &usage); err == nil {
+			facts.Usage = usage
+		}
+	}
+
+	for _, choiceJSON := range body.Get("choices").Array() {
+		choice := facts.ensureChoice(int(choiceJSON.Get("index").Int()))
+		if role := strings.TrimSpace(choiceJSON.Get("delta.role").String()); role != "" {
+			choice.Message.Role = role
+		}
+		if content := choiceJSON.Get("delta.content"); content.Exists() {
+			choice.Message.Content += content.String()
+		}
+		if finishReason := strings.TrimSpace(choiceJSON.Get("finish_reason").String()); finishReason != "" {
+			choice.FinishReason = finishReason
+		}
+	}
+}
+
+func (facts *StructuredStreamingCacheFacts) ensureChoice(index int) *StructuredCacheChoice {
+	for i := range facts.Choices {
+		if facts.Choices[i].Index == index {
+			return &facts.Choices[i]
+		}
+	}
+
+	facts.Choices = append(facts.Choices, StructuredCacheChoice{
+		Index: index,
+		Message: StructuredCacheAnswer{
+			Role: "assistant",
+		},
 	})
+	return &facts.Choices[len(facts.Choices)-1]
+}
+
+func NewStructuredCacheEntryForOpenAIStreamingResponse(facts StructuredStreamingCacheFacts, answer string, keyMaterial ScopedCacheKeyMaterial) StructuredCacheEntry {
+	entry := NewStructuredCacheEntryForAnswer(answer, keyMaterial)
+	if model := strings.TrimSpace(facts.Model); model != "" {
+		entry.Model = model
+		entry.Provider.Model = model
+	}
+	if len(facts.Choices) > 0 {
+		entry.Choices = make([]StructuredCacheChoice, 0, len(facts.Choices))
+		for _, choice := range facts.Choices {
+			if strings.TrimSpace(choice.Message.Role) == "" {
+				choice.Message.Role = "assistant"
+			}
+			entry.Choices = append(entry.Choices, choice)
+		}
+		sort.Slice(entry.Choices, func(i, j int) bool {
+			return entry.Choices[i].Index < entry.Choices[j].Index
+		})
+		if strings.TrimSpace(entry.Choices[0].Message.Content) == "" {
+			entry.Choices[0].Message.Content = answer
+		}
+		entry.Answer = entry.Choices[0].Message
+		if strings.TrimSpace(entry.Choices[0].FinishReason) != "" {
+			entry.FinishReason = entry.Choices[0].FinishReason
+		}
+	}
+	if hasStructuredUsage(facts.Usage) {
+		entry.Usage = facts.Usage
+	}
+	return entry
 }
 
 func NewStructuredCacheEntryForOpenAIResponse(responseBody []byte, answer string, keyMaterial ScopedCacheKeyMaterial) StructuredCacheEntry {

@@ -1046,8 +1046,13 @@ data: {"id":"0b8ed3c9-3710-920b-abd9-581a0a77fd28","object":"chat.completion.chu
 
 `
 
-			// 末 chunk：流结束标记
-			doneChunk := `data: [DONE]
+			// 末 chunk：finish_reason、usage 与流结束标记。usage-only chunk 是
+			// OpenAI-compatible stream_options.include_usage 的常见收尾形态。
+			doneChunk := `data: {"id":"0b8ed3c9-3710-920b-abd9-581a0a77fd28","object":"chat.completion.chunk","created":1781169426,"model":"hy-mt2-pro","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data: {"id":"0b8ed3c9-3710-920b-abd9-581a0a77fd28","object":"chat.completion.chunk","created":1781169426,"model":"hy-mt2-pro","choices":[],"usage":{"prompt_tokens":16,"completion_tokens":9,"total_tokens":25,"prompt_tokens_details":{"cached_tokens":0}}}
+
+data: [DONE]
 
 `
 
@@ -1083,6 +1088,14 @@ data: {"id":"0b8ed3c9-3710-920b-abd9-581a0a77fd28","object":"chat.completion.chu
 				"SET command must not use the raw prompt as the Redis key, got query: %q", setQuery)
 			require.Contains(t, setQuery, "天津是历史文化名城",
 				"SET command should contain the accumulated value, got query: %q", setQuery)
+			require.Contains(t, setQuery, `"model":"hy-mt2-pro"`,
+				"SET command should preserve upstream stream model, got query: %q", setQuery)
+			require.Contains(t, setQuery, `"choices"`,
+				"SET command should preserve structured stream choices, got query: %q", setQuery)
+			require.Contains(t, setQuery, `"finish_reason":"stop"`,
+				"SET command should preserve stream finish reason, got query: %q", setQuery)
+			require.Contains(t, setQuery, `"usage":{"prompt_tokens":16,"completion_tokens":9,"total_tokens":25,"prompt_tokens_details":{"cached_tokens":0}}`,
+				"SET command should preserve stream final usage, got query: %q", setQuery)
 		})
 
 		// 测试流式响应体处理：最后一个 buffer 同时包含最后一段 content 与 data: [DONE]
