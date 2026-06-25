@@ -208,6 +208,19 @@ var invalidCacheSoftTTLConfig = func() json.RawMessage {
 	return data
 }()
 
+var invalidCacheModeConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":        "redis",
+			"serviceName": "redis.static",
+			"servicePort": 6379,
+		},
+		"provider":  "dashscope",
+		"cacheMode": "unsafe",
+	})
+	return data
+}()
+
 // 测试配置：缺少必需字段
 var missingRequiredFieldsConfig = func() json.RawMessage {
 	data, _ := json.Marshal(map[string]interface{}{
@@ -285,6 +298,7 @@ func TestParseConfig(t *testing.T) {
 			require.Equal(t, 3600, config.CacheHardTTLSeconds())
 			require.Equal(t, 3600, config.CacheSoftTTLSeconds())
 			require.False(t, config.StaleWhileRevalidateEnabled())
+			require.Equal(t, "exact-only", config.CacheMode)
 
 			// 验证响应模板
 			require.Contains(t, config.ResponseTemplate, "from-cache")
@@ -314,6 +328,7 @@ func TestParseConfig(t *testing.T) {
 
 			// 验证语义缓存
 			require.True(t, config.EnableSemanticCache)
+			require.Equal(t, "semantic", config.CacheMode)
 
 			// 验证响应模板
 			require.Contains(t, config.ResponseTemplate, "from-cache")
@@ -345,6 +360,7 @@ func TestParseConfig(t *testing.T) {
 			require.Equal(t, 3600, config.CacheHardTTLSeconds())
 			require.Equal(t, 3600, config.CacheSoftTTLSeconds())
 			require.False(t, config.StaleWhileRevalidateEnabled())
+			require.Equal(t, "exact-only", config.CacheMode)
 			require.False(t, config.EnableSemanticCache)
 		})
 
@@ -484,6 +500,12 @@ func TestParseConfig(t *testing.T) {
 			require.Equal(t, types.OnPluginStartStatusFailed, status)
 		})
 
+		t.Run("invalid cache mode", func(t *testing.T) {
+			host, status := test.NewTestHost(invalidCacheModeConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusFailed, status)
+		})
+
 		// 测试缺少必需字段的配置
 		t.Run("missing required fields config", func(t *testing.T) {
 			host, status := test.NewTestHost(missingRequiredFieldsConfig)
@@ -530,6 +552,22 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 			})
 
 			// 应该返回ActionContinue，因为跳过了缓存
+			require.Equal(t, types.ActionContinue, action)
+		})
+
+		t.Run("request cache mode skip header", func(t *testing.T) {
+			host, status := test.NewTestHost(basicRedisConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			action := host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+				{"x-higress-ai-cache-mode", "skip"},
+			})
+
 			require.Equal(t, types.ActionContinue, action)
 		})
 
@@ -611,6 +649,81 @@ func TestOnHttpRequestBody(t *testing.T) {
 
 			// 应该返回ActionPause，因为需要等待缓存检查结果
 			require.Equal(t, types.ActionPause, action)
+		})
+
+		t.Run("route cache mode off bypasses lookup", func(t *testing.T) {
+			routeOffConfig := func() json.RawMessage {
+				data, _ := json.Marshal(map[string]interface{}{
+					"cache": map[string]interface{}{
+						"type":        "redis",
+						"serviceName": "redis.static",
+						"servicePort": 6379,
+					},
+					"provider":         "dashscope",
+					"cacheScope":       "global",
+					"cacheMode":        "off",
+					"cacheKeyStrategy": "lastQuestion",
+					"cacheKeyFrom":     "messages.@reverse.0.content",
+					"cacheValueFrom":   "choices.0.message.content",
+				})
+				return data
+			}()
+			host, status := test.NewTestHost(routeOffConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			action := host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "今天天气怎么样？"}],
+				"stream": false
+			}`))
+
+			require.Equal(t, types.ActionContinue, action)
+			require.Empty(t, host.GetRedisCalloutAttributes())
+		})
+
+		t.Run("route cache mode shadow bypasses replay lookup", func(t *testing.T) {
+			shadowConfig := func() json.RawMessage {
+				data, _ := json.Marshal(map[string]interface{}{
+					"cache": map[string]interface{}{
+						"type":        "redis",
+						"serviceName": "redis.static",
+						"servicePort": 6379,
+					},
+					"provider":         "dashscope",
+					"cacheScope":       "global",
+					"cacheMode":        "shadow",
+					"cacheKeyStrategy": "lastQuestion",
+					"cacheKeyFrom":     "messages.@reverse.0.content",
+					"cacheValueFrom":   "choices.0.message.content",
+				})
+				return data
+			}()
+			host, status := test.NewTestHost(shadowConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			action := host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "今天天气怎么样？"}],
+				"stream": false
+			}`))
+
+			require.Equal(t, types.ActionContinue, action)
+			require.Nil(t, host.GetLocalResponse())
+			require.Empty(t, host.GetRedisCalloutAttributes())
 		})
 
 		// 测试所有问题策略
@@ -1452,6 +1565,73 @@ func TestExternalServiceCalls(t *testing.T) {
 			host.CompleteHttp()
 		})
 
+		t.Run("request cache mode exact-only bypasses semantic lookup", func(t *testing.T) {
+			semanticConfig := func() json.RawMessage {
+				data, _ := json.Marshal(map[string]interface{}{
+					"cache": map[string]interface{}{
+						"type":        "redis",
+						"serviceName": "redis.static",
+						"servicePort": 6379,
+					},
+					"embedding": map[string]interface{}{
+						"type":        "dashscope",
+						"apiKey":      "test-dashscope-key",
+						"serviceName": "dashscope.static",
+						"servicePort": 8080,
+					},
+					"vector": map[string]interface{}{
+						"type":              "dashvector",
+						"serviceName":       "dashvector-service",
+						"serviceHost":       "dashvector.example.com",
+						"servicePort":       8081,
+						"apiKey":            "test-dashvector-key",
+						"collectionID":      "test-collection",
+						"threshold":         0.8,
+						"thresholdRelation": "gt",
+					},
+					"provider":            "dashscope",
+					"cacheScope":          "global",
+					"enableSemanticCache": true,
+					"cacheKeyStrategy":    "lastQuestion",
+					"cacheKeyFrom":        "messages.@reverse.0.content",
+					"cacheValueFrom":      "choices.0.message.content",
+				})
+				return data
+			}()
+
+			host, status := test.NewTestHost(semanticConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+				{"x-higress-ai-cache-mode", "exact-only"},
+			})
+
+			requestBody := `{
+				"model": "qwen-turbo",
+				"messages": [
+					{
+						"role": "user",
+						"content": "今天天气怎么样？"
+					}
+				],
+				"stream": false
+			}`
+			host.CallOnHttpRequestBody([]byte(requestBody))
+			cacheMissResp := test.CreateRedisRespNull()
+			host.CallOnRedisCall(0, cacheMissResp)
+			host.CallOnRedisCall(0, cacheMissResp)
+
+			require.Empty(t, host.GetRedisCalloutAttributes())
+			require.Empty(t, host.GetHttpCalloutAttributes())
+			require.Nil(t, host.GetLocalResponse())
+			host.CompleteHttp()
+		})
+
 		// 测试流式响应的缓存流程
 		t.Run("streaming response cache flow", func(t *testing.T) {
 			streamConfig := func() json.RawMessage {
@@ -1504,6 +1684,65 @@ data: [DONE]`,
 
 			// 完成HTTP请求
 			host.CompleteHttp()
+		})
+
+		t.Run("request cache mode no-store skips response cache write", func(t *testing.T) {
+			host, status := test.NewTestHost(basicRedisConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+				{"x-higress-ai-cache-mode", "no-store"},
+			})
+
+			requestBody := `{
+				"model": "qwen-turbo",
+				"messages": [
+					{
+						"role": "user",
+						"content": "今天天气怎么样？"
+					}
+				],
+				"stream": false
+			}`
+			host.CallOnHttpRequestBody([]byte(requestBody))
+			cacheMissResp := test.CreateRedisRespNull()
+			host.CallOnRedisCall(0, cacheMissResp)
+			host.CallOnRedisCall(0, cacheMissResp)
+			require.Empty(t, host.GetRedisCalloutAttributes())
+
+			host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "application/json"},
+			})
+			responseBody := `{
+				"id": "chatcmpl-123",
+				"choices": [
+					{
+						"index": 0,
+						"message": {
+							"role": "assistant",
+							"content": "今天北京天气晴朗，温度25度"
+						},
+						"finish_reason": "stop"
+					}
+				],
+				"model": "qwen-turbo",
+				"object": "chat.completion",
+				"usage": {
+					"prompt_tokens": 16,
+					"completion_tokens": 9,
+					"total_tokens": 25
+				}
+			}`
+			action := host.CallOnHttpResponseBody([]byte(responseBody))
+
+			require.Equal(t, types.ActionContinue, action)
+			require.Empty(t, host.GetRedisCalloutAttributes())
 		})
 
 		// 测试缓存存储流程

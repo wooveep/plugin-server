@@ -14,7 +14,9 @@ LLM 结果缓存插件，默认配置方式可以直接用于 openai 协议的�
 
 **提示**
 
-携带请求头`x-higress-skip-ai-cache: on`时，当前请求将不会使用缓存中的内容，而是直接转发给后端服务，同时也不会缓存该请求返回响应的内容
+携带请求头`x-higress-skip-ai-cache: on`时，当前请求将不会使用缓存中的内容，而是直接转发给后端服务，同时也不会缓存该请求返回响应的内容。
+
+携带请求头`x-higress-ai-cache-mode`时，可对单次请求覆盖缓存策略：`skip` 表示跳过读写缓存，`no-store` 表示允许读取缓存但不写入响应，`exact-only` 表示本次请求仅使用精确缓存匹配且不发起语义查询。
 
 
 ## 运行属性
@@ -37,6 +39,7 @@ LLM 结果缓存插件，默认配置方式可以直接用于 openai 协议的�
 | embedding | object | optional | - | 文本向量化服务配置，详见下文文本向量化服务配置 |
 | cache | object | optional | - | 缓存服务配置，详见下文缓存服务配置 |
 | cacheKeyStrategy | string | optional | "lastQuestion" | 决定如何根据历史问题生成缓存键的策略。可选值: "lastQuestion" (使用最后一个问题), "allQuestions" (拼接所有问题) 或 "disabled" (禁用缓存) |
+| cacheMode | string | optional | 当启用语义缓存时为 "semantic"，否则为 "exact-only" | 路由级缓存模式。可选值: "off" (跳过读写缓存), "exact-only" (仅精确匹配), "semantic" (精确未命中后语义查询), "shadow" (不回放缓存命中，仅记录可写入的上游响应) |
 | enableSemanticCache | bool | optional | false | 是否启用语义化缓存。若不启用，则使用字符串匹配的方式来查找缓存，此时需要配置cache服务。当配置了 vector provider 时，默认自动开启 |
 
 根据是否需要启用语义缓存，可以只配置组件的组合为:

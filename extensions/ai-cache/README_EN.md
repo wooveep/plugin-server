@@ -12,6 +12,8 @@ LLM result caching plugin. The default configuration can be directly used for Op
 
 When carrying the request header `x-higress-skip-ai-cache: on`, the current request will not use content from the cache but will be directly forwarded to the backend service. Additionally, the response content from this request will not be cached.
 
+When carrying the request header `x-higress-ai-cache-mode`, one request can override the route cache policy: `skip` bypasses cache reads and writes, `no-store` allows cache reads but skips storing the response, and `exact-only` uses exact cache matching only without semantic lookup.
+
 ## Runtime Properties
 
 Plugin Execution Phase: `Authentication Phase`
@@ -31,6 +33,7 @@ This plugin supports both vector database-based semantic caching and string matc
 | embedding | object | optional | - | Text embedding service configuration, see Text Embedding Service section below |
 | cache | object | optional | - | Cache service configuration, see Cache Service section below |
 | cacheKeyStrategy | string | optional | "lastQuestion" | Strategy for generating cache key from historical questions. Options: "lastQuestion" (use last question), "allQuestions" (concatenate all questions), or "disabled" (disable caching) |
+| cacheMode | string | optional | "semantic" when semantic cache is enabled, otherwise "exact-only" | Route-level cache mode. Options: "off" (bypass cache reads and writes), "exact-only" (exact matching only), "semantic" (semantic lookup after exact miss), or "shadow" (do not replay cache hits, only keep upstream responses eligible for storage) |
 | enableSemanticCache | bool | optional | false | Whether to enable semantic caching. If disabled, string matching is used to find cache, requiring cache service configuration. Automatically enabled when a vector provider is configured |
 
 Depending on whether semantic caching is needed, you can configure component combinations as follows:

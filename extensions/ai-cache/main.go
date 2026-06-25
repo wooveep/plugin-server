@@ -21,10 +21,12 @@ const (
 	CACHE_CONTENT_CONTEXT_KEY       = "cacheContent"
 	CACHE_RESPONSE_BODY_CONTEXT_KEY = "cacheResponseBody"
 	CACHE_STREAM_FACTS_CONTEXT_KEY  = "cacheStreamFacts"
+	CACHE_REQUEST_MODE_CONTEXT_KEY  = "cacheRequestMode"
 	PARTIAL_MESSAGE_CONTEXT_KEY     = "partialMessage"
 	TOOL_CALLS_CONTEXT_KEY          = "toolCalls"
 	STREAM_CONTEXT_KEY              = "stream"
 	SKIP_CACHE_HEADER               = "x-higress-skip-ai-cache"
+	CACHE_MODE_HEADER               = "x-higress-ai-cache-mode"
 	ERROR_PARTIAL_MESSAGE_KEY       = "errorPartialMessage"
 
 	DEFAULT_MAX_BODY_BYTES uint32 = 100 * 1024 * 1024
@@ -63,7 +65,12 @@ func parseConfig(json gjson.Result, c *config.PluginConfig, log log.Log) error {
 func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) types.Action {
 	ctx.DisableReroute()
 	skipCache, _ := proxywasm.GetHttpRequestHeader(SKIP_CACHE_HEADER)
-	if skipCache == "on" {
+	requestModeHeader, _ := proxywasm.GetHttpRequestHeader(CACHE_MODE_HEADER)
+	requestMode := normalizeRequestCacheMode(requestModeHeader)
+	if requestMode != "" {
+		ctx.SetContext(CACHE_REQUEST_MODE_CONTEXT_KEY, requestMode)
+	}
+	if skipCache == "on" || requestMode == config.CACHE_MODE_SKIP {
 		ctx.SetContext(SKIP_CACHE_HEADER, struct{}{})
 		ctx.DontReadRequestBody()
 		return types.ActionContinue
@@ -92,6 +99,14 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 	if bodyJson.Get("stream").Bool() {
 		stream = true
 		ctx.SetContext(STREAM_CONTEXT_KEY, struct{}{})
+	}
+
+	cacheMode := effectiveCacheMode(ctx, c)
+	if cacheMode == config.CACHE_MODE_OFF || cacheMode == config.CACHE_MODE_SKIP {
+		ctx.SetUserAttribute("cache_status", "skip")
+		ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
 	}
 
 	var key string
@@ -135,7 +150,13 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 	ctx.SetContext(CACHE_KEY_MATERIAL_CONTEXT_KEY, keyMaterial)
 	log.Debugf("[onHttpRequestBody] scoped cache key: %s", keyMaterial.EntryKey)
 
-	if err := CheckCacheForKey(key, ctx, c, log, stream, true); err != nil {
+	if cacheMode == config.CACHE_MODE_SHADOW {
+		ctx.SetUserAttribute("cache_status", "shadow")
+		ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
+		return types.ActionContinue
+	}
+
+	if err := CheckCacheForKey(key, ctx, c, log, stream, shouldUseSimilaritySearch(cacheMode, c)); err != nil {
 		log.Errorf("[onHttpRequestBody] check cache for key: %s failed, error: %v", key, err)
 		return types.ActionContinue
 	}
@@ -206,7 +227,56 @@ func onHttpResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chunk []
 		return chunk
 	}
 
+	if shouldBypassCacheWrite(ctx, c) {
+		return chunk
+	}
+
 	cacheResponse(ctx, c, key.(string), value, log)
 	uploadEmbeddingAndAnswer(ctx, c, key.(string), value, log)
 	return chunk
+}
+
+func normalizeRequestCacheMode(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case config.CACHE_MODE_SKIP:
+		return config.CACHE_MODE_SKIP
+	case config.CACHE_MODE_NO_STORE:
+		return config.CACHE_MODE_NO_STORE
+	case config.CACHE_MODE_EXACT_ONLY:
+		return config.CACHE_MODE_EXACT_ONLY
+	default:
+		return ""
+	}
+}
+
+func requestCacheMode(ctx wrapper.HttpContext) string {
+	if mode, ok := ctx.GetContext(CACHE_REQUEST_MODE_CONTEXT_KEY).(string); ok {
+		return mode
+	}
+	return ""
+}
+
+func effectiveCacheMode(ctx wrapper.HttpContext, c config.PluginConfig) string {
+	if c.CacheMode == config.CACHE_MODE_OFF {
+		return config.CACHE_MODE_OFF
+	}
+	switch requestCacheMode(ctx) {
+	case config.CACHE_MODE_SKIP:
+		return config.CACHE_MODE_SKIP
+	case config.CACHE_MODE_EXACT_ONLY:
+		return config.CACHE_MODE_EXACT_ONLY
+	default:
+		return c.CacheMode
+	}
+}
+
+func shouldUseSimilaritySearch(cacheMode string, c config.PluginConfig) bool {
+	return cacheMode == config.CACHE_MODE_SEMANTIC && c.EnableSemanticCache
+}
+
+func shouldBypassCacheWrite(ctx wrapper.HttpContext, c config.PluginConfig) bool {
+	cacheMode := effectiveCacheMode(ctx, c)
+	return cacheMode == config.CACHE_MODE_OFF ||
+		cacheMode == config.CACHE_MODE_SKIP ||
+		requestCacheMode(ctx) == config.CACHE_MODE_NO_STORE
 }

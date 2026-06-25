@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-cache/cache"
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-cache/embedding"
@@ -14,6 +15,13 @@ const (
 	CACHE_KEY_STRATEGY_LAST_QUESTION = "lastQuestion"
 	CACHE_KEY_STRATEGY_ALL_QUESTIONS = "allQuestions"
 	CACHE_KEY_STRATEGY_DISABLED      = "disabled"
+
+	CACHE_MODE_OFF        = "off"
+	CACHE_MODE_EXACT_ONLY = "exact-only"
+	CACHE_MODE_SEMANTIC   = "semantic"
+	CACHE_MODE_SHADOW     = "shadow"
+	CACHE_MODE_SKIP       = "skip"
+	CACHE_MODE_NO_STORE   = "no-store"
 
 	CACHE_SCOPE_TENANT   = "tenant"
 	CACHE_SCOPE_CONSUMER = "consumer"
@@ -58,6 +66,7 @@ type PluginConfig struct {
 	ConsumerHeader     string
 	Provider           string
 	CachePolicyVersion string
+	CacheMode          string
 }
 
 func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
@@ -93,6 +102,7 @@ func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
 	if c.CachePolicyVersion == "" {
 		c.CachePolicyVersion = DEFAULT_CACHE_POLICY_VERSION
 	}
+	c.CacheMode = normalizeCacheMode(firstJSONValue(json, "cacheMode", "cache_mode"))
 	c.CacheKeyFrom = json.Get("cacheKeyFrom").String()
 	if c.CacheKeyFrom == "" {
 		c.CacheKeyFrom = "messages.@reverse.0.content"
@@ -125,6 +135,13 @@ func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
 		c.EnableSemanticCache = false // set value to false when no vector provider
 	} else {
 		c.EnableSemanticCache = true // set default value to true
+	}
+	if c.CacheMode == "" {
+		if c.EnableSemanticCache {
+			c.CacheMode = CACHE_MODE_SEMANTIC
+		} else {
+			c.CacheMode = CACHE_MODE_EXACT_ONLY
+		}
 	}
 
 	// compatible with legacy config
@@ -167,6 +184,12 @@ func (c *PluginConfig) Validate() error {
 		c.CacheScope != CACHE_SCOPE_GLOBAL {
 		return fmt.Errorf("invalid CacheScope: %s", c.CacheScope)
 	}
+	if c.CacheMode != CACHE_MODE_OFF &&
+		c.CacheMode != CACHE_MODE_EXACT_ONLY &&
+		c.CacheMode != CACHE_MODE_SEMANTIC &&
+		c.CacheMode != CACHE_MODE_SHADOW {
+		return fmt.Errorf("invalid CacheMode: %s", c.CacheMode)
+	}
 	if c.CacheKeyStrategy != CACHE_KEY_STRATEGY_DISABLED &&
 		c.cacheProviderConfig.GetProviderType() != "" &&
 		c.Provider == "" {
@@ -190,6 +213,10 @@ func firstJSONValue(json gjson.Result, keys ...string) string {
 		}
 	}
 	return ""
+}
+
+func normalizeCacheMode(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
 }
 
 func (c *PluginConfig) Complete(log log.Log) error {
