@@ -19,6 +19,11 @@ import (
 func CheckCacheForKey(key string, ctx wrapper.HttpContext, c config.PluginConfig, log logs.Log, stream bool, useSimilaritySearch bool) error {
 	activeCacheProvider := c.GetCacheProvider()
 	if activeCacheProvider == nil {
+		if !useSimilaritySearch || !c.EnableSemanticCache {
+			log.Debugf("[%s] [CheckCacheForKey] no cache provider configured and similarity search is disabled", PLUGIN_NAME)
+			proxywasm.ResumeHttpRequest()
+			return nil
+		}
 		log.Debugf("[%s] [CheckCacheForKey] no cache provider configured, performing similarity search", PLUGIN_NAME)
 		return performSimilaritySearch(key, ctx, c, log, key, stream)
 	}
@@ -34,6 +39,11 @@ func CheckCacheForKey(key string, ctx wrapper.HttpContext, c config.PluginConfig
 
 	err := activeCacheProvider.Get(queryKey, func(response resp.Value) {
 		if handleCacheHitResponse(key, response, ctx, log, stream, c) {
+			return
+		}
+		if ctx.GetBoolContext(CACHE_DISABLE_LEGACY_CONTEXT_KEY, false) {
+			log.Debugf("[%s] [CheckCacheForKey] scoped cache miss, legacy fallback disabled for key: %s", PLUGIN_NAME, key)
+			handleCacheResponse(key, response, ctx, log, stream, c, useSimilaritySearch)
 			return
 		}
 		legacyQueryKey := activeCacheProvider.GetCacheKeyPrefix() + key

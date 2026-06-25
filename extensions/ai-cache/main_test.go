@@ -8,6 +8,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/test"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 // 测试配置：基础Redis缓存配置
@@ -104,6 +105,30 @@ var cacheOnlyConfig = func() json.RawMessage {
 	})
 	return data
 }()
+
+func TestRequestCacheEligibility(t *testing.T) {
+	t.Run("english terms match token boundaries", func(t *testing.T) {
+		require.True(t, requestHasDynamicDataIntent("what is the weather today?"))
+		require.True(t, requestHasDynamicDataIntent("what is the usd exchange rate?"))
+		require.True(t, requestHasDynamicDataIntent("今天杭州天气怎么样"))
+		require.True(t, requestHasAmbiguousMultiTurnIntent(gjson.Parse(`{
+			"messages": [
+				{"role": "user", "content": "summarize the proposal"},
+				{"role": "assistant", "content": "first draft"},
+				{"role": "user", "content": "make it shorter"}
+			]
+		}`), "make it shorter"))
+
+		require.False(t, requestHasDynamicDataIntent("explain snow formation"))
+		require.False(t, requestHasAmbiguousMultiTurnIntent(gjson.Parse(`{
+			"messages": [
+				{"role": "user", "content": "draft notes"},
+				{"role": "assistant", "content": "done"},
+				{"role": "user", "content": "write a summary"}
+			]
+		}`), "write a summary"))
+	})
+}
 
 // 测试配置：仅嵌入模型配置
 var embeddingOnlyConfig = func() json.RawMessage {
@@ -726,6 +751,58 @@ func TestOnHttpRequestBody(t *testing.T) {
 			require.Empty(t, host.GetRedisCalloutAttributes())
 		})
 
+		t.Run("request with tools bypasses cache read and write", func(t *testing.T) {
+			host, status := test.NewTestHost(basicRedisConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			action := host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "查一下订单状态"}],
+				"tools": [
+					{
+						"type": "function",
+						"function": {
+							"name": "lookup_order",
+							"parameters": {"type": "object"}
+						}
+					}
+				],
+				"stream": false
+			}`))
+
+			require.Equal(t, types.ActionContinue, action)
+			require.Empty(t, host.GetRedisCalloutAttributes())
+
+			host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "application/json"},
+			})
+			responseBody := `{
+				"id": "chatcmpl-123",
+				"choices": [
+					{
+						"index": 0,
+						"message": {
+							"role": "assistant",
+							"content": "订单正在配送中"
+						},
+						"finish_reason": "stop"
+					}
+				],
+				"model": "qwen-turbo",
+				"object": "chat.completion"
+			}`
+			require.Equal(t, types.ActionContinue, host.CallOnHttpResponseBody([]byte(responseBody)))
+			require.Empty(t, host.GetRedisCalloutAttributes())
+		})
+
 		// 测试所有问题策略
 		t.Run("request body with all questions strategy", func(t *testing.T) {
 			allQuestionsConfig := func() json.RawMessage {
@@ -1008,6 +1085,97 @@ func TestOnHttpResponseHeaders(t *testing.T) {
 			// 应该返回ActionContinue
 			require.Equal(t, types.ActionContinue, action)
 		})
+
+		t.Run("non-success response bypasses cache write", func(t *testing.T) {
+			host, status := test.NewTestHost(basicRedisConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "介绍杭州西湖"}],
+				"stream": false
+			}`))
+			cacheMissResp := test.CreateRedisRespNull()
+			host.CallOnRedisCall(0, cacheMissResp)
+			host.CallOnRedisCall(0, cacheMissResp)
+			require.Empty(t, host.GetRedisCalloutAttributes())
+
+			action := host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "500"},
+				{"content-type", "application/json"},
+			})
+			require.Equal(t, types.ActionContinue, action)
+
+			responseBody := `{
+				"id": "chatcmpl-123",
+				"choices": [
+					{
+						"index": 0,
+						"message": {
+							"role": "assistant",
+							"content": "这条错误响应不应写入缓存"
+						},
+						"finish_reason": "stop"
+					}
+				],
+				"model": "qwen-turbo",
+				"object": "chat.completion"
+			}`
+			require.Equal(t, types.ActionContinue, host.CallOnHttpResponseBody([]byte(responseBody)))
+			require.Empty(t, host.GetRedisCalloutAttributes())
+		})
+
+		t.Run("missing response status bypasses cache write", func(t *testing.T) {
+			host, status := test.NewTestHost(basicRedisConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "介绍杭州西湖"}],
+				"stream": false
+			}`))
+			cacheMissResp := test.CreateRedisRespNull()
+			host.CallOnRedisCall(0, cacheMissResp)
+			host.CallOnRedisCall(0, cacheMissResp)
+			require.Empty(t, host.GetRedisCalloutAttributes())
+
+			action := host.CallOnHttpResponseHeaders([][2]string{
+				{"content-type", "application/json"},
+			})
+			require.Equal(t, types.ActionContinue, action)
+
+			responseBody := `{
+				"id": "chatcmpl-123",
+				"choices": [
+					{
+						"index": 0,
+						"message": {
+							"role": "assistant",
+							"content": "缺少状态码的响应不应写入缓存"
+						},
+						"finish_reason": "stop"
+					}
+				],
+				"model": "qwen-turbo",
+				"object": "chat.completion"
+			}`
+			require.Equal(t, types.ActionContinue, host.CallOnHttpResponseBody([]byte(responseBody)))
+			require.Empty(t, host.GetRedisCalloutAttributes())
+		})
 	})
 }
 
@@ -1129,6 +1297,209 @@ data: [DONE]`
 			require.Equal(t, types.ActionContinue, action)
 			actualStreamResponseBody := string(host.GetResponseBody())
 			require.Equal(t, expectedStreamResponseBody, actualStreamResponseBody)
+		})
+
+		t.Run("non-stream response with tool call is not cached", func(t *testing.T) {
+			host, status := test.NewTestHost(basicRedisConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "查一下订单状态"}],
+				"stream": false
+			}`))
+			cacheMissResp := test.CreateRedisRespNull()
+			host.CallOnRedisCall(0, cacheMissResp)
+			host.CallOnRedisCall(0, cacheMissResp)
+
+			host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "application/json"},
+			})
+			responseBody := `{
+				"id": "chatcmpl-123",
+				"choices": [
+					{
+						"index": 0,
+						"message": {
+							"role": "assistant",
+							"content": "我需要查询订单。",
+							"tool_calls": [
+								{
+									"id": "call_1",
+									"type": "function",
+									"function": {"name": "lookup_order", "arguments": "{}"}
+								}
+							]
+						},
+						"finish_reason": "tool_calls"
+					}
+				],
+				"model": "qwen-turbo",
+				"object": "chat.completion"
+			}`
+
+			require.Equal(t, types.ActionContinue, host.CallOnHttpResponseBody([]byte(responseBody)))
+			require.Empty(t, host.GetRedisCalloutAttributes())
+		})
+
+		t.Run("missing final assistant content is not cached", func(t *testing.T) {
+			host, status := test.NewTestHost(basicRedisConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "介绍杭州西湖"}],
+				"stream": false
+			}`))
+			cacheMissResp := test.CreateRedisRespNull()
+			host.CallOnRedisCall(0, cacheMissResp)
+			host.CallOnRedisCall(0, cacheMissResp)
+
+			host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "application/json"},
+			})
+			responseBody := `{
+				"id": "chatcmpl-123",
+				"choices": [
+					{
+						"index": 0,
+						"message": {
+							"role": "assistant",
+							"content": ""
+						},
+						"finish_reason": "stop"
+					}
+				],
+				"model": "qwen-turbo",
+				"object": "chat.completion"
+			}`
+
+			require.Equal(t, types.ActionContinue, host.CallOnHttpResponseBody([]byte(responseBody)))
+			require.Empty(t, host.GetRedisCalloutAttributes())
+		})
+
+		t.Run("stream response with tool call is not cached", func(t *testing.T) {
+			host, status := test.NewTestHost(basicRedisConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "查一下订单状态"}],
+				"stream": true
+			}`))
+			cacheMissResp := test.CreateRedisRespNull()
+			host.CallOnRedisCall(0, cacheMissResp)
+			host.CallOnRedisCall(0, cacheMissResp)
+			require.Empty(t, host.GetRedisCalloutAttributes())
+
+			host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "text/event-stream"},
+			})
+			contentChunk := `data: {"id":"chatcmpl-123","object":"chat.completion.chunk","model":"qwen-turbo","choices":[{"index":0,"delta":{"role":"assistant","content":"我需要查询订单。"},"finish_reason":null}]}
+
+`
+			doneChunk := `data: {"id":"chatcmpl-123","object":"chat.completion.chunk","model":"qwen-turbo","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_1","type":"function","function":{"name":"lookup_order","arguments":"{}"}}]},"finish_reason":"tool_calls"}]}
+
+data: [DONE]
+
+`
+
+			require.Equal(t, types.ActionContinue, host.CallOnHttpStreamingResponseBody([]byte(contentChunk), false))
+			require.Equal(t, types.ActionContinue, host.CallOnHttpStreamingResponseBody([]byte(doneChunk), true))
+			require.Empty(t, host.GetRedisCalloutAttributes())
+		})
+
+		t.Run("stream response missing final assistant content is not uploaded to vector", func(t *testing.T) {
+			completeGlobalConfig := func() json.RawMessage {
+				var data map[string]interface{}
+				require.NoError(t, json.Unmarshal(completeConfig, &data))
+				data["cacheScope"] = "global"
+				raw, err := json.Marshal(data)
+				require.NoError(t, err)
+				return raw
+			}()
+			host, status := test.NewTestHost(completeGlobalConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "介绍杭州西湖"}],
+				"stream": true
+			}`))
+			cacheMissResp := test.CreateRedisRespNull()
+			host.CallOnRedisCall(0, cacheMissResp)
+			host.CallOnRedisCall(0, cacheMissResp)
+
+			embeddingResponse := `{
+				"output": {
+					"embeddings": [
+						{
+							"embedding": [0.1, 0.2, 0.3, 0.4, 0.5]
+						}
+					]
+				}
+			}`
+			host.CallOnHttpCall([][2]string{
+				{"Content-Type", "application/json"},
+				{":status", "200"},
+			}, []byte(embeddingResponse))
+
+			vectorQueryResponse := `{
+				"code": 200,
+				"request_id": "test-request-123",
+				"message": "success",
+				"output": []
+			}`
+			host.CallOnHttpCall([][2]string{
+				{"Content-Type", "application/json"},
+				{":status", "200"},
+			}, []byte(vectorQueryResponse))
+			require.Empty(t, host.GetRedisCalloutAttributes())
+			require.Empty(t, host.GetHttpCalloutAttributes())
+
+			host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "text/event-stream"},
+			})
+			doneChunk := `data: {"id":"chatcmpl-123","object":"chat.completion.chunk","model":"qwen-turbo","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":"stop"}]}
+
+data: [DONE]
+
+`
+			require.Equal(t, types.ActionContinue, host.CallOnHttpStreamingResponseBody([]byte(doneChunk), true))
+			require.Empty(t, host.GetRedisCalloutAttributes())
+			require.Empty(t, host.GetHttpCalloutAttributes())
 		})
 
 		// 测试流式响应体处理：首 chunk 只带 role 无 content（混元大模型场景，#3953）
@@ -1497,7 +1868,7 @@ func TestExternalServiceCalls(t *testing.T) {
 				"messages": [
 					{
 						"role": "user",
-						"content": "今天天气怎么样？"
+						"content": "介绍杭州西湖"
 					}
 				],
 				"stream": false
@@ -1533,8 +1904,8 @@ func TestExternalServiceCalls(t *testing.T) {
 					{
 						"id": "1",
 						"fields": {
-							"query": "今天天气怎么样？",
-							"answer": "今天北京天气晴朗，温度25度，湿度60%"
+							"query": "介绍杭州西湖",
+							"answer": "杭州西湖是中国著名的风景名胜，兼具自然景观与历史文化。"
 						},
 						"score": 0.95
 					}
@@ -1550,7 +1921,7 @@ func TestExternalServiceCalls(t *testing.T) {
 				"expected a compatibility SET redis callout after accepted vector answer, got %d", len(redisCalls))
 			setQuery := string(redisCalls[len(redisCalls)-1].Query)
 			require.Contains(t, setQuery, "higress-ai-cache:{aiscope:")
-			require.Contains(t, setQuery, "今天北京天气晴朗，温度25度，湿度60%")
+			require.Contains(t, setQuery, "杭州西湖是中国著名的风景名胜")
 			require.NotContains(t, setQuery, `"version":1`,
 				"vector answer payloads are not authoritative structured cache entries")
 			require.NotContains(t, setQuery, `"usage"`,
@@ -1563,6 +1934,149 @@ func TestExternalServiceCalls(t *testing.T) {
 
 			// 完成HTTP请求
 			host.CompleteHttp()
+		})
+
+		runSemanticBypassCase := func(name string, requestBody string) {
+			t.Run(name, func(t *testing.T) {
+				semanticConfig := func() json.RawMessage {
+					data, _ := json.Marshal(map[string]interface{}{
+						"cache": map[string]interface{}{
+							"type":        "redis",
+							"serviceName": "redis.static",
+							"servicePort": 6379,
+						},
+						"embedding": map[string]interface{}{
+							"type":        "dashscope",
+							"apiKey":      "test-dashscope-key",
+							"serviceName": "dashscope.static",
+							"servicePort": 8080,
+						},
+						"vector": map[string]interface{}{
+							"type":              "dashvector",
+							"serviceName":       "dashvector-service",
+							"serviceHost":       "dashvector.example.com",
+							"servicePort":       8081,
+							"apiKey":            "test-dashvector-key",
+							"collectionID":      "test-collection",
+							"threshold":         0.8,
+							"thresholdRelation": "gt",
+						},
+						"provider":            "dashscope",
+						"cacheScope":          "global",
+						"enableSemanticCache": true,
+						"cacheKeyStrategy":    "lastQuestion",
+						"cacheKeyFrom":        "messages.@reverse.0.content",
+						"cacheValueFrom":      "choices.0.message.content",
+					})
+					return data
+				}()
+
+				host, status := test.NewTestHost(semanticConfig)
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+
+				host.CallOnHttpRequestHeaders([][2]string{
+					{":authority", "example.com"},
+					{":path", "/api/chat"},
+					{":method", "POST"},
+					{"content-type", "application/json"},
+				})
+
+				host.CallOnHttpRequestBody([]byte(requestBody))
+				cacheMissResp := test.CreateRedisRespNull()
+				host.CallOnRedisCall(0, cacheMissResp)
+
+				require.Empty(t, host.GetRedisCalloutAttributes())
+				require.Empty(t, host.GetHttpCalloutAttributes())
+				require.Nil(t, host.GetLocalResponse())
+				host.CompleteHttp()
+			})
+		}
+
+		runSemanticBypassCase("sampling settings bypass semantic lookup", `{
+			"model": "qwen-turbo",
+			"messages": [{"role": "user", "content": "介绍杭州西湖"}],
+			"temperature": 0.7,
+			"stream": false
+		}`)
+		runSemanticBypassCase("dynamic data intent bypasses semantic lookup", `{
+			"model": "qwen-turbo",
+			"messages": [{"role": "user", "content": "what is the weather today?"}],
+			"stream": false
+		}`)
+		runSemanticBypassCase("weak intent bypasses semantic lookup", `{
+			"model": "qwen-turbo",
+			"messages": [{"role": "user", "content": "continue"}],
+			"stream": false
+		}`)
+		runSemanticBypassCase("ambiguous multi-turn prompt bypasses semantic lookup", `{
+			"model": "qwen-turbo",
+			"messages": [
+				{"role": "user", "content": "给我三个缓存策略"},
+				{"role": "assistant", "content": "第一是精确缓存，第二是语义缓存，第三是旁路。"},
+				{"role": "user", "content": "第二个"}
+			],
+			"stream": false
+		}`)
+
+		t.Run("sampling settings bypass legacy raw-key fallback", func(t *testing.T) {
+			semanticConfig := func() json.RawMessage {
+				data, _ := json.Marshal(map[string]interface{}{
+					"cache": map[string]interface{}{
+						"type":        "redis",
+						"serviceName": "redis.static",
+						"servicePort": 6379,
+					},
+					"embedding": map[string]interface{}{
+						"type":        "dashscope",
+						"apiKey":      "test-dashscope-key",
+						"serviceName": "dashscope.static",
+						"servicePort": 8080,
+					},
+					"vector": map[string]interface{}{
+						"type":              "dashvector",
+						"serviceName":       "dashvector-service",
+						"serviceHost":       "dashvector.example.com",
+						"servicePort":       8081,
+						"apiKey":            "test-dashvector-key",
+						"collectionID":      "test-collection",
+						"threshold":         0.8,
+						"thresholdRelation": "gt",
+					},
+					"provider":            "dashscope",
+					"cacheScope":          "global",
+					"enableSemanticCache": true,
+					"cacheKeyStrategy":    "lastQuestion",
+					"cacheKeyFrom":        "messages.@reverse.0.content",
+					"cacheValueFrom":      "choices.0.message.content",
+				})
+				return data
+			}()
+			host, status := test.NewTestHost(semanticConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "介绍杭州西湖"}],
+				"temperature": 0.7,
+				"stream": false
+			}`))
+
+			redisCalls := host.GetRedisCalloutAttributes()
+			require.Len(t, redisCalls, 1)
+			require.NotContains(t, string(redisCalls[0].Query), "higress-ai-cache:介绍杭州西湖")
+
+			host.CallOnRedisCall(0, test.CreateRedisRespNull())
+			require.Empty(t, host.GetRedisCalloutAttributes())
+			require.Empty(t, host.GetHttpCalloutAttributes())
+			require.Nil(t, host.GetLocalResponse())
 		})
 
 		t.Run("request cache mode exact-only bypasses semantic lookup", func(t *testing.T) {

@@ -64,6 +64,10 @@ func processNonStreamLastChunk(ctx wrapper.HttpContext, c config.PluginConfig, c
 		body = chunk
 	}
 	bodyJson := gjson.ParseBytes(body)
+	if responseHasToolCall(bodyJson) {
+		ctx.SetContext(TOOL_CALLS_CONTEXT_KEY, "response tool call")
+		return "", fmt.Errorf("[processNonStreamLastChunk] response contains tool calls")
+	}
 	value := bodyJson.Get(c.CacheValueFrom).String()
 	if strings.TrimSpace(value) == "" {
 		return "", fmt.Errorf("[processNonStreamLastChunk] parse value from response body failed, body:%s", body)
@@ -140,9 +144,13 @@ func processSSEMessage(ctx wrapper.HttpContext, c config.PluginConfig, sseMessag
 		responseBody := gjson.Get(bodyJson, c.CacheStreamValueFrom)
 		toolCalls := gjson.Get(bodyJson, c.CacheToolCallsFrom)
 
-		if toolCalls.Exists() {
+		if hasNonEmptyJSONValue(toolCalls) || responseHasToolCall(gjson.Parse(bodyJson)) {
 			// TODO: Temporarily store the tool_calls value in the context for processing
-			ctx.SetContext(TOOL_CALLS_CONTEXT_KEY, toolCalls.String())
+			reason := toolCalls.String()
+			if strings.TrimSpace(reason) == "" {
+				reason = "response tool call"
+			}
+			ctx.SetContext(TOOL_CALLS_CONTEXT_KEY, reason)
 		}
 
 		// Check if the ResponseBody field exists

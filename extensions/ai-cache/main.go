@@ -14,20 +14,22 @@ import (
 )
 
 const (
-	PLUGIN_NAME                     = "ai-cache"
-	CACHE_KEY_CONTEXT_KEY           = "cacheKey"
-	CACHE_KEY_MATERIAL_CONTEXT_KEY  = "cacheKeyMaterial"
-	CACHE_KEY_EMBEDDING_KEY         = "cacheKeyEmbedding"
-	CACHE_CONTENT_CONTEXT_KEY       = "cacheContent"
-	CACHE_RESPONSE_BODY_CONTEXT_KEY = "cacheResponseBody"
-	CACHE_STREAM_FACTS_CONTEXT_KEY  = "cacheStreamFacts"
-	CACHE_REQUEST_MODE_CONTEXT_KEY  = "cacheRequestMode"
-	PARTIAL_MESSAGE_CONTEXT_KEY     = "partialMessage"
-	TOOL_CALLS_CONTEXT_KEY          = "toolCalls"
-	STREAM_CONTEXT_KEY              = "stream"
-	SKIP_CACHE_HEADER               = "x-higress-skip-ai-cache"
-	CACHE_MODE_HEADER               = "x-higress-ai-cache-mode"
-	ERROR_PARTIAL_MESSAGE_KEY       = "errorPartialMessage"
+	PLUGIN_NAME                      = "ai-cache"
+	CACHE_KEY_CONTEXT_KEY            = "cacheKey"
+	CACHE_KEY_MATERIAL_CONTEXT_KEY   = "cacheKeyMaterial"
+	CACHE_KEY_EMBEDDING_KEY          = "cacheKeyEmbedding"
+	CACHE_CONTENT_CONTEXT_KEY        = "cacheContent"
+	CACHE_RESPONSE_BODY_CONTEXT_KEY  = "cacheResponseBody"
+	CACHE_STREAM_FACTS_CONTEXT_KEY   = "cacheStreamFacts"
+	CACHE_REQUEST_MODE_CONTEXT_KEY   = "cacheRequestMode"
+	CACHE_BYPASS_REASON_CONTEXT_KEY  = "cacheBypassReason"
+	CACHE_DISABLE_LEGACY_CONTEXT_KEY = "cacheDisableLegacyFallback"
+	PARTIAL_MESSAGE_CONTEXT_KEY      = "partialMessage"
+	TOOL_CALLS_CONTEXT_KEY           = "toolCalls"
+	STREAM_CONTEXT_KEY               = "stream"
+	SKIP_CACHE_HEADER                = "x-higress-skip-ai-cache"
+	CACHE_MODE_HEADER                = "x-higress-ai-cache-mode"
+	ERROR_PARTIAL_MESSAGE_KEY        = "errorPartialMessage"
 
 	DEFAULT_MAX_BODY_BYTES uint32 = 100 * 1024 * 1024
 )
@@ -141,6 +143,22 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 		return types.ActionContinue
 	}
 
+	eligibility := evaluateRequestCacheEligibility(bodyJson, key)
+	if !eligibility.Cacheable {
+		log.Infof("[onHttpRequestBody] bypass cache: %s", eligibility.Reason)
+		ctx.SetContext(CACHE_KEY_CONTEXT_KEY, nil)
+		ctx.SetContext(CACHE_BYPASS_REASON_CONTEXT_KEY, eligibility.Reason)
+		ctx.SetUserAttribute("cache_status", "skip")
+		ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
+	if !eligibility.SemanticAllowed && cacheMode == config.CACHE_MODE_SEMANTIC {
+		log.Infof("[onHttpRequestBody] semantic cache bypass: %s", eligibility.Reason)
+		ctx.SetContext(CACHE_DISABLE_LEGACY_CONTEXT_KEY, true)
+		cacheMode = config.CACHE_MODE_EXACT_ONLY
+	}
+
 	keyMaterial := BuildScopedCacheKeyMaterial(c, bodyJson, key)
 	if !keyMaterial.Valid {
 		log.Warnf("[onHttpRequestBody] bypass cache: %s", keyMaterial.BypassReason)
@@ -173,6 +191,17 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log l
 		return types.ActionContinue
 	}
 	if ctx.GetContext(CACHE_KEY_CONTEXT_KEY) != nil {
+		status, err := proxywasm.GetHttpResponseHeader(":status")
+		if err != nil || !isSuccessfulHTTPStatus(status) {
+			reason := "response status not cacheable"
+			log.Infof("[onHttpResponseHeaders] bypass cache write: %s, status: %s", reason, status)
+			ctx.SetContext(CACHE_KEY_CONTEXT_KEY, nil)
+			ctx.SetContext(CACHE_BYPASS_REASON_CONTEXT_KEY, reason)
+			ctx.SetUserAttribute("cache_status", "skip")
+			ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
+			ctx.DontReadResponseBody()
+			return types.ActionContinue
+		}
 		ctx.SetUserAttribute("cache_status", "miss")
 		ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
 	}
@@ -227,7 +256,17 @@ func onHttpResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chunk []
 		return chunk
 	}
 
+	if ctx.GetContext(TOOL_CALLS_CONTEXT_KEY) != nil {
+		log.Warnf("[onHttpResponseBody] bypass cache write: response contains tool calls")
+		ctx.SetContext(CACHE_BYPASS_REASON_CONTEXT_KEY, "response contains tool calls")
+		return chunk
+	}
 	if shouldBypassCacheWrite(ctx, c) {
+		return chunk
+	}
+	if strings.TrimSpace(value) == "" {
+		log.Warnf("[onHttpResponseBody] bypass cache write: missing final assistant content")
+		ctx.SetContext(CACHE_BYPASS_REASON_CONTEXT_KEY, "missing final assistant content")
 		return chunk
 	}
 
