@@ -2166,6 +2166,99 @@ func TestExternalServiceCalls(t *testing.T) {
 			"stream": false
 		}`)
 
+		t.Run("semantic vector upload stores structured cache metadata", func(t *testing.T) {
+			semanticConfig := func() json.RawMessage {
+				data, _ := json.Marshal(map[string]interface{}{
+					"cache": map[string]interface{}{
+						"type":        "redis",
+						"serviceName": "redis.static",
+						"servicePort": 6379,
+					},
+					"embedding": map[string]interface{}{
+						"type":        "dashscope",
+						"apiKey":      "test-dashscope-key",
+						"serviceName": "dashscope.static",
+						"servicePort": 8080,
+					},
+					"vector": map[string]interface{}{
+						"type":              "dashvector",
+						"serviceName":       "dashvector-service",
+						"serviceHost":       "dashvector.example.com",
+						"servicePort":       8081,
+						"apiKey":            "test-dashvector-key",
+						"collectionID":      "test-collection",
+						"threshold":         0.8,
+						"thresholdRelation": "gt",
+					},
+					"provider":            "dashscope",
+					"cacheScope":          "global",
+					"cachePolicyVersion":  "pv-20260625",
+					"enableSemanticCache": true,
+					"cacheKeyStrategy":    "lastQuestion",
+					"cacheKeyFrom":        "messages.@reverse.0.content",
+					"cacheValueFrom":      "choices.0.message.content",
+				})
+				return data
+			}()
+
+			host, status := test.NewTestHost(semanticConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/chat"},
+				{":method", "POST"},
+				{"content-type", "application/json"},
+			})
+			host.CallOnHttpRequestBody([]byte(`{
+				"model": "qwen-turbo",
+				"messages": [{"role": "user", "content": "介绍杭州西湖"}],
+				"stream": false
+			}`))
+
+			host.CallOnRedisCall(0, test.CreateRedisRespNull())
+			host.CallOnRedisCall(0, test.CreateRedisRespNull())
+			host.CallOnHttpCall([][2]string{
+				{"Content-Type", "application/json"},
+				{":status", "200"},
+			}, []byte(`{"output":{"embeddings":[{"embedding":[0.1,0.2,0.3]}]}}`))
+			host.CallOnHttpCall([][2]string{
+				{"Content-Type", "application/json"},
+				{":status", "200"},
+			}, []byte(`{
+				"code":200,
+				"output":[{"id":"1","fields":{"query":"其它问题","answer":"其它答案"},"score":0.1}]
+			}`))
+
+			host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "application/json"},
+			})
+			require.Equal(t, types.ActionContinue, host.CallOnHttpResponseBody([]byte(`{
+				"id":"chatcmpl-123",
+				"object":"chat.completion",
+				"model":"qwen-turbo",
+				"choices":[{"index":0,"message":{"role":"assistant","content":"杭州西湖是中国著名风景名胜。"},"finish_reason":"stop"}],
+				"usage":{"prompt_tokens":9,"completion_tokens":8,"total_tokens":17}
+			}`)))
+
+			httpCalls := host.GetHttpCalloutAttributes()
+			require.NotEmpty(t, httpCalls)
+			uploadBody := httpCalls[len(httpCalls)-1].Body
+			require.Equal(t, "介绍杭州西湖", gjson.GetBytes(uploadBody, "docs.0.fields.query").String())
+			require.Equal(t, "杭州西湖是中国著名风景名胜。", gjson.GetBytes(uploadBody, "docs.0.fields.answer").String())
+			require.Contains(t, gjson.GetBytes(uploadBody, "docs.0.fields.cache_entry_key").String(), "higress-ai-cache:{aiscope:")
+			require.Equal(t, "global", gjson.GetBytes(uploadBody, "docs.0.fields.scope_type").String())
+			require.Equal(t, "dashscope", gjson.GetBytes(uploadBody, "docs.0.fields.provider_name").String())
+			require.Equal(t, "qwen-turbo", gjson.GetBytes(uploadBody, "docs.0.fields.model").String())
+			require.Equal(t, "pv-20260625", gjson.GetBytes(uploadBody, "docs.0.fields.policy_version").String())
+			require.NotEmpty(t, gjson.GetBytes(uploadBody, "docs.0.fields.request_fingerprint_hash").String())
+			require.NotEmpty(t, gjson.GetBytes(uploadBody, "docs.0.fields.semantic_text_hash").String())
+			require.Greater(t, gjson.GetBytes(uploadBody, "docs.0.fields.soft_expires_at").Int(), int64(0))
+			require.Greater(t, gjson.GetBytes(uploadBody, "docs.0.fields.hard_expires_at").Int(), int64(0))
+		})
+
 		t.Run("sampling settings bypass legacy raw-key fallback", func(t *testing.T) {
 			semanticConfig := func() json.RawMessage {
 				data, _ := json.Marshal(map[string]interface{}{

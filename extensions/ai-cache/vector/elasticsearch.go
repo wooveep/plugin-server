@@ -102,6 +102,17 @@ func (d *ESProvider) UploadAnswerAndEmbedding(
 	ctx wrapper.HttpContext,
 	log log.Log,
 	callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
+	return d.UploadAnswerAndEmbeddingWithMetadata(queryString, queryEmb, queryAnswer, PayloadMetadata{}, ctx, log, callback)
+}
+
+func (d *ESProvider) UploadAnswerAndEmbeddingWithMetadata(
+	queryString string,
+	queryEmb []float64,
+	queryAnswer string,
+	metadata PayloadMetadata,
+	ctx wrapper.HttpContext,
+	log log.Log,
+	callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
 	// 最少需要填写的参数为 index, embeddings 和 question
 	// 下面是一个例子
 	// POST /<index>/_doc
@@ -113,11 +124,7 @@ func (d *ESProvider) UploadAnswerAndEmbedding(
 	// 	  "你吃了吗？"
 	// 	]
 	// }
-	requestBody, err := json.Marshal(esInsertRequest{
-		Embedding: queryEmb,
-		Question:  queryString,
-		Answer:    queryAnswer,
-	})
+	requestBody, err := esUploadRequestBody(queryEmb, queryString, queryAnswer, metadata)
 	if err != nil {
 		log.Errorf("[ES] Failed to marshal upload embedding request body: %v", err)
 		return err
@@ -132,16 +139,25 @@ func (d *ESProvider) UploadAnswerAndEmbedding(
 		requestBody,
 		func(statusCode int, responseHeaders http.Header, responseBody []byte) {
 			log.Debugf("[ES] statusCode:%d, responseBody:%s", statusCode, string(responseBody))
-			callback(ctx, log, err)
+			if shouldRetryLegacyUpload(statusCode, metadata) {
+				log.Warnf("[ES] metadata upload rejected, retrying legacy upload: %d", statusCode)
+				if retryErr := d.UploadAnswerAndEmbedding(queryString, queryEmb, queryAnswer, ctx, log, callback); retryErr != nil {
+					notifyUploadCallback(callback, ctx, log, retryErr)
+				}
+				return
+			}
+			notifyUploadCallback(callback, ctx, log, uploadStatusError("ES", statusCode))
 		},
 		d.config.timeout,
 	)
 }
 
-type esInsertRequest struct {
-	Embedding []float64 `json:"embedding"`
-	Question  string    `json:"question"`
-	Answer    string    `json:"answer"`
+func esUploadRequestBody(queryEmb []float64, queryString string, queryAnswer string, metadata PayloadMetadata) ([]byte, error) {
+	return json.Marshal(mergePayloadMetadataFields(map[string]interface{}{
+		"embedding": queryEmb,
+		"question":  queryString,
+		"answer":    queryAnswer,
+	}, metadata))
 }
 
 type knn struct {

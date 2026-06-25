@@ -373,6 +373,19 @@ func TestNewStructuredCacheEntryForOpenAIResponsePreservesReplayFacts(t *testing
 	require.Equal(t, 0, entry.Usage.PromptTokensDetails.CachedTokens)
 }
 
+func TestNewStructuredCacheEntryForAnswerSetsSemanticTextHash(t *testing.T) {
+	entry := NewStructuredCacheEntryForAnswer("cached answer", ScopedCacheKeyMaterial{
+		LegacyKey:          "介绍杭州西湖",
+		Route:              StructuredRouteFacts{Name: "chat"},
+		Provider:           StructuredProviderFacts{Name: "qwen", Model: "qwen-plus"},
+		Scope:              StructuredCacheScope{Type: "global"},
+		PolicyVersion:      "v1",
+		RequestFingerprint: RequestFingerprint{Hash: "request-hash"},
+	})
+
+	require.Equal(t, stableHash("介绍杭州西湖"), entry.Semantic.TextHash)
+}
+
 func TestNewStructuredCacheEntryForOpenAIStreamingResponsePreservesReplayFacts(t *testing.T) {
 	var facts StructuredStreamingCacheFacts
 	facts.MergeOpenAIStreamingChunkJSON(`{

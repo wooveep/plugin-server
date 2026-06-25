@@ -99,6 +99,17 @@ func (d *ChromaProvider) UploadAnswerAndEmbedding(
 	ctx wrapper.HttpContext,
 	log log.Log,
 	callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
+	return d.UploadAnswerAndEmbeddingWithMetadata(queryString, queryEmb, queryAnswer, PayloadMetadata{}, ctx, log, callback)
+}
+
+func (d *ChromaProvider) UploadAnswerAndEmbeddingWithMetadata(
+	queryString string,
+	queryEmb []float64,
+	queryAnswer string,
+	metadata PayloadMetadata,
+	ctx wrapper.HttpContext,
+	log log.Log,
+	callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
 	// 最少需要填写的参数为 collection_id, embeddings 和 ids
 	// 下面是一个例子
 	// {
@@ -124,11 +135,7 @@ func (d *ChromaProvider) UploadAnswerAndEmbedding(
 	// 	  "id1"
 	// 	]
 	// }
-	requestBody, err := json.Marshal(chromaInsertRequest{
-		Embeddings: []chromaEmbedding{queryEmb},
-		IDs:        []string{queryString}, // queryString 指的是用户查询的问题
-		Documents:  []string{queryAnswer}, // queryAnswer 指的是用户查询的问题的答案
-	})
+	requestBody, err := chromaUploadRequestBody(queryEmb, queryString, queryAnswer, metadata)
 
 	if err != nil {
 		log.Errorf("[Chroma] Failed to marshal upload embedding request body: %v", err)
@@ -143,15 +150,34 @@ func (d *ChromaProvider) UploadAnswerAndEmbedding(
 		requestBody,
 		func(statusCode int, responseHeaders http.Header, responseBody []byte) {
 			log.Debugf("[Chroma] statusCode:%d, responseBody:%s", statusCode, string(responseBody))
-			callback(ctx, log, err)
+			if shouldRetryLegacyUpload(statusCode, metadata) {
+				log.Warnf("[Chroma] metadata upload rejected, retrying legacy upload: %d", statusCode)
+				if retryErr := d.UploadAnswerAndEmbedding(queryString, queryEmb, queryAnswer, ctx, log, callback); retryErr != nil {
+					notifyUploadCallback(callback, ctx, log, retryErr)
+				}
+				return
+			}
+			notifyUploadCallback(callback, ctx, log, uploadStatusError("Chroma", statusCode))
 		},
 		d.config.timeout,
 	)
 	return err
 }
 
+func chromaUploadRequestBody(queryEmb []float64, queryString string, queryAnswer string, metadata PayloadMetadata) ([]byte, error) {
+	request := chromaInsertRequest{
+		Embeddings: []chromaEmbedding{queryEmb},
+		IDs:        []string{queryString}, // queryString 指的是用户查询的问题
+		Documents:  []string{queryAnswer}, // queryAnswer 指的是用户查询的问题的答案
+	}
+	if fields := metadata.Fields(); len(fields) > 0 {
+		request.Metadatas = []chromaMetadataMap{chromaMetadataMap(fields)}
+	}
+	return json.Marshal(request)
+}
+
 type chromaEmbedding []float64
-type chromaMetadataMap map[string]string
+type chromaMetadataMap map[string]interface{}
 type chromaInsertRequest struct {
 	Embeddings []chromaEmbedding   `json:"embeddings"`
 	Metadatas  []chromaMetadataMap `json:"metadatas,omitempty"` // 可选参数

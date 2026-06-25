@@ -44,15 +44,10 @@ func (c *qdrantProvider) GetProviderType() string {
 	return PROVIDER_TYPE_QDRANT
 }
 
-type qdrantPayload struct {
-	Question string `json:"question"`
-	Answer   string `json:"answer"`
-}
-
 type qdrantPoint struct {
-	ID      string        `json:"id"`
-	Vector  []float64     `json:"vector"`
-	Payload qdrantPayload `json:"payload"`
+	ID      string                 `json:"id"`
+	Vector  []float64              `json:"vector"`
+	Payload map[string]interface{} `json:"payload"`
 }
 
 type qdrantInsertRequest struct {
@@ -63,6 +58,17 @@ func (d *qdrantProvider) UploadAnswerAndEmbedding(
 	queryString string,
 	queryEmb []float64,
 	queryAnswer string,
+	ctx wrapper.HttpContext,
+	log log.Log,
+	callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
+	return d.UploadAnswerAndEmbeddingWithMetadata(queryString, queryEmb, queryAnswer, PayloadMetadata{}, ctx, log, callback)
+}
+
+func (d *qdrantProvider) UploadAnswerAndEmbeddingWithMetadata(
+	queryString string,
+	queryEmb []float64,
+	queryAnswer string,
+	metadata PayloadMetadata,
 	ctx wrapper.HttpContext,
 	log log.Log,
 	callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
@@ -84,15 +90,7 @@ func (d *qdrantProvider) UploadAnswerAndEmbedding(
 	// 	  }
 	//   ]
 	// }
-	requestBody, err := json.Marshal(qdrantInsertRequest{
-		Points: []qdrantPoint{
-			{
-				ID:      uuid.New().String(),
-				Vector:  queryEmb,
-				Payload: qdrantPayload{Question: queryString, Answer: queryAnswer},
-			},
-		},
-	})
+	requestBody, err := qdrantUploadRequestBody(queryEmb, queryString, queryAnswer, metadata)
 
 	if err != nil {
 		log.Errorf("[Qdrant] Failed to marshal upload embedding request body: %v", err)
@@ -108,10 +106,29 @@ func (d *qdrantProvider) UploadAnswerAndEmbedding(
 		requestBody,
 		func(statusCode int, responseHeaders http.Header, responseBody []byte) {
 			log.Debugf("[Qdrant] statusCode:%d, responseBody:%s", statusCode, string(responseBody))
-			callback(ctx, log, err)
+			if shouldRetryLegacyUpload(statusCode, metadata) {
+				log.Warnf("[Qdrant] metadata upload rejected, retrying legacy upload: %d", statusCode)
+				if retryErr := d.UploadAnswerAndEmbedding(queryString, queryEmb, queryAnswer, ctx, log, callback); retryErr != nil {
+					notifyUploadCallback(callback, ctx, log, retryErr)
+				}
+				return
+			}
+			notifyUploadCallback(callback, ctx, log, uploadStatusError("Qdrant", statusCode))
 		},
 		d.config.timeout,
 	)
+}
+
+func qdrantUploadRequestBody(queryEmb []float64, queryString string, queryAnswer string, metadata PayloadMetadata) ([]byte, error) {
+	return json.Marshal(qdrantInsertRequest{
+		Points: []qdrantPoint{
+			{
+				ID:      uuid.New().String(),
+				Vector:  queryEmb,
+				Payload: mergePayloadMetadataFields(map[string]interface{}{"question": queryString, "answer": queryAnswer}, metadata),
+			},
+		},
+	})
 }
 
 type qdrantQueryRequest struct {

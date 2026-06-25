@@ -424,6 +424,10 @@ func NewStructuredCacheEntryForOpenAIResponse(responseBody []byte, answer string
 }
 
 func NewStructuredCacheEntryForAnswer(answer string, keyMaterial ScopedCacheKeyMaterial) StructuredCacheEntry {
+	semantic := SemanticCacheMetadata{}
+	if keyMaterial.LegacyKey != "" {
+		semantic.TextHash = stableHash(keyMaterial.LegacyKey)
+	}
 	return StructuredCacheEntry{
 		Version: StructuredCacheEntryVersion,
 		Answer: StructuredCacheAnswer{
@@ -436,6 +440,7 @@ func NewStructuredCacheEntryForAnswer(answer string, keyMaterial ScopedCacheKeyM
 		Scope:              keyMaterial.Scope,
 		PolicyVersion:      keyMaterial.PolicyVersion,
 		RequestFingerprint: keyMaterial.RequestFingerprint,
+		Semantic:           semantic,
 	}
 }
 

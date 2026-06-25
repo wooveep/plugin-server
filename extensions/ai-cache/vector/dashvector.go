@@ -184,8 +184,8 @@ func (d *DvProvider) ParseQueryResponse(responseBody []byte, ctx wrapper.HttpCon
 }
 
 type document struct {
-	Vector []float64         `json:"vector"`
-	Fields map[string]string `json:"fields"`
+	Vector []float64              `json:"vector"`
+	Fields map[string]interface{} `json:"fields"`
 }
 
 type insertRequest struct {
@@ -193,14 +193,18 @@ type insertRequest struct {
 }
 
 func (d *DvProvider) constructUploadParameters(emb []float64, queryString string, answer string) (string, []byte, [][2]string, error) {
+	return d.constructUploadParametersWithMetadata(emb, queryString, answer, PayloadMetadata{})
+}
+
+func (d *DvProvider) constructUploadParametersWithMetadata(emb []float64, queryString string, answer string, metadata PayloadMetadata) (string, []byte, [][2]string, error) {
 	url := "/v1/collections/" + d.config.collectionID + "/docs"
 
 	doc := document{
 		Vector: emb,
-		Fields: map[string]string{
+		Fields: mergePayloadMetadataFields(map[string]interface{}{
 			"query":  queryString,
 			"answer": answer,
-		},
+		}, metadata),
 	}
 
 	requestBody, err := json.Marshal(insertRequest{Docs: []document{doc}})
@@ -227,17 +231,18 @@ func (d *DvProvider) UploadEmbedding(queryString string, queryEmb []float64, ctx
 		body,
 		func(statusCode int, responseHeaders http.Header, responseBody []byte) {
 			log.Debugf("statusCode:%d, responseBody:%s", statusCode, string(responseBody))
-			if statusCode != http.StatusOK {
-				err = fmt.Errorf("failed to upload embedding: %d", statusCode)
-			}
-			callback(ctx, log, err)
+			notifyUploadCallback(callback, ctx, log, uploadStatusError("DashVector", statusCode))
 		},
 		d.config.timeout)
 	return err
 }
 
 func (d *DvProvider) UploadAnswerAndEmbedding(queryString string, queryEmb []float64, queryAnswer string, ctx wrapper.HttpContext, log log.Log, callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
-	url, body, headers, err := d.constructUploadParameters(queryEmb, queryString, queryAnswer)
+	return d.UploadAnswerAndEmbeddingWithMetadata(queryString, queryEmb, queryAnswer, PayloadMetadata{}, ctx, log, callback)
+}
+
+func (d *DvProvider) UploadAnswerAndEmbeddingWithMetadata(queryString string, queryEmb []float64, queryAnswer string, metadata PayloadMetadata, ctx wrapper.HttpContext, log log.Log, callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
+	url, body, headers, err := d.constructUploadParametersWithMetadata(queryEmb, queryString, queryAnswer, metadata)
 	if err != nil {
 		return err
 	}
@@ -247,10 +252,14 @@ func (d *DvProvider) UploadAnswerAndEmbedding(queryString string, queryEmb []flo
 		body,
 		func(statusCode int, responseHeaders http.Header, responseBody []byte) {
 			log.Debugf("statusCode:%d, responseBody:%s", statusCode, string(responseBody))
-			if statusCode != http.StatusOK {
-				err = fmt.Errorf("failed to upload embedding: %d", statusCode)
+			if shouldRetryLegacyUpload(statusCode, metadata) {
+				log.Warnf("[DashVector] metadata upload rejected, retrying legacy upload: %d", statusCode)
+				if retryErr := d.UploadAnswerAndEmbedding(queryString, queryEmb, queryAnswer, ctx, log, callback); retryErr != nil {
+					notifyUploadCallback(callback, ctx, log, retryErr)
+				}
+				return
 			}
-			callback(ctx, log, err)
+			notifyUploadCallback(callback, ctx, log, uploadStatusError("DashVector", statusCode))
 		},
 		d.config.timeout)
 	return err

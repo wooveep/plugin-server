@@ -484,6 +484,7 @@ func cacheResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, v
 			log.Errorf("[%s] [cacheResponse] failed to encode structured cache entry, cache_id=%s, error: %v", PLUGIN_NAME, cacheLogID(queryKey), err)
 			return false
 		}
+		ctx.SetContext(CACHE_VECTOR_PAYLOAD_METADATA_CONTEXT_KEY, newVectorPayloadMetadata(queryKey, entry))
 		ctx.SetContext(CACHE_WRITE_PENDING_CONTEXT_KEY, true)
 		if err := activeCacheProvider.Set(queryKey, payload, func(response resp.Value) {
 			if response.Error() != nil {
@@ -527,6 +528,18 @@ func uploadEmbeddingAndAnswer(ctx wrapper.HttpContext, c config.PluginConfig, ke
 	}
 
 	// Attempt to upload answer embedding first
+	if metadata, ok := ctx.GetContext(CACHE_VECTOR_PAYLOAD_METADATA_CONTEXT_KEY).(vector.PayloadMetadata); ok && metadata.CacheEntryKey != "" {
+		if metadataUploader, ok := activeVectorProvider.(vector.AnswerAndEmbeddingMetadataUploader); ok {
+			log.Infof("[%s] uploading answer embedding with cache metadata, cache_id=%s", PLUGIN_NAME, cacheLogID(metadata.CacheEntryKey))
+			err := metadataUploader.UploadAnswerAndEmbeddingWithMetadata(key, emb, value, metadata, ctx, log, nil)
+			if err != nil {
+				log.Warnf("[%s] [uploadEmbeddingAndAnswer] failed to upload answer embedding with cache metadata, cache_id=%s, error: %v", PLUGIN_NAME, cacheLogID(metadata.CacheEntryKey), err)
+			} else {
+				return
+			}
+		}
+	}
+
 	if ansEmbUploader, ok := activeVectorProvider.(vector.AnswerAndEmbeddingUploader); ok {
 		log.Infof("[%s] uploading answer embedding, cache_id=%s", PLUGIN_NAME, cacheLogID(key))
 		err := ansEmbUploader.UploadAnswerAndEmbedding(key, emb, value, ctx, log, nil)
@@ -544,6 +557,38 @@ func uploadEmbeddingAndAnswer(ctx wrapper.HttpContext, c config.PluginConfig, ke
 		if err != nil {
 			log.Warnf("[%s] [uploadEmbeddingAndAnswer] failed to upload embedding, cache_id=%s, error: %v", PLUGIN_NAME, cacheLogID(key), err)
 		}
+	}
+}
+
+func newVectorPayloadMetadata(cacheEntryKey string, entry StructuredCacheEntry) vector.PayloadMetadata {
+	model := normalizeOr(entry.Model, entry.Provider.Model)
+	providerModel := normalizeOr(entry.Provider.Model, model)
+	return vector.PayloadMetadata{
+		CacheEntryKey: cacheEntryKey,
+		Scope: vector.PayloadScope{
+			Type:     entry.Scope.Type,
+			Tenant:   entry.Scope.Tenant,
+			Consumer: entry.Scope.Consumer,
+		},
+		Route: vector.PayloadRoute{
+			ID:      entry.Route.ID,
+			Name:    entry.Route.Name,
+			APIName: entry.Route.APIName,
+		},
+		Provider: vector.PayloadProvider{
+			Name:  entry.Provider.Name,
+			Model: providerModel,
+		},
+		Model:         model,
+		PolicyVersion: entry.PolicyVersion,
+		RequestFingerprint: vector.PayloadRequestFingerprint{
+			Hash: entry.RequestFingerprint.Hash,
+		},
+		Semantic: vector.PayloadSemantic{
+			TextHash: entry.Semantic.TextHash,
+		},
+		SoftExpiresAt: entry.SoftExpiresAt,
+		HardExpiresAt: entry.HardExpiresAt,
 	}
 }
 

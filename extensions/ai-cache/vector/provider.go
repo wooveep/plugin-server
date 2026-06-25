@@ -2,6 +2,7 @@ package vector
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -74,12 +75,135 @@ type AnswerAndEmbeddingUploader interface {
 		callback func(ctx wrapper.HttpContext, log log.Log, err error)) error
 }
 
+type AnswerAndEmbeddingMetadataUploader interface {
+	UploadAnswerAndEmbeddingWithMetadata(
+		queryString string,
+		queryEmb []float64,
+		answer string,
+		metadata PayloadMetadata,
+		ctx wrapper.HttpContext,
+		log log.Log,
+		callback func(ctx wrapper.HttpContext, log log.Log, err error)) error
+}
+
 type StringQuerier interface {
 	QueryString(
 		queryString string,
 		ctx wrapper.HttpContext,
 		log log.Log,
 		callback func(results []QueryResult, ctx wrapper.HttpContext, log log.Log, err error)) error
+}
+
+type PayloadMetadata struct {
+	CacheEntryKey      string
+	Scope              PayloadScope
+	Route              PayloadRoute
+	Provider           PayloadProvider
+	Model              string
+	PolicyVersion      string
+	RequestFingerprint PayloadRequestFingerprint
+	Semantic           PayloadSemantic
+	SoftExpiresAt      int64
+	HardExpiresAt      int64
+}
+
+type PayloadScope struct {
+	Type     string
+	Tenant   string
+	Consumer string
+}
+
+type PayloadRoute struct {
+	ID      string
+	Name    string
+	APIName string
+}
+
+type PayloadProvider struct {
+	Name  string
+	Model string
+}
+
+type PayloadRequestFingerprint struct {
+	Hash string
+}
+
+type PayloadSemantic struct {
+	TextHash string
+}
+
+func (m PayloadMetadata) Fields() map[string]interface{} {
+	fields := make(map[string]interface{})
+	if !m.HasMetadata() {
+		return fields
+	}
+	putString(fields, "cache_entry_key", m.CacheEntryKey)
+	putString(fields, "scope_type", m.Scope.Type)
+	putString(fields, "scope_tenant", m.Scope.Tenant)
+	putString(fields, "scope_consumer", m.Scope.Consumer)
+	putString(fields, "route_id", m.Route.ID)
+	putString(fields, "route_name", m.Route.Name)
+	putString(fields, "route_api_name", m.Route.APIName)
+	putString(fields, "provider_name", m.Provider.Name)
+	putString(fields, "provider_model", m.Provider.Model)
+	putString(fields, "model", m.Model)
+	putString(fields, "policy_version", m.PolicyVersion)
+	putString(fields, "request_fingerprint_hash", m.RequestFingerprint.Hash)
+	putString(fields, "semantic_text_hash", m.Semantic.TextHash)
+	fields["soft_expires_at"] = m.SoftExpiresAt
+	fields["hard_expires_at"] = m.HardExpiresAt
+	return fields
+}
+
+func (m PayloadMetadata) HasMetadata() bool {
+	return m.CacheEntryKey != "" ||
+		m.Scope.Type != "" ||
+		m.Scope.Tenant != "" ||
+		m.Scope.Consumer != "" ||
+		m.Route.ID != "" ||
+		m.Route.Name != "" ||
+		m.Route.APIName != "" ||
+		m.Provider.Name != "" ||
+		m.Provider.Model != "" ||
+		m.Model != "" ||
+		m.PolicyVersion != "" ||
+		m.RequestFingerprint.Hash != "" ||
+		m.Semantic.TextHash != "" ||
+		m.SoftExpiresAt != 0 ||
+		m.HardExpiresAt != 0
+}
+
+func putString(fields map[string]interface{}, key string, value string) {
+	if value != "" {
+		fields[key] = value
+	}
+}
+
+func mergePayloadMetadataFields(fields map[string]interface{}, metadata PayloadMetadata) map[string]interface{} {
+	if fields == nil {
+		fields = make(map[string]interface{})
+	}
+	for key, value := range metadata.Fields() {
+		fields[key] = value
+	}
+	return fields
+}
+
+func uploadStatusError(provider string, statusCode int) error {
+	if statusCode >= 200 && statusCode < 300 {
+		return nil
+	}
+	return fmt.Errorf("[%s] failed to upload embedding: %d", provider, statusCode)
+}
+
+func shouldRetryLegacyUpload(statusCode int, metadata PayloadMetadata) bool {
+	return metadata.HasMetadata() && (statusCode < 200 || statusCode >= 300)
+}
+
+func notifyUploadCallback(callback func(ctx wrapper.HttpContext, log log.Log, err error), ctx wrapper.HttpContext, log log.Log, err error) {
+	if callback != nil {
+		callback(ctx, log, err)
+	}
 }
 
 type ProviderConfig struct {

@@ -44,20 +44,29 @@ func (c *milvusProvider) GetProviderType() string {
 }
 
 type milvusData struct {
-	Vector   []float64 `json:"vector"`
-	Question string    `json:"question,omitempty"`
-	Answer   string    `json:"answer,omitempty"`
+	Vector []float64 `json:"vector"`
 }
 
 type milvusInsertRequest struct {
-	CollectionName string       `json:"collectionName"`
-	Data           []milvusData `json:"data"`
+	CollectionName string                   `json:"collectionName"`
+	Data           []map[string]interface{} `json:"data"`
 }
 
 func (d *milvusProvider) UploadAnswerAndEmbedding(
 	queryString string,
 	queryEmb []float64,
 	queryAnswer string,
+	ctx wrapper.HttpContext,
+	log log.Log,
+	callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
+	return d.UploadAnswerAndEmbeddingWithMetadata(queryString, queryEmb, queryAnswer, PayloadMetadata{}, ctx, log, callback)
+}
+
+func (d *milvusProvider) UploadAnswerAndEmbeddingWithMetadata(
+	queryString string,
+	queryEmb []float64,
+	queryAnswer string,
+	metadata PayloadMetadata,
 	ctx wrapper.HttpContext,
 	log log.Log,
 	callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
@@ -79,16 +88,7 @@ func (d *milvusProvider) UploadAnswerAndEmbedding(
 	// 	  }
 	//   ]
 	// }
-	requestBody, err := json.Marshal(milvusInsertRequest{
-		CollectionName: d.config.collectionID,
-		Data: []milvusData{
-			{
-				Question: queryString,
-				Answer:   queryAnswer,
-				Vector:   queryEmb,
-			},
-		},
-	})
+	requestBody, err := milvusUploadRequestBody(d.config.collectionID, queryEmb, queryString, queryAnswer, metadata)
 
 	if err != nil {
 		log.Errorf("[Milvus] Failed to marshal upload embedding request body: %v", err)
@@ -104,10 +104,30 @@ func (d *milvusProvider) UploadAnswerAndEmbedding(
 		requestBody,
 		func(statusCode int, responseHeaders http.Header, responseBody []byte) {
 			log.Debugf("[Milvus] statusCode:%d, responseBody:%s", statusCode, string(responseBody))
-			callback(ctx, log, err)
+			if shouldRetryLegacyUpload(statusCode, metadata) {
+				log.Warnf("[Milvus] metadata upload rejected, retrying legacy upload: %d", statusCode)
+				if retryErr := d.UploadAnswerAndEmbedding(queryString, queryEmb, queryAnswer, ctx, log, callback); retryErr != nil {
+					notifyUploadCallback(callback, ctx, log, retryErr)
+				}
+				return
+			}
+			notifyUploadCallback(callback, ctx, log, uploadStatusError("Milvus", statusCode))
 		},
 		d.config.timeout,
 	)
+}
+
+func milvusUploadRequestBody(collectionID string, queryEmb []float64, queryString string, queryAnswer string, metadata PayloadMetadata) ([]byte, error) {
+	return json.Marshal(milvusInsertRequest{
+		CollectionName: collectionID,
+		Data: []map[string]interface{}{
+			mergePayloadMetadataFields(map[string]interface{}{
+				"question": queryString,
+				"answer":   queryAnswer,
+				"vector":   queryEmb,
+			}, metadata),
+		},
+	})
 }
 
 type milvusQueryRequest struct {

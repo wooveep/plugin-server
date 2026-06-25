@@ -112,14 +112,21 @@ func (d *WeaviateProvider) UploadAnswerAndEmbedding(
 	ctx wrapper.HttpContext,
 	log log.Log,
 	callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
+	return d.UploadAnswerAndEmbeddingWithMetadata(queryString, queryEmb, queryAnswer, PayloadMetadata{}, ctx, log, callback)
+}
+
+func (d *WeaviateProvider) UploadAnswerAndEmbeddingWithMetadata(
+	queryString string,
+	queryEmb []float64,
+	queryAnswer string,
+	metadata PayloadMetadata,
+	ctx wrapper.HttpContext,
+	log log.Log,
+	callback func(ctx wrapper.HttpContext, log log.Log, err error)) error {
 	// 最少需要填写的参数为 class, vector 和 question 和 answer
 	// 下面是一个例子
 	// {"class": "Higress", "vector": [0.1, 0.2, 0.3], "properties": {"question": "这里是问题", "answer": "这里是答案"}}
-	requestBody, err := json.Marshal(weaviateInsertRequest{
-		Class:      d.config.collectionID,
-		Vector:     queryEmb,
-		Properties: weaviateProperties{Question: queryString, Answer: queryAnswer}, // queryString 指的是用户查询的问题
-	})
+	requestBody, err := weaviateUploadRequestBody(d.config.collectionID, queryEmb, queryString, queryAnswer, metadata)
 
 	if err != nil {
 		log.Errorf("[Weaviate] Failed to marshal upload embedding request body: %v", err)
@@ -135,21 +142,31 @@ func (d *WeaviateProvider) UploadAnswerAndEmbedding(
 		requestBody,
 		func(statusCode int, responseHeaders http.Header, responseBody []byte) {
 			log.Debugf("[Weaviate] statusCode: %d, responseBody: %s", statusCode, string(responseBody))
-			callback(ctx, log, err)
+			if shouldRetryLegacyUpload(statusCode, metadata) {
+				log.Warnf("[Weaviate] metadata upload rejected, retrying legacy upload: %d", statusCode)
+				if retryErr := d.UploadAnswerAndEmbedding(queryString, queryEmb, queryAnswer, ctx, log, callback); retryErr != nil {
+					notifyUploadCallback(callback, ctx, log, retryErr)
+				}
+				return
+			}
+			notifyUploadCallback(callback, ctx, log, uploadStatusError("Weaviate", statusCode))
 		},
 		d.config.timeout,
 	)
 }
 
-type weaviateProperties struct {
-	Question string `json:"question"`
-	Answer   string `json:"answer"`
+func weaviateUploadRequestBody(collectionID string, queryEmb []float64, queryString string, queryAnswer string, metadata PayloadMetadata) ([]byte, error) {
+	return json.Marshal(weaviateInsertRequest{
+		Class:      collectionID,
+		Vector:     queryEmb,
+		Properties: mergePayloadMetadataFields(map[string]interface{}{"question": queryString, "answer": queryAnswer}, metadata), // queryString 指的是用户查询的问题
+	})
 }
 
 type weaviateInsertRequest struct {
-	Class      string             `json:"class"`
-	Vector     []float64          `json:"vector"`
-	Properties weaviateProperties `json:"properties"`
+	Class      string                 `json:"class"`
+	Vector     []float64              `json:"vector"`
+	Properties map[string]interface{} `json:"properties"`
 }
 
 type weaviateQueryRequest struct {
