@@ -243,6 +243,27 @@ func (c *PluginConfig) GetCacheProvider() cache.Provider {
 	return c.cacheProvider
 }
 
+func (c *PluginConfig) CacheHardTTLSeconds() int {
+	if c.cacheProviderConfig == nil || c.cacheProviderConfig.GetProviderType() == "" {
+		return 0
+	}
+	return c.cacheProviderConfig.GetCacheTTL()
+}
+
+func (c *PluginConfig) CacheSoftTTLSeconds() int {
+	if c.cacheProviderConfig == nil || c.cacheProviderConfig.GetProviderType() == "" {
+		return 0
+	}
+	return c.cacheProviderConfig.GetCacheSoftTTL()
+}
+
+func (c *PluginConfig) StaleWhileRevalidateEnabled() bool {
+	if c.cacheProviderConfig == nil || c.cacheProviderConfig.GetProviderType() == "" {
+		return false
+	}
+	return c.cacheProviderConfig.StaleWhileRevalidateEnabled()
+}
+
 func convertLegacyMapFields(c *PluginConfig, json gjson.Result, log log.Log) {
 	keyMap := map[string]string{
 		"cacheKeyFrom.requestBody":         "cacheKeyFrom",

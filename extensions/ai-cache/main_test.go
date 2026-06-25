@@ -194,6 +194,20 @@ var invalidCacheScopeConfig = func() json.RawMessage {
 	return data
 }()
 
+var invalidCacheSoftTTLConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"cache": map[string]interface{}{
+			"type":         "redis",
+			"serviceName":  "redis.static",
+			"servicePort":  6379,
+			"cacheTTL":     0,
+			"cacheSoftTTL": 60,
+		},
+		"provider": "dashscope",
+	})
+	return data
+}()
+
 // 测试配置：缺少必需字段
 var missingRequiredFieldsConfig = func() json.RawMessage {
 	data, _ := json.Marshal(map[string]interface{}{
@@ -268,6 +282,9 @@ func TestParseConfig(t *testing.T) {
 			require.Equal(t, "x-mse-tenant", config.TenantHeader)
 			require.Equal(t, "x-mse-consumer", config.ConsumerHeader)
 			require.Equal(t, "v1", config.CachePolicyVersion)
+			require.Equal(t, 3600, config.CacheHardTTLSeconds())
+			require.Equal(t, 3600, config.CacheSoftTTLSeconds())
+			require.False(t, config.StaleWhileRevalidateEnabled())
 
 			// 验证响应模板
 			require.Contains(t, config.ResponseTemplate, "from-cache")
@@ -325,6 +342,9 @@ func TestParseConfig(t *testing.T) {
 			require.Equal(t, "x-mse-tenant", config.TenantHeader)
 			require.Equal(t, "x-mse-consumer", config.ConsumerHeader)
 			require.Equal(t, "v1", config.CachePolicyVersion)
+			require.Equal(t, 3600, config.CacheHardTTLSeconds())
+			require.Equal(t, 3600, config.CacheSoftTTLSeconds())
+			require.False(t, config.StaleWhileRevalidateEnabled())
 			require.False(t, config.EnableSemanticCache)
 		})
 
@@ -415,6 +435,8 @@ func TestParseConfig(t *testing.T) {
 			// 验证缓存键策略
 			require.Equal(t, "lastQuestion", config.CacheKeyStrategy)
 			require.Equal(t, "messages.@reverse.0.content", config.CacheKeyFrom)
+			require.Equal(t, 7200, config.CacheHardTTLSeconds())
+			require.Equal(t, 7200, config.CacheSoftTTLSeconds())
 		})
 
 		t.Run("scoped cache config", func(t *testing.T) {
@@ -452,6 +474,12 @@ func TestParseConfig(t *testing.T) {
 
 		t.Run("invalid cache scope", func(t *testing.T) {
 			host, status := test.NewTestHost(invalidCacheScopeConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusFailed, status)
+		})
+
+		t.Run("invalid cache soft ttl without hard ttl", func(t *testing.T) {
+			host, status := test.NewTestHost(invalidCacheSoftTTLConfig)
 			defer host.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, status)
 		})
@@ -1560,6 +1588,9 @@ data: [DONE]`,
 			require.Contains(t, setQuery, `"usage":{"prompt_tokens":16,"completion_tokens":9,"total_tokens":25,"prompt_tokens_details":{"cached_tokens":0}}`)
 			require.Contains(t, setQuery, `"finish_reason":"stop"`)
 			require.Contains(t, setQuery, "今天北京天气晴朗，温度25度")
+			require.NotContains(t, setQuery, `"created_at":0`)
+			require.NotContains(t, setQuery, `"soft_expires_at":0`)
+			require.NotContains(t, setQuery, `"hard_expires_at":0`)
 
 			// 模拟Redis存储操作
 			storeResp := test.CreateRedisRespArray([]interface{}{"OK"})

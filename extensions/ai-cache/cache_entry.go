@@ -12,11 +12,16 @@ import (
 const StructuredCacheEntryVersion = 1
 
 type RedisCacheEntryKind string
+type StructuredCacheFreshness string
 
 const (
 	RedisCacheEntryKindStructured RedisCacheEntryKind = "structured"
 	RedisCacheEntryKindLegacy     RedisCacheEntryKind = "legacy"
 	RedisCacheEntryKindEmpty      RedisCacheEntryKind = "empty"
+
+	StructuredCacheFreshnessFresh   StructuredCacheFreshness = "fresh"
+	StructuredCacheFreshnessStale   StructuredCacheFreshness = "stale"
+	StructuredCacheFreshnessExpired StructuredCacheFreshness = "expired"
 )
 
 type RedisCacheEntryPayload struct {
@@ -432,6 +437,36 @@ func NewStructuredCacheEntryForAnswer(answer string, keyMaterial ScopedCacheKeyM
 		PolicyVersion:      keyMaterial.PolicyVersion,
 		RequestFingerprint: keyMaterial.RequestFingerprint,
 	}
+}
+
+func ApplyStructuredCacheEntryExpiry(entry *StructuredCacheEntry, nowUnix int64, softTTLSeconds int, hardTTLSeconds int) {
+	if entry == nil || nowUnix <= 0 {
+		return
+	}
+	entry.CreatedAt = nowUnix
+	if hardTTLSeconds > 0 {
+		entry.HardExpiresAt = nowUnix + int64(hardTTLSeconds)
+	}
+	if softTTLSeconds > 0 {
+		softExpiresAt := nowUnix + int64(softTTLSeconds)
+		if entry.HardExpiresAt > 0 && softExpiresAt > entry.HardExpiresAt {
+			softExpiresAt = entry.HardExpiresAt
+		}
+		entry.SoftExpiresAt = softExpiresAt
+	}
+}
+
+func StructuredCacheEntryFreshnessAt(entry StructuredCacheEntry, nowUnix int64) StructuredCacheFreshness {
+	if nowUnix <= 0 {
+		return StructuredCacheFreshnessFresh
+	}
+	if entry.HardExpiresAt > 0 && nowUnix >= entry.HardExpiresAt {
+		return StructuredCacheFreshnessExpired
+	}
+	if entry.SoftExpiresAt > 0 && nowUnix >= entry.SoftExpiresAt {
+		return StructuredCacheFreshnessStale
+	}
+	return StructuredCacheFreshnessFresh
 }
 
 type StructuredCacheEntry struct {

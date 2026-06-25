@@ -67,6 +67,23 @@ func TestStructuredCacheEntryJSONContract(t *testing.T) {
 	require.NotContains(t, string(encoded), "from-cache")
 }
 
+func TestStructuredCacheEntryExpiryHelpers(t *testing.T) {
+	entry := StructuredCacheEntry{}
+	ApplyStructuredCacheEntryExpiry(&entry, 1000, 300, 600)
+	require.Equal(t, int64(1000), entry.CreatedAt)
+	require.Equal(t, int64(1300), entry.SoftExpiresAt)
+	require.Equal(t, int64(1600), entry.HardExpiresAt)
+
+	require.Equal(t, StructuredCacheFreshnessFresh, StructuredCacheEntryFreshnessAt(entry, 1299))
+	require.Equal(t, StructuredCacheFreshnessStale, StructuredCacheEntryFreshnessAt(entry, 1300))
+	require.Equal(t, StructuredCacheFreshnessExpired, StructuredCacheEntryFreshnessAt(entry, 1600))
+
+	entry = StructuredCacheEntry{}
+	ApplyStructuredCacheEntryExpiry(&entry, 1000, 700, 600)
+	require.Equal(t, int64(1600), entry.SoftExpiresAt)
+	require.Equal(t, int64(1600), entry.HardExpiresAt)
+}
+
 func TestDecodeRedisCacheEntryPayloadClassifiesStructuredEntry(t *testing.T) {
 	payload := `{
 		"version":1,

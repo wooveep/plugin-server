@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	PROVIDER_TYPE_REDIS  = "redis"
-	DEFAULT_CACHE_PREFIX = "higress-ai-cache:"
+	PROVIDER_TYPE_REDIS       = "redis"
+	DEFAULT_CACHE_PREFIX      = "higress-ai-cache:"
+	DEFAULT_CACHE_TTL_SECONDS = 3600
 )
 
 type providerInitializer interface {
@@ -48,8 +49,14 @@ type ProviderConfig struct {
 	// @Description zh-CN 请求缓存服务的超时时间，单位为毫秒。默认值是10000，即10秒
 	timeout uint32
 	// @Title zh-CN 缓存过期时间
-	// @Description zh-CN 缓存过期时间，单位为秒。默认值是0，即永不过期
+	// @Description zh-CN 缓存过期时间，单位为秒。默认值是3600
 	cacheTTL int
+	// @Title zh-CN 缓存软过期时间
+	// @Description zh-CN 缓存软过期时间，单位为秒。默认值等于cacheTTL
+	cacheSoftTTL int
+	// @Title zh-CN 是否允许软过期缓存回放
+	// @Description zh-CN 开启后，soft_expires_at之后、hard_expires_at之前的结构化条目可以作为陈旧缓存回放
+	staleWhileRevalidate bool
 	// @Title 缓存 Key 前缀
 	// @Description 缓存 Key 的前缀，默认值为 "higressAiCache:"
 	cacheKeyPrefix string
@@ -90,9 +97,13 @@ func (c *ProviderConfig) FromJson(json gjson.Result) {
 	}
 	c.cacheTTL = int(json.Get("cacheTTL").Int())
 	if !json.Get("cacheTTL").Exists() {
-		c.cacheTTL = 0
-		// c.cacheTTL = 3600000
+		c.cacheTTL = DEFAULT_CACHE_TTL_SECONDS
 	}
+	c.cacheSoftTTL = int(json.Get("cacheSoftTTL").Int())
+	if !json.Get("cacheSoftTTL").Exists() {
+		c.cacheSoftTTL = c.cacheTTL
+	}
+	c.staleWhileRevalidate = json.Get("staleWhileRevalidate").Bool()
 	if json.Get("cacheKeyPrefix").Exists() {
 		c.cacheKeyPrefix = json.Get("cacheKeyPrefix").String()
 	} else {
@@ -106,6 +117,15 @@ func (c *ProviderConfig) ConvertLegacyJson(json gjson.Result) {
 	c.typ = "redis"
 	if json.Get("cacheTTL").Exists() {
 		c.cacheTTL = int(json.Get("cacheTTL").Int())
+		if !json.Get("cacheSoftTTL").Exists() {
+			c.cacheSoftTTL = c.cacheTTL
+		}
+	}
+	if json.Get("cacheSoftTTL").Exists() {
+		c.cacheSoftTTL = int(json.Get("cacheSoftTTL").Int())
+	}
+	if json.Get("staleWhileRevalidate").Exists() {
+		c.staleWhileRevalidate = json.Get("staleWhileRevalidate").Bool()
 	}
 }
 
@@ -118,6 +138,12 @@ func (c *ProviderConfig) Validate() error {
 	}
 	if c.cacheTTL < 0 {
 		return errors.New("cache TTL must be greater than or equal to 0")
+	}
+	if c.cacheSoftTTL < 0 {
+		return errors.New("cache soft TTL must be greater than or equal to 0")
+	}
+	if c.cacheSoftTTL > c.cacheTTL {
+		return errors.New("cache soft TTL must be less than or equal to cache TTL")
 	}
 	initializer, has := providerInitializers[c.typ]
 	if !has {
@@ -135,6 +161,18 @@ func CreateProvider(pc ProviderConfig, log log.Log) (Provider, error) {
 		return nil, errors.New("unknown provider type: " + pc.typ)
 	}
 	return initializer.CreateProvider(pc, log)
+}
+
+func (c ProviderConfig) GetCacheTTL() int {
+	return c.cacheTTL
+}
+
+func (c ProviderConfig) GetCacheSoftTTL() int {
+	return c.cacheSoftTTL
+}
+
+func (c ProviderConfig) StaleWhileRevalidateEnabled() bool {
+	return c.staleWhileRevalidate
 }
 
 type Provider interface {

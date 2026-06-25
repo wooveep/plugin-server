@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-cache/config"
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-cache/vector"
@@ -89,7 +90,20 @@ func handleCacheHitResponse(key string, response resp.Value, ctx wrapper.HttpCon
 		return true
 	}
 	if decoded.IsAuthoritative() {
-		log.Infof("[%s] structured cache hit for key: %s", PLUGIN_NAME, key)
+		freshness := StructuredCacheEntryFreshnessAt(*decoded.StructuredEntry, time.Now().Unix())
+		if freshness == StructuredCacheFreshnessExpired {
+			log.Infof("[%s] structured cache entry expired for key: %s", PLUGIN_NAME, key)
+			return false
+		}
+		if freshness == StructuredCacheFreshnessStale && !c.StaleWhileRevalidateEnabled() {
+			log.Infof("[%s] structured cache entry stale for key: %s", PLUGIN_NAME, key)
+			return false
+		}
+		if freshness == StructuredCacheFreshnessStale {
+			log.Infof("[%s] stale structured cache hit for key: %s", PLUGIN_NAME, key)
+		} else {
+			log.Infof("[%s] structured cache hit for key: %s", PLUGIN_NAME, key)
+		}
 		if !stream {
 			processStructuredCacheHit(key, *decoded.StructuredEntry, ctx, log)
 			return true
@@ -344,6 +358,7 @@ func cacheResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, v
 			entry = NewStructuredCacheEntryForOpenAIStreamingResponse(streamFacts, value, keyMaterial)
 			ctx.SetContext(CACHE_STREAM_FACTS_CONTEXT_KEY, nil)
 		}
+		ApplyStructuredCacheEntryExpiry(&entry, time.Now().Unix(), c.CacheSoftTTLSeconds(), c.CacheHardTTLSeconds())
 		payload, err := EncodeRedisCacheEntryPayload(entry)
 		if err != nil {
 			log.Errorf("[%s] [cacheResponse] failed to encode structured cache entry for key: %s, error: %v", PLUGIN_NAME, key, err)

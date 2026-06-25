@@ -85,7 +85,9 @@ LLM 结果缓存插件，默认配置方式可以直接用于 openai 协议的�
 | cache.username | string | optional | - | 缓存服务用户名 |
 | cache.password | string | optional | - | 缓存服务密码 |
 | cache.timeout | uint32 | optional | 10000 | 缓存服务的超时时间，单位为毫秒。默认值是10000，即10秒 |
-| cache.cacheTTL | int | optional | 0 | 缓存过期时间，单位为秒。默认值是 0，即永不过期 |
+| cache.cacheTTL | int | optional | 3600 | 缓存硬过期时间，单位为秒 |
+| cache.cacheSoftTTL | int | optional | 3600 | 缓存软过期时间，单位为秒；不得大于 cache.cacheTTL |
+| cache.staleWhileRevalidate | bool | optional | false | 是否允许软过期后、硬过期前的结构化缓存作为陈旧缓存回放 |
 | cache.cacheKeyPrefix | string | optional | "higress-ai-cache:" | 缓存 Key 的前缀 |
 | cache.database | int | optional | 0 | 使用的数据库id，仅限redis，例如配置为1，对应`SELECT 1` |
 

@@ -80,7 +80,9 @@ If you do not configure a related component, you can ignore the `required` field
 | cache.username | string | optional | - | Cache service username |
 | cache.password | string | optional | - | Cache service password |
 | cache.timeout | uint32 | optional | 10000 | Cache service timeout, in milliseconds. Default is 10000 (10 seconds) |
-| cache.cacheTTL | int | optional | 0 | Cache expiration time, in seconds. Default is 0 (never expire) |
+| cache.cacheTTL | int | optional | 3600 | Hard cache expiration time, in seconds |
+| cache.cacheSoftTTL | int | optional | 3600 | Soft cache expiration time, in seconds; must be less than or equal to cache.cacheTTL |
+| cache.staleWhileRevalidate | bool | optional | false | Whether structured cache entries may replay as stale after soft expiry and before hard expiry |
 | cache.cacheKeyPrefix | string | optional | "higress-ai-cache:" | Prefix for cache keys |
 | cache.database | int | optional | 0 | Database ID to use, only for Redis. For example, configure as 1 for `SELECT 1` |
 
