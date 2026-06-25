@@ -266,7 +266,7 @@ func handleQueryResults(key string, results []vector.QueryResult, ctx wrapper.Ht
 		log.Infof("[%s] key accepted: %s with score: %f", PLUGIN_NAME, mostSimilarData.Text, mostSimilarData.Score)
 		if mostSimilarData.Answer != "" {
 			// direct return the answer if available
-			cacheResponse(ctx, c, key, mostSimilarData.Answer, log)
+			cacheCompatibilityResponse(ctx, c, key, mostSimilarData.Answer, log)
 			processCacheHit(key, mostSimilarData.Answer, stream, ctx, c, log)
 		} else {
 			if c.GetCacheProvider() != nil {
@@ -299,6 +299,26 @@ func handleInternalError(err error, message string, log logs.Log) {
 	}
 	// proxywasm.SendHttpResponse(500, [][2]string{{"content-type", "text/plain"}}, []byte("Internal Server Error"), -1)
 	proxywasm.ResumeHttpRequest()
+}
+
+// Caches non-authoritative compatibility values that cannot provide structured usage/model facts.
+func cacheCompatibilityResponse(ctx wrapper.HttpContext, c config.PluginConfig, key string, value string, log logs.Log) {
+	if strings.TrimSpace(value) == "" {
+		log.Warnf("[%s] [cacheCompatibilityResponse] cached value for key %s is empty", PLUGIN_NAME, key)
+		return
+	}
+
+	activeCacheProvider := c.GetCacheProvider()
+	if activeCacheProvider != nil {
+		keyMaterial := ScopedCacheKeyMaterialForLookup(ctx, c, key)
+		if !keyMaterial.Valid {
+			log.Warnf("[%s] [cacheCompatibilityResponse] skip cache write for key: %s, reason: %s", PLUGIN_NAME, key, keyMaterial.BypassReason)
+			return
+		}
+		queryKey := activeCacheProvider.GetCacheKeyPrefix() + keyMaterial.EntryKey
+		_ = activeCacheProvider.Set(queryKey, value, nil)
+		log.Debugf("[%s] [cacheCompatibilityResponse] compatibility cache set success, key: %s, length of value: %d", PLUGIN_NAME, queryKey, len(value))
+	}
 }
 
 // Caches the response value

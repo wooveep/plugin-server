@@ -1404,6 +1404,22 @@ func TestExternalServiceCalls(t *testing.T) {
 				{":status", "200"},
 			}, []byte(vectorQueryResponse))
 
+			redisCalls := host.GetRedisCalloutAttributes()
+			require.GreaterOrEqual(t, len(redisCalls), 1,
+				"expected a compatibility SET redis callout after accepted vector answer, got %d", len(redisCalls))
+			setQuery := string(redisCalls[len(redisCalls)-1].Query)
+			require.Contains(t, setQuery, "higress-ai-cache:{aiscope:")
+			require.Contains(t, setQuery, "今天北京天气晴朗，温度25度，湿度60%")
+			require.NotContains(t, setQuery, `"version":1`,
+				"vector answer payloads are not authoritative structured cache entries")
+			require.NotContains(t, setQuery, `"usage"`,
+				"vector answer payloads must not synthesize zero-usage structured entries")
+
+			localResponse := host.GetLocalResponse()
+			require.NotNil(t, localResponse)
+			require.Contains(t, string(localResponse.Data), "from-cache")
+			host.CallOnRedisCall(0, test.CreateRedisRespString("OK"))
+
 			// 完成HTTP请求
 			host.CompleteHttp()
 		})
