@@ -412,19 +412,26 @@ func captureInternalCostAttribution(ctx wrapper.HttpContext) bool {
 		return false
 	}
 	var costSourceHeader, workerKindHeader string
-	var costSourcePresent, workerKindPresent bool
+	var costSourceCount, workerKindCount int
 	for _, header := range headers {
 		switch strings.ToLower(header[0]) {
 		case internalCostSourceHeader:
-			costSourceHeader = header[1]
-			costSourcePresent = true
+			costSourceCount++
+			if costSourceCount == 1 {
+				costSourceHeader = header[1]
+			}
 		case internalCostWorkerKindHeader:
-			workerKindHeader = header[1]
-			workerKindPresent = true
+			workerKindCount++
+			if workerKindCount == 1 {
+				workerKindHeader = header[1]
+			}
 		}
 	}
-	if !costSourcePresent && !workerKindPresent {
+	if costSourceCount == 0 && workerKindCount == 0 {
 		return true
+	}
+	if costSourceCount != 1 || workerKindCount != 1 {
+		return false
 	}
 	costSource, sourceValid := internalAttributionValue(costSourceHeader)
 	workerKind, workerValid := internalAttributionValue(workerKindHeader)

@@ -590,6 +590,76 @@ func TestBillingEventDelivery(t *testing.T) {
 			}
 		})
 
+		t.Run("duplicate internal attribution headers suppress delivery", func(t *testing.T) {
+			config := mustBillingConfig(t, map[string]interface{}{
+				"event_kind":    eventKindInternalCost,
+				"cost_source":   "internal",
+				"worker_kind":   "internal",
+				"bill_customer": false,
+				"redis_stream": map[string]interface{}{
+					"service_name": "redis.static",
+					"service_port": 6379,
+					"timeout":      750,
+				},
+				"enable_path_suffixes": []string{"/v1/chat/completions"},
+			})
+			cases := []struct {
+				name    string
+				headers [][2]string
+			}{
+				{
+					name: "source whitespace followed by valid source",
+					headers: [][2]string{
+						{"x-ai-billing-cost-source", " "},
+						{"x-ai-billing-cost-source", "ai-memory.digest"},
+						{"x-ai-billing-worker-kind", "digest"},
+					},
+				},
+				{
+					name: "worker whitespace followed by valid worker",
+					headers: [][2]string{
+						{"x-ai-billing-cost-source", "ai-memory.digest"},
+						{"x-ai-billing-worker-kind", " "},
+						{"x-ai-billing-worker-kind", "digest"},
+					},
+				},
+				{
+					name: "two valid source values",
+					headers: [][2]string{
+						{"x-ai-billing-cost-source", "ai-memory.digest"},
+						{"x-ai-billing-cost-source", "ai-memory.extraction"},
+						{"x-ai-billing-worker-kind", "digest"},
+					},
+				},
+			}
+
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					host, status := test.NewTestHost(config)
+					defer host.Reset()
+					require.Equal(t, types.OnPluginStartStatusOK, status)
+
+					headers := append([][2]string{
+						{":authority", "internal.example.com"},
+						{":path", "/v1/chat/completions"},
+						{":method", "POST"},
+					}, tc.headers...)
+					action := host.CallOnHttpRequestHeaders(headers)
+					require.Equal(t, types.ActionContinue, action)
+					action = host.CallOnHttpResponseHeaders([][2]string{
+						{":status", "200"},
+						{"content-type", "application/json"},
+					})
+					require.Equal(t, types.ActionContinue, action)
+					action = host.CallOnHttpResponseBody([]byte(`{"model":"deepseek-v4-flash","usage":{"prompt_tokens":5,"completion_tokens":8,"total_tokens":13}}`))
+					require.Equal(t, types.ActionContinue, action)
+
+					require.Empty(t, host.GetRedisCalloutAttributes())
+					host.CompleteHttp()
+				})
+			}
+		})
+
 		t.Run("ordinary customer route ignores internal attribution headers", func(t *testing.T) {
 			host, status := test.NewTestHost(mustBillingConfig(t, map[string]interface{}{
 				"event_kind":    eventKindUsage,
