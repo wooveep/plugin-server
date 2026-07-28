@@ -35,4 +35,4 @@ spec:
       provider: dashscope
   phase: UNSPECIFIED_PHASE
   priority: 270
-  url: http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.0/plugin.wasm
+  url: http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.4/plugin.wasm

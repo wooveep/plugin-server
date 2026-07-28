@@ -77,6 +77,10 @@ matchRules:
 
 平台自有的内部 AI Route，例如 `ai-cache.embedding`、`ai-memory.digest`，应配置 `event_kind=internal_cost` 和内部 `quota_scope`。这类事件仍携带 usage、provider、model 和 route 事实，供 Console/billing-service 计算平台成本，但下游不能把它们生成普通客户 usage 账单。
 
+### 受信任的内部成本归因请求头
+
+对于匹配 `internal_cost` 规则的请求，受信任的内部调用方可以同时提供 `x-ai-billing-cost-source` 和 `x-ai-billing-worker-kind`。插件会对该请求使用这对值；如果两者均未提供，则回退到路由配置。仅提供其中一个请求头或请求头值无效时，插件会抑制该请求的 billing event 投递，但不会阻塞模型流量。这些请求头不能启用 `internal_cost` 模式，也不能设置 `bill_customer`。
+
 Console 管理的 `ai-billing` 配置会把 Redis 服务投影为 McpBridge registry 名称，例如 `redis-stack-server.dns`。旧的 `billing_service`、`path` 和 `auth_token` 配置已移除；从旧版本升级时需要删除并重新创建已有 HTTP 形态的 `WasmPlugin`，或通过 Console 重新投影托管绑定。
 
 `ai-billing` 与 `ai-quota`、`ai-statistics` 相互独立，可以在另外两个插件关闭时单独上报 billing event；实际余额扣减和 Redis 投影刷新由 Console/billing-service 完成。

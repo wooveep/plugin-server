@@ -13,9 +13,9 @@
 
 ## 3. Release Contract
 
-- [ ] 3.1 Document the trusted paired-header boundary in Chinese and English READMEs
-- [ ] 3.2 Set `VERSION` and the plugin example artifact URL to `0.1.4`
-- [ ] 3.3 Build and verify the non-empty `build/plugins/ai-billing/0.1.4/plugin.wasm` artifact
+- [x] 3.1 Document the trusted paired-header boundary in Chinese and English READMEs
+- [x] 3.2 Set `VERSION` and the plugin example artifact URL to `0.1.4`
+- [x] 3.3 Build and verify the non-empty `build/plugins/ai-billing/0.1.4/plugin.wasm` artifact
 
 ## 4. Final Verification
 

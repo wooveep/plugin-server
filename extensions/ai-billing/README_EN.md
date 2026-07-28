@@ -75,6 +75,10 @@ The global `defaultConfig` must contain `redis_stream.service_name`, and should 
 
 Platform-owned internal AI Routes, such as `ai-cache.embedding` and `ai-memory.digest`, should set `event_kind=internal_cost` plus an internal `quota_scope`. These events still carry usage, provider, model, and route facts so Console/billing-service can calculate platform costs, but downstream billing must not turn them into ordinary customer usage statements.
 
+### Trusted internal-cost attribution headers
+
+For a request that matches an `internal_cost` rule, a trusted internal caller may provide both `x-ai-billing-cost-source` and `x-ai-billing-worker-kind`. The plugin uses the pair for that request and otherwise falls back to the route configuration. A partial or invalid pair suppresses billing-event delivery for that request without blocking model traffic. These headers cannot enable `internal_cost` mode or set `bill_customer`.
+
 Console-managed `ai-billing` configuration projects the Redis service to an McpBridge registry name, such as `redis-stack-server.dns`. The old `billing_service`, `path`, and `auth_token` configuration has been removed; when upgrading from the HTTP transport, delete and recreate existing HTTP-shaped `WasmPlugin` objects or reproject Console-managed bindings.
 
 `ai-billing`, `ai-quota`, and `ai-statistics` can be deployed independently. Balance debit and Redis projection refresh remain owned by Console/billing-service.
