@@ -1,15 +1,15 @@
 ## 1. Safety And Failing Tests
 
-- [ ] 1.1 Run Graphify and GitNexus upstream impact gates for `onHttpRequestHeaders` and `buildBillingEvent`
-- [ ] 1.2 Add failing lifecycle tests for digest, extraction, and embedding invocation pairs overriding generic route attribution
-- [ ] 1.3 Add failing tests for no-header configuration fallback, partial-pair suppression, malformed-pair suppression, and customer-rule non-spoofing
+- [x] 1.1 Run Graphify and GitNexus upstream impact gates for `onHttpRequestHeaders` and `buildBillingEvent`
+- [x] 1.2 Add failing lifecycle tests for digest, extraction, and embedding invocation pairs overriding generic route attribution
+- [x] 1.3 Add failing tests for no-header configuration fallback, partial-pair suppression, malformed-pair suppression, and customer-rule non-spoofing
 
 ## 2. Trusted Attribution Implementation
 
-- [ ] 2.1 Add bounded paired-header parsing only inside matched `internal_cost` request handling
-- [ ] 2.2 Store valid source and worker values in request context and use them with route-config fallback during event construction
-- [ ] 2.3 Suppress unsafe event delivery without blocking model traffic or logging submitted values
-- [ ] 2.4 Run focused and complete `ai-billing` Go tests and `go vet`
+- [x] 2.1 Add bounded paired-header parsing only inside matched `internal_cost` request handling
+- [x] 2.2 Store valid source and worker values in request context and use them with route-config fallback during event construction
+- [x] 2.3 Suppress unsafe event delivery without blocking model traffic or logging submitted values
+- [x] 2.4 Run focused and complete `ai-billing` Go tests and `go vet`
 
 ## 3. Release Contract
 

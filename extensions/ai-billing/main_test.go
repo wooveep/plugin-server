@@ -472,6 +472,162 @@ func TestBillingEventDelivery(t *testing.T) {
 			host.CompleteHttp()
 		})
 
+		t.Run("internal cost invocation attribution overrides generic route fallback", func(t *testing.T) {
+			config := mustBillingConfig(t, map[string]interface{}{
+				"event_kind":    eventKindInternalCost,
+				"cost_source":   "internal",
+				"worker_kind":   "internal",
+				"bill_customer": false,
+				"redis_stream": map[string]interface{}{
+					"service_name": "redis.static",
+					"service_port": 6379,
+					"timeout":      750,
+				},
+				"enable_path_suffixes": []string{"/v1/chat/completions"},
+			})
+			cases := []struct {
+				name       string
+				costSource string
+				workerKind string
+			}{
+				{"digest", "ai-memory.digest", "digest"},
+				{"extraction", "ai-memory.extraction", "extraction"},
+				{"embedding", "ai-memory.embedding", "embedding"},
+			}
+
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					host, status := test.NewTestHost(config)
+					defer host.Reset()
+					require.Equal(t, types.OnPluginStartStatusOK, status)
+
+					action := host.CallOnHttpRequestHeaders([][2]string{
+						{":authority", "internal.example.com"},
+						{":path", "/v1/chat/completions"},
+						{":method", "POST"},
+						{"x-mse-tenant", "must-not-be-billed"},
+						{"x-mse-consumer", "ai-memory-worker"},
+						{"x-ai-billing-source-job", "ai-memory:job-1"},
+						{"x-ai-billing-cost-source", tc.costSource},
+						{"x-ai-billing-worker-kind", tc.workerKind},
+					})
+					require.Equal(t, types.ActionContinue, action)
+					action = host.CallOnHttpResponseHeaders([][2]string{
+						{":status", "200"},
+						{"content-type", "application/json"},
+					})
+					require.Equal(t, types.ActionContinue, action)
+					action = host.CallOnHttpResponseBody([]byte(`{"model":"deepseek-v4-flash","usage":{"prompt_tokens":5,"completion_tokens":8,"total_tokens":13}}`))
+					require.Equal(t, types.ActionContinue, action)
+
+					event := requireRedisBillingEvent(t, host)
+					require.Equal(t, tc.costSource, event["cost_source"])
+					require.Equal(t, tc.workerKind, event["worker_kind"])
+					require.Equal(t, "ai-memory:job-1", event["source_job"])
+					require.Equal(t, eventKindInternalCost, event["event_kind"])
+					require.Empty(t, event["tenant"])
+					require.Equal(t, false, event["bill_customer"])
+
+					ackRedisBillingEvent(t, host)
+					host.CompleteHttp()
+				})
+			}
+		})
+
+		t.Run("unsafe internal attribution suppresses delivery without blocking model traffic", func(t *testing.T) {
+			config := mustBillingConfig(t, map[string]interface{}{
+				"event_kind":    eventKindInternalCost,
+				"cost_source":   "internal",
+				"worker_kind":   "internal",
+				"bill_customer": false,
+				"redis_stream": map[string]interface{}{
+					"service_name": "redis.static",
+					"service_port": 6379,
+					"timeout":      750,
+				},
+				"enable_path_suffixes": []string{"/v1/chat/completions"},
+			})
+			cases := []struct {
+				name       string
+				costSource string
+				workerKind string
+			}{
+				{"source only", "ai-memory.digest", ""},
+				{"worker only", "", "digest"},
+				{"oversized source", strings.Repeat("x", 129), "digest"},
+				{"invalid source characters", "ai-memory.digest\nspoof", "digest"},
+			}
+
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					host, status := test.NewTestHost(config)
+					defer host.Reset()
+					require.Equal(t, types.OnPluginStartStatusOK, status)
+
+					action := host.CallOnHttpRequestHeaders([][2]string{
+						{":authority", "internal.example.com"},
+						{":path", "/v1/chat/completions"},
+						{":method", "POST"},
+						{"x-ai-billing-cost-source", tc.costSource},
+						{"x-ai-billing-worker-kind", tc.workerKind},
+					})
+					require.Equal(t, types.ActionContinue, action)
+					action = host.CallOnHttpResponseHeaders([][2]string{
+						{":status", "200"},
+						{"content-type", "application/json"},
+					})
+					require.Equal(t, types.ActionContinue, action)
+					action = host.CallOnHttpResponseBody([]byte(`{"model":"deepseek-v4-flash","usage":{"prompt_tokens":5,"completion_tokens":8,"total_tokens":13}}`))
+					require.Equal(t, types.ActionContinue, action)
+
+					require.Empty(t, host.GetRedisCalloutAttributes())
+					host.CompleteHttp()
+				})
+			}
+		})
+
+		t.Run("ordinary customer route ignores internal attribution headers", func(t *testing.T) {
+			host, status := test.NewTestHost(mustBillingConfig(t, map[string]interface{}{
+				"event_kind":    eventKindUsage,
+				"bill_customer": true,
+				"redis_stream": map[string]interface{}{
+					"service_name": "redis.static",
+					"service_port": 6379,
+					"timeout":      750,
+				},
+				"enable_path_suffixes": []string{"/v1/chat/completions"},
+			}))
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			action := host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "customer.example.com"},
+				{":path", "/v1/chat/completions"},
+				{":method", "POST"},
+				{"x-mse-tenant", "tenant-a"},
+				{"x-ai-billing-cost-source", "ai-memory.digest"},
+				{"x-ai-billing-worker-kind", "digest"},
+			})
+			require.Equal(t, types.ActionContinue, action)
+			action = host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "application/json"},
+			})
+			require.Equal(t, types.ActionContinue, action)
+			action = host.CallOnHttpResponseBody([]byte(`{"model":"deepseek-v4-flash","usage":{"prompt_tokens":5,"completion_tokens":8,"total_tokens":13}}`))
+			require.Equal(t, types.ActionContinue, action)
+
+			event := requireRedisBillingEvent(t, host)
+			require.Equal(t, eventKindUsage, event["event_kind"])
+			require.Equal(t, "tenant-a", event["tenant"])
+			require.NotContains(t, event, "cost_source")
+			require.NotContains(t, event, "worker_kind")
+			require.NotContains(t, event, "bill_customer")
+
+			ackRedisBillingEvent(t, host)
+			host.CompleteHttp()
+		})
+
 		t.Run("successful event includes request facts", func(t *testing.T) {
 			host, status := test.NewTestHost(billingConfig)
 			defer host.Reset()

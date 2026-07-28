@@ -67,6 +67,14 @@ const (
 	ctxProviderUsage    = "ai-billing-provider-usage"
 	ctxSourceJob        = "ai-billing-source-job"
 	ctxUpstreamInvoked  = "ai-billing-upstream-invoked"
+	ctxCostSource       = "ai-billing-cost-source"
+	ctxWorkerKind       = "ai-billing-worker-kind"
+)
+
+const (
+	internalCostSourceHeader     = "x-ai-billing-cost-source"
+	internalCostWorkerKindHeader = "x-ai-billing-worker-kind"
+	maxInternalAttributionLength = 128
 )
 
 const (
@@ -357,6 +365,13 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config BillingConfig) types.A
 	consumer, _ := proxywasm.GetHttpRequestHeader(config.ConsumerHeader)
 	if config.EventKind == eventKindInternalCost {
 		tenant = ""
+		if !captureInternalCostAttribution(ctx) {
+			log.Warn("ai-billing internal attribution rejected; delivery disabled for request")
+			ctx.SetContext(ctxBillingEnabled, false)
+			ctx.DontReadRequestBody()
+			ctx.DontReadResponseBody()
+			return types.ActionContinue
+		}
 		if sourceJob, _ := proxywasm.GetHttpRequestHeader("x-ai-billing-source-job"); sourceJob != "" {
 			ctx.SetContext(ctxSourceJob, strings.TrimSpace(sourceJob))
 		}
@@ -374,6 +389,37 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config BillingConfig) types.A
 		ctx.DontReadResponseBody()
 	}
 	return types.ActionContinue
+}
+
+func internalAttributionValue(value string) (string, bool) {
+	value = strings.TrimSpace(value)
+	if value == "" || len(value) > maxInternalAttributionLength {
+		return "", false
+	}
+	for _, char := range value {
+		if !(char >= 'a' && char <= 'z') &&
+			!(char >= '0' && char <= '9') &&
+			char != '.' && char != '-' && char != '_' {
+			return "", false
+		}
+	}
+	return value, true
+}
+
+func captureInternalCostAttribution(ctx wrapper.HttpContext) bool {
+	costSourceHeader, _ := proxywasm.GetHttpRequestHeader(internalCostSourceHeader)
+	workerKindHeader, _ := proxywasm.GetHttpRequestHeader(internalCostWorkerKindHeader)
+	if strings.TrimSpace(costSourceHeader) == "" && strings.TrimSpace(workerKindHeader) == "" {
+		return true
+	}
+	costSource, sourceValid := internalAttributionValue(costSourceHeader)
+	workerKind, workerValid := internalAttributionValue(workerKindHeader)
+	if !sourceValid || !workerValid {
+		return false
+	}
+	ctx.SetContext(ctxCostSource, costSource)
+	ctx.SetContext(ctxWorkerKind, workerKind)
+	return true
 }
 
 func initBillingRequestContext(ctx wrapper.HttpContext, requestPath, requestID, tenant, consumer, provider, quotaScope, priceVersion string) (string, error) {
@@ -728,8 +774,8 @@ func buildBillingEvent(ctx wrapper.HttpContext, config BillingConfig, isStream b
 	}
 	if event.EventKind == eventKindInternalCost {
 		event.Tenant = ""
-		event.CostSource = strings.TrimSpace(config.CostSource)
-		event.WorkerKind = strings.TrimSpace(config.WorkerKind)
+		event.CostSource = ctx.GetStringContext(ctxCostSource, strings.TrimSpace(config.CostSource))
+		event.WorkerKind = ctx.GetStringContext(ctxWorkerKind, strings.TrimSpace(config.WorkerKind))
 		event.SourceJob = ctx.GetStringContext(ctxSourceJob, "")
 		event.BillCustomer = config.BillCustomer
 	}
