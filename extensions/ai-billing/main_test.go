@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/iface"
+	billinglog "github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/test"
 	"github.com/higress-group/wasm-go/pkg/tokenusage"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -554,6 +556,8 @@ func TestBillingEventDelivery(t *testing.T) {
 			}{
 				{"source only", "ai-memory.digest", ""},
 				{"worker only", "", "digest"},
+				{"source whitespace", " ", ""},
+				{"both whitespace", " ", "\t"},
 				{"oversized source", strings.Repeat("x", 129), "digest"},
 				{"invalid source characters", "ai-memory.digest\nspoof", "digest"},
 			}
@@ -1613,6 +1617,72 @@ func TestBillingEventDelivery(t *testing.T) {
 			ackRedisBillingEvent(t, host)
 			host.CompleteHttp()
 		})
+	})
+}
+
+type recordingBillingLog struct {
+	entries []string
+}
+
+func (l *recordingBillingLog) record(format string, args ...interface{}) {
+	l.entries = append(l.entries, fmt.Sprintf(format, args...))
+}
+
+func (l *recordingBillingLog) Trace(msg string)                          { l.record("%s", msg) }
+func (l *recordingBillingLog) Tracef(format string, args ...interface{}) { l.record(format, args...) }
+func (l *recordingBillingLog) Debug(msg string)                          { l.record("%s", msg) }
+func (l *recordingBillingLog) Debugf(format string, args ...interface{}) { l.record(format, args...) }
+func (l *recordingBillingLog) Info(msg string)                           { l.record("%s", msg) }
+func (l *recordingBillingLog) Infof(format string, args ...interface{})  { l.record(format, args...) }
+func (l *recordingBillingLog) Warn(msg string)                           { l.record("%s", msg) }
+func (l *recordingBillingLog) Warnf(format string, args ...interface{})  { l.record(format, args...) }
+func (l *recordingBillingLog) Error(msg string)                          { l.record("%s", msg) }
+func (l *recordingBillingLog) Errorf(format string, args ...interface{}) { l.record(format, args...) }
+func (l *recordingBillingLog) Critical(msg string)                       { l.record("%s", msg) }
+func (l *recordingBillingLog) Criticalf(format string, args ...interface{}) {
+	l.record(format, args...)
+}
+func (l *recordingBillingLog) ResetID(pluginID string) {}
+
+func TestUnsafeInternalAttributionDoesNotLogSubmittedValue(t *testing.T) {
+	test.RunGoTest(t, func(t *testing.T) {
+		host, status := test.NewTestHost(mustBillingConfig(t, map[string]interface{}{
+			"event_kind":    eventKindInternalCost,
+			"cost_source":   "internal",
+			"worker_kind":   "internal",
+			"bill_customer": false,
+			"redis_stream": map[string]interface{}{
+				"service_name": "redis.static",
+				"service_port": 6379,
+				"timeout":      750,
+			},
+			"enable_path_suffixes": []string{"/v1/chat/completions"},
+		}))
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+
+		logs := &recordingBillingLog{}
+		billinglog.SetPluginLog(logs)
+		submitted := "ai-memory.digest\nspoof"
+		action := host.CallOnHttpRequestHeaders([][2]string{
+			{":authority", "internal.example.com"},
+			{":path", "/v1/chat/completions"},
+			{":method", "POST"},
+			{"x-ai-billing-cost-source", submitted},
+			{"x-ai-billing-worker-kind", "digest"},
+		})
+		require.Equal(t, types.ActionContinue, action)
+		action = host.CallOnHttpResponseHeaders([][2]string{
+			{":status", "200"},
+			{"content-type", "application/json"},
+		})
+		require.Equal(t, types.ActionContinue, action)
+		action = host.CallOnHttpResponseBody([]byte(`{"model":"deepseek-v4-flash","usage":{"prompt_tokens":5,"completion_tokens":8,"total_tokens":13}}`))
+		require.Equal(t, types.ActionContinue, action)
+
+		require.Empty(t, host.GetRedisCalloutAttributes())
+		require.NotContains(t, strings.Join(logs.entries, "\n"), submitted)
+		host.CompleteHttp()
 	})
 }
 

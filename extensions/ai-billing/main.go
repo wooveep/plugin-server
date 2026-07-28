@@ -407,9 +407,23 @@ func internalAttributionValue(value string) (string, bool) {
 }
 
 func captureInternalCostAttribution(ctx wrapper.HttpContext) bool {
-	costSourceHeader, _ := proxywasm.GetHttpRequestHeader(internalCostSourceHeader)
-	workerKindHeader, _ := proxywasm.GetHttpRequestHeader(internalCostWorkerKindHeader)
-	if strings.TrimSpace(costSourceHeader) == "" && strings.TrimSpace(workerKindHeader) == "" {
+	headers, err := proxywasm.GetHttpRequestHeaders()
+	if err != nil {
+		return false
+	}
+	var costSourceHeader, workerKindHeader string
+	var costSourcePresent, workerKindPresent bool
+	for _, header := range headers {
+		switch strings.ToLower(header[0]) {
+		case internalCostSourceHeader:
+			costSourceHeader = header[1]
+			costSourcePresent = true
+		case internalCostWorkerKindHeader:
+			workerKindHeader = header[1]
+			workerKindPresent = true
+		}
+	}
+	if !costSourcePresent && !workerKindPresent {
 		return true
 	}
 	costSource, sourceValid := internalAttributionValue(costSourceHeader)
