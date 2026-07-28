@@ -19,6 +19,9 @@
 
 ## 4. Final Verification
 
-- [ ] 4.1 Update Graphify and review GitNexus change detection for the focused plugin flow
-- [ ] 4.2 Validate the OpenSpec change and verify formatting, tests, vet, artifact build, and a clean feature-branch worktree
-- [ ] 4.3 Support the Modelfusion focused and full E2E proof for canonical AI Memory costs and zero customer billing
+- [x] 4.1 Update Graphify and review GitNexus change detection for the focused plugin flow
+  - Graphify rebuilt 10,986 nodes and 14,624 edges. GitNexus comparison with `main` reported LOW risk, 97 changed indexed symbols, 11 files, and no affected execution process.
+- [x] 4.2 Validate the OpenSpec change and verify formatting, tests, vet, artifact build, and a clean feature-branch worktree
+  - Strict OpenSpec validation, formatting, complete `ai-billing` tests, vet, and the non-empty 0.1.4 artifact passed; the committed feature branch has no source or artifact drift.
+- [x] 4.3 Support the Modelfusion focused and full E2E proof for canonical AI Memory costs and zero customer billing
+  - Modelfusion run `20260728T071000Z` recorded 164 positive internal-cost records totaling 83,370,500 micro-CNY across digest, extraction, and embedding, with complete source/worker pairs and zero customer-billed internal-cost records.
