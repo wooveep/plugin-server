@@ -210,7 +210,7 @@ runtime contracts.
 
 - **WHEN** the coordinated alignment check runs
 - **THEN** ai-proxy, ai-billing, ai-quota, and ai-statistics resources SHALL
-  identify `1.0.2`, `0.1.5`, `1.0.2`, and `1.0.1`, respectively
+  identify `1.0.2`, `0.1.5`, `1.0.2`, and `1.0.2`, respectively
 - **AND** any mismatch SHALL fail verification.
 
 ### Requirement: ai-memory resource package is generated

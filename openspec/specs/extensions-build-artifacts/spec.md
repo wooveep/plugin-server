@@ -7,7 +7,7 @@ Define authoritative extension versions, reproducible versioned Wasm builds, imm
 
 The four changed extensions SHALL have one authoritative source version:
 ai-proxy `1.0.2`, ai-billing `0.1.5`, ai-quota `1.0.2`, and ai-statistics
-`1.0.1`. Resource metadata, option/plugin metadata, schemas, examples, and
+`1.0.2`. Resource metadata, option/plugin metadata, schemas, examples, and
 documentation SHALL be generated from or automatically checked against that
 source.
 
@@ -38,7 +38,7 @@ The reviewed sibling result commit SHALL build non-empty Wasm artifacts at
   `build/plugins/ai-proxy/1.0.2/plugin.wasm`,
   `build/plugins/ai-billing/0.1.5/plugin.wasm`,
   `build/plugins/ai-quota/1.0.2/plugin.wasm`, and
-  `build/plugins/ai-statistics/1.0.1/plugin.wasm`
+  `build/plugins/ai-statistics/1.0.2/plugin.wasm`
 - **AND** every file SHALL be non-empty and a valid Wasm module.
 
 #### Scenario: Independent module tests fail
