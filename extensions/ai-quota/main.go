@@ -26,31 +26,23 @@ const (
 	defaultTenantHeader       = "x-mse-tenant"
 	defaultConsumerHeader     = "x-mse-consumer"
 	defaultBalanceKeyTemplate = "billing:balance:{tenant}:{quota_scope}:{consumer}"
-	defaultPriceKeyTemplate   = "billing:effective_price:{tenant}:{provider}:{model}:{token_type}"
-	defaultAmountScale        = int64(1000000)
-	defaultPriceUnitTokens    = int64(1000000)
-
-	ctxQuotaEnabled = "ai-quota-enabled"
-	ctxTenant       = "ai-quota-tenant"
-	ctxConsumer     = "ai-quota-consumer"
-	ctxBalanceKey   = "ai-quota-balance-key"
 )
 
 const (
 	MissingPolicyDeny  = "deny"
 	MissingPolicyAllow = "allow"
-	MissingPolicySkip  = "skip"
 
 	PathScopeLegacySuffixes = "legacy_suffixes"
 	PathScopeBoundTarget    = "bound_target"
 )
 
-type ChatMode string
-
-const (
-	ChatModeCompletion ChatMode = "completion"
-	ChatModeNone       ChatMode = "none"
-)
+var removedSettlementConfigFields = []string{
+	"price_key_template",
+	"amount_scale",
+	"price_unit_tokens",
+	"missing_price_policy",
+	"missing_usage_policy",
+}
 
 func main() {}
 
@@ -69,15 +61,10 @@ type QuotaConfig struct {
 	TenantHeader         string    `yaml:"tenant_header"`
 	ConsumerHeader       string    `yaml:"consumer_header"`
 	BalanceKeyTemplate   string    `yaml:"balance_key_template"`
-	PriceKeyTemplate     string    `yaml:"price_key_template"`
-	AmountScale          int64     `yaml:"amount_scale"`
-	PriceUnitTokens      int64     `yaml:"price_unit_tokens"`
 	PathScope            string    `yaml:"path_scope"`
 	EnablePathSuffixes   []string  `yaml:"enable_path_suffixes"`
 	EnableMethods        []string  `yaml:"enable_methods"`
 	MissingBalancePolicy string    `yaml:"missing_balance_policy"`
-	MissingPricePolicy   string    `yaml:"missing_price_policy"`
-	MissingUsagePolicy   string    `yaml:"missing_usage_policy"`
 	redisClient          wrapper.RedisClient
 }
 
@@ -91,32 +78,18 @@ type RedisInfo struct {
 }
 
 func parseConfig(json gjson.Result, config *QuotaConfig) error {
+	if err := rejectRemovedSettlementConfig(json); err != nil {
+		return err
+	}
 	config.QuotaScope = stringDefault(json.Get("quota_scope").String(), defaultQuotaScope)
 	config.Provider = stringDefault(json.Get("provider").String(), defaultProvider)
 	config.TenantHeader = stringDefault(json.Get("tenant_header").String(), defaultTenantHeader)
 	config.ConsumerHeader = stringDefault(json.Get("consumer_header").String(), defaultConsumerHeader)
 	config.BalanceKeyTemplate = stringDefault(json.Get("balance_key_template").String(), defaultBalanceKeyTemplate)
-	config.PriceKeyTemplate = stringDefault(json.Get("price_key_template").String(), defaultPriceKeyTemplate)
-	config.AmountScale = int64Default(json.Get("amount_scale").Int(), defaultAmountScale)
-	config.PriceUnitTokens = int64Default(json.Get("price_unit_tokens").Int(), defaultPriceUnitTokens)
 	config.MissingBalancePolicy = stringDefault(json.Get("missing_balance_policy").String(), MissingPolicyDeny)
-	config.MissingPricePolicy = stringDefault(json.Get("missing_price_policy").String(), MissingPolicySkip)
-	config.MissingUsagePolicy = stringDefault(json.Get("missing_usage_policy").String(), MissingPolicySkip)
 
 	if err := validatePolicy(config.MissingBalancePolicy, MissingPolicyDeny, MissingPolicyAllow); err != nil {
 		return fmt.Errorf("invalid missing_balance_policy: %w", err)
-	}
-	if err := validatePolicy(config.MissingPricePolicy, MissingPolicySkip); err != nil {
-		return fmt.Errorf("invalid missing_price_policy: %w", err)
-	}
-	if err := validatePolicy(config.MissingUsagePolicy, MissingPolicySkip); err != nil {
-		return fmt.Errorf("invalid missing_usage_policy: %w", err)
-	}
-	if config.PriceUnitTokens <= 0 {
-		return errors.New("price_unit_tokens must be positive")
-	}
-	if config.AmountScale <= 0 {
-		return errors.New("amount_scale must be positive")
 	}
 
 	pathScope, err := parsePathScope(json.Get("path_scope"))
@@ -178,6 +151,9 @@ func parseRuleConfig(json gjson.Result, global QuotaConfig, config *QuotaConfig)
 	if global.redisInfo.ServiceName == "" || global.redisClient == nil {
 		return errors.New("missing redis in config")
 	}
+	if err := rejectRemovedSettlementConfig(json); err != nil {
+		return err
+	}
 
 	*config = global
 	config.EnablePathSuffixes = cloneStrings(global.EnablePathSuffixes)
@@ -228,11 +204,9 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 
 	rawPath := context.Path()
 	if !isQuotaRequestEnabled(rawPath, context.Method(), config) {
-		context.SetContext(ctxQuotaEnabled, false)
 		context.DontReadResponseBody()
 		return types.ActionContinue
 	}
-	context.SetContext(ctxQuotaEnabled, true)
 	context.DontReadRequestBody()
 	context.DontReadResponseBody()
 
@@ -243,9 +217,6 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 	}
 
 	balanceKey := config.buildBalanceKey(tenant, consumer)
-	context.SetContext(ctxTenant, tenant)
-	context.SetContext(ctxConsumer, consumer)
-	context.SetContext(ctxBalanceKey, balanceKey)
 	log.Debugf("ai-quota admission tenant:%s consumer:%s balance_key:%s", tenant, consumer, balanceKey)
 
 	err := config.redisClient.Get(balanceKey, func(response resp.Value) {
@@ -269,7 +240,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 			util.SendResponse(http.StatusServiceUnavailable, "ai-quota.redis_error", "text/plain", "Request denied by ai quota check. Invalid Redis balance.")
 			return
 		}
-		if balance < 0 {
+		if balance <= 0 {
 			deniedNoBalance()
 			return
 		}
@@ -283,10 +254,6 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 	return types.HeaderStopAllIterationAndWatermark
 }
 
-func onHttpStreamingResponseBody(ctx wrapper.HttpContext, config QuotaConfig, data []byte, endOfStream bool) []byte {
-	return data
-}
-
 func deniedMissingIdentity() types.Action {
 	util.SendResponse(http.StatusForbidden, "ai-quota.missing_identity", "text/plain", "Request denied by ai quota check. Missing tenant or consumer identity.")
 	return types.ActionContinue
@@ -298,13 +265,6 @@ func deniedMissingBalance() {
 
 func deniedNoBalance() {
 	util.SendResponse(http.StatusForbidden, "ai-quota.no_balance", "text/plain", "Request denied by ai quota check. No monetary balance left.")
-}
-
-func getOperationMode(path string, pathSuffixes []string) ChatMode {
-	if isAIPathEnabled(path, pathSuffixes) {
-		return ChatModeCompletion
-	}
-	return ChatModeNone
 }
 
 func isAIPathEnabled(requestPath string, enabledSuffixes []string) bool {
@@ -350,18 +310,6 @@ func (config QuotaConfig) buildBalanceKey(tenant, consumer string) string {
 		"{consumer}", consumer,
 	)
 	return replacer.Replace(config.BalanceKeyTemplate)
-}
-
-func (config QuotaConfig) buildPriceKey(tenant, model, tokenType string) string {
-	replacer := strings.NewReplacer(
-		"{tenant}", tenant,
-		"{quota_scope}", config.QuotaScope,
-		"{consumer}", "",
-		"{provider}", config.Provider,
-		"{model}", model,
-		"{token_type}", tokenType,
-	)
-	return replacer.Replace(config.PriceKeyTemplate)
 }
 
 func parsePathSuffixes(result gjson.Result) ([]string, error) {
@@ -504,15 +452,17 @@ func redisInteger(response resp.Value) (int64, error) {
 	return strconv.ParseInt(strings.TrimSpace(response.String()), 10, 64)
 }
 
-func stringDefault(value, fallback string) string {
-	if strings.TrimSpace(value) == "" {
-		return fallback
+func rejectRemovedSettlementConfig(json gjson.Result) error {
+	for _, field := range removedSettlementConfigFields {
+		if json.Get(field).Exists() {
+			return fmt.Errorf("%s has been removed; ai-quota is admission-only", field)
+		}
 	}
-	return value
+	return nil
 }
 
-func int64Default(value, fallback int64) int64 {
-	if value == 0 {
+func stringDefault(value, fallback string) string {
+	if strings.TrimSpace(value) == "" {
 		return fallback
 	}
 	return value

@@ -19,10 +19,7 @@ var monetaryConfig = func() json.RawMessage {
 		"tenant_header":          "x-tenant-id",
 		"consumer_header":        "x-consumer-id",
 		"balance_key_template":   "billing:balance:{tenant}:{quota_scope}:{consumer}",
-		"price_key_template":     "billing:effective_price:{tenant}:{provider}:{model}:{token_type}",
 		"missing_balance_policy": "deny",
-		"missing_price_policy":   "skip",
-		"missing_usage_policy":   "skip",
 		"enable_path_suffixes": []string{
 			"/v1/chat/completions",
 			"/v1/messages",
@@ -49,7 +46,7 @@ func quotaConfigWith(overrides map[string]interface{}) json.RawMessage {
 
 func TestParseConfig(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
-		t.Run("default monetary config", func(t *testing.T) {
+		t.Run("default admission config", func(t *testing.T) {
 			data, _ := json.Marshal(map[string]interface{}{
 				"redis": map[string]interface{}{
 					"service_name": "redis.static",
@@ -68,12 +65,7 @@ func TestParseConfig(t *testing.T) {
 			require.Equal(t, "x-mse-tenant", quotaConfig.TenantHeader)
 			require.Equal(t, "x-mse-consumer", quotaConfig.ConsumerHeader)
 			require.Equal(t, "billing:balance:{tenant}:{quota_scope}:{consumer}", quotaConfig.BalanceKeyTemplate)
-			require.Equal(t, "billing:effective_price:{tenant}:{provider}:{model}:{token_type}", quotaConfig.PriceKeyTemplate)
-			require.Equal(t, int64(1000000), quotaConfig.AmountScale)
-			require.Equal(t, int64(1000000), quotaConfig.PriceUnitTokens)
 			require.Equal(t, MissingPolicyDeny, quotaConfig.MissingBalancePolicy)
-			require.Equal(t, MissingPolicySkip, quotaConfig.MissingPricePolicy)
-			require.Equal(t, MissingPolicySkip, quotaConfig.MissingUsagePolicy)
 			require.Equal(t, []string{"/v1/chat/completions", "/v1/messages"}, quotaConfig.EnablePathSuffixes)
 		})
 
@@ -85,6 +77,41 @@ func TestParseConfig(t *testing.T) {
 			defer host.Reset()
 			require.Equal(t, types.OnPluginStartStatusOK, status)
 		})
+	})
+}
+
+func TestRemovedSettlementConfigIsRejected(t *testing.T) {
+	test.RunGoTest(t, func(t *testing.T) {
+		removedFields := map[string]interface{}{
+			"price_key_template":   "billing:effective_price:{tenant}:{provider}:{model}:{token_type}",
+			"amount_scale":         1000000,
+			"price_unit_tokens":    1000000,
+			"missing_price_policy": "skip",
+			"missing_usage_policy": "skip",
+		}
+
+		for field, value := range removedFields {
+			t.Run("global rejects "+field, func(t *testing.T) {
+				host, status := test.NewTestHost(quotaConfigWith(map[string]interface{}{
+					field: value,
+				}))
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusFailed, status)
+			})
+
+			t.Run("rule rejects "+field, func(t *testing.T) {
+				host, status := test.NewTestHost(quotaConfigWith(map[string]interface{}{
+					"_rules_": []map[string]interface{}{
+						{
+							"_match_route_": []string{"route-removed-settlement"},
+							field:           value,
+						},
+					},
+				}))
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusFailed, status)
+			})
+		}
 	})
 }
 
@@ -128,6 +155,7 @@ func TestRequestAdmission(t *testing.T) {
 			response := host.GetLocalResponse()
 			require.NotNil(t, response)
 			require.Equal(t, uint32(http.StatusForbidden), response.StatusCode)
+			require.Equal(t, "ai-quota.no_balance", response.StatusCodeDetail)
 			require.Contains(t, string(response.Data), "No monetary balance left")
 			require.Equal(t, types.HeaderStopAllIterationAndWatermark, host.GetHttpStreamAction())
 			require.NotEqual(t, types.ActionContinue, host.GetHttpStreamAction())
@@ -151,6 +179,7 @@ func TestRequestAdmission(t *testing.T) {
 			host.CallOnRedisCall(0, test.CreateRedisRespInt(-1))
 			response := host.GetLocalResponse()
 			require.Equal(t, uint32(http.StatusForbidden), response.StatusCode)
+			require.Equal(t, "ai-quota.no_balance", response.StatusCodeDetail)
 			require.Contains(t, string(response.Data), "No monetary balance left")
 			require.Equal(t, types.HeaderStopAllIterationAndWatermark, host.GetHttpStreamAction())
 			require.NotEqual(t, types.ActionContinue, host.GetHttpStreamAction())
@@ -260,33 +289,6 @@ func TestAdmissionOnlyDoesNotDeduct(t *testing.T) {
 			host.CompleteHttp()
 		})
 
-		t.Run("legacy pricing config remains accepted but inert", func(t *testing.T) {
-			host, status := test.NewTestHost(quotaConfigWith(map[string]interface{}{
-				"missing_price_policy": "skip",
-				"missing_usage_policy": "skip",
-				"price_key_template":   "billing:effective_price:{tenant}:{provider}:{model}:{token_type}",
-				"price_unit_tokens":    1000000,
-			}))
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
-				{":method", "POST"},
-				{"x-tenant-id", "tenant-a"},
-				{"x-consumer-id", "consumer-a"},
-			})
-			host.CallOnRedisCall(0, test.CreateRedisRespInt(1000))
-
-			action := host.CallOnHttpStreamingResponseBody([]byte(`{"model":"gpt-4","usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`), true)
-			require.Equal(t, types.ActionContinue, action)
-			attrs := host.GetRedisCalloutAttributes()
-			require.Empty(t, attrs)
-			assertNoRedisMutationQueries(t, attrs)
-			host.CompleteHttp()
-		})
-
 		t.Run("missing usage has no response redis callout", func(t *testing.T) {
 			host, status := test.NewTestHost(monetaryConfig)
 			defer host.Reset()
@@ -312,13 +314,10 @@ func TestAdmissionOnlyDoesNotDeduct(t *testing.T) {
 func TestKeyBuilders(t *testing.T) {
 	config := QuotaConfig{
 		BalanceKeyTemplate: "billing:balance:{tenant}:{quota_scope}:{consumer}",
-		PriceKeyTemplate:   "billing:effective_price:{tenant}:{provider}:{model}:{token_type}",
 		QuotaScope:         "team-a",
-		Provider:           "openai",
 	}
 
 	require.Equal(t, "billing:balance:t1:team-a:c1", config.buildBalanceKey("t1", "c1"))
-	require.Equal(t, "billing:effective_price:t1:openai:gpt-4:input", config.buildPriceKey("t1", "gpt-4", "input"))
 	require.False(t, isAIPathEnabled("/v1/chat/completions/quota", []string{"/v1/chat/completions"}))
 	require.True(t, isAIPathEnabled("/proxy/v1/messages?debug=true", []string{"/v1/messages"}))
 }

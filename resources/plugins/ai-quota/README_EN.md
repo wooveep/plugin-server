@@ -1,54 +1,48 @@
 ---
 title: AI Monetary Quota
 keywords: [AI Gateway, AI Quota, Monetary Quota]
-description: Configuration reference for read-only monetary balance admission.
+description: Resource reference for read-only Redis balance admission.
 ---
 
 ## Overview
 
-`ai-quota` checks a Console-derived Redis hot balance before forwarding enabled AI requests. Requests with a balance greater than or equal to zero continue; negative balances are rejected as arrears; missing balances follow the configured policy. The plugin is admission-only: it does not parse response usage, does not run Lua `EVAL`, and does not deduct Redis balances after responses.
+`ai-quota` reads Console- or billing-service-derived Redis hot balance during
+request-header processing. A balance greater than `0` allows the request.
+Zero and negative balances return the fixed `403 no_balance` response. A
+missing key follows `missing_balance_policy`.
 
-The plugin no longer owns in-gateway quota management. Account balances, prices, billing statements, Redis rebuilds, idempotency, and reconciliation are owned by Console or billing-service.
+This request admission is the plugin's final account enforcement action for
+the request. Redis balance hot data is read-only input to the plugin. Console
+or billing-service owns authoritative accounts, settlement, statements,
+reconciliation, and Redis hot-data rebuilds.
 
-## Runtime Properties
+## Runtime properties
 
 Plugin execution phase: `default phase`
+
 Plugin execution priority: `280`
 
-## Redis Keys
+## Request scope
 
-- Default balance key: `billing:balance:{tenant}:{quota_scope}:{consumer}`
-- Default price key: `billing:effective_price:{tenant}:{provider}:{model}:{token_type}`
-- Amounts are signed integers owned by Console or billing-service.
+- Missing or explicit `path_scope: legacy_suffixes` preserves legacy suffix
+  gating. The default suffixes are `/v1/chat/completions` and `/v1/messages`.
+- `path_scope: bound_target` processes every request already selected by the
+  Higress binding target.
+- Explicitly non-empty `enable_path_suffixes` and `enable_methods` are
+  advanced intersection filters and cannot expand the binding target.
 
-## Configuration
+## Configuration fields
 
-| Name | Type | Default | Description |
-| --- | --- | --- | --- |
-| `redis` | object | none | Redis connection configuration |
-| `quota_scope` | string | `global` | Quota scope for the current route or rule |
-| `provider` | string | `default` | AI provider identifier used in price keys |
-| `tenant_header` | string | `x-mse-tenant` | Request header containing tenant identity |
-| `consumer_header` | string | `x-mse-consumer` | Request header containing consumer identity |
-| `balance_key_template` | string | `billing:balance:{tenant}:{quota_scope}:{consumer}` | Balance key template |
-| `price_key_template` | string | `billing:effective_price:{tenant}:{provider}:{model}:{token_type}` | Price key template |
-| `amount_scale` | int | `1000000` | Monetary amount scale |
-| `price_unit_tokens` | int | `1000000` | Token count represented by one price unit |
-| `enable_path_suffixes` | []string | `/v1/chat/completions`, `/v1/messages` | Enabled AI path suffixes |
-| `missing_balance_policy` | string | `deny` | Missing balance policy: `deny` or `allow` |
-| `missing_price_policy` | string | `skip` | Skip deduction when prices are missing |
-| `missing_usage_policy` | string | `skip` | Skip deduction when usage is missing |
+Global configuration supports `redis`, `quota_scope`, `provider`,
+`tenant_header`, `consumer_header`, `balance_key_template`, `path_scope`,
+`enable_path_suffixes`, `enable_methods`, and `missing_balance_policy`.
 
-`redis` fields:
+`redis` supports `service_name`, `service_port`, `username`, `password`,
+`timeout`, and `database`; `service_name` is required.
 
-| Field | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `service_name` | string | yes | - | Redis service name |
-| `service_port` | int | no | 80 for static services, otherwise 6379 | Redis service port |
-| `username` | string | no | - | Redis username |
-| `password` | string | no | - | Redis password |
-| `timeout` | int | no | 1000 | Connection timeout in milliseconds |
-| `database` | int | no | 0 | Redis database |
+Rules override only `quota_scope`, `provider`, `path_scope`,
+`enable_path_suffixes`, and `enable_methods`. All other admission
+infrastructure is inherited from global configuration.
 
 ## Example
 
@@ -56,19 +50,30 @@ Plugin execution priority: `280`
 redis:
   service_name: redis-service.default.svc.cluster.local
   service_port: 6379
+  username: <redis-username>
+  password: <redis-password>
   timeout: 1000
+  database: 0
+quota_scope: global
+provider: default
 tenant_header: x-mse-tenant
 consumer_header: x-mse-consumer
 balance_key_template: "billing:balance:{tenant}:{quota_scope}:{consumer}"
-price_key_template: "billing:effective_price:{tenant}:{provider}:{model}:{token_type}"
-amount_scale: 1000000
-price_unit_tokens: 1000000
+path_scope: legacy_suffixes
 enable_path_suffixes:
   - /v1/chat/completions
   - /v1/messages
 missing_balance_policy: deny
-missing_price_policy: skip
-missing_usage_policy: skip
 ```
 
-Use Higress WasmPlugin `matchRules` to bind different `quota_scope` and `provider` values to different AI routes. `ai-quota`, `ai-billing`, and `ai-statistics` can be deployed independently.
+When the binding target already selects a provider-native route and no
+additional filtering is needed, use:
+
+```yaml
+quota_scope: route:qwen
+provider: dashscope
+path_scope: bound_target
+```
+
+`ai-quota`, `ai-billing`, and `ai-statistics` share no private runtime state
+and can be deployed independently.

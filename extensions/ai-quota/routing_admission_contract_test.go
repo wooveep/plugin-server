@@ -308,6 +308,7 @@ func runQuotaRoutingAdmission(
 		response := host.GetLocalResponse()
 		require.NotNil(t, response)
 		require.Equal(t, uint32(http.StatusForbidden), response.StatusCode)
+		require.Equal(t, "ai-quota.no_balance", response.StatusCodeDetail)
 		require.Contains(t, string(response.Data), "No monetary balance left")
 		require.Equal(t, types.HeaderStopAllIterationAndWatermark, host.GetHttpStreamAction())
 		require.NotEqual(t, types.ActionContinue, host.GetHttpStreamAction())

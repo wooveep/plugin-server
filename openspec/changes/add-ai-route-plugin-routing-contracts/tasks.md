@@ -1468,10 +1468,69 @@ Task 4.3 evidence (2026-07-29):
   those exact initialization/configuration boundaries are covered by the
   configuration, rule-inheritance, and real Redis admission tests.
 
-- [ ] 4.4 Converge ai-quota schema, examples, docs, and runtime on the
+- [x] 4.4 Converge ai-quota schema, examples, docs, and runtime on the
   admission-only Redis balance surface, removing obsolete settlement controls
   from current configuration and response-stage account behavior from the
   implementation.
+
+Task 4.4 evidence (2026-07-29):
+
+- The accepted and delta ai-monetary-quota specifications, shared design and
+  task plan, quota source/tests/schema/examples, bilingual extension and
+  resource documentation, and current Graphify/GitNexus reports were reviewed
+  before implementation. The accepted ai-monetary-quota Purpose remains
+  byte-for-byte untouched, and the plugin/resource versions remain `1.0.1` for
+  Task 6.4.
+- Pre-edit GitNexus upstream impact was LOW for `QuotaConfig` (one direct test
+  dependent, zero flows), `buildPriceKey` (one direct test dependent, zero
+  flows), and `int64Default` (one direct caller and the existing
+  `ParseConfig -> RedisClusterClient` flow). `parseConfig`,
+  `parseRuleConfig`, `onHttpRequestHeaders`,
+  `onHttpStreamingResponseBody`, and `getOperationMode` had zero direct
+  dependents or affected flows; `ChatMode` was unresolved by the index and a
+  scoped source search confirmed its only remaining reference was the removed
+  mode helper. No HIGH or CRITICAL pre-edit impact was ignored.
+- The inherited RED boundary contained exactly three executable zero-balance
+  failures: the Go and Wasm `TestRequestAdmission` leaves plus the bound-target
+  routing admission leaf. Positive balance, negative balance, and all 14
+  request/response ownership leaves remained independent controls. New
+  test-first parser coverage then failed all ten global/rule cases for
+  `price_key_template`, `amount_scale`, `price_unit_tokens`,
+  `missing_price_policy`, and `missing_usage_policy`; the new structured
+  resource contract failed its four intended schema, examples, bilingual docs,
+  and obsolete-surface leaves before production/resource changes.
+- Request admission now denies every Redis balance `<= 0` with fixed
+  `403`/`ai-quota.no_balance` behavior and continues only for a strictly
+  positive balance. The parser explicitly rejects each removed settlement
+  field at both global and route-rule scope. Obsolete effective-price,
+  input/output token-price, missing usage/price policy, response body mode, and
+  response-stage account-state helpers were removed; the only live Redis
+  account operation remains the request-stage read-only balance `GET`.
+- The resource schema uses `additionalProperties: false` and exposes only the
+  admission surface globally plus the supported business/scope route
+  overrides. It documents both legacy and unfiltered bound-target examples,
+  preserves rule inheritance/intersection semantics, and excludes global
+  infrastructure from route overrides. The plugin example and four bilingual
+  READMEs now state strict `balance > 0`, fixed zero/negative denial,
+  request-header final account enforcement, read-only Redis ownership, and the
+  Console/billing-service settlement boundary.
+- The final exact core contract command passes in 3.795s, including removed
+  field rejection, Go/Wasm balance admission, route admission, all 14
+  ownership leaves, and structured schema/example/doc assertions. The complete
+  module passes in 5.471s (`util` in 0.003s); extension `go vet ./...`, exact
+  changed-file `gofmt`, `git diff --check`, scoped obsolete-current-surface
+  searches, accepted-spec diff, and strict OpenSpec validation also pass.
+- Controller diff review found no unresolved implementation, ownership,
+  schema, documentation, or test finding. `graphify update .` rebuilt 11,166
+  nodes, 15,049 edges, and 881 communities. GitNexus incremental analysis
+  rebuilt 12,986 nodes, 40,897 edges, 291 clusters, and 300 flows; its eight
+  generated repository-instruction rewrites were restored. Final staged
+  detection is MEDIUM across exactly 11 files and 38 indexed symbols, affecting
+  only `ParseConfig -> RedisClusterClient`; that configuration boundary is
+  covered by the parser and real Redis admission suites. The mandatory
+  compare-to-`main` result is CRITICAL across the cumulative 75-file change
+  branch (547 symbols and 59 flows), rather than the isolated Task 4.4 delta.
+
 - [ ] 4.5 Run focused and complete independent ai-quota unit, Redis admission,
   proxy-wasm lifecycle/integration, no-deduction regression, and security
   suites.

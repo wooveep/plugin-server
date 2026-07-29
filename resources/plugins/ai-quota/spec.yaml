@@ -8,9 +8,9 @@ info:
   title: AI Monetary Quota
   x-title-i18n:
     zh-CN: AI 金额配额
-  description: Perform read-only monetary balance admission for AI requests using Console-derived Redis hot balances.
+  description: Perform read-only Redis balance admission for AI requests.
   x-description-i18n:
-    zh-CN: 基于 Console 派生的 Redis 热余额对 AI 请求进行只读金额余额准入。
+    zh-CN: 基于只读 Redis 热余额对 AI 请求进行准入检查。
   iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README.md
   x-readmeUrl-i18n:
@@ -24,15 +24,17 @@ spec:
   configSchema:
     openAPIV3Schema:
       type: object
+      additionalProperties: false
       properties:
         redis:
           type: object
+          additionalProperties: false
           title: Redis配置
           x-title-i18n:
             en-US: Redis Configuration
-          description: Redis连接配置
+          description: 只读余额热数据的 Redis 连接配置
           x-description-i18n:
-            en-US: Redis connection configuration
+            en-US: Redis connection for read-only balance hot data
           required: [service_name]
           properties:
             service_name:
@@ -40,17 +42,17 @@ spec:
               title: Redis服务名称
               x-title-i18n:
                 en-US: Redis Service Name
-              description: Redis 服务名称，带服务类型的完整 FQDN 名称，例如 my-redis.dns、redis.my-ns.svc.cluster.local
+              description: Redis 服务名称，例如 my-redis.dns 或 redis.my-ns.svc.cluster.local
               x-description-i18n:
-                en-US: Redis service name, full FQDN name with service type, e.g., my-redis.dns, redis.my-ns.svc.cluster.local
+                en-US: Redis service name, such as my-redis.dns or redis.my-ns.svc.cluster.local
             service_port:
               type: integer
               title: Redis服务端口
               x-title-i18n:
                 en-US: Redis Service Port
-              description: Redis 服务端口。static 服务默认 80，其他默认 6379
+              description: Redis 服务端口；static 服务默认为 80，其他默认为 6379
               x-description-i18n:
-                en-US: Redis service port. Defaults to 80 for static services and 6379 otherwise
+                en-US: Redis service port; defaults to 80 for static services and 6379 otherwise
               default: 6379
             username:
               type: string
@@ -98,9 +100,9 @@ spec:
         provider:
           type: string
           title: AI Provider
-          description: AI provider 标识，用于价格 key
+          description: 当前准入上下文的 AI provider 标识
           x-description-i18n:
-            en-US: AI provider identifier used in price keys
+            en-US: AI provider identifier for the current admission context
           default: default
         tenant_header:
           type: string
@@ -129,273 +131,117 @@ spec:
           x-description-i18n:
             en-US: Redis balance key template supporting {tenant}, {quota_scope}, and {consumer}
           default: "billing:balance:{tenant}:{quota_scope}:{consumer}"
-        price_key_template:
+        path_scope:
           type: string
-          title: 价格Key模板
+          title: 路径作用域
           x-title-i18n:
-            en-US: Price Key Template
-          description: Redis 生效价格 key 模板，支持 {tenant}、{provider}、{model}、{token_type}
+            en-US: Path Scope
+          description: legacy_suffixes 保留旧后缀门控；bound_target 默认覆盖已绑定目标
           x-description-i18n:
-            en-US: Redis effective price key template supporting {tenant}, {provider}, {model}, and {token_type}
-          default: "billing:effective_price:{tenant}:{provider}:{model}:{token_type}"
-        amount_scale:
-          type: integer
-          title: 金额缩放比例
-          x-title-i18n:
-            en-US: Amount Scale
-          description: 金额缩放比例
-          x-description-i18n:
-            en-US: Monetary amount scale
-          default: 1000000
-        price_unit_tokens:
-          type: integer
-          title: 价格单位Token数
-          x-title-i18n:
-            en-US: Price Unit Tokens
-          description: 价格单位 token 数
-          x-description-i18n:
-            en-US: Token count represented by one price unit
-          default: 1000000
+            en-US: legacy_suffixes preserves legacy suffix gating; bound_target defaults to the bound target
+          enum: [legacy_suffixes, bound_target]
+          default: legacy_suffixes
         enable_path_suffixes:
           type: array
           title: 生效路径后缀
           x-title-i18n:
             en-US: Enabled Path Suffixes
-          description: 插件生效的 AI 请求路径后缀
+          description: legacy_suffixes 的路径门控，或 bound_target 的可选非空交集过滤器
           x-description-i18n:
-            en-US: AI request path suffixes enabled for this plugin
+            en-US: Legacy path gating or an optional non-empty intersection filter for bound_target
           items:
             type: string
           default:
           - /v1/chat/completions
           - /v1/messages
+        enable_methods:
+          type: array
+          title: 生效HTTP方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: 可选非空 HTTP 方法交集过滤器
+          x-description-i18n:
+            en-US: Optional non-empty HTTP method intersection filter
+          items:
+            type: string
         missing_balance_policy:
           type: string
           title: 余额缺失策略
           x-title-i18n:
             en-US: Missing Balance Policy
-          description: 余额 key 缺失时的处理策略，可选 deny 或 allow
+          description: 余额 key 缺失时拒绝或放行请求
           x-description-i18n:
-            en-US: Policy when the balance key is missing, either deny or allow
+            en-US: Deny or allow the request when the balance key is missing
           enum: [deny, allow]
           default: deny
-        missing_price_policy:
-          type: string
-          title: 价格缺失策略
-          x-title-i18n:
-            en-US: Missing Price Policy
-          description: 生效价格缺失时的处理策略，当前支持 skip
-          x-description-i18n:
-            en-US: Policy when effective prices are missing. Currently supports skip
-          enum: [skip]
-          default: skip
-        missing_usage_policy:
-          type: string
-          title: Usage缺失策略
-          x-title-i18n:
-            en-US: Missing Usage Policy
-          description: token usage 缺失时的处理策略，当前支持 skip
-          x-description-i18n:
-            en-US: Policy when token usage is missing. Currently supports skip
-          enum: [skip]
-          default: skip
       required: [redis]
       example:
         redis:
           service_name: redis-service.default.svc.cluster.local
           service_port: 6379
+          username: <redis-username>
+          password: <redis-password>
           timeout: 1000
+          database: 0
+        quota_scope: global
+        provider: default
         tenant_header: x-mse-tenant
         consumer_header: x-mse-consumer
         balance_key_template: "billing:balance:{tenant}:{quota_scope}:{consumer}"
-        price_key_template: "billing:effective_price:{tenant}:{provider}:{model}:{token_type}"
-        amount_scale: 1000000
-        price_unit_tokens: 1000000
+        path_scope: legacy_suffixes
         enable_path_suffixes:
         - /v1/chat/completions
         - /v1/messages
         missing_balance_policy: deny
-        missing_price_policy: skip
-        missing_usage_policy: skip
   routeConfigSchema:
     openAPIV3Schema:
       type: object
+      additionalProperties: false
       properties:
-        redis:
-          type: object
-          title: Redis配置
-          x-title-i18n:
-            en-US: Redis Configuration
-          description: Redis连接配置
-          x-description-i18n:
-            en-US: Redis connection configuration
-          required: [service_name]
-          properties:
-            service_name:
-              type: string
-              title: Redis服务名称
-              x-title-i18n:
-                en-US: Redis Service Name
-              description: Redis 服务名称，带服务类型的完整 FQDN 名称，例如 my-redis.dns、redis.my-ns.svc.cluster.local
-              x-description-i18n:
-                en-US: Redis service name, full FQDN name with service type, e.g., my-redis.dns, redis.my-ns.svc.cluster.local
-            service_port:
-              type: integer
-              title: Redis服务端口
-              x-title-i18n:
-                en-US: Redis Service Port
-              description: Redis 服务端口。static 服务默认 80，其他默认 6379
-              x-description-i18n:
-                en-US: Redis service port. Defaults to 80 for static services and 6379 otherwise
-              default: 6379
-            username:
-              type: string
-              title: Redis用户名
-              x-title-i18n:
-                en-US: Redis Username
-              description: Redis 用户名
-              x-description-i18n:
-                en-US: Redis username
-            password:
-              type: string
-              title: Redis密码
-              x-title-i18n:
-                en-US: Redis Password
-              description: Redis 密码
-              x-description-i18n:
-                en-US: Redis password
-            timeout:
-              type: integer
-              title: Redis连接超时
-              x-title-i18n:
-                en-US: Redis Connection Timeout
-              description: Redis 连接超时时间，单位毫秒
-              x-description-i18n:
-                en-US: Redis connection timeout in milliseconds
-              default: 1000
-            database:
-              type: integer
-              title: Redis数据库
-              x-title-i18n:
-                en-US: Redis Database
-              description: Redis database 编号
-              x-description-i18n:
-                en-US: Redis database index
-              default: 0
         quota_scope:
           type: string
           title: 额度作用域
           x-title-i18n:
             en-US: Quota Scope
-          description: 当前路由或规则的额度作用域
+          description: 匹配路由的额度作用域
           x-description-i18n:
-            en-US: Quota scope for the current route or rule
-          default: global
+            en-US: Quota scope for the matched route
         provider:
           type: string
           title: AI Provider
-          description: AI provider 标识，用于价格 key
+          description: 匹配路由准入上下文的 AI provider 标识
           x-description-i18n:
-            en-US: AI provider identifier used in price keys
-          default: default
-        tenant_header:
+            en-US: AI provider identifier for the matched admission context
+        path_scope:
           type: string
-          title: 租户请求头
+          title: 路径作用域
           x-title-i18n:
-            en-US: Tenant Header
-          description: 租户身份请求头
+            en-US: Path Scope
+          description: legacy_suffixes 保留旧后缀门控；bound_target 默认覆盖已绑定目标
           x-description-i18n:
-            en-US: Request header containing tenant identity
-          default: x-mse-tenant
-        consumer_header:
-          type: string
-          title: Consumer请求头
-          x-title-i18n:
-            en-US: Consumer Header
-          description: Consumer 身份请求头
-          x-description-i18n:
-            en-US: Request header containing consumer identity
-          default: x-mse-consumer
-        balance_key_template:
-          type: string
-          title: 余额Key模板
-          x-title-i18n:
-            en-US: Balance Key Template
-          description: Redis 余额 key 模板，支持 {tenant}、{quota_scope}、{consumer}
-          x-description-i18n:
-            en-US: Redis balance key template supporting {tenant}, {quota_scope}, and {consumer}
-          default: "billing:balance:{tenant}:{quota_scope}:{consumer}"
-        price_key_template:
-          type: string
-          title: 价格Key模板
-          x-title-i18n:
-            en-US: Price Key Template
-          description: Redis 生效价格 key 模板，支持 {tenant}、{provider}、{model}、{token_type}
-          x-description-i18n:
-            en-US: Redis effective price key template supporting {tenant}, {provider}, {model}, and {token_type}
-          default: "billing:effective_price:{tenant}:{provider}:{model}:{token_type}"
-        amount_scale:
-          type: integer
-          title: 金额缩放比例
-          x-title-i18n:
-            en-US: Amount Scale
-          description: 金额缩放比例
-          x-description-i18n:
-            en-US: Monetary amount scale
-          default: 1000000
-        price_unit_tokens:
-          type: integer
-          title: 价格单位Token数
-          x-title-i18n:
-            en-US: Price Unit Tokens
-          description: 价格单位 token 数
-          x-description-i18n:
-            en-US: Token count represented by one price unit
-          default: 1000000
+            en-US: legacy_suffixes preserves legacy suffix gating; bound_target defaults to the bound target
+          enum: [legacy_suffixes, bound_target]
         enable_path_suffixes:
           type: array
           title: 生效路径后缀
           x-title-i18n:
             en-US: Enabled Path Suffixes
-          description: 插件生效的 AI 请求路径后缀
+          description: 可选非空路径交集过滤器
           x-description-i18n:
-            en-US: AI request path suffixes enabled for this plugin
+            en-US: Optional non-empty path intersection filter
           items:
             type: string
-          default:
-          - /v1/chat/completions
-          - /v1/messages
-        missing_balance_policy:
-          type: string
-          title: 余额缺失策略
+        enable_methods:
+          type: array
+          title: 生效HTTP方法
           x-title-i18n:
-            en-US: Missing Balance Policy
-          description: 余额 key 缺失时的处理策略，可选 deny 或 allow
+            en-US: Enabled HTTP Methods
+          description: 可选非空 HTTP 方法交集过滤器
           x-description-i18n:
-            en-US: Policy when the balance key is missing, either deny or allow
-          enum: [deny, allow]
-          default: deny
-        missing_price_policy:
-          type: string
-          title: 价格缺失策略
-          x-title-i18n:
-            en-US: Missing Price Policy
-          description: 生效价格缺失时的处理策略，当前支持 skip
-          x-description-i18n:
-            en-US: Policy when effective prices are missing. Currently supports skip
-          enum: [skip]
-          default: skip
-        missing_usage_policy:
-          type: string
-          title: Usage缺失策略
-          x-title-i18n:
-            en-US: Missing Usage Policy
-          description: token usage 缺失时的处理策略，当前支持 skip
-          x-description-i18n:
-            en-US: Policy when token usage is missing. Currently supports skip
-          enum: [skip]
-          default: skip
-      required: [redis]
+            en-US: Optional non-empty HTTP method intersection filter
+          items:
+            type: string
       example:
         quota_scope: route:qwen
         provider: dashscope
+        path_scope: bound_target

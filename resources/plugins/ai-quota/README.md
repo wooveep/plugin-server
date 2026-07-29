@@ -1,54 +1,44 @@
 ---
 title: AI 金额配额
 keywords: [AI网关, AI配额, 金额配额]
-description: ai-quota 只读金额余额准入插件配置参考
+description: ai-quota 只读 Redis 余额准入资源说明
 ---
 
 ## 功能说明
 
-`ai-quota` 在 AI 请求进入上游前读取 Console 派生的 Redis 热余额，余额大于等于 0 时放行，负余额按欠费拒绝，余额缺失按策略处理。插件只做请求准入，不在响应结束后解析 usage，不执行 Lua `EVAL`，也不扣减 Redis 余额。
+`ai-quota` 在请求头阶段读取 Console 或 billing-service 派生的 Redis
+热余额。余额大于 `0` 时放行；零余额和负余额返回固定的 `403 no_balance`；
+余额 key 不存在时由 `missing_balance_policy` 决定拒绝或放行。
 
-插件不再承担网关内 quota 管理职责。账户、余额、价格、账单流水、Redis 重建、幂等和对账由 Console 或 billing-service 负责。
+这次请求准入是插件对该请求的最终账户执法动作。Redis 余额热数据是插件的
+只读输入。权威账户、结算、账单、对账和 Redis 热数据重建属于 Console 或
+billing-service。
 
 ## 运行属性
 
 插件执行阶段：`默认阶段`
+
 插件执行优先级：`280`
 
-## Redis Key
+## 请求范围
 
-- 余额默认 key：`billing:balance:{tenant}:{quota_scope}:{consumer}`
-- 价格默认 key：`billing:effective_price:{tenant}:{provider}:{model}:{token_type}`
-- 金额为 Console 或 billing-service 维护的有符号整数。
+- 缺省或显式 `path_scope: legacy_suffixes` 保留历史后缀门控，默认后缀为
+  `/v1/chat/completions` 和 `/v1/messages`。
+- `path_scope: bound_target` 默认处理 Higress 绑定目标已经选中的全部请求。
+- 显式非空的 `enable_path_suffixes` 和 `enable_methods` 是与绑定目标求
+  交集的高级过滤器，不能扩大绑定目标。
 
-## 配置说明
+## 配置字段
 
-| 名称 | 类型 | 默认值 | 说明 |
-| --- | --- | --- | --- |
-| `redis` | object | 无 | Redis 连接配置 |
-| `quota_scope` | string | `global` | 当前路由或规则的额度作用域 |
-| `provider` | string | `default` | AI provider 标识，用于价格 key |
-| `tenant_header` | string | `x-mse-tenant` | 租户身份请求头 |
-| `consumer_header` | string | `x-mse-consumer` | consumer 身份请求头 |
-| `balance_key_template` | string | `billing:balance:{tenant}:{quota_scope}:{consumer}` | 余额 key 模板 |
-| `price_key_template` | string | `billing:effective_price:{tenant}:{provider}:{model}:{token_type}` | 价格 key 模板 |
-| `amount_scale` | int | `1000000` | 金额缩放比例 |
-| `price_unit_tokens` | int | `1000000` | 价格单位 token 数 |
-| `enable_path_suffixes` | []string | `/v1/chat/completions`, `/v1/messages` | 生效路径后缀 |
-| `missing_balance_policy` | string | `deny` | 余额缺失策略：`deny` 或 `allow` |
-| `missing_price_policy` | string | `skip` | 价格缺失时跳过扣减 |
-| `missing_usage_policy` | string | `skip` | usage 缺失时跳过扣减 |
+全局配置支持 `redis`、`quota_scope`、`provider`、`tenant_header`、
+`consumer_header`、`balance_key_template`、`path_scope`、
+`enable_path_suffixes`、`enable_methods` 和 `missing_balance_policy`。
 
-`redis` 字段：
+`redis` 支持 `service_name`、`service_port`、`username`、`password`、
+`timeout` 和 `database`，其中 `service_name` 必填。
 
-| 配置项 | 类型 | 必填 | 默认值 | 说明 |
-| --- | --- | --- | --- | --- |
-| `service_name` | string | 是 | - | Redis 服务名称 |
-| `service_port` | int | 否 | static 服务为 80，其他为 6379 | Redis 端口 |
-| `username` | string | 否 | - | Redis 用户名 |
-| `password` | string | 否 | - | Redis 密码 |
-| `timeout` | int | 否 | 1000 | 连接超时，单位毫秒 |
-| `database` | int | 否 | 0 | Redis database |
+规则只覆盖 `quota_scope`、`provider`、`path_scope`、
+`enable_path_suffixes` 和 `enable_methods`；其余准入基础设施继承自全局。
 
 ## 配置示例
 
@@ -56,19 +46,29 @@ description: ai-quota 只读金额余额准入插件配置参考
 redis:
   service_name: redis-service.default.svc.cluster.local
   service_port: 6379
+  username: <redis-username>
+  password: <redis-password>
   timeout: 1000
+  database: 0
+quota_scope: global
+provider: default
 tenant_header: x-mse-tenant
 consumer_header: x-mse-consumer
 balance_key_template: "billing:balance:{tenant}:{quota_scope}:{consumer}"
-price_key_template: "billing:effective_price:{tenant}:{provider}:{model}:{token_type}"
-amount_scale: 1000000
-price_unit_tokens: 1000000
+path_scope: legacy_suffixes
 enable_path_suffixes:
   - /v1/chat/completions
   - /v1/messages
 missing_balance_policy: deny
-missing_price_policy: skip
-missing_usage_policy: skip
 ```
 
-不同 AI 路由建议通过 Higress WasmPlugin `matchRules` 配置不同 `quota_scope` 和 `provider`。`ai-quota` 与 `ai-statistics`、`ai-billing` 相互独立，可以单独启用。
+绑定目标已经精确选中 provider-native 路由且不需要额外过滤时，规则使用：
+
+```yaml
+quota_scope: route:qwen
+provider: dashscope
+path_scope: bound_target
+```
+
+`ai-quota`、`ai-billing` 和 `ai-statistics` 不共享私有运行时状态，可以
+独立部署。
