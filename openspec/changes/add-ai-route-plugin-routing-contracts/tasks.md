@@ -2481,9 +2481,115 @@ Task 6.6 evidence (2026-07-30):
   PASS. The fresh shared schema/example contract, `go test ./... -count=1`,
   `openspec validate add-ai-route-plugin-routing-contracts --strict`, and
   `git diff --check` also passed.
-- [ ] 6.7 Run schema/example validation, bilingual documentation consistency,
+- [x] 6.7 Run schema/example validation, bilingual documentation consistency,
   version-alignment checks, and every affected independent extension module's
   formatting, tests, and vet/static checks.
+
+Task 6.7 verification evidence (2026-07-30):
+
+- The task started from clean sibling-worktree HEAD
+  `97f41d49e2eeb4ab84fd6af8104dcd8a8937cee1`. Repository instructions,
+  the complete active apply context, all seven delta specifications, the
+  ignored Task 6.7 preflight, and the verification, Higress Wasm, Graphify,
+  and GitNexus instructions were reviewed before edits. Graphify refreshed to
+  11,302 nodes, 15,623 edges, and 839 communities; GitNexus refreshed to
+  13,217 nodes, 41,738 edges, 301 clusters, and 300 flows, after which its
+  eight generated instruction-file rewrites were restored.
+- The only dependency-hygiene mutations are the exact `go mod tidy` results
+  prescribed by the preflight. `extensions/ai-billing/go.mod` moves
+  `github.com/tidwall/resp v0.1.1` from indirect to direct and does not change
+  `go.sum`. `extensions/ai-quota/go.mod` moves
+  `gopkg.in/yaml.v3 v3.0.1` from indirect to direct, and its `go.sum` deletes
+  exactly the four stale checksums for locally replaced
+  `proxy-wasm-go-sdk`/`wasm-go` modules. No runtime, test, schema,
+  documentation, version, Task 6.8, or Task 7 release surface changed.
+- For each of `ai-proxy`, `ai-billing`, `ai-quota`, and `ai-statistics`,
+  `go mod tidy -diff` exited 0 with empty output, `go mod verify` reported
+  `all modules verified`, the module-wide sorted `gofmt -l` scan was empty,
+  and `go vet ./...` exited 0 with empty output. The four-module
+  tidy/verify gate completed in 0.5s and the final combined
+  tidy/verify/gofmt/vet gate in 0.6s.
+- Root release commands
+  `go test . -run '^TestAIPluginVersionParserFixture$' -count=1`,
+  `go test . -run '^TestAIPluginVersionAlignmentContract$' -count=1 -v`,
+  and
+  `go test . -run '^(TestAIRoutePluginSharedRoutingSchemaVocabulary|TestAIRoutePluginExamplesMatchRoutingVocabulary|TestAIBillingReleaseSchemaAndDocumentationContract|TestAIStatisticsReleaseSchemaAndDocumentationContract)$' -count=1 -v`
+  passed in 0.08s, 0.07s, and 0.08s. All four named version subtests and all
+  38 release surfaces passed with no skip. The four required same-language
+  billing/statistics extension/resource README `cmp` commands were
+  byte-identical. `go test ./... -count=1 -timeout=10m` at root passed in
+  0.36s.
+- The exact four focused module commands from the Task 6.7 preflight all
+  exited 0 in a 5.9s parallel wall-time window. The proxy command included
+  the nine named routing/adapter/security contracts plus
+  `go test ./config ./provider ./util -count=1 -timeout=5m`; the billing,
+  quota, and statistics commands included every named preflight contract.
+  `TestAdapterMetadataV2GoWasmContract` visibly passed `/go` and `/wasm`;
+  `TestStatisticsTerminalLifecycleGoWasmContract` visibly passed `/go` and
+  `/wasm`; neither skipped.
+- Complete independent suites passed with exact commands and elapsed times:
+  `(cd extensions/ai-proxy && go test ./... -count=1 -timeout=10m)` in
+  311.51s; ai-billing with `-timeout=5m` in 11.62s; ai-quota with
+  `-timeout=5m` in 6.57s; and ai-statistics with `-timeout=5m` in 41.66s.
+  Complete mandatory race suites
+  `CGO_ENABLED=1 go test -race ./... -count=1 -timeout=10m` passed for
+  ai-billing in 113.48s, ai-quota in 66.67s, and ai-statistics in 402.05s.
+- The preflight's literal proxy command
+  `CGO_ENABLED=1 go test -race ./... -count=1 -timeout=10m -skip='/wasm$'`
+  is not reported as PASS: Go names repeated subtests `wasm#NN`, so that
+  regular expression failed to skip `TestAzure/wasm#04` and the command
+  timed out at 10 minutes in Wazero JIT compilation, without an observed
+  race or assertion failure. The corrected true all-Go command
+  `CGO_ENABLED=1 go test -race ./... -count=1 -timeout=10m -skip='/wasm($|#)'`
+  passed in 2.01s. The changed real producer command
+  `CGO_ENABLED=1 go test -race . -run '^TestAdapterMetadataV2GoWasmContract$' -count=1 -timeout=5m -v`
+  passed `/go` and `/wasm` in 30.41s with no skip, and the known-adapter Go
+  control
+  `CGO_ENABLED=1 go test -race . -run '^TestKnownQwenResponsesAdapterContract$' -count=1 -timeout=5m -v`
+  passed in 1.31s.
+- The complete aggregate proxy Go+Wasm race suite is also not reported as
+  PASS. Its previously verified 15-minute and 30-minute attempts timed out
+  while Wazero JIT-compiled unrelated existing `TestMinimax/wasm` and
+  `TestGroq/wasm`; neither attempt observed a race or assertion failure.
+  Acceptance uses the fresh corrected all-Go race plus the fresh changed
+  real Go/Wasm and known-adapter controls above.
+- Root sorted `gofmt -l`, `git diff --check`, and
+  `openspec validate add-ai-route-plugin-routing-contracts --strict` passed.
+  Root `go vet ./...` is not reported as PASS: its sole output is the
+  pre-existing unchanged
+  `pkg/ai/sessionctx/sessionctx.go:512:2: unreachable code`; no additional
+  finding appeared. A high-confidence private-key/token/credential scan over
+  the exact mechanical diff found no match.
+- A fresh `/tmp/task-6.7-wasm.*` build used
+  `make --no-print-directory build-plugin PLUGIN=<plugin> BUILD_DIR=<temp>`
+  for all four selected releases. Every exact versioned `plugin.wasm` was
+  non-empty, began with `00 61 73 6d`, and had adjacent `metadata.txt`:
+  ai-proxy `1.0.2`, 9,903,117 bytes,
+  SHA-256 `dbe09dd5a07230eea8cb73f195fd338022f6ed6400dc741fede11d9eac87df4a`;
+  ai-billing `0.1.5`, 18,436,731 bytes,
+  `42d305c7549cbc6d470bdf54db18a34b4199eead791540b233c400d771e6f01c`;
+  ai-quota `1.0.2`, 6,342,049 bytes,
+  `0fd87f3e829a8397055d12b21c24df8ddb59d90bb04d289c54209280169375f4`;
+  and ai-statistics `1.0.1`, 6,923,564 bytes,
+  `2c9eaca0d95b33644ebcbf52ec68b3ed4b6ae28fd268190d805fa025026bf7f8`.
+  The temporary tree was removed. These bytes prove buildability only and
+  are not Task 7 reviewed, published, available, or provenance artifacts.
+- Independent read-only review returned `APPROVED` with zero Critical,
+  Important, or Minor findings. It confirmed the exact four-file scope and
+  mechanical dependency diff, independently reproduced the quick/static/root
+  gates, observed 1,534 non-Wasm actions and zero Wasm actions under the
+  corrected all-Go proxy race filter, and verified that neither the temporary
+  build tree nor any formal Task 7 artifact path remained.
+- Final Graphify refresh rebuilt 11,302 nodes, 15,623 edges, and 844
+  communities. GitNexus rebuilt 13,217 nodes, 41,738 edges, 301 clusters, and
+  300 flows; its eight generated instruction-file rewrites were restored.
+  Task-local change detection is LOW across four files, one indexed
+  documentation section, and zero affected processes. The mandatory
+  comparison with `main` remains CRITICAL across the cumulative 122-file
+  branch, 847 symbols, and 70 flows; that cumulative risk is covered by the
+  separate Task 6 risk audit and is not attributed to this mechanical
+  dependency-hygiene delta.
+
 - [ ] 6.8 Obtain an independent versions/schemas/resources/documentation
   review, resolve every finding, and rerun all affected alignment, schema,
   documentation, and module checks.
