@@ -1641,9 +1641,70 @@ Task 4.6 evidence (2026-07-29):
 
 ## 5. AI Statistics Red-Green Contracts
 
-- [ ] 5.1 Add RED configuration/gating tests for legacy scope, bound-target
+- [x] 5.1 Add RED configuration/gating tests for legacy scope, bound-target
   provider-native requests, no synthesized suffixes, and advanced non-empty
   suffix/method intersections.
+
+Task 5.1 evidence (2026-07-29):
+
+- The current Graphify report, change proposal/design/tasks, all seven delta
+  capabilities, accepted resource specification, ai-statistics source/tests,
+  wrapper route-matching behavior, and HostEmulator lifecycle were reviewed
+  before the fixture was added. No accepted
+  `openspec/specs/ai-statistics-observability/spec.md` exists yet, so the
+  validated statistics delta and shared routing design are the current
+  authority. The pre-edit Graphify report contained 11,166 nodes, 15,049
+  edges, and 880 communities and was two commits behind the clean starting
+  HEAD `f4e852d656f7d23c3dd25a810aef194afdaac19c`.
+- Pre-edit controls passed:
+  `go test . -run
+  '^(TestParseConfig|TestUnmatchedPathsAndContentTypes|TestIsPathEnabled)$'
+  -count=1` in `2.153s`, complete `go test ./... -count=1` in `33.616s`,
+  and `go vet ./...`. Upstream impact for the new
+  `TestStatisticsRoutingScopeContract` symbol was UNKNOWN with zero indexed
+  dependents; this documentation section was LOW with zero callers, affected
+  processes, or modules. No production symbol, existing test, shared harness,
+  schema, documentation, or version surface was modified.
+- `extensions/ai-statistics/routing_scope_contract_test.go` adds one
+  compile-safe Go HostEmulator contract and no top-level helper. Every request
+  receives a fresh host and literal JSON configuration. Eligibility is
+  observed through the real request-body lifecycle and
+  `wrapper.AILogKey`: an admitted request writes the bounded test attribute,
+  while `SkipProcessing` plus `DontReadRequestBody` leaves the property
+  absent. The fixture does not reference future fields, getters, constants,
+  or Task 5.2 base metrics.
+- Global and rule cases retain omitted and explicit `legacy_suffixes`
+  behavior; exercise `bound_target` with filters omitted and with both lists
+  literal empty; require provider-native coverage without a synthesized
+  default suffix; and require non-empty suffix and exact-case method filters
+  to intersect. Rule cases prove omitted-scope inheritance, explicit legacy
+  suffix replacement, legacy-to-bound-target projection, literal-empty
+  filters, non-empty intersections, and preservation of inherited global
+  attributes. Unknown global/rule `path_scope` and blank-only global/rule
+  suffix/method lists must fail configuration.
+- Exact RED command:
+  `go test . -run '^TestStatisticsRoutingScopeContract$' -count=1`.
+  It compiles and fails at exactly 15 semantic/executable Go leaves: one
+  global unfiltered bound-target provider-native observation; two global
+  exact-case method mismatches; four rule inheritance/legacy/bound-target
+  leaves; two rule non-empty intersection leaves; two invalid path-scope
+  leaves; and four blank-only suffix/method validation leaves. The complete
+  `go test ./... -count=1` module boundary fails at those same 15 leaves in
+  `33.599s` and no pre-existing test.
+- Independent controls remain GREEN: the original three-test parser/gating
+  command passes in `2.042s`; omitted and explicit legacy behavior plus
+  literal-empty bound-target filters pass together in `0.003s`; global
+  exact-match/suffix-mismatch/both-mismatch intersections pass in `0.003s`;
+  and the rule suffix-mismatch control passes in `0.003s`. Changed-file
+  `gofmt`, extension `go vet ./...`, `git diff --check`, and strict OpenSpec
+  validation pass. The final `graphify update .` rebuilt 11,168 nodes, 15,053
+  edges, and 866 communities. GitNexus refreshed 12,992 nodes, 40,944 edges, 290
+  clusters, and 300 flows; the post-index test-symbol impact is LOW with zero
+  callers/processes/modules. Final staged detection is LOW across exactly two
+  files and seven mapped test/documentation symbols with zero affected
+  processes. All eight generated repository-instruction rewrites were
+  restored.
+
 - [ ] 5.2 Add RED lifecycle/metric tests proving opaque success and error
   responses emit bounded route/path attribution, method, status, latency,
   bounded error, request count, and duration independently of model/token
