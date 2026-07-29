@@ -51,9 +51,12 @@ func TestAIProxyURLBoundarySecurityContract(t *testing.T) {
 
 	collectDiagnostics := func(host wasmhost.TestHost) string {
 		diagnostics := make([]string, 0)
+		diagnostics = append(diagnostics, host.GetTraceLogs()...)
 		diagnostics = append(diagnostics, host.GetDebugLogs()...)
+		diagnostics = append(diagnostics, host.GetInfoLogs()...)
 		diagnostics = append(diagnostics, host.GetWarnLogs()...)
 		diagnostics = append(diagnostics, host.GetErrorLogs()...)
+		diagnostics = append(diagnostics, host.GetCriticalLogs()...)
 		if localResponse := host.GetLocalResponse(); localResponse != nil {
 			diagnostics = append(diagnostics, string(localResponse.Data))
 		}

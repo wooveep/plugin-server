@@ -215,8 +215,9 @@ Task 2.5 evidence (2026-07-29):
   request targets. Each case requires local `400..599` rejection, and an
   unrejected target independently proves the provider credential boundary
   while recording the forwarded target and authorization. All cases aggregate
-  debug/warn/error logs plus any local body and prohibit provider/client
-  credentials, raw-query markers, and submitted body markers.
+  every HostEmulator diagnostic channel (trace/debug/info/warn/error/critical)
+  plus any local body and prohibit provider/client credentials, raw-query
+  markers, and submitted body markers.
 - Focused RED command:
   `go test . -run '^TestAIProxyURLBoundarySecurityContract$' -count=1`.
   It compiled and failed each of the absolute URL, scheme injection, network
@@ -232,6 +233,12 @@ Task 2.5 evidence (2026-07-29):
   proving provider host/authentication plus exact duplicate ordering, escaping,
   and empty-value preservation for
   `sig=a%2Bb&dup=1&dup=2&empty=` after provider-base prefixing.
+- Independent review identified three initially omitted HostEmulator log
+  channels. The fixture now executes trace, debug, info, warn, error, and
+  critical getters for the complete diagnostics aggregate without weakening
+  any marker assertion. The exact focused rerun retained seven failing leaf
+  subtests and 20 real assertion failures, while the safe-query guard and
+  existing Qwen Responses lifecycle baseline still passed independently.
 - No production source, shared test harness, protocol/path-scope fields, or
   missing production constants were added or modified.
 - `gofmt`, `git diff --check`, and strict OpenSpec validation pass.
