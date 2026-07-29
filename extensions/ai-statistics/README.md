@@ -4,14 +4,16 @@ keywords: [higress, AI, observability]
 description: AI可观测配置参考
 ---
 
+> 插件版本：`1.0.1`
+
 ## 介绍
 
-提供 AI 可观测基础能力，包括 metric, log, trace，其后需接 ai-proxy 插件，如果不接 ai-proxy 插件的话，则需要用户进行相应配置才可生效。
+提供 AI 可观测基础能力，包括 metric、log 和 trace。安全基础事实不依赖 ai-proxy；ai-proxy schema-v2 元数据只是可选的可信增强，可提供有界的逻辑 operation 和路径模板。
 
 ## 运行属性
 
 插件执行阶段：`默认阶段`
-插件执行优先级：`200`
+插件执行优先级：`900`
 
 ## 配置说明
 
@@ -28,12 +30,14 @@ description: AI可观测配置参考
 | `use_default_response_attributes` | bool | 非必填  | false   | 是否使用轻量级默认属性配置（推荐），包含 model 和 token 统计，不缓冲流式响应体。适用于高并发生产环境 |
 | `attributes` | []Attribute | 非必填  | -   | 用户希望记录在log/span中的信息 |
 | `disable_openai_usage` | bool | 非必填  | false   | 非openai兼容协议时，model、token的支持非标，配置为true时可以避免报错 |
-| `value_length_limit` | int | 非必填  | 4000   | 记录的单个value的长度限制 |
+| `value_length_limit` | int | 非必填  | 条件默认值 | 记录的单个 value 的长度限制 |
 | `path_scope` | string | 非必填 | `legacy_suffixes` | `legacy_suffixes` 或 `bound_target` |
 | `enable_path_suffixes` | []string    | 非必填   | 历史行为见下文 | 路径后缀门控或可选交集过滤器，可显式配置 "\*" |
 | `enable_methods` | []string | 非必填 | 无 | 可选 HTTP 方法过滤器，按精确大小写匹配 |
 | `enable_content_types` | []string    | 非必填   | []     | 只对这些内容类型的响应进行缓冲处理。如果为空数组，则对所有内容类型生效                                                           |
 | `session_id_header` | string | 非必填  | -   | 指定读取 session ID 的 header 名称。如果不配置，将按以下优先级自动查找：`x-openclaw-session-key`、`x-clawdbot-session-key`、`x-moltbot-session-key`、`x-agent-session`。session ID 可用于追踪多轮 Agent 对话 |
+
+`value_length_limit` 的条件运行时默认值为：`32000`（普通/自定义配置）、`10485760`（完整默认属性）和 `4000`（轻量默认响应属性）。`enable_content_types` 省略列表时匹配所有 Content-Type；内容解析或缓冲选择不会抑制终态安全基础事实。
 
 ### 请求作用域
 
@@ -65,13 +69,29 @@ enable_methods:
   - POST
 ```
 
+## 安全基础可观测契约
+
+安全基础事实独立成立；ai-proxy schema-v2 元数据只是可选的可信增强。
+
+每个符合范围且已完成的请求都会输出有界的 `route`、`path`、规范化且有界的 `method`、`status_code`、正值 `latency_ms` 和有界 `error_class`，并恰好输出一次 `request_count` 和 `request_duration_ms`。这些安全基础事实与 model、逻辑 operation、token 或 usage 提取无关；opaque 成功、opaque 错误以及解析失败仍会输出基础事实，可选维度会省略而不是猜测。可信的 provider 解析器可以补充 model/token 信息，但不得从任意路径或 opaque body 推断。原始响应体和无界 provider 错误文本绝不进入指标属性。
+
+响应头只捕获有界状态和错误投影，不会冻结完成时延。首次真实终态——非流式响应体 EOS、流式 EOS，或无响应体回调、空 body、不支持 Content-Type、解析器跳过时的 `wrapper.ProcessStreamDone` 回退——使用同一个终态时间戳完成指标和 AILog。请求级完成标记保证所有终态回调合计恰好一次；响应头和 body 字节保持透明。
+
+只有恰好三位 ASCII 数字且数值位于 `100..599` 的状态才可信。其他输入统一为 `status_code=0` 和 `status_unknown`。有效 `2xx..3xx` 使用 `none`，`4xx` 使用 `http_4xx`，`5xx` 使用 `http_5xx`；其他有效状态使用 `status_unknown`。
+
+`route` 只来自可信 Higress `route_name`：它必须非空、是有效 UTF-8、最多 128 字节且不含控制字符，否则使用 `route_unknown`。`path` 只接受实际选中适配器的 `matched:true` schema v2 `operation_template`：它必须是 origin-form、恰好一个前导 `/`、最多 128 字节，并且只包含 ASCII 字母/数字和 `/ . _ - ~ { }`，不得包含 authority、query、fragment、控制字符或 Unicode。
+
+无元数据、格式错误或超过 1024 字节的元数据、`matched:false`、schema v1、未知 schema，以及缺少任一必需 operation 字段的 v2 元数据都使用 `provider_native_unknown`。已提供但非法或超长的选中 v2 模板使用 `path_unknown`，且绝不输出提交值。逻辑 `normalized_operation` 必须非空、不超过 128 字节、不能以 `/` 开头，只能包含 ASCII 字母/数字和 `/ . _ - ~`，且不能包含 query、fragment、authority 或控制字符；它单独用于可选 AILog operation，不会作为路径模板。schema v1 只能保留通过该校验的逻辑 operation，不能信任 adapter、adapter version、provider、capability 或 usage profile。unknown、malformed 或 unmatched 元数据不贡献任何可选 enrichment。
+
+路径归因绝不使用原始路径、query、请求头、凭据、请求体或响应体，也不使用动态请求片段或原始路径的哈希。`usage_missing` 是 ai-billing 的事件字段，不是 ai-statistics 的事实或指标维度；ai-statistics 在 usage/model/逻辑 operation/token 不可用或禁用时仍输出安全基础 count/duration 和终态 AILog，只省略不可用的可选维度，不会创建合成的 `usage_missing` 指标标签。
+
 Attribute 配置说明:
 
 | 名称                    | 数据类型 | 填写要求 | 默认值 | 描述                                                                                                                                        |
 | ----------------------- | -------- | -------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `key`                   | string   | 必填     | -      | attribute 名称                                                                                                                              |
-| `value_source`          | string   | 必填     | -      | attribute 取值来源，可选值为 `fixed_value`, `request_header`, `request_body`, `response_header`, `response_body`, `response_streaming_body` |
-| `value`                 | string   | 必填     | -      | attribute 取值 key value/path                                                                                                               |
+| `value_source`          | string   | 条件必填 | -      | 自定义属性需要；内置属性可省略。可选值为 `fixed_value`, `request_header`, `request_body`, `response_header`, `response_body`, `response_streaming_body` |
+| `value`                 | string   | 条件必填 | -      | 自定义属性需要；内置属性可省略。配置 attribute 取值 key value/path                                                                          |
 | `default_value`         | string   | 非必填   | -      | attribute 默认值                                                                                                                            |
 | `rule`                  | string   | 非必填   | -      | 从流式响应中提取 attribute 的规则，可选值为 `first`, `replace`, `append`                                                                    |
 | `apply_to_log`          | bool     | 非必填   | false  | 是否将提取的信息记录在日志中                                                                                                                |

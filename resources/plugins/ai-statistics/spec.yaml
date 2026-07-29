@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-statistics/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-statistics/README_EN.md
-  version: 1.0.0
+  version: 1.0.1
   contact:
     name: rinfx
 spec:
@@ -24,6 +24,7 @@ spec:
   configSchema:
     openAPIV3Schema:
       type: object
+      additionalProperties: false
       properties:
         use_default_attributes:
           type: boolean
@@ -53,6 +54,7 @@ spec:
             en-US: Custom attributes recorded in logs or tracing spans. Built-in attribute keys may omit value_source and value.
           items:
             type: object
+            additionalProperties: false
             required: [key]
             properties:
               key:
@@ -223,57 +225,8 @@ spec:
   routeConfigSchema:
     openAPIV3Schema:
       type: object
+      additionalProperties: false
       properties:
-        use_default_attributes:
-          type: boolean
-          title: 使用完整默认属性
-          x-title-i18n:
-            en-US: Use Full Default Attributes
-          default: false
-        use_default_response_attributes:
-          type: boolean
-          title: 使用轻量默认响应属性
-          x-title-i18n:
-            en-US: Use Lightweight Default Response Attributes
-          default: false
-        attributes:
-          type: array
-          title: 可观测属性
-          x-title-i18n:
-            en-US: Observable Attributes
-          items:
-            type: object
-            required: [key]
-            properties:
-              key:
-                type: string
-              value_source:
-                type: string
-                enum: [fixed_value, request_header, request_body, response_header, response_body, response_streaming_body]
-              value:
-                type: string
-              default_value:
-                type: string
-              rule:
-                type: string
-                enum: [first, replace, append]
-              apply_to_log:
-                type: boolean
-                default: false
-              apply_to_span:
-                type: boolean
-                default: false
-              trace_span_key:
-                type: string
-              as_separate_log_field:
-                type: boolean
-                default: false
-        disable_openai_usage:
-          type: boolean
-          default: false
-        value_length_limit:
-          type: integer
-          default: 32000
         path_scope:
           type: string
           title: 路径作用域
@@ -299,18 +252,5 @@ spec:
           items:
             type: string
             pattern: '.*\S.*'
-        enable_content_types:
-          type: array
-          items:
-            type: string
-        session_id_header:
-          type: string
       example:
-        use_default_response_attributes: true
-        value_length_limit: 4000
         path_scope: bound_target
-        attributes:
-        - key: model
-          apply_to_log: true
-        - key: output_token_details
-          apply_to_log: true

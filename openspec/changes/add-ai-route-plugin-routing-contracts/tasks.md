@@ -2365,9 +2365,91 @@ Task 6.4 evidence (2026-07-30):
   was LOW across 12 files and 23 indexed symbols with zero affected execution
   flows.
 
-- [ ] 6.5 Advance authoritative ai-statistics version to `1.0.1` and align
+- [x] 6.5 Advance authoritative ai-statistics version to `1.0.1` and align
   metadata, schema, examples, bounded route/path attribution and safe-base-fact
   language, and bilingual extension/resource documentation.
+
+Task 6.5 evidence (2026-07-30):
+
+- The task started from clean sibling-worktree HEAD
+  `1ed040f003d7c6d4319e1cc5e00d0674e09a2157`. Repository instructions, the
+  current Graphify report, complete OpenSpec apply context, active statistics
+  and resource-documentation deltas, design/tasks, TDD and GitNexus guidance,
+  and the ignored Task 6.5 preflight were reviewed before edits. No runtime
+  function/type/callback, adapter metadata/golden, dependency, quota surface,
+  accepted specification, or Task 6.6 automation was modified.
+- The version parser fixture passed first. The exact pre-edit command
+  `go test . -run
+  '^TestAIPluginVersionAlignmentContract$/^ai-statistics$' -count=1 -v`
+  then failed only at the six intended release surfaces: authoritative
+  `VERSION`, resource `info.version`, and four absent bilingual
+  extension/resource README markers.
+- A new independent root structured contract was added before resource or
+  documentation edits. Its YAML/parser fixture passed while the production
+  subtests failed only for the intended truth gaps: unclosed global, route,
+  and attribute-item objects; seven falsely advertised route overrides and
+  their defaults; a route example containing unsupported overrides; and
+  absent bilingual safe-observability/configuration semantics. No compile,
+  fixture, setup, or panic failure occurred.
+- The authoritative release is now `1.0.1` in exactly those six surfaces.
+  Resource `apiVersion: 1.0.0` remains the catalog/schema API version.
+  Adapter-envelope schema v2, selected adapter implementation version `"1"`,
+  the shared metadata golden, `normalized_operation`, and
+  `operation_template` remain unchanged and semantically separate.
+- Global and route schemas are closed with `additionalProperties: false`.
+  Global properties are exactly the ten runtime-supported fields, nested
+  `attributes.items` is also closed with its exact nine-property surface, and
+  the route schema exposes only `path_scope`, `enable_path_suffixes`, and
+  `enable_methods`, without defaults. The legacy global example keeps exact
+  `/completions` and `/messages` suffixes; the bound-target route example is
+  unfiltered and contains only `path_scope`.
+- The four bilingual READMEs have exactly one release marker and remain
+  same-language byte-identical between extension and resource copies. They
+  correct priority `900`, both English default-mode rows, conditional
+  `value_length_limit` defaults `32000`/`10485760`/`4000`, omitted
+  all-content-type behavior, and custom-versus-built-in attribute
+  requirements.
+- The safe-observability sections document normalized bounded method,
+  positive latency, bounded status/error, terminal exact-once ownership,
+  exact three-digit `100..599` status truth, trusted 128-byte route/template
+  boundaries, `route_unknown`, `provider_native_unknown`, and `path_unknown`,
+  logical-operation validation and schema-v1 trust limits, and exclusion of
+  raw/dynamic/credential/body/error-text/hash material from metric
+  attribution. Opaque or missing usage never suppresses base facts;
+  unavailable optional dimensions are omitted. `usage_missing` is explicitly
+  an ai-billing event field rather than an ai-statistics fact, dimension, or
+  synthetic metric label.
+- Independent read-only review was blocking. Its first pass returned
+  `NEEDS_FIXES` for incomplete method/latency/error and logical-operation/
+  metadata trust language plus stale `value_source`/`value` requiredness. New
+  section-scoped assertions reproduced only those missing semantics before
+  all four documents were repaired. The same reviewer then returned
+  `APPROVED` with zero Critical, Important, or Minor findings.
+- The final structured contract, parser fixture, ai-statistics version
+  subtest, and shared routing schema/example contracts pass. The focused
+  statistics scope, opaque facts, attribution/cardinality, completion,
+  terminal Go/Wasm, legacy usage, and exact-empty route suite passed in
+  `2.088s`; complete `go test ./... -count=1 -timeout=5m` in
+  `extensions/ai-statistics` passed in `34.915s`. Module-local
+  `go vet ./...` and `go mod tidy -diff` both pass with empty output.
+- Root `go test ./... -count=1` is fully GREEN after the final pending
+  statistics release alignment. Same-language `cmp`, exact Go formatting,
+  `git diff --check`, and strict OpenSpec validation pass. Root-wide
+  `go vet ./...` reports only the pre-existing unchanged
+  `pkg/ai/sessionctx/sessionctx.go:512:2` unreachable-code finding.
+- The preflight's exact-source complete statistics race gate passed in
+  `384.026s`. Because Task 6.5 changes no runtime or dependency source, that
+  expensive race gate was not redundantly repeated here; Task 6.7 retains the
+  coordinated fresh verification responsibility.
+- Final Graphify refresh rebuilt 11,302 nodes, 15,623 edges, and 841
+  communities. GitNexus incremental analysis rebuilt 13,217 nodes, 41,738
+  edges, 301 clusters, and 300 flows; its eight generated repository
+  instruction rewrites were restored before staging. Final staged detection
+  is LOW across exactly eight Task 6.5 files and 31 test/documentation symbols
+  with zero affected execution processes. The mandatory comparison against
+  `main` remains CRITICAL across the cumulative 119-file change branch (847
+  symbols and 70 flows), not the isolated statistics release delta.
+
 - [ ] 6.6 Add an automated version-alignment/single-source check that fails on
   drift among authoritative extension versions, resource `info.version`,
   plugin/option metadata, example artifact URLs, and documented versions.
