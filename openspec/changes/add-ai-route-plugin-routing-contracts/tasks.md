@@ -2723,11 +2723,31 @@ Task 7.3 evidence (2026-07-30):
 - No expanded token, Authorization value, Secret, kubeconfig, provider
   credential, or plaintext password is present. Upload and retrieval facts
   remain explicitly `pending`/`null`; Tasks 7.4 and 7.5 are not claimed.
-- [ ] 7.4 Upload the exact four tested Wasm byte sequences to the supported
+- [x] 7.4 Upload the exact four tested Wasm byte sequences to the supported
   local plugin server and verify each version is available through its normal
   local service interface.
-- [ ] 7.5 Retrieve all four served artifacts and prove byte-for-byte SHA-256
+- [x] 7.5 Retrieve all four served artifacts and prove byte-for-byte SHA-256
   identity with the tested local files; reject and replace any mismatch.
+
+Tasks 7.4 and 7.5 evidence (2026-07-30):
+
+- Before upload, all four target versions returned HTTP 404 through the normal
+  in-cluster DNS Service. The exact tested files recorded by the manifest were
+  then uploaded with the supported authenticated PUT helper; each PUT returned
+  HTTP 201.
+- The upload transport was a temporary `kubectl port-forward` bound only to
+  `127.0.0.1:18084`. Its exact PID was stopped after the run, and its unique
+  temporary retrieval directory was removed. The token came from the ignored
+  local E2E environment and was neither printed nor persisted.
+- Every loopback GET and every independent normal in-cluster DNS GET returned
+  HTTP 200 with `application/wasm`. Each response was non-empty, had Wasm
+  magic/version `0061736d01000000`, matched the manifest size and SHA-256, and
+  was byte-identical by `cmp` to both the tested local artifact and the other
+  retrieval path.
+- The controlled availability run lasted from
+  `2026-07-29T19:06:43Z` through `2026-07-29T19:06:49Z`. The manifest records
+  the upload status and both retrieval results independently for each version;
+  no mismatch required replacement.
 
 ## 8. Final Verification, Spec Sync, And Archive
 

@@ -70,6 +70,18 @@
     "kubectl -n higress-system exec \"${PLUGIN_POD}\" -- python3 -c 'import sys,urllib.request;sys.stdout.buffer.write(urllib.request.urlopen(sys.argv[1],timeout=60).read())' \"http://higress-plugin-server.higress-system.svc/plugins/${PLUGIN}/${VERSION}/plugin.wasm\"",
     "cmp --silent \"${ARTIFACT}\" \"${SERVED_FILE}\""
   ],
+  "availability_run": {
+    "kubernetes_context": "kind-higress",
+    "namespace": "higress-system",
+    "service": "higress-plugin-server",
+    "upload_transport": "kubectl port-forward bound only to 127.0.0.1:18084",
+    "normal_service_base_url": "http://higress-plugin-server.higress-system.svc",
+    "started_at_utc": "2026-07-29T19:06:43Z",
+    "finished_at_utc": "2026-07-29T19:06:49Z",
+    "expanded_secret_recorded": false,
+    "port_forward_stopped": true,
+    "temporary_retrieval_files_removed": true
+  },
   "artifacts": [
     {
       "plugin": "ai-proxy",
@@ -126,13 +138,30 @@
         "namespace": "higress-system",
         "service": "higress-plugin-server",
         "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-proxy/1.0.2/plugin.wasm",
-        "upload_http_status": null,
-        "retrieval_http_status": null,
-        "content_type": null,
-        "served_size_bytes": null,
-        "served_sha256": null,
-        "byte_identical": null,
-        "state": "pending-upload-and-retrieval"
+        "preupload_service_http_status": 404,
+        "upload_http_status": 201,
+        "retrieval_http_status": 200,
+        "content_type": "application/wasm",
+        "served_size_bytes": 9899479,
+        "served_sha256": "dab58afed159badafbd60f07666a99d8d665c044b54b8026a0ee7b19d777e6cc",
+        "byte_identical": true,
+        "loopback_retrieval": {
+          "url": "http://127.0.0.1:18084/plugins/ai-proxy/1.0.2/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 9899479,
+          "served_sha256": "dab58afed159badafbd60f07666a99d8d665c044b54b8026a0ee7b19d777e6cc",
+          "byte_identical": true
+        },
+        "service_retrieval": {
+          "url": "http://higress-plugin-server.higress-system.svc/plugins/ai-proxy/1.0.2/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 9899479,
+          "served_sha256": "dab58afed159badafbd60f07666a99d8d665c044b54b8026a0ee7b19d777e6cc",
+          "byte_identical": true
+        },
+        "state": "available-byte-identical"
       }
     },
     {
@@ -190,13 +219,30 @@
         "namespace": "higress-system",
         "service": "higress-plugin-server",
         "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.5/plugin.wasm",
-        "upload_http_status": null,
-        "retrieval_http_status": null,
-        "content_type": null,
-        "served_size_bytes": null,
-        "served_sha256": null,
-        "byte_identical": null,
-        "state": "pending-upload-and-retrieval"
+        "preupload_service_http_status": 404,
+        "upload_http_status": 201,
+        "retrieval_http_status": 200,
+        "content_type": "application/wasm",
+        "served_size_bytes": 18436619,
+        "served_sha256": "4e346d42a7032c69ca54d26ae48a15dce495065bff5029471945d5c866184ca0",
+        "byte_identical": true,
+        "loopback_retrieval": {
+          "url": "http://127.0.0.1:18084/plugins/ai-billing/0.1.5/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 18436619,
+          "served_sha256": "4e346d42a7032c69ca54d26ae48a15dce495065bff5029471945d5c866184ca0",
+          "byte_identical": true
+        },
+        "service_retrieval": {
+          "url": "http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.5/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 18436619,
+          "served_sha256": "4e346d42a7032c69ca54d26ae48a15dce495065bff5029471945d5c866184ca0",
+          "byte_identical": true
+        },
+        "state": "available-byte-identical"
       }
     },
     {
@@ -254,13 +300,30 @@
         "namespace": "higress-system",
         "service": "higress-plugin-server",
         "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-quota/1.0.2/plugin.wasm",
-        "upload_http_status": null,
-        "retrieval_http_status": null,
-        "content_type": null,
-        "served_size_bytes": null,
-        "served_sha256": null,
-        "byte_identical": null,
-        "state": "pending-upload-and-retrieval"
+        "preupload_service_http_status": 404,
+        "upload_http_status": 201,
+        "retrieval_http_status": 200,
+        "content_type": "application/wasm",
+        "served_size_bytes": 6341937,
+        "served_sha256": "0c974c1aeda1d0dead8294d990a8b6846eaaa19a5eba663fe5a1e9dbb9465f59",
+        "byte_identical": true,
+        "loopback_retrieval": {
+          "url": "http://127.0.0.1:18084/plugins/ai-quota/1.0.2/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 6341937,
+          "served_sha256": "0c974c1aeda1d0dead8294d990a8b6846eaaa19a5eba663fe5a1e9dbb9465f59",
+          "byte_identical": true
+        },
+        "service_retrieval": {
+          "url": "http://higress-plugin-server.higress-system.svc/plugins/ai-quota/1.0.2/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 6341937,
+          "served_sha256": "0c974c1aeda1d0dead8294d990a8b6846eaaa19a5eba663fe5a1e9dbb9465f59",
+          "byte_identical": true
+        },
+        "state": "available-byte-identical"
       }
     },
     {
@@ -318,13 +381,30 @@
         "namespace": "higress-system",
         "service": "higress-plugin-server",
         "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-statistics/1.0.1/plugin.wasm",
-        "upload_http_status": null,
-        "retrieval_http_status": null,
-        "content_type": null,
-        "served_size_bytes": null,
-        "served_sha256": null,
-        "byte_identical": null,
-        "state": "pending-upload-and-retrieval"
+        "preupload_service_http_status": 404,
+        "upload_http_status": 201,
+        "retrieval_http_status": 200,
+        "content_type": "application/wasm",
+        "served_size_bytes": 6923452,
+        "served_sha256": "243d1994b9a35a889b3ecd132f9de41f0ddb73587ea5c0cb65653c6e2cadbe37",
+        "byte_identical": true,
+        "loopback_retrieval": {
+          "url": "http://127.0.0.1:18084/plugins/ai-statistics/1.0.1/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 6923452,
+          "served_sha256": "243d1994b9a35a889b3ecd132f9de41f0ddb73587ea5c0cb65653c6e2cadbe37",
+          "byte_identical": true
+        },
+        "service_retrieval": {
+          "url": "http://higress-plugin-server.higress-system.svc/plugins/ai-statistics/1.0.1/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 6923452,
+          "served_sha256": "243d1994b9a35a889b3ecd132f9de41f0ddb73587ea5c0cb65653c6e2cadbe37",
+          "byte_identical": true
+        },
+        "state": "available-byte-identical"
       }
     }
   ]
