@@ -1842,7 +1842,7 @@ Task 5.2 review-fix evidence (2026-07-29):
   across exactly two files and two test/documentation symbols, with zero
   affected execution processes.
 
-- [ ] 5.3 Add RED trust/cardinality fixtures proving: raw
+- [x] 5.3 Add RED trust/cardinality fixtures proving: raw
   `/v1/files/<uuid>?api_key=secret` plus trusted
   `/v1/files/{file_id}` emits only the template; unknown
   `/vendor/jobs/<attacker>` emits `provider_native_unknown`; invalid or
@@ -1851,6 +1851,35 @@ Task 5.2 review-fix evidence (2026-07-29):
   `route_unknown`; repeated fallbacks are deterministic; raw queries,
   credentials, headers, bodies, dynamic segments, and raw-path hashes never
   enter metric attributes.
+
+Task 5.3 evidence (2026-07-29):
+
+- `extensions/ai-statistics/attribution_cardinality_contract_test.go` adds one
+  independent HostEmulator matrix with literal bound-target configuration,
+  literal-empty advanced filters, empty attributes/defaults, opaque response
+  controls, test-local bounded adapter metadata, and the trusted
+  `mse_ai_proxy_adapter_metadata` property. It enumerates actual counter keys
+  read-only through same-package `GetMatchConfig`, verifies response
+  transparency, and aggregates every terminal HostEmulator log level.
+- The bounded focused command
+  `timeout 45s go test . -run '^TestStatisticsAttributionCardinalityContract$' -count=1`
+  compiles and fails at exactly 19 intentional leaves: trusted template, no
+  metadata, matched-false metadata, nine invalid templates, five route cases,
+  determinism, and spoofing. Each intended failure is missing bounded base
+  attribution/metrics; no setup, panic, or empty-property error is present.
+  The selected full boundary is exactly 37 leaves: existing Task 5.1 15 + Task
+  5.2 3 + these 19 only.
+- The isolated missing-route command
+  `timeout 45s go test . -run '^TestStatisticsAttributionCardinalityContract$/^go$/^missing_trusted_route_name_uses_fixed_fallback$' -count=1 -v`
+  bootstraps and resets its own ordinary host before the raw no-default host.
+  It fails only the intended attribution/metric assertions, with no context,
+  setup, or panic failure.
+- The SDK HostEmulator rejects zero-length `SetProperty` values and dereferences
+  element zero while reading an injected empty slice, so it cannot honestly
+  represent an empty `route_name`. This fixture uses a raw no-default-property
+  HostEmulator for the genuine missing route case and an exact 128-byte valid
+  route control instead of fabricating empty data. Before Task 5.4 production
+  work, a pure route-validator RED test must cover the exact empty-value case.
 - [ ] 5.4 Implement bound-target gating and base-fact emission before optional
   trusted adapter/provider enrichment, with 128-byte bounded trusted Higress
   route names and selected-adapter origin-form operation templates.
