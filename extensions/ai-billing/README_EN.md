@@ -4,11 +4,11 @@ keywords: [AI Gateway, AI Billing, ai-billing]
 description: Configuration reference for request-level AI billing event delivery.
 ---
 
-> Plugin version: `0.1.5`
+> Plugin version: `0.1.6`
 
 ## Overview
 
-`ai-billing` creates one request-level event when an enabled AI request completes or its stream terminates, then runs `XADD <stream> * event <BillingEvent JSON>` through one global Redis Stream target. Delivery is fail-open: Redis initialization, network, timeout, or command errors do not block the model response. The plugin does not calculate final authoritative cost, apply discounts, debit balances, or update account databases. Idempotent settlement, statements, balance projection, and reconciliation belong to Console/billing-service.
+`ai-billing` creates one request-level event when an enabled AI request completes or its stream terminates, then runs `XADD <stream> * event <BillingEvent JSON>` through the Redis Stream target selected by its valid global or scoped configuration. Delivery is fail-open: Redis initialization, network, timeout, or command errors do not block the model response. The plugin does not calculate final authoritative cost, apply discounts, debit balances, or update account databases. Idempotent settlement, statements, balance projection, and reconciliation belong to Console/billing-service.
 
 ## Billing event contract
 
@@ -34,7 +34,7 @@ When canonical request context is missing, the plugin removes the upstream value
 
 ## Configuration and migration
 
-Global `redis_stream` is the only delivery target and requires a non-empty `service_name`. The defaults for `service_port`, `database`, `timeout`, and `stream` are `6379`, `0`, `500`, and `billing:events`. Credential examples use only the `<redis-username>` and `<redis-password>` placeholders.
+A global delivery target requires `redis_stream.service_name`. The defaults for `service_port`, `database`, `timeout`, and `stream` are `6379`, `0`, `500`, and `billing:events`. Credential examples use only the `<redis-username>` and `<redis-password>` placeholders.
 
 ```yaml
 defaultConfig:
@@ -75,7 +75,31 @@ matchRules:
       path_scope: bound_target
 ```
 
-Global and route configuration support `event_kind`, `quota_scope`, `provider`, `cost_source`, `worker_kind`, `bill_customer`, `tenant_header`, `consumer_header`, `path_scope`, `enable_path_suffixes`, `enable_methods`, and `fail_policy`. Omitted business, header, path, and fail-open route fields inherit the global configuration. Redis service, credentials, database, and stream always inherit the global target.
+For route-scoped-only delivery, leave the base empty, set `defaultConfigDisable: true`, and place a complete Redis target in every active match rule:
+
+```yaml
+defaultConfigDisable: true
+matchRules:
+  - ingress:
+      - qwen
+    config:
+      redis_stream:
+        service_name: redis-stack-server.dns
+        service_port: 6379
+        username: <redis-username>
+        password: <redis-password>
+        database: 0
+        timeout: 500
+        stream: billing:events
+      event_kind: usage
+      quota_scope: route:qwen
+      provider: dashscope
+      path_scope: bound_target
+```
+
+The empty base starts in a dormant no-op state, so unmatched traffic does not read bodies, initialize billing state, or emit events. Any non-empty base still requires a valid global `redis_stream.service_name`.
+
+Global and route configuration support `event_kind`, `quota_scope`, `provider`, `cost_source`, `worker_kind`, `bill_customer`, `tenant_header`, `consumer_header`, `path_scope`, `enable_path_suffixes`, `enable_methods`, and `fail_policy`. With a valid global Redis target, omitted route fields inherit global values and a rule cannot replace that target. With a dormant base, each active rule must be complete, including `redis_stream.service_name`.
 
 Missing or explicit `legacy_suffixes` retains exactly the two effective legacy suffixes `/v1/chat/completions` and `/v1/messages`. With `bound_target`, the Higress binding defines the request set, and omitted or literal-empty filters add no narrowing. For advanced narrowing, non-empty suffix and method filters form an exact intersection with the binding target and cannot expand it; the following example intersects `/v1/responses` with `POST`:
 
@@ -87,7 +111,7 @@ enable_methods:
   - POST
 ```
 
-The old HTTP-shaped transport is removed from the current configuration surface. Global and rule-level `billing_service` are rejected with guidance to use global `redis_stream`; rule-level `redis_stream` is rejected because rules inherit the global delivery target. To upgrade old objects, remove `billing_service`, `path`, and `auth_token`, then recreate the `WasmPlugin` or let Console reproject the managed binding.
+The old HTTP-shaped transport is removed from the current configuration surface. Global and rule-level `billing_service` are rejected. Rule-level `redis_stream` is accepted only with a dormant empty base; it cannot replace an existing global target. To upgrade old objects, remove `billing_service`, `path`, and `auth_token`, then recreate the `WasmPlugin` or let Console reproject the managed binding.
 
 ## Independent deployment boundary
 

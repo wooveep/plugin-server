@@ -45,4 +45,4 @@ spec:
       path_scope: bound_target
   phase: UNSPECIFIED_PHASE
   priority: 270
-  url: http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.5/plugin.wasm
+  url: http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.6/plugin.wasm

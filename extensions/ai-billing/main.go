@@ -115,6 +115,8 @@ type BillingConfig struct {
 	EnablePathSuffixes []string    `yaml:"enable_path_suffixes"`
 	EnableMethods      []string    `yaml:"enable_methods"`
 	FailPolicy         string      `yaml:"fail_policy"`
+	dormant            bool
+	invalidBase        bool
 	redisClient        wrapper.RedisClient
 }
 
@@ -200,21 +202,36 @@ func (usage BillingUsage) MarshalJSON() ([]byte, error) {
 }
 
 func parseConfig(configJson gjson.Result, config *BillingConfig) error {
+	if configJson.Get("billing_service").Exists() {
+		return errors.New("billing_service is no longer supported; use redis_stream")
+	}
+	redisStream := configJson.Get("redis_stream")
+	if !redisStream.Exists() && isRuleOnlyConfig(configJson) {
+		*config = BillingConfig{dormant: true}
+		return nil
+	}
 	if err := parseConfigFields(configJson, config); err != nil {
 		return err
 	}
-	if configJson.Get("billing_service").Exists() {
-		return errors.New("billing_service is no longer supported; use redis_stream")
+	if !redisStream.Exists() && configJson.Get("_rules_").Exists() {
+		config.invalidBase = true
+		return nil
 	}
-	return parseRedisStream(configJson.Get("redis_stream"), config)
+	return parseRedisStream(redisStream, config)
 }
 
 func parseRuleConfig(configJson gjson.Result, global BillingConfig, config *BillingConfig) error {
-	if global.RedisStream.ServiceName == "" {
-		return errors.New("missing redis_stream in config")
-	}
 	if configJson.Get("billing_service").Exists() {
 		return errors.New("billing_service is no longer supported; use redis_stream")
+	}
+	if global.invalidBase {
+		return errors.New("missing redis_stream in non-empty base config")
+	}
+	if global.RedisStream.ServiceName == "" {
+		if !configJson.Get("redis_stream").Exists() {
+			return errors.New("missing redis_stream in scoped config")
+		}
+		return parseConfig(configJson, config)
 	}
 	if configJson.Get("redis_stream").Exists() {
 		return errors.New("redis_stream must be configured globally")
@@ -286,6 +303,15 @@ func parseRuleConfig(configJson gjson.Result, global BillingConfig, config *Bill
 		config.EnableMethods = methods
 	}
 	return nil
+}
+
+func isRuleOnlyConfig(configJson gjson.Result) bool {
+	for key := range configJson.Map() {
+		if key != "_rules_" {
+			return false
+		}
+	}
+	return true
 }
 
 func parseConfigFields(configJson gjson.Result, config *BillingConfig) error {
@@ -389,6 +415,12 @@ func parseRedisStream(redisStream gjson.Result, config *BillingConfig) error {
 }
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config BillingConfig) types.Action {
+	if config.dormant {
+		ctx.SetContext(ctxBillingEnabled, false)
+		ctx.DontReadRequestBody()
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
 	requestPath := ctx.Path()
 	if !isBillingRequestEnabled(requestPath, ctx.Method(), config) {
 		ctx.SetContext(ctxBillingEnabled, false)

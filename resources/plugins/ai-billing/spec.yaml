@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README_EN.md
-  version: 0.1.5
+  version: 0.1.6
   contact:
     name: 2456868764
 spec:
@@ -195,7 +195,6 @@ spec:
             en-US: Delivery failure policy. Currently supports open
           enum: [open]
           default: open
-      required: [redis_stream]
       example:
         redis_stream:
           service_name: redis-stack-server.dns
@@ -220,6 +219,59 @@ spec:
       type: object
       additionalProperties: false
       properties:
+        redis_stream:
+          type: object
+          additionalProperties: false
+          title: Redis Stream配置
+          x-title-i18n:
+            en-US: Redis Stream Configuration
+          description: 仅在禁用且空的全局配置下使用的完整规则级 BillingEvent Redis Stream XADD 目标
+          x-description-i18n:
+            en-US: Complete rule-level BillingEvent Redis Stream XADD target, valid only with an empty disabled global config
+          required: [service_name]
+          properties:
+            service_name:
+              type: string
+              title: Redis服务名称
+              x-title-i18n:
+                en-US: Redis Service Name
+            service_port:
+              type: integer
+              title: Redis服务端口
+              x-title-i18n:
+                en-US: Redis Service Port
+              default: 6379
+            username:
+              type: string
+              title: Redis用户名
+              x-title-i18n:
+                en-US: Redis Username
+            password:
+              type: string
+              title: Redis密码
+              x-title-i18n:
+                en-US: Redis Password
+              description: Redis 密码，需按敏感字段处理
+              x-description-i18n:
+                en-US: Redis password. Treat as sensitive
+            database:
+              type: integer
+              title: Redis数据库
+              x-title-i18n:
+                en-US: Redis Database
+              default: 0
+            timeout:
+              type: integer
+              title: Redis超时时间
+              x-title-i18n:
+                en-US: Redis Timeout
+              default: 500
+            stream:
+              type: string
+              title: Stream名称
+              x-title-i18n:
+                en-US: Stream Name
+              default: billing:events
         event_kind:
           type: string
           title: 事件类型
@@ -324,6 +376,14 @@ spec:
             en-US: Rule-level delivery failure policy override. Currently supports open and inherits the global config when omitted
           enum: [open]
       example:
+        redis_stream:
+          service_name: redis-stack-server.dns
+          service_port: 6379
+          username: <redis-username>
+          password: <redis-password>
+          database: 0
+          timeout: 500
+          stream: billing:events
         event_kind: internal_cost
         quota_scope: internal:ai-memory.digest
         provider: dashscope

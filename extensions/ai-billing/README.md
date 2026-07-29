@@ -4,11 +4,11 @@ keywords: [AI网关, AI账单, ai-billing]
 description: ai-billing 请求级账单事件插件配置参考
 ---
 
-> 插件版本：`0.1.5`
+> 插件版本：`0.1.6`
 
 ## 功能说明
 
-`ai-billing` 在已启用的 AI 请求完成或流终止时生成一个请求级事件，并通过全局 Redis Stream 执行 `XADD <stream> * event <BillingEvent JSON>`。投递默认为 fail-open：Redis 初始化、网络、超时或命令错误不会阻塞模型响应。插件不计算最终权威费用、不应用折扣、不扣减余额，也不更新账户数据库；幂等结算、账单流水、余额投影和补偿归 Console/billing-service 所有。
+`ai-billing` 在已启用的 AI 请求完成或流终止时生成一个请求级事件，并通过有效全局或路由配置选中的 Redis Stream 执行 `XADD <stream> * event <BillingEvent JSON>`。投递默认为 fail-open：Redis 初始化、网络、超时或命令错误不会阻塞模型响应。插件不计算最终权威费用、不应用折扣、不扣减余额，也不更新账户数据库；幂等结算、账单流水、余额投影和补偿归 Console/billing-service 所有。
 
 ## 账单事件契约
 
@@ -34,7 +34,7 @@ description: ai-billing 请求级账单事件插件配置参考
 
 ## 配置与迁移
 
-全局 `redis_stream` 是唯一投递目标，必须提供非空 `service_name`。`service_port`、`database`、`timeout` 和 `stream` 的默认值分别是 `6379`、`0`、`500` 和 `billing:events`。示例凭据只能使用 `<redis-username>` 和 `<redis-password>` 占位符。
+全局投递目标必须提供 `redis_stream.service_name`。`service_port`、`database`、`timeout` 和 `stream` 的默认值分别是 `6379`、`0`、`500` 和 `billing:events`。示例凭据只能使用 `<redis-username>` 和 `<redis-password>` 占位符。
 
 ```yaml
 defaultConfig:
@@ -75,7 +75,31 @@ matchRules:
       path_scope: bound_target
 ```
 
-全局和路由可配置 `event_kind`、`quota_scope`、`provider`、`cost_source`、`worker_kind`、`bill_customer`、`tenant_header`、`consumer_header`、`path_scope`、`enable_path_suffixes`、`enable_methods` 和 `fail_policy`。规则省略的业务、头、路径和 fail-open 字段会继承全局配置；Redis 服务、凭据、database 和 stream 始终继承全局目标。
+仅按路由投递时，保持基础配置为空，设置 `defaultConfigDisable: true`，并在每条有效匹配规则中提供完整 Redis 目标：
+
+```yaml
+defaultConfigDisable: true
+matchRules:
+  - ingress:
+      - qwen
+    config:
+      redis_stream:
+        service_name: redis-stack-server.dns
+        service_port: 6379
+        username: <redis-username>
+        password: <redis-password>
+        database: 0
+        timeout: 500
+        stream: billing:events
+      event_kind: usage
+      quota_scope: route:qwen
+      provider: dashscope
+      path_scope: bound_target
+```
+
+空基础配置会以休眠 no-op 状态启动，因此未匹配流量不会读取 body、初始化账单状态或发布事件。任何非空基础配置仍必须提供有效的全局 `redis_stream.service_name`。
+
+全局和路由可配置 `event_kind`、`quota_scope`、`provider`、`cost_source`、`worker_kind`、`bill_customer`、`tenant_header`、`consumer_header`、`path_scope`、`enable_path_suffixes`、`enable_methods` 和 `fail_policy`。存在有效全局 Redis 目标时，规则省略的字段继承全局值，且规则不得替换该目标；基础配置休眠时，每条有效规则都必须完整提供 `redis_stream.service_name`。
 
 缺省或显式 `legacy_suffixes` 保留且只保留两个历史默认后缀：`/v1/chat/completions` 和 `/v1/messages`。`bound_target` 由 Higress 绑定定义请求集合；缺省或字面空过滤器不增加收窄。需要高级过滤时，非空 suffix 和 method 只与绑定目标做精确交集，不能扩大绑定；下面示例将 `/v1/responses` 与 `POST` 同时作为高级交集：
 
@@ -87,7 +111,7 @@ enable_methods:
   - POST
 ```
 
-当前配置面已移除 HTTP 形态的 transport。全局和规则级 `billing_service` 都会被拒绝，并提示改用全局 `redis_stream`；规则级 `redis_stream` 会被拒绝，因为规则只能继承全局投递目标。升级旧对象时应删除旧 `billing_service`、`path`、`auth_token` 输入，并重新创建 `WasmPlugin` 或通过 Console 重新投影托管绑定。
+当前配置面已移除 HTTP 形态的 transport。全局和规则级 `billing_service` 都会被拒绝。规则级 `redis_stream` 仅可用于休眠的空基础配置，不能替换已有全局目标。升级旧对象时应删除旧 `billing_service`、`path`、`auth_token` 输入，并重新创建 `WasmPlugin` 或通过 Console 重新投影托管绑定。
 
 ## 独立部署边界
 

@@ -105,7 +105,7 @@ schema:
 
 		assertClosedObject(t, globalSchema, "global schema")
 		assertClosedObject(t, routeSchema, "route schema")
-		assertStringSlice(t, globalSchema, "required", []string{"redis_stream"})
+		assertKeyAbsent(t, globalSchema, "required")
 		assertExactProperties(t, globalProperties, []string{
 			"redis_stream",
 			"event_kind",
@@ -122,6 +122,7 @@ schema:
 			"fail_policy",
 		})
 		assertExactProperties(t, routeProperties, []string{
+			"redis_stream",
 			"event_kind",
 			"quota_scope",
 			"provider",
@@ -137,26 +138,30 @@ schema:
 		})
 		assertKeyAbsent(t, globalProperties, "billing_service")
 		assertKeyAbsent(t, routeProperties, "billing_service")
-		assertKeyAbsent(t, routeProperties, "redis_stream")
 
-		redisSchema := nestedMapping(t, globalProperties, "redis_stream")
-		redisProperties := nestedMapping(t, redisSchema, "properties")
-		assertClosedObject(t, redisSchema, "redis_stream")
-		assertStringSlice(t, redisSchema, "required", []string{"service_name"})
-		assertExactProperties(t, redisProperties, []string{
-			"service_name",
-			"service_port",
-			"username",
-			"password",
-			"database",
-			"timeout",
-			"stream",
-		})
-		assertKeyAbsent(t, nestedMapping(t, redisProperties, "service_name"), "default")
-		assertIntegerDefault(t, redisProperties, "service_port", 6379)
-		assertIntegerDefault(t, redisProperties, "database", 0)
-		assertIntegerDefault(t, redisProperties, "timeout", 500)
-		assertStringValue(t, nestedMapping(t, redisProperties, "stream"), "default", "billing:events")
+		for name, properties := range map[string]map[string]any{
+			"global redis_stream": globalProperties,
+			"route redis_stream":  routeProperties,
+		} {
+			redisSchema := nestedMapping(t, properties, "redis_stream")
+			redisProperties := nestedMapping(t, redisSchema, "properties")
+			assertClosedObject(t, redisSchema, name)
+			assertStringSlice(t, redisSchema, "required", []string{"service_name"})
+			assertExactProperties(t, redisProperties, []string{
+				"service_name",
+				"service_port",
+				"username",
+				"password",
+				"database",
+				"timeout",
+				"stream",
+			})
+			assertKeyAbsent(t, nestedMapping(t, redisProperties, "service_name"), "default")
+			assertIntegerDefault(t, redisProperties, "service_port", 6379)
+			assertIntegerDefault(t, redisProperties, "database", 0)
+			assertIntegerDefault(t, redisProperties, "timeout", 500)
+			assertStringValue(t, nestedMapping(t, redisProperties, "stream"), "default", "billing:events")
+		}
 
 		for _, properties := range []map[string]any{globalProperties, routeProperties} {
 			eventKind := nestedMapping(t, properties, "event_kind")
@@ -202,7 +207,10 @@ schema:
 		assertStringValue(t, routeExample, "path_scope", "bound_target")
 		assertKeyAbsent(t, routeExample, "enable_path_suffixes")
 		assertKeyAbsent(t, routeExample, "enable_methods")
-		assertKeyAbsent(t, routeExample, "redis_stream")
+		routeRedis := nestedMapping(t, routeExample, "redis_stream")
+		assertStringValue(t, routeRedis, "service_name", "redis-stack-server.dns")
+		assertStringValue(t, routeRedis, "username", "<redis-username>")
+		assertStringValue(t, routeRedis, "password", "<redis-password>")
 		assertKeyAbsent(t, routeExample, "billing_service")
 		for _, name := range []string{"cost_source", "worker_kind"} {
 			value, exists := routeExample[name]
@@ -315,10 +323,11 @@ schema:
 					"缺少规范请求上下文", "删除上游值且不会虚构", "不能证明 Redis 已持久化",
 				},
 				configFragments: []string{
-					"全局 `redis_stream`", "`service_name`", "`6379`", "`0`", "`500`",
+					"全局投递目标", "`redis_stream.service_name`", "`6379`", "`0`", "`500`",
 					"`billing:events`", "`<redis-username>`", "`<redis-password>`",
 					"全局和规则级 `billing_service` 都会被拒绝",
-					"规则级 `redis_stream` 会被拒绝", "继承全局", "精确交集",
+					"规则级 `redis_stream` 仅可用于休眠的空基础配置",
+					"`defaultConfigDisable: true`", "继承全局值", "精确交集",
 					"`/v1/chat/completions`", "`/v1/messages`", "`/v1/responses`", "`POST`",
 				},
 				independenceParts: []string{
@@ -365,10 +374,11 @@ schema:
 					"removes the upstream value without inventing one", "does not prove Redis persistence",
 				},
 				configFragments: []string{
-					"global `redis_stream`", "`service_name`", "`6379`", "`0`", "`500`",
+					"a global delivery target", "`redis_stream.service_name`", "`6379`", "`0`", "`500`",
 					"`billing:events`", "`<redis-username>`", "`<redis-password>`",
 					"global and rule-level `billing_service` are rejected",
-					"rule-level `redis_stream` is rejected", "inherit the global", "exact intersection",
+					"rule-level `redis_stream` is accepted only with a dormant empty base",
+					"`defaultConfigDisable: true`", "inherit global values", "exact intersection",
 					"`/v1/chat/completions`", "`/v1/messages`", "`/v1/responses`", "`POST`",
 				},
 				independenceParts: []string{
