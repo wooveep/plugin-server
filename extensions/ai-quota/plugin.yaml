@@ -31,4 +31,4 @@ spec:
       quota_scope: route:deepseek
   phase: UNSPECIFIED_PHASE
   priority: 280
-  url: http://higress-plugin-server.higress-system.svc/plugins/ai-quota/1.0.1/plugin.wasm
+  url: http://higress-plugin-server.higress-system.svc/plugins/ai-quota/1.0.2/plugin.wasm

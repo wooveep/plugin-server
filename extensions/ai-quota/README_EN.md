@@ -4,6 +4,8 @@ keywords: [AI Gateway, AI Quota, Monetary Quota]
 description: Configuration reference for read-only Redis balance admission.
 ---
 
+> Plugin version: `1.0.2`
+
 ## Overview
 
 `ai-quota` reads Console- or billing-service-derived Redis hot balance during
@@ -15,6 +17,10 @@ This request admission is the plugin's final account enforcement action for
 the request. The plugin treats Redis balance hot data as read-only input and
 does not mutate account state. Console or billing-service owns authoritative
 accounts, settlement, statements, reconciliation, and Redis hot-data rebuilds.
+
+Recognizable, opaque, streaming, cache, local, error, and missing-usage
+responses do not trigger another quota decision, price lookup, Redis write, or
+account mutation.
 
 ## Request scope
 

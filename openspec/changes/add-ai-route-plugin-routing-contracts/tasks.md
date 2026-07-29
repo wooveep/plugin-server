@@ -2315,9 +2315,56 @@ Task 6.3 evidence (2026-07-30):
   CRITICAL across the cumulative 113-file change branch (808 symbols and 70
   flows), not the isolated Task 6.3 delta.
 
-- [ ] 6.4 Advance authoritative ai-quota version to `1.0.2` and align metadata,
+- [x] 6.4 Advance authoritative ai-quota version to `1.0.2` and align metadata,
   admission-only schema/examples, ownership language, and bilingual
   extension/resource documentation.
+
+Task 6.4 evidence (2026-07-30):
+
+- Exact pre-edit GitNexus upstream impact for
+  `TestQuotaAdmissionSurfaceResources` was LOW with zero direct callers,
+  affected processes, or affected modules. No quota runtime symbol or
+  `extensions/ai-quota/main.go` was modified.
+- The parser fixture passed, while the exact ai-quota release subtest first
+  failed on seven intended surfaces: `VERSION`, resource `info.version`,
+  plugin artifact URL, and four bilingual extension/resource README markers.
+  The existing 13-contract admission/runtime/resource control gate passed.
+  The extended structured contract then failed only on the known README
+  release/response wording and three current documentation-drift groups;
+  schema/default/placeholder/inheritance leaves remained GREEN without a
+  fixture, YAML, setup, or panic failure.
+- The authoritative version is now `1.0.2` across exactly those seven
+  surfaces. The structured contract locks Redis closure, required fields,
+  exact properties/defaults, credential placeholders, global defaults, legacy
+  suffix order, blank-only rejection, route inheritance, and an unfiltered
+  bound-target example with no synthesized filters. The four bilingual
+  READMEs make request admission final and Redis balance read-only across all
+  response classes, with accounts, settlement, statements, reconciliation,
+  and hot-balance rebuild owned by Console/billing-service.
+- The current quota reference is admission-only. The historical joint
+  quota/billing requirements page is explicitly superseded and points through
+  four resolving links to current quota/billing contracts while retaining
+  ai-billing event publication and billing-service settlement boundaries.
+  Console design keeps billing-service price books, calculation, settlement,
+  ledger/projection, reconciliation, and rebuild responsibilities but no
+  longer assigns effective-price reads or gateway deduction to ai-quota.
+- The exact parser, quota version, extended resource, and 13-contract
+  admission gates pass. Complete quota module tests and race tests pass;
+  module vet, exact Go formatting, `git diff --check`, and strict OpenSpec
+  validation pass. Root tests and aggregate version alignment are RED only for
+  the pending ai-statistics `1.0.1` six-surface task; root vet reports only the
+  pre-existing unchanged `pkg/ai/sessionctx/sessionctx.go:512:2` unreachable
+  code.
+- Independent review first found one Important extra version marker on the
+  current rendered quota page. It was removed to preserve exactly seven
+  authoritative surfaces, focused gates were rerun, and final rereview
+  returned `APPROVED` with zero Critical, Important, or Minor findings.
+- Graphify rebuilt 11,291 nodes, 15,597 edges, and 833 communities. GitNexus
+  rebuilt 13,201 nodes, 41,716 edges, 300 clusters, and 300 flows; its eight
+  generated instruction rewrites were restored. Task-local change detection
+  was LOW across 12 files and 23 indexed symbols with zero affected execution
+  flows.
+
 - [ ] 6.5 Advance authoritative ai-statistics version to `1.0.1` and align
   metadata, schema, examples, bounded route/path attribution and safe-base-fact
   language, and bilingual extension/resource documentation.

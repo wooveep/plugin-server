@@ -27,11 +27,15 @@ var removedQuotaSettlementFields = []string{
 func TestQuotaAdmissionSurfaceResources(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
 		extensionRoot, resourceRoot := quotaSurfaceRoots(t)
+		repositoryRoot := filepath.Clean(filepath.Join(extensionRoot, "..", ".."))
 		extensionReadme := quotaSurfaceRead(t, extensionRoot, "README.md")
 		extensionReadmeEN := quotaSurfaceRead(t, extensionRoot, "README_EN.md")
 		pluginText := quotaSurfaceRead(t, extensionRoot, "plugin.yaml")
 		resourceReadme := quotaSurfaceRead(t, resourceRoot, "README.md")
 		resourceReadmeEN := quotaSurfaceRead(t, resourceRoot, "README_EN.md")
+		currentQuotaDoc := quotaSurfaceRead(t, repositoryRoot, "docs/plugins/ai/api-consumer/ai-quota.md")
+		jointRequirementsDoc := quotaSurfaceRead(t, repositoryRoot, "docs/plugins/ai/api-consumer/ai-quota-ai-billing-requirements.md")
+		consoleBillingDoc := quotaSurfaceRead(t, repositoryRoot, "docs/plugins/ai/api-consumer/console-billing-service-api-design.md")
 		specText := quotaSurfaceRead(t, resourceRoot, "spec.yaml")
 		spec := quotaSurfaceYAML(t, specText)
 		plugin := quotaSurfaceYAML(t, pluginText)
@@ -41,6 +45,8 @@ func TestQuotaAdmissionSurfaceResources(t *testing.T) {
 			routeSchema := quotaSurfaceMap(t, spec, "spec", "routeConfigSchema", "openAPIV3Schema")
 			globalProperties := quotaSurfaceMap(t, globalSchema, "properties")
 			routeProperties := quotaSurfaceMap(t, routeSchema, "properties")
+			redisSchema := quotaSurfaceMap(t, globalProperties, "redis")
+			redisProperties := quotaSurfaceMap(t, redisSchema, "properties")
 
 			require.ElementsMatch(t, []string{
 				"redis",
@@ -63,6 +69,43 @@ func TestQuotaAdmissionSurfaceResources(t *testing.T) {
 			}, quotaSurfaceKeys(routeProperties))
 			require.Equal(t, false, globalSchema["additionalProperties"])
 			require.Equal(t, false, routeSchema["additionalProperties"])
+			require.Equal(t, false, redisSchema["additionalProperties"])
+			require.Equal(t, []interface{}{"redis"}, globalSchema["required"])
+			require.Equal(t, []interface{}{"service_name"}, redisSchema["required"])
+			require.ElementsMatch(t, []string{
+				"service_name",
+				"service_port",
+				"username",
+				"password",
+				"timeout",
+				"database",
+			}, quotaSurfaceKeys(redisProperties))
+			require.Equal(t, 6379, quotaSurfaceMap(t, redisProperties, "service_port")["default"])
+			require.Equal(t, 1000, quotaSurfaceMap(t, redisProperties, "timeout")["default"])
+			require.Equal(t, 0, quotaSurfaceMap(t, redisProperties, "database")["default"])
+			require.Equal(t, "global", quotaSurfaceMap(t, globalProperties, "quota_scope")["default"])
+			require.Equal(t, "default", quotaSurfaceMap(t, globalProperties, "provider")["default"])
+			require.Equal(t, "x-mse-tenant", quotaSurfaceMap(t, globalProperties, "tenant_header")["default"])
+			require.Equal(t, "x-mse-consumer", quotaSurfaceMap(t, globalProperties, "consumer_header")["default"])
+			require.Equal(t, "billing:balance:{tenant}:{quota_scope}:{consumer}", quotaSurfaceMap(t, globalProperties, "balance_key_template")["default"])
+			require.Equal(t, PathScopeLegacySuffixes, quotaSurfaceMap(t, globalProperties, "path_scope")["default"])
+			require.Equal(t, "deny", quotaSurfaceMap(t, globalProperties, "missing_balance_policy")["default"])
+			for name, field := range routeProperties {
+				fieldMap, ok := field.(map[string]interface{})
+				require.Truef(t, ok, "route field %q must be an object", name)
+				require.NotContainsf(t, fieldMap, "default", "route field %q must inherit rather than publish a default", name)
+			}
+			for label, field := range map[string]interface{}{
+				"global suffixes": globalProperties["enable_path_suffixes"],
+				"global methods":  globalProperties["enable_methods"],
+				"route suffixes":  routeProperties["enable_path_suffixes"],
+				"route methods":   routeProperties["enable_methods"],
+			} {
+				fieldMap, ok := field.(map[string]interface{})
+				require.Truef(t, ok, "%s must be an object", label)
+				items := quotaSurfaceMap(t, fieldMap, "items")
+				require.Equalf(t, `.*\S.*`, items["pattern"], "%s must reject blank-only entries", label)
+			}
 			quotaSurfaceRequireEnum(t, globalProperties["path_scope"], []string{
 				PathScopeLegacySuffixes,
 				PathScopeBoundTarget,
@@ -76,11 +119,26 @@ func TestQuotaAdmissionSurfaceResources(t *testing.T) {
 		t.Run("examples preserve legacy scope and show unfiltered bound target", func(t *testing.T) {
 			globalExample := quotaSurfaceMap(t, spec, "spec", "configSchema", "openAPIV3Schema", "example")
 			routeExample := quotaSurfaceMap(t, spec, "spec", "routeConfigSchema", "openAPIV3Schema", "example")
+			redisExample := quotaSurfaceMap(t, globalExample, "redis")
 			require.Equal(t, PathScopeLegacySuffixes, globalExample["path_scope"])
-			require.Contains(t, globalExample, "enable_path_suffixes")
+			require.Equal(t, []interface{}{"/v1/chat/completions", "/v1/messages"}, globalExample["enable_path_suffixes"])
+			require.Equal(t, "<redis-username>", redisExample["username"])
+			require.Equal(t, "<redis-password>", redisExample["password"])
+			require.Equal(t, 6379, redisExample["service_port"])
+			require.Equal(t, 1000, redisExample["timeout"])
+			require.Equal(t, 0, redisExample["database"])
 			require.Equal(t, PathScopeBoundTarget, routeExample["path_scope"])
 			require.NotContains(t, routeExample, "enable_path_suffixes")
 			require.NotContains(t, routeExample, "enable_methods")
+			for _, inherited := range []string{
+				"redis",
+				"tenant_header",
+				"consumer_header",
+				"balance_key_template",
+				"missing_balance_policy",
+			} {
+				require.NotContainsf(t, routeExample, inherited, "route example must inherit %q", inherited)
+			}
 
 			defaultConfig := quotaSurfaceMap(t, plugin, "spec", "defaultConfig")
 			require.Equal(t, PathScopeLegacySuffixes, defaultConfig["path_scope"])
@@ -107,13 +165,29 @@ func TestQuotaAdmissionSurfaceResources(t *testing.T) {
 		})
 
 		t.Run("bilingual docs describe the final read-only admission action", func(t *testing.T) {
-			for label, text := range map[string]string{
-				"extension README.md":    extensionReadme,
-				"extension README_EN.md": extensionReadmeEN,
-				"resource README.md":     resourceReadme,
-				"resource README_EN.md":  resourceReadmeEN,
+			for label, fixture := range map[string]struct {
+				text          string
+				versionMarker string
+			}{
+				"extension README.md": {
+					text:          extensionReadme,
+					versionMarker: "> 插件版本：`1.0.2`",
+				},
+				"extension README_EN.md": {
+					text:          extensionReadmeEN,
+					versionMarker: "> Plugin version: `1.0.2`",
+				},
+				"resource README.md": {
+					text:          resourceReadme,
+					versionMarker: "> 插件版本：`1.0.2`",
+				},
+				"resource README_EN.md": {
+					text:          resourceReadmeEN,
+					versionMarker: "> Plugin version: `1.0.2`",
+				},
 			} {
-				normalized := strings.ToLower(strings.Join(strings.Fields(text), " "))
+				normalized := strings.ToLower(strings.Join(strings.Fields(fixture.text), " "))
+				require.Equalf(t, 1, strings.Count(fixture.text, fixture.versionMarker), "%s must identify release 1.0.2 exactly once", label)
 				require.Contains(t, normalized, "ai-quota", label)
 				require.Contains(t, normalized, "legacy_suffixes", label)
 				require.Contains(t, normalized, "bound_target", label)
@@ -143,6 +217,62 @@ func TestQuotaAdmissionSurfaceResources(t *testing.T) {
 					"%s must document the strict positive-balance boundary",
 					label,
 				)
+				require.True(
+					t,
+					strings.Contains(normalized, "zero and negative balances") ||
+						strings.Contains(normalized, "零余额和负余额"),
+					"%s must document unconditional zero/negative denial",
+					label,
+				)
+				require.True(
+					t,
+					strings.Contains(normalized, "missing key follows") ||
+						strings.Contains(normalized, "余额 key 不存在时由"),
+					"%s must apply policy only to a missing balance key",
+					label,
+				)
+				require.True(
+					t,
+					strings.Contains(normalized, "does not mutate account state") ||
+						strings.Contains(normalized, "不修改账户状态"),
+					"%s must forbid account mutation",
+					label,
+				)
+				require.True(
+					t,
+					strings.Contains(normalized, "recognizable, opaque, streaming, cache, local, error, and missing-usage responses") ||
+						strings.Contains(normalized, "可识别、不透明、流式、缓存、本地、错误和 usage 缺失响应"),
+					"%s must cover every response class without inspecting response facts",
+					label,
+				)
+				require.True(
+					t,
+					strings.Contains(normalized, "do not trigger another quota decision") ||
+						strings.Contains(normalized, "不会触发第二次配额判断"),
+					"%s must forbid a second quota decision",
+					label,
+				)
+				for _, ownerTerm := range []struct {
+					english string
+					chinese string
+				}{
+					{english: "authoritative accounts", chinese: "权威账户"},
+					{english: "settlement", chinese: "结算"},
+					{english: "statements", chinese: "账单"},
+					{english: "reconciliation", chinese: "对账"},
+					{english: "rebuild", chinese: "重建"},
+					{english: "private runtime state", chinese: "私有运行时状态"},
+				} {
+					require.Truef(
+						t,
+						strings.Contains(normalized, ownerTerm.english) ||
+							strings.Contains(normalized, ownerTerm.chinese),
+						"%s must document account ownership term %q/%q",
+						label,
+						ownerTerm.english,
+						ownerTerm.chinese,
+					)
+				}
 				require.NotContains(t, normalized, "greater than or equal to zero", label)
 				require.NotContains(t, normalized, "大于等于 0", label)
 			}
@@ -170,6 +300,82 @@ func TestQuotaAdmissionSurfaceResources(t *testing.T) {
 				} {
 					require.NotContainsf(t, normalized, removedWording, "%s retains removed response-settlement wording %q", label, removedWording)
 				}
+			}
+		})
+
+		t.Run("current quota docs contain no response settlement contract", func(t *testing.T) {
+			normalized := strings.ToLower(strings.Join(strings.Fields(currentQuotaDoc), " "))
+			for _, removed := range removedQuotaSettlementFields {
+				require.NotContainsf(t, normalized, removed, "current ai-quota reference exposes removed field %q", removed)
+			}
+			for _, staleClaim := range []string{
+				"响应后扣费",
+				"响应完成后，插件",
+				"pkg/tokenusage",
+				"redis lua",
+				"`eval`",
+				"输入、输出 token 价格 key",
+				"费用计算",
+				"扣减余额",
+			} {
+				require.NotContainsf(t, normalized, staleClaim, "current ai-quota reference retains stale claim %q", staleClaim)
+			}
+			for _, required := range []string{
+				"只读",
+				"请求准入",
+				"最终账户执法动作",
+				"console",
+				"billing-service",
+				"结算",
+				"bound_target",
+				"交集",
+			} {
+				require.Containsf(t, normalized, required, "current ai-quota reference must describe %q", required)
+			}
+		})
+
+		t.Run("historical joint requirements are explicitly retired", func(t *testing.T) {
+			normalized := strings.ToLower(strings.Join(strings.Fields(jointRequirementsDoc), " "))
+			require.Contains(t, normalized, "已废弃")
+			require.Contains(t, normalized, "superseded")
+			require.Contains(t, normalized, "ai-quota")
+			require.Contains(t, normalized, "只读")
+			require.Contains(t, normalized, "请求准入")
+			require.Contains(t, normalized, "billing-service")
+			require.Contains(t, normalized, "结算")
+			for _, staleQuotaClaim := range []string{
+				"`ai-quota` 响应结束后",
+				"`ai-quota` 调用 tokenusage",
+				"`ai-quota` 只读取 redis 中的生效价格",
+				"| `ai-quota` | 金额余额准入、响应后",
+				"`ai-quota` 按金额扣减余额",
+				"ai-quota 从 redis 读取 tenant/provider/model",
+			} {
+				require.NotContainsf(t, normalized, staleQuotaClaim, "retired requirements retain active quota claim %q", staleQuotaClaim)
+			}
+		})
+
+		t.Run("console design keeps settlement ownership outside quota", func(t *testing.T) {
+			normalized := strings.ToLower(strings.Join(strings.Fields(consoleBillingDoc), " "))
+			for _, staleQuotaClaim := range []string{
+				"ai-quota 读取热余额和热价格",
+				"redis 余额只用于网关快速判断和近实时扣减",
+				"`ai-quota` 不理解折扣规则，只读取 `billing:effective_price:*`",
+				"网关侧扣减金额与服务端计算金额不一致",
+				"price 缺失导致的网关未扣费",
+			} {
+				require.NotContainsf(t, normalized, staleQuotaClaim, "console design retains stale quota claim %q", staleQuotaClaim)
+			}
+			for _, required := range []string{
+				"ai-quota",
+				"只读",
+				"请求准入",
+				"billing-service",
+				"账户余额投影",
+				"结算",
+				"redis 热余额刷新",
+			} {
+				require.Containsf(t, normalized, required, "console design must retain %q ownership", required)
 			}
 		})
 	})

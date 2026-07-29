@@ -39,7 +39,7 @@ Redis
         ▲
         │
 Higress Gateway
-  ├─ ai-quota 读取热余额和热价格
+  ├─ ai-quota 只读热余额执行请求准入
   └─ ai-billing 上报 billing event
 ```
 
@@ -55,7 +55,7 @@ Higress Gateway
 | account balance 投影 | billing-service DB | 热余额 | 由流水事务更新，用于快速查询和 Redis 重建 |
 | 基础价格 | billing-service DB | 不直接给网关使用 | provider/model 标准价格 |
 | 租户价格策略 | billing-service DB | 不直接给网关使用 | 折扣或覆盖价格 |
-| 租户生效价格 | billing-service DB 或计算投影 | 热价格 | 网关响应后快速计算金额 |
+| 租户生效价格 | billing-service DB 或计算投影 | 热价格 | 供 billing-service 结算与缓存重建 |
 | 幂等状态 | billing-service DB | 短 TTL 去重 | 防重复结算 |
 
 余额真实源关系：
@@ -64,7 +64,7 @@ Higress Gateway
 account_balance = sum(billing_statements)
 ```
 
-工程实现可以使用 `account_balances` 表保存当前余额投影，但该投影必须由账单流水、充值流水、调整流水在同一 DB 事务内更新。Redis 余额只用于网关快速判断和近实时扣减，不能作为真实源。
+工程实现可以使用 `account_balances` 表保存当前余额投影，但该投影必须由账单流水、充值流水、调整流水在同一 DB 事务内更新。Redis 余额只是 `ai-quota` 的只读请求准入输入；结算、账户状态变更和 Redis 投影刷新均由 billing-service 负责，Redis 不能作为真实源。
 
 ## 4. 金额和价格单位
 
@@ -370,7 +370,7 @@ PUT /v1/billing/tenants/{tenant}/override-prices/{provider}/{model}
 
 - 覆盖价格优先级高于折扣价格。
 - 租户生效价格必须由 billing-service 计算并刷新 Redis。
-- `ai-quota` 不理解折扣规则，只读取 `billing:effective_price:*`。
+- 租户生效价格供 billing-service 结算使用；`ai-quota` 不理解折扣规则，也不读取价格 key。
 
 ## 9. quota_scope API
 
@@ -541,8 +541,7 @@ POST /v1/billing/events
   "started_at": 1730000000000,
   "ended_at": 1730000001200,
   "usage_missing": false,
-  "price_version": "2026-05-01",
-  "gateway_calculated_cost": 220
+  "price_version": "2026-05-01"
 }
 ```
 
@@ -567,7 +566,6 @@ POST /v1/billing/events
 - `idempotency_key` 必须唯一。
 - 重复上报同一 `idempotency_key` 时不得重复写账单流水。
 - billing-service 必须使用 DB 中的基础价格和租户价格策略重新计算最终费用。
-- `gateway_calculated_cost` 只用于对账。
 - `usage_missing = true` 时，不做正常 token 费用结算，应写入异常事件。
 - 成功结算时，billing-service 必须在同一事务内写入账单流水并更新账户余额投影。
 
@@ -709,10 +707,10 @@ POST /v1/billing/cache:rebuild
 
 billing-service 应提供异步对账能力：
 
-- 对比 `gateway_calculated_cost` 与服务端 `calculated_cost`。
-- 对比 Redis 热余额与 DB 余额。
+- 对比 billing event、服务端结算结果和账单流水。
+- 在 billing-service 刷新投影后对比 Redis 热余额与 DB 余额。
 - 对 usage 缺失事件进行人工或自动补偿。
-- 对 price 缺失导致的网关未扣费事件进行补偿。
+- 对服务端价格事实缺失导致的未结算事件进行补偿。
 
 建议内部任务：
 
@@ -744,5 +742,5 @@ billing-service 应提供异步对账能力：
 - billing-service 能在同一事务内写入流水并更新 `account_balances` 投影。
 - 重复 billing event 不会重复结算。
 - usage 缺失事件会被记录为异常事件。
-- 网关侧扣减金额与服务端计算金额不一致时，billing-service 可以记录差异并后续补偿。
+- billing event、服务端结算结果和账单流水不一致时，billing-service 可以记录差异并后续补偿。
 - Redis 重启或数据丢失后，billing-service 可以从 DB 全量或局部重建余额和租户生效价格缓存。

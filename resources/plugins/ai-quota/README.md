@@ -4,6 +4,8 @@ keywords: [AI网关, AI配额, 金额配额]
 description: ai-quota 只读 Redis 余额准入资源说明
 ---
 
+> 插件版本：`1.0.2`
+
 ## 功能说明
 
 `ai-quota` 在请求头阶段读取 Console 或 billing-service 派生的 Redis
@@ -11,8 +13,11 @@ description: ai-quota 只读 Redis 余额准入资源说明
 余额 key 不存在时由 `missing_balance_policy` 决定拒绝或放行。
 
 这次请求准入是插件对该请求的最终账户执法动作。Redis 余额热数据是插件的
-只读输入。权威账户、结算、账单、对账和 Redis 热数据重建属于 Console 或
-billing-service。
+只读输入，插件不修改账户状态。权威账户、结算、账单、对账和 Redis 热数据
+重建属于 Console 或 billing-service。
+
+可识别、不透明、流式、缓存、本地、错误和 usage 缺失响应
+不会触发第二次配额判断、价格查询、Redis 写入或账户修改。
 
 ## 运行属性
 

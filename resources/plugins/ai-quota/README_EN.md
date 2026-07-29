@@ -4,6 +4,8 @@ keywords: [AI Gateway, AI Quota, Monetary Quota]
 description: Resource reference for read-only Redis balance admission.
 ---
 
+> Plugin version: `1.0.2`
+
 ## Overview
 
 `ai-quota` reads Console- or billing-service-derived Redis hot balance during
@@ -12,9 +14,13 @@ Zero and negative balances return the fixed `403 no_balance` response. A
 missing key follows `missing_balance_policy`.
 
 This request admission is the plugin's final account enforcement action for
-the request. Redis balance hot data is read-only input to the plugin. Console
-or billing-service owns authoritative accounts, settlement, statements,
-reconciliation, and Redis hot-data rebuilds.
+the request. Redis balance hot data is read-only input to the plugin, which
+does not mutate account state. Console or billing-service owns authoritative
+accounts, settlement, statements, reconciliation, and Redis hot-data rebuilds.
+
+Recognizable, opaque, streaming, cache, local, error, and missing-usage
+responses do not trigger another quota decision, price lookup, Redis write, or
+account mutation.
 
 ## Runtime properties
 
