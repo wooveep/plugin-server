@@ -45,9 +45,31 @@ completed while any required fixture is still failing.
 
 ## 2. AI Proxy Red-Green Contracts
 
-- [ ] 2.1 Add RED parser tests proving missing `protocol_mode` defaults to
+- [x] 2.1 Add RED parser tests proving missing `protocol_mode` defaults to
   `auto`, `passthrough` is accepted, invalid modes fail, and missing
   `path_scope` preserves legacy behavior.
+
+Task 2.1 evidence (2026-07-29):
+
+- The Graphify report and focused parser audit were reviewed before source
+  inspection. Upstream impact for `PluginConfig`, `FromJson`, `Validate`,
+  `parseGlobalConfig`, and `parseOverrideRuleConfig` was LOW with zero indexed
+  execution flows. The CRITICAL shared `RunGoTest` and `NewTestHost` helpers
+  were not modified.
+- Pre-change baselines passed:
+  `go test ./config -count=1` and
+  `go test . -run '^TestParseGlobalAndOverrideConfig$' -count=1`.
+- `extensions/ai-proxy/config/routing_config_test.go` adds independent runtime
+  parser assertions for default `auto`, accepted `passthrough`, omitted
+  override inheritance, invalid-mode rejection, and default
+  `legacy_suffixes`. No production source or shared test harness changed.
+- RED command:
+  `go test ./config -run '^TestPluginConfigRoutingParserContract$' -count=1`.
+  It compiled and failed only for the missing contract: three subtests
+  reported that `*PluginConfig` does not implement `GetProtocolMode`, invalid
+  mode validation returned `nil`, and the legacy-scope subtest reported that
+  `*PluginConfig` does not implement `GetPathScope`.
+
 - [ ] 2.2 Add RED adapter tests proving a stable known Responses/Claude/Qwen
   adapter is selected only when provider, method, path, and capability match
   and performs the expected request/response transformation; cover the
