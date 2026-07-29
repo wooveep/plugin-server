@@ -1175,9 +1175,77 @@ Task 3.6 evidence (2026-07-29):
   touched documentation sections, zero affected symbols, and zero affected
   execution processes.
 
-- [ ] 3.7 Obtain an independent ai-billing implementation/security review,
+- [x] 3.7 Obtain an independent ai-billing implementation/security review,
   resolve every finding, and rerun the affected RED/GREEN and complete module
   suites before beginning the quota implementation.
+
+Task 3.7 evidence (2026-07-29):
+
+- Independent review was blocking throughout the complete billing sequence.
+  Task 3.1 result `e254760ba220` received `NEEDS_FIXES` because explicit-empty
+  suffix filters lacked executable global/rule runtime delivery coverage and
+  the tracked stream name was inaccurate. Repair `50d6da6a52ff` added the
+  coverage but rereview remained `NEEDS_FIXES` because a nested mock host
+  would deadlock after parser GREEN. Final repair `16b4753807ed` removed the
+  nested lifecycle; rereview was `APPROVED` with zero Critical, Important, or
+  Minor findings and retained exactly the five intended RED leaves.
+- Task 3.3 result `712795d0c54c` received `NEEDS_FIXES` because accepted,
+  configured-fallback, and customer-spoofed attribution values were not
+  excluded from every trace-through-critical plugin log level. Repair
+  `2b8e0f2b736d` added distinct accepted/fallback/spoof markers and one shared
+  six-level log collector. Rereview was `APPROVED` with no remaining finding,
+  while the exact six later correlation/query RED leaves and all retained
+  delivery, identity, idempotency, cache/local, Redis fail-open, and
+  attribution controls remained intact.
+- Task 3.4 result `99b98727c462` received `NEEDS_FIXES` for blank-only
+  non-empty filters becoming allow-all, method-token uppercasing violating
+  exact matching, and undocumented list/entry caps breaking compatibility.
+  Repair `361bb57b7078` closed those parser, method-case, and compatibility
+  defects, but rereview remained `NEEDS_FIXES` because raw runtime empty
+  suffixes still failed open. Final repair `990e488be648` made unusable raw
+  suffixes fail closed while preserving absent/literal-empty bound-target
+  semantics; two independent final rereviews were `APPROVED` with no
+  blocking or non-blocking finding.
+- The final Task 3.5 independent production/security review covered immutable
+  range
+  `990e488be64879c3c2bcbdd6d9639f1c90b19ff0..82238f469f63a9e13b7391b810fd2ff843b2f0e2`.
+  Report
+  `.superpowers/sdd/add-ai-route-plugin-routing-contracts/task-3.5-reviewer.md`
+  has SHA-256
+  `4d58579d5eaf2ff9c6bef71643a56ca78cf8c593f4f4b4b11a7caad5e0c5fa1c`,
+  returned `APPROVED`, and reported zero Critical, Important, or Minor
+  findings. Its reviewed implementation result is exact source
+  `82238f469f63a9e13b7391b810fd2ff843b2f0e2`.
+- The reviewer retained the HIGH risk of `buildBillingEvent` and inspected it
+  layer by layer: 12 direct and 17 total dependents across four modules and
+  both completion families, `onHttpResponseBody` and
+  `onHttpStreamingResponseBody` with idempotent `onHttpStreamDone` fallback.
+  Every indexed direct dependent, non-streaming and streaming completion,
+  provider/estimated/missing/cache/internal event construction, Redis
+  fail-open delivery, exact correlation, and one-delivery stream fallback
+  passed before the full module gate.
+- No finding was waived or downgraded. Every `NEEDS_FIXES` verdict blocked the
+  next implementation task until an exact repair range, affected
+  RED/GREEN/baseline rerun, static/specification gates, and independent
+  rereview closed it. The final Task 3.5 review passed the exact nine contract
+  leaves in `0.003s`, the HIGH-impact dependent/completion gate in `4.876s`,
+  and `go test ./... -count=1` in `9.637s`, together with extension vet,
+  exact formatting, diff, and strict OpenSpec checks.
+- Task 3.6 then supplied fresh post-review confirmation on the same final
+  source: the exact nine leaves passed in `0.003s`, the HIGH-impact gate in
+  `4.770s`, and the complete module in `9.647s`. Unit, proxy-wasm lifecycle,
+  non-streaming/streaming/stream-done, cache/local, Redis fail-open and
+  at-most-once delivery, all five internal-attribution scenarios,
+  correlation replace/remove, event identity, path/query, path-scope, and
+  trace-through-critical security-log coverage are GREEN.
+- Exact GitNexus upstream impact for this documentation section is LOW with
+  zero direct dependents, affected processes, or affected modules. This
+  documentation-only detector is likewise LOW across one changed file, four
+  shifted documentation-section mappings, zero affected symbols, and zero
+  affected processes. This closeout changes no production or test source and
+  does not modify any 4.x task. With all independent ai-billing findings
+  resolved and the complete final suite reconfirmed, the quota implementation
+  may begin at Task 4.1.
 
 ## 4. AI Quota Red-Green Contracts
 
