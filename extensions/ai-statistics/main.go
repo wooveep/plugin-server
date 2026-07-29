@@ -33,7 +33,7 @@ func main() {}
 func init() {
 	wrapper.SetCtx(
 		"ai-statistics",
-		wrapper.ParseConfig(parseConfig),
+		wrapper.ParseOverrideConfig(parseConfig, parseRuleConfig),
 		wrapper.ProcessRequestHeaders(onHttpRequestHeaders),
 		wrapper.ProcessRequestBody(onHttpRequestBody),
 		wrapper.ProcessResponseHeaders(onHttpResponseHeaders),
@@ -456,6 +456,10 @@ type AIStatisticsConfig struct {
 	valueLengthLimit   int
 	// Path suffixes to enable the plugin on
 	enablePathSuffixes []string
+	// Route-effective path scope and optional exact-case HTTP method filters
+	pathScope          string
+	enableMethods      []string
+	legacyPathSuffixes []string
 	// Content types to enable response body buffering
 	enableContentTypes []string
 	// Session ID header name (if configured, takes priority over default headers)
@@ -620,25 +624,17 @@ func parseConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
 	// Parse openai usage config setting.
 	config.disableOpenaiUsage = configJson.Get("disable_openai_usage").Bool()
 
-	// Parse path suffix configuration
-	pathSuffixes := configJson.Get("enable_path_suffixes").Array()
-	config.enablePathSuffixes = make([]string, 0, len(pathSuffixes))
-
-	// If use_default_attributes or use_default_response_attributes is enabled and enable_path_suffixes is not configured, use default path suffixes
-	if (useDefaultAttributes || useDefaultResponseAttributes) && !configJson.Get("enable_path_suffixes").Exists() {
-		config.enablePathSuffixes = []string{"/completions", "/messages"}
+	if err := parseStatisticsRouting(
+		configJson,
+		config,
+		useDefaultAttributes || useDefaultResponseAttributes,
+	); err != nil {
+		return err
+	}
+	if len(config.enablePathSuffixes) > 0 &&
+		(useDefaultAttributes || useDefaultResponseAttributes) &&
+		!configJson.Get("enable_path_suffixes").Exists() {
 		log.Infof("Using default path suffixes: /completions, /messages")
-	} else {
-		// Process manually configured path suffixes
-		for _, suffix := range pathSuffixes {
-			suffixStr := suffix.String()
-			if suffixStr == "*" {
-				// Clear the suffixes list since * means all paths are enabled
-				config.enablePathSuffixes = make([]string, 0)
-				break
-			}
-			config.enablePathSuffixes = append(config.enablePathSuffixes, suffixStr)
-		}
 	}
 
 	// Parse content type configuration
@@ -664,10 +660,10 @@ func parseConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
 }
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) types.Action {
-	// Check if request path matches enabled suffixes
 	requestPath, _ := proxywasm.GetHttpRequestHeader(":path")
-	if !isPathEnabled(requestPath, config.enablePathSuffixes) {
-		log.Debugf("ai-statistics: skipping request for path %s (not in enabled suffixes)", requestPath)
+	requestMethod, _ := proxywasm.GetHttpRequestHeader(":method")
+	if !isStatisticsRequestEnabled(requestPath, requestMethod, config) {
+		log.Debug("ai-statistics: skipping request outside configured routing scope")
 		// Set skip processing flag and avoid reading request/response body
 		ctx.SetContext(SkipProcessing, true)
 		ctx.DontReadRequestBody()
@@ -676,15 +672,16 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) ty
 	}
 
 	ctx.DisableReroute()
-	route, _ := getRouteName()
+	setStatisticsRequestBaseFacts(ctx)
+	route := ctx.GetStringContext(statisticsRouteContext, routeUnknown)
 	cluster, _ := getClusterName()
 	api, apiError := getAPIName()
-	if apiError == nil {
+	if apiError == nil && route != routeUnknown {
 		route = api
+		ctx.SetUserAttribute(APIName, api)
 	}
 	ctx.SetContext(RouteName, route)
 	ctx.SetContext(ClusterName, cluster)
-	ctx.SetUserAttribute(APIName, api)
 	ctx.SetContext(StatisticsRequestStartTime, time.Now().UnixMilli())
 	if requestPath, _ := proxywasm.GetHttpRequestHeader(":path"); requestPath != "" {
 		ctx.SetContext(RequestPath, requestPath)
@@ -774,10 +771,23 @@ func onHttpRequestBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body 
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) types.Action {
+	if ctx.GetBoolContext(SkipProcessing, false) {
+		return types.ActionContinue
+	}
+
+	// Adapter metadata can be established after this plugin's request callback,
+	// so refresh the bounded attribution at the response boundary.
+	setStatisticsRequestBaseFacts(ctx)
+	setStatisticsResponseStatusFact(ctx)
+	completeStatisticsBaseFacts(ctx, time.Now().UnixMilli())
+	writeBaseMetrics(ctx, config)
+	debugLogAiLog(ctx)
+	_ = ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
+
 	contentType, _ := proxywasm.GetHttpResponseHeader("content-type")
 
 	if !isContentTypeEnabled(contentType, config.enableContentTypes) {
-		log.Debugf("ai-statistics: skipping response for content type %s (not in enabled content types)", contentType)
+		log.Debug("ai-statistics: skipping response outside configured content types")
 		// Set skip processing flag and avoid reading response body
 		ctx.SetContext(SkipProcessing, true)
 		ctx.DontReadResponseBody()
@@ -860,6 +870,7 @@ func onHttpStreamingBody(ctx wrapper.HttpContext, config AIStatisticsConfig, dat
 	if endOfStream {
 		responseEndTime := time.Now().UnixMilli()
 		ctx.SetUserAttribute(LLMServiceDuration, responseEndTime-requestStartTime)
+		completeStatisticsBaseFacts(ctx, responseEndTime)
 
 		// Set user defined log & span attributes from streaming body.
 		// Always call setAttributeBySource even if shouldBufferStreamingBody is false,
@@ -891,6 +902,7 @@ func onHttpResponseBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body
 
 	responseEndTime := time.Now().UnixMilli()
 	ctx.SetUserAttribute(LLMServiceDuration, responseEndTime-requestStartTime)
+	completeStatisticsBaseFacts(ctx, responseEndTime)
 
 	ctx.SetUserAttribute(ResponseType, "normal")
 	if chatID := wrapper.GetValueFromBody(body, []string{
@@ -1343,6 +1355,8 @@ func setSpanAttribute(key string, value interface{}) {
 }
 
 func writeMetric(ctx wrapper.HttpContext, config AIStatisticsConfig) {
+	writeBaseMetrics(ctx, config)
+
 	// Generate usage metrics
 	var ok bool
 	var route, cluster, model string

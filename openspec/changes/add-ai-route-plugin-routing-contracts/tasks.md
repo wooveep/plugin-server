@@ -1880,9 +1880,64 @@ Task 5.3 evidence (2026-07-29):
   HostEmulator for the genuine missing route case and an exact 128-byte valid
   route control instead of fabricating empty data. Before Task 5.4 production
   work, a pure route-validator RED test must cover the exact empty-value case.
-- [ ] 5.4 Implement bound-target gating and base-fact emission before optional
+- [x] 5.4 Implement bound-target gating and base-fact emission before optional
   trusted adapter/provider enrichment, with 128-byte bounded trusted Higress
   route names and selected-adapter origin-form operation templates.
+
+Task 5.4 evidence (2026-07-29):
+
+- Before production implementation, the mandatory pure-validator command
+  `go test . -run '^TestNormalizeTrustedRouteNameExactEmpty$' -count=1`
+  compiled all existing code and failed only at
+  `route_validator_contract_test.go:10:36: undefined:
+  normalizeTrustedRouteName`. After implementation, the same exact command
+  passed in `0.002s`. Pre-edit GitNexus upstream impact was LOW for the
+  existing lifecycle/config symbols and `writeMetric` (two direct callback
+  callers, zero indexed execution flows); planned new helpers/tests were
+  UNKNOWN/not-found with zero dependents. No HIGH or CRITICAL pre-edit impact
+  was reported.
+- Global and rule configuration now use route-effective
+  `legacy_suffixes`/`bound_target` scope, clone inherited filter slices, retain
+  omitted and explicit legacy defaults, accept literal-empty bound-target
+  filters, reject blank-only/invalid values, and intersect non-empty suffix
+  and exact-case method filters. Fixed skip logs no longer print raw request
+  paths or response content types.
+- Request admission records only a UTF-8, no-control, at-most-128-byte trusted
+  route (otherwise `route_unknown`) and a fixed-cardinality method. Response
+  headers refresh bounded adapter metadata, record bounded status/error and a
+  positive latency, then emit `request_count` and `request_duration_ms` before
+  any optional content-type/body/usage parser. Missing, malformed,
+  schema-mismatched, or `matched:false` metadata uses
+  `provider_native_unknown`; schema-v1 `matched:true` metadata with an invalid
+  or oversized origin-form operation uses `path_unknown`. Raw request paths,
+  query strings, credentials, headers, bodies, dynamic segments, and hashes
+  are never included in the new metric key.
+- Five completion-seam regressions prove response-header EOS, unsupported
+  parser content type, empty body, malformed status, and missing status all
+  emit exactly the two base counters once, preserve headers/body, and retain
+  bounded AILog facts. The Task 5.1/5.2/5.3 contract union
+  (`15 + 3 + 19 = 37` leaves), exact-empty validator, completion seams, and
+  final cardinality regression pass together in `0.023s`. Complete
+  `go test ./... -count=1 -timeout=3m` passes in `33.821s`; final-source
+  `go test -race ./... -count=1 -timeout=10m` passes in `345.568s` with no
+  race finding.
+- Independent implementation review initially returned one HIGH finding:
+  legacy token/duration metrics still consumed the raw `RouteName` when valid
+  usage existed. A new 129-byte-route plus real-usage regression reproduced
+  one exact RED (the `route.route_unknown...input_token` counter was absent).
+  `RouteName` now derives from the normalized statistics route, while a valid
+  `api@...` name may still fold to its compatible first-three-part value only
+  after the full route passes validation. The exact regression passes in
+  `0.002s`, legacy metric/API controls pass in `8.176s`, every generated
+  counter key rejects the unsafe route, and the same reviewer returned
+  APPROVED with no remaining finding.
+- Final extension `go vet ./...`, changed-file `gofmt -l` (empty output),
+  `git diff --check`, and
+  `openspec validate add-ai-route-plugin-routing-contracts --strict` all
+  pass. The known ai-proxy metadata value without a leading slash remains a
+  documented Task 5.6 cross-module follow-up; Task 5.4 does not modify proxy,
+  Task 5.5, version, schema, or resource surfaces.
+
 - [ ] 5.5 Run focused and complete independent ai-statistics unit,
   proxy-wasm lifecycle/integration, metric regression, cardinality, and
   security suites.
