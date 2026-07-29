@@ -1,21 +1,53 @@
 # ai-monetary-quota Specification
 
 ## Purpose
-Define monetary quota enforcement for `ai-quota`, including Redis-backed request admission, post-response cost deduction, missing-data policies, and ownership boundaries with billing-service.
+Define admission-only monetary quota enforcement for `ai-quota`, including request admission from read-only Redis balance hot data, missing-balance policy, and external ownership boundaries with Console or billing-service.
 ## Requirements
 ### Requirement: Monetary quota configuration
 
-`ai-quota` SHALL support monetary quota configuration using Redis connection settings, `quota_scope`, `provider`, `tenant_header`, `consumer_header`, `balance_key_template`, `price_key_template`, `amount_scale`, `price_unit_tokens`, `enable_path_suffixes`, `missing_balance_policy`, `missing_price_policy`, and `missing_usage_policy`.
+`ai-quota` SHALL support admission-only configuration using Redis connection
+settings, `quota_scope`, `provider`, `tenant_header`, `consumer_header`,
+`balance_key_template`, `path_scope`, `enable_path_suffixes`,
+`enable_methods`, and `missing_balance_policy`.
 
-#### Scenario: Default monetary configuration is applied
+Missing `path_scope` SHALL resolve to `legacy_suffixes` and preserve existing
+default and explicit suffix behavior. `bound_target` SHALL use the Higress
+binding target as its default request set without requiring a suffix list.
+Explicit non-empty suffix or method filters SHALL only narrow that target by
+intersection.
 
-- **WHEN** `ai-quota` is configured with Redis settings and omits optional monetary fields
-- **THEN** the plugin SHALL default `quota_scope` to `global`, `tenant_header` to `x-mse-tenant`, `consumer_header` to `x-mse-consumer`, `balance_key_template` to `billing:balance:{tenant}:{quota_scope}:{consumer}`, `price_key_template` to `billing:effective_price:{tenant}:{provider}:{model}:{token_type}`, `amount_scale` to `1000000`, `price_unit_tokens` to `1000000`, `missing_balance_policy` to `deny`, `missing_price_policy` to `skip`, and `missing_usage_policy` to `skip`
+#### Scenario: Default admission configuration is applied
+
+- **WHEN** ai-quota is configured with Redis settings and omits optional
+  admission fields
+- **THEN** `quota_scope`, `tenant_header`, `consumer_header`,
+  `balance_key_template`, `path_scope`, and `missing_balance_policy` SHALL
+  default to `global`, `x-mse-tenant`, `x-mse-consumer`,
+  `billing:balance:{tenant}:{quota_scope}:{consumer}`, `legacy_suffixes`, and
+  `deny`
+- **AND** existing legacy default suffix behavior SHALL be retained.
 
 #### Scenario: Route-level quota scope is selected
 
-- **WHEN** a Higress WasmPlugin `matchRules` entry matches an AI route and provides `quota_scope` and `provider`
-- **THEN** `ai-quota` SHALL use the matched `quota_scope` and `provider` for balance and price key construction for that request
+- **WHEN** a matching Higress WasmPlugin rule provides `quota_scope` and
+  `provider`
+- **THEN** ai-quota SHALL use those matched values for that request's
+  admission context.
+
+#### Scenario: Bound target omits filters
+
+- **WHEN** a rule selects `path_scope: bound_target` and omits
+  `enable_path_suffixes` and `enable_methods`
+- **THEN** ai-quota SHALL accept the configuration
+- **AND** it SHALL perform admission for every request already selected by
+  that Higress target.
+
+#### Scenario: Bound target has advanced filters
+
+- **WHEN** a bound-target rule supplies a non-empty suffix or method filter
+- **THEN** ai-quota SHALL perform admission only for the intersection of the
+  target and every supplied filter
+- **AND** the filter SHALL NOT expand the target.
 
 ### Requirement: Legacy quota management is removed
 
@@ -33,61 +65,89 @@ Define monetary quota enforcement for `ai-quota`, including Redis-backed request
 
 ### Requirement: Request admission uses Redis monetary balance
 
-`ai-quota` SHALL perform request admission for enabled AI path suffixes by reading a Redis monetary balance key built from tenant, quota scope, and consumer identity.
+`ai-quota` SHALL perform request admission for every in-scope request by
+reading a Redis monetary balance key built from tenant, quota scope, and
+consumer identity. Legacy instances SHALL retain existing path eligibility;
+bound-target instances SHALL use the Higress target plus explicit non-empty
+filter intersections.
 
 #### Scenario: Positive balance allows request
 
-- **WHEN** an enabled AI request has tenant and consumer headers and Redis returns a balance greater than `0`
-- **THEN** `ai-quota` SHALL allow the request to continue
+- **WHEN** an in-scope request has tenant and consumer headers and Redis
+  returns a balance greater than `0`
+- **THEN** ai-quota SHALL allow the request to continue.
 
 #### Scenario: Non-positive balance denies request
 
-- **WHEN** an enabled AI request has tenant and consumer headers and Redis returns a balance less than or equal to `0`
-- **THEN** `ai-quota` SHALL deny the request
+- **WHEN** an in-scope request has tenant and consumer headers and Redis
+  returns a balance less than or equal to `0`
+- **THEN** ai-quota SHALL deny the request.
 
 #### Scenario: Missing balance follows policy
 
-- **WHEN** an enabled AI request has tenant and consumer headers and the Redis balance key is missing
-- **THEN** `ai-quota` SHALL deny the request when `missing_balance_policy` is `deny` and SHALL allow the request when `missing_balance_policy` is `allow`
+- **WHEN** an in-scope request has tenant and consumer headers and the Redis
+  balance key is missing
+- **THEN** ai-quota SHALL deny the request when `missing_balance_policy` is
+  `deny`
+- **AND** it SHALL allow the request when `missing_balance_policy` is `allow`.
 
 #### Scenario: Missing identity denies request
 
-- **WHEN** an enabled AI request does not include the configured tenant or consumer header
-- **THEN** `ai-quota` SHALL deny the request
+- **WHEN** an in-scope request lacks the configured tenant or consumer header
+- **THEN** ai-quota SHALL deny the request.
 
-### Requirement: Monetary deduction uses token usage and effective prices
+#### Scenario: Bound provider-native request is admitted
 
-`ai-quota` SHALL deduct monetary balance after response completion when token usage and effective prices are available.
-
-#### Scenario: Usage and prices produce cost
-
-- **WHEN** response completion provides input tokens, output tokens, and model, and Redis contains matching input and output effective prices
-- **THEN** `ai-quota` SHALL calculate `ceil(input_tokens * input_price / price_unit_tokens) + ceil(output_tokens * output_price / price_unit_tokens)` and deduct that integer amount from the Redis balance key
-
-#### Scenario: Usage is missing
-
-- **WHEN** response completion does not provide usable token usage
-- **THEN** `ai-quota` SHALL skip deduction when `missing_usage_policy` is `skip`
-
-#### Scenario: Price is missing
-
-- **WHEN** response completion provides usage but Redis does not contain a required effective price key
-- **THEN** `ai-quota` SHALL skip deduction when `missing_price_policy` is `skip`
+- **WHEN** a provider-native operation is matched by a bound-target quota
+  instance and satisfies every explicit filter
+- **THEN** ai-quota SHALL apply the same Redis admission decision without
+  requiring a recognized AI API suffix or response usage shape.
 
 ### Requirement: Billing-service remains the account source of truth
 
-`ai-quota` SHALL treat Redis as request-path hot data and SHALL NOT directly manage account balances, tenant price rules, billing statements, or database state.
+`ai-quota` SHALL treat Redis balance hot data as read-only request-admission
+input. Console or billing-service SHALL own authoritative accounts,
+settlement, statements, reconciliation, and rebuilding that hot data.
 
-#### Scenario: Redis cache is rebuilt externally
+#### Scenario: Redis balance hot data is rebuilt externally
 
-- **WHEN** Redis hot balance or effective price keys are lost
-- **THEN** billing-service SHALL be responsible for rebuilding Redis from database-backed balances and price rules, and `ai-quota` SHALL apply its missing-data policies until keys are restored
+- **WHEN** Redis balance hot data is lost or stale
+- **THEN** Console or billing-service SHALL rebuild it from authoritative
+  account state
+- **AND** ai-quota SHALL apply `missing_balance_policy` until the balance key
+  is available.
 
-### Requirement: Token usage parser is shared but runtime state is not
+### Requirement: Quota Enforcement Is Admission-Only
 
-`ai-quota` SHALL use `pkg/tokenusage` for token usage extraction and SHALL NOT depend on private runtime state from `ai-statistics` or `ai-billing`.
+The request-header admission result SHALL be ai-quota's final account
+enforcement action for that request. Redis balance input SHALL be read-only to
+the plugin, and response lifecycle handling SHALL NOT add another account
+enforcement action.
 
-#### Scenario: Statistics plugin is disabled
+#### Scenario: Admitted request completes
 
-- **WHEN** `ai-statistics` is not enabled for a route
-- **THEN** `ai-quota` SHALL still perform admission and eligible post-response deduction using its own invocation of `pkg/tokenusage`
+- **WHEN** an admitted request reaches any non-streaming or streaming response
+  completion path
+- **THEN** the earlier admission result SHALL remain final
+- **AND** later response facts SHALL NOT cause ai-quota to mutate account
+  state.
+
+#### Scenario: Billing or statistics plugin is disabled
+
+- **WHEN** ai-billing, ai-statistics, or both are disabled for a route
+- **THEN** ai-quota SHALL continue to make its independent admission decision
+  from Redis balance hot data
+- **AND** it SHALL NOT depend on either plugin's private runtime state.
+
+### Requirement: AI Quota Admission Release
+
+The authoritative ai-quota extension version SHALL advance to `1.0.2` and
+SHALL implement admission-only bound-target enforcement.
+
+#### Scenario: Version 1.0.2 is packaged
+
+- **WHEN** ai-quota `1.0.2` is built
+- **THEN** its versioned Wasm artifact, resource metadata, schema, examples,
+  and bilingual documentation SHALL identify `1.0.2`
+- **AND** independent quota tests SHALL verify legacy scope, bound target,
+  advanced filters, and Redis admission-only behavior.

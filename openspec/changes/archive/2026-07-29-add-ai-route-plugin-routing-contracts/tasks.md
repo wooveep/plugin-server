@@ -2910,7 +2910,7 @@ Task 8.3 evidence (2026-07-30):
 - `git diff --check` passes. The only working-tree change is this target task
   evidence; the index and untracked set are empty. No formal artifact or
   unrelated active change was modified during final validation.
-- [ ] 8.4 Before archive, synchronize the seven validated requirement deltas,
+- [x] 8.4 Before archive, synchronize the seven validated requirement deltas,
   manually rewrite the accepted `ai-billing-events` Purpose to global Redis
   Stream event delivery, and manually rewrite the accepted
   `ai-monetary-quota` Purpose plus its surviving account-ownership scenario to
@@ -2924,3 +2924,31 @@ Task 8.3 evidence (2026-07-30):
   semantic review of accepted `ai-monetary-quota` proving no response-stage
   balance change, effective-price key, response token parser, or
   missing-price/usage policy claim survives.
+
+Task 8.4 evidence (2026-07-30):
+
+- `openspec archive add-ai-route-plugin-routing-contracts -y` synchronized
+  exactly seven capabilities with `+28`, `~12`, `-3`, and `→0` requirement
+  operations, then moved only this change to
+  `openspec/changes/archive/2026-07-29-add-ai-route-plugin-routing-contracts`.
+- Accepted `ai-billing-events` now defines global Redis Stream event delivery.
+  Accepted `ai-monetary-quota` now defines admission-only enforcement from
+  read-only Redis balance hot data and retains the exact external
+  billing-service account-source-of-truth rebuild scenario.
+- The four newly accepted capabilities received explicit reader-facing
+  purposes for proxy routing, statistics observability, reproducible build
+  artifacts, and Responses API adapter behavior; no generated `TBD` remains.
+- The three unrelated active change trees remain at
+  `a1331830be5e04baa9607870a618cc00cf50fce1`,
+  `01145c3ac6d232fcfe56e124fed02c11d259d49e`, and
+  `85c841484bae9ecb78c514efe48d9ac1533ec36e`; none was synchronized, moved, or
+  archived.
+- `openspec validate --specs --strict --no-interactive` passes all nine
+  accepted capabilities. `--all` also evaluates unrelated active changes and
+  still reports their two pre-existing validation failures; they were not
+  modified to change that baseline.
+- Scoped grep and semantic review of accepted `ai-monetary-quota` find only
+  read-only admission, external settlement ownership, and explicit prohibitions
+  on later response mutation. No response-stage balance change, effective-price
+  key, response token parser, missing-price/usage policy, Lua/EVAL, debit, or
+  deduction claim survives.
