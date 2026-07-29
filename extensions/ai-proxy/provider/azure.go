@@ -239,6 +239,12 @@ type azureProvider struct {
 	defaultModel       string
 }
 
+func (m *azureProvider) TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header) {
+	util.OverwriteRequestHostHeader(headers, m.serviceUrl.Host)
+	clearTransparentCredentials(headers)
+	headers.Set("api-key", m.config.GetApiTokenInUse(ctx))
+}
+
 func (m *azureProvider) GetProviderType() string {
 	return providerTypeAzure
 }

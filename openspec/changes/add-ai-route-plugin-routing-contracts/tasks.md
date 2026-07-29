@@ -445,6 +445,50 @@ Task 2.8 evidence (2026-07-29):
   staged detection including this task evidence remained LOW with seven files,
   12 indexed symbols/sections, and zero affected processes.
 
+Task 2.8 review-fix evidence (2026-07-29):
+
+- The independent `NEEDS_FIXES` report was reproduced before correction:
+  normal/failover/retry bookkeeping logs exposed provider credentials,
+  Claude Code/OpenAI custom/Azure full-service transparent requests still ran
+  operation-mutating provider header pipelines, Qwen retry rebuilt an empty
+  JSON `POST`, and decoded NUL/CRLF/DEL targets passed validation.
+- Provider-owned transparent transport now has an explicit header policy.
+  Claude, OpenAI, Azure, and Qwen implementations update only authority and
+  credentials; the common layer preserves method, path, raw query,
+  non-credential/protocol headers, and binary body while retaining configured
+  legacy/provider base-path policy and first-byte timeout behavior. Automatic
+  unknown and forced-passthrough contracts cover Claude Code, OpenAI direct
+  custom URLs, and Azure full-service URLs.
+- Transparent retry now replays the stored method, exact target and raw query,
+  headers, and opaque body through a real Qwen callout, applying only the
+  replacement credential and provider authority. Successful retry responses
+  bypass protocol transforms and retain exact response bytes and headers.
+- All selected credential, inventory, cooldown, health-check, failover, and
+  retry diagnostics are categorical or count-only. Successful transparent,
+  failover, and retry contracts aggregate every HostEmulator log level and
+  reject provider credentials, client credentials, and submitted body markers.
+- Every decoded validation pass now rejects C0 and DEL bytes. The contract
+  covers direct and recursively encoded NUL, CRLF, DEL, backslash, fragment,
+  authority, and traversal while retaining legal `job%2F42` classification and
+  the exact duplicate/escaped raw query.
+- Exact upstream impact was LOW for all behavior edits except
+  `modifyApiToken` and `modifyApiTokenRequestCount`, which were HIGH because
+  they participate in the established failover/CAS flows. Those two authorized
+  edits changed only log strings and removed secret arguments; their shared
+  state, CAS, counter, and control-flow behavior is unchanged.
+- Focused Azure/Minimax/generic regressions passed in `23.738s`; focused
+  Vertex/cooldown/path-scope regressions passed in `36.510s`; config, provider,
+  and root wrapper packages passed. The serial aggregate
+  `timeout 8m go test -count=1 -p 1 ./...` passed with the root package at
+  `249.199s`. Extension and wrapper `go vet`, exact `gofmt`,
+  `git diff --check`, and strict OpenSpec validation also passed.
+- `graphify update .` rebuilt 11,049 nodes, 14,688 edges, and 876 communities
+  with no tracked generated changes. GitNexus incremental analysis rebuilt
+  12,818 nodes, 39,396 edges, 287 clusters, and 300 flows. Final change
+  detection remains HIGH only for the two authorized log-only failover
+  symbols and their ten pre-existing token-availability processes; no new
+  unreviewed HIGH/CRITICAL behavior edit was introduced.
+
 - [ ] 2.9 Run focused and complete independent ai-proxy unit, proxy-wasm
   lifecycle/integration, streaming, regression, and security suites.
 - [ ] 2.10 Obtain an independent ai-proxy implementation/security review,

@@ -48,7 +48,8 @@ func validateDecodedRequestPath(rawPath string) error {
 		if err != nil {
 			return errUnsafeRequestTarget
 		}
-		if strings.HasPrefix(decoded, "//") ||
+		if containsUnsafeRequestTargetByte(decoded) ||
+			strings.HasPrefix(decoded, "//") ||
 			strings.Contains(decoded, "\\") ||
 			strings.Contains(decoded, "#") ||
 			hasTraversalSegment(decoded) {
@@ -60,6 +61,16 @@ func validateDecodedRequestPath(rawPath string) error {
 		current = decoded
 	}
 	return errUnsafeRequestTarget
+}
+
+func containsUnsafeRequestTargetByte(value string) bool {
+	for index := 0; index < len(value); index++ {
+		character := value[index]
+		if character < 0x20 || character == 0x7f {
+			return true
+		}
+	}
+	return false
 }
 
 func hasTraversalSegment(path string) bool {

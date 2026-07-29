@@ -925,6 +925,12 @@ func (ctx *CommonHttpCtx[PluginConfig]) DontReadRequestBody() {
 	ctx.needRequestBody = false
 }
 
+// EnableRequestBody opts a plugin back into request-body callbacks after the
+// wrapper's conservative binary-content default disabled them.
+func (ctx *CommonHttpCtx[PluginConfig]) EnableRequestBody() {
+	ctx.needRequestBody = true
+}
+
 func (ctx *CommonHttpCtx[PluginConfig]) DontReadResponseBody() {
 	ctx.needResponseBody = false
 }

@@ -133,6 +133,11 @@ func TestTransparentQwenUnknownFallbackContract(t *testing.T) {
 			require.Contains(t, providerTokens, secondAuthorization)
 			require.NotEqual(t, firstAuthorization, secondAuthorization)
 			require.NotEqual(t, "Bearer attacker-token", secondAuthorization)
+
+			allLogs := collectAllHostLogs(host)
+			for _, token := range []string{"provider-token-a", "provider-token-b", "attacker-token"} {
+				require.NotContains(t, allLogs, token)
+			}
 		})
 	})
 }

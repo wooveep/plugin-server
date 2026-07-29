@@ -81,6 +81,16 @@ type claudeChatMessageContent struct {
 	Thinking  string                      `json:"thinking,omitempty"`    // For thinking
 }
 
+func (c *claudeProvider) TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header) {
+	util.OverwriteRequestHostHeader(headers, claudeDomain)
+	clearTransparentCredentials(headers)
+	if c.config.claudeCodeMode {
+		headers.Set(util.HeaderAuthorization, "Bearer "+c.config.GetApiTokenInUse(ctx))
+		return
+	}
+	headers.Set(util.HeaderXApiKey, c.config.GetApiTokenInUse(ctx))
+}
+
 // UnmarshalJSON implements custom JSON unmarshaling for claudeChatMessageContentWr
 func (ccw *claudeChatMessageContentWr) UnmarshalJSON(data []byte) error {
 	// Try to unmarshal as string first

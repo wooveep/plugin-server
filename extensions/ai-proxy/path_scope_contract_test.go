@@ -376,8 +376,10 @@ func TestAIProxyPathScopeContract(t *testing.T) {
 			assert.Contains(
 				t,
 				newDebugLogs,
-				"apiTokens: [provider-token-a provider-token-b], unavailableApiTokens: []",
+				"available credential count: 2, unavailable credential count: 0",
 			)
+			assert.NotContains(t, newDebugLogs, "provider-token-a")
+			assert.NotContains(t, newDebugLogs, "provider-token-b")
 		})
 
 		t.Run("bound_target_mismatch_callbacks_preserve_json_bytes", func(t *testing.T) {

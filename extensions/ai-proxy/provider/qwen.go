@@ -122,6 +122,16 @@ func (m *qwenProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName 
 	}
 }
 
+func (m *qwenProvider) TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header) {
+	if m.config.qwenDomain != "" {
+		util.OverwriteRequestHostHeader(headers, m.config.qwenDomain)
+	} else {
+		util.OverwriteRequestHostHeader(headers, qwenDefaultDomain)
+	}
+	clearTransparentCredentials(headers)
+	headers.Set(util.HeaderAuthorization, "Bearer "+m.config.GetApiTokenInUse(ctx))
+}
+
 func (m *qwenProvider) TransformRequestBodyHeaders(ctx wrapper.HttpContext, apiName ApiName, body []byte, headers http.Header) ([]byte, error) {
 	if m.config.qwenEnableCompatible {
 		modifiedBody := body

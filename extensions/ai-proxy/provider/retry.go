@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strconv"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
@@ -88,11 +89,20 @@ func (c *ProviderConfig) retryCall(
 
 	if statusCode == 200 {
 		log.Infof("Retry request succeeded")
+		if ctx.GetBoolContext(CtxTransparentLifecycle, false) {
+			proxywasm.SendHttpResponse(
+				uint32(statusCode),
+				util.HeaderToSlice(responseHeaders),
+				responseBody,
+				-1,
+			)
+			return
+		}
 		headers, body := c.transformResponseHeadersAndBody(ctx, activeProvider, apiName, responseHeaders, responseBody)
 		proxywasm.SendHttpResponse(200, headers, body, -1)
 		return
 	} else {
-		log.Infof("The retry request still failed, status: %d, responseHeaders: %v, responseBody: %s", statusCode, responseHeaders, string(responseBody))
+		log.Infof("The retry request still failed, status: %d", statusCode)
 	}
 
 	retryCount++
@@ -123,20 +133,36 @@ func (c *ProviderConfig) sendRetryRequest(
 	}
 	// Set apiTokenInUse for the retry request
 	apiTokenInUse = GetRandomToken(apiTokens)
-	log.Debugf("Retry request with apiToken: %s", apiTokenInUse)
+	log.Debugf("Retry request selected a replacement credential")
 	ctx.SetContext(c.failover.ctxApiTokenInUse, apiTokenInUse)
 	requestBody := ctx.GetByteSliceContext(CtxRequestBody, []byte(""))
-	log.Debugf("get original requestBody:%s", requestBody)
-	modifiedHeaders, modifiedBody, err := c.transformRequestHeadersAndBody(ctx, activeProvider, [][2]string{
-		{"content-type", "application/json"},
-		{":authority", ctx.GetStringContext(CtxRequestHost, "")},
-		{":path", ctx.GetStringContext(CtxRequestPath, "")},
-	}, requestBody)
-	if err != nil {
-		return fmt.Errorf("sendRetryRequest failed to transform request headers and body: %v", err)
+	var (
+		method          = http.MethodPost
+		modifiedHeaders http.Header
+		modifiedBody    []byte
+	)
+	if ctx.GetBoolContext(CtxTransparentLifecycle, false) {
+		storedHeaders, _ := ctx.GetContext(CtxRequestHeaders).([][2]string)
+		modifiedHeaders = c.BuildTransparentRequestHeaders(
+			activeProvider,
+			ctx,
+			util.SliceToHeader(storedHeaders),
+		)
+		modifiedBody = append([]byte(nil), requestBody...)
+		method = ctx.GetStringContext(CtxRequestMethod, http.MethodPost)
+	} else {
+		var err error
+		modifiedHeaders, modifiedBody, err = c.transformRequestHeadersAndBody(ctx, activeProvider, [][2]string{
+			{"content-type", "application/json"},
+			{":authority", ctx.GetStringContext(CtxRequestHost, "")},
+			{":path", ctx.GetStringContext(CtxRequestPath, "")},
+		}, requestBody)
+		if err != nil {
+			return fmt.Errorf("sendRetryRequest failed to transform request headers and body: %v", err)
+		}
 	}
 
-	err = retryClient.Post(generateUrl(modifiedHeaders), util.HeaderToSlice(modifiedHeaders), modifiedBody,
+	err := dispatchRetryRequest(retryClient, method, modifiedHeaders, modifiedBody,
 		func(statusCode int, responseHeaders http.Header, responseBody []byte) {
 			c.retryCall(ctx, activeProvider, apiName, statusCode, responseHeaders, responseBody, retryClient, apiTokenInUse, apiTokens)
 		}, uint32(c.retryOnFailure.retryTimeout))
@@ -144,6 +170,51 @@ func (c *ProviderConfig) sendRetryRequest(
 		return fmt.Errorf("failed to send retry request: %v", err)
 	}
 	return nil
+}
+
+func dispatchRetryRequest(
+	retryClient *wrapper.ClusterClient[wrapper.RouteCluster],
+	method string,
+	headers http.Header,
+	body []byte,
+	callback func(int, http.Header, []byte),
+	timeout uint32,
+) error {
+	headers.Set(":method", method)
+	_, err := proxywasm.DispatchHttpCall(
+		retryClient.ClusterName(),
+		util.HeaderToSlice(headers),
+		body,
+		nil,
+		timeout,
+		func(numHeaders, bodySize, numTrailers int) {
+			responseBody, bodyErr := proxywasm.GetHttpCallResponseBody(0, bodySize)
+			if bodyErr != nil && bodySize > 0 {
+				log.Errorf("failed to read retry response body: %v", bodyErr)
+			}
+			responseHeaderSlice, headerErr := proxywasm.GetHttpCallResponseHeaders()
+			if headerErr != nil {
+				log.Errorf("failed to read retry response headers: %v", headerErr)
+			}
+
+			statusCode := http.StatusBadGateway
+			responseHeaders := make(http.Header)
+			for _, header := range responseHeaderSlice {
+				responseHeaders.Add(header[0], header[1])
+				if header[0] != ":status" {
+					continue
+				}
+				parsedStatus, parseErr := strconv.Atoi(header[1])
+				if parseErr != nil {
+					log.Errorf("failed to parse retry response status")
+					continue
+				}
+				statusCode = parsedStatus
+			}
+			callback(statusCode, responseHeaders, responseBody)
+		},
+	)
+	return err
 }
 
 func createRetryClient() *wrapper.ClusterClient[wrapper.RouteCluster] {
@@ -158,8 +229,8 @@ func removeApiTokenFromRetryList(apiTokens []string, removedApiToken string) []s
 			availableApiTokens = append(availableApiTokens, s)
 		}
 	}
-	log.Debugf("Remove apiToken %s from retry apiTokens list", removedApiToken)
-	log.Debugf("Available retry apiTokens: %v", availableApiTokens)
+	log.Debugf("Removed failed credential from retry candidates")
+	log.Debugf("Available retry credential count: %d", len(availableApiTokens))
 	return availableApiTokens
 }
 

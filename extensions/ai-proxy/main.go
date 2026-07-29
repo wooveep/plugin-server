@@ -321,20 +321,22 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 		// save the original request host and path in case they are needed for apiToken health check and retry
 		ctx.SetContext(provider.CtxRequestHost, ctx.Host())
 		ctx.SetContext(provider.CtxRequestPath, ctx.Path())
-
-		err := handler.OnRequestHeaders(ctx, apiName)
-		if err != nil {
-			_ = util.ErrorHandler("ai-proxy.proc_req_headers_failed", fmt.Errorf("failed to process request headers: %v", err))
-			return types.ActionContinue
-		}
+		ctx.SetContext(provider.CtxRequestMethod, ctx.Method())
 
 		if transparent {
-			if err := providerConfig.ApplyTransparentFirstByteTimeout(); err != nil {
+			if err := providerConfig.ApplyTransparentTransportPolicy(activeProvider, ctx); err != nil {
 				_ = util.ErrorHandler(
 					"ai-proxy.transparent_transport_policy_failed",
 					fmt.Errorf("failed to apply provider transport policy"),
 				)
 				return types.ActionContinue
+			}
+			ctx.SetContext(
+				provider.CtxRequestHeaders,
+				util.HeaderToSlice(util.GetRequestHeaders()),
+			)
+			if bodyReader, ok := ctx.(interface{ EnableRequestBody() }); ok {
+				bodyReader.EnableRequestBody()
 			}
 			if !forcedTransparent && (providerConfig.IsOriginal() || providerConfig.IsGeneric()) {
 				_, hasRequestBodyHandler := activeProvider.(provider.RequestBodyHandler)
@@ -344,6 +346,12 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 					return types.HeaderStopIteration
 				}
 			}
+			return types.ActionContinue
+		}
+
+		err := handler.OnRequestHeaders(ctx, apiName)
+		if err != nil {
+			_ = util.ErrorHandler("ai-proxy.proc_req_headers_failed", fmt.Errorf("failed to process request headers: %v", err))
 			return types.ActionContinue
 		}
 
@@ -367,6 +375,8 @@ func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig
 		return types.ActionContinue
 	}
 	if isTransparentLifecycle(ctx) {
+		log.Debugf("[onHttpRequestBody] preserving transparent request body bytes=%d", len(body))
+		ctx.SetContext(provider.CtxRequestBody, append([]byte(nil), body...))
 		return types.ActionContinue
 	}
 

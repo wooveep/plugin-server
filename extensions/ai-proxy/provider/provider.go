@@ -291,6 +291,12 @@ type TransformRequestHeadersHandler interface {
 	TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header)
 }
 
+// TransparentRequestHeadersHandler applies only provider-owned transport policy.
+// Implementations must not change the request method, target, protocol headers, or body.
+type TransparentRequestHeadersHandler interface {
+	TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header)
+}
+
 type TransformRequestBodyHandler interface {
 	TransformRequestBody(ctx wrapper.HttpContext, apiName ApiName, body []byte) ([]byte, error)
 }

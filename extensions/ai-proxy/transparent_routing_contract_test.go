@@ -38,7 +38,17 @@ func TestSafeOriginFormTargetValidatorContract(t *testing.T) {
 		"/%252e%252e/vendor/jobs",
 		"/bad%zz",
 		"/backslash\\authority",
+		"/decoded%5cauthority",
+		"/nested%255cauthority",
 		"/fragment#value",
+		"/decoded%23fragment",
+		"/nested%2523fragment",
+		"/decoded%00nul",
+		"/decoded%0d%0ainjected",
+		"/decoded%7fdelete",
+		"/nested%2500nul",
+		"/nested%250d%250ainjected",
+		"/nested%257fdelete",
 		"/%25252525252525252f%25252525252525252fauthority.invalid",
 	}
 	for _, target := range unsafeTargets {
