@@ -789,12 +789,55 @@ Task 2.10 evidence (2026-07-29):
 
 ## 3. AI Billing Red-Green Contracts
 
-- [ ] 3.1 Add RED configuration, Redis delivery, and request-gating tests:
+- [x] 3.1 Add RED configuration, Redis delivery, and request-gating tests:
   global `redis_stream` requirement/defaults, global and rule-level removed
   `billing_service` rejection, rule-level `redis_stream` rejection, rule
   inheritance without target replacement, omitted/explicit legacy scope,
   bound target without suffixes, provider-native paths, and explicit non-empty
   suffix/method intersections.
+
+Task 3.1 evidence (2026-07-29):
+
+- The current Graphify report, proposal/design/task plan, all seven delta
+  capabilities, accepted billing/resource specifications, and the completed
+  correlation/internal-cost dependency changes were reviewed before source
+  inspection. GitNexus located the real `parseConfig`, `parseRuleConfig`,
+  `isAIPathEnabled`, and HostEmulator billing-delivery seams. Pre-edit impact
+  for the four new test-only symbols was UNKNOWN with zero indexed dependents;
+  no production symbol or CRITICAL shared `RunGoTest`/`NewTestHost` helper was
+  modified.
+- Pre-change controls passed:
+  `go test . -run '^TestParseConfig$' -count=1`,
+  `go test . -run '^TestBillingEventDelivery$' -count=1`, and
+  `go test . -run
+  '^(TestBillingResponseRequestIDHeader|TestUnsafeInternalAttributionDoesNotLogSubmittedValue|TestPathFiltering)$'
+  -count=1`. They retain Redis delivery, legacy gating, exact response
+  correlation, and internal-attribution behavior.
+- `extensions/ai-billing/routing_delivery_contract_test.go` adds independent
+  Go HostEmulator configuration and request-lifecycle contracts. The passing
+  controls prove the required global Redis target and exact defaults, removed
+  global/rule `billing_service` rejection, rule-level `redis_stream`
+  rejection, full target inheritance, legacy empty-list rejection, and
+  omitted/explicit legacy suffix gating. Positive delivery decodes the real
+  inherited `XADD billing:events * event <json>` command; no production or
+  shared test-harness code changed.
+- Focused RED command:
+  `go test . -run
+  '^(TestBillingRoutingAndDeliveryConfigContract|TestBillingRequestGatingContract)$'
+  -count=1`. It compiled and failed only at the missing routing contracts:
+  bound target rejected an explicitly empty advanced-filter list; global
+  bound target, an empty-method-filter target, and a rule-level bound target
+  emitted no Redis event for provider-native paths; and a non-matching `GET`
+  incorrectly emitted an event because the non-empty method intersection was
+  ignored. The matching `POST` and non-matching suffix controls passed.
+- The new Redis/configuration and omitted/explicit legacy control subsets pass
+  independently. Extension vet, exact changed-file `gofmt`, `git diff
+  --check`, and strict OpenSpec validation pass. `graphify update .` rebuilt
+  11,101 nodes, 14,858 edges, and 864 communities. Staged GitNexus detection
+  reports LOW risk, two changed files, zero affected processes, and only stale
+  documentation-section associations; production execution flows are
+  unchanged.
+
 - [ ] 3.2 Add RED event tests proving trustworthy provider usage remains
   authoritative and opaque native responses produce `usage_missing=true`
   without fabricated model, token, provider-usage, price, or cost facts;
