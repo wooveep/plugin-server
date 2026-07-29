@@ -14,4 +14,4 @@
 - [x] 3.1 Run focused/full Go tests and the exact Wasm lifecycle test.
 - [x] 3.2 Run strict OpenSpec, Graphify, GitNexus, and diff gates.
 - [x] 3.3 Deploy locally and prove scoped billing loads, processes its route, and ignores unmatched AdminWeb traffic.
-- [ ] 3.4 Synchronize accepted specs and archive the change.
+- [x] 3.4 Synchronize accepted specs and archive the change.

@@ -141,7 +141,10 @@ contracts.
 
 The ai-billing resource `spec.yaml` SHALL expose the current global Redis
 target, complete business configuration, allowed rule overrides,
-backward-compatible path scope, and truthful examples.
+backward-compatible path scope, scoped-only delivery, and truthful examples.
+Global configuration SHALL retain its complete Redis target schema. Route
+configuration SHALL expose the same `redis_stream` shape only for use with a
+dormant disabled base.
 
 #### Scenario: Global Redis Stream fields are complete
 
@@ -161,13 +164,13 @@ backward-compatible path scope, and truthful examples.
 - **AND** it SHALL document `usage` and `internal_cost`, legacy
   `customer_usage` normalization, and both path-scope values.
 
-#### Scenario: Route schema allows only supported partial overrides
+#### Scenario: Route schema allows supported scoped configuration
 
 - **WHEN** the ai-billing route config schema is inspected
 - **THEN** it SHALL allow supported business, header, path-filter, and
-  fail-policy overrides without requiring a delivery target
-- **AND** it SHALL reject rule-level `redis_stream` and removed
-  `billing_service`.
+  fail-policy overrides
+- **AND** it SHALL expose complete `redis_stream` delivery for a dormant base
+- **AND** it SHALL reject removed `billing_service`.
 
 #### Scenario: Legacy example uses global target and rule business fields
 
@@ -184,6 +187,14 @@ backward-compatible path scope, and truthful examples.
 - **THEN** it SHALL omit suffix and method filters
 - **AND** any non-empty filter example SHALL describe target intersection.
 
+#### Scenario: Scoped-only example is complete
+
+- **WHEN** the schema shows a scoped-only `bound_target` example
+- **THEN** its rule SHALL contain a valid `redis_stream.service_name`
+- **AND** documentation SHALL require `defaultConfigDisable: true` for the
+  corresponding empty global scope
+- **AND** it SHALL state that a rule cannot replace an existing global target.
+
 ### Requirement: Resource metadata stays aligned with extension examples
 
 Resource metadata SHALL stay aligned for ai-proxy, ai-billing, ai-quota, and
@@ -195,8 +206,9 @@ runtime contracts.
 - **WHEN** resource examples are compared with extension examples
 - **THEN** they SHALL use equivalent fields, defaults, placeholders,
   inheritance, protocol/path-scope semantics, and route values
-- **AND** the ai-billing extension example SHALL keep `redis_stream` global
-  and route configuration transport-free.
+- **AND** legacy ai-billing examples SHALL keep `redis_stream` global
+- **AND** scoped-only examples SHALL keep complete delivery configuration in
+  the matched rule.
 
 #### Scenario: Resource documentation follows tested runtime
 
@@ -210,7 +222,7 @@ runtime contracts.
 
 - **WHEN** the coordinated alignment check runs
 - **THEN** ai-proxy, ai-billing, ai-quota, and ai-statistics resources SHALL
-  identify `1.0.2`, `0.1.5`, `1.0.2`, and `1.0.2`, respectively
+  identify `1.0.2`, `0.1.7`, `1.0.2`, and `1.0.2`, respectively
 - **AND** any mismatch SHALL fail verification.
 
 ### Requirement: ai-memory resource package is generated

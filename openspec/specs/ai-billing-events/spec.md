@@ -5,16 +5,18 @@ Define the `ai-billing` extension behavior for request-level AI billing events, 
 ## Requirements
 ### Requirement: Billing plugin configuration
 
-`ai-billing` SHALL require one global `redis_stream` delivery target and SHALL
-support `event_kind`, `quota_scope`, `provider`, `cost_source`, `worker_kind`,
-`bill_customer`, `tenant_header`, `consumer_header`, `path_scope`,
-`enable_path_suffixes`, `enable_methods`, and `fail_policy`.
+`ai-billing` SHALL support either one valid global `redis_stream` delivery
+target with inheriting rules or a dormant empty base with complete scoped
+rules. It SHALL support `event_kind`, `quota_scope`, `provider`, `cost_source`,
+`worker_kind`, `bill_customer`, `tenant_header`, `consumer_header`,
+`path_scope`, `enable_path_suffixes`, `enable_methods`, and `fail_policy`.
 
 `redis_stream` SHALL contain required `service_name` and optional
 `service_port`, `username`, `password`, `database`, `timeout`, and `stream`.
-Rules SHALL inherit the global target and SHALL NOT replace it. Global and
-rule-level `billing_service` SHALL be rejected. Rule-level `redis_stream` SHALL
-also be rejected.
+Rules SHALL inherit a configured global target and SHALL NOT replace it. When
+the base is dormant, every active rule SHALL contain and validate its own
+complete `redis_stream` target. Global and rule-level `billing_service` SHALL
+always be rejected.
 
 Missing `path_scope` SHALL resolve to `legacy_suffixes`. In
 `legacy_suffixes`, ai-billing SHALL retain its existing default and explicit
@@ -31,12 +33,19 @@ explicit non-empty filters SHALL only narrow that target by intersection.
 - **AND** optional `username` and `password` SHALL be used only for Redis
   connection authentication.
 
-#### Scenario: Global Redis Stream target is required
+#### Scenario: Non-empty incomplete base is rejected
 
-- **WHEN** global config omits `redis_stream` or provides an empty
+- **WHEN** non-empty global config omits `redis_stream` or provides an empty
   `redis_stream.service_name`
 - **THEN** ai-billing SHALL reject plugin initialization with a clear
   Redis-target configuration error.
+
+#### Scenario: Empty base is dormant
+
+- **WHEN** Higress initializes ai-billing with an empty base configuration
+- **THEN** plugin startup SHALL succeed
+- **AND** the base configuration SHALL not read bodies, initialize billing
+  request state, or emit events.
 
 #### Scenario: Removed global billing service is rejected
 
@@ -52,10 +61,24 @@ explicit non-empty filters SHALL only narrow that target by intersection.
 
 #### Scenario: Rules cannot replace delivery target
 
-- **WHEN** a matching rule contains `redis_stream` or `billing_service`
+- **WHEN** global config contains a valid `redis_stream` and a matching rule
+  contains `redis_stream` or `billing_service`
 - **THEN** ai-billing SHALL reject that rule configuration
 - **AND** route data SHALL NOT choose a Redis service, credential, database, or
   stream.
+
+#### Scenario: Dormant base uses complete scoped rule
+
+- **WHEN** an empty base is combined with a matching rule that contains valid
+  `redis_stream.service_name` and `path_scope: bound_target`
+- **THEN** the rule SHALL initialize its Redis client
+- **AND** it SHALL process only requests selected by that Higress match rule.
+
+#### Scenario: Dormant base rejects incomplete scoped rule
+
+- **WHEN** an empty base is combined with a matching rule that omits a valid
+  `redis_stream.service_name`
+- **THEN** ai-billing SHALL reject that rule configuration.
 
 #### Scenario: Event kind and business attribution are configured
 
@@ -507,13 +530,13 @@ remove any upstream value and SHALL NOT invent an identity.
 
 ### Requirement: AI Billing Routing Release
 
-The authoritative ai-billing extension version SHALL advance to `0.1.5` and
+The authoritative ai-billing extension version SHALL advance to `0.1.7` and
 SHALL combine Redis Stream delivery, trusted internal attribution, exact
 response correlation, bound-target scope, and truthful opaque-response usage.
 
-#### Scenario: Version 0.1.5 is packaged
+#### Scenario: Version 0.1.7 is packaged
 
-- **WHEN** ai-billing `0.1.5` is built
+- **WHEN** ai-billing `0.1.7` is built
 - **THEN** its versioned Wasm artifact, resource metadata, schema, examples,
-  and bilingual documentation SHALL identify `0.1.5`
+  and bilingual documentation SHALL identify `0.1.7`
 - **AND** independent tests SHALL cover the complete release contract.
