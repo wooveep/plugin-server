@@ -1279,9 +1279,12 @@ Task 4.1 evidence (2026-07-29):
   arrays must fail closed.
 - Every eligible runtime case must dispatch a real Redis `GET` containing the
   route-effective balance key. A positive balance must resume the request; a
-  negative balance must produce the existing 403 local no-balance response.
-  Out-of-scope filter mismatches must continue without a Redis callout or local
-  response. This tests the admission lifecycle rather than parser state alone.
+  non-positive balance must produce the existing 403 local no-balance response
+  while the HostEmulator retains its original
+  `HeaderStopAllIterationAndWatermark` action rather than observing
+  `ActionContinue`. Out-of-scope filter mismatches must continue without a
+  Redis callout or local response. This tests the admission lifecycle rather
+  than parser state alone.
 - Focused RED command:
   `go test . -run
   '^(TestQuotaRoutingConfigurationContract|TestQuotaRoutingAdmissionContract)$'
@@ -1293,14 +1296,44 @@ Task 4.1 evidence (2026-07-29):
   case-sensitive method matching. Existing blank-only suffix rejection,
   rule-level blank-filter guards, and omitted/explicit legacy eligibility
   remain GREEN.
-- The complete `go test ./... -count=1` module run contains only those nine
-  intended RED leaves. Dedicated legacy and blank-filter guard reruns pass.
-  Changed-file `gofmt`, extension `go vet ./...`, `git diff --check`, and
-  strict OpenSpec validation pass. `graphify update .` rebuilt 11,131 nodes,
-  14,958 edges, and 891 communities without tracked output. The GitNexus
-  refresh generated eight repository-instruction diffs, all restored before
-  staging; staged detection reports LOW risk across exactly two changed files
-  and six test/documentation symbols, with zero affected processes.
+- The initial complete `go test ./... -count=1` module run contained only
+  those nine routing RED leaves. Dedicated legacy and blank-filter guard
+  reruns passed. Changed-file `gofmt`, extension `go vet ./...`,
+  `git diff --check`, and strict OpenSpec validation passed. `graphify update
+  .` rebuilt 11,131 nodes, 14,958 edges, and 891 communities without tracked
+  output. The GitNexus refresh generated eight repository-instruction diffs,
+  all restored before staging; staged detection reported LOW risk across
+  exactly two changed files and six test/documentation symbols, with zero
+  affected processes.
+- Independent review returned `NEEDS_FIXES` because the retained
+  `TestRequestAdmission` required zero balance to resume even though both the
+  accepted and change specifications require `<= 0` denial, and the new
+  provider-native lifecycle covered only `-1`. Before repair, the stale
+  zero-allow suite passed in `1.778s`, while the nine routing RED leaves were
+  reproduced unchanged.
+- The repair renames the retained case to `zero balance denies request` and
+  requires the real Redis zero callback to produce the existing 403
+  no-balance response without request resume in both Go and Wasm modes. The
+  bound-target provider-native lifecycle now exercises positive, zero, and
+  negative balances through the same Redis callback; both denied branches
+  require 403 plus the HostEmulator's retained header-stop action. The
+  positive and negative retained controls pass together in both modes.
+- Combined pre-production command:
+  `go test . -run
+  '^(TestRequestAdmission|TestQuotaRoutingConfigurationContract|TestQuotaRoutingAdmissionContract)$'
+  -count=1`. It contains ten semantic RED contracts: the zero-balance boundary
+  plus the unchanged nine routing contracts. Because `TestRequestAdmission`
+  executes in both Go and Wasm modes, the output has eleven executable failing
+  leaves: two zero-balance leaves and the original nine Go-mode routing
+  leaves. No prior routing RED moved or disappeared.
+- The complete repaired `go test ./... -count=1` module run has that same
+  ten-contract/eleven-executable-leaf boundary and no other failure. Fresh
+  positive/negative retained admission controls pass in both Go and Wasm
+  modes. Changed-file `gofmt`, extension `go vet ./...`, `git diff --check`,
+  and strict OpenSpec validation pass. The repair Graphify refresh rebuilt
+  11,131 nodes, 14,958 edges, and 879 communities without tracked output.
+  Final staged GitNexus detection is LOW across exactly three changed
+  test/task files and five mapped symbols, with zero affected processes.
 
 - [ ] 4.2 Add RED ownership tests proving the request-header Redis balance
   admission result is final for recognizable, opaque, streaming, and

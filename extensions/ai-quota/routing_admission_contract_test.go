@@ -135,6 +135,10 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 			)
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodPatch, "/vendor/jobs/job-42:cancel",
+				0, true, true, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+			)
+			runQuotaRoutingAdmission(
+				t, config, "", http.MethodPatch, "/vendor/jobs/job-42:cancel",
 				-1, true, true, "billing:balance:tenant-a:global:consumer-a", "redis.static",
 			)
 		})
@@ -305,6 +309,8 @@ func runQuotaRoutingAdmission(
 		require.NotNil(t, response)
 		require.Equal(t, uint32(http.StatusForbidden), response.StatusCode)
 		require.Contains(t, string(response.Data), "No monetary balance left")
+		require.Equal(t, types.HeaderStopAllIterationAndWatermark, host.GetHttpStreamAction())
+		require.NotEqual(t, types.ActionContinue, host.GetHttpStreamAction())
 	} else {
 		require.Equal(t, types.ActionContinue, host.GetHttpStreamAction())
 		require.Nil(t, host.GetLocalResponse())

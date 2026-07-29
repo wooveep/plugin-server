@@ -110,7 +110,7 @@ func TestRequestAdmission(t *testing.T) {
 			host.CompleteHttp()
 		})
 
-		t.Run("zero balance allows request", func(t *testing.T) {
+		t.Run("zero balance denies request", func(t *testing.T) {
 			host, status := test.NewTestHost(monetaryConfig)
 			defer host.Reset()
 			require.Equal(t, types.OnPluginStartStatusOK, status)
@@ -125,7 +125,12 @@ func TestRequestAdmission(t *testing.T) {
 			require.Equal(t, types.HeaderStopAllIterationAndWatermark, action)
 
 			host.CallOnRedisCall(0, test.CreateRedisRespInt(0))
-			require.Equal(t, types.ActionContinue, host.GetHttpStreamAction())
+			response := host.GetLocalResponse()
+			require.NotNil(t, response)
+			require.Equal(t, uint32(http.StatusForbidden), response.StatusCode)
+			require.Contains(t, string(response.Data), "No monetary balance left")
+			require.Equal(t, types.HeaderStopAllIterationAndWatermark, host.GetHttpStreamAction())
+			require.NotEqual(t, types.ActionContinue, host.GetHttpStreamAction())
 			host.CompleteHttp()
 		})
 
@@ -147,6 +152,8 @@ func TestRequestAdmission(t *testing.T) {
 			response := host.GetLocalResponse()
 			require.Equal(t, uint32(http.StatusForbidden), response.StatusCode)
 			require.Contains(t, string(response.Data), "No monetary balance left")
+			require.Equal(t, types.HeaderStopAllIterationAndWatermark, host.GetHttpStreamAction())
+			require.NotEqual(t, types.ActionContinue, host.GetHttpStreamAction())
 			host.CompleteHttp()
 		})
 
