@@ -1335,10 +1335,70 @@ Task 4.1 evidence (2026-07-29):
   Final staged GitNexus detection is LOW across exactly three changed
   test/task files and five mapped symbols, with zero affected processes.
 
-- [ ] 4.2 Add RED ownership tests proving the request-header Redis balance
+- [x] 4.2 Add RED ownership tests proving the request-header Redis balance
   admission result is final for recognizable, opaque, streaming, and
   non-streaming responses; Redis balance input remains read-only and no
   response lifecycle callback adds account enforcement.
+
+Task 4.2 evidence (2026-07-29):
+
+- The accepted and delta ai-monetary-quota specifications, shared design,
+  task plan, quota source/tests/schema, current Graphify report, and real
+  HostEmulator Redis protocol were reviewed before the fixture was added.
+  Current runtime ownership had already converged at `7c657e1`: `init`
+  registers only request headers, eligible requests call
+  `DontReadResponseBody`, and the sole live Redis operation is the admission
+  `Get`. Task 4.2 therefore records the missing regression boundary without
+  manufacturing a current-source RED. Task 4.4 remains responsible for
+  schema/docs and obsolete settlement-control convergence.
+- The independent
+  `extensions/ai-quota/ownership_admission_contract_test.go` uses one fresh,
+  non-parallel HostEmulator per leaf. Its seven response classes are
+  recognizable JSON usage, explicitly eligible opaque provider-native
+  non-streaming bytes, streaming SSE usage, upstream error, gateway local,
+  cache replay, and success without usage. Each positive admission requires
+  exactly one callout to `outbound|6379||redis.static` with the complete RESP
+  body `GET billing:balance:tenant-a:global:consumer-a`.
+- After the positive Redis callback resumes the request, duplicate response
+  header/body or terminal streaming callbacks and stream completion must
+  create no additional Redis callout of any kind. This stronger zero-callout
+  oracle rejects price reads as well as `EVAL`, `DECRBY`, `SET`, or other
+  balance mutation. Every lifecycle also requires no quota local response and
+  exact preservation of the supplied response status, headers, and opaque or
+  structured bytes.
+- The same test was overlaid, without commits or shared-worktree changes, on
+  detached pre-admission-only source `7c657e1^`
+  (`ad1e61a2dd295e40c9aee852096e58e5b5042ab4`). It failed at exactly four
+  semantic/eight Go-Wasm leaves: recognizable JSON usage, streaming SSE
+  usage, upstream error with recognizable usage, and cache replay with
+  recognizable usage. Each failure exposed one response-stage Redis `EVAL`;
+  its exact callout body contains input/output price `GET`s, `DECRBY` of the
+  admitted balance key, both effective-price keys, token arguments `11` and
+  `7`, and the price-unit argument. Opaque native, gateway-local without
+  usage, and no-usage controls stayed GREEN. The detached worktree was then
+  removed.
+- On current HEAD,
+  `go test . -run '^TestQuotaAdmissionOwnershipContract$' -count=1` passes all
+  seven cases in both Go and Wasm modes. The retained positive and negative
+  admission controls also pass in both modes with an exact focused filter.
+  The zero-balance denial remains only the already-recorded Task 4.1 RED;
+  Task 4.2 does not duplicate or mask that pending `<= 0` implementation
+  boundary. The complete module still fails at exactly the same eleven
+  executable Task 4.1 leaves (two zero-boundary leaves plus nine routing
+  leaves), while the util package remains GREEN.
+- Pre-edit GitNexus impact for the new test and this evidence section was
+  UNKNOWN with zero indexed dependents or execution flows. No production,
+  accepted specification, existing test, shared harness, schema, or
+  documentation symbol was modified.
+- Changed-file `gofmt`, extension `go vet ./...`, `git diff --check`, and
+  strict OpenSpec validation pass. `graphify update .` rebuilt 11,133 nodes,
+  14,963 edges, and 873 communities without tracked generated changes.
+  GitNexus incremental analysis rebuilt 12,966 nodes, 40,774 edges, 290
+  clusters, and 300 flows; its eight generated instruction-file rewrites were
+  restored before staging. Final staged detection is LOW across exactly two
+  changed files and ten test/documentation symbols, with zero affected
+  execution flows.
+
 - [ ] 4.3 Implement ai-quota path-scope parsing and bound-target admission
   intersections while preserving legacy request eligibility.
 - [ ] 4.4 Converge ai-quota schema, examples, docs, and runtime on the
