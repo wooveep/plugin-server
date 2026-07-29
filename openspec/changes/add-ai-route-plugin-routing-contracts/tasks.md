@@ -489,6 +489,63 @@ Task 2.8 review-fix evidence (2026-07-29):
   symbols and their ten pre-existing token-availability processes; no new
   unreviewed HIGH/CRITICAL behavior edit was introduced.
 
+Task 2.8 second review-fix evidence (2026-07-29):
+
+- The second independent `NEEDS_FIXES` report was reproduced with new
+  HostEmulator contracts before production edits. Vertex Express automatic
+  unknown and forced passthrough retained the client `x-goog-api-key`;
+  Bedrock AK/SK automatic unknown and forced passthrough retained the client
+  Bearer value instead of producing SigV4; Vertex standard OAuth returned
+  `ActionContinue` without its token callout; and a focused Bedrock unit RED
+  proved query-bearing and query-free targets produced the same signature.
+- A transparent body-authentication interface now receives a clone of the
+  exact opaque body and request headers. The common policy copies back only
+  provider credential/signing headers, so method, exact target/raw query,
+  protocol headers, and body cannot be changed by the hook. The live
+  transparent body callback stores the exact bytes before authentication, and
+  transparent retry invokes the same hook after selecting the replacement
+  credential and before dispatch.
+- Vertex has an explicit transport-only header policy. Express mode uses the
+  provider-supported `x-goog-api-key` header without rewriting the target or
+  raw query; standard mode uses the existing OAuth callout/callback and cached
+  Bearer-token model. Bedrock has an explicit transport-only header policy for
+  bearer mode and signs the exact method, canonical query derived from the
+  unchanged request target, provider authority, and opaque body for AK/SK
+  mode. Client-supplied Google/AWS authentication and signing headers are
+  removed.
+- Automatic-unknown and forced-passthrough Go/Wasm contracts cover Vertex
+  Express, Vertex standard OAuth with a real `/token` callout, Bedrock bearer,
+  and Bedrock AK/SK. A Vertex Express retry contract proves the replay keeps
+  exact `PATCH`, target/raw query, non-credential headers, and binary body
+  while changing to the remaining request-scoped `x-goog-api-key`.
+  Bedrock signing unit coverage independently proves changes to method, query,
+  or body change the signature.
+- A Go HostEmulator-only, read-only context oracle inspects the actual current
+  request context without production hooks or credential logs. Google,
+  Anthropic, and Vertex Raw header-to-body lifecycle cases seed two different
+  consecutive random choices, capture the exact header-phase selection, and
+  require the final key to equal it. The same cases aggregate every
+  HostEmulator log level and reject both configured credentials.
+- Exact pre-edit upstream impact was LOW for `onHttpRequestBody`,
+  `sendRetryRequest`, `setAuthHeaders`, `generateSignatureWithService`,
+  `generateSignature`, and the inspected Vertex lifecycle tests. No new
+  HIGH/CRITICAL symbol was edited. Post-change GitNexus detection reports HIGH
+  only at aggregate scope while listing the ten reviewed existing
+  `onHttpRequestBody`/Bedrock `OnRequestBody` and SigV4 process families; the
+  exact behavior edits and their direct callers were independently reviewed
+  and fully exercised.
+- The new contracts pass in Go/Wasm mode, the exact-selection oracle passes in
+  Go HostEmulator mode, the complete provider package passes, and combined
+  Vertex/Bedrock/Qwen transparent regressions pass. The exact serial aggregate
+  `timeout 8m go test -count=1 -p 1 ./...` passes with the root package at
+  `258.488s`; extension and root-wrapper vet, root-wrapper tests, exact
+  `gofmt`, `git diff --check`, and strict OpenSpec validation also pass.
+  Root-wide `go vet ./...` continues to report only the pre-existing unchanged
+  `pkg/ai/sessionctx/sessionctx.go:512` unreachable-code finding.
+- `graphify update .` rebuilt 11,064 nodes, 14,740 edges, and 873 communities
+  without tracked generated changes. GitNexus incremental analysis rebuilt
+  12,847 nodes, 39,595 edges, 287 clusters, and 300 flows.
+
 - [ ] 2.9 Run focused and complete independent ai-proxy unit, proxy-wasm
   lifecycle/integration, streaming, regression, and security suites.
 - [ ] 2.10 Obtain an independent ai-proxy implementation/security review,

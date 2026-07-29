@@ -297,6 +297,18 @@ type TransparentRequestHeadersHandler interface {
 	TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header)
 }
 
+// TransparentRequestBodyAuthHandler applies authentication that depends on the
+// exact opaque request body. Implementations may only mutate provider
+// authentication or signing headers; method, target, protocol headers, and body
+// are immutable transport inputs.
+type TransparentRequestBodyAuthHandler interface {
+	AuthenticateTransparentRequest(
+		ctx wrapper.HttpContext,
+		body []byte,
+		headers http.Header,
+	) (types.Action, error)
+}
+
 type TransformRequestBodyHandler interface {
 	TransformRequestBody(ctx wrapper.HttpContext, apiName ApiName, body []byte) ([]byte, error)
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 )
 
@@ -20,6 +21,9 @@ var transparentCredentialHeaders = []string{
 	util.HeaderAnthropicApiKey,
 	"api-key",
 	"x-goog-api-key",
+	"x-amz-content-sha256",
+	"x-amz-date",
+	"x-amz-security-token",
 }
 
 // BuildTransparentRequestHeaders applies provider-owned authority and credentials
@@ -75,6 +79,39 @@ func clearTransparentCredentials(headers http.Header) {
 	for _, name := range transparentCredentialHeaders {
 		headers.Del(name)
 	}
+}
+
+// BuildTransparentRequestBodyAuthHeaders applies body-dependent provider
+// authentication while copying back only credential/signing headers. This
+// prevents a provider hook from changing the opaque transport operation.
+func (c *ProviderConfig) BuildTransparentRequestBodyAuthHeaders(
+	activeProvider Provider,
+	ctx wrapper.HttpContext,
+	source http.Header,
+	body []byte,
+) (http.Header, types.Action, error) {
+	headers := source.Clone()
+	handler, ok := activeProvider.(TransparentRequestBodyAuthHandler)
+	if !ok {
+		return headers, types.ActionContinue, nil
+	}
+
+	candidate := source.Clone()
+	action, err := handler.AuthenticateTransparentRequest(
+		ctx,
+		append([]byte(nil), body...),
+		candidate,
+	)
+	if err != nil {
+		return headers, action, err
+	}
+	for _, name := range transparentCredentialHeaders {
+		headers.Del(name)
+		for _, value := range candidate.Values(name) {
+			headers.Add(name, value)
+		}
+	}
+	return headers, action, nil
 }
 
 func (c *ProviderConfig) ApplyTransparentTransportPolicy(

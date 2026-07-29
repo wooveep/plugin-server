@@ -210,6 +210,51 @@ func (v *vertexProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiNam
 	headers.Del("anthropic-version")
 }
 
+func (v *vertexProvider) TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header) {
+	finalVertexDomain := vertexDomain
+	if !v.isExpressMode() && v.config.vertexRegion != vertexGlobalRegion {
+		finalVertexDomain = fmt.Sprintf("%s-%s", v.config.vertexRegion, vertexDomain)
+	}
+	util.OverwriteRequestHostHeader(headers, finalVertexDomain)
+	clearTransparentCredentials(headers)
+}
+
+func (v *vertexProvider) AuthenticateTransparentRequest(
+	ctx wrapper.HttpContext,
+	body []byte,
+	headers http.Header,
+) (types.Action, error) {
+	clearTransparentCredentials(headers)
+	if v.isExpressMode() {
+		headers.Set("x-goog-api-key", v.getExpressAPIKey(ctx))
+		return types.ActionContinue, nil
+	}
+
+	cacheKeyName := v.buildTokenKey()
+	cachedAccessToken, err := v.getCachedAccessToken(cacheKeyName)
+	if err != nil {
+		return types.ActionContinue, err
+	}
+	if cachedAccessToken != "" {
+		headers.Set(util.HeaderAuthorization, "Bearer "+cachedAccessToken)
+		return types.ActionContinue, nil
+	}
+
+	cached, err := v.getToken()
+	if err != nil {
+		return types.ActionContinue, err
+	}
+	if cached {
+		cachedAccessToken, err = v.getCachedAccessToken(cacheKeyName)
+		if err != nil {
+			return types.ActionContinue, err
+		}
+		headers.Set(util.HeaderAuthorization, "Bearer "+cachedAccessToken)
+		return types.ActionContinue, nil
+	}
+	return types.ActionPause, nil
+}
+
 func (v *vertexProvider) getToken() (cached bool, err error) {
 	cacheKeyName := v.buildTokenKey()
 	cachedAccessToken, err := v.getCachedAccessToken(cacheKeyName)

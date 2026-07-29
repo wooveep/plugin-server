@@ -377,7 +377,26 @@ func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig
 	if isTransparentLifecycle(ctx) {
 		log.Debugf("[onHttpRequestBody] preserving transparent request body bytes=%d", len(body))
 		ctx.SetContext(provider.CtxRequestBody, append([]byte(nil), body...))
-		return types.ActionContinue
+		activeProvider := pluginConfig.GetProvider()
+		if activeProvider == nil {
+			return types.ActionContinue
+		}
+		headers, action, err := pluginConfig.GetProviderConfig().BuildTransparentRequestBodyAuthHeaders(
+			activeProvider,
+			ctx,
+			util.GetRequestHeaders(),
+			body,
+		)
+		if err != nil {
+			log.Errorf("[onHttpRequestBody] failed to apply transparent request authentication")
+			_ = util.ErrorHandler(
+				"ai-proxy.transparent_request_authentication_failed",
+				fmt.Errorf("failed to apply transparent request authentication"),
+			)
+			return types.ActionContinue
+		}
+		util.ReplaceRequestHeaders(headers)
+		return action
 	}
 
 	activeProvider := pluginConfig.GetProvider()

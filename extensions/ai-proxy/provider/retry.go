@@ -9,6 +9,7 @@ import (
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -150,6 +151,22 @@ func (c *ProviderConfig) sendRetryRequest(
 		)
 		modifiedBody = append([]byte(nil), requestBody...)
 		method = ctx.GetStringContext(CtxRequestMethod, http.MethodPost)
+		var (
+			action types.Action
+			err    error
+		)
+		modifiedHeaders, action, err = c.BuildTransparentRequestBodyAuthHeaders(
+			activeProvider,
+			ctx,
+			modifiedHeaders,
+			modifiedBody,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to authenticate transparent retry request: %v", err)
+		}
+		if action != types.ActionContinue {
+			return errors.New("transparent retry authentication requires asynchronous continuation")
+		}
 	} else {
 		var err error
 		modifiedHeaders, modifiedBody, err = c.transformRequestHeadersAndBody(ctx, activeProvider, [][2]string{
