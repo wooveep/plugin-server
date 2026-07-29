@@ -32,14 +32,33 @@ selected provider, HTTP method, normalized operation path, and declared
 provider capabilities. It SHALL apply request and response transformations only
 when an adapter matches.
 
+Trusted adapter metadata SHALL use schema version `2`. For a real adapter
+match, the schema-v2 envelope SHALL carry two distinct reviewed registry
+values: `normalized_operation` as the stable logical operation ID and
+`operation_template` as the origin-form path-attribution template. For
+example, the reviewed Responses adapter SHALL publish
+`normalized_operation: "openai/v1/responses"` and
+`operation_template: "/v1/responses"`.
+
+Both values SHALL be bounded registry constants. The logical operation SHALL
+be non-empty, at most 128 bytes, contain only ASCII letters, digits, `/`, `.`,
+`_`, `-`, and `~`, not begin with `/`, and contain no query, fragment,
+authority, or control character. The template SHALL be non-empty and at most
+128 bytes. An unmatched or forced-passthrough envelope SHALL NOT claim either
+value, an adapter ID, or a usage profile. The complete envelope SHALL be at
+most 1024 bytes. The registry schema version, serialized envelope, and adapter
+tests SHALL remain aligned.
+
 #### Scenario: Known adapter matches
 
 - **WHEN** an automatic request matches a registered adapter for its provider,
   method, path, and capability
 - **THEN** ai-proxy SHALL execute that adapter's request and response
   transformations
-- **AND** it SHALL make the stable adapter ID, normalized operation, and usage
-  profile available only as trusted gateway metadata.
+- **AND** it SHALL make the stable adapter ID, logical normalized operation,
+  origin-form operation template, and usage profile available only as trusted
+  gateway metadata
+- **AND** the metadata SHALL identify schema version `2`.
 
 #### Scenario: Provider capability does not satisfy an adapter
 
@@ -53,7 +72,17 @@ when an adapter matches.
 - **WHEN** ai-proxy publishes trusted adapter metadata
 - **THEN** every value SHALL come from the reviewed adapter registry
 - **AND** arbitrary request paths, query values, headers, or bodies SHALL NOT
-  create an adapter ID, normalized operation, or usage profile.
+  create an adapter ID, normalized operation, operation template, or usage
+  profile
+- **AND** the complete serialized envelope SHALL be at most 1024 bytes.
+
+#### Scenario: Unmatched metadata does not fabricate adapter facts
+
+- **WHEN** automatic resolution finds no adapter or forced passthrough skips a
+  known adapter
+- **THEN** any metadata envelope SHALL identify `matched:false`
+- **AND** it SHALL omit adapter ID, normalized operation, operation template,
+  and usage profile.
 
 ### Requirement: Transparent Provider-Native Fallback
 

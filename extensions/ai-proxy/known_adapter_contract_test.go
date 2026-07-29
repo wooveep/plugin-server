@@ -15,9 +15,12 @@ func TestKnownQwenResponsesAdapterContract(t *testing.T) {
 	const maxAdapterMetadataBytes = 1024
 
 	type adapterMetadata struct {
+		SchemaVersion       int    `json:"schema_version"`
+		Matched             bool   `json:"matched"`
 		AdapterID           string `json:"adapter_id"`
 		Version             string `json:"version"`
 		NormalizedOperation string `json:"normalized_operation"`
+		OperationTemplate   string `json:"operation_template"`
 		ProviderMatch       string `json:"provider_match"`
 		CapabilityMatch     string `json:"capability_match"`
 		UsageProfile        string `json:"usage_profile"`
@@ -38,8 +41,10 @@ func TestKnownQwenResponsesAdapterContract(t *testing.T) {
 	}
 
 	claimsQwenResponsesFallback := func(metadata adapterMetadata) bool {
-		return metadata.ProviderMatch == "qwen" &&
+		return metadata.Matched &&
+			metadata.ProviderMatch == "qwen" &&
 			metadata.NormalizedOperation == "openai/v1/responses" &&
+			metadata.OperationTemplate == "/v1/responses" &&
 			metadata.CapabilityMatch == "openai/v1/chat/completions"
 	}
 
@@ -194,9 +199,12 @@ func TestKnownQwenResponsesAdapterContract(t *testing.T) {
 
 				metadata, exists := readAdapterMetadata(t, host)
 				require.True(t, exists, "matched adapter must publish trusted adapter metadata")
+				require.Equal(t, 2, metadata.SchemaVersion)
+				require.True(t, metadata.Matched)
 				require.NotEmpty(t, metadata.AdapterID)
 				require.NotEmpty(t, metadata.Version)
 				require.Equal(t, "openai/v1/responses", metadata.NormalizedOperation)
+				require.Equal(t, "/v1/responses", metadata.OperationTemplate)
 				require.Equal(t, "qwen", metadata.ProviderMatch)
 				require.Equal(t, "openai/v1/chat/completions", metadata.CapabilityMatch)
 				require.NotEmpty(t, metadata.UsageProfile)

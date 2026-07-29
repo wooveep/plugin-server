@@ -39,6 +39,7 @@ func init() {
 		wrapper.ProcessResponseHeaders(onHttpResponseHeaders),
 		wrapper.ProcessStreamingResponseBody(onHttpStreamingBody),
 		wrapper.ProcessResponseBody(onHttpResponseBody),
+		wrapper.ProcessStreamDone(onHttpStreamDone),
 		wrapper.WithRebuildAfterRequests[AIStatisticsConfig](1000),
 		wrapper.WithRebuildMaxMemBytes[AIStatisticsConfig](200*1024*1024),
 	)
@@ -779,10 +780,6 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) t
 	// so refresh the bounded attribution at the response boundary.
 	setStatisticsRequestBaseFacts(ctx)
 	setStatisticsResponseStatusFact(ctx)
-	completeStatisticsBaseFacts(ctx, time.Now().UnixMilli())
-	writeBaseMetrics(ctx, config)
-	debugLogAiLog(ctx)
-	_ = ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
 
 	contentType, _ := proxywasm.GetHttpResponseHeader("content-type")
 
@@ -870,7 +867,7 @@ func onHttpStreamingBody(ctx wrapper.HttpContext, config AIStatisticsConfig, dat
 	if endOfStream {
 		responseEndTime := time.Now().UnixMilli()
 		ctx.SetUserAttribute(LLMServiceDuration, responseEndTime-requestStartTime)
-		completeStatisticsBaseFacts(ctx, responseEndTime)
+		finalizeStatisticsBaseFacts(ctx, config, responseEndTime)
 
 		// Set user defined log & span attributes from streaming body.
 		// Always call setAttributeBySource even if shouldBufferStreamingBody is false,
@@ -902,7 +899,7 @@ func onHttpResponseBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body
 
 	responseEndTime := time.Now().UnixMilli()
 	ctx.SetUserAttribute(LLMServiceDuration, responseEndTime-requestStartTime)
-	completeStatisticsBaseFacts(ctx, responseEndTime)
+	finalizeStatisticsBaseFacts(ctx, config, responseEndTime)
 
 	ctx.SetUserAttribute(ResponseType, "normal")
 	if chatID := wrapper.GetValueFromBody(body, []string{
@@ -944,6 +941,15 @@ func onHttpResponseBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body
 	writeMetric(ctx, config)
 
 	return types.ActionContinue
+}
+
+func onHttpStreamDone(ctx wrapper.HttpContext, config AIStatisticsConfig) {
+	if ctx.GetContext(StatisticsRequestStartTime) == nil ||
+		!finalizeStatisticsBaseFacts(ctx, config, time.Now().UnixMilli()) {
+		return
+	}
+	debugLogAiLog(ctx)
+	_ = ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
 }
 
 // fetches the tracing span value from the specified source.

@@ -106,12 +106,34 @@ the upstream host.
 Alternative considered: accept absolute provider-native URLs in route config.
 That would cross the established credential and SSRF boundary and is excluded.
 
-### 3. Make adapter metadata trustworthy and bounded
+### 3. Make adapter metadata trustworthy, bounded, and semantically versioned
 
-Stable adapter metadata includes adapter ID, normalized operation, usage
-profile, provider/capability match, and version. It is set only after an adapter
-match. Transparent fallback and forced passthrough do not invent an adapter ID,
-operation, or usage profile from an arbitrary path or body.
+Adapter metadata schema v2 separates two registry-owned concepts:
+
+- `normalized_operation` is the stable logical operation ID, for example
+  `openai/v1/responses`;
+- `operation_template` is the origin-form attribution template, for example
+  `/v1/responses` or `/v1/files/{file_id}`.
+
+Both values are bounded registry constants, not request-derived values. A
+matched v2 envelope includes the stable adapter ID, adapter implementation
+version, logical normalized operation, origin-form operation template, usage
+profile, and provider/capability match. An unmatched or forced-passthrough
+envelope may identify only the schema and effective match/mode state; it does
+not claim an adapter ID, normalized operation, operation template, or usage
+profile. The schema version, registry record, serialized envelope, and
+consumer parser therefore describe the same two-field semantics. The complete
+serialized envelope is at most 1024 bytes.
+
+Schema-v1 metadata remains a compatibility input only. Its
+`normalized_operation` is a logical operation ID and is never reinterpreted as
+a path template. A matched v1 envelope may contribute only separately
+validated bounded logical enrichment; it has no trusted path template.
+Unknown future schemas, malformed envelopes, and unmatched metadata contribute
+neither adapter enrichment nor a path template. A schema-v2 matched envelope
+that omits either required operation field is malformed and uses that same
+fail-safe behavior; only a present but invalid/oversized
+`operation_template` produces `path_unknown`.
 
 Existing Responses native and Chat Completions fallback conversions become
 registered adapter outcomes. This preserves their current conversion behavior
@@ -216,7 +238,7 @@ to admission-only Redis balance hot data. A post-archive grep and semantic
 review must find no response-stage account, price-key, response-usage parser, or
 missing-price/usage policy contract in that accepted capability.
 
-### 8. Emit bounded statistics base facts before optional AI enrichment
+### 8. Finalize bounded statistics base facts at the terminal lifecycle seam
 
 ai-statistics emits route, request path, HTTP method, status, latency, and a
 bounded error classification independently of model/operation/token parsing.
@@ -224,22 +246,50 @@ Trusted adapter/provider metadata may enrich the record. Missing or opaque
 payloads leave optional fields absent rather than blocking base count/duration
 or fabricating values.
 
+Response headers record the bounded status/error projection but do not freeze
+completed-request duration. `request_count`, `request_duration_ms`, and the
+terminal AILog are finalized exactly once at the first real terminal seam:
+non-streaming response-body EOS, streaming EOS, or
+`wrapper.ProcessStreamDone` fallback. The stream-done fallback covers
+header-only responses, unsupported or parser-skipped content types, empty
+bodies, and other lifecycles where no body parser callback can finalize the
+request. Later terminal callbacks observe the request-scoped marker and do not
+emit a duplicate. The duration and AILog latency use the same terminal
+timestamp.
+
+Response status is truthful only when the response `:status` value is exactly
+three ASCII digits and numerically within `100..599`. Missing, malformed,
+signed, padded-to-four-digits, or out-of-range values use fixed
+`status_code=0` and `status_unknown`.
+
 The current runtime exposes trusted Higress `route_name`, but not a universal
 route path template. Route attribution therefore accepts only a non-empty
 control-plane `route_name` no longer than 128 bytes and without control
 characters; otherwise it emits the fixed `route_unknown` sentinel.
 
 Path attribution never reads raw query, headers, credentials, or body material.
-It uses a trusted ai-proxy adapter operation template only when that template is
-origin-form, begins with exactly one `/`, contains only ASCII letters, digits,
-`/`, `.`, `_`, `-`, `~`, `{`, and `}`, contains no query, fragment, control
-character, or authority, and is at most 128 bytes. Dynamic segments are
-represented by the adapter's `{placeholder}` values, never request values.
-Without such a trusted template, opaque provider-native traffic emits the
-fixed `provider_native_unknown` sentinel. An invalid or oversized trusted
-template emits `path_unknown`. These deterministic fixed fallbacks avoid
-inventing a route template that Higress does not provide and prevent
-attacker-controlled path cardinality.
+It uses `operation_template` only from a supported schema-v2 envelope with
+`matched:true`. The template must be origin-form, begin with exactly one `/`,
+contain only ASCII letters, digits, `/`, `.`, `_`, `-`, `~`, `{`, and `}`,
+contain no query, fragment, control character, or authority, and be at most
+128 bytes. Dynamic segments are represented by the adapter's
+`{placeholder}` values, never request values. A supported matched v2 envelope
+that supplies an invalid or oversized template emits `path_unknown` and never
+emits the submitted value.
+
+No metadata, malformed metadata, `matched:false`, schema v1, or an unknown
+schema version provides a trusted path template, so path attribution emits the
+fixed `provider_native_unknown` sentinel. A matched schema-v1 envelope may
+retain only a separately validated, at-most-128-byte logical
+`normalized_operation`; schema-v2 logical enrichment follows the same bound.
+The logical value contains only ASCII letters, digits, `/`, `.`, `_`, `-`,
+and `~`, does not begin with `/`, and contains no query, fragment, authority,
+or control character.
+The optional AILog `operation` field is this logical operation ID and is never
+the path template. Unknown schemas, malformed envelopes, and unmatched
+metadata do not contribute optional operation, adapter, or usage enrichment.
+These deterministic fixed fallbacks avoid inventing a route template that
+Higress does not provide and prevent attacker-controlled path cardinality.
 
 Alternative considered: keep model/usage parsing as the metric gate. That makes
 unknown provider-native traffic operationally invisible.

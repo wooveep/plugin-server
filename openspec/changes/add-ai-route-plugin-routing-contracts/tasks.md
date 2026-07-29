@@ -1945,6 +1945,79 @@ Task 5.4 evidence (2026-07-29):
   review, resolve every finding, and rerun the affected RED/GREEN and complete
   module suites before version/resource work.
 
+Task 5.6 open finding-resolution scope (2026-07-29):
+
+- The initial independent review of result `b8f4cb60dbc9` is
+  `NEEDS_FIXES`. It found that schema-v1 `normalized_operation` was produced as
+  the logical ID `openai/v1/responses` but consumed as an origin-form path
+  template, that `request_duration_ms` was frozen at response headers rather
+  than terminal completion, that non-HTTP status forms and `600..999` were
+  accepted, and that the new routing/base/cardinality branches lacked direct
+  Wasm-mode contract coverage.
+- Resolution SHALL first align the active design and deltas on schema v2:
+  matched metadata separates bounded logical `normalized_operation` from
+  bounded origin-form `operation_template`; unmatched/passthrough metadata
+  claims neither. ai-statistics uses only matched schema-v2
+  `operation_template` for path attribution, keeps logical operation
+  enrichment separate, treats v1/unknown/malformed/unmatched metadata as
+  having no trusted template, and never emits submitted unsafe values.
+- Base facts SHALL finalize exactly once at non-streaming body EOS, streaming
+  EOS, or `wrapper.ProcessStreamDone` fallback. Response headers may capture
+  status/error state but do not freeze duration. Status accepts only exact
+  three-ASCII-digit `100..599`; all other forms use
+  `0`/`status_unknown`.
+- RED/GREEN evidence SHALL include exact producer bytes, v1 and future-schema
+  compatibility, invalid/oversized v2 templates, matched-false behavior,
+  bounded logical operation versus path attribution, observable terminal
+  delay, header-only/parser-skipped fallback, exact-once behavior, and at
+  least one direct `test.RunTest` Go/Wasm lifecycle matrix for the new branch.
+- This checkbox remains open until all findings are fixed, both modules pass
+  focused/full/race/vet plus explicit temporary-Wasm verification, strict
+  OpenSpec/Graphify/GitNexus gates pass, and a fresh independent review returns
+  `APPROVED`.
+
+Task 5.6 finding-resolution implementation evidence (2026-07-29):
+
+- Exact RED proved that ai-proxy emitted schema v1 without
+  `operation_template` in both Go and Wasm modes. Statistics RED proved that
+  schema-v2 metadata fell back to `provider_native_unknown`, schema-v1 logical
+  operation was treated as a path, duration was frozen at response headers,
+  and invalid HTTP status forms were accepted.
+- ai-proxy now publishes a bounded schema-v2 envelope with distinct reviewed
+  logical `normalized_operation` and origin-form `operation_template` values.
+  Matched Responses metadata is byte-for-byte equal to the shared golden;
+  unmatched and forced-passthrough envelopes omit adapter and operation
+  claims. ai-statistics caps the envelope at 1024 bytes, accepts only supported
+  schema/match states, keeps schema-v1 compatibility logical-only, and rejects
+  unknown, malformed, missing-field, unsafe, or oversized values to fixed
+  fallbacks without optional enrichment.
+- Response headers now capture only bounded status/error state. Body EOS,
+  streaming EOS, or `ProcessStreamDone` owns one terminal timestamp and one
+  request-count/duration emission. The terminal marker prevents later
+  callbacks from duplicating facts. Status accepts only exact three-ASCII-digit
+  values in `100..599`.
+- Focused proxy metadata and statistics attribution/completion/lifecycle
+  contracts pass. Explicit temporary Wasm builds ran the new producer and
+  consumer contracts in both `go` and `wasm` modes without skip, then their
+  exact temporary files were removed. Complete ordinary suites pass for both
+  modules; both `go vet ./...` runs pass; complete ai-statistics race passes;
+  all 349 ai-proxy Go-mode race tests/subtests plus the changed Go/Wasm
+  metadata race contract pass.
+- Complete ai-proxy race was additionally attempted with 15-minute and
+  30-minute limits. Both produced no race or assertion finding but timed out
+  while Wazero compiled unrelated existing provider Wasm cases
+  (`TestMinimax/wasm`, then `TestGroq/wasm`). This harness limitation is
+  recorded rather than reported as a passing complete race suite.
+- Strict OpenSpec validation and `git diff --check` pass. Graphify rebuilt
+  11216 nodes, 15158 edges, and 873 communities with the new lifecycle callback
+  in the statistics community. Final GitNexus indexing reports 13110 nodes,
+  41521 edges, and 300 flows. Its aggregate HIGH change result was reviewed:
+  six flows are expected wrapper initialization/option registration and five
+  are bounded local stream-done context/log flows; no unexpected business,
+  security, network, credential, billing, or persistence flow is introduced.
+- Task 5.6 remains unchecked pending a fresh independent review of the fix
+  commit and an explicit `APPROVED` result.
+
 ## 6. Versions, Schemas, Resources, And Documentation
 
 - [ ] 6.1 Define one shared schema vocabulary for `protocol_mode`,

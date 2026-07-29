@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -20,12 +22,21 @@ import (
 )
 
 func TestStatisticsAttributionCardinalityContract(t *testing.T) {
+	goldenMetadata, err := os.ReadFile(filepath.Join(
+		"..",
+		"ai-proxy",
+		"testdata",
+		"adapter_metadata_v2_qwen_responses.yaml",
+	))
+	require.NoError(t, err)
+
 	test.RunGoTest(t, func(t *testing.T) {
 		const (
 			adapterMetadataProperty = "mse_ai_proxy_adapter_metadata"
 			aiLogPropertyKey        = "ai_log"
 			requestUUID             = "550e8400-e29b-41d4-a716-446655440000"
 			rawRequestPath          = "/v1/files/" + requestUUID + "?api_key=secret"
+			responsesRawRequestPath = "/v1/responses?api_key=secret"
 			callerHeaderMarker      = "caller-header-metadata-marker"
 			callerBodyMarker        = "caller-body-metadata-marker"
 			attackerSegment         = "attacker-controlled-job-4242"
@@ -106,6 +117,8 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 			require.Equal(t, responseHeaders, host.GetResponseHeaders(), "response headers must remain transparent")
 			require.Equal(t, responseBody, host.GetResponseBody(), "opaque response body must remain transparent")
 
+			host.CompleteHttp()
+
 			rawLog, err := host.GetProperty([]string{aiLogPropertyKey})
 			require.NoError(t, err)
 			decodedLog, err := strconv.Unquote(`"` + string(rawLog) + `"`)
@@ -113,7 +126,6 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 			facts := map[string]interface{}{}
 			require.NoError(t, json.Unmarshal([]byte(decodedLog), &facts))
 
-			host.CompleteHttp()
 			allLogEntries := append([]string{}, host.GetTraceLogs()...)
 			allLogEntries = append(allLogEntries, host.GetDebugLogs()...)
 			allLogEntries = append(allLogEntries, host.GetInfoLogs()...)
@@ -171,6 +183,15 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 			require.Equal(t, responseHeaders, host.GetCurrentResponseHeaders(contextID))
 			require.Equal(t, responseBody, host.GetCurrentResponseBody(contextID))
 
+			matched, ok := proxywasm.GetHttpContext(contextID).(interface {
+				GetMatchConfig() (*AIStatisticsConfig, error)
+			})
+			require.True(t, ok, "raw HostEmulator context must expose the existing match config")
+			statisticsConfig, err := matched.GetMatchConfig()
+			require.NoError(t, err)
+
+			host.CompleteHttpContext(contextID)
+
 			rawLog, err := host.GetProperty([]string{aiLogPropertyKey})
 			require.NoError(t, err)
 			decodedLog, err := strconv.Unquote(`"` + string(rawLog) + `"`)
@@ -178,13 +199,6 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 			facts := map[string]interface{}{}
 			require.NoError(t, json.Unmarshal([]byte(decodedLog), &facts))
 
-			matched, ok := proxywasm.GetHttpContext(contextID).(interface {
-				GetMatchConfig() (*AIStatisticsConfig, error)
-			})
-			require.True(t, ok, "raw HostEmulator context must expose the existing match config")
-			statisticsConfig, err := matched.GetMatchConfig()
-			require.NoError(t, err)
-			host.CompleteHttpContext(contextID)
 			allLogEntries := append([]string{}, host.GetTraceLogs()...)
 			allLogEntries = append(allLogEntries, host.GetDebugLogs()...)
 			allLogEntries = append(allLogEntries, host.GetInfoLogs()...)
@@ -199,13 +213,24 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 			}
 		}
 
-		assertSafe := func(t *testing.T, got observation, wantRoute, wantPath string) {
+		assertSafe := func(t *testing.T, got observation, wantRoute, wantPath, wantOperation string) {
 			t.Helper()
 			assert.Equal(t, wantRoute, got.facts["route"])
 			assert.Equal(t, wantPath, got.facts["path"])
 			assert.Equal(t, "POST", got.facts["method"])
 			assert.Equal(t, float64(200), got.facts["status_code"])
 			assert.Equal(t, "none", got.facts["error_class"])
+			if wantOperation == "" {
+				assert.NotContains(t, got.facts, "operation")
+				for _, key := range []string{"adapter", "adapter_version", "usage_profile", "provider"} {
+					assert.NotContains(t, got.facts, key,
+						"unknown, malformed, or unmatched envelopes cannot enrich adapter facts")
+				}
+			} else {
+				assert.Equal(t, wantOperation, got.facts["operation"])
+				assert.NotEqual(t, wantPath, got.facts["operation"],
+					"logical operation enrichment must remain distinct from path attribution")
+			}
 
 			metricPrefix := fmt.Sprintf("route.%s.path.%s.method.POST.status.200.error.none.metric.", wantRoute, wantPath)
 			assert.Equal(t, []string{metricPrefix + "request_count", metricPrefix + "request_duration_ms"}, got.metricNames,
@@ -218,6 +243,7 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 				requestUUID,
 				"api_key=secret",
 				rawRequestPath,
+				responsesRawRequestPath,
 				callerHeaderMarker,
 				callerBodyMarker,
 				attackerSegment,
@@ -230,21 +256,64 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 			}
 		}
 
-		adapterMetadata := func(matched bool, normalizedOperation string) string {
-			return fmt.Sprintf(`{"schema_version":1,"matched":%t,"mode":"auto","adapter_id":"openai.files.get","version":"v1","normalized_operation":%q,"usage_profile":"opaque"}`,
-				matched, normalizedOperation)
+		v2AdapterMetadata := func(matched bool, operationTemplate string) string {
+			return fmt.Sprintf(`{"schema_version":2,"matched":%t,"mode":"auto","adapter_id":"openai.files.get","version":"v2","normalized_operation":"openai/v1/files/get","operation_template":%q,"usage_profile":"opaque"}`,
+				matched, operationTemplate)
 		}
-		trustedMetadata := adapterMetadata(true, "/v1/files/{file_id}")
-		t.Run("trusted normalized template replaces raw UUID query and credential", func(t *testing.T) {
-			assertSafe(t, exercise(t, trustedRouteName, rawRequestPath, trustedMetadata), trustedRouteName, "/v1/files/{file_id}")
+		trustedMetadata := v2AdapterMetadata(true, "/v1/files/{file_id}")
+		goldenResponsesMetadata := strings.TrimSpace(string(goldenMetadata))
+		t.Run("exact proxy v2 golden separates logical operation and path template", func(t *testing.T) {
+			assertSafe(
+				t,
+				exercise(t, trustedRouteName, responsesRawRequestPath, goldenResponsesMetadata),
+				trustedRouteName,
+				"/v1/responses",
+				"openai/v1/responses",
+			)
 		})
 
 		t.Run("opaque provider native request without trusted metadata uses fixed fallback", func(t *testing.T) {
-			assertSafe(t, exercise(t, trustedRouteName, "/vendor/jobs/"+attackerSegment, ""), trustedRouteName, providerNativeUnknown)
+			assertSafe(t, exercise(t, trustedRouteName, "/vendor/jobs/"+attackerSegment, ""), trustedRouteName, providerNativeUnknown, "")
 		})
 
-		t.Run("unmatched adapter metadata cannot contribute a normalized template", func(t *testing.T) {
-			assertSafe(t, exercise(t, trustedRouteName, "/vendor/jobs/"+attackerSegment, adapterMetadata(false, "/v1/files/{file_id}")), trustedRouteName, providerNativeUnknown)
+		t.Run("unmatched adapter metadata cannot contribute operation or template", func(t *testing.T) {
+			assertSafe(
+				t,
+				exercise(t, trustedRouteName, "/vendor/jobs/"+attackerSegment, v2AdapterMetadata(false, "/v1/files/{file_id}")),
+				trustedRouteName,
+				providerNativeUnknown,
+				"",
+			)
+		})
+
+		t.Run("schema v1 logical operation cannot become a path template", func(t *testing.T) {
+			metadata := `{"schema_version":1,"matched":true,"mode":"auto","adapter_id":"legacy.responses","version":"v1","normalized_operation":"openai/v1/responses","usage_profile":"opaque"}`
+			got := exercise(t, trustedRouteName, rawRequestPath, metadata)
+			assertSafe(
+				t,
+				got,
+				trustedRouteName,
+				providerNativeUnknown,
+				"openai/v1/responses",
+			)
+			for _, key := range []string{"adapter", "adapter_version", "usage_profile", "provider"} {
+				assert.NotContains(t, got.facts, key,
+					"schema v1 compatibility is logical-operation-only")
+			}
+		})
+
+		t.Run("unknown schema cannot contribute operation or template", func(t *testing.T) {
+			metadata := `{"schema_version":99,"matched":true,"adapter_id":"future","normalized_operation":"openai/v1/responses","operation_template":"/v1/responses","usage_profile":"opaque"}`
+			assertSafe(t, exercise(t, trustedRouteName, rawRequestPath, metadata), trustedRouteName, providerNativeUnknown, "")
+		})
+
+		t.Run("malformed metadata cannot contribute operation or template", func(t *testing.T) {
+			assertSafe(t, exercise(t, trustedRouteName, rawRequestPath, `{"schema_version":2`), trustedRouteName, providerNativeUnknown, "")
+		})
+
+		t.Run("v2 missing operation template is an untrusted envelope", func(t *testing.T) {
+			metadata := `{"schema_version":2,"matched":true,"adapter_id":"missing.template","normalized_operation":"openai/v1/responses","usage_profile":"opaque"}`
+			assertSafe(t, exercise(t, trustedRouteName, rawRequestPath, metadata), trustedRouteName, providerNativeUnknown, "")
 		})
 
 		for _, testCase := range []struct {
@@ -263,8 +332,8 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 		} {
 			testCase := testCase
 			t.Run("invalid trusted template "+testCase.name+" uses fixed fallback", func(t *testing.T) {
-				metadata := adapterMetadata(true, testCase.template)
-				assertSafe(t, exercise(t, trustedRouteName, rawRequestPath, metadata), trustedRouteName, unknownPath)
+				metadata := v2AdapterMetadata(true, testCase.template)
+				assertSafe(t, exercise(t, trustedRouteName, rawRequestPath, metadata), trustedRouteName, unknownPath, "openai/v1/files/get")
 			})
 		}
 
@@ -282,10 +351,10 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 			testCase := testCase
 			t.Run(testCase.name, func(t *testing.T) {
 				if testCase.routeName == "<missing>" {
-					assertSafe(t, exerciseMissingRoute(t, rawRequestPath, trustedMetadata), testCase.wantRoute, "/v1/files/{file_id}")
+					assertSafe(t, exerciseMissingRoute(t, rawRequestPath, trustedMetadata), testCase.wantRoute, "/v1/files/{file_id}", "openai/v1/files/get")
 					return
 				}
-				assertSafe(t, exercise(t, testCase.routeName, rawRequestPath, trustedMetadata), testCase.wantRoute, "/v1/files/{file_id}")
+				assertSafe(t, exercise(t, testCase.routeName, rawRequestPath, trustedMetadata), testCase.wantRoute, "/v1/files/{file_id}", "openai/v1/files/get")
 			})
 		}
 
@@ -293,15 +362,15 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 			first := exercise(t, trustedRouteName, "/vendor/jobs/"+attackerSegment, "")
 			time.Sleep(time.Millisecond)
 			second := exercise(t, trustedRouteName, "/vendor/jobs/"+attackerSegment, "")
-			assertSafe(t, first, trustedRouteName, providerNativeUnknown)
-			assertSafe(t, second, trustedRouteName, providerNativeUnknown)
+			assertSafe(t, first, trustedRouteName, providerNativeUnknown, "")
+			assertSafe(t, second, trustedRouteName, providerNativeUnknown, "")
 			assert.Equal(t, first.facts["route"], second.facts["route"])
 			assert.Equal(t, first.facts["path"], second.facts["path"])
 			assert.Equal(t, first.metricNames, second.metricNames)
 		})
 
 		t.Run("caller spoofed metadata headers route headers and body are ignored", func(t *testing.T) {
-			assertSafe(t, exercise(t, trustedRouteName, "/vendor/jobs/"+attackerSegment, ""), trustedRouteName, providerNativeUnknown)
+			assertSafe(t, exercise(t, trustedRouteName, "/vendor/jobs/"+attackerSegment, ""), trustedRouteName, providerNativeUnknown, "")
 		})
 	})
 }

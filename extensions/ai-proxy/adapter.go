@@ -22,6 +22,7 @@ type protocolAdapter struct {
 	provider                  string
 	method                    string
 	operation                 provider.ApiName
+	operationTemplate         string
 	requiredCapability        provider.ApiName
 	requiresUnsupportedNative provider.ApiName
 	normalizedOperation       string
@@ -41,6 +42,7 @@ type adapterMetadata struct {
 	AdapterID           string `json:"adapter_id,omitempty"`
 	Version             string `json:"version,omitempty"`
 	NormalizedOperation string `json:"normalized_operation,omitempty"`
+	OperationTemplate   string `json:"operation_template,omitempty"`
 	ProviderMatch       string `json:"provider_match,omitempty"`
 	CapabilityMatch     string `json:"capability_match,omitempty"`
 	UsageProfile        string `json:"usage_profile,omitempty"`
@@ -53,6 +55,7 @@ var reviewedProtocolAdapters = [...]protocolAdapter{
 		provider:                  "qwen",
 		method:                    "POST",
 		operation:                 provider.ApiNameResponses,
+		operationTemplate:         provider.PathOpenAIResponses,
 		requiredCapability:        provider.ApiNameChatCompletion,
 		requiresUnsupportedNative: provider.ApiNameResponses,
 		normalizedOperation:       "openai/v1/responses",
@@ -65,6 +68,7 @@ var reviewedProtocolAdapters = [...]protocolAdapter{
 		provider:                  anyProviderMatch,
 		method:                    "POST",
 		operation:                 provider.ApiNameResponses,
+		operationTemplate:         provider.PathOpenAIResponses,
 		requiredCapability:        provider.ApiNameChatCompletion,
 		requiresUnsupportedNative: provider.ApiNameResponses,
 		normalizedOperation:       "openai/v1/responses",
@@ -109,7 +113,7 @@ func resolveProtocolAdapter(
 
 func publishNoAdapterMetadata(mode string) {
 	publishAdapterMetadata(adapterMetadata{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		Matched:       false,
 		Mode:          mode,
 	})
@@ -120,12 +124,13 @@ func publishMatchedAdapterMetadata(mode string, resolved *resolvedProtocolAdapte
 		return
 	}
 	publishAdapterMetadata(adapterMetadata{
-		SchemaVersion:       1,
+		SchemaVersion:       2,
 		Matched:             true,
 		Mode:                mode,
 		AdapterID:           resolved.adapter.id,
 		Version:             resolved.adapter.version,
 		NormalizedOperation: resolved.adapter.normalizedOperation,
+		OperationTemplate:   resolved.adapter.operationTemplate,
 		ProviderMatch:       resolved.providerMatch,
 		CapabilityMatch:     resolved.adapter.capabilityMetadata,
 		UsageProfile:        resolved.adapter.usageProfile,

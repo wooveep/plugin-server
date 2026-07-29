@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -25,7 +24,7 @@ const (
 
 	adapterMetadataProperty = "mse_ai_proxy_adapter_metadata"
 	maxAttributionBytes     = 128
-	maxAdapterMetadataBytes = 4096
+	maxAdapterMetadataBytes = 1024
 
 	statisticsMethodContext         = "ai-statistics-method"
 	statisticsRouteContext          = "ai-statistics-safe-route"
@@ -43,6 +42,7 @@ type statisticsAdapterMetadata struct {
 	AdapterID           string `json:"adapter_id"`
 	Version             string `json:"version"`
 	NormalizedOperation string `json:"normalized_operation"`
+	OperationTemplate   string `json:"operation_template"`
 	UsageProfile        string `json:"usage_profile"`
 	ProviderMatch       string `json:"provider_match"`
 }
@@ -281,14 +281,53 @@ func statisticsPathAttribution() (string, *statisticsAdapterMetadata) {
 	}
 	var metadata statisticsAdapterMetadata
 	if err := json.Unmarshal(raw, &metadata); err != nil ||
-		metadata.SchemaVersion != 1 ||
 		!metadata.Matched {
 		return providerNativeUnknown, nil
 	}
-	if !isValidOperationTemplate(metadata.NormalizedOperation) {
-		return pathUnknown, nil
+	if !isValidNormalizedOperation(metadata.NormalizedOperation) {
+		return providerNativeUnknown, nil
 	}
-	return metadata.NormalizedOperation, &metadata
+	switch metadata.SchemaVersion {
+	case 1:
+		metadata.AdapterID = ""
+		metadata.Version = ""
+		metadata.UsageProfile = ""
+		metadata.ProviderMatch = ""
+		return providerNativeUnknown, &metadata
+	case 2:
+		if metadata.OperationTemplate == "" {
+			return providerNativeUnknown, nil
+		}
+		if !isValidOperationTemplate(metadata.OperationTemplate) {
+			return pathUnknown, &metadata
+		}
+		return metadata.OperationTemplate, &metadata
+	default:
+		return providerNativeUnknown, nil
+	}
+}
+
+func isValidNormalizedOperation(value string) bool {
+	if len(value) == 0 ||
+		len(value) > maxAttributionBytes ||
+		value[0] == '/' {
+		return false
+	}
+	for index := 0; index < len(value); index++ {
+		character := value[index]
+		if (character >= 'a' && character <= 'z') ||
+			(character >= 'A' && character <= 'Z') ||
+			(character >= '0' && character <= '9') {
+			continue
+		}
+		switch character {
+		case '/', '.', '_', '-', '~':
+			continue
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func isValidOperationTemplate(value string) bool {
@@ -335,7 +374,7 @@ func setStatisticsRequestBaseFacts(ctx wrapper.HttpContext) {
 	if metadata == nil {
 		return
 	}
-	ctx.SetUserAttribute("operation", path)
+	ctx.SetUserAttribute("operation", metadata.NormalizedOperation)
 	if value := boundedMetadataValue(metadata.AdapterID); value != "" {
 		ctx.SetUserAttribute("adapter", value)
 	}
@@ -373,9 +412,17 @@ func boundedMetadataValue(value string) string {
 
 func setStatisticsResponseStatusFact(ctx wrapper.HttpContext) {
 	rawStatus, _ := proxywasm.GetHttpResponseHeader(":status")
-	status, err := strconv.Atoi(rawStatus)
-	if err != nil || status < 100 || status > 999 {
-		status = 0
+	status := 0
+	if len(rawStatus) == 3 &&
+		rawStatus[0] >= '0' && rawStatus[0] <= '9' &&
+		rawStatus[1] >= '0' && rawStatus[1] <= '9' &&
+		rawStatus[2] >= '0' && rawStatus[2] <= '9' {
+		parsedStatus := int(rawStatus[0]-'0')*100 +
+			int(rawStatus[1]-'0')*10 +
+			int(rawStatus[2]-'0')
+		if parsedStatus >= 100 && parsedStatus <= 599 {
+			status = parsedStatus
+		}
 	}
 	errorClass := "status_unknown"
 	switch {
@@ -399,6 +446,19 @@ func completeStatisticsBaseFacts(ctx wrapper.HttpContext, completedAtMillis int6
 		latencyMillis = completedAtMillis - startedAtMillis
 	}
 	ctx.SetUserAttribute("latency_ms", latencyMillis)
+}
+
+func finalizeStatisticsBaseFacts(
+	ctx wrapper.HttpContext,
+	config AIStatisticsConfig,
+	completedAtMillis int64,
+) bool {
+	if ctx.GetBoolContext(statisticsBaseMetricsWritten, false) {
+		return false
+	}
+	completeStatisticsBaseFacts(ctx, completedAtMillis)
+	writeBaseMetrics(ctx, config)
+	return true
 }
 
 func writeBaseMetrics(ctx wrapper.HttpContext, config AIStatisticsConfig) {
