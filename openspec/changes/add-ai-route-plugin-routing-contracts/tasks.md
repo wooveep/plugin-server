@@ -1705,6 +1705,45 @@ Task 5.1 evidence (2026-07-29):
   processes. All eight generated repository-instruction rewrites were
   restored.
 
+Task 5.1 review-fix evidence (2026-07-29):
+
+- Independent review of exact result `77590c22a4373534b84a08761e5ce2fa96e1ba13`
+  returned `NEEDS_FIXES`. Its ignored report
+  `.superpowers/sdd/add-ai-route-plugin-routing-contracts/task-5.1-reviewer.md`
+  has SHA-256
+  `cc053177f4e9cd4cb4309a02bec70bc3485971bb507f9ce1c083b9d3361b50e1`.
+  The review found that the two rule legacy tests had only positive
+  observations, permitting a future omitted-scope rule to widen into
+  unfiltered bound-target behavior or an explicit rule suffix to union with
+  the inherited global suffix. It also found no control for explicit
+  `legacy_suffixes` with an omitted suffix list. Task 5.2 remained blocked.
+- Exact pre-edit upstream impact for
+  `TestStatisticsRoutingScopeContract` and this Task 5 section was LOW with
+  zero callers, processes, or modules. The omitted-rule-scope subtest now
+  rejects a provider-native path on the same matched route after its positive
+  inherited suffix/marker assertion. The explicit-legacy-rule subtest now
+  rejects the inherited global suffix on the same matched route after its
+  positive route-suffix/marker assertion. Neither existing assertion was
+  weakened or reordered.
+- A new compile-safe GREEN control selects explicit `legacy_suffixes` with
+  `enable_path_suffixes` omitted. It observes `/v1/chat/completions` and skips
+  `/vendor/jobs/job-42`, proving the existing default suffix projection is
+  retained rather than widened. Its isolated command passes in `0.002s`.
+- The exact focused RED command still compiles and fails at the same 15 leaves
+  with no new failure. Both strengthened rule subtests still stop at their
+  original missing-inheritance positive assertion on current production; when
+  GREEN implementation satisfies that assertion, the new same-route negative
+  observations become mandatory. Complete `go test ./... -count=1` fails only
+  at those 15 leaves in `33.060s`.
+- The existing parser/gating controls pass in `1.993s`; omitted, explicit
+  default, explicit configured legacy, and literal-empty bound-target controls
+  pass together in `0.003s`; global intersection controls pass in `0.003s`;
+  and the rule suffix-mismatch control passes in `0.002s`. Extension vet,
+  changed-file `gofmt`, `git diff --check`, and strict OpenSpec validation
+  pass. Graphify and GitNexus staged change detection were refreshed before
+  the review-fix commit, and all generated repository-instruction rewrites
+  were restored.
+
 - [ ] 5.2 Add RED lifecycle/metric tests proving opaque success and error
   responses emit bounded route/path attribution, method, status, latency,
   bounded error, request count, and duration independently of model/token

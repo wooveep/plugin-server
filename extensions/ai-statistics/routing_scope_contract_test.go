@@ -87,6 +87,20 @@ func TestStatisticsRoutingScopeContract(t *testing.T) {
 			)
 		})
 
+		t.Run("explicit legacy scope without suffixes retains legacy defaults", func(t *testing.T) {
+			config := defaultAttributesConfig()
+			config["path_scope"] = "legacy_suffixes"
+
+			requireObserved(
+				t, config, "", http.MethodPost,
+				"/v1/chat/completions", "", true,
+			)
+			requireObserved(
+				t, config, "", http.MethodPost,
+				"/vendor/jobs/job-42", "", false,
+			)
+		})
+
 		t.Run("explicit legacy scope retains explicit suffixes", func(t *testing.T) {
 			config := fixedMarkerConfig("explicit-legacy-marker")
 			config["path_scope"] = "legacy_suffixes"
@@ -187,6 +201,10 @@ func TestStatisticsRoutingScopeContract(t *testing.T) {
 				t, config, "statistics-route-inherit", http.MethodPost,
 				"/v2/global/allowed", "rule-inherited-legacy-marker", true,
 			)
+			requireObserved(
+				t, config, "statistics-route-inherit", http.MethodPost,
+				"/vendor/jobs/job-42", "", false,
+			)
 		})
 
 		t.Run("rule explicit legacy suffix overrides inherited suffix and retains attributes", func(t *testing.T) {
@@ -203,6 +221,10 @@ func TestStatisticsRoutingScopeContract(t *testing.T) {
 			requireObserved(
 				t, config, "statistics-route-legacy", http.MethodPost,
 				"/v2/route/allowed", "rule-explicit-legacy-marker", true,
+			)
+			requireObserved(
+				t, config, "statistics-route-legacy", http.MethodPost,
+				"/v2/global/allowed", "", false,
 			)
 		})
 
