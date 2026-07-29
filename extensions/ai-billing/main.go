@@ -33,6 +33,13 @@ const (
 
 	FailPolicyOpen = "open"
 
+	PathScopeLegacySuffixes = "legacy_suffixes"
+	PathScopeBoundTarget    = "bound_target"
+
+	maxRoutingFilterEntries = 64
+	maxPathSuffixBytes      = 256
+	maxHTTPMethodBytes      = 32
+
 	eventKindUsage               = "usage"
 	eventKindCustomerUsageLegacy = "customer_usage"
 	eventKindInternalCost        = "internal_cost"
@@ -108,7 +115,9 @@ type BillingConfig struct {
 	BillCustomer       *bool       `yaml:"bill_customer"`
 	TenantHeader       string      `yaml:"tenant_header"`
 	ConsumerHeader     string      `yaml:"consumer_header"`
+	PathScope          string      `yaml:"path_scope"`
 	EnablePathSuffixes []string    `yaml:"enable_path_suffixes"`
+	EnableMethods      []string    `yaml:"enable_methods"`
 	FailPolicy         string      `yaml:"fail_policy"`
 	redisClient        wrapper.RedisClient
 }
@@ -215,6 +224,8 @@ func parseRuleConfig(configJson gjson.Result, global BillingConfig, config *Bill
 		return errors.New("redis_stream must be configured globally")
 	}
 	*config = global
+	config.EnablePathSuffixes = cloneStrings(global.EnablePathSuffixes)
+	config.EnableMethods = cloneStrings(global.EnableMethods)
 	if value := configJson.Get("quota_scope"); value.Exists() {
 		config.QuotaScope = stringDefault(value.String(), defaultQuotaScope)
 	}
@@ -250,12 +261,33 @@ func parseRuleConfig(configJson gjson.Result, global BillingConfig, config *Bill
 			return errors.New("fail_policy only supports open")
 		}
 	}
+	if value := configJson.Get("path_scope"); value.Exists() {
+		pathScope, err := parsePathScope(value)
+		if err != nil {
+			return err
+		}
+		if pathScope != normalizedPathScope(global.PathScope) {
+			config.EnablePathSuffixes = nil
+			config.EnableMethods = nil
+			if pathScope == PathScopeLegacySuffixes {
+				config.EnablePathSuffixes = defaultPathSuffixes()
+			}
+		}
+		config.PathScope = pathScope
+	}
 	if value := configJson.Get("enable_path_suffixes"); value.Exists() {
-		suffixes, err := parsePathSuffixes(value)
+		suffixes, err := parsePathSuffixesForScope(value, normalizedPathScope(config.PathScope))
 		if err != nil {
 			return err
 		}
 		config.EnablePathSuffixes = suffixes
+	}
+	if value := configJson.Get("enable_methods"); value.Exists() {
+		methods, err := parseHTTPMethods(value)
+		if err != nil {
+			return err
+		}
+		config.EnableMethods = methods
 	}
 	return nil
 }
@@ -280,11 +312,23 @@ func parseConfigFields(configJson gjson.Result, config *BillingConfig) error {
 	if config.FailPolicy != FailPolicyOpen {
 		return errors.New("fail_policy only supports open")
 	}
-	suffixes, err := parsePathSuffixes(configJson.Get("enable_path_suffixes"))
+	config.PathScope, err = parsePathScope(configJson.Get("path_scope"))
+	if err != nil {
+		return err
+	}
+	suffixes, err := parsePathSuffixesForScope(
+		configJson.Get("enable_path_suffixes"),
+		config.PathScope,
+	)
 	if err != nil {
 		return err
 	}
 	config.EnablePathSuffixes = suffixes
+	methods, err := parseHTTPMethods(configJson.Get("enable_methods"))
+	if err != nil {
+		return err
+	}
+	config.EnableMethods = methods
 	return nil
 }
 
@@ -350,7 +394,7 @@ func parseRedisStream(redisStream gjson.Result, config *BillingConfig) error {
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config BillingConfig) types.Action {
 	requestPath := ctx.Path()
-	if !isAIPathEnabled(requestPath, config.EnablePathSuffixes) {
+	if !isBillingRequestEnabled(requestPath, ctx.Method(), config) {
 		ctx.SetContext(ctxBillingEnabled, false)
 		ctx.DontReadRequestBody()
 		ctx.DontReadResponseBody()
@@ -1065,12 +1109,7 @@ func tokenDetailsFromContext(value any) map[string]int64 {
 }
 
 func isAIPathEnabled(requestPath string, enabledSuffixes []string) bool {
-	pathWithoutQuery := requestPath
-	if parsed, err := url.Parse(requestPath); err == nil && parsed.Path != "" {
-		pathWithoutQuery = parsed.Path
-	} else if queryPos := strings.Index(requestPath, "?"); queryPos != -1 {
-		pathWithoutQuery = requestPath[:queryPos]
-	}
+	pathWithoutQuery := normalizedRequestPath(requestPath)
 	for _, suffix := range enabledSuffixes {
 		if strings.HasSuffix(pathWithoutQuery, suffix) {
 			return true
@@ -1079,25 +1118,166 @@ func isAIPathEnabled(requestPath string, enabledSuffixes []string) bool {
 	return false
 }
 
-func parsePathSuffixes(result gjson.Result) ([]string, error) {
+func isBillingRequestEnabled(requestPath string, requestMethod string, config BillingConfig) bool {
+	pathScope := normalizedPathScope(config.PathScope)
+	if pathScope == PathScopeLegacySuffixes &&
+		!isAIPathEnabled(requestPath, config.EnablePathSuffixes) {
+		return false
+	}
+	if pathScope == PathScopeBoundTarget &&
+		len(config.EnablePathSuffixes) > 0 &&
+		!isAIPathEnabled(requestPath, config.EnablePathSuffixes) {
+		return false
+	}
+	if len(config.EnableMethods) > 0 && !matchesHTTPMethod(config.EnableMethods, requestMethod) {
+		return false
+	}
+	return pathScope == PathScopeLegacySuffixes || pathScope == PathScopeBoundTarget
+}
+
+func normalizedRequestPath(requestPath string) string {
+	if parsed, err := url.Parse(requestPath); err == nil && parsed.Path != "" {
+		return parsed.Path
+	}
+	if queryPos := strings.Index(requestPath, "?"); queryPos != -1 {
+		return requestPath[:queryPos]
+	}
+	return requestPath
+}
+
+func parsePathScope(result gjson.Result) (string, error) {
 	if !result.Exists() {
-		return []string{"/v1/chat/completions", "/v1/messages"}, nil
+		return PathScopeLegacySuffixes, nil
 	}
-	if !result.IsArray() {
-		return nil, errors.New("enable_path_suffixes must be an array")
+	if result.Type != gjson.String {
+		return "", errors.New("path_scope must be legacy_suffixes or bound_target")
 	}
-	values := result.Array()
-	suffixes := make([]string, 0, len(values))
-	for _, suffix := range values {
-		suffixStr := strings.TrimSpace(suffix.String())
-		if suffixStr != "" {
-			suffixes = append(suffixes, suffixStr)
+	pathScope := strings.TrimSpace(result.String())
+	if pathScope != PathScopeLegacySuffixes && pathScope != PathScopeBoundTarget {
+		return "", errors.New("path_scope must be legacy_suffixes or bound_target")
+	}
+	return pathScope, nil
+}
+
+func normalizedPathScope(pathScope string) string {
+	if pathScope == "" {
+		return PathScopeLegacySuffixes
+	}
+	return pathScope
+}
+
+func parsePathSuffixes(result gjson.Result) ([]string, error) {
+	return parsePathSuffixesForScope(result, PathScopeLegacySuffixes)
+}
+
+func parsePathSuffixesForScope(result gjson.Result, pathScope string) ([]string, error) {
+	if !result.Exists() {
+		if pathScope == PathScopeBoundTarget {
+			return nil, nil
 		}
+		return defaultPathSuffixes(), nil
 	}
-	if len(suffixes) == 0 {
+	suffixes, err := parseRoutingStringList(result, maxPathSuffixBytes, false)
+	if err != nil {
+		return nil, errors.New("enable_path_suffixes must be an array of bounded strings")
+	}
+	if pathScope == PathScopeLegacySuffixes && len(suffixes) == 0 {
 		return nil, errors.New("enable_path_suffixes must not be empty")
 	}
 	return suffixes, nil
+}
+
+func parseHTTPMethods(result gjson.Result) ([]string, error) {
+	if !result.Exists() {
+		return nil, nil
+	}
+	methods, err := parseRoutingStringList(result, maxHTTPMethodBytes, true)
+	if err != nil {
+		return nil, errors.New("enable_methods must be an array of bounded HTTP method strings")
+	}
+	return methods, nil
+}
+
+func parseRoutingStringList(
+	result gjson.Result,
+	maxEntryBytes int,
+	normalizeMethod bool,
+) ([]string, error) {
+	if !result.IsArray() {
+		return nil, errors.New("routing filter must be an array")
+	}
+	values := result.Array()
+	if len(values) > maxRoutingFilterEntries {
+		return nil, errors.New("routing filter has too many entries")
+	}
+	normalized := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		if value.Type != gjson.String {
+			return nil, errors.New("routing filter entries must be strings")
+		}
+		entry := strings.TrimSpace(value.String())
+		if entry == "" {
+			continue
+		}
+		if len(entry) > maxEntryBytes {
+			return nil, errors.New("routing filter entry is too long")
+		}
+		if normalizeMethod {
+			entry = strings.ToUpper(entry)
+			if !isHTTPToken(entry) {
+				return nil, errors.New("routing filter entry is not an HTTP token")
+			}
+		}
+		if _, exists := seen[entry]; exists {
+			continue
+		}
+		seen[entry] = struct{}{}
+		normalized = append(normalized, entry)
+	}
+	return normalized, nil
+}
+
+func defaultPathSuffixes() []string {
+	return []string{"/v1/chat/completions", "/v1/messages"}
+}
+
+func cloneStrings(values []string) []string {
+	if values == nil {
+		return nil
+	}
+	return append([]string(nil), values...)
+}
+
+func matchesHTTPMethod(methods []string, requestMethod string) bool {
+	requestMethod = strings.ToUpper(strings.TrimSpace(requestMethod))
+	for _, method := range methods {
+		if method == requestMethod {
+			return true
+		}
+	}
+	return false
+}
+
+func isHTTPToken(value string) bool {
+	if value == "" {
+		return false
+	}
+	for index := 0; index < len(value); index++ {
+		character := value[index]
+		if (character >= 'a' && character <= 'z') ||
+			(character >= 'A' && character <= 'Z') ||
+			(character >= '0' && character <= '9') {
+			continue
+		}
+		switch character {
+		case '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~':
+			continue
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func stringProperty(path []string, fallback string) string {

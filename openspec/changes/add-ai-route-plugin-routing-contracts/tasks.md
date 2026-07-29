@@ -963,8 +963,65 @@ Task 3.3 evidence (2026-07-29):
   affected processes; the shared log collector has one direct test caller and
   no production process participation.
 
-- [ ] 3.4 Implement ai-billing path-scope parsing and bound-target/advanced
+- [x] 3.4 Implement ai-billing path-scope parsing and bound-target/advanced
   filter gating without widening legacy configurations.
+
+Task 3.4 evidence (2026-07-29):
+
+- The current Graphify report, change design/tasks, complete
+  `ai-billing-events` delta, accepted billing specification, Task 3.1 RED
+  contracts, and the existing ai-proxy routing parser were reviewed before
+  production edits. Exact GitNexus upstream impact was LOW for `parseConfig`
+  (zero direct callers/processes), `parseRuleConfig` (zero direct
+  callers/processes), `isAIPathEnabled` (one direct caller and zero
+  processes), `parseConfigFields` (one direct caller and zero processes),
+  `parsePathSuffixes` (two direct and one indirect caller, zero processes),
+  and `onHttpRequestHeaders` (zero direct callers/processes). `BillingConfig`
+  was HIGH with 16 direct event/cache/stream test dependents and zero indexed
+  processes; this was reported before edits and explicitly authorized, and
+  all 16 dependents pass after the change.
+- The focused pre-edit command
+  `go test . -run
+  '^(TestBillingRoutingAndDeliveryConfigContract|TestBillingRequestGatingContract)$'
+  -count=1` failed at exactly the five intended leaves: explicit empty
+  bound-target filters, global provider-native bound target, empty
+  bound-target method filters, rule bound target without inherited legacy
+  suffix gating, and non-empty suffix/method intersection. The identical
+  post-edit command passes.
+- `BillingConfig` now carries route-effective `path_scope` and
+  `enable_methods`. Global and rule parsers default omitted scope to
+  `legacy_suffixes`, reject unsupported scope values, normalize and validate
+  bounded/deduplicated HTTP method tokens, preserve legacy default/explicit
+  suffix behavior, and accept absent or explicitly empty advanced filters
+  only as non-narrowing bound-target projections. A rule changing from legacy
+  to bound-target scope does not inherit the legacy suffix projection; rule
+  filters still replace only their corresponding request gate, while the
+  complete global Redis target and omitted business fields remain inherited.
+  Removed `billing_service` and rule-level `redis_stream` rejection are
+  unchanged.
+- Request admission remains suffix-required in legacy mode. Bound-target mode
+  admits the already selected Higress target when filters are absent/empty,
+  while each explicit non-empty suffix or normalized method list narrows it
+  and two lists intersect. The gate continues model traffic when billing is
+  out of scope and does not alter event truth, Redis delivery, internal-cost
+  attribution, or response-correlation code.
+- The 16 HIGH-impact direct-dependent tests pass together, as do the focused
+  configuration/delivery/correlation/internal-attribution/cache/stream
+  baselines and
+  `TestBillingInternalCostAndSensitiveDataContract`. Task 3.2 remains RED at
+  exactly its three model-unknown leaves and Task 3.3 remains RED at exactly
+  its six response-header/query-lifecycle leaves; `go test ./... -count=1`
+  contains only those nine later-task leaves. Extension `go vet ./...`,
+  changed-file `gofmt`, `git diff --check`, and
+  `openspec validate add-ai-route-plugin-routing-contracts --strict` pass.
+  Graphify was refreshed to 11,121 nodes, 14,924 edges, and 874 communities.
+  The subsequent GitNexus refresh generated eight repository-instruction
+  diffs, all of which were restored. Branch-wide comparison against `main`
+  retains the expected CRITICAL result from 63 files of already committed
+  change history; task-local detection is LOW across exactly two changed
+  files with zero affected processes. The retained source/spec delta is
+  limited to this routing gate and its Task 3.4 evidence.
+
 - [ ] 3.5 Implement truthful provider-native/opaque-response event handling
   while preserving global inherited Redis delivery, exact correlation, and
   internal-cost authority.
