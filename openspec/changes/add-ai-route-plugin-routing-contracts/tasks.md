@@ -38,6 +38,11 @@ Task 1.2 evidence (2026-07-29):
 - Only this new change directory was modified; the three pre-existing active
   changes remain untouched.
 
+For every RED task below, run the fixture against the pre-implementation state
+and record the expected observed failure before production edits. No GREEN,
+module verification, review-resolution, or final verification task may be
+completed while any required fixture is still failing.
+
 ## 2. AI Proxy Red-Green Contracts
 
 - [ ] 2.1 Add RED parser tests proving missing `protocol_mode` defaults to
@@ -45,7 +50,9 @@ Task 1.2 evidence (2026-07-29):
   `path_scope` preserves legacy behavior.
 - [ ] 2.2 Add RED adapter tests proving a stable known Responses/Claude/Qwen
   adapter is selected only when provider, method, path, and capability match
-  and performs the expected request/response transformation.
+  and performs the expected request/response transformation; cover the
+  Qwen-only `openai/v1/responses` sentinel for explicit empty, whitespace,
+  omitted, and non-empty paths plus another provider's empty path.
 - [ ] 2.3 Add RED transparent-fallback tests using a non-generic provider,
   nontrivial method, path, raw query, opaque request body, and opaque response
   body; prove exact preservation plus provider-owned host/auth/timeout/failover.
@@ -64,42 +71,64 @@ Task 1.2 evidence (2026-07-29):
   preserving origin-form operation bytes and provider-owned transport policy.
 - [ ] 2.9 Run focused and complete independent ai-proxy unit, proxy-wasm
   lifecycle/integration, streaming, regression, and security suites.
+- [ ] 2.10 Obtain an independent ai-proxy implementation/security review,
+  resolve every finding, and rerun the affected RED/GREEN and complete module
+  suites before beginning the billing implementation.
 
 ## 3. AI Billing Red-Green Contracts
 
-- [ ] 3.1 Add RED configuration and request-gating tests for omitted/explicit
-  legacy scope, bound target without suffixes, provider-native paths, and
-  explicit non-empty suffix/method intersections.
+- [ ] 3.1 Add RED configuration, Redis delivery, and request-gating tests:
+  global `redis_stream` requirement/defaults, global and rule-level removed
+  `billing_service` rejection, rule-level `redis_stream` rejection, rule
+  inheritance without target replacement, omitted/explicit legacy scope,
+  bound target without suffixes, provider-native paths, and explicit non-empty
+  suffix/method intersections.
 - [ ] 3.2 Add RED event tests proving trustworthy provider usage remains
   authoritative and opaque native responses produce `usage_missing=true`
-  without fabricated model, token, provider-usage, price, or cost facts.
-- [ ] 3.3 Add RED regression/security tests preserving event identity,
-  idempotent streaming delivery, canonical response correlation, cache facts,
-  credential redaction, and trusted internal-cost attribution boundaries.
+  without fabricated model, token, provider-usage, price, or cost facts;
+  verify the complete configuration/event surface including `event_kind`,
+  `cost_source`, `worker_kind`, `source_job`, `bill_customer`, and
+  `upstream_invoked`, plus fail-open Redis `XADD` delivery.
+- [ ] 3.3 Add RED regression/security fixtures for all five internal-cost
+  scenarios (complete pair, absent-pair fallback, partial suppression,
+  empty/oversized/invalid-character suppression, and customer no-spoof) and
+  the exact `x-ocmf-gateway-request-id` lifecycle (replace-not-append,
+  canonical-absent removal, non-streaming, streaming, and local/cache paths);
+  also preserve event identity, idempotent streaming delivery, cache facts,
+  Redis credential redaction, and submitted-value non-leakage.
 - [ ] 3.4 Implement ai-billing path-scope parsing and bound-target/advanced
   filter gating without widening legacy configurations.
 - [ ] 3.5 Implement truthful provider-native/opaque-response event handling
-  without changing delivery, correlation, or internal-cost authority.
+  while preserving global inherited Redis delivery, exact correlation, and
+  internal-cost authority.
 - [ ] 3.6 Run focused and complete independent ai-billing unit,
-  proxy-wasm lifecycle/integration, streaming, delivery, internal-attribution,
-  and security suites.
+  proxy-wasm lifecycle/integration, streaming, Redis delivery,
+  internal-attribution, correlation, and security suites.
+- [ ] 3.7 Obtain an independent ai-billing implementation/security review,
+  resolve every finding, and rerun the affected RED/GREEN and complete module
+  suites before beginning the quota implementation.
 
 ## 4. AI Quota Red-Green Contracts
 
 - [ ] 4.1 Add RED configuration and admission tests for legacy scope,
   bound-target provider-native requests, no synthesized suffix list, and
   explicit non-empty suffix/method intersections.
-- [ ] 4.2 Add RED ownership tests proving admitted recognizable and opaque
-  responses perform no response usage parsing, effective-price lookup, cost
-  calculation, or post-response Redis balance deduction.
+- [ ] 4.2 Add RED ownership tests proving the request-header Redis balance
+  admission result is final for recognizable, opaque, streaming, and
+  non-streaming responses; Redis balance input remains read-only and no
+  response lifecycle callback adds account enforcement.
 - [ ] 4.3 Implement ai-quota path-scope parsing and bound-target admission
   intersections while preserving legacy request eligibility.
-- [ ] 4.4 Converge ai-quota on admission-only behavior; keep legacy settlement
-  fields only as inert parse-compatible inputs and remove any response-stage
-  deduction dependency.
+- [ ] 4.4 Converge ai-quota schema, examples, docs, and runtime on the
+  admission-only Redis balance surface, removing obsolete settlement controls
+  from current configuration and response-stage account behavior from the
+  implementation.
 - [ ] 4.5 Run focused and complete independent ai-quota unit, Redis admission,
   proxy-wasm lifecycle/integration, no-deduction regression, and security
   suites.
+- [ ] 4.6 Obtain an independent ai-quota implementation/ownership review,
+  resolve every finding, and rerun the affected RED/GREEN and complete module
+  suites before beginning the statistics implementation.
 
 ## 5. AI Statistics Red-Green Contracts
 
@@ -107,16 +136,27 @@ Task 1.2 evidence (2026-07-29):
   provider-native requests, no synthesized suffixes, and advanced non-empty
   suffix/method intersections.
 - [ ] 5.2 Add RED lifecycle/metric tests proving opaque success and error
-  responses emit route, path, method, status, latency, bounded error, request
-  count, and duration independently of model/token parsing.
-- [ ] 5.3 Add RED trust/security tests proving arbitrary headers, paths, bodies,
-  and errors cannot fabricate adapter, operation, model, token, route, or
-  unbounded error attributes and do not leak raw bodies or secrets.
+  responses emit bounded route/path attribution, method, status, latency,
+  bounded error, request count, and duration independently of model/token
+  parsing.
+- [ ] 5.3 Add RED trust/cardinality fixtures proving: raw
+  `/v1/files/<uuid>?api_key=secret` plus trusted
+  `/v1/files/{file_id}` emits only the template; unknown
+  `/vendor/jobs/<attacker>` emits `provider_native_unknown`; invalid or
+  oversized trusted templates emit `path_unknown`; valid trusted
+  `route_name` is retained while missing/unsafe/oversized values emit
+  `route_unknown`; repeated fallbacks are deterministic; raw queries,
+  credentials, headers, bodies, dynamic segments, and raw-path hashes never
+  enter metric attributes.
 - [ ] 5.4 Implement bound-target gating and base-fact emission before optional
-  trusted adapter/provider enrichment.
+  trusted adapter/provider enrichment, with 128-byte bounded trusted Higress
+  route names and selected-adapter origin-form operation templates.
 - [ ] 5.5 Run focused and complete independent ai-statistics unit,
   proxy-wasm lifecycle/integration, metric regression, cardinality, and
   security suites.
+- [ ] 5.6 Obtain an independent ai-statistics implementation/cardinality
+  review, resolve every finding, and rerun the affected RED/GREEN and complete
+  module suites before version/resource work.
 
 ## 6. Versions, Schemas, Resources, And Documentation
 
@@ -128,20 +168,24 @@ Task 1.2 evidence (2026-07-29):
   plugin/option metadata, schema, examples, adapter metadata, and bilingual
   extension/resource documentation.
 - [ ] 6.3 Advance authoritative ai-billing version to `0.1.5` and align
-  metadata, schema, examples, event/trust documentation, and bilingual
-  extension/resource documentation.
+  metadata, global Redis Stream schema/examples, complete event/trust and
+  correlation documentation, and bilingual extension/resource documentation;
+  reject removed `billing_service` on every config surface.
 - [ ] 6.4 Advance authoritative ai-quota version to `1.0.2` and align metadata,
   admission-only schema/examples, ownership language, and bilingual
   extension/resource documentation.
 - [ ] 6.5 Advance authoritative ai-statistics version to `1.0.1` and align
-  metadata, schema, examples, safe-base-fact language, and bilingual
-  extension/resource documentation.
+  metadata, schema, examples, bounded route/path attribution and safe-base-fact
+  language, and bilingual extension/resource documentation.
 - [ ] 6.6 Add an automated version-alignment/single-source check that fails on
   drift among authoritative extension versions, resource `info.version`,
   plugin/option metadata, example artifact URLs, and documented versions.
 - [ ] 6.7 Run schema/example validation, bilingual documentation consistency,
   version-alignment checks, and every affected independent extension module's
   formatting, tests, and vet/static checks.
+- [ ] 6.8 Obtain an independent versions/schemas/resources/documentation
+  review, resolve every finding, and rerun all affected alignment, schema,
+  documentation, and module checks.
 
 ## 7. Reviewed Artifacts And Local Availability
 
@@ -175,7 +219,17 @@ Task 1.2 evidence (2026-07-29):
 - [ ] 8.3 Run strict OpenSpec validation, verify every task has fresh evidence,
   and preserve the immutable result commit/artifact/upload/checksum manifest
   for downstream catalog consumption.
-- [ ] 8.4 Synchronize the seven validated delta capabilities into accepted
-  specs, archive only `add-ai-route-plugin-routing-contracts`, strictly
-  validate the accepted spec tree, and inspect protocol/path-scope/quota/
-  billing/statistics requirements for duplicates or contradictions.
+- [ ] 8.4 Before archive, synchronize the seven validated requirement deltas,
+  manually rewrite the accepted `ai-billing-events` Purpose to global Redis
+  Stream event delivery, and manually rewrite the accepted
+  `ai-monetary-quota` Purpose plus its surviving account-ownership scenario to
+  admission-only read-only Redis balance hot data. Archive only
+  `add-ai-route-plugin-routing-contracts`; do not modify or archive
+  `expose-ai-billing-request-correlation`,
+  `fix-ai-memory-internal-cost-attribution`, or
+  `fix-qwen-responses-capability-fallback`. Strictly validate the accepted
+  tree, verify it contains every complete internal-cost, exact correlation,
+  and Qwen sentinel scenario carried here, and perform a scoped grep plus
+  semantic review of accepted `ai-monetary-quota` proving no response-stage
+  balance change, effective-price key, response token parser, or
+  missing-price/usage policy claim survives.

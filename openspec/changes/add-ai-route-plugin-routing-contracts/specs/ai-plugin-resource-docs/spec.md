@@ -2,84 +2,68 @@
 
 ### Requirement: ai-quota resource documentation reflects monetary quota behavior
 
-The resource catalog documentation for `ai-quota` SHALL describe the current
-admission-only Redis monetary balance behavior and SHALL NOT claim
-post-response deduction.
+The `ai-quota` resource documentation SHALL describe admission from read-only
+Redis balance hot data, backward-compatible path scope, and external account
+ownership.
 
 #### Scenario: Admission-only quota overview is documented
 
-- **WHEN** an operator reads `resources/plugins/ai-quota/README.md` or
-  `resources/plugins/ai-quota/README_EN.md`
-- **THEN** the documentation SHALL explain that `ai-quota` reads Redis hot
-  balances before forwarding in-scope requests
-- **AND** it SHALL explain `legacy_suffixes`, `bound_target`, and explicit
-  advanced filter intersections
-- **AND** it SHALL state that the plugin does not parse completion usage or
-  deduct balance after the response.
+- **WHEN** an operator reads either ai-quota resource README
+- **THEN** it SHALL explain the request-header Redis balance decision,
+  `legacy_suffixes`, `bound_target`, and explicit filter intersections
+- **AND** it SHALL identify that admission decision as the plugin's final
+  account enforcement action for a request.
 
-#### Scenario: Removed admin and settlement APIs are not presented as supported
+#### Scenario: Removed gateway management surface is absent
 
-- **WHEN** an operator reads the `ai-quota` resource documentation
-- **THEN** the documentation SHALL NOT present `/quota`, `/quota/refresh`,
-  `/quota/delta`, `admin_consumer`, `admin_path`, or `redis_key_prefix` as
-  supported configuration or management interfaces
-- **AND** it SHALL NOT present price lookup, token-usage parsing, or
-  post-response balance deduction as current behavior.
+- **WHEN** an operator reads the ai-quota resource documentation
+- **THEN** it SHALL NOT present `/quota`, `/quota/refresh`, `/quota/delta`,
+  `admin_consumer`, `admin_path`, or `redis_key_prefix` as supported
+  configuration or management interfaces.
 
-#### Scenario: Billing ownership is documented
+#### Scenario: External account ownership is documented
 
-- **WHEN** an operator reads the `ai-quota` resource documentation
-- **THEN** the documentation SHALL state that account balances, prices, billing
-  statements, settlement, Redis rebuilds, idempotency, and reconciliation are
-  owned by Console or billing-service rather than the gateway plugin.
+- **WHEN** an operator reads either ai-quota resource README
+- **THEN** it SHALL state that Console or billing-service owns authoritative
+  accounts, settlement, statements, reconciliation, and Redis hot-data
+  rebuilds
+- **AND** it SHALL state that ai-quota treats balance hot data as read-only.
 
 ### Requirement: ai-quota resource schema matches monetary quota configuration
 
-The resource catalog `spec.yaml` for `ai-quota` SHALL expose the current
-admission-only configuration, backward-compatible path scope, and examples.
+The ai-quota resource `spec.yaml` SHALL expose only the current admission
+configuration, backward-compatible path scope, and truthful examples.
 
-#### Scenario: Admission and scope fields are present in schema
-
-- **WHEN** `resources/plugins/ai-quota/spec.yaml` is inspected
-- **THEN** its current config schema SHALL include `redis`, `quota_scope`,
-  `provider`, `tenant_header`, `consumer_header`, `balance_key_template`,
-  `path_scope`, `enable_path_suffixes`, `enable_methods`, and
-  `missing_balance_policy`
-- **AND** it SHALL define `path_scope` values `legacy_suffixes` and
-  `bound_target` with legacy as the compatibility default.
-
-#### Scenario: Redis schema includes database
+#### Scenario: Admission and scope fields are present
 
 - **WHEN** `resources/plugins/ai-quota/spec.yaml` is inspected
-- **THEN** its Redis object schema SHALL include `service_name`,
-  `service_port`, `username`, `password`, `timeout`, and `database`, with
-  `service_name` required.
+- **THEN** its current schema SHALL include `redis`, `quota_scope`, `provider`,
+  `tenant_header`, `consumer_header`, `balance_key_template`, `path_scope`,
+  `enable_path_suffixes`, `enable_methods`, and `missing_balance_policy`
+- **AND** `path_scope` SHALL define `legacy_suffixes` and `bound_target` with
+  legacy compatibility semantics.
 
-#### Scenario: Obsolete fields are not active schema controls
+#### Scenario: Redis connection fields are complete
 
-- **WHEN** `resources/plugins/ai-quota/spec.yaml` and its examples are
-  inspected
-- **THEN** they SHALL NOT present `redis_key_prefix`, `admin_consumer`,
-  `admin_path`, `price_key_template`, `amount_scale`, `price_unit_tokens`,
-  `missing_price_policy`, or `missing_usage_policy` as active current
-  behavior
-- **AND** any documented legacy acceptance SHALL explicitly identify those
-  settlement fields as inert compatibility inputs.
+- **WHEN** the ai-quota Redis schema is inspected
+- **THEN** it SHALL include `service_name`, `service_port`, `username`,
+  `password`, `timeout`, and `database`
+- **AND** `service_name` SHALL be required and credential examples SHALL use
+  placeholders.
 
-#### Scenario: Bound-target example omits synthesized suffixes
+#### Scenario: Bound-target example omits synthesized filters
 
-- **WHEN** the ai-quota resource shows a `bound_target` example without an
-  advanced filter
-- **THEN** the example SHALL omit `enable_path_suffixes` and
-  `enable_methods`
-- **AND** documentation SHALL state that a non-empty filter narrows the
-  binding target by intersection.
+- **WHEN** an ai-quota example selects `bound_target` without advanced
+  narrowing
+- **THEN** it SHALL omit `enable_path_suffixes` and `enable_methods`
+- **AND** any non-empty filter example SHALL be described as an intersection
+  with the binding target.
 
 ### Requirement: ai-billing resource package is generated
 
-The resource catalog SHALL include a complete `ai-billing` resource package
-that reflects provider-native bound-target processing and the current
-`extensions/ai-billing` event contract.
+The resource catalog SHALL include complete Chinese and English ai-billing
+documentation and schema matching the global Redis Stream delivery and event
+contracts.
 
 #### Scenario: ai-billing resource files exist
 
@@ -88,160 +72,143 @@ that reflects provider-native bound-target processing and the current
   `resources/plugins/ai-billing/README_EN.md`, and
   `resources/plugins/ai-billing/spec.yaml` SHALL exist.
 
-#### Scenario: ai-billing documentation explains event delivery
+#### Scenario: Redis Stream delivery is documented
 
-- **WHEN** an operator reads the `ai-billing` resource documentation
-- **THEN** it SHALL explain request-level billing event generation,
-  billing-service HTTP callout delivery, Bearer token authorization from
-  `billing_service.auth_token`, fail-open behavior, current implemented event
-  fields, the global-default plus rule-override configuration model, and that
-  settlement and reconciliation belong to billing-service.
+- **WHEN** an operator reads either ai-billing resource README
+- **THEN** it SHALL explain global `redis_stream` delivery with
+  `XADD <stream> * event <json>` and fail-open behavior
+- **AND** it SHALL state that rules inherit and cannot replace the global
+  target
+- **AND** it SHALL state that removed `billing_service` input is rejected.
 
-#### Scenario: Config inheritance and path scope are documented
+#### Scenario: Complete billing event surface is documented
 
-- **WHEN** an operator reads `resources/plugins/ai-billing/README.md` or
-  `resources/plugins/ai-billing/README_EN.md`
-- **THEN** the documentation SHALL explain that `defaultConfig` contains shared
-  billing-service and identity defaults, while `matchRules[].config` can
-  contain route-specific overrides
-- **AND** it SHALL explain legacy suffix defaults, bound-target scope with no
-  synthesized suffixes, and explicit non-empty suffix or method filters as
-  intersections.
+- **WHEN** an operator reads either ai-billing resource README
+- **THEN** it SHALL document `event_id`, `event_kind`, `cost_source`,
+  `worker_kind`, `source_job`, `bill_customer`, `idempotency_key`,
+  `request_id`, `tenant`, `consumer`, `route`, `provider`, `quota_scope`,
+  `model`, `request_path`, `status_code`, `usage`, `usage_missing`,
+  `usage_source`, `start_time_ms`, `end_time_ms`, `is_stream`, `cluster`,
+  optional `price_version`, and trusted `upstream_invoked`
+- **AND** it SHALL explain event-kind-specific omission and truthful
+  missing-usage behavior.
 
-#### Scenario: ai-billing event documentation matches implemented payload
+#### Scenario: Event documentation excludes unsupported fields and secrets
 
-- **WHEN** an operator reads the `ai-billing` resource documentation
-- **THEN** it SHALL document the emitted event fields as `event_id`,
-  `idempotency_key`, `request_id`, `tenant`, `consumer`, `quota_scope`,
-  `route`, `provider`, `model`, `request_path`, `status_code`, `usage`,
-  `usage_missing`, `usage_source`, `start_time_ms`, `end_time_ms`,
-  `is_stream`, `cluster`, and optional `price_version`
-- **AND** it SHALL explain that an opaque response without trustworthy usage
-  emits missing usage rather than invented facts.
+- **WHEN** an operator reads either ai-billing resource README
+- **THEN** it SHALL NOT claim emission of top-level `input_tokens`,
+  `output_tokens`, `total_tokens`, or `gateway_calculated_cost`
+- **AND** it SHALL NOT expose raw API keys or real Redis credentials.
 
-#### Scenario: ai-billing removed event fields are not documented as emitted
+#### Scenario: Inheritance and path scope are documented
 
-- **WHEN** an operator reads the `ai-billing` resource documentation
-- **THEN** it SHALL NOT state that billing events emit top-level
-  `input_tokens`, top-level `output_tokens`, top-level `total_tokens`, or
-  `gateway_calculated_cost`.
+- **WHEN** an operator reads either ai-billing resource README
+- **THEN** it SHALL explain global shared defaults and allowed route business
+  overrides
+- **AND** it SHALL explain legacy suffix behavior, bound-target scope without
+  synthesized filters, and non-empty filter intersections.
 
-#### Scenario: ai-billing independence is documented
+#### Scenario: Trusted internal attribution is documented completely
 
-- **WHEN** an operator reads the `ai-billing` resource documentation
-- **THEN** it SHALL state that `ai-billing`, `ai-quota`, and `ai-statistics`
-  can be deployed independently and do not depend on each other's private
-  runtime state.
+- **WHEN** an operator reads either ai-billing resource README
+- **THEN** it SHALL explain that a complete valid paired header overrides
+  configured internal-cost fallback
+- **AND** absent pairs use configured fallback
+- **AND** partial, empty, oversized, or invalid-character pairs suppress event
+  delivery while model traffic continues without submitted-value leakage
+- **AND** ordinary customer rules ignore those headers for classification.
 
-#### Scenario: Trusted attribution and correlation are documented
+#### Scenario: Exact response correlation lifecycle is documented
 
-- **WHEN** an operator reads either ai-billing README
-- **THEN** it SHALL retain the established internal-cost paired-header trust
-  boundary and canonical gateway request-ID correlation behavior
-- **AND** it SHALL state that path scope does not enable internal-cost mode or
-  customer settlement.
+- **WHEN** an operator reads either ai-billing resource README
+- **THEN** it SHALL identify `x-ocmf-gateway-request-id` as the exact internal
+  response header
+- **AND** it SHALL document replacement on non-streaming, streaming, and
+  gateway-local/cache responses
+- **AND** it SHALL document removal, without invention, when canonical request
+  context is absent.
+
+#### Scenario: Plugin independence is documented
+
+- **WHEN** an operator reads the ai-billing resource documentation
+- **THEN** it SHALL state that ai-billing, ai-quota, and ai-statistics can be
+  deployed independently without sharing private runtime state.
 
 ### Requirement: ai-billing resource schema matches plugin configuration
 
-The resource catalog `spec.yaml` for `ai-billing` SHALL expose the current
-billing event configuration, inherited rule overrides, backward-compatible
-path scope, advanced filters, and examples.
+The ai-billing resource `spec.yaml` SHALL expose the current global Redis
+target, complete business configuration, allowed rule overrides,
+backward-compatible path scope, and truthful examples.
 
-#### Scenario: Billing service fields are present in schema
-
-- **WHEN** `resources/plugins/ai-billing/spec.yaml` is inspected
-- **THEN** its config schema SHALL include
-  `billing_service.service_name`, `billing_service.service_port`,
-  `billing_service.path`, `billing_service.timeout`, and
-  `billing_service.auth_token`.
-
-#### Scenario: Billing event configuration fields are present in schema
+#### Scenario: Global Redis Stream fields are complete
 
 - **WHEN** `resources/plugins/ai-billing/spec.yaml` is inspected
-- **THEN** its config schema SHALL include `quota_scope`, `provider`,
-  `tenant_header`, `consumer_header`, `path_scope`,
-  `enable_path_suffixes`, `enable_methods`, and `fail_policy`
-- **AND** it SHALL define `legacy_suffixes` and `bound_target`.
+- **THEN** global config SHALL require `redis_stream.service_name` and expose
+  `service_port`, `username`, `password`, `database`, `timeout`, and `stream`
+- **AND** defaults SHALL match `6379`, `0`, `500`, and `billing:events`
+- **AND** examples SHALL use credential placeholders.
 
-#### Scenario: Route config schema allows partial overrides
+#### Scenario: Complete billing configuration fields are present
 
-- **WHEN** `resources/plugins/ai-billing/spec.yaml` is inspected
-- **THEN** its route config schema SHALL allow `provider`, `quota_scope`,
-  `tenant_header`, `consumer_header`, `path_scope`,
-  `enable_path_suffixes`, `enable_methods`, and `fail_policy` without
-  requiring `billing_service`.
+- **WHEN** the ai-billing schema is inspected
+- **THEN** it SHALL expose `event_kind`, `quota_scope`, `provider`,
+  `cost_source`, `worker_kind`, `bill_customer`, `tenant_header`,
+  `consumer_header`, `path_scope`, `enable_path_suffixes`, `enable_methods`,
+  and `fail_policy`
+- **AND** it SHALL document `usage` and `internal_cost`, legacy
+  `customer_usage` normalization, and both path-scope values.
 
-#### Scenario: Billing service auth token examples are placeholders
+#### Scenario: Route schema allows only supported partial overrides
 
-- **WHEN** `resources/plugins/ai-billing/spec.yaml` examples are inspected
-- **THEN** every `billing_service.auth_token` example value SHALL use a
-  placeholder such as `<shared-secret>` rather than a real secret.
+- **WHEN** the ai-billing route config schema is inspected
+- **THEN** it SHALL allow supported business, header, path-filter, and
+  fail-policy overrides without requiring a delivery target
+- **AND** it SHALL reject rule-level `redis_stream` and removed
+  `billing_service`.
 
-#### Scenario: Billing legacy example matches inherited config model
+#### Scenario: Legacy example uses global target and rule business fields
 
-- **WHEN** `resources/plugins/ai-billing/spec.yaml` shows a legacy-suffix
-  example
-- **THEN** it SHALL show global billing service and shared identity defaults
-- **AND** route rules SHALL contain only route-specific values such as
-  `quota_scope` and `provider`
-- **AND** the documented legacy suffix defaults SHALL include
-  `/v1/chat/completions`, `/v1/messages`, and `/v1/responses`.
+- **WHEN** the schema shows a legacy-suffix example
+- **THEN** it SHALL place Redis delivery and shared defaults in global config
+- **AND** route rules SHALL contain only supported route-specific differences
+- **AND** documented legacy defaults SHALL include `/v1/chat/completions`,
+  `/v1/messages`, and `/v1/responses`.
 
-#### Scenario: Billing bound-target example omits synthesized filters
+#### Scenario: Bound-target example omits synthesized filters
 
-- **WHEN** `resources/plugins/ai-billing/spec.yaml` shows a
-  `path_scope: bound_target` example without advanced narrowing
+- **WHEN** the schema shows `path_scope: bound_target` without advanced
+  narrowing
 - **THEN** it SHALL omit suffix and method filters
-- **AND** any non-empty advanced filter example SHALL be documented as an
-  intersection with the binding target.
+- **AND** any non-empty filter example SHALL describe target intersection.
 
 ### Requirement: Resource metadata stays aligned with extension examples
 
-Resource catalog metadata SHALL stay aligned for ai-proxy, ai-billing,
-ai-quota, and ai-statistics with the corresponding extension versions,
-schemas, examples, and runtime contracts.
+Resource metadata SHALL stay aligned for ai-proxy, ai-billing, ai-quota, and
+ai-statistics with authoritative extension versions, schemas, examples, and
+runtime contracts.
 
-#### Scenario: Resource examples follow extension plugin examples
+#### Scenario: Resource and extension examples agree
 
-- **WHEN** resource `spec.yaml` examples are compared with the four extension
-  `plugin.yaml` or equivalent examples
-- **THEN** they SHALL use equivalent config field names, defaults, secret
-  placeholders, protocol/path-scope semantics, and representative route-level
-  values.
+- **WHEN** resource examples are compared with extension examples
+- **THEN** they SHALL use equivalent fields, defaults, placeholders,
+  inheritance, protocol/path-scope semantics, and route values
+- **AND** the ai-billing extension example SHALL keep `redis_stream` global
+  and route configuration transport-free.
 
-#### Scenario: ai-billing extension example uses recommended override shape
+#### Scenario: Resource documentation follows tested runtime
 
-- **WHEN** `extensions/ai-billing/plugin.yaml` is inspected
-- **THEN** it SHALL put common billing-service, identity, legacy enabled
-  suffixes, and fail policy in `defaultConfig`
-- **AND** route rules SHALL contain only route-specific differences such as
-  quota scope and provider
-- **AND** a separate bound-target example SHALL not synthesize suffixes.
-
-#### Scenario: Resource docs follow extension README content
-
-- **WHEN** resource README files are compared with extension README files for
-  the same plugin
-- **THEN** they SHALL describe the same runtime responsibilities, supported
-  configuration fields, inheritance behavior, protocol/path-scope semantics,
-  and operational ownership boundaries.
-
-#### Scenario: Resource docs follow implementation tests
-
-- **WHEN** resource documentation is compared with the four plugin
-  implementations and release tests
-- **THEN** it SHALL follow tested serialized payloads, metrics, admission
-  behavior, and routing semantics
-- **AND** it SHALL NOT reintroduce fields or behavior that tests assert are
-  absent.
+- **WHEN** resource and extension READMEs are compared with implementation
+  tests
+- **THEN** they SHALL agree on payloads, metrics, admission, routing,
+  inheritance, and ownership boundaries
+- **AND** they SHALL NOT reintroduce behavior that tests assert is absent.
 
 #### Scenario: Resource versions match authoritative extensions
 
-- **WHEN** the coordinated release alignment check runs
-- **THEN** ai-proxy resources SHALL identify `1.0.2`, ai-billing resources
-  SHALL identify `0.1.5`, ai-quota resources SHALL identify `1.0.2`, and
-  ai-statistics resources SHALL identify `1.0.1`
-- **AND** mismatches SHALL fail verification.
+- **WHEN** the coordinated alignment check runs
+- **THEN** ai-proxy, ai-billing, ai-quota, and ai-statistics resources SHALL
+  identify `1.0.2`, `0.1.5`, `1.0.2`, and `1.0.1`, respectively
+- **AND** any mismatch SHALL fail verification.
 
 ## ADDED Requirements
 
@@ -249,68 +216,78 @@ schemas, examples, and runtime contracts.
 
 The ai-proxy resource package and extension documentation SHALL describe
 automatic adapter selection, transparent fallback, forced passthrough,
-backward-compatible path scope, trusted metadata, and provider URL boundaries.
+backward-compatible path scope, trusted metadata, provider URL boundaries, and
+the Qwen Responses capability sentinel.
 
-#### Scenario: Protocol mode schema is inspected
+#### Scenario: Protocol and path scope are documented
 
-- **WHEN** an operator inspects the ai-proxy resource schema
-- **THEN** it SHALL define `protocol_mode` values `auto` and `passthrough`
-  with `auto` as the compatibility default
-- **AND** it SHALL define `path_scope` values `legacy_suffixes` and
+- **WHEN** an operator inspects ai-proxy resources
+- **THEN** schema and documentation SHALL define `protocol_mode` values `auto`
+  and `passthrough`, with `auto` as compatibility default
+- **AND** they SHALL define `path_scope` values `legacy_suffixes` and
   `bound_target`.
 
-#### Scenario: Transparent fallback is documented
+#### Scenario: Transparent fallback and passthrough are documented
 
 - **WHEN** an operator reads either ai-proxy README
-- **THEN** it SHALL explain exact operation/body preservation when no adapter
-  matches, provider-owned host/auth/timeout/failover, and the prohibition on
-  absolute URL or authority injection.
+- **THEN** it SHALL explain operation/body preservation when no adapter
+  matches and full transformation bypass in forced passthrough
+- **AND** provider configuration SHALL remain authoritative for host,
+  authentication, timeout, and failover
+- **AND** route data SHALL NOT inject an absolute URL or authority.
 
-#### Scenario: Forced passthrough is documented
+#### Scenario: Qwen capability sentinel is documented
 
 - **WHEN** an operator reads either ai-proxy README
-- **THEN** it SHALL explain that forced passthrough bypasses request and
-  response body transformation even for a known adapter
-- **AND** it SHALL not imply that provider credentials or authority become
-  route-controlled.
+- **THEN** it SHALL explain that an explicitly empty or whitespace-only Qwen
+  `openai/v1/responses` path disables native Responses capability
+- **AND** omitted or non-empty Qwen paths and every other provider's empty-path
+  semantics SHALL remain unchanged.
 
 ### Requirement: ai-statistics resources describe safe base observability
 
 The ai-statistics resource package and extension documentation SHALL describe
-legacy/bound-target scope, advanced filter intersections, safe base facts, and
-trusted optional enrichment.
+legacy/bound-target scope, advanced intersections, bounded base facts, trusted
+optional enrichment, and deterministic route/path attribution.
 
-#### Scenario: Statistics schema is inspected
+#### Scenario: Statistics scope schema is inspected
 
 - **WHEN** an operator inspects the ai-statistics resource schema
 - **THEN** it SHALL define `path_scope`, `enable_path_suffixes`, and
-  `enable_methods` with backward-compatible legacy semantics and bound-target
+  `enable_methods` with backward-compatible legacy behavior and bound-target
   intersection behavior.
 
-#### Scenario: Opaque operation behavior is documented
+#### Scenario: Bounded route and path attribution is documented
 
 - **WHEN** an operator reads either ai-statistics README
-- **THEN** it SHALL state that route, path, method, status, latency, and bounded
-  error facts are emitted even when model, operation, or token facts are
-  unavailable
-- **AND** it SHALL state that unavailable facts are omitted rather than
-  invented.
+- **THEN** it SHALL document trusted `route_name` and selected-adapter
+  operation-template validation with a 128-byte maximum
+- **AND** it SHALL document `route_unknown`, `provider_native_unknown`, and
+  `path_unknown` fallbacks
+- **AND** it SHALL prohibit raw query, dynamic request segments, credentials,
+  headers, bodies, and raw-path hashes from metric attributes.
+
+#### Scenario: Opaque operation base facts are documented
+
+- **WHEN** model, operation, or token facts are unavailable
+- **THEN** documentation SHALL state that bounded route/path attribution,
+  method, status, latency, and bounded error facts are still emitted
+- **AND** unavailable optional facts are omitted rather than invented.
 
 ### Requirement: Coordinated Resource Version Alignment
 
-The resource and extension version surfaces for the four selected plugins SHALL
-have an automated alignment check or a single-source generation mechanism.
+The four selected extension and resource version surfaces SHALL have an
+automated alignment check or single-source generation mechanism.
 
 #### Scenario: Alignment check passes
 
 - **WHEN** the coordinated resource check runs
-- **THEN** each extension version, resource `info.version`,
-  plugin/option metadata version, example artifact URL, and documented version
-  SHALL match its authoritative selected version.
+- **THEN** every authoritative extension version, resource `info.version`,
+  metadata version, artifact URL, and documented version SHALL match.
 
 #### Scenario: Stale duplicate version is found
 
-- **WHEN** any checked-in duplicate version differs from the authoritative
-  extension version
+- **WHEN** a checked-in duplicate differs from its authoritative extension
+  version
 - **THEN** verification SHALL fail
 - **AND** no artifact or downstream catalog update SHALL use that release.

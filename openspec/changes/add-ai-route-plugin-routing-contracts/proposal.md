@@ -23,12 +23,22 @@ contracts until new sibling artifacts are specified, tested, and made available.
 - Require ai-billing to emit truthful provider usage when available and
   `usage_missing` without invented model, token, or cost facts for opaque
   responses.
+- Preserve ai-billing's current global Redis Stream delivery contract:
+  `redis_stream` is required globally, rules inherit but cannot replace it,
+  removed `billing_service` input is rejected, delivery uses fail-open `XADD`,
+  and the complete usage/internal-cost event surface remains intact.
+- Carry the completed-but-unarchived internal-cost attribution, gateway
+  response-correlation, and Qwen Responses capability-sentinel contracts into
+  this delta without changing or archiving their original changes.
 - Align ai-quota with its implemented admission-only ownership boundary:
-  request admission uses Redis hot balance, but the gateway does not perform
-  post-response token deduction or invent completion usage.
+  request admission reads Redis balance hot data and the gateway performs no
+  response-stage account mutation. Archive synchronization will also rewrite
+  the stale accepted Purpose and surviving ownership scenario to that
+  admission-only model.
 - Require ai-statistics to emit safe route/path/method/status/latency/error
-  base facts independently of model or token parsing and to omit unsupported
-  dimensions rather than fabricate them.
+  base facts independently of model or token parsing, use only bounded trusted
+  route and operation-template attribution, and fall back deterministically
+  when no safe bounded path fact exists.
 - Publish synchronized patch targets ai-proxy `1.0.2`, ai-billing `0.1.5`,
   ai-quota `1.0.2`, and ai-statistics `1.0.1`, with authoritative versions,
   schemas, resource packages, examples, and bilingual documentation checked
@@ -56,10 +66,11 @@ contracts until new sibling artifacts are specified, tested, and made available.
 ### Modified Capabilities
 
 - `ai-billing-events`: Adds backward-compatible path scope and truthful
-  provider-native/opaque-response usage behavior while preserving correlation
-  and internal-cost attribution.
-- `ai-monetary-quota`: Replaces stale post-response deduction requirements with
-  the implemented admission-only contract and adds bound-target filtering.
+  provider-native/opaque-response usage behavior while preserving Redis Stream
+  delivery, exact correlation, and complete internal-cost attribution.
+- `ai-monetary-quota`: Replaces stale response-stage account behavior with the
+  implemented admission-only Redis balance contract and adds bound-target
+  filtering.
 - `ai-plugin-resource-docs`: Aligns schemas, versions, examples, and bilingual
   documentation for protocol mode, path scope, truthful billing/statistics,
   and admission-only quota behavior.
@@ -79,5 +90,13 @@ contracts until new sibling artifacts are specified, tested, and made available.
   exact verified artifacts.
 - This change is intentionally based on sibling commit
   `9995ed5c7d4977a8ddf16ea34faea3d8286a9e56` and depends on its completed
-  ai-billing internal-cost attribution work. Existing active changes are not
-  modified or archived by this proposal.
+  ai-billing internal-cost attribution, response-correlation, and Qwen
+  Responses fallback work. Their complete security-sensitive scenarios are
+  repeated here solely so archiving this change produces a self-contained
+  accepted tree; the existing active changes are not modified or archived.
+- Archive synchronization includes deliberate manual rewrites of the stale
+  `ai-billing-events` accepted Purpose to Redis Stream delivery and the
+  `ai-monetary-quota` accepted Purpose plus surviving account-ownership
+  requirement to admission-only Redis balance hot data because requirement
+  deltas cannot update Purpose prose. Post-archive semantic checks must find
+  neither the removed billing transport nor stale quota behavior.

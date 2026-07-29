@@ -72,3 +72,47 @@ traffic SHALL not inherit metadata from a skipped adapter.
 - **THEN** downstream trusted metadata SHALL identify that fallback adapter and
   its normalized operation
 - **AND** metadata SHALL not claim native Responses handling.
+
+### Requirement: Qwen Responses Native Capability Sentinel
+
+For Qwen only, ai-proxy SHALL treat an explicitly configured empty or
+whitespace-only `openai/v1/responses` capability path as meaning native support
+is disabled. Existing Responses-to-Chat fallback SHALL remain conditional on
+the existing Chat Completions capability. The sentinel SHALL NOT change
+provider defaults or other providers' capability semantics.
+
+#### Scenario: Explicit empty Qwen Responses path disables native support
+
+- **WHEN** a Qwen capability map explicitly contains
+  `openai/v1/responses` with an empty path
+- **THEN** native Qwen Responses SHALL be reported unsupported
+- **AND** the existing compatible fallback SHALL be selected when its Chat
+  Completions dependency is supported.
+
+#### Scenario: Whitespace-only Qwen Responses path disables native support
+
+- **WHEN** a Qwen capability map explicitly contains
+  `openai/v1/responses` with a whitespace-only path
+- **THEN** native Qwen Responses SHALL be reported unsupported
+- **AND** the whitespace value SHALL NOT be treated as a native endpoint.
+
+#### Scenario: Omitted Qwen Responses path preserves defaults
+
+- **WHEN** the Qwen capability map omits `openai/v1/responses`
+- **THEN** normal provider-default merging and native capability behavior SHALL
+  remain unchanged.
+
+#### Scenario: Non-empty Qwen Responses path preserves native behavior
+
+- **WHEN** a Qwen capability map contains a non-empty
+  `openai/v1/responses` path
+- **THEN** existing native Qwen Responses capability behavior SHALL remain
+  unchanged.
+
+#### Scenario: Other provider empty path remains supported
+
+- **WHEN** any non-Qwen provider has an explicitly present empty
+  `openai/v1/responses` capability path
+- **THEN** its existing key-presence capability semantics SHALL remain
+  unchanged
+- **AND** the Qwen-specific sentinel SHALL NOT apply.
