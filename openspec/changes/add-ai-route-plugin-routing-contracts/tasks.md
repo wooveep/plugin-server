@@ -1043,6 +1043,25 @@ Task 3.4 evidence (2026-07-29):
   communities; GitNexus rebuilt 12,952 nodes, 40,595 edges, 292 clusters, and
   300 flows. The eight generated repository-instruction diffs were restored,
   and task-local detection remained LOW with zero affected processes.
+- A follow-up defensive runtime audit found that manually constructed
+  `EnablePathSuffixes: []string{""}` bypassed the parser and matched every
+  path because an empty string is a suffix of every string. The regression was
+  added before production changes and failed at exactly two leaves: a
+  literal-empty raw suffix admitted a request, and an empty-plus-usable raw
+  list admitted a path that did not match the usable suffix. `isAIPathEnabled`
+  now ignores suffixes that are empty after trimming, so a raw list with no
+  usable suffix fails closed and a mixed list matches only usable entries.
+  Parsed bound-target absent/literal `[]` semantics remain unchanged because
+  the suffix matcher is invoked only when the configured slice is non-empty.
+  The original Task 3.1 and all repair regressions pass together; all 16
+  original HIGH dependents plus the new 17th regression dependent pass,
+  focused security/lifecycle baselines pass, and the exact 3+6 later-task RED
+  boundary remains unchanged. Follow-up Graphify rebuilt 11,125 nodes, 14,940
+  edges, and 879 communities; GitNexus rebuilt 12,953 nodes, 40,595 edges,
+  292 clusters, and 300 flows. Eight generated repository-instruction diffs
+  were restored. Comparison against `main` retains the expected branch-history
+  CRITICAL result, while task-local detection is LOW across exactly three
+  changed symbols/files with zero affected processes.
 
 - [ ] 3.5 Implement truthful provider-native/opaque-response event handling
   while preserving global inherited Redis delivery, exact correlation, and

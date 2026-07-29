@@ -57,6 +57,34 @@ func TestBillingBlankOnlyBoundTargetFiltersAreRejected(t *testing.T) {
 			EnableMethods: []string{"   "},
 		},
 	))
+
+	t.Run("raw literal-empty suffix fails closed", func(t *testing.T) {
+		require.False(t, isBillingRequestEnabled(
+			"/vendor/jobs/job-42",
+			http.MethodPost,
+			BillingConfig{
+				PathScope:          PathScopeBoundTarget,
+				EnablePathSuffixes: []string{""},
+			},
+		))
+	})
+
+	t.Run("raw empty and usable suffixes use only the usable entry", func(t *testing.T) {
+		config := BillingConfig{
+			PathScope:          PathScopeBoundTarget,
+			EnablePathSuffixes: []string{"", "/vendor/jobs"},
+		}
+		require.True(t, isBillingRequestEnabled(
+			"/v2/vendor/jobs",
+			http.MethodPost,
+			config,
+		))
+		require.False(t, isBillingRequestEnabled(
+			"/v2/vendor/models",
+			http.MethodPost,
+			config,
+		))
+	})
 }
 
 func TestBillingMethodFiltersPreserveExactCase(t *testing.T) {

@@ -1107,6 +1107,9 @@ func tokenDetailsFromContext(value any) map[string]int64 {
 func isAIPathEnabled(requestPath string, enabledSuffixes []string) bool {
 	pathWithoutQuery := normalizedRequestPath(requestPath)
 	for _, suffix := range enabledSuffixes {
+		if strings.TrimSpace(suffix) == "" {
+			continue
+		}
 		if strings.HasSuffix(pathWithoutQuery, suffix) {
 			return true
 		}
