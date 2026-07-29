@@ -4,32 +4,50 @@ keywords: [AI网关, AI账单, ai-billing]
 description: ai-billing 请求级账单事件插件配置参考
 ---
 
+> 插件版本：`0.1.5`
+
 ## 功能说明
 
-`ai-billing` 在 AI 响应完成后独立解析 token usage 和 model，默认构造客户用量 billing event，并通过 Redis Stream 写入 Console/billing-service 的结算队列。内部 AI Route 可以配置为 `event_kind=internal_cost`，只用于平台成本归因，不进入普通客户账单。插件使用 Redis `XADD <stream> * event <BillingEvent JSON>`，默认写入 `billing:events`。插件默认 fail-open：Redis 投递超时、网络失败或返回错误时只记录日志，不阻塞用户响应。
+`ai-billing` 在已启用的 AI 请求完成或流终止时生成一个请求级事件，并通过全局 Redis Stream 执行 `XADD <stream> * event <BillingEvent JSON>`。投递默认为 fail-open：Redis 初始化、网络、超时或命令错误不会阻塞模型响应。插件不计算最终权威费用、不应用折扣、不扣减余额，也不更新账户数据库；幂等结算、账单流水、余额投影和补偿归 Console/billing-service 所有。
 
-`ai-billing` 不计算最终权威费用，不应用租户折扣或覆盖价格，不扣减 Redis 余额，也不直接更新账户或数据库。幂等、结算、账单流水、余额投影和补偿由 Console/billing-service 负责。
+## 账单事件契约
 
-## 事件字段
+完整事件面包括 `event_id`、`event_kind`、`cost_source`、`worker_kind`、`source_job`、`bill_customer`、`idempotency_key`、`request_id`、`tenant`、`consumer`、`route`、`provider`、`quota_scope`、`model`、`request_path`、`status_code`、`usage`、`usage_missing`、`usage_source`、`start_time_ms`、`end_time_ms`、`is_stream`、`cluster`、可选的 `price_version`，以及可信网关生命周期事实 `upstream_invoked`。请求、响应或用户 payload 不能伪造该事实。`event_id` 在请求开始时生成，默认同时作为 `idempotency_key`，重试沿用同一值。
 
-事件包含 `event_id`、`event_kind`、`idempotency_key`、`request_id`、`tenant`、`consumer`、`quota_scope`、`route`、`provider`、`model`、`cluster`、`request_path`、`status_code`、`start_time_ms`、`end_time_ms`、`is_stream`、`usage`、`usage_missing` 和可选 `price_version`。
+规范事件类型是 `usage` 和 `internal_cost`。旧值 `customer_usage` 仅作为兼容别名接受，并归一化为 `usage`。`cost_source`、`worker_kind`、`source_job` 和 `bill_customer` 是 `internal_cost` 的内部归因字段；普通 `usage` 事件会省略这些字段。`price_version` 只有在存在可信价格事实时才是可选字段。
 
-当 provider usage 暴露 cache 详情时，`usage` 还会包含 `input_cache_hit_tokens`、`input_cache_miss_tokens` 和 `output_tokens`。为了兼容旧事件，`usage.input`、`usage.output` 和 `usage.total` 会继续保留。
+可信 provider usage 保持权威，设置 `usage_source=provider`、`usage_missing=false`，并在 `usage.details.provider_usage` 保留完整 provider 对象。没有 provider usage 但识别出的结构允许安全估算时，设置 `usage_source=estimated` 和 `usage_missing=false`，且不会虚构 provider-only 详情。无法可信解析时使用零 token 计数、`usage_missing=true` 和 `usage_source=missing`；这种结果不会虚构 model、provider usage、price、cost 或 settlement。
 
-`route`、`provider`、`model` 使用 Console 原生对象事实格式：`{ "id"?: "...", "name"?: "..." }`。网关通常不知道 Console UUID，因此默认填充运行时 `name`。
+`usage` 以 `unit=token` 以及 `input`、`output`、`total` 表示规范计数，并可包含 cache 详情。事件不提供顶层 `input_tokens`、`output_tokens`、`total_tokens` 或 `gateway_calculated_cost`。事件和日志不包含原始 API key 或真实 Redis 凭据。`route`、`provider` 和 `model` 使用 `{ "id"?: "...", "name"?: "..." }` 事实对象；绑定目标和路径本身不能证明 model、usage、price 或 cost。
 
-## 配置示例
+## 可信内部成本归因
+
+仅已配置的 `internal_cost` 路由才有资格使用调用级归因头。受信任调用方必须同时提交 `x-ai-billing-cost-source` 和 `x-ai-billing-worker-kind`：完整的一对会覆盖已配置的回退值；两者都缺失时使用已配置的回退值。部分、空、超长、非法字符或重复的头值只抑制 billing event 投递，模型流量继续且不受阻塞。
+
+接受和拒绝的提交值都不会写入日志。客户路由忽略这些头进行事件分类；它们不能启用 `internal_cost`、不能设置 `bill_customer`，也不能改变配置派生的客户结算分类。
+
+## 响应关联契约
+
+对启用账单的请求，`x-ocmf-gateway-request-id` 使用最终规范请求 ID 替换而不是追加任何上游同名值，并与事件中的 `request_id` 完全一致。该规则覆盖非流式、流式、网关本地和缓存响应；流式结束不会追加第二个 `x-ocmf-gateway-request-id` 值。
+
+缺少规范请求上下文时，插件删除上游值且不会虚构关联 ID。该响应头只证明请求关联，不能证明 Redis 已持久化；持久化状态必须由 Console/billing-service 的消费结果确认。
+
+## 配置与迁移
+
+全局 `redis_stream` 是唯一投递目标，必须提供非空 `service_name`。`service_port`、`database`、`timeout` 和 `stream` 的默认值分别是 `6379`、`0`、`500` 和 `billing:events`。示例凭据只能使用 `<redis-username>` 和 `<redis-password>` 占位符。
 
 ```yaml
 defaultConfig:
   redis_stream:
     service_name: redis-stack-server.dns
     service_port: 6379
+    username: <redis-username>
+    password: <redis-password>
     database: 0
     timeout: 500
     stream: billing:events
+  event_kind: usage
   quota_scope: global
-  event_kind: customer_usage
   provider: default
   tenant_header: x-mse-tenant
   consumer_header: x-mse-consumer
@@ -51,33 +69,15 @@ matchRules:
       event_kind: internal_cost
       quota_scope: internal:ai-memory.digest
       provider: dashscope
+      cost_source: ai-memory
+      worker_kind: digest
+      bill_customer: false
+      path_scope: bound_target
 ```
 
-## 配置说明
+全局和路由可配置 `event_kind`、`quota_scope`、`provider`、`cost_source`、`worker_kind`、`bill_customer`、`tenant_header`、`consumer_header`、`path_scope`、`enable_path_suffixes`、`enable_methods` 和 `fail_policy`。规则省略的业务、头、路径和 fail-open 字段会继承全局配置；Redis 服务、凭据、database 和 stream 始终继承全局目标。
 
-| 名称 | 类型 | 默认值 | 说明 |
-| --- | --- | --- | --- |
-| `redis_stream` | object | 无 | Redis Stream 投递目标 |
-| `redis_stream.service_name` | string | 无 | Redis 服务名或 Console 管理的服务注册名 |
-| `redis_stream.service_port` | integer | `6379` | Redis 服务端口 |
-| `redis_stream.username` | string | 空 | Redis 用户名 |
-| `redis_stream.password` | string | 空 | Redis 密码，需按敏感字段处理 |
-| `redis_stream.database` | integer | `0` | Redis database |
-| `redis_stream.timeout` | integer | `500` | Redis callout 超时时间，单位毫秒 |
-| `redis_stream.stream` | string | `billing:events` | Redis Stream 名称 |
-| `event_kind` | string | `customer_usage` | 事件类型，可选 `customer_usage` 或 `internal_cost` |
-| `quota_scope` | string | `global` | 当前路由或规则的额度作用域 |
-| `provider` | string | `default` | AI provider 标识 |
-| `tenant_header` | string | `x-mse-tenant` | 租户身份请求头 |
-| `consumer_header` | string | `x-mse-consumer` | consumer 身份请求头 |
-| `path_scope` | string | `legacy_suffixes` | `legacy_suffixes` 或 `bound_target` |
-| `enable_path_suffixes` | []string | 历史有效默认值为 `/v1/chat/completions`、`/v1/messages` | 可选路径过滤器 |
-| `enable_methods` | []string | 无 | 可选 HTTP 方法过滤器，按精确大小写匹配 |
-| `fail_policy` | string | `open` | 投递失败策略，当前支持 `open` |
-
-全局 `defaultConfig` 必须配置 `redis_stream.service_name`，并推荐放置共享的租户、consumer、路径作用域和 fail-open 设置。`matchRules[].config` 可以只配置当前路由差异，例如 `event_kind`、`provider`、`quota_scope`、`path_scope`、`enable_path_suffixes`、`enable_methods` 或 `fail_policy`；未配置字段会继承全局值。规则级 `redis_stream` 不支持配置，Redis Stream 目标属于插件实例共享配置。
-
-缺省或显式 `legacy_suffixes` 保留上述两个历史默认后缀。在 `bound_target` 下，Higress 绑定目标定义请求集合；缺省或字面空数组过滤器不额外收窄，显式非空过滤器只与绑定目标求交集且不能扩大绑定。ai-billing 对 `enable_methods` 使用精确大小写匹配，示例采用规范的大写方法：
+缺省或显式 `legacy_suffixes` 保留且只保留两个历史默认后缀：`/v1/chat/completions` 和 `/v1/messages`。`bound_target` 由 Higress 绑定定义请求集合；缺省或字面空过滤器不增加收窄。需要高级过滤时，非空 suffix 和 method 只与绑定目标做精确交集，不能扩大绑定；下面示例将 `/v1/responses` 与 `POST` 同时作为高级交集：
 
 ```yaml
 path_scope: bound_target
@@ -87,8 +87,8 @@ enable_methods:
   - POST
 ```
 
-平台自有的内部 AI Route，例如 `ai-cache.embedding`、`ai-memory.digest`，应配置 `event_kind=internal_cost` 和内部 `quota_scope`。这类事件仍携带 usage、provider、model 和 route 事实，供 Console/billing-service 计算平台成本，但下游不能把它们生成普通客户 usage 账单。
+当前配置面已移除 HTTP 形态的 transport。全局和规则级 `billing_service` 都会被拒绝，并提示改用全局 `redis_stream`；规则级 `redis_stream` 会被拒绝，因为规则只能继承全局投递目标。升级旧对象时应删除旧 `billing_service`、`path`、`auth_token` 输入，并重新创建 `WasmPlugin` 或通过 Console 重新投影托管绑定。
 
-Console 管理的 `ai-billing` 配置会把 Redis 服务投影为 McpBridge registry 名称，例如 `redis-stack-server.dns`。旧的 `billing_service`、`path` 和 `auth_token` 配置已移除；从旧版本升级时需要删除并重新创建已有 HTTP 形态的 `WasmPlugin`，或通过 Console 重新投影托管绑定。
+## 独立部署边界
 
-`ai-billing` 与 `ai-quota`、`ai-statistics` 相互独立，可以在另外两个插件关闭时单独上报 billing event；实际余额扣减和 Redis 投影刷新由 Console/billing-service 完成。
+`ai-billing`、`ai-quota` 和 `ai-statistics` 可以独立部署。`ai-billing` 只发布账单事件，不依赖或共享彼此的私有运行时状态；余额准入和可观测性分别由另外两个插件独立处理，结算与持久化归 Console/billing-service 所有。

@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README_EN.md
-  version: 0.1.0
+  version: 0.1.5
   contact:
     name: 2456868764
 spec:
@@ -24,9 +24,11 @@ spec:
   configSchema:
     openAPIV3Schema:
       type: object
+      additionalProperties: false
       properties:
         redis_stream:
           type: object
+          additionalProperties: false
           title: Redis Stream配置
           x-title-i18n:
             en-US: Redis Stream Configuration
@@ -43,7 +45,6 @@ spec:
               description: Redis 服务名或 Console 管理的 MCPBridge 服务名
               x-description-i18n:
                 en-US: Redis service name or Console-managed MCPBridge service name
-              default: redis-stack-server.dns
             service_port:
               type: integer
               title: Redis服务端口
@@ -89,11 +90,11 @@ spec:
           title: 事件类型
           x-title-i18n:
             en-US: Event Kind
-          description: Billing event 类型。customer_usage 用于普通客户用量账单；internal_cost 用于内部 AI Route 的平台成本归因。
+          description: Billing event 类型。usage 是规范客户用量事件，internal_cost 用于内部 AI Route 平台成本归因；旧 customer_usage 仅作兼容别名并归一化为 usage。
           x-description-i18n:
-            en-US: Billing event type. customer_usage is for ordinary customer usage billing; internal_cost is for platform-owned internal AI Route cost attribution.
-          enum: [customer_usage, internal_cost]
-          default: customer_usage
+            en-US: Billing event type. usage is canonical customer usage, internal_cost is platform cost attribution, and legacy customer_usage is a compatibility alias normalized to usage.
+          enum: [usage, internal_cost, customer_usage]
+          default: usage
         quota_scope:
           type: string
           title: 额度作用域
@@ -110,6 +111,30 @@ spec:
           x-description-i18n:
             en-US: Default AI provider identifier. Route rule config can override it
           default: default
+        cost_source:
+          type: string
+          title: 成本来源
+          x-title-i18n:
+            en-US: Cost Source
+          description: internal_cost 的配置来源标识
+          x-description-i18n:
+            en-US: Configuration-derived source identifier for internal_cost
+        worker_kind:
+          type: string
+          title: Worker类型
+          x-title-i18n:
+            en-US: Worker Kind
+          description: internal_cost 的配置 worker 类型
+          x-description-i18n:
+            en-US: Configuration-derived worker kind for internal_cost
+        bill_customer:
+          type: boolean
+          title: 是否计入客户账单
+          x-title-i18n:
+            en-US: Bill Customer
+          description: 配置派生的客户结算分类，内部成本路由通常设为 false
+          x-description-i18n:
+            en-US: Configuration-derived customer settlement classification; normally false for internal-cost routes
         tenant_header:
           type: string
           title: 租户请求头
@@ -175,12 +200,12 @@ spec:
         redis_stream:
           service_name: redis-stack-server.dns
           service_port: 6379
-          username: ""
+          username: <redis-username>
           password: <redis-password>
           database: 0
           timeout: 500
           stream: billing:events
-        event_kind: customer_usage
+        event_kind: usage
         quota_scope: global
         provider: default
         tenant_header: x-mse-tenant
@@ -193,17 +218,17 @@ spec:
   routeConfigSchema:
     openAPIV3Schema:
       type: object
+      additionalProperties: false
       properties:
         event_kind:
           type: string
           title: 事件类型
           x-title-i18n:
             en-US: Event Kind
-          description: 规则级 event_kind 覆盖。内部 AI Route 可配置为 internal_cost，只做平台成本归因。
+          description: 规则级 event_kind 覆盖。usage 为规范值，customer_usage 是归一化为 usage 的兼容别名；internal_cost 只做平台成本归因。
           x-description-i18n:
-            en-US: Rule-level event_kind override. Internal AI Routes can use internal_cost for platform cost attribution only.
-          enum: [customer_usage, internal_cost]
-          default: customer_usage
+            en-US: Rule-level event_kind override. usage is canonical, customer_usage is a compatibility alias normalized to usage, and internal_cost is platform cost attribution only.
+          enum: [usage, internal_cost, customer_usage]
         quota_scope:
           type: string
           title: 额度作用域
@@ -212,14 +237,36 @@ spec:
           description: 规则级额度作用域覆盖；未配置时继承全局配置
           x-description-i18n:
             en-US: Rule-level quota scope override. Inherits the global config when omitted
-          default: global
         provider:
           type: string
           title: AI Provider
           description: 规则级 AI provider 覆盖；未配置时继承全局配置
           x-description-i18n:
             en-US: Rule-level AI provider override. Inherits the global config when omitted
-          default: default
+        cost_source:
+          type: string
+          title: 成本来源
+          x-title-i18n:
+            en-US: Cost Source
+          description: 规则级 internal_cost 成本来源；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level internal-cost source; inherits global configuration when omitted
+        worker_kind:
+          type: string
+          title: Worker类型
+          x-title-i18n:
+            en-US: Worker Kind
+          description: 规则级 internal_cost worker 类型；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level internal-cost worker kind; inherits global configuration when omitted
+        bill_customer:
+          type: boolean
+          title: 是否计入客户账单
+          x-title-i18n:
+            en-US: Bill Customer
+          description: 规则级客户结算分类；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level customer settlement classification; inherits global configuration when omitted
         tenant_header:
           type: string
           title: 租户请求头
@@ -228,7 +275,6 @@ spec:
           description: 规则级租户身份请求头覆盖；未配置时继承全局配置
           x-description-i18n:
             en-US: Rule-level tenant identity header override. Inherits the global config when omitted
-          default: x-mse-tenant
         consumer_header:
           type: string
           title: Consumer请求头
@@ -237,7 +283,6 @@ spec:
           description: 规则级 Consumer 身份请求头覆盖；未配置时继承全局配置
           x-description-i18n:
             en-US: Rule-level consumer identity header override. Inherits the global config when omitted
-          default: x-mse-consumer
         path_scope:
           type: string
           title: 路径作用域
@@ -278,9 +323,11 @@ spec:
           x-description-i18n:
             en-US: Rule-level delivery failure policy override. Currently supports open and inherits the global config when omitted
           enum: [open]
-          default: open
       example:
         event_kind: internal_cost
         quota_scope: internal:ai-memory.digest
         provider: dashscope
+        cost_source: ai-memory
+        worker_kind: digest
+        bill_customer: false
         path_scope: bound_target

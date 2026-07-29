@@ -4,24 +4,50 @@ keywords: [AI Gateway, AI Billing, ai-billing]
 description: Configuration reference for request-level AI billing event delivery.
 ---
 
+> Plugin version: `0.1.5`
+
 ## Overview
 
-`ai-billing` parses token usage and model independently after an enabled AI response completes, builds a customer usage billing event by default, and writes it to Console/billing-service settlement through Redis Streams. Internal AI Routes can set `event_kind=internal_cost` so events are used only for platform cost attribution and not for ordinary customer statements. The plugin uses Redis `XADD <stream> * event <BillingEvent JSON>` and defaults to `billing:events`. Delivery is fail-open by default: Redis timeouts, network failures, and error responses are logged but do not block the user response.
+`ai-billing` creates one request-level event when an enabled AI request completes or its stream terminates, then runs `XADD <stream> * event <BillingEvent JSON>` through one global Redis Stream target. Delivery is fail-open: Redis initialization, network, timeout, or command errors do not block the model response. The plugin does not calculate final authoritative cost, apply discounts, debit balances, or update account databases. Idempotent settlement, statements, balance projection, and reconciliation belong to Console/billing-service.
 
-The plugin does not calculate final authoritative costs, apply tenant discounts, apply override prices, deduct Redis balances, or update account databases. Idempotency, settlement, statements, balance projection, and reconciliation belong to Console/billing-service.
+## Billing event contract
 
-## Example
+The complete event surface includes `event_id`, `event_kind`, `cost_source`, `worker_kind`, `source_job`, `bill_customer`, `idempotency_key`, `request_id`, `tenant`, `consumer`, `route`, `provider`, `quota_scope`, `model`, `request_path`, `status_code`, `usage`, `usage_missing`, `usage_source`, `start_time_ms`, `end_time_ms`, `is_stream`, `cluster`, optional `price_version`, and the trusted gateway lifecycle fact `upstream_invoked`. Request, response, or user payload cannot spoof that fact. `event_id` is created at request start, defaults `idempotency_key` to the same value, and remains stable across retries.
+
+The canonical event kinds are `usage` and `internal_cost`. Legacy `customer_usage` is accepted only as a compatibility alias and normalizes to `usage`. `cost_source`, `worker_kind`, `source_job`, and `bill_customer` are internal attribution fields on `internal_cost`; ordinary `usage` events omit them. `price_version` is optional and appears only when a trustworthy price fact exists.
+
+Trustworthy provider usage remains authoritative, sets `usage_source=provider` and `usage_missing=false`, and retains the complete provider object in `usage.details.provider_usage`. When provider usage is absent but a recognized structure allows safe estimation, the event uses `usage_source=estimated` with `usage_missing=false` without inventing provider-only detail. When neither source is trustworthy, it uses zero token counts, `usage_missing=true`, and `usage_source=missing`; this does not fabricate model, provider usage, price, cost, or settlement.
+
+`usage` carries canonical `unit=token`, `input`, `output`, and `total` counts plus optional cache detail. The event has no top-level `input_tokens`, `output_tokens`, `total_tokens`, or `gateway_calculated_cost`, and events and logs contain no raw API keys or real Redis credentials. `route`, `provider`, and `model` use `{ "id"?: "...", "name"?: "..." }` fact objects. A binding target or path alone cannot prove model, usage, price, or cost.
+
+## Trusted internal-cost attribution
+
+Only configured `internal_cost` routes are eligible for invocation-level attribution headers. A trusted caller must submit both `x-ai-billing-cost-source` and `x-ai-billing-worker-kind`: a complete pair overrides the configured fallback, while the configured fallback applies when both are absent. A partial, empty, oversized, invalid-character, or duplicate pair suppresses only billing-event delivery; model traffic continues without being blocked.
+
+Accepted and rejected submitted values are never logged. Customer routes ignore these headers for event classification. They cannot enable `internal_cost`, cannot set `bill_customer`, and cannot change configuration-derived customer settlement classification.
+
+## Response correlation contract
+
+For billing-enabled requests, `x-ocmf-gateway-request-id` uses the final canonical request ID and replaces rather than appends any same-named upstream value. It exactly matches the event `request_id` for non-streaming, streaming, gateway-local, and cache responses. Stream completion does not append a second `x-ocmf-gateway-request-id` value.
+
+When canonical request context is missing, the plugin removes the upstream value without inventing one. The response header proves request correlation only and does not prove Redis persistence; Console/billing-service consumption determines persistence.
+
+## Configuration and migration
+
+Global `redis_stream` is the only delivery target and requires a non-empty `service_name`. The defaults for `service_port`, `database`, `timeout`, and `stream` are `6379`, `0`, `500`, and `billing:events`. Credential examples use only the `<redis-username>` and `<redis-password>` placeholders.
 
 ```yaml
 defaultConfig:
   redis_stream:
     service_name: redis-stack-server.dns
     service_port: 6379
+    username: <redis-username>
+    password: <redis-password>
     database: 0
     timeout: 500
     stream: billing:events
-  quota_scope: global
   event_kind: usage
+  quota_scope: global
   provider: default
   tenant_header: x-mse-tenant
   consumer_header: x-mse-consumer
@@ -43,41 +69,15 @@ matchRules:
       event_kind: internal_cost
       quota_scope: internal:ai-memory.digest
       provider: dashscope
+      cost_source: ai-memory
+      worker_kind: digest
+      bill_customer: false
+      path_scope: bound_target
 ```
 
-Events include `event_id`, `event_kind`, `idempotency_key`, `request_id`, `tenant`, `consumer`, `quota_scope`, `route`, `provider`, `model`, `cluster`, request path, status code, timing, stream flag, `usage`, `usage_missing`, and optional price version.
+Global and route configuration support `event_kind`, `quota_scope`, `provider`, `cost_source`, `worker_kind`, `bill_customer`, `tenant_header`, `consumer_header`, `path_scope`, `enable_path_suffixes`, `enable_methods`, and `fail_policy`. Omitted business, header, path, and fail-open route fields inherit the global configuration. Redis service, credentials, database, and stream always inherit the global target.
 
-When provider usage exposes cache details, `usage` also includes `input_cache_hit_tokens`, `input_cache_miss_tokens`, and `output_tokens`. Legacy `usage.input`, `usage.output`, and `usage.total` stay present for compatibility.
-
-`route`, `provider`, and `model` use Console-native object facts: `{ "id"?: "...", "name"?: "..." }`. Gateways usually do not know Console UUIDs, so the plugin populates runtime `name` values by default.
-
-For billing-enabled AI requests, the plugin overwrites `x-ocmf-gateway-request-id` on the response with the gateway's final `x-request-id`. This value exactly matches the event `request_id`, allowing Console and UI billing correlation; a same-named header supplied by the upstream provider is not retained. Paths where billing is not enabled do not expose this correlation header. The response header identifies the gateway request but does not by itself prove that the Redis event has been persisted.
-
-Configuration fields:
-
-| Name | Type | Default | Description |
-| --- | --- | --- | --- |
-| `redis_stream` | object | none | Redis Stream delivery target |
-| `redis_stream.service_name` | string | none | Redis service name or Console-managed registry name |
-| `redis_stream.service_port` | integer | `6379` | Redis service port |
-| `redis_stream.username` | string | empty | Redis username |
-| `redis_stream.password` | string | empty | Redis password; treat as sensitive |
-| `redis_stream.database` | integer | `0` | Redis database |
-| `redis_stream.timeout` | integer | `500` | Redis callout timeout in milliseconds |
-| `redis_stream.stream` | string | `billing:events` | Redis Stream name |
-| `event_kind` | string | `usage` | Event type: `usage` or `internal_cost` |
-| `quota_scope` | string | `global` | Quota scope for the current route or rule |
-| `provider` | string | `default` | AI provider identifier |
-| `tenant_header` | string | `x-mse-tenant` | Tenant identity request header |
-| `consumer_header` | string | `x-mse-consumer` | Consumer identity request header |
-| `path_scope` | string | `legacy_suffixes` | `legacy_suffixes` or `bound_target` |
-| `enable_path_suffixes` | []string | effective legacy defaults: `/v1/chat/completions`, `/v1/messages` | Optional path filter |
-| `enable_methods` | []string | none | Optional exact-case HTTP-method filter |
-| `fail_policy` | string | `open` | Delivery failure policy; currently only `open` is supported |
-
-The global `defaultConfig` must contain `redis_stream.service_name`, and should hold shared tenant, consumer, path-scope, and fail-open defaults. `matchRules[].config` can contain only route-specific differences such as `event_kind`, `provider`, `quota_scope`, `path_scope`, `enable_path_suffixes`, `enable_methods`, or `fail_policy`; omitted fields inherit from the global config. Rule-level `redis_stream` is not supported because the Redis Stream target is shared plugin-instance configuration.
-
-Missing or explicit `legacy_suffixes` preserves the two effective legacy suffix defaults above. In `bound_target`, the Higress binding target defines the request set; omitted or literal-empty filters add no narrowing, and explicit non-empty filters only intersect the target and never expand it. ai-billing matches `enable_methods` with exact case; examples use canonical uppercase methods:
+Missing or explicit `legacy_suffixes` retains exactly the two effective legacy suffixes `/v1/chat/completions` and `/v1/messages`. With `bound_target`, the Higress binding defines the request set, and omitted or literal-empty filters add no narrowing. For advanced narrowing, non-empty suffix and method filters form an exact intersection with the binding target and cannot expand it; the following example intersects `/v1/responses` with `POST`:
 
 ```yaml
 path_scope: bound_target
@@ -87,12 +87,8 @@ enable_methods:
   - POST
 ```
 
-Platform-owned internal AI Routes, such as `ai-cache.embedding` and `ai-memory.digest`, should set `event_kind=internal_cost` plus an internal `quota_scope`. These events still carry usage, provider, model, and route facts so Console/billing-service can calculate platform costs, but downstream billing must not turn them into ordinary customer usage statements.
+The old HTTP-shaped transport is removed from the current configuration surface. Global and rule-level `billing_service` are rejected with guidance to use global `redis_stream`; rule-level `redis_stream` is rejected because rules inherit the global delivery target. To upgrade old objects, remove `billing_service`, `path`, and `auth_token`, then recreate the `WasmPlugin` or let Console reproject the managed binding.
 
-### Trusted internal-cost attribution headers
+## Independent deployment boundary
 
-For a request that matches an `internal_cost` rule, a trusted internal caller may provide both `x-ai-billing-cost-source` and `x-ai-billing-worker-kind`. The plugin uses the pair for that request and otherwise falls back to the route configuration. A partial or invalid pair suppresses billing-event delivery for that request without blocking model traffic. These headers cannot enable `internal_cost` mode or set `bill_customer`.
-
-Console-managed `ai-billing` configuration projects the Redis service to an McpBridge registry name, such as `redis-stack-server.dns`. The old `billing_service`, `path`, and `auth_token` configuration has been removed; when upgrading from the HTTP transport, delete and recreate existing HTTP-shaped `WasmPlugin` objects or reproject Console-managed bindings.
-
-`ai-billing`, `ai-quota`, and `ai-statistics` can be deployed independently. Balance debit and Redis projection refresh remain owned by Console/billing-service.
+`ai-billing`, `ai-quota`, and `ai-statistics` can be deployed independently. `ai-billing` only publishes billing events; the plugins do not depend on or share one another's private runtime state. Balance admission and observability stay within their respective plugins, while settlement and persistence belong to Console/billing-service.

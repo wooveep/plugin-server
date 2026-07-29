@@ -2231,10 +2231,90 @@ Task 6.2 evidence (2026-07-30):
   still-pending ai-billing, ai-quota, and ai-statistics release tasks; the
   ai-proxy subtest is absent from that failure output.
 
-- [ ] 6.3 Advance authoritative ai-billing version to `0.1.5` and align
+- [x] 6.3 Advance authoritative ai-billing version to `0.1.5` and align
   metadata, global Redis Stream schema/examples, complete event/trust and
   correlation documentation, and bilingual extension/resource documentation;
   reject removed `billing_service` on every config surface.
+
+Task 6.3 evidence (2026-07-30):
+
+- The task started from clean sibling-worktree HEAD
+  `61c030e7c6a5b79c2d225696192233473ea82ee2`. Repository instructions,
+  the current Graphify report, complete OpenSpec apply context, accepted and
+  delta billing/resource specifications, the ignored Task 6.3 preflight, and
+  the already-GREEN billing runtime contracts were reviewed before edits.
+  No runtime function, type, callback, dependency, quota/statistics surface,
+  or Task 6.6 automation was modified.
+- The existing parser fixture passed first. The exact pre-edit version command
+  `go test . -run
+  '^TestAIPluginVersionAlignmentContract$/^ai-billing$' -count=1 -v`
+  then failed only at the seven selected release surfaces: authoritative
+  `VERSION`, resource `info.version`, plugin artifact URL, and the four exact
+  bilingual version markers.
+- A new structured root contract was added before resource/documentation
+  edits. Its independent YAML parser fixture passed; the production subtests
+  failed only for the observed schema, example, and documentation gaps:
+  unclosed global/Redis/route schemas, missing internal attribution fields,
+  stale event-kind/default truth, route inheritance defaults, placeholder and
+  internal-route examples, incomplete event/trust/correlation/migration
+  sections, and divergent extension/resource documents. The only initial
+  test-implementation panic (reading an i18n mapping as a string) was fixed
+  and the semantic RED rerun contained no compile, setup, or panic failure.
+- The authoritative release is now `0.1.5` in `VERSION`, resource metadata,
+  the plugin-server URL, and all four exact documentation markers. Global,
+  nested Redis, and route schemas are closed with
+  `additionalProperties: false`; Redis requires `service_name`, preserves
+  `6379`/`0`/`500`/`billing:events` defaults, and uses credential
+  placeholders. Global and route business surfaces include
+  `cost_source`, `worker_kind`, and `bill_customer`; route fields carry no
+  defaults and cannot declare either `redis_stream` or `billing_service`.
+- `usage` is the canonical/default event kind, `internal_cost` remains the
+  platform-cost type, and legacy `customer_usage` remains schema-accepted
+  only as a documented compatibility alias normalized to `usage`. The
+  extension/resource examples retain exactly the two tested legacy suffixes,
+  keep delivery global, provide an unfiltered `bound_target`, separate the
+  non-empty `/v1/responses` plus `POST` intersection example, and show
+  configuration-derived internal attribution with `bill_customer: false`.
+- The four bilingual READMEs are independently complete and same-language
+  byte-identical. They document the full event surface and omission rules,
+  authoritative provider usage, safe estimation, truthful missing usage,
+  secret/top-level-field exclusions, all trusted-attribution branches,
+  canonical response-header replacement/removal across every origin, global
+  and rule-level removed-input rejection, and independent deployment without
+  shared private plugin runtime state.
+- Independent read-only review was blocking. Its first pass found missing
+  independent-deployment language and an imprecise streaming-correlation
+  claim; a new RED required that stream completion not append a second
+  correlation-header value and required the private-state boundary before
+  both languages were repaired. Its second pass found missing
+  `usage_missing=false` for safe estimation and insufficiently explicit
+  trusted-gateway/no-payload-spoof wording for `upstream_invoked`; those
+  assertions likewise failed first and passed after all four documents were
+  synchronized. Final rereview returned `APPROVED` with zero Critical,
+  Important, or Minor findings.
+- The final structured contract, parser fixture, ai-billing version subtest,
+  shared routing schema/example contracts, the five-contract billing runtime
+  gate, the expanded ordinary billing gate, and
+  `go test ./... -count=1` in `extensions/ai-billing` all pass. The complete
+  billing module finished in `9.468s`; module-local `go vet ./...`, exact
+  `gofmt -l`, same-language `cmp`, `git diff --check`, and strict OpenSpec
+  validation pass.
+- Root-wide alignment and `go test ./... -count=1` remain intentionally RED
+  only for the pending ai-quota `1.0.2` and ai-statistics `1.0.1` release
+  tasks; ai-proxy and ai-billing pass and no other root package fails.
+  Root-wide vet reports only the pre-existing unchanged
+  `pkg/ai/sessionctx/sessionctx.go:512:2` unreachable-code finding.
+- Final Graphify refresh rebuilt 11,289 nodes, 15,594 edges, and 849
+  communities. GitNexus incremental analysis rebuilt 13,222 nodes, 41,726
+  edges, 300 clusters, and 300 flows; its eight generated repository
+  instruction-file rewrites were restored before staging. The indexed new
+  root contract has exact LOW upstream impact with zero callers, affected
+  processes, or modules. Final staged change detection is LOW across exactly
+  nine files and 42 indexed test/documentation symbols, with zero affected
+  execution processes. The mandatory comparison against `main` remains
+  CRITICAL across the cumulative 113-file change branch (808 symbols and 70
+  flows), not the isolated Task 6.3 delta.
+
 - [ ] 6.4 Advance authoritative ai-quota version to `1.0.2` and align metadata,
   admission-only schema/examples, ownership language, and bilingual
   extension/resource documentation.
