@@ -1063,9 +1063,71 @@ Task 3.4 evidence (2026-07-29):
   CRITICAL result, while task-local detection is LOW across exactly three
   changed symbols/files with zero affected processes.
 
-- [ ] 3.5 Implement truthful provider-native/opaque-response event handling
+- [x] 3.5 Implement truthful provider-native/opaque-response event handling
   while preserving global inherited Redis delivery, exact correlation, and
   internal-cost authority.
+
+Task 3.5 evidence (2026-07-29):
+
+- The current Graphify report, Higress WASM lifecycle guidance, accepted and
+  delta `ai-billing-events` specifications, change proposal/design/tasks, and
+  both completed correlation/internal-cost dependency changes were reviewed
+  before production inspection. GitNexus was refreshed to the exact
+  `990e488be64879c3c2bcbdd6d9639f1c90b19ff0` pre-implementation HEAD; its
+  eight generated repository-instruction rewrites were restored before work
+  continued.
+- The exact pre-edit command
+  `go test . -run
+  '^(TestBillingTruthfulEventContract|TestBillingCorrelationLifecycleContract)$'
+  -count=1` reproduced exactly nine intended RED leaves. Three opaque
+  non-streaming-success, non-streaming-error, and streaming-success leaves
+  emitted only the fabricated `model.name=unknown`. Four response-origin
+  leaves concatenated an upstream duplicate with the canonical correlation
+  value, one canonical-absent leaf retained an upstream value, and one
+  security leaf exposed the submitted query marker only through
+  `request_path`. Provider usage, Redis XADD/fail-open, event identity,
+  idempotent stream delivery, cache/local origin, internal-cost authority,
+  response bytes/status, and credential/header/body/log secrecy controls all
+  passed before implementation.
+- Exact upstream impact was HIGH for `buildBillingEvent`: 12 direct and 17
+  total dependents across the non-streaming and streaming completion process
+  families. This blast radius was reported and explicitly authorized before
+  editing. Impact was LOW for `onHttpResponseHeaders` with zero indexed
+  dependents/processes and LOW for `initBillingRequestContext` with four
+  direct dependents and zero processes.
+- The minimal implementation stops defaulting an absent event model to the
+  synthetic `unknown` value; estimated usage still stores its established
+  unknown-model tokenizer fallback explicitly, and trustworthy provider usage
+  still stores and emits its authoritative model, raw provider object,
+  cache-aware details, and token counts. No price, cost, provider usage, or
+  internal attribution behavior was added to missing-usage events.
+- Response-header handling now filters every case-insensitive
+  `x-ocmf-gateway-request-id` entry from the complete response header map and
+  writes at most one canonical request-context value through whole-map
+  replacement. Missing canonical context writes none, so non-streaming,
+  streaming, cache, gateway-local, and canonical-absent paths cannot append,
+  preserve, or invent an ambiguous value.
+- Request context now stores the existing normalized path projection rather
+  than the raw query-bearing target. This removes the query and its submitted
+  secret from `request_path` without adding statistics-style cardinality
+  rewriting or changing legacy/bound-target gating.
+- The exact nine-leaf command is GREEN. A focused HIGH-impact gate covering
+  every indexed direct event-builder dependent, both response-completion
+  families, provider and estimated usage, cache facts, internal cost,
+  correlation, Redis fail-open, and stream-done idempotency passed in
+  `5.062s`. The complete independent ai-billing module passed with
+  `go test ./... -count=1` in `9.473s`. `go vet ./...`, `gofmt -d main.go`,
+  `git diff --check`, and strict OpenSpec validation also passed.
+- The post-implementation Graphify update indexed 11,125 nodes, 14,942
+  edges, and 856 communities. The final GitNexus refresh indexed 12,952
+  symbols, 40,595 relationships, 292 clusters, and 300 execution flows; its
+  eight generated repository-instruction rewrites were restored. Staged
+  task-local change detection was LOW across exactly two files and five
+  changed symbols with zero affected processes. The required comparison
+  against `main` remained CRITICAL across 64 files, 476 changed symbols, and
+  53 affected processes because it includes the change branch's cumulative
+  pre-existing history rather than only Task 3.5.
+
 - [ ] 3.6 Run focused and complete independent ai-billing unit,
   proxy-wasm lifecycle/integration, streaming, Redis delivery,
   internal-attribution, correlation, and security suites.

@@ -491,7 +491,7 @@ func initBillingRequestContext(ctx wrapper.HttpContext, requestPath, requestID, 
 	ctx.SetContext(ctxStartTime, time.Now().UnixMilli())
 	ctx.SetContext(ctxEventID, eventID)
 	ctx.SetContext(ctxIdempotencyKey, eventID)
-	ctx.SetContext(ctxRequestPath, requestPath)
+	ctx.SetContext(ctxRequestPath, normalizedRequestPath(requestPath))
 	ctx.SetContext(ctxRequestID, requestID)
 	ctx.SetContext(ctxProvider, provider)
 	ctx.SetContext(ctxQuotaScope, quotaScope)
@@ -510,12 +510,28 @@ func initBillingRequestContext(ctx wrapper.HttpContext, requestPath, requestID, 
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, config BillingConfig) types.Action {
-	_ = proxywasm.RemoveHttpResponseHeader(gatewayRequestIDHeader)
-	if !ctx.GetBoolContext(ctxBillingEnabled, false) {
-		return types.ActionContinue
+	billingEnabled := ctx.GetBoolContext(ctxBillingEnabled, false)
+	requestID := ""
+	if billingEnabled {
+		requestID = ctx.GetStringContext(ctxRequestID, "")
 	}
-	if requestID := ctx.GetStringContext(ctxRequestID, ""); requestID != "" {
-		_ = proxywasm.AddHttpResponseHeader(gatewayRequestIDHeader, requestID)
+	if headers, err := proxywasm.GetHttpResponseHeaders(); err == nil {
+		filteredHeaders := make([][2]string, 0, len(headers)+1)
+		for _, header := range headers {
+			if strings.EqualFold(header[0], gatewayRequestIDHeader) {
+				continue
+			}
+			filteredHeaders = append(filteredHeaders, header)
+		}
+		if requestID != "" {
+			filteredHeaders = append(filteredHeaders, [2]string{gatewayRequestIDHeader, requestID})
+		}
+		_ = proxywasm.ReplaceHttpResponseHeaders(filteredHeaders)
+	} else {
+		_ = proxywasm.RemoveHttpResponseHeader(gatewayRequestIDHeader)
+	}
+	if !billingEnabled {
+		return types.ActionContinue
 	}
 	status, _ := proxywasm.GetHttpResponseHeader(":status")
 	statusCode, err := strconv.Atoi(status)
@@ -811,7 +827,7 @@ func buildBillingEvent(ctx wrapper.HttpContext, config BillingConfig, isStream b
 		Route:          namedBillingFact(ctx.GetStringContext(ctxRoute, "-")),
 		Provider:       namedBillingFact(provider),
 		QuotaScope:     ctx.GetStringContext(ctxQuotaScope, config.QuotaScope),
-		Model:          namedBillingFact(ctx.GetStringContext(ctxModel, tokenusage.ModelUnknown)),
+		Model:          namedBillingFact(ctx.GetStringContext(ctxModel, "")),
 		RequestPath:    ctx.GetStringContext(ctxRequestPath, ""),
 		StatusCode:     intDefault(intFromContext(ctx.GetContext(ctxStatusCode)), http.StatusBadGateway),
 		Usage: BillingUsage{
