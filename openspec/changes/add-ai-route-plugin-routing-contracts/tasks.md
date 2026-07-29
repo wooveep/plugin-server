@@ -2450,9 +2450,37 @@ Task 6.5 evidence (2026-07-30):
   `main` remains CRITICAL across the cumulative 119-file change branch (847
   symbols and 70 flows), not the isolated statistics release delta.
 
-- [ ] 6.6 Add an automated version-alignment/single-source check that fails on
+- [x] 6.6 Add an automated version-alignment/single-source check that fails on
   drift among authoritative extension versions, resource `info.version`,
   plugin/option metadata, example artifact URLs, and documented versions.
+
+Task 6.6 evidence (2026-07-30):
+
+- The existing root `release_version_alignment_contract_test.go`, introduced
+  RED at `915b9704e48eb0aa4800c08b0d58304433d6e79b`, is the required automated
+  single-source/drift gate; no duplicate test, production, schema,
+  documentation, or version-surface change was needed for this closure.
+  `TestAIPluginVersionParserFixture` proves exact metadata, artifact URL,
+  documentation-marker, unrelated-version isolation, and root Makefile
+  `VERSION`-derived output-path behavior.
+- The sequential GREEN commits are ai-proxy
+  `61c030e7cadb1d98ab7ccfefb1fcc4b294a6fe5f`, ai-billing
+  `b51659dd05d1b94af29a0e0bb160c77eef5dd197`, ai-quota
+  `1ed040f003d7c6d4319e1cc5e00d0674e09a2157`, and ai-statistics
+  `97fe2951fa81e37005e8daed4584269d85fea562`. Their authoritative
+  `VERSION` values are respectively `1.0.2`, `0.1.5`, `1.0.2`, and `1.0.1`.
+- The complete contract checks exactly 38 selected release surfaces:
+  ai-proxy 18 (`VERSION`, resource/option metadata, Go annotation, ten OCI
+  URLs, four bilingual markers), ai-billing 7 (`VERSION`, resource metadata,
+  artifact URL, four bilingual markers), ai-quota 7 (the same breakdown), and
+  ai-statistics 6 (`VERSION`, resource metadata, four bilingual markers).
+- From clean committed Task 6.5 HEAD, fresh
+  `go test . -run '^TestAIPluginVersionParserFixture$' -count=1 -v` and
+  `go test . -run '^TestAIPluginVersionAlignmentContract$' -count=1 -v`
+  passed with all four named plugin subtests GREEN, no skip, and aggregate
+  PASS. The fresh shared schema/example contract, `go test ./... -count=1`,
+  `openspec validate add-ai-route-plugin-routing-contracts --strict`, and
+  `git diff --check` also passed.
 - [ ] 6.7 Run schema/example validation, bilingual documentation consistency,
   version-alignment checks, and every affected independent extension module's
   formatting, tests, and vet/static checks.
