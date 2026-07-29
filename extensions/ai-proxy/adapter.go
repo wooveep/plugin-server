@@ -159,9 +159,7 @@ func applyResponsesFallbackAdapter(
 	ctx.SetContext(provider.CtxKeyNeedResponsesResponseConversion, true)
 	publishMatchedAdapterMetadata(mode, resolved)
 	log.Debugf(
-		"[Auto Protocol] Responses request detected, selected adapter and converted path from %s to %s, apiName: %s",
-		path,
-		newPath,
+		"[Auto Protocol] Responses request selected a registered fallback adapter, apiName: %s",
 		provider.ApiNameChatCompletion,
 	)
 	return provider.ApiNameChatCompletion

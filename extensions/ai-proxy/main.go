@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -118,7 +117,7 @@ func init() {
 }
 
 func parseGlobalConfig(json gjson.Result, pluginConfig *config.PluginConfig) error {
-	log.Debugf("loading global config: %s", json.String())
+	log.Debugf("loading global config")
 
 	pluginConfig.FromJson(json)
 	if err := pluginConfig.Validate(); err != nil {
@@ -134,7 +133,7 @@ func parseGlobalConfig(json gjson.Result, pluginConfig *config.PluginConfig) err
 }
 
 func parseOverrideRuleConfig(json gjson.Result, global config.PluginConfig, pluginConfig *config.PluginConfig) error {
-	log.Debugf("loading override rule config: %s", json.String())
+	log.Debugf("loading override rule config")
 
 	*pluginConfig = global
 
@@ -216,12 +215,9 @@ func saveContextsToHeaders(ctx wrapper.HttpContext) {
 }
 
 func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
-	ctx.SetContext(ctxSkipAIProxyLifecycle, false)
-	ctx.SetContext("needClaudeResponseConversion", false)
-	ctx.SetContext(provider.CtxKeyNeedResponsesResponseConversion, false)
-
 	activeProvider := pluginConfig.GetProvider()
-	publishNoAdapterMetadata(pluginConfig.GetProtocolMode())
+	protocolMode := pluginConfig.GetProtocolMode()
+	initializeProtocolLifecycle(ctx, protocolMode)
 
 	if activeProvider == nil {
 		log.Debugf("[onHttpRequestHeader] no active provider, skip processing")
@@ -229,11 +225,15 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 		return types.ActionContinue
 	}
 
+	classificationPath, err := validateSafeOriginFormTarget(ctx.Path())
+	if err != nil {
+		ctx.SetContext(ctxSkipAIProxyLifecycle, true)
+		return rejectUnsafeRequestTarget()
+	}
+
 	log.Debugf("[onHttpRequestHeader] provider=%s", activeProvider.GetProviderType())
 
-	rawPath := ctx.Path()
-	path, _ := url.Parse(rawPath)
-	if !pluginConfig.MatchesBoundTargetFilters(ctx.Method(), path.Path) {
+	if !pluginConfig.MatchesBoundTargetFilters(ctx.Method(), classificationPath) {
 		ctx.SetContext(ctxSkipAIProxyLifecycle, true)
 		return types.ActionContinue
 	}
@@ -247,29 +247,37 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 		saveContextsToHeaders(ctx)
 	}()
 
-	apiName := getApiName(path.Path)
+	apiName := getApiName(classificationPath)
 	providerConfig := pluginConfig.GetProviderConfig()
-	if providerConfig.IsOriginal() {
+	forcedTransparent := protocolMode == config.ProtocolModePassthrough
+	if !forcedTransparent && providerConfig.IsOriginal() {
 		if handler, ok := activeProvider.(provider.ApiNameHandler); ok {
-			apiName = handler.GetApiName(path.Path)
+			apiName = handler.GetApiName(classificationPath)
 		}
-	} else {
+	}
+
+	transparent := forcedTransparent || apiName == ""
+	if transparent {
+		apiName = ""
+		markTransparentLifecycle(ctx)
+		log.Debugf("[onHttpRequestHeader] unsupported path category, using transparent lifecycle")
+	} else if !providerConfig.IsOriginal() {
 		// Only perform protocol conversion for non-original protocols.
 		// Auto-detect protocol based on request path and handle conversion if needed
 		// If request is Claude format (/v1/messages) but provider doesn't support it natively,
 		// convert to OpenAI format (/v1/chat/completions)
 		if apiName == provider.ApiNameAnthropicMessages && !providerConfig.IsSupportedAPI(provider.ApiNameAnthropicMessages) {
 			// Provider doesn't support Claude protocol natively, convert to OpenAI format
-			newPath := strings.Replace(path.Path, provider.PathAnthropicMessages, provider.PathOpenAIChatCompletions, 1)
+			newPath := strings.Replace(classificationPath, provider.PathAnthropicMessages, provider.PathOpenAIChatCompletions, 1)
 			_ = proxywasm.ReplaceHttpRequestHeader(":path", newPath)
 			// Update apiName to match the new path
 			apiName = provider.ApiNameChatCompletion
 			// Mark that we need to convert response back to Claude format
 			ctx.SetContext("needClaudeResponseConversion", true)
-			log.Debugf("[Auto Protocol] Claude request detected, provider doesn't support natively, converted path from %s to %s, apiName: %s", path.Path, newPath, apiName)
+			log.Debugf("[Auto Protocol] Claude request detected, provider doesn't support natively, selected Chat Completions conversion")
 		} else if apiName == provider.ApiNameAnthropicMessages {
 			// Provider supports Claude protocol natively, no conversion needed
-			log.Debugf("[Auto Protocol] Claude request detected, provider supports natively, keeping original path: %s, apiName: %s", path.Path, apiName)
+			log.Debugf("[Auto Protocol] Claude request detected, provider supports natively")
 		} else if adapter := resolveProtocolAdapter(
 			activeProvider,
 			providerConfig,
@@ -278,33 +286,31 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 		); adapter != nil {
 			apiName = applyResponsesFallbackAdapter(
 				ctx,
-				path.Path,
-				pluginConfig.GetProtocolMode(),
+				classificationPath,
+				protocolMode,
 				adapter,
 			)
 		} else if apiName == provider.ApiNameResponses && !providerConfig.IsSupportedAPI(provider.ApiNameResponses) && !providerConfig.IsSupportedAPI(provider.ApiNameChatCompletion) {
-			log.Warnf("[Auto Protocol] Responses request detected, provider supports neither Responses nor Chat Completions, keeping original path for unsupported API handling: %s, apiName: %s", path.Path, apiName)
+			log.Warnf("[Auto Protocol] Responses request detected, provider supports neither Responses nor Chat Completions")
 		} else if apiName == provider.ApiNameResponses {
-			log.Debugf("[Auto Protocol] Responses request detected, provider supports natively or lacks chat fallback, keeping original path: %s, apiName: %s", path.Path, apiName)
+			log.Debugf("[Auto Protocol] Responses request detected, provider supports natively or lacks chat fallback")
 		}
 	}
 
-	if contentType, _ := proxywasm.GetHttpRequestHeader(util.HeaderContentType); contentType != "" && !isSupportedRequestContentType(apiName, contentType) {
-		ctx.DontReadRequestBody()
-		log.Debugf("[onHttpRequestHeader] unsupported content type for api %s: %s, will not process the request body", apiName, contentType)
-	}
-
-	if apiName == "" {
-		ctx.DontReadRequestBody()
-		ctx.DontReadResponseBody()
-		log.Warnf("[onHttpRequestHeader] unsupported path: %s, will not process http path and body", path.Path)
+	if !transparent {
+		if contentType, _ := proxywasm.GetHttpRequestHeader(util.HeaderContentType); contentType != "" && !isSupportedRequestContentType(apiName, contentType) {
+			ctx.DontReadRequestBody()
+			log.Debugf("[onHttpRequestHeader] unsupported content type for api %s, will not process the request body", apiName)
+		}
 	}
 
 	ctx.SetContext(provider.CtxKeyApiName, apiName)
 
 	// Always remove the Accept-Encoding header to prevent the LLM from sending compressed responses,
 	// allowing plugins to inspect or modify the response correctly
-	_ = proxywasm.RemoveHttpRequestHeader("Accept-Encoding")
+	if !transparent {
+		_ = proxywasm.RemoveHttpRequestHeader("Accept-Encoding")
+	}
 
 	if handler, ok := activeProvider.(provider.RequestHeadersHandler); ok {
 		// Set the apiToken for the current request.
@@ -319,6 +325,25 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 		err := handler.OnRequestHeaders(ctx, apiName)
 		if err != nil {
 			_ = util.ErrorHandler("ai-proxy.proc_req_headers_failed", fmt.Errorf("failed to process request headers: %v", err))
+			return types.ActionContinue
+		}
+
+		if transparent {
+			if err := providerConfig.ApplyTransparentFirstByteTimeout(); err != nil {
+				_ = util.ErrorHandler(
+					"ai-proxy.transparent_transport_policy_failed",
+					fmt.Errorf("failed to apply provider transport policy"),
+				)
+				return types.ActionContinue
+			}
+			if !forcedTransparent && (providerConfig.IsOriginal() || providerConfig.IsGeneric()) {
+				_, hasRequestBodyHandler := activeProvider.(provider.RequestBodyHandler)
+				if ctx.HasRequestBody() && hasRequestBodyHandler {
+					_ = proxywasm.RemoveHttpRequestHeader("Content-Length")
+					ctx.SetRequestBodyBufferLimit(defaultMaxBodyBytes)
+					return types.HeaderStopIteration
+				}
+			}
 			return types.ActionContinue
 		}
 
@@ -339,6 +364,9 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 
 func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, body []byte) types.Action {
 	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
+		return types.ActionContinue
+	}
+	if isTransparentLifecycle(ctx) {
 		return types.ActionContinue
 	}
 
@@ -370,7 +398,7 @@ func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig
 		if providerConfig.IsOpenAIProtocol() && !providerConfig.IsGeneric() && (apiName == provider.ApiNameChatCompletion || apiName == provider.ApiNameCompletion) {
 			newBody = normalizeOpenAiRequestBody(newBody)
 		}
-		log.Debugf("[onHttpRequestBody] newBody=%s", newBody)
+		log.Debugf("[onHttpRequestBody] transformed request body bytes=%d", len(newBody))
 		body = newBody
 		action, err := handler.OnRequestBody(ctx, apiName, body)
 		if err == nil {
@@ -413,6 +441,10 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginCo
 			log.Errorf("unable to load :status header from response: %v", err)
 		}
 		action := providerConfig.OnRequestFailed(activeProvider, ctx, apiTokenInUse, apiTokens, status)
+		if isTransparentLifecycle(ctx) {
+			ctx.DontReadResponseBody()
+			return action
+		}
 		if action == types.ActionContinue &&
 			providerConfig.GetLogUpstreamErrorResponseBody() &&
 			shouldLogUpstreamErrorResponse(status) {
@@ -428,6 +460,10 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginCo
 	// Reset ctxApiTokenRequestFailureCount if the request is successful,
 	// the apiToken is removed only when the number of consecutive request failures exceeds the threshold.
 	providerConfig.ResetApiTokenRequestFailureCount(apiTokenInUse)
+	if isTransparentLifecycle(ctx) {
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
 
 	headers := util.GetResponseHeaders()
 	if handler, ok := activeProvider.(provider.TransformResponseHeadersHandler); ok {
@@ -462,6 +498,9 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
 		return chunk
 	}
+	if isTransparentLifecycle(ctx) {
+		return chunk
+	}
 
 	activeProvider := pluginConfig.GetProvider()
 
@@ -473,7 +512,7 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 	promoteThinking := pluginConfig.GetProviderConfig().GetPromoteThinkingOnEmpty()
 
 	log.Debugf("[onStreamingResponseBody] provider=%s", activeProvider.GetProviderType())
-	log.Debugf("[onStreamingResponseBody] isLastChunk=%v chunk: %s", isLastChunk, string(chunk))
+	log.Debugf("[onStreamingResponseBody] isLastChunk=%v chunk_bytes=%d", isLastChunk, len(chunk))
 
 	if handler, ok := activeProvider.(provider.StreamingResponseBodyHandler); ok {
 		apiName, _ := ctx.GetContext(provider.CtxKeyApiName).(provider.ApiName)
@@ -500,7 +539,7 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 		}
 		var responseBuilder strings.Builder
 		for _, event := range events {
-			log.Debugf("processing event: %v", event)
+			log.Debugf("processing streaming event")
 
 			if event.IsEndData() {
 				responseBuilder.WriteString(event.ToHttpString())
@@ -509,7 +548,7 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 
 			outputEvents, err := handler.OnStreamingEvent(ctx, apiName, event)
 			if err != nil {
-				log.Errorf("[onStreamingResponseBody] failed to process streaming event: %v\n%s", err, chunk)
+				log.Errorf("[onStreamingResponseBody] failed to process streaming event")
 				return chunk
 			}
 			if len(outputEvents) == 0 {
@@ -570,6 +609,9 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 
 func onHttpResponseBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, body []byte) types.Action {
 	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
+		return types.ActionContinue
+	}
+	if isTransparentLifecycle(ctx) {
 		return types.ActionContinue
 	}
 

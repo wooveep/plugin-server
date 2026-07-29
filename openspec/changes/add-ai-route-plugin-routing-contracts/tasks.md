@@ -371,8 +371,80 @@ Task 2.7 evidence (2026-07-29):
   changes. `gofmt`, strict OpenSpec validation, diff checks, and staged
   GitNexus change detection were run before the task commit.
 
-- [ ] 2.8 Implement transparent unknown fallback and forced passthrough while
+- [x] 2.8 Implement transparent unknown fallback and forced passthrough while
   preserving origin-form operation bytes and provider-owned transport policy.
+
+Task 2.8 evidence (2026-07-29):
+
+- The focused Task 2.8 audit, current Graphify report, active design/deltas,
+  provider lifecycle, and all three approved RED fixtures were reviewed before
+  production edits. Exact upstream impact was LOW for
+  `parseGlobalConfig`, `parseOverrideRuleConfig`, `onHttpRequestHeader`,
+  `onHttpRequestBody`, `onHttpResponseHeaders`, `onHttpResponseBody`, and
+  `applyResponsesFallbackAdapter`; `onStreamingResponseBody` was also LOW with
+  one direct and three total test dependents. No HIGH/CRITICAL symbol,
+  `provider.replaceRequestBody`, shared harness, or converter was modified.
+- The required pre-edit RED runs reproduced only their approved gaps.
+  Transparent unknown Qwen traffic preserved opaque operation/query and bytes
+  plus provider host/auth/failover, but expected configured timeout `3210` and
+  observed request-controlled `1`. Forced Qwen Responses passthrough still
+  rewrote the path and converted request, JSON response, and SSE bytes while
+  publishing the skipped adapter identity. All six unsafe URL/authority/
+  traversal targets were forwarded with provider credentials, and startup/body
+  diagnostics exposed configured/submitted material.
+- A bounded origin-form validator now rejects empty, relative, absolute,
+  scheme/authority, raw or nested encoded authority/traversal, malformed
+  escape, backslash, fragment, control, and over-decode targets before
+  provider logging, context capture, token selection, or credential mutation.
+  It validates up to six decode passes without rebuilding the request target
+  or raw query, returns the established single-decoded classification path,
+  and emits only fixed local `400`,
+  `ai-proxy.invalid_request_target`, and `invalid request target` values.
+- Explicit passthrough and true automatic no-match traffic now share a
+  request-scoped transparent marker and bounded no-match metadata. Provider
+  header processing receives an empty API name so authority,
+  authentication, base-path policy, token inventory, and failover remain
+  provider-owned while request/response adapters and body classification are
+  skipped. Configured first-byte timeout replaces the client header at the
+  header stage; an omitted provider timeout removes the client-controlled
+  header. Response status/failover and success failure-count reset execute
+  before transparent response adapters are suppressed.
+- TDD added direct validator, fixed local-response/timeout, same-context
+  transparent-to-known re-entry, and provider-original classification
+  contracts. The validator first failed to compile, the transport contract
+  then retained the injected timeout and lacked a local rejection, and the
+  re-entry/provider-original contracts initially failed because wrapper
+  `DontRead*` state is one-way and provider classification occurred after the
+  transparent decision. Request-scoped callback guards now preserve bytes
+  without permanently disabling later re-entry; auto original-provider
+  classification remains authoritative, and legacy original/generic
+  body-capable traffic retains its established header-stop action while the
+  transparent guard prevents conversion. Explicit passthrough remains the
+  unconditional transparent override.
+- Lifecycle diagnostics touched by this task are categorical or byte-count
+  only. Full config JSON, target/path/query values, request bodies, streaming
+  chunks/events, and error chunks were removed from those logs. The legacy
+  fixed substring `unsupported path` is retained without any submitted value.
+- Required Task 2.3, 2.4, and 2.5 GREEN commands pass, as do their failover and
+  safe raw-query positive guards. Tasks 2.1, 2.2, and 2.6 remain GREEN, along
+  with Qwen Responses non-streaming/streaming controls and the complete config
+  and provider packages. Serial provider regression groups covering every
+  listed top-level provider suite passed after resolving Vertex/Bedrock
+  original classification and Azure/Minimax/generic lifecycle compatibility.
+- The exact aggregate gate passed:
+  `go test ./... -count=1 -timeout=8m` (root package `245.483s`, config,
+  provider, and util packages GREEN). Exact changed-file `gofmt`/`gofmt -d`,
+  `go vet ./...`, `git diff --check`, and
+  `openspec validate add-ai-route-plugin-routing-contracts --strict` also pass.
+- `graphify update .` rebuilt 11,027 nodes, 14,631 edges, and 872 communities
+  with no tracked generated changes. GitNexus compare-to-`main` reported the
+  intentional cumulative branch as MEDIUM (32 files, one pre-existing
+  `FromJson` flow from earlier work); isolated staged detection for Task 2.8
+  reported LOW risk, six files, eight indexed existing symbols, zero affected
+  processes, and no unexpected module, shared harness, or converter. Final
+  staged detection including this task evidence remained LOW with seven files,
+  12 indexed symbols/sections, and zero affected processes.
+
 - [ ] 2.9 Run focused and complete independent ai-proxy unit, proxy-wasm
   lifecycle/integration, streaming, regression, and security suites.
 - [ ] 2.10 Obtain an independent ai-proxy implementation/security review,
