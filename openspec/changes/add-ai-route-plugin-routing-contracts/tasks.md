@@ -2624,9 +2624,44 @@ Task 6.8 independent final-review evidence (2026-07-30):
 
 ## 7. Reviewed Artifacts And Local Availability
 
-- [ ] 7.1 Complete independent implementation review, resolve findings, run
+- [x] 7.1 Complete independent implementation review, resolve findings, run
   GitNexus `detect_changes`, and record the reviewed clean source result commit
   from which release bytes will be built.
+
+Task 7.1 evidence (2026-07-30):
+
+- Independent review report
+  `.superpowers/sdd/add-ai-route-plugin-routing-contracts/task-7.1-implementation-review.md`
+  has SHA-256
+  `7e6d8c262a9b0ef209cc660f46690159e2fa80dad4f5dd21110b4821d02f6b6b` and
+  verdict `APPROVED`, with zero Critical, Important, or Minor findings.
+- Reviewed clean source result is
+  `eff8624eb9cbdc199b006e265f12ece5098e9d0d`; intentional base is
+  `9995ed5c7d4977a8ddf16ea34faea3d8286a9e56`; the range is 116 files, 17,558
+  insertions, and 1,474 deletions.
+- Raw GitNexus comparison reports 802 changed symbols, 116 changed files, 70
+  affected execution flows, and aggregate `CRITICAL`. The raw aggregate
+  classification was retained; all 70 flows were classified/reviewed,
+  including documented proxy, quota, statistics, and registration groupings.
+- Billing's callback/property graph blind spot was supplemented by
+  `impact(buildBillingEvent, includeTests=true)`: `HIGH`, 12 direct plus 5
+  indirect dependents, with direct stream-done source review. GitNexus has no
+  PDG/taint layer; callback, closure, and property-flow gaps were supplemented
+  with direct source review and focused Go/Wasm contracts, so zero persisted
+  findings are not safety proof.
+- Fresh focused proxy, billing, quota, statistics, and root gates passed,
+  together with strict OpenSpec validation, exact-base diff check, changed-Go
+  formatting, README comparisons, and clean staged/unstaged state on
+  `eff8624`.
+- Known limitations: root vet's unchanged sessionctx unreachable-code baseline;
+  aggregate ai-proxy Go+Wasm race is not claimed PASS due Wazero timeouts, with
+  corrected all-Go and changed real Go/Wasm evidence; `SensitiveHttpCall` does
+  not globally reject future absolute URLs, while the sole reviewed production
+  caller uses constant relative `/token`; no PDG/taint and callback/property
+  under-modeling remain.
+- Task 7 release bytes must be built from detached exact source
+  `eff8624eb9cbdc199b006e265f12ece5098e9d0d`, not from the later evidence-only
+  commit.
 - [ ] 7.2 Build and validate non-empty Wasm files at
   `build/plugins/ai-proxy/1.0.2/plugin.wasm`,
   `build/plugins/ai-billing/0.1.5/plugin.wasm`,
