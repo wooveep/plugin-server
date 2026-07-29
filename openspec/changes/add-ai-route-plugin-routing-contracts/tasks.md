@@ -2179,9 +2179,58 @@ Task 6.1 evidence (2026-07-29):
   YAML blocks; focused revalidation passed and the same reviewer returned
   `APPROVED` with zero remaining findings.
 
-- [ ] 6.2 Advance authoritative ai-proxy version to `1.0.2` and align
+- [x] 6.2 Advance authoritative ai-proxy version to `1.0.2` and align
   plugin/option metadata, schema, examples, adapter metadata, and bilingual
   extension/resource documentation.
+
+Task 6.2 evidence (2026-07-30):
+
+- The task started from clean sibling-worktree HEAD
+  `915b9704e48eb0aa4800c08b0d58304433d6e79b`. Repository instructions,
+  the current Graphify report, complete OpenSpec apply context, accepted
+  resource specification, Task 5.6 metadata truth, and the existing release
+  alignment fixture were reviewed before edits. Exact upstream impact for
+  `extensions/ai-proxy/config/config.go::PluginConfig` was LOW with zero
+  direct dependents, affected processes, or affected modules.
+- The parser control
+  `go test . -run '^TestAIPluginVersionParserFixture$' -count=1` passed before
+  edits. The exact ai-proxy RED
+  `go test . -run
+  '^TestAIPluginVersionAlignmentContract$/^ai-proxy$' -count=1` then failed
+  only at the 18 intended release surfaces: missing authoritative `VERSION`,
+  three stale metadata values, ten stale OCI artifact URLs, and four missing
+  bilingual version markers.
+- The minimal GREEN adds the authoritative
+  `extensions/ai-proxy/VERSION` value `1.0.2` and aligns
+  `extensions/ai-proxy/option.yaml`, the `PluginConfig` `@Version` annotation,
+  and `resources/plugins/ai-proxy/spec.yaml` `info.version`. Because the
+  extension-local ignore rule ignores generated files by default, `VERSION`
+  was explicitly added with `git add -f`; `git ls-files --stage` confirms a
+  tracked regular-file entry.
+- All ten explicitly inventoried real ai-proxy OCI references now use
+  `1.0.2`: the provider/consumer documentation, the extension/resource
+  ai-proxy READMEs, and the extension/resource ai-token-ratelimit READMEs.
+  The four core extension/resource bilingual READMEs each contain exactly one
+  `> 插件版本：` / `> Plugin version:` marker for `1.0.2`.
+- Adapter metadata remains semantically separate from the plugin release:
+  schema version `2`, adapter implementation version `"1"`, the shared
+  schema-v2 golden, `normalized_operation`, and `operation_template` were not
+  changed. Unrelated API, builder, compose, developer, synthetic, and
+  billing/quota/statistics versions were not changed.
+- The exact ai-proxy version subtest is GREEN. The parser fixture, existing
+  root routing schema/example contracts, complete ai-proxy config and provider
+  packages, focused schema-v2 metadata Go/Wasm contract, and complete serial
+  ai-proxy module suite pass; the serial root package completed in
+  `285.153s`. Extension `go vet ./...`, changed-file `gofmt -l`,
+  `git diff --check`, and strict OpenSpec validation pass.
+- Independent read-only review returned `APPROVED` with zero Critical,
+  Important, or Minor findings. It independently confirmed the 14-file scope,
+  ten URL values, four exact markers, tracked authoritative file, unchanged
+  adapter schema/version, and absence of cross-plugin or later-task edits.
+  The aggregate version-alignment test remains intentionally RED only for the
+  still-pending ai-billing, ai-quota, and ai-statistics release tasks; the
+  ai-proxy subtest is absent from that failure output.
+
 - [ ] 6.3 Advance authoritative ai-billing version to `0.1.5` and align
   metadata, global Redis Stream schema/examples, complete event/trust and
   correlation documentation, and bilingual extension/resource documentation;

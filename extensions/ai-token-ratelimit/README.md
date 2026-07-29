@@ -275,7 +275,7 @@ spec:
           '*': "qwen-turbo"
     ingress:
     - qwen
-  url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.0
+  url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.2
   phase: UNSPECIFIED_PHASE
   priority: 100
 ---

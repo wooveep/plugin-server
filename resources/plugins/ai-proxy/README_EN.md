@@ -4,6 +4,8 @@ keywords: [AI Gateway, AI Proxy]
 description: Reference for configuring the AI Proxy plugin
 ---
 
+> Plugin version: `1.0.2`
+
 ## Function Description
 
 The `AI Proxy` plugin implements AI proxy functionality based on the OpenAI API contract. It currently supports AI service providers such as OpenAI, Azure OpenAI, Moonshot, and Qwen.
@@ -2460,7 +2462,7 @@ spec:
           - "YOUR_API_TOKEN"
     ingress:
     - groq
-  url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.0
+  url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.2
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

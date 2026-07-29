@@ -4,6 +4,8 @@ keywords: [AI网关, AI代理]
 description: AI 代理插件配置参考
 ---
 
+> 插件版本：`1.0.2`
+
 ## 功能说明
 
 `AI 代理`插件实现了基于 OpenAI API 契约的 AI 代理功能。目前支持 OpenAI、Azure OpenAI、月之暗面（Moonshot）和通义千问等 AI
@@ -2677,7 +2679,7 @@ spec:
             - 'YOUR_API_TOKEN'
       ingress:
         - groq
-  url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.0
+  url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.2
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
