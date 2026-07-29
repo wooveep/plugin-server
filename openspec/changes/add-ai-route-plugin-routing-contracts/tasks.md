@@ -841,12 +841,63 @@ Task 3.1 evidence (2026-07-29):
   documentation-section associations; production execution flows are
   unchanged.
 
-- [ ] 3.2 Add RED event tests proving trustworthy provider usage remains
+- [x] 3.2 Add RED event tests proving trustworthy provider usage remains
   authoritative and opaque native responses produce `usage_missing=true`
   without fabricated model, token, provider-usage, price, or cost facts;
   verify the complete configuration/event surface including `event_kind`,
   `cost_source`, `worker_kind`, `source_job`, `bill_customer`, and
   `upstream_invoked`, plus fail-open Redis `XADD` delivery.
+
+Task 3.2 evidence (2026-07-29):
+
+- The current Graphify report, accepted and delta `ai-billing-events`
+  specifications, change proposal/design/tasks, and the pre-existing
+  correlation and internal-cost changes were reviewed before source
+  inspection. GitNexus located the billing event-construction, provider-usage,
+  cache-attribution, streaming, and Redis-delivery seams. Pre-edit impact for
+  both new test symbols was UNKNOWN with zero indexed dependents; the
+  documentation-section impact was LOW with zero affected processes. No
+  production symbol or CRITICAL shared `RunGoTest`/`NewTestHost` harness was
+  modified.
+- The pre-change delivery/correlation/internal-cost/cache/stream baseline
+  passed:
+  `go test . -run
+  '^(TestBillingEventDelivery|TestBillingResponseRequestIDHeader|TestUnsafeInternalAttributionDoesNotLogSubmittedValue|TestBuildBillingEvent_TrustedCacheReplayFacts|TestBuildBillingEvent_UsesLocalResponseCodeDetailsForCacheReplay|TestBillingEventIgnoresUserSuppliedUpstreamInvokedFields|TestStreamDoneFallbackDeliversProviderUsage|TestStreamDoneFallbackDeliversMissingUsage|TestStreamDoneFallbackSkipsAfterNormalDelivery|TestOnHttpStreamingResponseBodyEndOfStreamDeliversAndMarksDelivered|TestDeliverBillingEventDispatchErrorIsFailOpen)$'
+  -count=1`.
+- `extensions/ai-billing/truthful_event_contract_test.go` uses explicit
+  provider-native suffixes so Task 3.1 path-scope RED does not mask the event
+  contract. Its passing provider leaf proves provider counts remain
+  authoritative over locally estimable text, retains the complete raw usage,
+  model/provider/route/quota/status/price-version facts, and omits
+  gateway-calculated cost. Its passing event-kind matrix proves configured
+  internal `cost_source`, `worker_kind`, `source_job`, `bill_customer=false`,
+  and tenant omission, while a customer cache hit retains trusted
+  `upstream_invoked=false` and omits internal-only fields.
+- Focused RED command:
+  `go test . -run '^TestBillingTruthfulEventContract$' -count=1`. The known
+  provider, internal-cost, and cache controls pass. Only three opaque-response
+  leaves fail: non-streaming HTTP 202, non-streaming HTTP 502, and streaming
+  HTTP 200 each serialize `model.name=unknown` where the contract requires an
+  empty model fact. Before that final assertion, each leaf proves the original
+  response body and status remain truthful, exactly one Redis event is
+  attempted, `usage_missing=true`, `usage_source=missing`, all token counts
+  are zero, provider usage/details and price/cost fields are absent, and
+  `upstream_invoked` remains trusted.
+- `extensions/ai-billing/redis_fail_open_contract_test.go` passes with
+  `go test . -run '^TestBillingRedisFailOpenContract$' -count=1`. It decodes
+  the exact configured
+  `XADD global:billing:events * event <serialized-json>` attempt for dispatch
+  failure, proves the event is marked delivered after one attempt, and proves
+  a Redis command-response error preserves the buffered upstream response,
+  `ActionContinue`, and at-most-once stream-done behavior. Raw request API-key
+  markers are absent from both serialized events and all host log levels.
+- Extension vet, exact changed-file `gofmt`, `git diff --check`, and strict
+  OpenSpec validation pass. `graphify update .` rebuilt 11,105 nodes, 14,874
+  edges, and 855 communities without tracked generated-file changes. After
+  restoring the eight GitNexus-generated instruction files, staged detection
+  reports LOW risk across three changed files and ten test/documentation
+  symbols, with zero affected production processes.
+
 - [ ] 3.3 Add RED regression/security fixtures for all five internal-cost
   scenarios (complete pair, absent-pair fallback, partial suppression,
   empty/oversized/invalid-character suppression, and customer no-spoof) and
