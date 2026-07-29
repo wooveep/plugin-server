@@ -40,6 +40,9 @@ const (
 	MissingPolicyDeny  = "deny"
 	MissingPolicyAllow = "allow"
 	MissingPolicySkip  = "skip"
+
+	PathScopeLegacySuffixes = "legacy_suffixes"
+	PathScopeBoundTarget    = "bound_target"
 )
 
 type ChatMode string
@@ -54,7 +57,7 @@ func main() {}
 func init() {
 	wrapper.SetCtx(
 		pluginName,
-		wrapper.ParseConfig(parseConfig),
+		wrapper.ParseOverrideConfig(parseConfig, parseRuleConfig),
 		wrapper.ProcessRequestHeaders(onHttpRequestHeaders),
 	)
 }
@@ -69,7 +72,9 @@ type QuotaConfig struct {
 	PriceKeyTemplate     string    `yaml:"price_key_template"`
 	AmountScale          int64     `yaml:"amount_scale"`
 	PriceUnitTokens      int64     `yaml:"price_unit_tokens"`
+	PathScope            string    `yaml:"path_scope"`
 	EnablePathSuffixes   []string  `yaml:"enable_path_suffixes"`
+	EnableMethods        []string  `yaml:"enable_methods"`
 	MissingBalancePolicy string    `yaml:"missing_balance_policy"`
 	MissingPricePolicy   string    `yaml:"missing_price_policy"`
 	MissingUsagePolicy   string    `yaml:"missing_usage_policy"`
@@ -114,11 +119,21 @@ func parseConfig(json gjson.Result, config *QuotaConfig) error {
 		return errors.New("amount_scale must be positive")
 	}
 
-	suffixes, err := parsePathSuffixes(json.Get("enable_path_suffixes"))
+	pathScope, err := parsePathScope(json.Get("path_scope"))
+	if err != nil {
+		return err
+	}
+	config.PathScope = pathScope
+	suffixes, err := parsePathSuffixesForScope(json.Get("enable_path_suffixes"), pathScope)
 	if err != nil {
 		return err
 	}
 	config.EnablePathSuffixes = suffixes
+	methods, err := parseHTTPMethods(json.Get("enable_methods"))
+	if err != nil {
+		return err
+	}
+	config.EnableMethods = methods
 
 	redisConfig := json.Get("redis")
 	if !redisConfig.Exists() {
@@ -159,12 +174,60 @@ func parseConfig(json gjson.Result, config *QuotaConfig) error {
 	return config.redisClient.Init(username, password, int64(timeout), wrapper.WithDataBase(database))
 }
 
+func parseRuleConfig(json gjson.Result, global QuotaConfig, config *QuotaConfig) error {
+	if global.redisInfo.ServiceName == "" || global.redisClient == nil {
+		return errors.New("missing redis in config")
+	}
+
+	*config = global
+	config.EnablePathSuffixes = cloneStrings(global.EnablePathSuffixes)
+	config.EnableMethods = cloneStrings(global.EnableMethods)
+
+	if value := json.Get("quota_scope"); value.Exists() {
+		config.QuotaScope = stringDefault(value.String(), defaultQuotaScope)
+	}
+	if value := json.Get("provider"); value.Exists() {
+		config.Provider = stringDefault(value.String(), defaultProvider)
+	}
+	if value := json.Get("path_scope"); value.Exists() {
+		pathScope, err := parsePathScope(value)
+		if err != nil {
+			return err
+		}
+		if pathScope != normalizedPathScope(global.PathScope) {
+			config.EnablePathSuffixes = nil
+			config.EnableMethods = nil
+			if pathScope == PathScopeLegacySuffixes {
+				config.EnablePathSuffixes = defaultPathSuffixes()
+			}
+		}
+		config.PathScope = pathScope
+	}
+	if value := json.Get("enable_path_suffixes"); value.Exists() {
+		suffixes, err := parsePathSuffixesForScope(
+			value,
+			normalizedPathScope(config.PathScope),
+		)
+		if err != nil {
+			return err
+		}
+		config.EnablePathSuffixes = suffixes
+	}
+	if value := json.Get("enable_methods"); value.Exists() {
+		methods, err := parseHTTPMethods(value)
+		if err != nil {
+			return err
+		}
+		config.EnableMethods = methods
+	}
+	return nil
+}
+
 func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types.Action {
 	context.DisableReroute()
 
 	rawPath := context.Path()
-	path, _ := url.Parse(rawPath)
-	if !isAIPathEnabled(path.Path, config.EnablePathSuffixes) {
+	if !isQuotaRequestEnabled(rawPath, context.Method(), config) {
 		context.SetContext(ctxQuotaEnabled, false)
 		context.DontReadResponseBody()
 		return types.ActionContinue
@@ -252,11 +315,32 @@ func isAIPathEnabled(requestPath string, enabledSuffixes []string) bool {
 		pathWithoutQuery = requestPath[:queryPos]
 	}
 	for _, suffix := range enabledSuffixes {
+		if strings.TrimSpace(suffix) == "" {
+			continue
+		}
 		if strings.HasSuffix(pathWithoutQuery, suffix) {
 			return true
 		}
 	}
 	return false
+}
+
+func isQuotaRequestEnabled(requestPath string, requestMethod string, config QuotaConfig) bool {
+	pathScope := normalizedPathScope(config.PathScope)
+	if pathScope == PathScopeLegacySuffixes &&
+		!isAIPathEnabled(requestPath, config.EnablePathSuffixes) {
+		return false
+	}
+	if pathScope == PathScopeBoundTarget &&
+		len(config.EnablePathSuffixes) > 0 &&
+		!isAIPathEnabled(requestPath, config.EnablePathSuffixes) {
+		return false
+	}
+	if len(config.EnableMethods) > 0 &&
+		!matchesHTTPMethod(config.EnableMethods, requestMethod) {
+		return false
+	}
+	return pathScope == PathScopeLegacySuffixes || pathScope == PathScopeBoundTarget
 }
 
 func (config QuotaConfig) buildBalanceKey(tenant, consumer string) string {
@@ -281,24 +365,127 @@ func (config QuotaConfig) buildPriceKey(tenant, model, tokenType string) string 
 }
 
 func parsePathSuffixes(result gjson.Result) ([]string, error) {
+	return parsePathSuffixesForScope(result, PathScopeLegacySuffixes)
+}
+
+func parsePathSuffixesForScope(result gjson.Result, pathScope string) ([]string, error) {
 	if !result.Exists() {
-		return []string{"/v1/chat/completions", "/v1/messages"}, nil
-	}
-	if !result.IsArray() {
-		return nil, errors.New("enable_path_suffixes must be an array")
-	}
-	values := result.Array()
-	suffixes := make([]string, 0, len(values))
-	for _, suffix := range values {
-		suffixStr := strings.TrimSpace(suffix.String())
-		if suffixStr != "" {
-			suffixes = append(suffixes, suffixStr)
+		if pathScope == PathScopeBoundTarget {
+			return nil, nil
 		}
+		return defaultPathSuffixes(), nil
 	}
-	if len(suffixes) == 0 {
+	suffixes, err := parseRoutingStringList(result, false)
+	if err != nil {
+		return nil, errors.New("enable_path_suffixes must be an array of strings")
+	}
+	if pathScope == PathScopeLegacySuffixes && len(suffixes) == 0 {
 		return nil, errors.New("enable_path_suffixes must not be empty")
 	}
 	return suffixes, nil
+}
+
+func parsePathScope(result gjson.Result) (string, error) {
+	if !result.Exists() {
+		return PathScopeLegacySuffixes, nil
+	}
+	if result.Type != gjson.String {
+		return "", errors.New("path_scope must be legacy_suffixes or bound_target")
+	}
+	pathScope := strings.TrimSpace(result.String())
+	if pathScope != PathScopeLegacySuffixes && pathScope != PathScopeBoundTarget {
+		return "", errors.New("path_scope must be legacy_suffixes or bound_target")
+	}
+	return pathScope, nil
+}
+
+func normalizedPathScope(pathScope string) string {
+	if pathScope == "" {
+		return PathScopeLegacySuffixes
+	}
+	return pathScope
+}
+
+func parseHTTPMethods(result gjson.Result) ([]string, error) {
+	if !result.Exists() {
+		return nil, nil
+	}
+	methods, err := parseRoutingStringList(result, true)
+	if err != nil {
+		return nil, errors.New("enable_methods must be an array of HTTP method strings")
+	}
+	return methods, nil
+}
+
+func parseRoutingStringList(result gjson.Result, validateMethod bool) ([]string, error) {
+	if !result.IsArray() {
+		return nil, errors.New("routing filter must be an array")
+	}
+	values := result.Array()
+	normalized := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		if value.Type != gjson.String {
+			return nil, errors.New("routing filter entries must be strings")
+		}
+		entry := strings.TrimSpace(value.String())
+		if entry == "" {
+			continue
+		}
+		if validateMethod && !isHTTPToken(entry) {
+			return nil, errors.New("routing filter entry is not an HTTP token")
+		}
+		if _, exists := seen[entry]; exists {
+			continue
+		}
+		seen[entry] = struct{}{}
+		normalized = append(normalized, entry)
+	}
+	if len(values) > 0 && len(normalized) == 0 {
+		return nil, errors.New("routing filter must contain a usable entry")
+	}
+	return normalized, nil
+}
+
+func isHTTPToken(value string) bool {
+	if value == "" {
+		return false
+	}
+	for index := 0; index < len(value); index++ {
+		character := value[index]
+		if character >= '0' && character <= '9' ||
+			character >= 'A' && character <= 'Z' ||
+			character >= 'a' && character <= 'z' {
+			continue
+		}
+		switch character {
+		case '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~':
+			continue
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func matchesHTTPMethod(methods []string, requestMethod string) bool {
+	for _, method := range methods {
+		if method == requestMethod {
+			return true
+		}
+	}
+	return false
+}
+
+func defaultPathSuffixes() []string {
+	return []string{"/v1/chat/completions", "/v1/messages"}
+}
+
+func cloneStrings(values []string) []string {
+	if values == nil {
+		return nil
+	}
+	return append([]string(nil), values...)
 }
 
 func validatePolicy(policy string, allowed ...string) error {

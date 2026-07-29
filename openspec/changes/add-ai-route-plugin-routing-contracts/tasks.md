@@ -1399,8 +1399,75 @@ Task 4.2 evidence (2026-07-29):
   changed files and ten test/documentation symbols, with zero affected
   execution flows.
 
-- [ ] 4.3 Implement ai-quota path-scope parsing and bound-target admission
+- [x] 4.3 Implement ai-quota path-scope parsing and bound-target admission
   intersections while preserving legacy request eligibility.
+
+Task 4.3 evidence (2026-07-29):
+
+- The current Graphify report, change design/tasks, accepted and delta
+  ai-monetary-quota specifications, Task 4.1/4.2 fixtures, quota production
+  source, and the reviewed ai-billing routing implementation were inspected
+  before production edits. Exact pre-edit GitNexus impact was LOW for
+  `QuotaConfig` (one direct test dependent and zero flows), `init`,
+  `parseConfig`, and `onHttpRequestHeaders` (zero direct dependents/flows),
+  `isAIPathEnabled` (two direct callers and zero flows), and
+  `parsePathSuffixes` (one direct caller and the existing
+  `ParseConfig -> RedisClusterClient` flow). The new rule parser and routing
+  helpers had no pre-existing symbols; no HIGH/CRITICAL pre-edit impact was
+  ignored.
+- Before production edits, a separate
+  `extensions/ai-quota/routing_regression_test.go` focused command failed at
+  11 observed points: seven global scope/filter validation boundaries, the
+  raw empty-suffix fail-open matcher, a valid method longer than 32 bytes that
+  was not gated, rule infrastructure replacement, and bound-to-legacy default
+  restoration. Existing non-array/empty legacy suffix rejection and query
+  stripping remained GREEN controls. The unchanged Task 4.1 focused command
+  independently reproduced exactly its original nine routing RED leaves.
+- `QuotaConfig` now carries route-effective `path_scope` and
+  `enable_methods`, and plugin registration uses a dedicated override parser.
+  Global and rule parsing accepts only `legacy_suffixes` and `bound_target`,
+  defaults omission to legacy, rejects blank/invalid/non-string scope,
+  rejects non-array or non-string filters and invalid RFC HTTP tokens,
+  preserves exact method case, and deduplicates exact entries without adding
+  count or length caps. A non-empty source list that trims to no usable entry
+  is rejected, while a literal empty bound-target list remains
+  non-narrowing.
+- Legacy missing/explicit suffix behavior remains suffix-gated and a method
+  filter can only narrow it. Bound-target mode admits the already selected
+  Higress target when both advanced filters are absent or literal empty;
+  non-empty suffix and exact-case method lists intersect. Suffix matching
+  excludes the query, ignores unusable raw entries, fails closed when none is
+  usable, and uses only usable entries in a mixed raw slice.
+- Rules clone inherited slices and retain the complete global Redis
+  information/client, tenant and consumer headers, balance template,
+  missing-balance policy, and every other base field. Only `quota_scope`,
+  `provider`, `path_scope`, and explicitly submitted filters are parsed as
+  rule overrides. A legacy-to-bound scope change clears inherited legacy
+  filters, and switching back to legacy restores legacy defaults. Submitted
+  rule Redis/header/template/policy fields cannot replace global
+  infrastructure.
+- The new regression command is GREEN. All nine original routing defects are
+  crossed before the retained zero-balance boundary, the other seven
+  Task 4.1 admission subtests pass independently, and all 14 Task 4.2
+  ownership leaves pass. The implementation deliberately retains
+  `balance < 0`, response ownership, and every obsolete settlement control
+  for Task 4.4. Consequently the complete module has only three known
+  executable zero-balance RED leaves: the retained `TestRequestAdmission`
+  Go/Wasm pair plus the now-unmasked bound-target Go fixture. This corrects
+  the earlier two-leaf estimate without editing or deleting the Task 4.1
+  assertion.
+- Existing parser, key-builder, admission-only/no-deduction, non-zero
+  admission, Redis ownership, configuration, and routing regression gates
+  pass. Extension `go vet ./...`, exact changed-file `gofmt`, `git diff
+  --check`, and strict OpenSpec validation pass. `graphify update .` rebuilt
+  11,150 nodes and 15,014 edges and regenerated the community map. GitNexus incremental
+  analysis rebuilt 12,995 nodes, 40,919 edges, 295 clusters, and 300 flows;
+  its eight generated repository-instruction diffs were restored. Change
+  detection retains HIGH risk for the reviewed five plugin-registration
+  option flows and the existing `ParseConfig -> RedisClusterClient` flow;
+  those exact initialization/configuration boundaries are covered by the
+  configuration, rule-inheritance, and real Redis admission tests.
+
 - [ ] 4.4 Converge ai-quota schema, examples, docs, and runtime on the
   admission-only Redis balance surface, removing obsolete settlement controls
   from current configuration and response-stage account behavior from the
