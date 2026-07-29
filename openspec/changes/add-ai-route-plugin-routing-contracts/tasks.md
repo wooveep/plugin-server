@@ -655,8 +655,59 @@ Task 2.8 fourth review-fix evidence (2026-07-29):
   nodes, 40,055 edges, 281 clusters, and 300 flows. Generated GitNexus
   instruction-file rewrites were restored before staging.
 
-- [ ] 2.9 Run focused and complete independent ai-proxy unit, proxy-wasm
+- [x] 2.9 Run focused and complete independent ai-proxy unit, proxy-wasm
   lifecycle/integration, streaming, regression, and security suites.
+
+Task 2.9 evidence (2026-07-29):
+
+- The independent verification used final source result
+  `5ae7de99960efd41273ea16e0489fee9be40943e`. The fifth Task 2.8
+  implementation/security re-review was `APPROVED` with no Critical,
+  Important, or Minor finding. Task 2.9 records only the completed independent
+  suite gates; the separate formal Task 2.10 review checkbox remains open.
+- The 15-contract transparent/OAuth/Vertex/Bedrock focused command passed in
+  `33.703s`, and the complete
+  `TestVertex|TestBedrock|TestTransparent` regression group passed in
+  `86.869s`. The isolated serial
+  `go test -count=1 -p 1 ./...` gate passed with exact package results:
+  root ai-proxy `282.197s`, config `0.002s`, provider `0.008s`, and util
+  `0.002s`.
+- Independent provider/config and wrapper gates passed: the complete config
+  and provider packages in the serial aggregate; focused
+  `TestIsValidOAuthBearerToken` in provider at `0.002s`;
+  `go test ./pkg/wrapper -count=1` at `0.001s`; and
+  `go test -race ./pkg/wrapper -count=1` at `1.007s`.
+- The suites cover protocol defaults and invalid input, stable adapter
+  resolution and Qwen empty/whitespace/omitted/non-empty capability
+  sentinels, automatic unknown and forced passthrough routing, legacy and
+  bound-target path-scope intersections, absolute/scheme/authority/traversal
+  rejection, safe exact raw-query preservation, client-credential stripping,
+  provider host/authentication/timeout/failover authority, exact opaque
+  request/response bytes, streaming and non-streaming lifecycle, Qwen exact
+  retry replay, and retained Claude/OpenAI/Azure/Responses regressions.
+- Vertex Express, standard OAuth, Bedrock bearer, and Bedrock SigV4 coverage
+  includes body-bearing and bodyless authentication, exact method/target/
+  query/header/body preservation, credential selection and rotation, OAuth
+  callback success and terminal failures, unsafe shared-cache refetch, the
+  8 KiB-bounded RFC 6750 bearer-token alphabet/padding contract, sensitive
+  synchronous dispatch failure, and all-level credential/token/body log
+  exclusion.
+- Extension-wide `go vet ./...`, root-wrapper `go vet ./pkg/wrapper`, strict
+  OpenSpec validation, exact changed-file `gofmt -l`, and reviewed-range plus
+  merge-base `git diff --check` gates passed. Root-wide `go vet ./...`
+  continues to report only the pre-existing
+  `pkg/ai/sessionctx/sessionctx.go:512:2` unreachable-code finding; that file
+  remains blob `e24b0a62e9bccff0023ad0b3e6efd1922693dcbe` at both ends of
+  the reviewed range.
+- An initial accidental overlap of two ai-proxy processes sharing
+  `wasm-unit-test.wasm` was deliberately interrupted with `SIGINT` and is not
+  gate evidence. Every result above came from a subsequent isolated serial
+  run. Read-only validator and unsafe-cache lifecycle review overlays passed
+  and were removed without modifying production or tracked test source.
+- The Task 2.9 documentation-only pre-commit GitNexus detector reports LOW
+  risk: one changed file, three touched documentation sections, zero affected
+  processes, and no production execution-flow change.
+
 - [ ] 2.10 Obtain an independent ai-proxy implementation/security review,
   resolve every finding, and rerun the affected RED/GREEN and complete module
   suites before beginning the billing implementation.
