@@ -1618,29 +1618,50 @@ func (v *vertexProvider) getAccessToken(jwtToken string) error {
 		{"Content-Type", "application/x-www-form-urlencoded"},
 	}
 	reqBody := "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=" + jwtToken
-	err := v.client.Post("/token", headers, []byte(reqBody), func(statusCode int, responseHeaders http.Header, responseBody []byte) {
-		responseString := string(responseBody)
-		defer func() {
-			_ = proxywasm.ResumeHttpRequest()
-		}()
+	sensitiveClient, ok := v.client.(wrapper.SensitiveHttpClient)
+	if !ok {
+		return errors.New("vertex token client does not support sensitive callouts")
+	}
+	err := sensitiveClient.PostSensitive("/token", headers, []byte(reqBody), func(statusCode int, responseHeaders http.Header, responseBody []byte) {
 		if statusCode != http.StatusOK {
-			log.Errorf("failed to create vertex access key, status: %d body: %s", statusCode, responseString)
+			log.Errorf("vertex oauth token exchange failed, status=%d", statusCode)
 			_ = util.ErrorHandler("ai-proxy.vertex.load_ak_failed", fmt.Errorf("failed to load vertex ak"))
 			return
 		}
-		responseJson := gjson.Parse(responseString)
-		accessToken := responseJson.Get("access_token").String()
-		_ = proxywasm.ReplaceHttpRequestHeader("Authorization", "Bearer "+accessToken)
+
+		var response struct {
+			AccessToken string `json:"access_token"`
+			ExpiresIn   int64  `json:"expires_in"`
+		}
+		if err := json.Unmarshal(responseBody, &response); err != nil ||
+			response.AccessToken == "" ||
+			strings.TrimSpace(response.AccessToken) != response.AccessToken ||
+			strings.ContainsAny(response.AccessToken, "\r\n") {
+			log.Errorf("vertex oauth token exchange returned an invalid success response")
+			_ = util.ErrorHandler("ai-proxy.vertex.load_ak_failed", fmt.Errorf("failed to load vertex ak"))
+			return
+		}
+		if err := proxywasm.ReplaceHttpRequestHeader(
+			util.HeaderAuthorization,
+			"Bearer "+response.AccessToken,
+		); err != nil {
+			log.Errorf("vertex oauth bearer installation failed")
+			_ = util.ErrorHandler("ai-proxy.vertex.load_ak_failed", fmt.Errorf("failed to load vertex ak"))
+			return
+		}
 
 		expiresIn := int64(3600)
-		if expiresInVal := responseJson.Get("expires_in"); expiresInVal.Exists() {
-			expiresIn = expiresInVal.Int()
+		if response.ExpiresIn > 0 {
+			expiresIn = response.ExpiresIn
 		}
 		expireTime := time.Now().Add(time.Duration(expiresIn) * time.Second).Unix()
 		keyName := v.buildTokenKey()
-		err := setCachedAccessToken(keyName, accessToken, expireTime)
+		err := setCachedAccessToken(keyName, response.AccessToken, expireTime)
 		if err != nil {
 			log.Errorf("[vertex]: unable to cache access token: %v", err)
+		}
+		if err := proxywasm.ResumeHttpRequest(); err != nil {
+			log.Errorf("vertex oauth request resume failed")
 		}
 	}, v.config.timeout)
 	return err

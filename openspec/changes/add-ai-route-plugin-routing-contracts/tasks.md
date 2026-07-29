@@ -546,6 +546,61 @@ Task 2.8 second review-fix evidence (2026-07-29):
   without tracked generated changes. GitNexus incremental analysis rebuilt
   12,847 nodes, 39,595 edges, 287 clusters, and 300 flows.
 
+Task 2.8 third review-fix evidence (2026-07-29):
+
+- The third independent `NEEDS_FIXES` report was reproduced with new
+  Go/Wasm HostEmulator contracts before production edits. Bodyless Vertex
+  Express automatic unknown and forced passthrough requests lacked
+  `x-goog-api-key`; bodyless Bedrock AK/SK requests lacked SigV4; and bodyless
+  standard Vertex returned `ActionContinue` without a token callout. OAuth
+  non-200 and no-status callbacks resumed a terminal stream, malformed 200
+  installed an invalid Bearer value without a local error, and the common HTTP
+  logger exposed the complete JWT-bearer form plus provider response bodies.
+  A synchronous authentication-dispatch error also returned
+  `ActionContinue`. The Bedrock bearer exact-replay/rotated-Authorization retry
+  fixture passed as an existing-behavior characterization.
+- The transparent header lifecycle now executes the same credential-only
+  authentication hook with an exact empty body when
+  `HasRequestBody()` is false and returns its action. Body-bearing traffic
+  continues to authenticate only from the body callback, while retry invokes
+  the same hook after credential rotation. Automatic-unknown and forced
+  contracts cover bodyless Vertex Express, standard OAuth, Bedrock bearer, and
+  Bedrock AK/SK while preserving exact `DELETE`, origin-form target/raw query,
+  protocol headers, and empty body.
+- Vertex token exchange now uses a dedicated sensitive HTTP callout path
+  instead of the common request/response-body logger. The new path never logs
+  the JWT assertion/form or provider response body. Non-200, malformed 200,
+  no-status timeout, and synchronous dispatch-error contracts require one
+  fixed local 500, a terminal paused stream, no invalid Bearer header, and no
+  operation/body mutation. Only a valid non-empty header-safe access token is
+  installed and followed by `ResumeHttpRequest`. Success and every callback
+  failure aggregate trace/debug/info/warn/error/critical logs and reject the
+  assertion/form, service-account/project markers, access token, provider
+  error body, operation target, and request-body marker.
+- Exact pre-edit upstream impact was LOW for `onHttpRequestHeader`,
+  `onHttpRequestBody`, Vertex `getAccessToken`, Vertex `getToken`, Bedrock
+  `generateSignatureWithService`, and `encodeSigV4Path`; the Vertex provider
+  struct was MEDIUM and not modified. The common `HttpCall` symbol was MEDIUM
+  with ten direct callers and was deliberately not modified; the sensitive
+  callout is a new narrow symbol. No HIGH/CRITICAL production symbol changed.
+- The new contracts and all retained body-authentication, exact Vertex
+  credential-selection, transparent logging, Qwen retry, and provider retry
+  contracts pass in Go/Wasm mode. The combined focused suite passed in
+  `25.455s`; complete Vertex/Bedrock/transparent regression passed in
+  `78.667s`; provider, config, and root-wrapper packages passed. The exact
+  serial aggregate `timeout 8m go test -count=1 -p 1 ./...` passed with the
+  root package at `272.956s`. Extension and root-wrapper vet, exact `gofmt`,
+  `git diff --check`, and strict OpenSpec validation pass. Root-wide
+  `go vet ./...` still reports only the pre-existing unchanged
+  `pkg/ai/sessionctx/sessionctx.go:512` unreachable-code finding.
+- The pre-commit graph refresh is unambiguously the five-file Task 2.8 third
+  review-fix worktree rooted at `c0ad10c8`. `graphify update .` rebuilt
+  11,083 nodes, 14,797 edges, and 859 communities. GitNexus incremental
+  analysis rebuilt 12,878 nodes, 39,918 edges, 284 clusters, and 300 flows.
+  Generated GitNexus instruction-file rewrites were restored before staging;
+  the final staged detector and clean-commit refresh are recorded in the
+  implementation report.
+
 - [ ] 2.9 Run focused and complete independent ai-proxy unit, proxy-wasm
   lifecycle/integration, streaming, regression, and security suites.
 - [ ] 2.10 Obtain an independent ai-proxy implementation/security review,

@@ -1766,8 +1766,8 @@ func bedrockAWSEndpoint(service, region string) string {
 }
 
 func encodeSigV4Path(path string) string {
-	// Keep only the URI path for canonical URI. Query string is handled separately in SigV4,
-	// and this implementation uses an empty canonical query string.
+	// Keep only the URI path for canonical URI. The signing caller handles the
+	// request target's query separately through canonicalSigV4Query.
 	if queryIndex := strings.Index(path, "?"); queryIndex >= 0 {
 		path = path[:queryIndex]
 	}

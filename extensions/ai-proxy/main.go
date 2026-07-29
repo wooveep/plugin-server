@@ -338,6 +338,19 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 			if bodyReader, ok := ctx.(interface{ EnableRequestBody() }); ok {
 				bodyReader.EnableRequestBody()
 			}
+			if !ctx.HasRequestBody() {
+				headers, action, err := providerConfig.BuildTransparentRequestBodyAuthHeaders(
+					activeProvider,
+					ctx,
+					util.GetRequestHeaders(),
+					nil,
+				)
+				if err != nil {
+					return failTransparentRequestAuthentication()
+				}
+				util.ReplaceRequestHeaders(headers)
+				return action
+			}
 			if !forcedTransparent && (providerConfig.IsOriginal() || providerConfig.IsGeneric()) {
 				_, hasRequestBodyHandler := activeProvider.(provider.RequestBodyHandler)
 				if ctx.HasRequestBody() && hasRequestBodyHandler {
@@ -388,12 +401,7 @@ func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig
 			body,
 		)
 		if err != nil {
-			log.Errorf("[onHttpRequestBody] failed to apply transparent request authentication")
-			_ = util.ErrorHandler(
-				"ai-proxy.transparent_request_authentication_failed",
-				fmt.Errorf("failed to apply transparent request authentication"),
-			)
-			return types.ActionContinue
+			return failTransparentRequestAuthentication()
 		}
 		util.ReplaceRequestHeaders(headers)
 		return action
@@ -437,6 +445,15 @@ func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig
 		_ = util.ErrorHandler("ai-proxy.proc_req_body_failed", fmt.Errorf("failed to process request body: %v", err))
 	}
 	return types.ActionContinue
+}
+
+func failTransparentRequestAuthentication() types.Action {
+	log.Errorf("transparent request authentication failed")
+	_ = util.ErrorHandler(
+		"ai-proxy.transparent_request_authentication_failed",
+		fmt.Errorf("failed to apply transparent request authentication"),
+	)
+	return types.ActionPause
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {

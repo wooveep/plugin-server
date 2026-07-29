@@ -45,6 +45,18 @@ type HttpClient interface {
 	ClusterName() string
 }
 
+// SensitiveHttpClient dispatches credential-bearing callouts without logging
+// either request or response bodies.
+type SensitiveHttpClient interface {
+	PostSensitive(
+		rawURL string,
+		headers [][2]string,
+		body []byte,
+		cb ResponseCallback,
+		timeoutMillisecond ...uint32,
+	) error
+}
+
 type ClusterClient[C Cluster] struct {
 	cluster C
 }
@@ -65,6 +77,11 @@ func (c ClusterClient[C]) Options(rawURL string, headers [][2]string, cb Respons
 func (c ClusterClient[C]) Post(rawURL string, headers [][2]string, body []byte, cb ResponseCallback, timeoutMillisecond ...uint32) error {
 	return HttpCall(c.cluster, http.MethodPost, rawURL, headers, body, cb, timeoutMillisecond...)
 }
+
+func (c ClusterClient[C]) PostSensitive(rawURL string, headers [][2]string, body []byte, cb ResponseCallback, timeoutMillisecond ...uint32) error {
+	return SensitiveHttpCall(c.cluster, http.MethodPost, rawURL, headers, body, cb, timeoutMillisecond...)
+}
+
 func (c ClusterClient[C]) Put(rawURL string, headers [][2]string, body []byte, cb ResponseCallback, timeoutMillisecond ...uint32) error {
 	return HttpCall(c.cluster, http.MethodPut, rawURL, headers, body, cb, timeoutMillisecond...)
 }
@@ -153,6 +170,82 @@ func HttpCall(cluster Cluster, method, rawURL string, headers [][2]string, body 
 			requestID, cluster.ClusterName(), method, rawURL, redactSensitiveRequestHeaders(headers),
 			strings.ReplaceAll(string(body), "\n", `\n`), timeout)
 	}
+	return err
+}
+
+// SensitiveHttpCall performs a credential-bearing HTTP call without passing
+// the request or response body through the common unsafe diagnostic logger.
+func SensitiveHttpCall(
+	cluster Cluster,
+	method, rawURL string,
+	headers [][2]string,
+	body []byte,
+	callback ResponseCallback,
+	timeoutMillisecond ...uint32,
+) error {
+	for i := len(headers) - 1; i >= 0; i-- {
+		key := headers[i][0]
+		if key == ":method" || key == ":path" || key == ":authority" {
+			headers = append(headers[:i], headers[i+1:]...)
+		}
+	}
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		proxywasm.LogCriticalf("sensitive http call has invalid URL")
+		return err
+	}
+	authority := cluster.HostName()
+	if parsedURL.Host != "" {
+		authority = parsedURL.Host
+	}
+	if authority == "" {
+		authority = "unknownhost"
+	}
+	path := "/" + strings.TrimPrefix(parsedURL.Path, "/")
+	if parsedURL.RawQuery != "" {
+		path = fmt.Sprintf("%s?%s", path, parsedURL.RawQuery)
+	}
+	var timeout uint32 = 500
+	if len(timeoutMillisecond) > 0 {
+		timeout = timeoutMillisecond[0]
+	}
+	headers = append(headers,
+		[2]string{":method", method},
+		[2]string{":path", path},
+		[2]string{":authority", authority},
+	)
+	_, err = proxywasm.DispatchHttpCall(
+		cluster.ClusterName(),
+		headers,
+		body,
+		nil,
+		timeout,
+		func(numHeaders, bodySize, numTrailers int) {
+			responseBody, bodyErr := proxywasm.GetHttpCallResponseBody(0, bodySize)
+			if bodyErr != nil && bodySize > 0 {
+				proxywasm.LogDebugf("sensitive http call response body unavailable")
+			}
+			responseHeaderSlice, headerErr := proxywasm.GetHttpCallResponseHeaders()
+			if headerErr != nil {
+				proxywasm.LogCriticalf("sensitive http call response headers unavailable")
+			}
+			code := http.StatusBadGateway
+			responseHeaders := make(http.Header)
+			for _, header := range responseHeaderSlice {
+				if header[0] == ":status" {
+					parsedCode, parseErr := strconv.Atoi(header[1])
+					if parseErr != nil {
+						proxywasm.LogErrorf("sensitive http call response status invalid")
+						code = http.StatusInternalServerError
+					} else {
+						code = parsedCode
+					}
+				}
+				responseHeaders.Add(header[0], header[1])
+			}
+			callback(code, responseHeaders, responseBody)
+		},
+	)
 	return err
 }
 
