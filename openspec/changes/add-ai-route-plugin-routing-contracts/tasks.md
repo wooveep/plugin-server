@@ -1938,9 +1938,91 @@ Task 5.4 evidence (2026-07-29):
   documented Task 5.6 cross-module follow-up; Task 5.4 does not modify proxy,
   Task 5.5, version, schema, or resource surfaces.
 
-- [ ] 5.5 Run focused and complete independent ai-statistics unit,
+- [x] 5.5 Run focused and complete independent ai-statistics unit,
   proxy-wasm lifecycle/integration, metric regression, cardinality, and
   security suites.
+
+Task 5.5 evidence (2026-07-29):
+
+- Independent behavior verification ran on exact source
+  `07ada49e45a4f22bc0fb0cbcde7c092ef1465273`. The module-hygiene result
+  `24f9a1ed3966a5cbe6a08a0ac9cd47ffbb7cb1a2` changes only
+  `extensions/ai-proxy/go.sum` and `extensions/ai-statistics/go.sum`, deleting
+  four stale checksum lines from each. It has zero additions, no `go.mod`,
+  Go-source, test, or OpenSpec change, and the combined ai-proxy/
+  ai-statistics `.go` plus `go.mod` blob-tree SHA-256 is identical at both
+  commits:
+  `3e3c45c9f33199d442e0f7721412a573f59f5aade2e39abcfb22f581962ed0c2`.
+  The behavior evidence therefore exercises byte-identical Go source, while
+  fresh post-hygiene focused and complete ordinary checks confirm the cleaned
+  module state.
+- The individual Task 5.1 routing, Task 5.2 opaque facts, Task 5.3
+  attribution/cardinality, exact-empty route, completion/status, and unsafe
+  legacy-usage route regressions all pass. Their combined seven-contract gate,
+  including schema-v2 terminal lifecycle, passes in `2.281s`.
+  Configuration/helper controls pass in `4.005s`; metric/terminal/legacy
+  controls pass in `7.912s`; and the secrecy/cardinality/response-transparency
+  matrix passes in `9.940s`.
+- Fresh temporary ai-proxy and ai-statistics guests are non-empty Wasm modules
+  with magic `00 61 73 6d`. Their final sizes and SHA-256 values are
+  ai-proxy 9,903,117 bytes /
+  `dbe09dd5a07230eea8cb73f195fd338022f6ed6400dc741fede11d9eac87df4a`
+  and ai-statistics 6,923,564 bytes /
+  `2c9eaca0d95b33644ebcbf52ec68b3ed4b6ae28fd268190d805fa025026bf7f8`.
+  Those exact values are unchanged after the checksum-only commit.
+- The ai-proxy schema-v2 producer contract passes in real `/go` and `/wasm`
+  modes, compares the matched envelope to the exact 306-byte shared golden,
+  and observes zero skip or missing/auto-compile marker. The direct
+  ai-statistics terminal consumer contract likewise passes in real `/go` and
+  `/wasm` modes with zero skip. A fresh post-hygiene smoke rerun reconfirms
+  both producer and consumer pairs with zero skip/failure.
+- The complete explicit ai-statistics dual-runtime matrix passes 18 top-level
+  entrances, 18 `/go` branches, and 18 `/wasm` branches in `35.303s`, with
+  zero skip, failure, missing-Wasm, or auto-compilation marker. It covers
+  existing request/response, streaming, metric, session, tool-call, attribute,
+  legacy, and edge-case lifecycles plus the new terminal contract.
+- Fixed shuffle seeds `17`, `314159`, and `8675309` pass in `34.662s`,
+  `35.070s`, and `34.730s`. The complete independent ai-statistics JSON suite
+  passes in `34.779s`: 34 top-level tests, 24 `/go` branches, 18 `/wasm`
+  branches, one package result, and zero skip/failure. The post-hygiene
+  implementer rerun independently records a complete ordinary pass in
+  `36.892s`.
+- The complete ai-statistics race gate
+  `CGO_ENABLED=1 go test -race ./... -count=1 -timeout=10m` passes in
+  `362.955s` (`363.204s` wall) with no race report. This instruments the Go
+  process and Go-mode path; it does not race-instrument guest Wasm bytecode.
+- The supporting ai-proxy ordinary serial suite passes on the behavior source
+  with root package `281.838s` plus config/provider/util passes; the
+  post-hygiene rerun passes with root package `285.296s` and every subpackage
+  green. The all-Go-mode proxy race gate passes 1,534 non-Wasm run/pass events
+  across four tested packages with zero failure, unexpected test skip, or race
+  marker. The changed producer race contract separately passes real `/go` and
+  `/wasm`, and the known-adapter Go control passes, in `30.643s`.
+- A complete ai-proxy Go+Wasm race result is deliberately **not** claimed.
+  Prior 15-minute and 30-minute attempts emitted no race or assertion finding
+  but timed out while Wazero JIT-compiled unrelated existing
+  `TestMinimax/wasm` and `TestGroq/wasm` cases. The true split evidence is the
+  complete all-Go-mode race plus the changed real Go/Wasm producer race
+  contract; the JIT limitation remains explicit.
+- On final source `24f9a1e`, both extension-local `go mod tidy -diff`
+  commands exit zero with empty output, both `go mod verify` commands report
+  all modules verified, and both `go vet ./...` commands pass. `gofmt -l`
+  across 136 Go files is empty; worktree and exact checksum-only range
+  `git diff --check` pass; and
+  `openspec validate add-ai-route-plugin-routing-contracts --strict` passes.
+  Every temporary Wasm and JSON file and its exact temporary directory was
+  removed after verification.
+- The fresh Task 5.6 rereview of the behavior source is `APPROVED` with no
+  remaining correctness, security, compatibility, response-transparency, or
+  test-execution finding. Task 5.5 records the independent suite result only;
+  the separate Task 5.6 checkbox remains unchanged for its own closeout.
+- Exact upstream impact for the AI Statistics task section is LOW with zero
+  direct dependents, affected processes, or affected modules. After GitNexus
+  refreshed to 13,110 nodes, 41,521 edges, 295 clusters, and 300 flows, staged
+  Task 5.5 detection remained LOW: exactly one changed documentation file and
+  one touched task section, with zero affected execution process. The eight
+  generated repository-instruction rewrites were restored before staging.
+
 - [ ] 5.6 Obtain an independent ai-statistics implementation/cardinality
   review, resolve every finding, and rerun the affected RED/GREEN and complete
   module suites before version/resource work.
