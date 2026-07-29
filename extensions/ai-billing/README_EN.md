@@ -25,6 +25,7 @@ defaultConfig:
   provider: default
   tenant_header: x-mse-tenant
   consumer_header: x-mse-consumer
+  path_scope: legacy_suffixes
   enable_path_suffixes:
     - /v1/chat/completions
     - /v1/messages
@@ -35,6 +36,7 @@ matchRules:
     config:
       quota_scope: route:qwen
       provider: dashscope
+      path_scope: bound_target
   - ingress:
       - ai-memory-digest
     config:
@@ -68,10 +70,22 @@ Configuration fields:
 | `provider` | string | `default` | AI provider identifier |
 | `tenant_header` | string | `x-mse-tenant` | Tenant identity request header |
 | `consumer_header` | string | `x-mse-consumer` | Consumer identity request header |
-| `enable_path_suffixes` | []string | `/v1/chat/completions`, `/v1/messages` | Enabled path suffixes |
+| `path_scope` | string | `legacy_suffixes` | `legacy_suffixes` or `bound_target` |
+| `enable_path_suffixes` | []string | effective legacy defaults: `/v1/chat/completions`, `/v1/messages` | Optional path filter |
+| `enable_methods` | []string | none | Optional exact-case HTTP-method filter |
 | `fail_policy` | string | `open` | Delivery failure policy; currently only `open` is supported |
 
-The global `defaultConfig` must contain `redis_stream.service_name`, and should hold shared tenant, consumer, path suffix, and fail-open defaults. `matchRules[].config` can contain only route-specific differences such as `event_kind`, `provider`, `quota_scope`, `enable_path_suffixes`, or `fail_policy`; omitted fields inherit from the global config. Rule-level `redis_stream` is not supported because the Redis Stream target is shared plugin-instance configuration.
+The global `defaultConfig` must contain `redis_stream.service_name`, and should hold shared tenant, consumer, path-scope, and fail-open defaults. `matchRules[].config` can contain only route-specific differences such as `event_kind`, `provider`, `quota_scope`, `path_scope`, `enable_path_suffixes`, `enable_methods`, or `fail_policy`; omitted fields inherit from the global config. Rule-level `redis_stream` is not supported because the Redis Stream target is shared plugin-instance configuration.
+
+Missing or explicit `legacy_suffixes` preserves the two effective legacy suffix defaults above. In `bound_target`, the Higress binding target defines the request set; omitted or literal-empty filters add no narrowing, and explicit non-empty filters only intersect the target and never expand it. ai-billing matches `enable_methods` with exact case; examples use canonical uppercase methods:
+
+```yaml
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
+```
 
 Platform-owned internal AI Routes, such as `ai-cache.embedding` and `ai-memory.digest`, should set `event_kind=internal_cost` plus an internal `quota_scope`. These events still carry usage, provider, model, and route facts so Console/billing-service can calculate platform costs, but downstream billing must not turn them into ordinary customer usage statements.
 

@@ -16,6 +16,7 @@ spec:
     provider: default
     tenant_header: x-mse-tenant
     consumer_header: x-mse-consumer
+    path_scope: legacy_suffixes
     enable_path_suffixes:
     - /v1/chat/completions
     - /v1/messages
@@ -27,6 +28,9 @@ spec:
     config:
       quota_scope: route:qwen
       provider: dashscope
+      # The Higress binding target defines the request set; omitted filters
+      # do not synthesize a path list.
+      path_scope: bound_target
   - ingress:
     - ai-memory-digest
     config:

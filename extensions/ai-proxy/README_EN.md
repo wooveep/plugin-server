@@ -30,6 +30,33 @@ The plugin now supports **automatic protocol detection**, allowing seamless comp
 
 > When the request path suffix matches `/v1/images/generations`, it corresponds to text-to-image scenarios. The request body will be parsed using OpenAI's image generation protocol and then converted to the corresponding LLM vendor's image generation protocol.
 
+## Routing Mode and Scope
+
+- `protocol_mode: auto` is the compatibility default: it uses registered adapters and preserves transparent forwarding when none matches. `passthrough` forces protocol conversion to be skipped.
+- Missing or explicit `path_scope: legacy_suffixes` preserves ai-proxy's historical operation classification. `path_scope: bound_target` processes requests already selected by the Higress binding target.
+- In `bound_target`, omitted or literal-empty `enable_path_suffixes: []` and `enable_methods: []` add no narrowing. Explicit non-empty filters intersect the binding target and never create or expand it.
+- ai-proxy trims and normalizes configured `enable_methods` to uppercase; examples use canonical uppercase HTTP methods. Omitted route-level fields inherit global configuration.
+
+```yaml
+# Legacy-compatible
+protocol_mode: auto
+path_scope: legacy_suffixes
+```
+
+```yaml
+# Bound target with no additional filters
+path_scope: bound_target
+```
+
+```yaml
+# Optional explicit intersection
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
+```
+
 ## Execution Properties
 Plugin execution phase: `Default Phase`
 Plugin execution priority: `100`

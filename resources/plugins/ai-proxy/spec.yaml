@@ -27,6 +27,48 @@ spec:
     openAPIV3Schema:
       type: object
       properties:
+        protocol_mode:
+          type: string
+          title: 协议模式
+          x-title-i18n:
+            en-US: Protocol Mode
+          description: auto 保留自动适配与透明回退；passthrough 强制跳过协议转换
+          x-description-i18n:
+            en-US: auto preserves automatic adapter selection and transparent fallback; passthrough forces protocol conversion to be skipped
+          enum: [auto, passthrough]
+          default: auto
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: legacy_suffixes 保留历史操作分类；bound_target 使用 Higress 绑定目标，缺省或空过滤器不额外收窄
+          x-description-i18n:
+            en-US: legacy_suffixes preserves historical operation classification; bound_target uses the Higress binding target, with absent or empty filters adding no narrowing
+          enum: [legacy_suffixes, bound_target]
+          default: legacy_suffixes
+        enable_path_suffixes:
+          type: array
+          title: 生效路径后缀
+          x-title-i18n:
+            en-US: Enabled Path Suffixes
+          description: bound_target 的可选路径后缀交集过滤器；缺省或空数组不额外收窄
+          x-description-i18n:
+            en-US: Optional path-suffix intersection filter for bound_target; omission or an empty array adds no narrowing
+          items:
+            type: string
+            pattern: '.*\S.*'
+        enable_methods:
+          type: array
+          title: 生效 HTTP 方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: bound_target 的可选 HTTP 方法交集过滤器；配置值会规范化为大写
+          x-description-i18n:
+            en-US: Optional HTTP-method intersection filter for bound_target; configured values are normalized to uppercase
+          items:
+            type: string
+            pattern: '.*\S.*'
         activeProviderId:
           type: string
           title: 当前 Provider ID
@@ -644,6 +686,8 @@ spec:
           x-description-i18n:
             en-US: Legacy-compatible single provider configuration. When provider is configured, it becomes the active provider directly.
       example:
+        protocol_mode: auto
+        path_scope: legacy_suffixes
         activeProviderId: qwen-main
         providers:
         - id: qwen-main
@@ -667,6 +711,46 @@ spec:
     openAPIV3Schema:
       type: object
       properties:
+        protocol_mode:
+          type: string
+          title: 协议模式
+          x-title-i18n:
+            en-US: Protocol Mode
+          description: 路由级协议模式覆盖；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Route-level protocol mode override; inherits global configuration when omitted
+          enum: [auto, passthrough]
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: 路由级路径作用域覆盖；bound_target 下缺省或空过滤器不额外收窄
+          x-description-i18n:
+            en-US: Route-level path scope override; absent or empty filters add no narrowing in bound_target
+          enum: [legacy_suffixes, bound_target]
+        enable_path_suffixes:
+          type: array
+          title: 生效路径后缀
+          x-title-i18n:
+            en-US: Enabled Path Suffixes
+          description: 路由级可选路径后缀交集过滤器
+          x-description-i18n:
+            en-US: Optional route-level path-suffix intersection filter
+          items:
+            type: string
+            pattern: '.*\S.*'
+        enable_methods:
+          type: array
+          title: 生效 HTTP 方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: 路由级可选 HTTP 方法交集过滤器；配置值会规范化为大写
+          x-description-i18n:
+            en-US: Optional route-level HTTP-method intersection filter; configured values are normalized to uppercase
+          items:
+            type: string
+            pattern: '.*\S.*'
         activeProviderId:
           type: string
           title: 当前 Provider ID
@@ -694,3 +778,4 @@ spec:
             en-US: Route-level legacy single provider override. When configured, it becomes the active provider for the route.
       example:
         activeProviderId: generic-fallback
+        path_scope: bound_target

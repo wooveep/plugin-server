@@ -21,7 +21,7 @@ import (
 // @Contact.email ch3cho@qq.com
 //
 // @Example
-// { "provider": { "type": "qwen", "apiToken": "YOUR_DASHSCOPE_API_TOKEN", "modelMapping": { "*": "qwen-turbo" } } }
+// { "protocol_mode": "auto", "path_scope": "legacy_suffixes", "provider": { "type": "qwen", "apiToken": "YOUR_DASHSCOPE_API_TOKEN", "modelMapping": { "*": "qwen-turbo" } } }
 // @End
 type PluginConfig struct {
 	// @Title zh-CN AI服务提供商配置

@@ -21,7 +21,8 @@ accounts, settlement, statements, reconciliation, and Redis hot-data rebuilds.
 - Missing or explicit `path_scope: legacy_suffixes` preserves legacy suffix
   gating. The default suffixes are `/v1/chat/completions` and `/v1/messages`.
 - `path_scope: bound_target` processes every request already selected by the
-  Higress binding target and requires no synthesized path list.
+  Higress binding target. Omitted or literal-empty filters add no narrowing
+  and require no synthesized path list.
 - In `bound_target`, explicitly non-empty `enable_path_suffixes` and
   `enable_methods` are advanced intersection filters. When both are supplied,
   both must match; neither filter can expand the binding target.
@@ -74,6 +75,17 @@ additional filtering can use:
 quota_scope: route:qwen
 provider: dashscope
 path_scope: bound_target
+```
+
+Explicit non-empty filters only narrow the binding target.
+`enable_methods` uses exact-case matching; examples use canonical uppercase:
+
+```yaml
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
 ```
 
 `ai-quota`, `ai-billing`, and `ai-statistics` share no private runtime state

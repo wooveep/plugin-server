@@ -35,6 +35,7 @@ defaultConfig:
   provider: default
   tenant_header: x-mse-tenant
   consumer_header: x-mse-consumer
+  path_scope: legacy_suffixes
   enable_path_suffixes:
     - /v1/chat/completions
     - /v1/messages
@@ -45,6 +46,7 @@ matchRules:
     config:
       quota_scope: route:qwen
       provider: dashscope
+      path_scope: bound_target
   - ingress:
       - ai-memory-digest
     config:
@@ -70,10 +72,22 @@ matchRules:
 | `provider` | string | `default` | AI provider 标识 |
 | `tenant_header` | string | `x-mse-tenant` | 租户身份请求头 |
 | `consumer_header` | string | `x-mse-consumer` | consumer 身份请求头 |
-| `enable_path_suffixes` | []string | `/v1/chat/completions`, `/v1/messages` | 生效路径后缀 |
+| `path_scope` | string | `legacy_suffixes` | `legacy_suffixes` 或 `bound_target` |
+| `enable_path_suffixes` | []string | 历史有效默认值为 `/v1/chat/completions`、`/v1/messages` | 可选路径过滤器 |
+| `enable_methods` | []string | 无 | 可选 HTTP 方法过滤器，按精确大小写匹配 |
 | `fail_policy` | string | `open` | 投递失败策略，当前支持 `open` |
 
-全局 `defaultConfig` 必须配置 `redis_stream.service_name`，并推荐放置共享的租户、consumer、路径后缀和 fail-open 设置。`matchRules[].config` 可以只配置当前路由差异，例如 `event_kind`、`provider`、`quota_scope`、`enable_path_suffixes` 或 `fail_policy`；未配置字段会继承全局值。规则级 `redis_stream` 不支持配置，Redis Stream 目标属于插件实例共享配置。
+全局 `defaultConfig` 必须配置 `redis_stream.service_name`，并推荐放置共享的租户、consumer、路径作用域和 fail-open 设置。`matchRules[].config` 可以只配置当前路由差异，例如 `event_kind`、`provider`、`quota_scope`、`path_scope`、`enable_path_suffixes`、`enable_methods` 或 `fail_policy`；未配置字段会继承全局值。规则级 `redis_stream` 不支持配置，Redis Stream 目标属于插件实例共享配置。
+
+缺省或显式 `legacy_suffixes` 保留上述两个历史默认后缀。在 `bound_target` 下，Higress 绑定目标定义请求集合；缺省或字面空数组过滤器不额外收窄，显式非空过滤器只与绑定目标求交集且不能扩大绑定。ai-billing 对 `enable_methods` 使用精确大小写匹配，示例采用规范的大写方法：
+
+```yaml
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
+```
 
 平台自有的内部 AI Route，例如 `ai-cache.embedding`、`ai-memory.digest`，应配置 `event_kind=internal_cost` 和内部 `quota_scope`。这类事件仍携带 usage、provider、model 和 route 事实，供 Console/billing-service 计算平台成本，但下游不能把它们生成普通客户 usage 账单。
 

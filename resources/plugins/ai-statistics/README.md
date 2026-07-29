@@ -29,9 +29,41 @@ description: AI可观测配置参考
 | `attributes` | []Attribute | 非必填  | -   | 用户希望记录在log/span中的信息 |
 | `disable_openai_usage` | bool | 非必填  | false   | 非openai兼容协议时，model、token的支持非标，配置为true时可以避免报错 |
 | `value_length_limit` | int | 非必填  | 4000   | 记录的单个value的长度限制 |
-| `enable_path_suffixes` | []string    | 非必填   | []     | 只对这些特定路径后缀的请求生效，可以配置为 "\*" 以匹配所有路径（通配符检查会优先进行以提高性能）。如果为空数组，则对所有路径生效 |
+| `path_scope` | string | 非必填 | `legacy_suffixes` | `legacy_suffixes` 或 `bound_target` |
+| `enable_path_suffixes` | []string    | 非必填   | 历史行为见下文 | 路径后缀门控或可选交集过滤器，可显式配置 "\*" |
+| `enable_methods` | []string | 非必填 | 无 | 可选 HTTP 方法过滤器，按精确大小写匹配 |
 | `enable_content_types` | []string    | 非必填   | []     | 只对这些内容类型的响应进行缓冲处理。如果为空数组，则对所有内容类型生效                                                           |
 | `session_id_header` | string | 非必填  | -   | 指定读取 session ID 的 header 名称。如果不配置，将按以下优先级自动查找：`x-openclaw-session-key`、`x-clawdbot-session-key`、`x-moltbot-session-key`、`x-agent-session`。session ID 可用于追踪多轮 Agent 对话 |
+
+### 请求作用域
+
+- 缺省或显式 `path_scope: legacy_suffixes` 保留历史行为：启用任一内置默认属性且省略后缀列表时，有效默认值为 `/completions` 和 `/messages`；未启用内置默认属性时，省略列表保留原有全路径行为。
+- `path_scope: bound_target` 使用 Higress 绑定目标。缺省或字面空数组 `enable_path_suffixes: []`、`enable_methods: []` 不额外收窄，也不会合成路径列表。
+- 显式非空后缀或方法过滤器仅与绑定目标求交集，不能创建或扩大绑定；两个过滤器同时配置时必须同时匹配。
+- ai-statistics 对 `enable_methods` 使用精确大小写匹配，示例采用规范的大写方法。路由级字段缺省时继承全局配置。
+
+```yaml
+# 兼容历史默认
+use_default_response_attributes: true
+path_scope: legacy_suffixes
+enable_path_suffixes:
+  - /completions
+  - /messages
+```
+
+```yaml
+# 绑定目标，无额外过滤
+path_scope: bound_target
+```
+
+```yaml
+# 可选的显式交集
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
+```
 
 Attribute 配置说明:
 

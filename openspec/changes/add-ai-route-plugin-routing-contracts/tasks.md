@@ -2128,10 +2128,57 @@ Task 5.6 final closeout evidence (2026-07-29):
 
 ## 6. Versions, Schemas, Resources, And Documentation
 
-- [ ] 6.1 Define one shared schema vocabulary for `protocol_mode`,
+- [x] 6.1 Define one shared schema vocabulary for `protocol_mode`,
   `path_scope`, `enable_path_suffixes`, and `enable_methods`, preserving legacy
   defaults and documenting bound-target advanced intersections in all affected
   extension/resource examples.
+
+Task 6.1 evidence (2026-07-29):
+
+- The root instructions, Graphify report, complete apply context, Task 6
+  preflight, accepted resource specification, four tested runtime routing
+  contracts, and exact schema/example/README surfaces were reviewed first.
+  The active resource delta's false ai-billing `/v1/responses` legacy default
+  was corrected to the authoritative two-value
+  `/v1/chat/completions`, `/v1/messages` runtime contract.
+- Exact upstream impact for the only existing source symbol touched,
+  `extensions/ai-proxy/config/config.go::PluginConfig`, was LOW with zero
+  direct dependents, affected processes, or modules. Its only edit is the
+  `@Example` annotation; no production field, parser, callback, runtime
+  behavior, plugin version, artifact URL, or 6.2–6.5 release surface changed.
+- `release_surface_contract_test.go` was added before resource edits. Its
+  schema RED failed only for the missing fields/patterns and quota's unsafe
+  unconditional suffix default. Its example RED failed only for missing
+  legacy/bound-target examples, the proxy annotation, billing extension
+  scope, and statistics' stale `/v1/...` example values. Both exact commands
+  are now GREEN:
+  `go test . -run '^TestAIRoutePluginSharedRoutingSchemaVocabulary$' -count=1`
+  and
+  `go test . -run '^TestAIRoutePluginExamplesMatchRoutingVocabulary$' -count=1`.
+- All four resource schemas now expose route-effective scope/filter fields.
+  ai-proxy alone exposes `protocol_mode: auto | passthrough`; global scope
+  defaults remain compatible and route fields have no defaults so they
+  inherit. Filter arrays accept literal `[]`, have no unconditional suffix
+  default, and reject blank-only items. Examples preserve each tested legacy
+  behavior and provide an unfiltered `bound_target`; non-empty filters are
+  documented only as binding-target intersections.
+- The 16 bilingual extension/resource READMEs use the same shared vocabulary
+  while retaining plugin-specific behavior. ai-proxy documents method
+  uppercasing; ai-billing, ai-quota, and ai-statistics document exact-case
+  matching; every method example uses uppercase `POST`. Statistics retains
+  the tested `/completions`, `/messages` effective legacy defaults when
+  built-in defaults are enabled.
+- Root focused and complete tests pass. Focused configuration/scope controls
+  pass independently for ai-proxy, ai-billing, ai-quota (including its
+  structured resource contract), and ai-statistics. Changed Go files are
+  gofmt-clean; `git diff --check` and
+  `openspec validate add-ai-route-plugin-routing-contracts --strict` pass.
+- Independent resource/schema/documentation review initially returned one
+  Important finding: proxy/statistics placed three examples in one YAML block
+  with duplicate keys. The eight affected READMEs now use three independent
+  YAML blocks; focused revalidation passed and the same reviewer returned
+  `APPROVED` with zero remaining findings.
+
 - [ ] 6.2 Advance authoritative ai-proxy version to `1.0.2` and align
   plugin/option metadata, schema, examples, adapter metadata, and bilingual
   extension/resource documentation.

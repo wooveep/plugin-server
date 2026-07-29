@@ -31,6 +31,33 @@ description: AI 代理插件配置参考
 
 > 请求路径后缀匹配 `/v1/images/generations` 时，对应文生图场景，会用 OpenAI 的图片生成协议解析请求 Body，再转换为对应 LLM 厂商的图片生成协议
 
+## 路由模式与作用域
+
+- `protocol_mode: auto` 是兼容默认值，使用已注册适配器并在无匹配时保留透明转发；`passthrough` 强制跳过协议转换。
+- 缺省或显式 `path_scope: legacy_suffixes` 保留 ai-proxy 历史操作分类；`path_scope: bound_target` 处理 Higress 绑定目标已经选中的请求。
+- 在 `bound_target` 下，缺省或字面空数组 `enable_path_suffixes: []`、`enable_methods: []` 都不增加收窄条件；显式非空过滤器与绑定目标求交集，不能创建或扩大绑定。
+- ai-proxy 会裁剪并将 `enable_methods` 规范化为大写；示例统一使用大写 HTTP 方法。路由级字段缺省时继承全局配置。
+
+```yaml
+# 兼容旧配置
+protocol_mode: auto
+path_scope: legacy_suffixes
+```
+
+```yaml
+# 绑定目标，无额外过滤
+path_scope: bound_target
+```
+
+```yaml
+# 可选的显式交集
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
+```
+
 ## 运行属性
 
 插件执行阶段：`默认阶段`

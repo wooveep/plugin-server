@@ -27,9 +27,10 @@ Plugin execution priority: `280`
 - Missing or explicit `path_scope: legacy_suffixes` preserves legacy suffix
   gating. The default suffixes are `/v1/chat/completions` and `/v1/messages`.
 - `path_scope: bound_target` processes every request already selected by the
-  Higress binding target.
+  Higress binding target. Omitted or literal-empty filters add no narrowing.
 - Explicitly non-empty `enable_path_suffixes` and `enable_methods` are
   advanced intersection filters and cannot expand the binding target.
+  `enable_methods` uses exact-case matching; examples use canonical uppercase.
 
 ## Configuration fields
 
@@ -73,6 +74,16 @@ additional filtering is needed, use:
 quota_scope: route:qwen
 provider: dashscope
 path_scope: bound_target
+```
+
+Explicit intersection example:
+
+```yaml
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
 ```
 
 `ai-quota`, `ai-billing`, and `ai-statistics` share no private runtime state

@@ -24,9 +24,11 @@ billing-service。
 
 - 缺省或显式 `path_scope: legacy_suffixes` 保留历史后缀门控，默认后缀为
   `/v1/chat/completions` 和 `/v1/messages`。
-- `path_scope: bound_target` 默认处理 Higress 绑定目标已经选中的全部请求。
+- `path_scope: bound_target` 默认处理 Higress 绑定目标已经选中的全部请求；
+  缺省或字面空数组过滤器不额外收窄。
 - 显式非空的 `enable_path_suffixes` 和 `enable_methods` 是与绑定目标求
-  交集的高级过滤器，不能扩大绑定目标。
+  交集的高级过滤器，不能扩大绑定目标。`enable_methods` 按精确大小写
+  匹配，示例使用规范的大写方法。
 
 ## 配置字段
 
@@ -68,6 +70,16 @@ missing_balance_policy: deny
 quota_scope: route:qwen
 provider: dashscope
 path_scope: bound_target
+```
+
+显式交集示例：
+
+```yaml
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
 ```
 
 `ai-quota`、`ai-billing` 和 `ai-statistics` 不共享私有运行时状态，可以

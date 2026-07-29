@@ -128,19 +128,38 @@ spec:
           x-description-i18n:
             en-US: Request header containing consumer identity
           default: x-mse-consumer
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: legacy_suffixes 保留默认 /v1/chat/completions 与 /v1/messages 后缀门控；bound_target 使用 Higress 绑定目标，缺省或空过滤器不额外收窄
+          x-description-i18n:
+            en-US: legacy_suffixes preserves the /v1/chat/completions and /v1/messages default gates; bound_target uses the Higress binding target, with absent or empty filters adding no narrowing
+          enum: [legacy_suffixes, bound_target]
+          default: legacy_suffixes
         enable_path_suffixes:
           type: array
           title: 生效路径后缀
           x-title-i18n:
             en-US: Enabled Path Suffixes
-          description: 默认生效的 AI 请求路径后缀，规则级配置可覆盖
+          description: legacy_suffixes 的路径门控，或 bound_target 的可选非空交集过滤器
           x-description-i18n:
-            en-US: Default AI request path suffixes enabled for this plugin. Route rule config can override them
+            en-US: Legacy path gating or an optional non-empty intersection filter for bound_target; omission or [] adds no bound-target narrowing
           items:
             type: string
-          default:
-          - /v1/chat/completions
-          - /v1/messages
+            pattern: '.*\S.*'
+        enable_methods:
+          type: array
+          title: 生效 HTTP 方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: 可选的精确大小写 HTTP 方法交集过滤器
+          x-description-i18n:
+            en-US: Optional exact-case HTTP-method intersection filter; omission or [] adds no bound-target narrowing
+          items:
+            type: string
+            pattern: '.*\S.*'
         fail_policy:
           type: string
           title: 投递失败策略
@@ -166,6 +185,7 @@ spec:
         provider: default
         tenant_header: x-mse-tenant
         consumer_header: x-mse-consumer
+        path_scope: legacy_suffixes
         enable_path_suffixes:
         - /v1/chat/completions
         - /v1/messages
@@ -218,19 +238,37 @@ spec:
           x-description-i18n:
             en-US: Rule-level consumer identity header override. Inherits the global config when omitted
           default: x-mse-consumer
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: 路由级路径作用域覆盖；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Route-level path scope override; inherits global configuration when omitted
+          enum: [legacy_suffixes, bound_target]
         enable_path_suffixes:
           type: array
           title: 生效路径后缀
           x-title-i18n:
             en-US: Enabled Path Suffixes
-          description: 规则级 AI 请求路径后缀覆盖；未配置时继承全局配置
+          description: 路由级路径后缀过滤器覆盖；bound_target 下缺省或空数组不额外收窄
           x-description-i18n:
-            en-US: Rule-level enabled AI path suffix override. Inherits the global config when omitted
+            en-US: Route-level path-suffix filter override; omission or [] adds no narrowing in bound_target
           items:
             type: string
-          default:
-          - /v1/chat/completions
-          - /v1/messages
+            pattern: '.*\S.*'
+        enable_methods:
+          type: array
+          title: 生效 HTTP 方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: 路由级可选精确大小写 HTTP 方法交集过滤器
+          x-description-i18n:
+            en-US: Optional route-level exact-case HTTP-method intersection filter
+          items:
+            type: string
+            pattern: '.*\S.*'
         fail_policy:
           type: string
           title: 投递失败策略
@@ -245,3 +283,4 @@ spec:
         event_kind: internal_cost
         quota_scope: internal:ai-memory.digest
         provider: dashscope
+        path_scope: bound_target

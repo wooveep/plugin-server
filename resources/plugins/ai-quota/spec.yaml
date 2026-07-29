@@ -136,9 +136,9 @@ spec:
           title: 路径作用域
           x-title-i18n:
             en-US: Path Scope
-          description: legacy_suffixes 保留旧后缀门控；bound_target 默认覆盖已绑定目标
+          description: legacy_suffixes 保留默认 /v1/chat/completions 与 /v1/messages 后缀门控；bound_target 使用已绑定目标，缺省或空过滤器不额外收窄
           x-description-i18n:
-            en-US: legacy_suffixes preserves legacy suffix gating; bound_target defaults to the bound target
+            en-US: legacy_suffixes preserves the /v1/chat/completions and /v1/messages default gates; bound_target uses the bound target, with absent or empty filters adding no narrowing
           enum: [legacy_suffixes, bound_target]
           default: legacy_suffixes
         enable_path_suffixes:
@@ -148,22 +148,21 @@ spec:
             en-US: Enabled Path Suffixes
           description: legacy_suffixes 的路径门控，或 bound_target 的可选非空交集过滤器
           x-description-i18n:
-            en-US: Legacy path gating or an optional non-empty intersection filter for bound_target
+            en-US: Legacy path gating or an optional non-empty intersection filter for bound_target; omission or [] adds no bound-target narrowing
           items:
             type: string
-          default:
-          - /v1/chat/completions
-          - /v1/messages
+            pattern: '.*\S.*'
         enable_methods:
           type: array
           title: 生效HTTP方法
           x-title-i18n:
             en-US: Enabled HTTP Methods
-          description: 可选非空 HTTP 方法交集过滤器
+          description: 可选非空的精确大小写 HTTP 方法交集过滤器
           x-description-i18n:
-            en-US: Optional non-empty HTTP method intersection filter
+            en-US: Optional non-empty exact-case HTTP-method intersection filter; omission or [] adds no bound-target narrowing
           items:
             type: string
+            pattern: '.*\S.*'
         missing_balance_policy:
           type: string
           title: 余额缺失策略
@@ -217,9 +216,9 @@ spec:
           title: 路径作用域
           x-title-i18n:
             en-US: Path Scope
-          description: legacy_suffixes 保留旧后缀门控；bound_target 默认覆盖已绑定目标
+          description: legacy_suffixes 保留旧后缀门控；bound_target 使用已绑定目标，缺省或空过滤器不额外收窄
           x-description-i18n:
-            en-US: legacy_suffixes preserves legacy suffix gating; bound_target defaults to the bound target
+            en-US: legacy_suffixes preserves legacy suffix gating; bound_target uses the bound target, with absent or empty filters adding no narrowing
           enum: [legacy_suffixes, bound_target]
         enable_path_suffixes:
           type: array
@@ -228,19 +227,21 @@ spec:
             en-US: Enabled Path Suffixes
           description: 可选非空路径交集过滤器
           x-description-i18n:
-            en-US: Optional non-empty path intersection filter
+            en-US: Optional non-empty path intersection filter; omission or [] adds no bound-target narrowing
           items:
             type: string
+            pattern: '.*\S.*'
         enable_methods:
           type: array
           title: 生效HTTP方法
           x-title-i18n:
             en-US: Enabled HTTP Methods
-          description: 可选非空 HTTP 方法交集过滤器
+          description: 可选非空的精确大小写 HTTP 方法交集过滤器
           x-description-i18n:
-            en-US: Optional non-empty HTTP method intersection filter
+            en-US: Optional non-empty exact-case HTTP-method intersection filter
           items:
             type: string
+            pattern: '.*\S.*'
       example:
         quota_scope: route:qwen
         provider: dashscope

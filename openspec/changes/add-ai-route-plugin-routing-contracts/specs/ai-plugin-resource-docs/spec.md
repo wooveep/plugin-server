@@ -171,8 +171,8 @@ backward-compatible path scope, and truthful examples.
 - **WHEN** the schema shows a legacy-suffix example
 - **THEN** it SHALL place Redis delivery and shared defaults in global config
 - **AND** route rules SHALL contain only supported route-specific differences
-- **AND** documented legacy defaults SHALL include `/v1/chat/completions`,
-  `/v1/messages`, and `/v1/responses`.
+- **AND** documented legacy defaults SHALL include exactly
+  `/v1/chat/completions` and `/v1/messages`.
 
 #### Scenario: Bound-target example omits synthesized filters
 

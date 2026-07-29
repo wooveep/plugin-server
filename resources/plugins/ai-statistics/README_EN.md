@@ -27,9 +27,41 @@ Users can also expand observable values ​​through configuration:
 | `attributes` | []Attribute | optional  | -   | Information that the user wants to record in log/span |
 | `disable_openai_usage` | bool | optional  | false   | When using a non-OpenAI-compatible protocol, the support for model and token is non-standard. Setting the configuration to true can prevent errors. |
 | `value_length_limit` | int | optional  | 4000   | length limit for each value |
-| `enable_path_suffixes`   | []string    | optional | ["/v1/chat/completions","/v1/completions","/v1/embeddings","/v1/models","/generateContent","/streamGenerateContent"] | Only effective for requests with these specific path suffixes, can be configured as "\*" to match all paths                                         |
+| `path_scope` | string | optional | `legacy_suffixes` | `legacy_suffixes` or `bound_target` |
+| `enable_path_suffixes` | []string | optional | see legacy behavior below | Path-suffix gate or optional intersection filter; `*` remains an explicit wildcard |
+| `enable_methods` | []string | optional | none | Optional exact-case HTTP-method filter |
 | `enable_content_types` | []string    | optional | ["text/event-stream","application/json"]                                                                             | Only buffer response body for these content types                                                                                                   |
 | `session_id_header` | string | optional  | -   | Specify the header name to read session ID from. If not configured, it will automatically search in the following priority: `x-openclaw-session-key`, `x-clawdbot-session-key`, `x-moltbot-session-key`, `x-agent-session`. Session ID can be used to trace multi-turn Agent conversations |
+
+### Request scope
+
+- Missing or explicit `path_scope: legacy_suffixes` preserves historical behavior. When either built-in default-attribute mode is enabled and suffixes are omitted, the effective defaults are `/completions` and `/messages`; without built-in defaults, omission preserves the existing all-path behavior.
+- `path_scope: bound_target` uses the Higress binding target. Omitted or literal-empty `enable_path_suffixes: []` and `enable_methods: []` add no narrowing and synthesize no path list.
+- Explicit non-empty suffix or method filters only intersect the binding target and never create or expand it. When both filters are supplied, both must match.
+- ai-statistics matches `enable_methods` with exact case; examples use canonical uppercase methods. Omitted route-level fields inherit global configuration.
+
+```yaml
+# Legacy-compatible effective defaults
+use_default_response_attributes: true
+path_scope: legacy_suffixes
+enable_path_suffixes:
+  - /completions
+  - /messages
+```
+
+```yaml
+# Bound target with no additional filters
+path_scope: bound_target
+```
+
+```yaml
+# Optional explicit intersection
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
+```
 
 Attribute Configuration instructions:
 

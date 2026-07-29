@@ -18,8 +18,8 @@ description: ai-quota 只读 Redis 余额准入插件配置参考
 
 - 缺省或显式 `path_scope: legacy_suffixes` 保留历史后缀门控，默认后缀为
   `/v1/chat/completions` 和 `/v1/messages`。
-- `path_scope: bound_target` 默认处理 Higress 绑定目标已经选中的全部请求，
-  不要求合成路径列表。
+- `path_scope: bound_target` 默认处理 Higress 绑定目标已经选中的全部请求；
+  缺省或字面空数组过滤器不额外收窄，也不要求合成路径列表。
 - 在 `bound_target` 下，显式非空的 `enable_path_suffixes` 和
   `enable_methods` 都是与绑定目标求交集的高级过滤器；同时配置时必须全部
   匹配，过滤器不会扩大绑定目标。
@@ -71,6 +71,17 @@ Redis、身份请求头、余额 key 模板和余额缺失策略由全局配置�
 quota_scope: route:qwen
 provider: dashscope
 path_scope: bound_target
+```
+
+显式非空过滤器只收窄绑定目标。`enable_methods` 按精确大小写匹配，示例使用
+规范的大写方法：
+
+```yaml
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
 ```
 
 `ai-quota`、`ai-billing` 和 `ai-statistics` 不共享私有运行时状态，可以

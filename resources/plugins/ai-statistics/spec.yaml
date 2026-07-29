@@ -150,16 +150,38 @@ spec:
           x-description-i18n:
             en-US: Maximum length for a single attribute value before writing to logs or spans.
           default: 32000
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: legacy_suffixes 保留历史后缀行为；启用内置默认属性且省略后缀时使用 /completions 与 /messages。bound_target 使用 Higress 绑定目标，缺省或空过滤器不额外收窄
+          x-description-i18n:
+            en-US: legacy_suffixes preserves historical suffix behavior, using /completions and /messages when built-in defaults are enabled and suffixes are omitted; bound_target uses the Higress binding target, with absent or empty filters adding no narrowing
+          enum: [legacy_suffixes, bound_target]
+          default: legacy_suffixes
         enable_path_suffixes:
           type: array
           title: 生效路径后缀
           x-title-i18n:
             en-US: Enabled Path Suffixes
-          description: 仅对指定路径后缀生效；配置 "*" 或留空表示所有路径。
+          description: legacy_suffixes 的路径门控，或 bound_target 的可选非空交集过滤器
           x-description-i18n:
-            en-US: Enables the plugin only for matching path suffixes. Use "*" or leave empty to match all paths.
+            en-US: Legacy path gating or an optional non-empty intersection filter for bound_target; omission or [] adds no bound-target narrowing
           items:
             type: string
+            pattern: '.*\S.*'
+        enable_methods:
+          type: array
+          title: 生效 HTTP 方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: 可选的精确大小写 HTTP 方法交集过滤器
+          x-description-i18n:
+            en-US: Optional exact-case HTTP-method intersection filter; omission or [] adds no bound-target narrowing
+          items:
+            type: string
+            pattern: '.*\S.*'
         enable_content_types:
           type: array
           title: 响应 Content-Type
@@ -181,9 +203,10 @@ spec:
       example:
         use_default_response_attributes: true
         value_length_limit: 4000
+        path_scope: legacy_suffixes
         enable_path_suffixes:
-        - /v1/chat/completions
-        - /v1/messages
+        - /completions
+        - /messages
         enable_content_types:
         - application/json
         - text/event-stream
@@ -251,10 +274,31 @@ spec:
         value_length_limit:
           type: integer
           default: 32000
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: 路由级路径作用域覆盖；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Route-level path scope override; inherits global configuration when omitted
+          enum: [legacy_suffixes, bound_target]
         enable_path_suffixes:
           type: array
+          description: 路由级路径后缀过滤器；bound_target 下缺省或空数组不额外收窄
+          x-description-i18n:
+            en-US: Route-level path-suffix filter; omission or [] adds no narrowing in bound_target
           items:
             type: string
+            pattern: '.*\S.*'
+        enable_methods:
+          type: array
+          description: 路由级可选精确大小写 HTTP 方法交集过滤器
+          x-description-i18n:
+            en-US: Optional route-level exact-case HTTP-method intersection filter
+          items:
+            type: string
+            pattern: '.*\S.*'
         enable_content_types:
           type: array
           items:
@@ -264,9 +308,7 @@ spec:
       example:
         use_default_response_attributes: true
         value_length_limit: 4000
-        enable_path_suffixes:
-        - /v1/chat/completions
-        - /v1/messages
+        path_scope: bound_target
         attributes:
         - key: model
           apply_to_log: true
