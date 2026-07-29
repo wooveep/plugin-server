@@ -1807,6 +1807,41 @@ Task 5.2 evidence (2026-07-29):
   detection is LOW across exactly two files and 14 test/documentation symbols,
   with zero affected execution processes.
 
+Task 5.2 review-fix evidence (2026-07-29):
+
+- Independent review of commit
+  `285615914cfbfaa77cdc43502f792976795fbecb` produced one HIGH finding and no
+  other findings; the immutable review report SHA-256 is
+  `ea51ce0e45ede45e7e56b4de52772a616baa10e46c58c3361bb65d124851e520`.
+  The finding was technically reproduced: the six-level HostEmulator log
+  snapshot preceded `CompleteHttp`, so it omitted terminal callback logs, and
+  it rejected only response-body and authorization markers rather than the
+  complete secrecy set.
+- Pre-edit upstream impact for
+  `TestStatisticsOpaqueBaseFactsContract` was LOW with zero direct callers,
+  affected processes, or affected modules. The fixture now invokes
+  `CompleteHttp` before aggregating all trace, debug, info, warn, error, and
+  critical logs. Both decoded AILog and the post-terminal six-level aggregate
+  reject the response-body/provider-error marker, request authorization,
+  `opaque-provider-trace`, and the raw provider-native path. Existing response
+  transparency, exact metric-name, optional-dimension, and bounded base-fact
+  assertions remain intact.
+- The focused Task 5.2 command still fails at exactly its three intended RED
+  leaves, and Task 5.1 still fails at exactly its documented 15 leaves. A
+  final-source full-module run failed in `33.345s`; its JSON event stream
+  proves the executable leaves are exactly the 18-leaf union, with no
+  additional failure. Retained metric, non-streaming, streaming, and
+  disabled-usage controls pass together in `8.265s`.
+- Changed-file `gofmt`, extension `go vet ./...`, `git diff --check`, and
+  strict OpenSpec validation pass. No production code, Task 5.1 fixture, Task
+  5.3 fixture, schema, documentation, or version surface was changed.
+- `graphify update .` rebuilt 11,170 nodes, 15,059 edges, and 851 communities
+  without tracked generated output. GitNexus incremental analysis rebuilt
+  13,008 nodes, 40,989 edges, 292 clusters, and 300 flows; its eight generated
+  repository-instruction rewrites were restored. Final staged detection is LOW
+  across exactly two files and two test/documentation symbols, with zero
+  affected execution processes.
+
 - [ ] 5.3 Add RED trust/cardinality fixtures proving: raw
   `/v1/files/<uuid>?api_key=secret` plus trusted
   `/v1/files/{file_id}` emits only the template; unknown

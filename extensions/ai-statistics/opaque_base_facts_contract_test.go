@@ -185,6 +185,8 @@ func TestStatisticsOpaqueBaseFactsContract(t *testing.T) {
 				assert.NotContains(t, decodedLog, "opaque-provider-trace")
 				assert.NotContains(t, decodedLog, testCase.path)
 
+				host.CompleteHttp()
+
 				allLogEntries := make([]string, 0)
 				allLogEntries = append(allLogEntries, host.GetTraceLogs()...)
 				allLogEntries = append(allLogEntries, host.GetDebugLogs()...)
@@ -195,6 +197,8 @@ func TestStatisticsOpaqueBaseFactsContract(t *testing.T) {
 				allLogs := strings.Join(allLogEntries, "\n")
 				assert.NotContains(t, allLogs, testCase.sensitiveMarker)
 				assert.NotContains(t, allLogs, "request-secret-must-not-be-observed")
+				assert.NotContains(t, allLogs, "opaque-provider-trace")
+				assert.NotContains(t, allLogs, testCase.path)
 
 				metricPrefix := fmt.Sprintf(
 					"route.%s.path.%s.method.%s.status.%d.error.%s.metric.",
@@ -220,8 +224,6 @@ func TestStatisticsOpaqueBaseFactsContract(t *testing.T) {
 					assert.False(t, strings.Contains(metricName, "request-secret-must-not-be-observed"))
 					assert.False(t, strings.Contains(metricName, testCase.path))
 				}
-
-				host.CompleteHttp()
 			})
 		}
 	})
