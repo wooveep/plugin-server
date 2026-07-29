@@ -70,11 +70,50 @@ Task 2.1 evidence (2026-07-29):
   mode validation returned `nil`, and the legacy-scope subtest reported that
   `*PluginConfig` does not implement `GetPathScope`.
 
-- [ ] 2.2 Add RED adapter tests proving a stable known Responses/Claude/Qwen
+- [x] 2.2 Add RED adapter tests proving a stable known Responses/Claude/Qwen
   adapter is selected only when provider, method, path, and capability match
   and performs the expected request/response transformation; cover the
   Qwen-only `openai/v1/responses` sentinel for explicit empty, whitespace,
   omitted, and non-empty paths plus another provider's empty path.
+
+Task 2.2 evidence (2026-07-29):
+
+- The current Graphify report and the focused task 2.2 audit were reviewed
+  before source inspection. The audit's upstream impact analysis reports LOW
+  risk for the existing ai-proxy request resolver, capability, and converter
+  production symbols. The CRITICAL shared `RunGoTest` (58 direct callers) and
+  `NewTestHost` (209 direct callers) helpers were only reused and were not
+  modified.
+- Pre-change focused baselines passed:
+  `go test . -run '^TestQwenResponsesFallbackConvertsNonStreamingRequestAndResponse$' -count=1`
+  and
+  `go test ./provider -run '^TestQwenProvider_ExplicitEmptyResponsesCapabilityDisablesProviderDefault$' -count=1`.
+- `extensions/ai-proxy/known_adapter_contract_test.go` adds one top-level
+  runtime contract. Its Qwen sentinel matrix passed explicit empty,
+  whitespace-only, omitted, and non-empty capability cases plus OpenAI's
+  existing empty-path key-presence behavior. The path, provider, and native
+  capability mismatch cases also passed without claiming the Qwen
+  Responses-to-Chat fallback.
+- Focused RED command:
+  `go test . -run '^TestKnownQwenResponsesAdapterContract$' -count=1`.
+  It compiled and failed only on the two missing contracts. The exact existing
+  Qwen request and response transformation assertions passed before the
+  positive case reported absent test-local literal property
+  `mse_ai_proxy_adapter_metadata`; the independent `GET /v1/responses`
+  mismatch expected `/v1/responses` but observed the incorrectly selected
+  `/compatible-mode/v1/chat/completions` fallback.
+- The future metadata assertion decodes at most 1024 bytes of JSON and requires
+  a non-empty stable adapter ID/version, normalized
+  `openai/v1/responses`, provider match `qwen`, Chat Completions capability
+  dependency, and non-empty usage profile across two identical matches. No
+  production source, missing production constant/package, or shared test
+  harness was added or modified.
+- `graphify update .` refreshed the local AST graph after the test addition.
+  Staged GitNexus change detection reported two changed files, zero affected
+  execution flows, and LOW risk; its stale line mapping associated only
+  documentation sections and found no production or shared-harness symbol
+  impact.
+
 - [ ] 2.3 Add RED transparent-fallback tests using a non-generic provider,
   nontrivial method, path, raw query, opaque request body, and opaque response
   body; prove exact preservation plus provider-owned host/auth/timeout/failover.
