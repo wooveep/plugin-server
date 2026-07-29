@@ -193,9 +193,53 @@ Task 2.4 evidence (2026-07-29):
   execution flows, and LOW risk; the stale index mapped only the task
   sections and did not yet resolve the newly added test symbol.
 
-- [ ] 2.5 Add RED URL-boundary security tests for absolute URLs, scheme or
+- [x] 2.5 Add RED URL-boundary security tests for absolute URLs, scheme or
   authority injection, raw/encoded traversal, credential boundary, raw-query
   preservation, and safe diagnostics without secrets or bodies.
+
+Task 2.5 evidence (2026-07-29):
+
+- The current Graphify report, focused task 2.5 audit, design, ai-proxy routing
+  delta, task plan, HostEmulator/TestHost lifecycle APIs, and existing Qwen
+  fixtures were reviewed before the test was added. Upstream impact for the
+  new `TestAIProxyURLBoundarySecurityContract` symbol was UNKNOWN with zero
+  indexed dependents. The CRITICAL shared `RunGoTest`/`NewTestHost` harness and
+  the MEDIUM `ProviderConfig.applyProviderBasePath` production symbol were
+  only inspected or reused and were not modified.
+- The existing focused Qwen lifecycle baseline passed:
+  `go test . -run '^TestQwenResponsesFallbackConvertsNonStreamingRequestAndResponse$' -count=1`.
+  The earlier Task 2.3 transparent-fallback fixture remained intentionally RED
+  only on its independently recorded provider-timeout contract.
+- `extensions/ai-proxy/url_boundary_security_contract_test.go` adds one
+  top-level Go-mode contract with fresh Qwen hosts for six independent unsafe
+  request targets. Each case requires local `400..599` rejection, and an
+  unrejected target independently proves the provider credential boundary
+  while recording the forwarded target and authorization. All cases aggregate
+  debug/warn/error logs plus any local body and prohibit provider/client
+  credentials, raw-query markers, and submitted body markers.
+- Focused RED command:
+  `go test . -run '^TestAIProxyURLBoundarySecurityContract$' -count=1`.
+  It compiled and failed each of the absolute URL, scheme injection, network
+  authority, encoded authority, raw traversal, and encoded traversal subtests:
+  no local response was produced and every unsafe target carried the configured
+  provider Bearer credential. Raw and encoded traversal were forwarded under
+  `/tenant/base` without containment enforcement.
+- The dedicated diagnostics subtest failed independently because the current
+  implementation logged the complete provider configuration/token and the
+  submitted Responses body. Its client-token and raw-query assertions passed.
+  The positive guard passed independently with
+  `go test . -run '^TestAIProxyURLBoundarySecurityContract$/^go$/^preserves_safe_origin_form_raw_query_with_provider_policy$' -count=1`,
+  proving provider host/authentication plus exact duplicate ordering, escaping,
+  and empty-value preservation for
+  `sig=a%2Bb&dup=1&dup=2&empty=` after provider-base prefixing.
+- No production source, shared test harness, protocol/path-scope fields, or
+  missing production constants were added or modified.
+- `gofmt`, `git diff --check`, and strict OpenSpec validation pass.
+  `graphify update .` completed without tracked generated changes. Staged
+  GitNexus change detection reported two changed files, zero affected
+  execution flows, and LOW risk; the stale index mapped only adjacent task
+  sections and did not yet resolve the new test symbol.
+
 - [ ] 2.6 Add RED path-scope tests proving legacy replay, bound-target
   provider-native coverage without synthesized suffixes, and explicit
   non-empty suffix/method intersections.
