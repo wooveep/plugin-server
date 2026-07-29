@@ -190,7 +190,7 @@ func TestAIPluginVersionAlignmentContract(t *testing.T) {
 		},
 		{
 			name:            "ai-statistics",
-			selectedVersion: "1.0.1",
+			selectedVersion: "1.0.2",
 			documentation:   releaseDocumentation("ai-statistics"),
 		},
 	}

@@ -504,6 +504,9 @@ func (config *AIStatisticsConfig) incrementCounter(metricName string, inc uint64
 	if inc == 0 {
 		return
 	}
+	if config.counterMetrics == nil {
+		config.counterMetrics = make(map[string]proxywasm.MetricCounter)
+	}
 	counter, ok := config.counterMetrics[metricName]
 	if !ok {
 		counter = proxywasm.DefineCounterMetric(metricName)

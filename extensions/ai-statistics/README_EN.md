@@ -4,7 +4,7 @@ keywords: [higress, AI, observability]
 description: AI Statistics plugin configuration reference
 ---
 
-> Plugin version: `1.0.1`
+> Plugin version: `1.0.2`
 
 ## Introduction
 
@@ -74,6 +74,8 @@ enable_methods:
 Safe base facts stand independently; ai-proxy schema-v2 metadata is optional trusted enrichment.
 
 Every eligible completed request emits bounded `route` and `path`, a normalized and bounded `method`, `status_code`, positive `latency_ms`, and bounded `error_class`, plus exactly one `request_count` and one `request_duration_ms`. These safe base facts are independent of model, logical operation, token, or usage extraction. Opaque successes, opaque errors, and parsing failures still emit the base facts; unavailable optional dimensions are omitted rather than guessed. Trusted provider parsers may enrich model/token facts, but arbitrary paths or opaque bodies never authorize inference. Raw response bodies and unbounded provider error text never enter metric attributes.
+
+Version `1.0.2` also guarantees that the per-configuration counter cache is initialized on first use, including rule-override lifecycle paths, so the first eligible base metric cannot fail on a nil cache.
 
 Response headers capture only the bounded status and error projection; they do not freeze completed-request latency. The first real terminal seam—non-streaming response-body EOS, streaming EOS, or `wrapper.ProcessStreamDone` fallback for no body callback, an empty body, an unsupported Content-Type, or a parser-skipped lifecycle—uses the same terminal timestamp for metrics and AILog. A request-scoped completion marker makes all terminal callbacks emit exactly once, while response headers and body bytes remain transparent.
 

@@ -24,6 +24,10 @@ None.
 
 - `ai-statistics-observability`: Require safe counter-cache initialization for
   eligible completed requests and advance the corrective release to `1.0.2`.
+- `extensions-build-artifacts`: Advance the authoritative and versioned
+  ai-statistics artifact path to `1.0.2`.
+- `ai-plugin-resource-docs`: Keep resource metadata and bilingual documentation
+  aligned with the corrected extension release.
 
 ## Impact
 
