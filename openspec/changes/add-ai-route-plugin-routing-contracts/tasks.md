@@ -2662,11 +2662,42 @@ Task 7.1 evidence (2026-07-30):
 - Task 7 release bytes must be built from detached exact source
   `eff8624eb9cbdc199b006e265f12ece5098e9d0d`, not from the later evidence-only
   commit.
-- [ ] 7.2 Build and validate non-empty Wasm files at
+- [x] 7.2 Build and validate non-empty Wasm files at
   `build/plugins/ai-proxy/1.0.2/plugin.wasm`,
   `build/plugins/ai-billing/0.1.5/plugin.wasm`,
   `build/plugins/ai-quota/1.0.2/plugin.wasm`, and
   `build/plugins/ai-statistics/1.0.1/plugin.wasm`.
+
+Task 7.2 evidence (2026-07-30):
+
+- A detached clean worktree at reviewed source
+  `eff8624eb9cbdc199b006e265f12ece5098e9d0d` built all four artifacts with
+  `go1.26.3 linux/amd64` and the exact root command
+  `make --no-print-directory build-plugin PLUGIN=<plugin> WASM_BUILDER=go`;
+  no `PLUGIN_VERSION` override was supplied. The versioned Wasm and metadata
+  files copied into the formal artifact paths were byte-identical to the
+  detached outputs.
+- `ai-proxy` `1.0.2` is 9,899,479 bytes, MD5
+  `904907c03829d81000e3762eae564fec`, and SHA-256
+  `dab58afed159badafbd60f07666a99d8d665c044b54b8026a0ee7b19d777e6cc`.
+- `ai-billing` `0.1.5` is 18,436,619 bytes, MD5
+  `96b8911d40e77fec4bff1c322f27e637`, and SHA-256
+  `4e346d42a7032c69ca54d26ae48a15dce495065bff5029471945d5c866184ca0`.
+- `ai-quota` `1.0.2` is 6,341,937 bytes, MD5
+  `30645ae949b326c4511a4f72ea018fcf`, and SHA-256
+  `0c974c1aeda1d0dead8294d990a8b6846eaaa19a5eba663fe5a1e9dbb9465f59`.
+- `ai-statistics` `1.0.1` is 6,923,452 bytes, MD5
+  `e73cfff0efd01db6dda58419c7a0166f`, and SHA-256
+  `243d1994b9a35a889b3ecd132f9de41f0ddb73587ea5c0cb65653c6e2cadbe37`.
+- All four files are non-empty WebAssembly 1.0 modules with exact magic and
+  version `0061736d01000000`; their adjacent metadata names, sizes, and MD5
+  values match. Each prescribed exact-`WASM_FILE_PATH` `/wasm` contract test
+  executed without skip or timeout and passed, then an independent reviewer
+  repeated all four tests and static validations with zero findings.
+- `go version -m` returns exit 1 with no output for each raw stripped Wasm
+  file. This is recorded as a parser limitation, not a passing validation;
+  build-toolchain evidence comes from the exact build environment and embedded
+  target strings.
 - [ ] 7.3 Record a release evidence manifest for each artifact containing
   repository, intentional base, reviewed result commit, plugin/version,
   versioned path, SHA-256, toolchain, exact build/test commands, and
