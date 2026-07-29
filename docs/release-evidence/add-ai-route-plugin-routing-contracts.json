@@ -7,8 +7,8 @@
     "remote": "https://github.com/wooveep/wasm-go.git",
     "intentional_base_commit": "9995ed5c7d4977a8ddf16ea34faea3d8286a9e56",
     "reviewed_result_commit": "eff8624eb9cbdc199b006e265f12ece5098e9d0d",
-    "evidence_commit": null,
-    "evidence_commit_state": "pending-first-manifest-commit",
+    "evidence_commit": "177c5a9457a727e3c0a4e63dcd15aad6efe2a2c7",
+    "evidence_commit_state": "recorded-first-manifest-commit",
     "clean_before_build": true
   },
   "toolchain": {

@@ -2698,10 +2698,31 @@ Task 7.2 evidence (2026-07-30):
   file. This is recorded as a parser limitation, not a passing validation;
   build-toolchain evidence comes from the exact build environment and embedded
   target strings.
-- [ ] 7.3 Record a release evidence manifest for each artifact containing
+- [x] 7.3 Record a release evidence manifest for each artifact containing
   repository, intentional base, reviewed result commit, plugin/version,
   versioned path, SHA-256, toolchain, exact build/test commands, and
   provenance.
+
+Task 7.3 evidence (2026-07-30):
+
+- The tracked machine-readable manifest is
+  `docs/release-evidence/add-ai-route-plugin-routing-contracts.json`; its
+  first committed form is immutable commit
+  `177c5a9457a727e3c0a4e63dcd15aad6efe2a2c7`, which this closure records as
+  `repository.evidence_commit`.
+- The manifest contains exactly four independently complete artifact records.
+  Each records the sanitized repository identity, intentional base, reviewed
+  result, authoritative version source, exact versioned Wasm and metadata
+  paths, size, SHA-256, MD5, build and Wasm-test commands, complete toolchain,
+  detached-clean/byte-identical provenance, and the raw-Wasm build-info parser
+  limitation.
+- An independent manifest review resolved two Important evidence defects
+  before commit: incomplete per-artifact toolchain replication and a
+  non-runnable pseudo-CLI GitNexus command. The final review found zero
+  remaining Critical, Important, or Minor findings.
+- No expanded token, Authorization value, Secret, kubeconfig, provider
+  credential, or plaintext password is present. Upload and retrieval facts
+  remain explicitly `pending`/`null`; Tasks 7.4 and 7.5 are not claimed.
 - [ ] 7.4 Upload the exact four tested Wasm byte sequences to the supported
   local plugin server and verify each version is available through its normal
   local service interface.
