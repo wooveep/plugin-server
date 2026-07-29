@@ -1249,9 +1249,59 @@ Task 3.7 evidence (2026-07-29):
 
 ## 4. AI Quota Red-Green Contracts
 
-- [ ] 4.1 Add RED configuration and admission tests for legacy scope,
+- [x] 4.1 Add RED configuration and admission tests for legacy scope,
   bound-target provider-native requests, no synthesized suffix list, and
   explicit non-empty suffix/method intersections.
+
+Task 4.1 evidence (2026-07-29):
+
+- The current Graphify report, accepted ai-monetary-quota specification,
+  complete quota delta, shared path-scope design, task plan, existing quota
+  parser/admission tests, resource schema, and real HostEmulator Redis
+  lifecycle were reviewed before the fixture was added. Upstream impact for
+  each of the five new test/helper symbols and this evidence section was
+  UNKNOWN with zero indexed dependents or execution flows because none was
+  present in the two-commit-stale index. Existing production and shared
+  harness symbols were not modified.
+- Before the test edit, `go test ./... -count=1` passed the complete ai-quota
+  module in `3.710s`, `go vet ./...`, `git diff --check`, and strict OpenSpec
+  validation passed. The independent
+  `extensions/ai-quota/routing_admission_contract_test.go` uses one fresh
+  HostEmulator per request and literal JSON configuration, without referencing
+  future path-scope or method-filter production fields.
+- The fixture retains positive guards for omitted legacy default suffixes and
+  explicit `legacy_suffixes`, including both eligible and ineligible paths. It
+  adds global and rule-level `bound_target` requests with absent and literal
+  empty filter lists, proves that a rule inherits the complete global Redis,
+  identity-header, balance-template, and missing-balance configuration while
+  overriding `quota_scope` and `provider`, and requires non-empty suffix and
+  exact-case method filters to intersect. Blank-only global and rule filter
+  arrays must fail closed.
+- Every eligible runtime case must dispatch a real Redis `GET` containing the
+  route-effective balance key. A positive balance must resume the request; a
+  negative balance must produce the existing 403 local no-balance response.
+  Out-of-scope filter mismatches must continue without a Redis callout or local
+  response. This tests the admission lifecycle rather than parser state alone.
+- Focused RED command:
+  `go test . -run
+  '^(TestQuotaRoutingConfigurationContract|TestQuotaRoutingAdmissionContract)$'
+  -count=1`. It compiles and fails at exactly nine leaves: explicit-empty
+  bound-target configuration, blank-only global method rejection, rule
+  infrastructure inheritance, global omitted-filter provider-native
+  admission, global literal-empty filters, rule omitted filters, rule
+  literal-empty filters, non-empty suffix/method intersection, and
+  case-sensitive method matching. Existing blank-only suffix rejection,
+  rule-level blank-filter guards, and omitted/explicit legacy eligibility
+  remain GREEN.
+- The complete `go test ./... -count=1` module run contains only those nine
+  intended RED leaves. Dedicated legacy and blank-filter guard reruns pass.
+  Changed-file `gofmt`, extension `go vet ./...`, `git diff --check`, and
+  strict OpenSpec validation pass. `graphify update .` rebuilt 11,131 nodes,
+  14,958 edges, and 891 communities without tracked output. The GitNexus
+  refresh generated eight repository-instruction diffs, all restored before
+  staging; staged detection reports LOW risk across exactly two changed files
+  and six test/documentation symbols, with zero affected processes.
+
 - [ ] 4.2 Add RED ownership tests proving the request-header Redis balance
   admission result is final for recognizable, opaque, streaming, and
   non-streaming responses; Redis balance input remains read-only and no
