@@ -2665,7 +2665,7 @@ Task 7.1 evidence (2026-07-30):
   `-trimpath` fix supersede that result with clean source
   `59447726256efa0a3fc1c39b65fd7c662f2c67ed`; all replacement release bytes
   must be built from this exact commit.
-- [ ] 7.2 Build and validate non-empty Wasm files at
+- [x] 7.2 Build and validate non-empty Wasm files at
   `build/plugins/ai-proxy/1.0.2/plugin.wasm`,
   `build/plugins/ai-billing/0.1.5/plugin.wasm`,
   `build/plugins/ai-quota/1.0.2/plugin.wasm`, and
@@ -2701,7 +2701,19 @@ Task 7.2 evidence (2026-07-30):
   file. This is recorded as a parser limitation, not a passing validation;
   build-toolchain evidence comes from the exact build environment and embedded
   target strings.
-- [ ] 7.3 Record a release evidence manifest for each artifact containing
+- Replacement evidence from reviewed result `5944772` supersedes the preceding
+  historical hashes: two clean detached worktrees at different absolute paths
+  produced byte-identical default Make outputs. The new SHA-256 values are
+  `0bb506041b02e37f15bdf35320f1f2504e3417b2db512b9a3be4624987bdf618`
+  (proxy),
+  `36b6119e102b777d875cd6e1b434880f40fbe282eee791cba6ad1db793c39335`
+  (billing),
+  `4a85ee815727dc78765f5bcbfd816c366a9f006b2dbdad60b6e85680f1a188f5`
+  (quota), and
+  `02407cf8a9255427b855588a2783935dd391489e7a2e9d404384c9e534933b11`
+  (statistics). All four exact artifact-path `/wasm` tests executed and passed
+  independently without skip or timeout.
+- [x] 7.3 Record a release evidence manifest for each artifact containing
   repository, intentional base, reviewed result commit, plugin/version,
   versioned path, SHA-256, toolchain, exact build/test commands, and
   provenance.
@@ -2710,9 +2722,11 @@ Task 7.3 evidence (2026-07-30):
 
 - The tracked machine-readable manifest is
   `docs/release-evidence/add-ai-route-plugin-routing-contracts.json`; its
-  first committed form is immutable commit
-  `177c5a9457a727e3c0a4e63dcd15aad6efe2a2c7`, which this closure records as
-  `repository.evidence_commit`.
+  superseded first form is immutable commit
+  `177c5a9457a727e3c0a4e63dcd15aad6efe2a2c7`. The authoritative reproducible
+  first form is immutable commit
+  `07ac833e525a99e9aaa835961f68dd253a39bef4`, which the current closure records
+  as `repository.evidence_commit`.
 - The manifest contains exactly four independently complete artifact records.
   Each records the sanitized repository identity, intentional base, reviewed
   result, authoritative version source, exact versioned Wasm and metadata
@@ -2726,6 +2740,13 @@ Task 7.3 evidence (2026-07-30):
 - No expanded token, Authorization value, Secret, kubeconfig, provider
   credential, or plaintext password is present. Upload and retrieval facts
   remain explicitly `pending`/`null`; Tasks 7.4 and 7.5 are not claimed.
+- The first committed reproducible manifest is immutable commit
+  `07ac833e525a99e9aaa835961f68dd253a39bef4`. It records reviewed result
+  `5944772`, the four replacement sizes/hashes/build IDs, exact commands,
+  cross-path identity, detached-path removal, retained absolute external
+  `go.mod replace` paths, and their clean dependency commits. An independent
+  review resolved one Minor wording precision issue and then returned
+  `APPROVED` with zero remaining findings.
 - [ ] 7.4 Upload the exact four tested Wasm byte sequences to the supported
   local plugin server and verify each version is available through its normal
   local service interface.
@@ -2769,8 +2790,9 @@ Task 7 reproducibility invalidation (2026-07-30):
   supersedes `eff8624eb9cbdc199b006e265f12ece5098e9d0d` as the reviewed result.
   Consequently, the old formal hashes, manifest provenance, local upload, and
   retrieval facts are historical superseded evidence. Tasks 7.2 through 7.5
-  are reopened until reproducible bytes from `5944772` are rebuilt, retested,
-  recorded, uploaded, and retrieved.
+  were reopened; replacement rebuild, retest, and manifest recording from
+  `5944772` are complete, while only Tasks 7.4 and 7.5 remain open for
+  replacement upload and retrieval.
 
 ## 8. Final Verification, Spec Sync, And Archive
 
