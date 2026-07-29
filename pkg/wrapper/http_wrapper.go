@@ -57,6 +57,17 @@ type SensitiveHttpClient interface {
 	) error
 }
 
+type sensitiveHTTPDispatchFunc func(
+	cluster string,
+	headers [][2]string,
+	body []byte,
+	trailers [][2]string,
+	timeoutMillisecond uint32,
+	callback func(numHeaders, bodySize, numTrailers int),
+) (uint32, error)
+
+var dispatchSensitiveHttpCall sensitiveHTTPDispatchFunc = proxywasm.DispatchHttpCall
+
 type ClusterClient[C Cluster] struct {
 	cluster C
 }
@@ -214,7 +225,7 @@ func SensitiveHttpCall(
 		[2]string{":path", path},
 		[2]string{":authority", authority},
 	)
-	_, err = proxywasm.DispatchHttpCall(
+	_, err = dispatchSensitiveHttpCall(
 		cluster.ClusterName(),
 		headers,
 		body,

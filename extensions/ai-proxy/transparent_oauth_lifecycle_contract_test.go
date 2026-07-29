@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 	"unsafe"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/config"
@@ -254,6 +256,11 @@ func TestTransparentVertexOAuthTerminalFailureContract(t *testing.T) {
 			responseHeaders: nil,
 			responseBody:    []byte(providerErrorMarker),
 		},
+		{
+			name:            "malformed_status",
+			responseHeaders: [][2]string{{":status", "not-a-status"}},
+			responseBody:    []byte(providerErrorMarker),
+		},
 	}
 
 	wasmhost.RunTest(t, func(t *testing.T) {
@@ -311,6 +318,227 @@ func TestTransparentVertexOAuthTerminalFailureContract(t *testing.T) {
 				require.NotContains(t, allLogs, string(callouts[0].Body))
 			})
 		}
+	})
+}
+
+func TestTransparentVertexOAuthRejectsUnsafeBearerTokens(t *testing.T) {
+	authKey := newTransparentOAuthServiceAccount(t)
+	requestBody := []byte("transparent-oauth-unsafe-token-request-body")
+	testCases := []struct {
+		name  string
+		token string
+	}{
+		{name: "nul", token: "unsafe\x00token"},
+		{name: "unit_separator", token: "unsafe\x1ftoken"},
+		{name: "del", token: "unsafe\x7ftoken"},
+		{name: "tab", token: "unsafe\ttoken"},
+		{name: "space", token: "unsafe token"},
+		{name: "newline", token: "unsafe\ntoken"},
+		{name: "non_ascii", token: "unsafe-令牌"},
+		{name: "invalid_punctuation", token: "unsafe!token"},
+		{name: "padding_in_middle", token: "unsafe=token"},
+		{name: "data_after_padding", token: "unsafe==token"},
+		{name: "overlong", token: strings.Repeat("a", 8*1024+1)},
+	}
+
+	wasmhost.RunTest(t, func(t *testing.T) {
+		for _, testCase := range testCases {
+			testCase := testCase
+			t.Run(testCase.name, func(t *testing.T) {
+				host, status := wasmhost.NewTestHost(transparentOAuthConfig(t, authKey, ""))
+				t.Cleanup(host.Reset)
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+
+				require.Equal(t, types.ActionContinue, host.CallOnHttpRequestHeaders([][2]string{
+					{":authority", "client.example"},
+					{":path", transparentAuthUnknownTarget},
+					{":method", "PATCH"},
+					{"authorization", "Bearer client-token"},
+					{"content-type", "application/octet-stream"},
+					{"x-operation-marker", "preserve-unsafe-token-failure"},
+				}))
+				require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody(requestBody))
+				require.Len(t, host.GetHttpCalloutAttributes(), 1)
+
+				responseBody, err := json.Marshal(map[string]any{
+					"access_token": testCase.token,
+					"expires_in":   3600,
+				})
+				require.NoError(t, err)
+				host.CallOnHttpCall(
+					[][2]string{{":status", "200"}, {"content-type", "application/json"}},
+					responseBody,
+				)
+
+				localResponse := host.GetLocalResponse()
+				require.NotNil(t, localResponse)
+				require.Equal(t, uint32(http.StatusInternalServerError), localResponse.StatusCode)
+				require.Equal(t, "ai-proxy.vertex.load_ak_failed", localResponse.StatusCodeDetail)
+				require.Equal(t, []byte("failed to load vertex ak"), localResponse.Data)
+				require.Equal(t, types.ActionPause, host.GetHttpStreamAction())
+
+				headers := host.GetRequestHeaders()
+				_, hasAuthorization := wasmhost.GetHeaderValue(headers, "authorization")
+				require.False(t, hasAuthorization)
+				requireHeaderValue(t, headers, ":method", "PATCH")
+				requireHeaderValue(t, headers, ":path", transparentAuthUnknownTarget)
+				requireHeaderValue(t, headers, "x-operation-marker", "preserve-unsafe-token-failure")
+				require.Equal(t, requestBody, host.GetRequestBody())
+
+				_, _, cacheErr := proxywasm.GetSharedData(
+					"vertex-us-central1-transparent-contract-project-access-token",
+				)
+				require.ErrorIs(t, cacheErr, types.ErrorStatusNotFound)
+
+				allLogs := collectAllHostLogs(host)
+				require.NotContains(t, allLogs, testCase.token)
+				require.NotContains(t, allLogs, string(responseBody))
+				require.NotContains(t, allLogs, transparentAuthUnknownTarget)
+				require.NotContains(t, allLogs, string(requestBody))
+			})
+		}
+	})
+}
+
+func TestTransparentVertexOAuthUnsafeTokenSendsOneTerminalError(t *testing.T) {
+	authKey := newTransparentOAuthServiceAccount(t)
+	const unsafeToken = "unsafe\x00token"
+
+	wasmhost.RunGoTest(t, func(t *testing.T) {
+		host, status := wasmhost.NewTestHost(transparentOAuthConfig(t, authKey, ""))
+		t.Cleanup(host.Reset)
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+
+		originalErrorHandler := util.ErrorHandler
+		errorHandlerCalls := 0
+		util.ErrorHandler = func(statusCodeDetails string, err error) error {
+			errorHandlerCalls++
+			return originalErrorHandler(statusCodeDetails, err)
+		}
+		t.Cleanup(func() {
+			util.ErrorHandler = originalErrorHandler
+		})
+
+		action := host.CallOnHttpRequestHeaders([][2]string{
+			{":authority", "client.example"},
+			{":path", transparentBodylessUnknownTarget},
+			{":method", "DELETE"},
+		}, wasmhost.WithEndOfStream(true))
+		require.Equal(t, types.ActionPause, action)
+		require.Len(t, host.GetHttpCalloutAttributes(), 1)
+
+		responseBody, err := json.Marshal(map[string]any{
+			"access_token": unsafeToken,
+			"expires_in":   3600,
+		})
+		require.NoError(t, err)
+		host.CallOnHttpCall(
+			[][2]string{{":status", "200"}, {"content-type", "application/json"}},
+			responseBody,
+		)
+
+		require.Equal(t, 1, errorHandlerCalls)
+		require.NotNil(t, host.GetLocalResponse())
+		require.Equal(t, types.ActionPause, host.GetHttpStreamAction())
+		_, hasAuthorization := wasmhost.GetHeaderValue(host.GetRequestHeaders(), "authorization")
+		require.False(t, hasAuthorization)
+		require.NotContains(t, collectAllHostLogs(host), unsafeToken)
+	})
+}
+
+func TestTransparentVertexOAuthTreatsUnsafeCachedBearerTokenAsMiss(t *testing.T) {
+	authKey := newTransparentOAuthServiceAccount(t)
+	testCases := []struct {
+		name  string
+		token string
+	}{
+		{name: "nul", token: "cached\x00token"},
+		{name: "padding_in_middle", token: "cached=token"},
+		{name: "overlong", token: strings.Repeat("a", 8*1024+1)},
+	}
+
+	wasmhost.RunTest(t, func(t *testing.T) {
+		for _, testCase := range testCases {
+			testCase := testCase
+			t.Run(testCase.name, func(t *testing.T) {
+				host, status := wasmhost.NewTestHost(transparentOAuthConfig(t, authKey, ""))
+				t.Cleanup(host.Reset)
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+
+				cachedData, err := json.Marshal(map[string]any{
+					"token":    testCase.token,
+					"expireAt": time.Now().Add(time.Hour).Unix(),
+				})
+				require.NoError(t, err)
+				require.NoError(t, proxywasm.SetSharedData(
+					"vertex-us-central1-transparent-contract-project-access-token",
+					cachedData,
+					0,
+				))
+
+				action := host.CallOnHttpRequestHeaders([][2]string{
+					{":authority", "client.example"},
+					{":path", transparentBodylessUnknownTarget},
+					{":method", "DELETE"},
+					{"authorization", "Bearer client-token"},
+					{"x-operation-marker", "preserve-cached-token-miss"},
+				}, wasmhost.WithEndOfStream(true))
+				require.Equal(t, types.ActionPause, action)
+				require.Equal(t, types.ActionPause, host.GetHttpStreamAction())
+				require.Nil(t, host.GetLocalResponse())
+				require.Len(t, host.GetHttpCalloutAttributes(), 1)
+
+				headers := host.GetRequestHeaders()
+				_, hasAuthorization := wasmhost.GetHeaderValue(headers, "authorization")
+				require.False(t, hasAuthorization)
+				requireHeaderValue(t, headers, ":method", "DELETE")
+				requireHeaderValue(t, headers, ":path", transparentBodylessUnknownTarget)
+				requireHeaderValue(t, headers, "x-operation-marker", "preserve-cached-token-miss")
+
+				allLogs := collectAllHostLogs(host)
+				require.NotContains(t, allLogs, testCase.token)
+				require.NotContains(t, allLogs, string(cachedData))
+			})
+		}
+	})
+}
+
+func TestTransparentVertexOAuthAcceptsRFC6750BearerToken(t *testing.T) {
+	authKey := newTransparentOAuthServiceAccount(t)
+	const accessToken = "AZaz09-._~+/=="
+
+	wasmhost.RunTest(t, func(t *testing.T) {
+		host, status := wasmhost.NewTestHost(transparentOAuthConfig(t, authKey, ""))
+		t.Cleanup(host.Reset)
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+
+		action := host.CallOnHttpRequestHeaders([][2]string{
+			{":authority", "client.example"},
+			{":path", transparentBodylessUnknownTarget},
+			{":method", "DELETE"},
+		}, wasmhost.WithEndOfStream(true))
+		require.Equal(t, types.ActionPause, action)
+		require.Len(t, host.GetHttpCalloutAttributes(), 1)
+
+		responseBody, err := json.Marshal(map[string]any{
+			"access_token": accessToken,
+			"expires_in":   3600,
+		})
+		require.NoError(t, err)
+		host.CallOnHttpCall(
+			[][2]string{{":status", "200"}, {"content-type", "application/json"}},
+			responseBody,
+		)
+
+		require.Nil(t, host.GetLocalResponse())
+		require.Equal(t, types.ActionContinue, host.GetHttpStreamAction())
+		requireHeaderValue(
+			t,
+			host.GetRequestHeaders(),
+			"authorization",
+			"Bearer "+accessToken,
+		)
+		require.NotContains(t, collectAllHostLogs(host), accessToken)
 	})
 }
 

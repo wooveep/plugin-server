@@ -51,6 +51,7 @@ const (
 	contextVertexStreamToolCallIDs     = "vertexStreamToolCallIDs"
 	vertexAnthropicVersion             = "vertex-2023-10-16"
 	vertexImageVariationDefaultPrompt  = "Create variations of the provided image."
+	maxOAuthBearerTokenLength          = 8 * 1024
 )
 
 // vertexRawPathRegex 匹配原生 Vertex AI REST API 路径
@@ -1634,9 +1635,7 @@ func (v *vertexProvider) getAccessToken(jwtToken string) error {
 			ExpiresIn   int64  `json:"expires_in"`
 		}
 		if err := json.Unmarshal(responseBody, &response); err != nil ||
-			response.AccessToken == "" ||
-			strings.TrimSpace(response.AccessToken) != response.AccessToken ||
-			strings.ContainsAny(response.AccessToken, "\r\n") {
+			!isValidOAuthBearerToken(response.AccessToken) {
 			log.Errorf("vertex oauth token exchange returned an invalid success response")
 			_ = util.ErrorHandler("ai-proxy.vertex.load_ak_failed", fmt.Errorf("failed to load vertex ak"))
 			return
@@ -1679,6 +1678,39 @@ type cachedAccessToken struct {
 	ExpireAt int64  `json:"expireAt"`
 }
 
+func isValidOAuthBearerToken(token string) bool {
+	if len(token) == 0 || len(token) > maxOAuthBearerTokenLength {
+		return false
+	}
+	if token[0] == '=' {
+		return false
+	}
+
+	padding := false
+	for i := 0; i < len(token); i++ {
+		character := token[i]
+		if character == '=' {
+			padding = true
+			continue
+		}
+		if padding {
+			return false
+		}
+		if (character >= 'A' && character <= 'Z') ||
+			(character >= 'a' && character <= 'z') ||
+			(character >= '0' && character <= '9') {
+			continue
+		}
+		switch character {
+		case '-', '.', '_', '~', '+', '/':
+			continue
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func (v *vertexProvider) getCachedAccessToken(key string) (string, error) {
 	data, _, err := proxywasm.GetSharedData(key)
 	if err != nil {
@@ -1694,6 +1726,9 @@ func (v *vertexProvider) getCachedAccessToken(key string) (string, error) {
 	var tokenInfo cachedAccessToken
 	if err = json.Unmarshal(data, &tokenInfo); err != nil {
 		return "", err
+	}
+	if !isValidOAuthBearerToken(tokenInfo.Token) {
+		return "", nil
 	}
 
 	now := time.Now().Unix()

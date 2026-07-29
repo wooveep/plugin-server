@@ -601,6 +601,60 @@ Task 2.8 third review-fix evidence (2026-07-29):
   the final staged detector and clean-commit refresh are recorded in the
   implementation report.
 
+Task 2.8 fourth review-fix evidence (2026-07-29):
+
+- The fourth independent `NEEDS_FIXES` token fixtures were reproduced before
+  production edits. The validator unit suite failed only because the unified
+  validator did not exist. Go/Wasm HostEmulator OAuth 200 callbacks accepted
+  NUL, non-CR/LF C0, DEL, non-ASCII, invalid punctuation, malformed padding,
+  and 8 KiB-plus-one access tokens without a local error; unsafe cached tokens
+  were installed immediately instead of remaining paused and re-fetching.
+- Vertex now uses one 8 KiB-bounded RFC 6750 `b64token` validator for both
+  successful OAuth response data and fresh shared-cache reads. It requires at
+  least one ASCII letter, digit, or `-._~+/` character, permits `=` only as a
+  trailing suffix, and rejects empty, oversized, whitespace/control, DEL,
+  non-ASCII, invalid-punctuation, leading-padding, and data-after-padding
+  values. Callback data is validated before header installation or cache
+  storage; an invalid cache entry is treated as a miss and triggers the real
+  sensitive token callout without installation or premature resume.
+- Go/Wasm contracts cover every required unsafe token class, no header/cache
+  installation, exact operation/body preservation, terminal pause/local 500
+  behavior, cache miss/re-fetch, and all-level token/body log exclusion. A
+  Go-only counter proves the invalid-success callback invokes the fixed local
+  error handler exactly once. A complete legal RFC 6750 token covering
+  `ALPHA`, `DIGIT`, `-._~+/`, and trailing `=` remains successful.
+- The SDK HostEmulator's `ProxyHttpCall` implementation always returns
+  `StatusOK` and exposes no synchronous dispatch-error injection API. The
+  permitted wrapper-level alternative therefore uses a narrow dispatch seam
+  below the real `ClusterClient.PostSensitive -> SensitiveHttpCall` path. Its
+  contract proves old pseudo-headers are replaced exactly once, URL authority
+  and path/raw-query are preserved, the first supplied timeout is selected,
+  the exact opaque body reaches dispatch, a synchronous error is returned
+  unchanged, and the callback does not run. The retained real Vertex
+  HostEmulator contract also covers missing and malformed status callbacks,
+  terminal local failure, and all-level response-body secrecy.
+- Exact pre-edit upstream impact was LOW for Vertex `getAccessToken`,
+  `getToken`, `getCachedAccessToken`, `setCachedAccessToken`, wrapper
+  `SensitiveHttpCall`, and the two amended test symbols. The cache writer had
+  one direct caller, four total affected symbols, and one existing
+  `OnRequestBody` family; every other exact query reported zero direct callers
+  or flows. No new HIGH/CRITICAL symbol was edited.
+- The 15-test combined transparent/OAuth/Bedrock/Vertex focused suite passed
+  in `33.805s`; the complete Vertex/Bedrock/transparent group passed in
+  `87.169s`; provider, config, and root-wrapper packages passed. The exact
+  serial aggregate `timeout 8m go test -count=1 -p 1 ./...` passed with the
+  root ai-proxy package at `281.613s`. Extension and root-wrapper vet, exact
+  `gofmt`, `git diff --check`, and strict OpenSpec validation also pass.
+  Root-wide `go vet ./...` continues to report only the pre-existing
+  `pkg/ai/sessionctx/sessionctx.go:512` unreachable-code finding; that file's
+  blob remains `e24b0a62e9bccff0023ad0b3e6efd1922693dcbe` at both
+  `4451eb84` and this worktree.
+- The pre-commit graph refresh is the five-file fourth review-fix worktree
+  rooted at `4451eb84`. `graphify update .` rebuilt 11,096 nodes, 14,841
+  edges, and 862 communities. GitNexus incremental analysis rebuilt 12,893
+  nodes, 40,055 edges, 281 clusters, and 300 flows. Generated GitNexus
+  instruction-file rewrites were restored before staging.
+
 - [ ] 2.9 Run focused and complete independent ai-proxy unit, proxy-wasm
   lifecycle/integration, streaming, regression, and security suites.
 - [ ] 2.10 Obtain an independent ai-proxy implementation/security review,
