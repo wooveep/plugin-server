@@ -114,9 +114,43 @@ Task 2.2 evidence (2026-07-29):
   documentation sections and found no production or shared-harness symbol
   impact.
 
-- [ ] 2.3 Add RED transparent-fallback tests using a non-generic provider,
+- [x] 2.3 Add RED transparent-fallback tests using a non-generic provider,
   nontrivial method, path, raw query, opaque request body, and opaque response
   body; prove exact preservation plus provider-owned host/auth/timeout/failover.
+
+Task 2.3 evidence (2026-07-29):
+
+- The current Graphify report, task 2.3 fast audit, change design/specs, Qwen
+  lifecycle fixtures, shared `NewTestHost`/`RunGoTest` harness, and failover
+  parser/status behavior were reviewed before the test was added. The audit's
+  read-only upstream impact results were LOW for the likely production seams;
+  no production symbol or shared harness was modified. The new unindexed
+  `TestTransparentQwenUnknownFallbackContract` symbol returned UNKNOWN with
+  zero indexed dependents when rechecked before its test-only refinement.
+- Pre-change focused baselines passed:
+  `go test . -run '^TestQwenResponsesFallbackConvertsNonStreamingRequestAndResponse$' -count=1`
+  and
+  `go test ./provider -run '^(TestFailover_FromJson_FailoverOnStatus|TestFailover_Validate)$' -count=1`.
+- `extensions/ai-proxy/transparent_fallback_contract_test.go` adds one
+  non-generic Qwen HostEmulator contract using configured
+  `qwenDomain: provider.example`, two provider tokens,
+  `firstByteTimeout: 3210`, minimal valid status failover, attacker-controlled
+  authority/auth/timeout, `PATCH
+  /api/v1/vendor/jobs/job%2F42:cancel?sig=a%2Bb&dup=1&dup=2`, and opaque
+  request/response byte slices. It independently asserts exact method, path,
+  raw query, request bytes, response bytes, provider authority, provider
+  authentication, and timeout authority without inventing fallback metadata.
+- Focused RED command:
+  `go test . -run '^TestTransparentQwenUnknownFallbackContract$' -count=1`.
+  It compiled and reached only the missing transport contract after every
+  preceding preservation/authority assertion passed: configured timeout
+  expected `3210`, forwarded request-controlled timeout observed `1`.
+- The independent failover-status subcase passed with
+  `go test . -run '^TestTransparentQwenUnknownFallbackContract$/^go$/^configured_failover_status_removes_the_failed_provider_token$' -count=1`;
+  a configured `429` removed the first provider token and the next request used
+  the remaining provider token while retaining provider authority. This
+  proves the existing failover path independently of the timeout RED.
+
 - [ ] 2.4 Add RED forced-passthrough tests proving an otherwise-known adapter
   does not transform request, non-streaming response, or streaming response
   bodies and does not publish the skipped adapter identity.
