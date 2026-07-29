@@ -1,0 +1,331 @@
+{
+  "schema_version": "1.0.0",
+  "change_name": "add-ai-route-plugin-routing-contracts",
+  "generated_at_utc": "2026-07-29T18:58:00Z",
+  "repository": {
+    "identity": "wooveep/wasm-go",
+    "remote": "https://github.com/wooveep/wasm-go.git",
+    "intentional_base_commit": "9995ed5c7d4977a8ddf16ea34faea3d8286a9e56",
+    "reviewed_result_commit": "eff8624eb9cbdc199b006e265f12ece5098e9d0d",
+    "evidence_commit": null,
+    "evidence_commit_state": "pending-first-manifest-commit",
+    "clean_before_build": true
+  },
+  "toolchain": {
+    "go_version": "go1.26.3",
+    "go_host_os": "linux",
+    "go_host_arch": "amd64",
+    "go_root": "/usr/local/go",
+    "wasm_target_os": "wasip1",
+    "wasm_target_arch": "wasm",
+    "make_version": "GNU Make 4.4.1",
+    "coreutils_version": "GNU coreutils 9.7",
+    "file_version": "file-5.46"
+  },
+  "review_commands": [
+    "git merge-base --is-ancestor 9995ed5c7d4977a8ddf16ea34faea3d8286a9e56 eff8624eb9cbdc199b006e265f12ece5098e9d0d",
+    "git status --porcelain=v1 --untracked-files=all",
+    "openspec validate add-ai-route-plugin-routing-contracts --strict --no-interactive",
+    "mcp__gitnexus.detect_changes({\"repo\":\"/home/cloudyi/.config/superpowers/worktrees/wasm-go/add-ai-route-plugin-routing-contracts\",\"scope\":\"compare\",\"base_ref\":\"9995ed5c7d4977a8ddf16ea34faea3d8286a9e56\",\"worktree\":\"/home/cloudyi/.config/superpowers/worktrees/wasm-go/add-ai-route-plugin-routing-contracts\"})",
+    "sha256sum .superpowers/sdd/add-ai-route-plugin-routing-contracts/task-7.1-implementation-review.md"
+  ],
+  "review_result": {
+    "report_sha256": "7e6d8c262a9b0ef209cc660f46690159e2fa80dad4f5dd21110b4821d02f6b6b",
+    "verdict": "APPROVED",
+    "critical_findings": 0,
+    "important_findings": 0,
+    "minor_findings": 0
+  },
+  "build_commands": [
+    "make --no-print-directory build-plugin PLUGIN=ai-proxy WASM_BUILDER=go",
+    "make --no-print-directory build-plugin PLUGIN=ai-billing WASM_BUILDER=go",
+    "make --no-print-directory build-plugin PLUGIN=ai-quota WASM_BUILDER=go",
+    "make --no-print-directory build-plugin PLUGIN=ai-statistics WASM_BUILDER=go"
+  ],
+  "test_commands": [
+    "(cd extensions/ai-proxy && WASM_FILE_PATH=\"${REPO_ROOT}/build/plugins/ai-proxy/1.0.2/plugin.wasm\" go test . -run '^TestAdapterMetadataV2GoWasmContract$/^wasm$' -count=1 -v -timeout=5m)",
+    "(cd extensions/ai-billing && WASM_FILE_PATH=\"${REPO_ROOT}/build/plugins/ai-billing/0.1.5/plugin.wasm\" go test . -run '^TestBuildBillingEvent_UsesLocalResponseCodeDetailsForCacheReplay$/^wasm$' -count=1 -v -timeout=5m)",
+    "(cd extensions/ai-quota && WASM_FILE_PATH=\"${REPO_ROOT}/build/plugins/ai-quota/1.0.2/plugin.wasm\" go test . -run '^TestQuotaAdmissionOwnershipContract$/^wasm$' -count=1 -v -timeout=5m)",
+    "(cd extensions/ai-statistics && WASM_FILE_PATH=\"${REPO_ROOT}/build/plugins/ai-statistics/1.0.1/plugin.wasm\" go test . -run '^TestStatisticsTerminalLifecycleGoWasmContract$/^wasm$' -count=1 -v -timeout=5m)"
+  ],
+  "validation_commands": [
+    "test -s \"${ARTIFACT}\"",
+    "test \"$(od -An -tx1 -N8 \"${ARTIFACT}\" | tr -d ' \\n')\" = 0061736d01000000",
+    "file \"${ARTIFACT}\"",
+    "sha256sum \"${ARTIFACT}\"",
+    "md5sum \"${ARTIFACT}\"",
+    "cmp --silent \"${DETACHED_ARTIFACT}\" \"${ARTIFACT}\"",
+    "go version -m \"${ARTIFACT}\""
+  ],
+  "validation_notes": [
+    "The exact artifact-path proxy-wasm tests executed their /wasm subtests without skip or timeout and passed.",
+    "go version -m returned exit code 1 with no output for every raw stripped Wasm artifact. This parser limitation is not recorded as a passing validation.",
+    "Build target evidence was independently confirmed from the build environment and embedded go1.26.3, GOOS=wasip1, and GOARCH=wasm strings."
+  ],
+  "upload_commands": [
+    "python3 /home/cloudyi/CodeWorkspace/plugin-server/upload_plugin.py --server http://127.0.0.1:18084 --token \"${MODELFUSION_E2E_UPLOAD_TOKEN}\" --file \"${ARTIFACT}\" --name \"${PLUGIN}\" --version \"${VERSION}\""
+  ],
+  "retrieval_commands": [
+    "curl --silent --show-error --location --output \"${SERVED_FILE}\" --write-out '%{http_code}|%{content_type}' --max-time 60 \"http://127.0.0.1:18084/plugins/${PLUGIN}/${VERSION}/plugin.wasm\"",
+    "kubectl -n higress-system exec \"${PLUGIN_POD}\" -- python3 -c 'import sys,urllib.request;sys.stdout.buffer.write(urllib.request.urlopen(sys.argv[1],timeout=60).read())' \"http://higress-plugin-server.higress-system.svc/plugins/${PLUGIN}/${VERSION}/plugin.wasm\"",
+    "cmp --silent \"${ARTIFACT}\" \"${SERVED_FILE}\""
+  ],
+  "artifacts": [
+    {
+      "plugin": "ai-proxy",
+      "version": "1.0.2",
+      "repository_identity": "wooveep/wasm-go",
+      "repository_remote": "https://github.com/wooveep/wasm-go.git",
+      "intentional_base_commit": "9995ed5c7d4977a8ddf16ea34faea3d8286a9e56",
+      "reviewed_result_commit": "eff8624eb9cbdc199b006e265f12ece5098e9d0d",
+      "toolchain": {
+        "go_version": "go1.26.3",
+        "go_host_os": "linux",
+        "go_host_arch": "amd64",
+        "go_root": "/usr/local/go",
+        "wasm_target_os": "wasip1",
+        "wasm_target_arch": "wasm",
+        "make_version": "GNU Make 4.4.1",
+        "coreutils_version": "GNU coreutils 9.7",
+        "file_version": "file-5.46"
+      },
+      "authoritative_version_path": "extensions/ai-proxy/VERSION",
+      "artifact_path": "build/plugins/ai-proxy/1.0.2/plugin.wasm",
+      "metadata_path": "build/plugins/ai-proxy/1.0.2/metadata.txt",
+      "size_bytes": 9899479,
+      "sha256": "dab58afed159badafbd60f07666a99d8d665c044b54b8026a0ee7b19d777e6cc",
+      "md5": "904907c03829d81000e3762eae564fec",
+      "wasm_magic_and_version": "0061736d01000000",
+      "file_identification": "WebAssembly (wasm) binary module version 0x1 (MVP)",
+      "go_build_info": {
+        "parser_command": "go version -m build/plugins/ai-proxy/1.0.2/plugin.wasm",
+        "parser_exit_code": 1,
+        "parser_output": "",
+        "result": "raw-stripped-wasm-parser-limitation-not-pass",
+        "embedded_evidence": [
+          "go1.26.3",
+          "GOOS=wasip1",
+          "GOARCH=wasm"
+        ]
+      },
+      "exact_build_command": "make --no-print-directory build-plugin PLUGIN=ai-proxy WASM_BUILDER=go",
+      "exact_wasm_test_command": "(cd extensions/ai-proxy && WASM_FILE_PATH=\"${REPO_ROOT}/build/plugins/ai-proxy/1.0.2/plugin.wasm\" go test . -run '^TestAdapterMetadataV2GoWasmContract$/^wasm$' -count=1 -v -timeout=5m)",
+      "exact_wasm_test_result": "PASS; /wasm executed; no skip; no timeout",
+      "provenance": {
+        "intentional_base_commit": "9995ed5c7d4977a8ddf16ea34faea3d8286a9e56",
+        "reviewed_result_commit": "eff8624eb9cbdc199b006e265f12ece5098e9d0d",
+        "build_worktree_clean": true,
+        "plugin_version_override_supplied": false,
+        "copied_output_byte_identical": true,
+        "build_started_at_utc": "2026-07-29T18:45:46Z",
+        "build_finished_at_utc": "2026-07-29T18:45:46Z",
+        "build_timestamp_precision": "one-second generated metadata",
+        "build_elapsed_seconds": 0.59
+      },
+      "availability": {
+        "namespace": "higress-system",
+        "service": "higress-plugin-server",
+        "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-proxy/1.0.2/plugin.wasm",
+        "upload_http_status": null,
+        "retrieval_http_status": null,
+        "content_type": null,
+        "served_size_bytes": null,
+        "served_sha256": null,
+        "byte_identical": null,
+        "state": "pending-upload-and-retrieval"
+      }
+    },
+    {
+      "plugin": "ai-billing",
+      "version": "0.1.5",
+      "repository_identity": "wooveep/wasm-go",
+      "repository_remote": "https://github.com/wooveep/wasm-go.git",
+      "intentional_base_commit": "9995ed5c7d4977a8ddf16ea34faea3d8286a9e56",
+      "reviewed_result_commit": "eff8624eb9cbdc199b006e265f12ece5098e9d0d",
+      "toolchain": {
+        "go_version": "go1.26.3",
+        "go_host_os": "linux",
+        "go_host_arch": "amd64",
+        "go_root": "/usr/local/go",
+        "wasm_target_os": "wasip1",
+        "wasm_target_arch": "wasm",
+        "make_version": "GNU Make 4.4.1",
+        "coreutils_version": "GNU coreutils 9.7",
+        "file_version": "file-5.46"
+      },
+      "authoritative_version_path": "extensions/ai-billing/VERSION",
+      "artifact_path": "build/plugins/ai-billing/0.1.5/plugin.wasm",
+      "metadata_path": "build/plugins/ai-billing/0.1.5/metadata.txt",
+      "size_bytes": 18436619,
+      "sha256": "4e346d42a7032c69ca54d26ae48a15dce495065bff5029471945d5c866184ca0",
+      "md5": "96b8911d40e77fec4bff1c322f27e637",
+      "wasm_magic_and_version": "0061736d01000000",
+      "file_identification": "WebAssembly (wasm) binary module version 0x1 (MVP)",
+      "go_build_info": {
+        "parser_command": "go version -m build/plugins/ai-billing/0.1.5/plugin.wasm",
+        "parser_exit_code": 1,
+        "parser_output": "",
+        "result": "raw-stripped-wasm-parser-limitation-not-pass",
+        "embedded_evidence": [
+          "go1.26.3",
+          "GOOS=wasip1",
+          "GOARCH=wasm"
+        ]
+      },
+      "exact_build_command": "make --no-print-directory build-plugin PLUGIN=ai-billing WASM_BUILDER=go",
+      "exact_wasm_test_command": "(cd extensions/ai-billing && WASM_FILE_PATH=\"${REPO_ROOT}/build/plugins/ai-billing/0.1.5/plugin.wasm\" go test . -run '^TestBuildBillingEvent_UsesLocalResponseCodeDetailsForCacheReplay$/^wasm$' -count=1 -v -timeout=5m)",
+      "exact_wasm_test_result": "PASS; /wasm executed; no skip; no timeout",
+      "provenance": {
+        "intentional_base_commit": "9995ed5c7d4977a8ddf16ea34faea3d8286a9e56",
+        "reviewed_result_commit": "eff8624eb9cbdc199b006e265f12ece5098e9d0d",
+        "build_worktree_clean": true,
+        "plugin_version_override_supplied": false,
+        "copied_output_byte_identical": true,
+        "build_started_at_utc": "2026-07-29T18:45:46Z",
+        "build_finished_at_utc": "2026-07-29T18:45:46Z",
+        "build_timestamp_precision": "one-second generated metadata",
+        "build_elapsed_seconds": 0.32
+      },
+      "availability": {
+        "namespace": "higress-system",
+        "service": "higress-plugin-server",
+        "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.5/plugin.wasm",
+        "upload_http_status": null,
+        "retrieval_http_status": null,
+        "content_type": null,
+        "served_size_bytes": null,
+        "served_sha256": null,
+        "byte_identical": null,
+        "state": "pending-upload-and-retrieval"
+      }
+    },
+    {
+      "plugin": "ai-quota",
+      "version": "1.0.2",
+      "repository_identity": "wooveep/wasm-go",
+      "repository_remote": "https://github.com/wooveep/wasm-go.git",
+      "intentional_base_commit": "9995ed5c7d4977a8ddf16ea34faea3d8286a9e56",
+      "reviewed_result_commit": "eff8624eb9cbdc199b006e265f12ece5098e9d0d",
+      "toolchain": {
+        "go_version": "go1.26.3",
+        "go_host_os": "linux",
+        "go_host_arch": "amd64",
+        "go_root": "/usr/local/go",
+        "wasm_target_os": "wasip1",
+        "wasm_target_arch": "wasm",
+        "make_version": "GNU Make 4.4.1",
+        "coreutils_version": "GNU coreutils 9.7",
+        "file_version": "file-5.46"
+      },
+      "authoritative_version_path": "extensions/ai-quota/VERSION",
+      "artifact_path": "build/plugins/ai-quota/1.0.2/plugin.wasm",
+      "metadata_path": "build/plugins/ai-quota/1.0.2/metadata.txt",
+      "size_bytes": 6341937,
+      "sha256": "0c974c1aeda1d0dead8294d990a8b6846eaaa19a5eba663fe5a1e9dbb9465f59",
+      "md5": "30645ae949b326c4511a4f72ea018fcf",
+      "wasm_magic_and_version": "0061736d01000000",
+      "file_identification": "WebAssembly (wasm) binary module version 0x1 (MVP)",
+      "go_build_info": {
+        "parser_command": "go version -m build/plugins/ai-quota/1.0.2/plugin.wasm",
+        "parser_exit_code": 1,
+        "parser_output": "",
+        "result": "raw-stripped-wasm-parser-limitation-not-pass",
+        "embedded_evidence": [
+          "go1.26.3",
+          "GOOS=wasip1",
+          "GOARCH=wasm"
+        ]
+      },
+      "exact_build_command": "make --no-print-directory build-plugin PLUGIN=ai-quota WASM_BUILDER=go",
+      "exact_wasm_test_command": "(cd extensions/ai-quota && WASM_FILE_PATH=\"${REPO_ROOT}/build/plugins/ai-quota/1.0.2/plugin.wasm\" go test . -run '^TestQuotaAdmissionOwnershipContract$/^wasm$' -count=1 -v -timeout=5m)",
+      "exact_wasm_test_result": "PASS; /wasm executed; no skip; no timeout",
+      "provenance": {
+        "intentional_base_commit": "9995ed5c7d4977a8ddf16ea34faea3d8286a9e56",
+        "reviewed_result_commit": "eff8624eb9cbdc199b006e265f12ece5098e9d0d",
+        "build_worktree_clean": true,
+        "plugin_version_override_supplied": false,
+        "copied_output_byte_identical": true,
+        "build_started_at_utc": "2026-07-29T18:45:47Z",
+        "build_finished_at_utc": "2026-07-29T18:45:47Z",
+        "build_timestamp_precision": "one-second generated metadata",
+        "build_elapsed_seconds": 0.16
+      },
+      "availability": {
+        "namespace": "higress-system",
+        "service": "higress-plugin-server",
+        "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-quota/1.0.2/plugin.wasm",
+        "upload_http_status": null,
+        "retrieval_http_status": null,
+        "content_type": null,
+        "served_size_bytes": null,
+        "served_sha256": null,
+        "byte_identical": null,
+        "state": "pending-upload-and-retrieval"
+      }
+    },
+    {
+      "plugin": "ai-statistics",
+      "version": "1.0.1",
+      "repository_identity": "wooveep/wasm-go",
+      "repository_remote": "https://github.com/wooveep/wasm-go.git",
+      "intentional_base_commit": "9995ed5c7d4977a8ddf16ea34faea3d8286a9e56",
+      "reviewed_result_commit": "eff8624eb9cbdc199b006e265f12ece5098e9d0d",
+      "toolchain": {
+        "go_version": "go1.26.3",
+        "go_host_os": "linux",
+        "go_host_arch": "amd64",
+        "go_root": "/usr/local/go",
+        "wasm_target_os": "wasip1",
+        "wasm_target_arch": "wasm",
+        "make_version": "GNU Make 4.4.1",
+        "coreutils_version": "GNU coreutils 9.7",
+        "file_version": "file-5.46"
+      },
+      "authoritative_version_path": "extensions/ai-statistics/VERSION",
+      "artifact_path": "build/plugins/ai-statistics/1.0.1/plugin.wasm",
+      "metadata_path": "build/plugins/ai-statistics/1.0.1/metadata.txt",
+      "size_bytes": 6923452,
+      "sha256": "243d1994b9a35a889b3ecd132f9de41f0ddb73587ea5c0cb65653c6e2cadbe37",
+      "md5": "e73cfff0efd01db6dda58419c7a0166f",
+      "wasm_magic_and_version": "0061736d01000000",
+      "file_identification": "WebAssembly (wasm) binary module version 0x1 (MVP)",
+      "go_build_info": {
+        "parser_command": "go version -m build/plugins/ai-statistics/1.0.1/plugin.wasm",
+        "parser_exit_code": 1,
+        "parser_output": "",
+        "result": "raw-stripped-wasm-parser-limitation-not-pass",
+        "embedded_evidence": [
+          "go1.26.3",
+          "GOOS=wasip1",
+          "GOARCH=wasm"
+        ]
+      },
+      "exact_build_command": "make --no-print-directory build-plugin PLUGIN=ai-statistics WASM_BUILDER=go",
+      "exact_wasm_test_command": "(cd extensions/ai-statistics && WASM_FILE_PATH=\"${REPO_ROOT}/build/plugins/ai-statistics/1.0.1/plugin.wasm\" go test . -run '^TestStatisticsTerminalLifecycleGoWasmContract$/^wasm$' -count=1 -v -timeout=5m)",
+      "exact_wasm_test_result": "PASS; /wasm executed; no skip; no timeout",
+      "provenance": {
+        "intentional_base_commit": "9995ed5c7d4977a8ddf16ea34faea3d8286a9e56",
+        "reviewed_result_commit": "eff8624eb9cbdc199b006e265f12ece5098e9d0d",
+        "build_worktree_clean": true,
+        "plugin_version_override_supplied": false,
+        "copied_output_byte_identical": true,
+        "build_started_at_utc": "2026-07-29T18:45:47Z",
+        "build_finished_at_utc": "2026-07-29T18:45:47Z",
+        "build_timestamp_precision": "one-second generated metadata",
+        "build_elapsed_seconds": 0.16
+      },
+      "availability": {
+        "namespace": "higress-system",
+        "service": "higress-plugin-server",
+        "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-statistics/1.0.1/plugin.wasm",
+        "upload_http_status": null,
+        "retrieval_http_status": null,
+        "content_type": null,
+        "served_size_bytes": null,
+        "served_sha256": null,
+        "byte_identical": null,
+        "state": "pending-upload-and-retrieval"
+      }
+    }
+  ]
+}
