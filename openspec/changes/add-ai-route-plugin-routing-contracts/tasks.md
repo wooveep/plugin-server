@@ -7,7 +7,7 @@
 - [x] 1.2 Create proposal, design, seven delta capability specs, and this task
   plan with `openspec new change`/status/instructions; run strict validation
   without modifying or archiving any pre-existing active change.
-- [ ] 1.3 Before every source-symbol edit, use the current Graphify map and run
+- [x] 1.3 Before every source-symbol edit, use the current Graphify map and run
   GitNexus upstream impact for the exact symbol; report HIGH or CRITICAL blast
   radius before editing and record affected callers/processes in task evidence.
 
@@ -37,6 +37,23 @@ Task 1.2 evidence (2026-07-29):
   seven delta capabilities, and `git diff --check` passes.
 - Only this new change directory was modified; the three pre-existing active
   changes remain untouched.
+
+Task 1.3 evidence (2026-07-30):
+
+- Every source task records its pre-edit Graphify review and exact-symbol
+  GitNexus impact. HIGH/CRITICAL shared helpers, config/model types, lifecycle
+  callbacks, and stream completion paths were warned before edits; direct
+  callers and affected process families were reviewed before each production
+  change.
+- The final refreshed exact-base comparison reports 804 changed symbols and 70
+  affected flows at aggregate `CRITICAL`. All 70 were inspected and classified;
+  the aggregate rating is retained as change-impact evidence rather than
+  downgraded to a defect finding.
+- Billing callback/property edges remain under-modeled. A final independent
+  `impact(buildBillingEvent, includeTests=true)` reports HIGH with 12 direct and
+  5 indirect dependents, supplemented by direct response/stream callback source
+  review and focused Go/Wasm tests. GitNexus has no PDG/taint layer, so zero
+  persisted taint findings are not treated as proof of safety.
 
 For every RED task below, run the fixture against the pre-implementation state
 and record the expected observed failure before production edits. No GREEN,
@@ -2807,16 +2824,92 @@ Task 7 reproducibility invalidation (2026-07-30):
 
 ## 8. Final Verification, Spec Sync, And Archive
 
-- [ ] 8.1 From a clean reviewed state, rerun all affected independent plugin
+- [x] 8.1 From a clean reviewed state, rerun all affected independent plugin
   unit/integration/security suites, root tests, formatting, vet/static checks,
   version alignment, and four-plugin versioned build.
-- [ ] 8.2 Refresh Graphify after code changes; run GitNexus change detection
+
+Task 8.1 evidence (2026-07-30):
+
+- Fresh verification started and finished on clean
+  `b5a9e0ae916948e458f702404aec92a4150e63b7`; reviewed source `5944772` is its
+  ancestor. Root version/alignment/schema/example/trimpath tests and
+  `go test ./... -count=1 -timeout=10m` passed without skip.
+- All four modules passed `go mod tidy -diff`, `go mod verify`, sorted `gofmt`
+  checks, `go vet ./...`, every Task 6.7 focused gate, and their ordinary full
+  suites. Full-suite wall times were `289.127s` (proxy), `11.059s` (billing),
+  `6.240s` (quota), and `37.777s` (statistics).
+- Corrected proxy all-Go race passed with
+  `-skip='/wasm($|#)'`. The aggregate Go+Wasm race is not claimed PASS; the
+  changed formal-Wasm controls executed visible `/go` and `/wasm` subtests
+  without skip for proxy, billing, quota, and statistics, and all passed.
+- A second clean detached absolute path rebuilt exact source `5944772` with
+  each default `make --no-print-directory build-plugin PLUGIN=<plugin>
+  WASM_BUILDER=go` command and no build/version/environment override. All four
+  rebuilt files matched the formal artifacts and current manifest byte for
+  byte, including size, SHA-256, MD5, build ID, versioned path, magic,
+  metadata, and absence of the detached worktree/output path.
+- Root `go vet ./...` is explicitly NOT PASS solely for pre-existing unchanged
+  `pkg/ai/sessionctx/sessionctx.go:512:2: unreachable code`; the file blob
+  `e24b0a62e9bccff0023ad0b3e6efd1922693dcbe` is identical at intentional base,
+  reviewed source, and current HEAD. Root formatting, README identity,
+  `git diff --check`, and strict OpenSpec gates passed.
+- The final tracked and cached diffs are empty, exactly eight formal
+  build/metadata files remain, and all detached worktrees, temporary files,
+  generated test guest Wasm files, and test processes were cleaned.
+- [x] 8.2 Refresh Graphify after code changes; run GitNexus change detection
   against the intentional base, inspect every affected execution flow, run
   final diff/secret/security review, and verify no unrelated active change was
   modified.
-- [ ] 8.3 Run strict OpenSpec validation, verify every task has fresh evidence,
+
+Task 8.2 evidence (2026-07-30):
+
+- Fresh Graphify at `b5a9e0a` contains 11,305 nodes, 15,629 edges, and 863
+  communities. Fresh GitNexus contains 13,222 nodes, 41,745 edges, 301
+  clusters, and 300 flows.
+- Exact-base detection from
+  `9995ed5c7d4977a8ddf16ea34faea3d8286a9e56` reports 804 changed symbols,
+  119 files, 70 affected flows, and aggregate `CRITICAL`. Independent review
+  classified every flow: ai-proxy 53 (34 general provider/transport, 9
+  Bedrock/SigV4, 10 failover), ai-statistics 11, and ai-quota 6. The billing
+  callback blind spot was covered by the HIGH 17-dependent impact and direct
+  callback review described under Task 1.3.
+- The reproducibility fix `5944772` changes only the Make default plus its
+  behavior-level test; later commits through `b5a9e0a` contain release evidence
+  only. No new runtime execution flow was introduced after the original
+  approved result.
+- Exact-base diff check, strict OpenSpec, source/security review, and added-line
+  high-confidence secret scan passed. Candidate credentials are documented
+  placeholders or explicit test-only sentinels; no real secret was found.
+  GitNexus has no PDG/taint layer, and `gitleaks`/`trufflehog` are unavailable,
+  so those limitations are retained.
+- Unrelated active change trees remain byte-identical and clean:
+  `a1331830be5e04baa9607870a618cc00cf50fce1`,
+  `01145c3ac6d232fcfe56e124fed02c11d259d49e`, and
+  `85c841484bae9ecb78c514efe48d9ac1533ec36e`. The release manifest still points
+  to immutable evidence commit `07ac833` and availability commit `e2f8010`;
+  all four formal and served identities agree.
+- Independent final verdict is `APPROVED` with zero code findings. Retained
+  non-blocking limitations are the unchanged root-vet baseline, the unclaimed
+  aggregate Go+Wasm race, and the existing `SensitiveHttpCall` general
+  absolute-URL gap whose sole reviewed production caller uses fixed relative
+  `/token`.
+- [x] 8.3 Run strict OpenSpec validation, verify every task has fresh evidence,
   and preserve the immutable result commit/artifact/upload/checksum manifest
   for downstream catalog consumption.
+
+Task 8.3 evidence (2026-07-30):
+
+- Strict validation passes with 48 of 49 tasks complete; the sole open task is
+  the archive operation itself. Fifty-three dated evidence headings cover the
+  implementation, reviews, artifact rebuild, replacement upload, final tests,
+  and graph/security audit.
+- The manifest parses and independently proves reviewed source `5944772`,
+  immutable first reproducible manifest `07ac833`, immutable first replacement
+  availability evidence `e2f8010`, and complete byte-identical availability for
+  exactly four selected versioned artifacts. All referenced commits exist.
+- `git diff --check` passes. The only working-tree change is this target task
+  evidence; the index and untracked set are empty. No formal artifact or
+  unrelated active change was modified during final validation.
 - [ ] 8.4 Before archive, synchronize the seven validated requirement deltas,
   manually rewrite the accepted `ai-billing-events` Purpose to global Redis
   Stream event delivery, and manually rewrite the accepted
