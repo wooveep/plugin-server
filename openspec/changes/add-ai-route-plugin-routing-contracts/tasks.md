@@ -2747,18 +2747,22 @@ Task 7.3 evidence (2026-07-30):
   `go.mod replace` paths, and their clean dependency commits. An independent
   review resolved one Minor wording precision issue and then returned
   `APPROVED` with zero remaining findings.
-- [ ] 7.4 Upload the exact four tested Wasm byte sequences to the supported
+- [x] 7.4 Upload the exact four tested Wasm byte sequences to the supported
   local plugin server and verify each version is available through its normal
   local service interface.
-- [ ] 7.5 Retrieve all four served artifacts and prove byte-for-byte SHA-256
+- [x] 7.5 Retrieve all four served artifacts and prove byte-for-byte SHA-256
   identity with the tested local files; reject and replace any mismatch.
 
 Tasks 7.4 and 7.5 evidence (2026-07-30):
 
-- Before upload, all four target versions returned HTTP 404 through the normal
-  in-cluster DNS Service. The exact tested files recorded by the manifest were
-  then uploaded with the supported authenticated PUT helper; each PUT returned
-  HTTP 201.
+- The preceding 404/upload/retrieval run and
+  `bb3ec7a2cfd93e3462bbb090034c55534c4adefb` are historical superseded
+  availability evidence for the invalidated `eff8624` bytes.
+- Before replacement, all four target versions returned HTTP 200 with their
+  superseded SHA-256 values through the normal in-cluster DNS Service, and all
+  four differed from the reproducible `5944772` artifact identities. The exact
+  tested replacement files recorded by the current manifest were uploaded with
+  the supported authenticated PUT helper; each PUT returned HTTP 201.
 - The upload transport was a temporary `kubectl port-forward` bound only to
   `127.0.0.1:18084`. Its exact PID was stopped after the run, and its unique
   temporary retrieval directory was removed. The token came from the ignored
@@ -2769,9 +2773,10 @@ Tasks 7.4 and 7.5 evidence (2026-07-30):
   was byte-identical by `cmp` to both the tested local artifact and the other
   retrieval path.
 - The controlled availability run lasted from
-  `2026-07-29T19:06:43Z` through `2026-07-29T19:06:49Z`. The manifest records
-  the upload status and both retrieval results independently for each version;
-  no mismatch required replacement.
+  `2026-07-29T19:43:25Z` through `2026-07-29T19:43:30Z`. The manifest records
+  each stale pre-upload identity, upload status, and both replacement retrieval
+  results independently for every version; all four detected mismatches were
+  replaced successfully.
 
 Task 7 reproducibility invalidation (2026-07-30):
 
@@ -2791,8 +2796,8 @@ Task 7 reproducibility invalidation (2026-07-30):
   Consequently, the old formal hashes, manifest provenance, local upload, and
   retrieval facts are historical superseded evidence. Tasks 7.2 through 7.5
   were reopened; replacement rebuild, retest, and manifest recording from
-  `5944772` are complete, while only Tasks 7.4 and 7.5 remain open for
-  replacement upload and retrieval.
+  `5944772` are complete, and replacement upload plus two-path retrieval are
+  now also complete. No Task 7 release gate remains open.
 
 ## 8. Final Verification, Spec Sync, And Archive
 

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "change_name": "add-ai-route-plugin-routing-contracts",
-  "generated_at_utc": "2026-07-29T19:35:00Z",
+  "generated_at_utc": "2026-07-29T19:43:30Z",
   "repository": {
     "identity": "wooveep/wasm-go",
     "remote": "https://github.com/wooveep/wasm-go.git",
@@ -9,6 +9,8 @@
     "reviewed_result_commit": "59447726256efa0a3fc1c39b65fd7c662f2c67ed",
     "evidence_commit": "07ac833e525a99e9aaa835961f68dd253a39bef4",
     "evidence_commit_state": "recorded-first-reproducible-manifest-commit",
+    "availability_evidence_commit": null,
+    "availability_evidence_commit_state": "pending-reproducible-availability-commit",
     "clean_before_build": true
   },
   "superseded_release": {
@@ -133,12 +135,12 @@
     "service": "higress-plugin-server",
     "upload_transport": "kubectl port-forward bound only to 127.0.0.1:18084",
     "normal_service_base_url": "http://higress-plugin-server.higress-system.svc",
-    "started_at_utc": null,
-    "finished_at_utc": null,
+    "started_at_utc": "2026-07-29T19:43:25Z",
+    "finished_at_utc": "2026-07-29T19:43:30Z",
     "expanded_secret_recorded": false,
-    "port_forward_stopped": null,
-    "temporary_retrieval_files_removed": null,
-    "state": "pending-reupload-and-retrieval"
+    "port_forward_stopped": true,
+    "temporary_retrieval_files_removed": true,
+    "state": "complete-replaced-superseded-bytes"
   },
   "artifacts": [
     {
@@ -213,16 +215,34 @@
         "namespace": "higress-system",
         "service": "higress-plugin-server",
         "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-proxy/1.0.2/plugin.wasm",
-        "preupload_service_http_status": null,
-        "upload_http_status": null,
-        "retrieval_http_status": null,
-        "content_type": null,
-        "served_size_bytes": null,
-        "served_sha256": null,
-        "byte_identical": null,
-        "loopback_retrieval": null,
-        "service_retrieval": null,
-        "state": "pending-reupload-and-retrieval"
+        "preupload_service_http_status": 200,
+        "preupload_content_type": "application/wasm",
+        "preupload_served_size_bytes": 9899479,
+        "preupload_served_sha256": "dab58afed159badafbd60f07666a99d8d665c044b54b8026a0ee7b19d777e6cc",
+        "preupload_byte_identical": false,
+        "upload_http_status": 201,
+        "retrieval_http_status": 200,
+        "content_type": "application/wasm",
+        "served_size_bytes": 9891322,
+        "served_sha256": "0bb506041b02e37f15bdf35320f1f2504e3417b2db512b9a3be4624987bdf618",
+        "byte_identical": true,
+        "loopback_retrieval": {
+          "url": "http://127.0.0.1:18084/plugins/ai-proxy/1.0.2/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 9891322,
+          "served_sha256": "0bb506041b02e37f15bdf35320f1f2504e3417b2db512b9a3be4624987bdf618",
+          "byte_identical": true
+        },
+        "service_retrieval": {
+          "url": "http://higress-plugin-server.higress-system.svc/plugins/ai-proxy/1.0.2/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 9891322,
+          "served_sha256": "0bb506041b02e37f15bdf35320f1f2504e3417b2db512b9a3be4624987bdf618",
+          "byte_identical": true
+        },
+        "state": "available-byte-identical-replaced-superseded-bytes"
       }
     },
     {
@@ -296,16 +316,34 @@
         "namespace": "higress-system",
         "service": "higress-plugin-server",
         "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.5/plugin.wasm",
-        "preupload_service_http_status": null,
-        "upload_http_status": null,
-        "retrieval_http_status": null,
-        "content_type": null,
-        "served_size_bytes": null,
-        "served_sha256": null,
-        "byte_identical": null,
-        "loopback_retrieval": null,
-        "service_retrieval": null,
-        "state": "pending-reupload-and-retrieval"
+        "preupload_service_http_status": 200,
+        "preupload_content_type": "application/wasm",
+        "preupload_served_size_bytes": 18436619,
+        "preupload_served_sha256": "4e346d42a7032c69ca54d26ae48a15dce495065bff5029471945d5c866184ca0",
+        "preupload_byte_identical": false,
+        "upload_http_status": 201,
+        "retrieval_http_status": 200,
+        "content_type": "application/wasm",
+        "served_size_bytes": 18427856,
+        "served_sha256": "36b6119e102b777d875cd6e1b434880f40fbe282eee791cba6ad1db793c39335",
+        "byte_identical": true,
+        "loopback_retrieval": {
+          "url": "http://127.0.0.1:18084/plugins/ai-billing/0.1.5/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 18427856,
+          "served_sha256": "36b6119e102b777d875cd6e1b434880f40fbe282eee791cba6ad1db793c39335",
+          "byte_identical": true
+        },
+        "service_retrieval": {
+          "url": "http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.5/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 18427856,
+          "served_sha256": "36b6119e102b777d875cd6e1b434880f40fbe282eee791cba6ad1db793c39335",
+          "byte_identical": true
+        },
+        "state": "available-byte-identical-replaced-superseded-bytes"
       }
     },
     {
@@ -379,16 +417,34 @@
         "namespace": "higress-system",
         "service": "higress-plugin-server",
         "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-quota/1.0.2/plugin.wasm",
-        "preupload_service_http_status": null,
-        "upload_http_status": null,
-        "retrieval_http_status": null,
-        "content_type": null,
-        "served_size_bytes": null,
-        "served_sha256": null,
-        "byte_identical": null,
-        "loopback_retrieval": null,
-        "service_retrieval": null,
-        "state": "pending-reupload-and-retrieval"
+        "preupload_service_http_status": 200,
+        "preupload_content_type": "application/wasm",
+        "preupload_served_size_bytes": 6341937,
+        "preupload_served_sha256": "0c974c1aeda1d0dead8294d990a8b6846eaaa19a5eba663fe5a1e9dbb9465f59",
+        "preupload_byte_identical": false,
+        "upload_http_status": 201,
+        "retrieval_http_status": 200,
+        "content_type": "application/wasm",
+        "served_size_bytes": 6333842,
+        "served_sha256": "4a85ee815727dc78765f5bcbfd816c366a9f006b2dbdad60b6e85680f1a188f5",
+        "byte_identical": true,
+        "loopback_retrieval": {
+          "url": "http://127.0.0.1:18084/plugins/ai-quota/1.0.2/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 6333842,
+          "served_sha256": "4a85ee815727dc78765f5bcbfd816c366a9f006b2dbdad60b6e85680f1a188f5",
+          "byte_identical": true
+        },
+        "service_retrieval": {
+          "url": "http://higress-plugin-server.higress-system.svc/plugins/ai-quota/1.0.2/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 6333842,
+          "served_sha256": "4a85ee815727dc78765f5bcbfd816c366a9f006b2dbdad60b6e85680f1a188f5",
+          "byte_identical": true
+        },
+        "state": "available-byte-identical-replaced-superseded-bytes"
       }
     },
     {
@@ -462,16 +518,34 @@
         "namespace": "higress-system",
         "service": "higress-plugin-server",
         "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-statistics/1.0.1/plugin.wasm",
-        "preupload_service_http_status": null,
-        "upload_http_status": null,
-        "retrieval_http_status": null,
-        "content_type": null,
-        "served_size_bytes": null,
-        "served_sha256": null,
-        "byte_identical": null,
-        "loopback_retrieval": null,
-        "service_retrieval": null,
-        "state": "pending-reupload-and-retrieval"
+        "preupload_service_http_status": 200,
+        "preupload_content_type": "application/wasm",
+        "preupload_served_size_bytes": 6923452,
+        "preupload_served_sha256": "243d1994b9a35a889b3ecd132f9de41f0ddb73587ea5c0cb65653c6e2cadbe37",
+        "preupload_byte_identical": false,
+        "upload_http_status": 201,
+        "retrieval_http_status": 200,
+        "content_type": "application/wasm",
+        "served_size_bytes": 6915123,
+        "served_sha256": "02407cf8a9255427b855588a2783935dd391489e7a2e9d404384c9e534933b11",
+        "byte_identical": true,
+        "loopback_retrieval": {
+          "url": "http://127.0.0.1:18084/plugins/ai-statistics/1.0.1/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 6915123,
+          "served_sha256": "02407cf8a9255427b855588a2783935dd391489e7a2e9d404384c9e534933b11",
+          "byte_identical": true
+        },
+        "service_retrieval": {
+          "url": "http://higress-plugin-server.higress-system.svc/plugins/ai-statistics/1.0.1/plugin.wasm",
+          "http_status": 200,
+          "content_type": "application/wasm",
+          "served_size_bytes": 6915123,
+          "served_sha256": "02407cf8a9255427b855588a2783935dd391489e7a2e9d404384c9e534933b11",
+          "byte_identical": true
+        },
+        "state": "available-byte-identical-replaced-superseded-bytes"
       }
     }
   ]
