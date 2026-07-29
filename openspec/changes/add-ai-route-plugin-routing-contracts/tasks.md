@@ -151,9 +151,48 @@ Task 2.3 evidence (2026-07-29):
   the remaining provider token while retaining provider authority. This
   proves the existing failover path independently of the timeout RED.
 
-- [ ] 2.4 Add RED forced-passthrough tests proving an otherwise-known adapter
+- [x] 2.4 Add RED forced-passthrough tests proving an otherwise-known adapter
   does not transform request, non-streaming response, or streaming response
   bodies and does not publish the skipped adapter identity.
+
+Task 2.4 evidence (2026-07-29):
+
+- The current Graphify report, focused task 2.4 audit, proposal, design,
+  ai-proxy routing and Responses deltas, task plan, existing Qwen Responses
+  non-streaming/streaming controls, and shared HostEmulator APIs were reviewed
+  before the test was added. GitNexus could not yet resolve the new
+  `TestForcedQwenResponsesPassthroughContract` symbol and returned UNKNOWN
+  with zero indexed dependents. No production symbol or CRITICAL shared
+  `RunGoTest`/`NewTestHost` harness was modified.
+- Both automatic-mode controls passed before the RED fixture:
+  `go test . -run '^TestQwenResponsesFallbackConvertsNonStreamingRequestAndResponse$' -count=1`
+  and
+  `go test . -run '^TestQwenResponsesFallbackConvertsStreamingRequestAndSSE$' -count=1`.
+- `extensions/ai-proxy/forced_passthrough_contract_test.go` adds one
+  compile-safe top-level Go-mode contract with independent non-streaming and
+  streaming subtests. Its literal configuration selects
+  `protocol_mode: passthrough` for the otherwise-known Qwen
+  Responses-to-Chat match without referring to a missing production field or
+  getter. Both branches prove provider-owned authority and authentication
+  still apply, then compare the `/v1/responses` path, request bytes, upstream
+  response/SSE bytes, and skipped adapter identity at observable boundaries.
+- Focused RED command:
+  `go test . -run '^TestForcedQwenResponsesPassthroughContract$' -count=1`.
+  It compiled, reached both independent request/response lifecycles, and
+  failed only on the missing forced-passthrough contract. Both branches
+  observed `/compatible-mode/v1/chat/completions` instead of
+  `/v1/responses` and converted request bytes. The non-streaming branch
+  converted the Chat-looking response into a Responses object, while the
+  streaming branch converted the exact Chat Completions SSE chunk into
+  Responses events. Non-fatal equality assertions recorded all six
+  preservation failures in one run; provider host/authentication and the
+  currently absent optional adapter-metadata property passed.
+- `gofmt`, `git diff --check`, and strict OpenSpec validation pass.
+  `graphify update .` refreshed the local AST graph after the test addition.
+  Staged GitNexus change detection reported two changed files, zero affected
+  execution flows, and LOW risk; the stale index mapped only the task
+  sections and did not yet resolve the newly added test symbol.
+
 - [ ] 2.5 Add RED URL-boundary security tests for absolute URLs, scheme or
   authority injection, raw/encoded traversal, credential boundary, raw-query
   preservation, and safe diagnostics without secrets or bodies.
