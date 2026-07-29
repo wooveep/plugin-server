@@ -291,8 +291,64 @@ Task 2.6 evidence (2026-07-29):
   files, zero affected execution flows, and LOW risk; its stale symbol mapping
   resolved only adjacent task sections and not the newly added test symbol.
 
-- [ ] 2.7 Implement validated protocol/path-scope parsing, stable adapter
+- [x] 2.7 Implement validated protocol/path-scope parsing, stable adapter
   resolution, trusted adapter metadata, and Responses adapter registration.
+
+Task 2.7 evidence (2026-07-29):
+
+- The focused production audit, Tasks 2.1/2.2/2.6 RED fixtures and reviews,
+  current config/main/provider/Qwen/Responses lifecycle code, active design and
+  delta specs, and Graphify report were reviewed before implementation.
+  Exact upstream impact was rerun against the linked-worktree index for
+  `PluginConfig`, `FromJson`, `Validate`, and `onHttpRequestHeader`; all four
+  reported LOW risk, zero indexed direct callers, and zero execution flows.
+  Manual review retained the known generic/callback caveat: these values flow
+  through global/override parsing and every ai-proxy request-header callback.
+- The three approved RED commands were replayed before production edits.
+  Parser state lacked both getters and accepted an invalid mode; the known
+  adapter contract lacked stable metadata and allowed GET to enter the old
+  fallback branch; the three bound-target filter mismatch leaves all replaced
+  client authority/authentication with provider values.
+- `PluginConfig` now owns inherited route-effective `protocol_mode`,
+  `path_scope`, `enable_path_suffixes`, and `enable_methods` state. Missing mode
+  and scope resolve to `auto` and `legacy_suffixes`; explicit invalid or empty
+  mode/scope and malformed/oversized filter input receive fixed bounded errors.
+  A rule overrides only fields present in its JSON, copied filters receive
+  independent backing arrays, list getters return clones, methods are
+  normalized to uppercase HTTP tokens, and absent/empty bound-target filters
+  add no narrowing while non-empty suffix/method lists intersect.
+- A reviewed local adapter registry now resolves the existing
+  Responses-to-Chat-Completions fallback from selected provider identity,
+  uppercase POST, normalized Responses operation, unsupported native Responses
+  capability, and supported Chat Completions capability. It preserves the Qwen
+  empty/whitespace sentinel and the established converters, while GET, native
+  Responses, provider/capability mismatch, and unrelated paths claim no
+  adapter.
+- Each request first receives a bounded no-match envelope in
+  `mse_ai_proxy_adapter_metadata` and clears the existing Responses conversion
+  marker. A matched adapter publishes at most 1024 JSON bytes containing only
+  registry/provider/capability values for stable ID, version, normalized
+  operation, provider match, capability match, and usage profile. Bound-target
+  mismatch returns before reroute, context, token, host/authentication, or body
+  work and preserves client authority/authentication/body ownership.
+- GREEN commands passed independently:
+  `go test ./config -run '^TestPluginConfigRoutingParserContract$' -count=1`,
+  `go test . -run '^TestKnownQwenResponsesAdapterContract$' -count=1`, and
+  `go test . -run '^TestAIProxyPathScopeContract$' -count=1`. The complete
+  config and provider packages passed, as did global/override parsing,
+  Qwen non-streaming/streaming fallback, OpenRouter fallback, and the explicit
+  empty Qwen capability sentinel. `go vet ./...` passed.
+- The Task 2.3 transparent fallback contract remains RED only at the recorded
+  provider-timeout authority assertion (`want 3210`, `got 1`). Task 2.4 remains
+  RED because passthrough still executes and identifies the registered
+  conversion for path, request body, non-streaming response, and SSE. Task 2.5
+  retains the recorded unsafe URL/authority/traversal dispatch and
+  credential/body diagnostic leakage failures; its safe raw-query guard
+  remains outside this task.
+- `graphify update .` rebuilt the local AST graph without tracked generated
+  changes. `gofmt`, strict OpenSpec validation, diff checks, and staged
+  GitNexus change detection were run before the task commit.
+
 - [ ] 2.8 Implement transparent unknown fallback and forced passthrough while
   preserving origin-form operation bytes and provider-owned transport policy.
 - [ ] 2.9 Run focused and complete independent ai-proxy unit, proxy-wasm

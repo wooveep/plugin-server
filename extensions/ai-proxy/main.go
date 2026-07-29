@@ -216,6 +216,8 @@ func saveContextsToHeaders(ctx wrapper.HttpContext) {
 
 func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
 	activeProvider := pluginConfig.GetProvider()
+	publishNoAdapterMetadata(pluginConfig.GetProtocolMode())
+	ctx.SetContext(provider.CtxKeyNeedResponsesResponseConversion, false)
 
 	if activeProvider == nil {
 		log.Debugf("[onHttpRequestHeader] no active provider, skip processing")
@@ -225,18 +227,23 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 
 	log.Debugf("[onHttpRequestHeader] provider=%s", activeProvider.GetProviderType())
 
+	rawPath := ctx.Path()
+	path, _ := url.Parse(rawPath)
+	if !pluginConfig.MatchesBoundTargetFilters(ctx.Method(), path.Path) {
+		ctx.DontReadRequestBody()
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
+
 	// Disable the route re-calculation since the plugin may modify some headers related to the chosen route.
 	ctx.DisableReroute()
 
 	initContext(ctx)
 
-	rawPath := ctx.Path()
-
 	defer func() {
 		saveContextsToHeaders(ctx)
 	}()
 
-	path, _ := url.Parse(rawPath)
 	apiName := getApiName(path.Path)
 	providerConfig := pluginConfig.GetProviderConfig()
 	if providerConfig.IsOriginal() {
@@ -260,12 +267,18 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 		} else if apiName == provider.ApiNameAnthropicMessages {
 			// Provider supports Claude protocol natively, no conversion needed
 			log.Debugf("[Auto Protocol] Claude request detected, provider supports natively, keeping original path: %s, apiName: %s", path.Path, apiName)
-		} else if apiName == provider.ApiNameResponses && !providerConfig.IsSupportedAPI(provider.ApiNameResponses) && providerConfig.IsSupportedAPI(provider.ApiNameChatCompletion) {
-			newPath := strings.Replace(path.Path, provider.PathOpenAIResponses, provider.PathOpenAIChatCompletions, 1)
-			_ = proxywasm.ReplaceHttpRequestHeader(":path", newPath)
-			apiName = provider.ApiNameChatCompletion
-			ctx.SetContext(provider.CtxKeyNeedResponsesResponseConversion, true)
-			log.Debugf("[Auto Protocol] Responses request detected, provider doesn't support natively, converted path from %s to %s, apiName: %s", path.Path, newPath, apiName)
+		} else if adapter := resolveProtocolAdapter(
+			activeProvider,
+			providerConfig,
+			ctx.Method(),
+			apiName,
+		); adapter != nil {
+			apiName = applyResponsesFallbackAdapter(
+				ctx,
+				path.Path,
+				pluginConfig.GetProtocolMode(),
+				adapter,
+			)
 		} else if apiName == provider.ApiNameResponses && !providerConfig.IsSupportedAPI(provider.ApiNameResponses) && !providerConfig.IsSupportedAPI(provider.ApiNameChatCompletion) {
 			log.Warnf("[Auto Protocol] Responses request detected, provider supports neither Responses nor Chat Completions, keeping original path for unsupported API handling: %s, apiName: %s", path.Path, apiName)
 		} else if apiName == provider.ApiNameResponses {

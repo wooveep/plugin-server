@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/tidwall/gjson"
 )
@@ -28,9 +30,19 @@ type PluginConfig struct {
 
 	activeProviderConfig *provider.ProviderConfig `yaml:"-"`
 	activeProvider       provider.Provider        `yaml:"-"`
+
+	protocolMode           string   `yaml:"-"`
+	protocolModeConfigured bool     `yaml:"-"`
+	pathScope              string   `yaml:"-"`
+	pathScopeConfigured    bool     `yaml:"-"`
+	enablePathSuffixes     []string `yaml:"-"`
+	enableMethods          []string `yaml:"-"`
+	routingConfigError     string   `yaml:"-"`
 }
 
 func (c *PluginConfig) FromJson(json gjson.Result) {
+	c.parseRoutingConfig(json)
+
 	if providersJson := json.Get("providers"); providersJson.Exists() && providersJson.IsArray() {
 		c.providerConfigs = make([]provider.ProviderConfig, 0)
 		for _, providerJson := range providersJson.Array() {
@@ -65,6 +77,19 @@ func (c *PluginConfig) FromJson(json gjson.Result) {
 }
 
 func (c *PluginConfig) Validate() error {
+	if c.routingConfigError != "" {
+		return fmt.Errorf("%s", c.routingConfigError)
+	}
+	if c.protocolModeConfigured &&
+		c.protocolMode != ProtocolModeAuto &&
+		c.protocolMode != ProtocolModePassthrough {
+		return fmt.Errorf("protocol_mode must be auto or passthrough")
+	}
+	if c.pathScopeConfigured &&
+		c.pathScope != PathScopeLegacySuffixes &&
+		c.pathScope != PathScopeBoundTarget {
+		return fmt.Errorf("path_scope must be legacy_suffixes or bound_target")
+	}
 	if c.activeProviderConfig == nil {
 		return nil
 	}
