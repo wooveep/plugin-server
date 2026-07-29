@@ -342,6 +342,17 @@ Task 2.7 evidence (2026-07-29):
   response-body setup. The regression proves exact response header/body
   preservation and unchanged two-token availability on the next admitted
   request, with no retry callout.
+- A second independent lifecycle review found that keeping `DontReadRequestBody`
+  and `DontReadResponseBody` in that mismatch branch permanently disabled the
+  wrapper's body callbacks for later same-context re-entry. Those calls were
+  removed from the mismatch branch. Request body, response headers, streaming
+  response body, and buffered response body now all check the same request-scope
+  skip marker and immediately preserve the supplied bytes/headers without
+  provider, conversion, failover, retry, token, or logging work. HostEmulator
+  RED cases proved the old failure and now prove admitted → mismatch → admitted
+  re-entry restores Qwen Responses request conversion plus both non-streaming
+  response and SSE conversion, while JSON mismatch callbacks remain exact
+  no-ops.
 - GREEN commands passed independently:
   `go test ./config -run '^TestPluginConfigRoutingParserContract$' -count=1`,
   `go test . -run '^TestKnownQwenResponsesAdapterContract$' -count=1`, and

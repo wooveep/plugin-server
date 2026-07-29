@@ -9,6 +9,7 @@ import (
 	wasmhost "github.com/higress-group/wasm-go/pkg/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func TestAIProxyPathScopeContract(t *testing.T) {
@@ -97,6 +98,20 @@ func TestAIProxyPathScopeContract(t *testing.T) {
 				"enabled": true,
 				"maxRetries": 1,
 				"retryOnStatus": ["429"]
+			}
+		}
+	}`)
+	boundTargetResponsesConfig := json.RawMessage(`{
+		"path_scope": "bound_target",
+		"enable_path_suffixes": ["/v1/responses"],
+		"enable_methods": ["POST"],
+		"provider": {
+			"type": "qwen",
+			"apiTokens": ["provider-responses-token"],
+			"qwenDomain": "provider.example",
+			"qwenEnableCompatible": true,
+			"capabilities": {
+				"openai/v1/responses": ""
 			}
 		}
 	}`)
@@ -287,7 +302,7 @@ func TestAIProxyPathScopeContract(t *testing.T) {
 			))
 			responseHeaders := [][2]string{
 				{":status", "200"},
-				{"content-type", "application/octet-stream"},
+				{"content-type", "application/json"},
 				{"content-length", "20"},
 				{"x-upstream-marker", "preserved"},
 			}
@@ -363,6 +378,206 @@ func TestAIProxyPathScopeContract(t *testing.T) {
 				newDebugLogs,
 				"apiTokens: [provider-token-a provider-token-b], unavailableApiTokens: []",
 			)
+		})
+
+		t.Run("bound_target_mismatch_callbacks_preserve_json_bytes", func(t *testing.T) {
+			host, status := wasmhost.NewTestHost(boundTargetResponsesConfig)
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+			t.Cleanup(host.Reset)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "client.example"},
+				{":path", "/v1/responses"},
+				{":method", "POST"},
+				{"authorization", "Bearer client-token"},
+				{"content-type", "application/json"},
+			})
+			require.NoError(t, host.SetProperty(
+				[]string{"response", "code_details"},
+				[]byte("via_upstream"),
+			))
+			host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "application/json"},
+			})
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "client.example"},
+				{":path", "/v1/responses"},
+				{":method", "GET"},
+				{"authorization", "Bearer client-token"},
+				{"content-type", "application/json"},
+			})
+			assertSkipped(t, host)
+
+			requestBody := []byte(`{"opaque":"mismatch-request"}`)
+			action := host.CallOnHttpRequestBody(requestBody)
+			require.Equal(t, types.ActionContinue, action)
+			require.Equal(t, requestBody, host.GetRequestBody())
+
+			responseHeaders := [][2]string{
+				{":status", "200"},
+				{"content-type", "application/json"},
+				{"content-length", "30"},
+				{"x-upstream-marker", "preserved"},
+			}
+			action = host.CallOnHttpResponseHeaders(responseHeaders)
+			require.Equal(t, types.ActionContinue, action)
+			assert.ElementsMatch(t, responseHeaders, host.GetResponseHeaders())
+
+			responseBody := []byte(`{"opaque":"mismatch-response"}`)
+			action = host.CallOnHttpResponseBody(responseBody)
+			require.Equal(t, types.ActionContinue, action)
+			require.Equal(t, responseBody, host.GetResponseBody())
+			assert.ElementsMatch(t, responseHeaders, host.GetResponseHeaders())
+		})
+
+		t.Run("bound_target_mismatch_keeps_non_streaming_reentry_callbacks_enabled", func(t *testing.T) {
+			host, status := wasmhost.NewTestHost(boundTargetResponsesConfig)
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+			t.Cleanup(host.Reset)
+
+			admittedHeaders := [][2]string{
+				{":authority", "client.example"},
+				{":path", "/v1/responses"},
+				{":method", "POST"},
+				{"authorization", "Bearer client-token"},
+				{"content-type", "application/json"},
+			}
+			mismatchHeaders := [][2]string{
+				{":authority", "client.example"},
+				{":path", "/v1/responses"},
+				{":method", "GET"},
+				{"authorization", "Bearer client-token"},
+				{"content-type", "application/json"},
+			}
+
+			host.CallOnHttpRequestHeaders(admittedHeaders)
+			firstPath, hasFirstPath := wasmhost.GetHeaderValue(
+				host.GetRequestHeaders(),
+				":path",
+			)
+			require.True(t, hasFirstPath)
+			require.Equal(t, "/compatible-mode/v1/chat/completions", firstPath)
+
+			host.CallOnHttpRequestHeaders(mismatchHeaders)
+			assertSkipped(t, host)
+
+			require.NoError(t, host.SetProperty(
+				[]string{"response", "code_details"},
+				[]byte("via_upstream"),
+			))
+			mismatchResponseHeaders := [][2]string{
+				{":status", "200"},
+				{"content-type", "application/json"},
+				{"content-length", "30"},
+				{"x-upstream-marker", "preserved"},
+			}
+			action := host.CallOnHttpResponseHeaders(mismatchResponseHeaders)
+			require.Equal(t, types.ActionContinue, action)
+			assert.ElementsMatch(t, mismatchResponseHeaders, host.GetResponseHeaders())
+
+			mismatchResponseBody := []byte(`{"opaque":"mismatch-response"}`)
+			action = host.CallOnHttpResponseBody(mismatchResponseBody)
+			require.Equal(t, types.ActionContinue, action)
+			require.Equal(t, mismatchResponseBody, host.GetResponseBody())
+
+			action = host.CallOnHttpRequestHeaders(admittedHeaders)
+			require.Equal(t, types.HeaderStopIteration, action)
+			reenteredPath, hasReenteredPath := wasmhost.GetHeaderValue(
+				host.GetRequestHeaders(),
+				":path",
+			)
+			require.True(t, hasReenteredPath)
+			require.Equal(t, "/compatible-mode/v1/chat/completions", reenteredPath)
+
+			action = host.CallOnHttpRequestBody([]byte(
+				`{"model":"deepseek-v4-flash","input":"reentered request"}`,
+			))
+			require.Equal(t, types.ActionContinue, action)
+			requestBody := host.GetRequestBody()
+			assert.Equal(
+				t,
+				"reentered request",
+				gjson.GetBytes(requestBody, "messages.0.content").String(),
+				string(requestBody),
+			)
+			assert.False(t, gjson.GetBytes(requestBody, "input").Exists(), string(requestBody))
+
+			action = host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "application/json"},
+			})
+			require.Equal(t, types.ActionContinue, action)
+			action = host.CallOnHttpResponseBody([]byte(
+				`{"id":"chatcmpl_reentered","object":"chat.completion","created":123,"model":"deepseek-v4-flash","choices":[{"index":0,"message":{"role":"assistant","content":"reentered response"},"finish_reason":"stop"}],"usage":{"prompt_tokens":9,"completion_tokens":4,"total_tokens":13}}`,
+			))
+			require.Equal(t, types.ActionContinue, action)
+			responseBody := host.GetResponseBody()
+			assert.Equal(t, "response", gjson.GetBytes(responseBody, "object").String(), string(responseBody))
+			assert.Equal(
+				t,
+				"reentered response",
+				gjson.GetBytes(responseBody, "output.0.content.0.text").String(),
+				string(responseBody),
+			)
+		})
+
+		t.Run("bound_target_mismatch_keeps_streaming_reentry_callbacks_enabled", func(t *testing.T) {
+			host, status := wasmhost.NewTestHost(boundTargetResponsesConfig)
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+			t.Cleanup(host.Reset)
+
+			admittedHeaders := [][2]string{
+				{":authority", "client.example"},
+				{":path", "/v1/responses"},
+				{":method", "POST"},
+				{"authorization", "Bearer client-token"},
+				{"content-type", "application/json"},
+			}
+			host.CallOnHttpRequestHeaders(admittedHeaders)
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "client.example"},
+				{":path", "/v1/responses"},
+				{":method", "GET"},
+				{"authorization", "Bearer client-token"},
+				{"content-type", "application/json"},
+			})
+			assertSkipped(t, host)
+
+			action := host.CallOnHttpRequestHeaders(admittedHeaders)
+			require.Equal(t, types.HeaderStopIteration, action)
+			action = host.CallOnHttpRequestBody([]byte(
+				`{"model":"deepseek-v4-flash","input":"reentered stream","stream":true}`,
+			))
+			require.Equal(t, types.ActionContinue, action)
+			requestBody := host.GetRequestBody()
+			assert.Equal(
+				t,
+				"reentered stream",
+				gjson.GetBytes(requestBody, "messages.0.content").String(),
+				string(requestBody),
+			)
+			assert.True(t, gjson.GetBytes(requestBody, "stream").Bool(), string(requestBody))
+
+			require.NoError(t, host.SetProperty(
+				[]string{"response", "code_details"},
+				[]byte("via_upstream"),
+			))
+			action = host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "200"},
+				{"content-type", "text/event-stream"},
+			})
+			require.Equal(t, types.ActionContinue, action)
+
+			action = host.CallOnHttpResponseBody([]byte(
+				"data: {\"id\":\"chatcmpl_reentered\",\"object\":\"chat.completion.chunk\",\"created\":123,\"model\":\"deepseek-v4-flash\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hello again\"}}]}\n\n",
+			))
+			require.Equal(t, types.ActionContinue, action)
+			responseBody := string(host.GetResponseBody())
+			assert.Contains(t, responseBody, "event: response.output_text.delta")
+			assert.Contains(t, responseBody, `"delta":"Hello again"`)
+			assert.NotContains(t, responseBody, "chat.completion.chunk")
 		})
 	})
 }

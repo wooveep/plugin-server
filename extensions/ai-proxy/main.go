@@ -235,8 +235,6 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 	path, _ := url.Parse(rawPath)
 	if !pluginConfig.MatchesBoundTargetFilters(ctx.Method(), path.Path) {
 		ctx.SetContext(ctxSkipAIProxyLifecycle, true)
-		ctx.DontReadRequestBody()
-		ctx.DontReadResponseBody()
 		return types.ActionContinue
 	}
 
@@ -340,6 +338,10 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, body []byte) types.Action {
+	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
+		return types.ActionContinue
+	}
+
 	activeProvider := pluginConfig.GetProvider()
 
 	if activeProvider == nil {
@@ -382,7 +384,6 @@ func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
 	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
-		ctx.DontReadResponseBody()
 		return types.ActionContinue
 	}
 
@@ -458,6 +459,10 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginCo
 }
 
 func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, chunk []byte, isLastChunk bool) []byte {
+	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
+		return chunk
+	}
+
 	activeProvider := pluginConfig.GetProvider()
 
 	if activeProvider == nil {
@@ -564,6 +569,10 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 }
 
 func onHttpResponseBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, body []byte) types.Action {
+	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
+		return types.ActionContinue
+	}
+
 	activeProvider := pluginConfig.GetProvider()
 
 	if activeProvider == nil {
