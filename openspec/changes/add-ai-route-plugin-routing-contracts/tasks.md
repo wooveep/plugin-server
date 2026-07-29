@@ -819,8 +819,8 @@ Task 3.1 evidence (2026-07-29):
   global/rule `billing_service` rejection, rule-level `redis_stream`
   rejection, full target inheritance, legacy empty-list rejection, and
   omitted/explicit legacy suffix gating. Positive delivery decodes the real
-  inherited `XADD billing:events * event <json>` command; no production or
-  shared test-harness code changed.
+  inherited `XADD global:billing:events * event <json>` command; no production
+  or shared test-harness code changed.
 - Focused RED command:
   `go test . -run
   '^(TestBillingRoutingAndDeliveryConfigContract|TestBillingRequestGatingContract)$'
@@ -829,7 +829,10 @@ Task 3.1 evidence (2026-07-29):
   bound target, an empty-method-filter target, and a rule-level bound target
   emitted no Redis event for provider-native paths; and a non-matching `GET`
   incorrectly emitted an event because the non-empty method intersection was
-  ignored. The matching `POST` and non-matching suffix controls passed.
+  ignored. The matching `POST` and non-matching suffix controls passed. The
+  existing global and rule leaves also retain provider-native runtime `XADD`
+  oracles after explicit empty suffix/method filters, so later parser
+  acceptance cannot hide a deny-all runtime or global/rule parser divergence.
 - The new Redis/configuration and omitted/explicit legacy control subsets pass
   independently. Extension vet, exact changed-file `gofmt`, `git diff
   --check`, and strict OpenSpec validation pass. `graphify update .` rebuilt

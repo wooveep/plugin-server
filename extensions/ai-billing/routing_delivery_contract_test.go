@@ -178,6 +178,15 @@ func TestBillingRoutingAndDeliveryConfigContract(t *testing.T) {
 			host, status := test.NewTestHost(mustBillingConfig(t, config))
 			defer host.Reset()
 			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			runBillingRoutingRequest(
+				t,
+				config,
+				"",
+				http.MethodPatch,
+				"/vendor/explicit-empty-filters/job-42",
+				true,
+			)
 		})
 	})
 }
@@ -216,17 +225,43 @@ func TestBillingRequestGatingContract(t *testing.T) {
 		})
 
 		t.Run("rule bound target inherits global redis but not legacy suffix gating", func(t *testing.T) {
-			config := billingRoutingContractConfig()
-			config["enable_path_suffixes"] = []string{"/v1/chat/completions"}
-			config["_rules_"] = []map[string]interface{}{
+			omittedFiltersConfig := billingRoutingContractConfig()
+			omittedFiltersConfig["enable_path_suffixes"] = []string{"/v1/chat/completions"}
+			omittedFiltersConfig["_rules_"] = []map[string]interface{}{
 				{
-					"_match_route_": []string{"route-native"},
+					"_match_route_": []string{"route-native-omitted-filters"},
 					"path_scope":    "bound_target",
 					"provider":      "anthropic",
 				},
 			}
+			runBillingRoutingRequest(
+				t,
+				omittedFiltersConfig,
+				"route-native-omitted-filters",
+				http.MethodPut,
+				"/native/messages/batches/batch-42",
+				true,
+			)
 
-			runBillingRoutingRequest(t, config, "route-native", http.MethodPut, "/native/messages/batches/batch-42", true)
+			explicitEmptyFiltersConfig := billingRoutingContractConfig()
+			explicitEmptyFiltersConfig["enable_path_suffixes"] = []string{"/v1/chat/completions"}
+			explicitEmptyFiltersConfig["_rules_"] = []map[string]interface{}{
+				{
+					"_match_route_":        []string{"route-native-empty-filters"},
+					"path_scope":           "bound_target",
+					"provider":             "anthropic",
+					"enable_path_suffixes": []string{},
+					"enable_methods":       []string{},
+				},
+			}
+			runBillingRoutingRequest(
+				t,
+				explicitEmptyFiltersConfig,
+				"route-native-empty-filters",
+				http.MethodDelete,
+				"/native/files/file-42",
+				true,
+			)
 		})
 
 		t.Run("nonempty suffix and method filters intersect bound target", func(t *testing.T) {
