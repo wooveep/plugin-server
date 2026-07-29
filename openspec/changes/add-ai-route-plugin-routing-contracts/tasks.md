@@ -1128,9 +1128,53 @@ Task 3.5 evidence (2026-07-29):
   53 affected processes because it includes the change branch's cumulative
   pre-existing history rather than only Task 3.5.
 
-- [ ] 3.6 Run focused and complete independent ai-billing unit,
+- [x] 3.6 Run focused and complete independent ai-billing unit,
   proxy-wasm lifecycle/integration, streaming, Redis delivery,
   internal-attribution, correlation, and security suites.
+
+Task 3.6 evidence (2026-07-29):
+
+- Independent verification used final source result
+  `82238f469f63a9e13b7391b810fd2ff843b2f0e2`. The exact nine-leaf
+  RED-to-GREEN command
+  `go test . -run
+  '^(TestBillingTruthfulEventContract|TestBillingCorrelationLifecycleContract)$'
+  -count=1` passed in `0.003s`.
+- The focused HIGH-impact completion/stream-done gate passed in `4.876s`.
+  It covers every indexed direct event-builder dependent together with
+  non-streaming and streaming completion, trusted provider and estimated
+  usage, cache and gateway-local facts, Redis dispatch and command-error
+  fail-open behavior, at-most-once delivery, and all five internal-attribution
+  scenarios: complete valid-pair override, absent-pair configured fallback,
+  partial-pair suppression, malformed/blank/oversized/invalid suppression,
+  and customer no-self-classification.
+- The complete independent `go test ./... -count=1` module gate passed in
+  `9.637s`. Unit and proxy-wasm lifecycle/integration coverage includes
+  non-streaming, streaming and stream-done delivery; cache/local origins;
+  event ID equal to idempotency key and exactly one Redis `XADD`; canonical
+  correlation replacement and canonical-absent removal across
+  non-streaming, streaming, cache, and local response paths; raw-path query
+  removal; and legacy plus bound-target `path_scope` behavior.
+- Security assertions cover Redis credential redaction, submitted
+  header/body/query/internal-attribution value exclusion from serialized
+  events and trace-through-critical logs, opaque missing-usage truthfulness,
+  provider-usage authority, internal-attribution suppression without model
+  traffic suppression, and customer inability to spoof internal event
+  classification.
+- Extension `go vet ./...`, exact changed-source `gofmt -l`, reviewed-range
+  `git diff --check`, and strict OpenSpec validation pass. A fresh
+  documentation-only rerun on the same final source reconfirmed the exact
+  nine-leaf gate in `0.003s`, the focused HIGH-impact gate in `4.770s`, and
+  the complete module in `9.647s`.
+- Exact GitNexus upstream impact for the
+  `3. AI Billing Red-Green Contracts` documentation section is LOW with zero
+  direct dependents, affected processes, or affected modules. No production
+  or test source changed, and the separate Task 3.7 independent
+  implementation/security review remains open.
+- Documentation-only change detection is LOW across one changed file, three
+  touched documentation sections, zero affected symbols, and zero affected
+  execution processes.
+
 - [ ] 3.7 Obtain an independent ai-billing implementation/security review,
   resolve every finding, and rerun the affected RED/GREEN and complete module
   suites before beginning the quota implementation.
