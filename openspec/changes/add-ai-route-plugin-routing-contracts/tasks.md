@@ -708,9 +708,84 @@ Task 2.9 evidence (2026-07-29):
   risk: one changed file, three touched documentation sections, zero affected
   processes, and no production execution-flow change.
 
-- [ ] 2.10 Obtain an independent ai-proxy implementation/security review,
+- [x] 2.10 Obtain an independent ai-proxy implementation/security review,
   resolve every finding, and rerun the affected RED/GREEN and complete module
   suites before beginning the billing implementation.
+
+Task 2.10 evidence (2026-07-29):
+
+- Independent review was a blocking gate across five exact source results.
+  Initial implementation `a4faf8ba25bd8945761e0bf50a125e37f88b5758`
+  received `NEEDS_FIXES` for credential disclosure across normal/failover/
+  retry bookkeeping, provider-specific transparent operation mutation,
+  destructive non-exact Qwen retry replay, and decoded control-octet
+  acceptance. Repair
+  `db04531cb7116ac03253c45144c8b0c235592342` closed those findings before
+  rereview.
+- The `db04531cb711` rereview remained `NEEDS_FIXES`: Vertex and Bedrock
+  body-stage authentication was absent for forced/automatic transparent
+  requests, and three Vertex lifecycle assertions no longer proved exact
+  reuse of the header-selected credential. Repair
+  `c0ad10c863f2cc7a1d1582390f1a8623047e4bf1` added a credential-only
+  opaque-body hook, exact Vertex/Bedrock coverage, SigV4 method/query/body
+  binding, retry reauthentication, and a read-only exact-selection oracle.
+- The `c0ad10c863f2` rereview remained `NEEDS_FIXES`: bodyless Vertex Express,
+  Vertex OAuth, and Bedrock AK/SK skipped authentication; OAuth callback
+  failures resumed after a terminal local response; and the token exchange
+  exposed its JWT-bearer form and provider response bodies. It also requested
+  exact Bedrock bearer retry, corrected SigV4 commentary, and unambiguous graph
+  evidence. Repair
+  `4451eb843930137a0f7123c2b1aeef5fb363bfe9` closed those lifecycle,
+  credential-secrecy, retry, comment, and evidence findings.
+- The `4451eb843930` rereview remained `NEEDS_FIXES`: successful OAuth and
+  shared-cache paths still accepted header-unsafe or oversized bearer values,
+  and the synchronous-dispatch regression did not traverse the real
+  `ClusterClient.PostSensitive -> SensitiveHttpCall` path. Repair
+  `5ae7de99960efd41273ea16e0489fee9be40943e` added one 8 KiB-bounded
+  RFC 6750 validator at both credential boundaries, unsafe-cache miss/refetch,
+  exact terminal failure behavior, exhaustive unsafe/legal token contracts,
+  and a narrow real sensitive-dispatch seam/oracle.
+- The final independent report
+  `.superpowers/sdd/add-ai-route-plugin-routing-contracts/task-2.8-rereviewer-v4.md`
+  has SHA-256
+  `ccb0e4b5d313f0998ee7eeb59bded253c4814222e82437d355e2cd3a161ab76e`.
+  It reviewed exact result `5ae7de99960e`, returned `APPROVED`, and reported
+  zero Critical, Important, or Minor findings. Its immutable review package
+  exactly matched `git diff --binary 4451eb843930..5ae7de99960e`.
+- Final GitNexus comparison deliberately retains its `CRITICAL` aggregate
+  classification: six files, 43 changed symbols, and 31 affected mappings.
+  Thirty mappings are conservative shared `ClusterClient` constructor,
+  provider `CreateProvider`, or config `Complete` flows; the remaining mapping
+  is the reviewed real sensitive-callout path. The review traced the shared
+  type/interface, exact validator/cache/OAuth callers, concrete
+  `PostSensitive -> SensitiveHttpCall` edge, sole production Vertex consumer,
+  and dispatch construction layer by layer rather than downgrading the risk.
+  The original `HttpCall` and all ten ordinary
+  `Get/Head/Options/Post/Put/Patch/Delete/Connect/Trace/Call` methods have zero
+  source or behavior diff; wrapper full and race gates independently preserve
+  that boundary.
+- After every finding was resolved, the exclusive serial final gates passed:
+  15 focused transparent/OAuth/Vertex/Bedrock contracts in `33.703s`;
+  complete `TestVertex|TestBedrock|TestTransparent` coverage in `86.869s`;
+  and `go test -count=1 -p 1 ./...` with root ai-proxy `282.197s`, config
+  `0.002s`, provider `0.008s`, and util `0.002s`. Focused provider RFC 6750
+  validation passed in `0.002s`; root-wrapper full and race suites passed in
+  `0.001s` and `1.007s`.
+- Extension-wide vet, root-wrapper vet, strict OpenSpec validation, exact
+  changed-file formatting, reviewed-range and merge-base diff checks, and
+  review-package byte comparison passed. Root-wide vet retains only the
+  pre-existing `pkg/ai/sessionctx/sessionctx.go:512:2` unreachable-code
+  finding, whose file blob remains
+  `e24b0a62e9bccff0023ad0b3e6efd1922693dcbe` at both reviewed endpoints.
+  The earlier overlapping ai-proxy runs were interrupted with `SIGINT` and
+  excluded; all cited final results are later isolated serial runs.
+- No finding was waived, downgraded, or left open: each `NEEDS_FIXES` result
+  blocked progression until its repair and independent rereview. The complete
+  ai-proxy implementation/security gate is now closed, so billing Task 3.1 may
+  begin; no 3.x checkbox or implementation is changed by this closeout. The
+  documentation-only pre-commit GitNexus detector reports LOW risk: one
+  changed file, four touched documentation sections, zero affected processes,
+  and no production execution-flow change.
 
 ## 3. AI Billing Red-Green Contracts
 
