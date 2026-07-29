@@ -215,6 +215,12 @@ spec:
         - /v1/messages
         fail_policy: open
   routeConfigSchema:
+    x-higress-external-resource:
+      kind: redis
+      registryType: dns
+      domainPath: redis_stream.service_name
+      portPath: redis_stream.service_port
+      projectedNamePath: redis_stream.service_name
     openAPIV3Schema:
       type: object
       additionalProperties: false
