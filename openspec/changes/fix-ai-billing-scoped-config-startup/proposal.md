@@ -11,7 +11,7 @@ gateway rejects the plugin and returns HTTP 500.
 - Allow a matching rule to provide the complete Redis Stream configuration
   only when the base is dormant; keep replacement forbidden when a global
   Redis target exists.
-- Publish the corrected ai-billing extension and resource as version `0.1.6`.
+- Publish the corrected ai-billing extension and resource as version `0.1.7`.
 
 ## Capabilities
 
@@ -25,7 +25,7 @@ None.
   scoped-rule startup behavior.
 - `ai-plugin-resource-docs`: Expose and document scoped delivery configuration.
 - `extensions-build-artifacts`: Advance the authoritative ai-billing release to
-  `0.1.6`.
+  `0.1.7`.
 
 ## Impact
 

@@ -6,7 +6,7 @@
 ## 2. Implementation and Release
 
 - [ ] 2.1 Implement dormant base parsing and conditional full rule parsing.
-- [ ] 2.2 Advance authoritative ai-billing version, schemas, examples, and bilingual documentation to `0.1.6`.
+- [ ] 2.2 Advance authoritative ai-billing version, schemas, examples, and bilingual documentation to `0.1.7`.
 - [ ] 2.3 Build the exact Wasm artifact and record size, SHA-256, source commit, and byte-identical availability.
 
 ## 3. Verification and Archive

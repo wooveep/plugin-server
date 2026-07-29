@@ -4,7 +4,7 @@ keywords: [AI网关, AI账单, ai-billing]
 description: ai-billing 请求级账单事件插件配置参考
 ---
 
-> 插件版本：`0.1.6`
+> 插件版本：`0.1.7`
 
 ## 功能说明
 

@@ -611,10 +611,14 @@ func onHttpStreamDone(ctx wrapper.HttpContext, config BillingConfig) {
 	if !ctx.GetBoolContext(ctxBillingEnabled, false) {
 		return
 	}
-	if !ctx.GetBoolContext(ctxIsStream, false) {
+	if ctx.GetBoolContext(ctxBillingDelivered, false) {
 		return
 	}
-	if ctx.GetBoolContext(ctxBillingDelivered, false) {
+	if !ctx.GetBoolContext(ctxIsStream, false) {
+		if ctx.GetStringContext(ctxUsageSource, "") == "" {
+			recordNonStreamingEstimatedUsage(ctx, nil)
+		}
+		deliverBillingEvent(ctx, config, false)
 		return
 	}
 	if ctx.GetStringContext(ctxUsageSource, "") == "" {

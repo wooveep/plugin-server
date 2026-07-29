@@ -46,7 +46,7 @@ Any non-empty base object that omits a valid Redis target remains invalid.
 
 ## Migration Plan
 
-Release and upload ai-billing 0.1.6, update the main catalog and minimum version,
+Release and upload ai-billing 0.1.7, update the main catalog and minimum version,
 project complete route rule configuration with disabled global execution, and
 restart the local gateway. Rollback selects 0.1.5 and restores the legacy
 globally enabled inheritance shape.
