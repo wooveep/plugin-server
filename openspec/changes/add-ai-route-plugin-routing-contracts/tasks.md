@@ -930,6 +930,12 @@ Task 3.3 evidence (2026-07-29):
   suppress event delivery without suppressing model traffic or leaking the
   submitted marker at trace-through-critical host log levels, and customer
   headers cannot spoof internal fields, `event_kind`, or `bill_customer`.
+  Independent review repair gives the accepted pair, configured fallback, and
+  customer-spoofed cost-source/worker/source-job values unique markers. The
+  accepted/fallback markers remain authoritative in the event and the
+  customer markers remain absent from it, while a shared test-only log
+  collector proves every marker stays out of trace, debug, info, warn, error,
+  and critical host logs.
 - Focused RED command:
   `go test . -run '^TestBillingCorrelationLifecycleContract$' -count=1`.
   It compiles and fails only at six missing security/lifecycle contracts:
@@ -952,7 +958,10 @@ Task 3.3 evidence (2026-07-29):
   tracked generated-file changes. After restoring the eight
   GitNexus-generated instruction files, staged detection reports LOW risk
   across three changed files and nine test/documentation symbols, with zero
-  affected production processes.
+  affected production processes. The review repair likewise reports LOW risk
+  across two changed files and three test/documentation symbols, with zero
+  affected processes; the shared log collector has one direct test caller and
+  no production process participation.
 
 - [ ] 3.4 Implement ai-billing path-scope parsing and bound-target/advanced
   filter gating without widening legacy configurations.

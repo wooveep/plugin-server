@@ -11,10 +11,20 @@ import (
 
 func TestBillingInternalCostAndSensitiveDataContract(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
+		const (
+			configuredCostSourceMarker = "configured-cost-source-marker-3-3"
+			configuredWorkerKindMarker = "configured-worker-kind-marker-3-3"
+			trustedCostSourceMarker    = "trusted-cost-source-marker-3-3"
+			trustedWorkerKindMarker    = "trusted-worker-kind-marker-3-3"
+			trustedSourceJobMarker     = "trusted-source-job-marker-3-3"
+			spoofedCostSourceMarker    = "spoofed-cost-source-marker-3-3"
+			spoofedWorkerKindMarker    = "spoofed-worker-kind-marker-3-3"
+			spoofedSourceJobMarker     = "spoofed-source-job-marker-3-3"
+		)
 		internalConfig := mustBillingConfig(t, map[string]interface{}{
 			"event_kind":    eventKindInternalCost,
-			"cost_source":   "route.fallback",
-			"worker_kind":   "route-worker",
+			"cost_source":   configuredCostSourceMarker,
+			"worker_kind":   configuredWorkerKindMarker,
 			"bill_customer": false,
 			"redis_stream": map[string]interface{}{
 				"service_name": "redis.static",
@@ -36,9 +46,9 @@ func TestBillingInternalCostAndSensitiveDataContract(t *testing.T) {
 				{"x-request-id", "internal-complete-3-3"},
 				{"x-mse-tenant", "must-not-be-billed"},
 				{"x-mse-consumer", "ai-memory-worker"},
-				{internalCostSourceHeader, "ai-memory.digest"},
-				{internalCostWorkerKindHeader, "digest"},
-				{"x-ai-billing-source-job", "job-complete-3-3"},
+				{internalCostSourceHeader, trustedCostSourceMarker},
+				{internalCostWorkerKindHeader, trustedWorkerKindMarker},
+				{"x-ai-billing-source-job", trustedSourceJobMarker},
 				{"x-ai-billing-event-kind", eventKindUsage},
 				{"x-ai-billing-bill-customer", "true"},
 			})
@@ -55,12 +65,19 @@ func TestBillingInternalCostAndSensitiveDataContract(t *testing.T) {
 
 			event := requireRedisBillingEvent(t, host)
 			require.Equal(t, eventKindInternalCost, event["event_kind"])
-			require.Equal(t, "ai-memory.digest", event["cost_source"])
-			require.Equal(t, "digest", event["worker_kind"])
-			require.Equal(t, "job-complete-3-3", event["source_job"])
+			require.Equal(t, trustedCostSourceMarker, event["cost_source"])
+			require.Equal(t, trustedWorkerKindMarker, event["worker_kind"])
+			require.Equal(t, trustedSourceJobMarker, event["source_job"])
 			require.Equal(t, false, event["bill_customer"])
 			require.Equal(t, "", event["tenant"])
 			require.Equal(t, "ai-memory-worker", event["consumer"])
+			for _, marker := range []string{
+				trustedCostSourceMarker,
+				trustedWorkerKindMarker,
+				trustedSourceJobMarker,
+			} {
+				require.NotContains(t, billingHostLogs(host), marker)
+			}
 		})
 
 		t.Run("absent pair retains route fallback", func(t *testing.T) {
@@ -86,9 +103,15 @@ func TestBillingInternalCostAndSensitiveDataContract(t *testing.T) {
 
 			event := requireRedisBillingEvent(t, host)
 			require.Equal(t, eventKindInternalCost, event["event_kind"])
-			require.Equal(t, "route.fallback", event["cost_source"])
-			require.Equal(t, "route-worker", event["worker_kind"])
+			require.Equal(t, configuredCostSourceMarker, event["cost_source"])
+			require.Equal(t, configuredWorkerKindMarker, event["worker_kind"])
 			require.Equal(t, false, event["bill_customer"])
+			for _, marker := range []string{
+				configuredCostSourceMarker,
+				configuredWorkerKindMarker,
+			} {
+				require.NotContains(t, billingHostLogs(host), marker)
+			}
 		})
 
 		for _, testCase := range []struct {
@@ -156,15 +179,7 @@ func TestBillingInternalCostAndSensitiveDataContract(t *testing.T) {
 				require.Equal(t, types.ActionContinue, action)
 				require.Equal(t, responseBody, host.GetResponseBody())
 				require.Empty(t, host.GetRedisCalloutAttributes())
-
-				logs := make([]string, 0)
-				logs = append(logs, host.GetTraceLogs()...)
-				logs = append(logs, host.GetDebugLogs()...)
-				logs = append(logs, host.GetInfoLogs()...)
-				logs = append(logs, host.GetWarnLogs()...)
-				logs = append(logs, host.GetErrorLogs()...)
-				logs = append(logs, host.GetCriticalLogs()...)
-				require.NotContains(t, strings.Join(logs, "\n"), testCase.marker)
+				require.NotContains(t, billingHostLogs(host), testCase.marker)
 			})
 		}
 
@@ -190,9 +205,9 @@ func TestBillingInternalCostAndSensitiveDataContract(t *testing.T) {
 				{"x-request-id", "customer-no-spoof-3-3"},
 				{"x-mse-tenant", "tenant-a"},
 				{"x-mse-consumer", "consumer-a"},
-				{internalCostSourceHeader, "ai-memory.digest"},
-				{internalCostWorkerKindHeader, "digest"},
-				{"x-ai-billing-source-job", "spoofed-source-job-3-3"},
+				{internalCostSourceHeader, spoofedCostSourceMarker},
+				{internalCostWorkerKindHeader, spoofedWorkerKindMarker},
+				{"x-ai-billing-source-job", spoofedSourceJobMarker},
 				{"x-ai-billing-event-kind", eventKindInternalCost},
 				{"x-ai-billing-bill-customer", "false"},
 			})
@@ -213,6 +228,24 @@ func TestBillingInternalCostAndSensitiveDataContract(t *testing.T) {
 			require.NotContains(t, event, "worker_kind")
 			require.NotContains(t, event, "source_job")
 			require.NotContains(t, event, "bill_customer")
+			for _, marker := range []string{
+				spoofedCostSourceMarker,
+				spoofedWorkerKindMarker,
+				spoofedSourceJobMarker,
+			} {
+				require.NotContains(t, billingHostLogs(host), marker)
+			}
 		})
 	})
+}
+
+func billingHostLogs(host test.TestHost) string {
+	logs := make([]string, 0)
+	logs = append(logs, host.GetTraceLogs()...)
+	logs = append(logs, host.GetDebugLogs()...)
+	logs = append(logs, host.GetInfoLogs()...)
+	logs = append(logs, host.GetWarnLogs()...)
+	logs = append(logs, host.GetErrorLogs()...)
+	logs = append(logs, host.GetCriticalLogs()...)
+	return strings.Join(logs, "\n")
 }
