@@ -2659,10 +2659,13 @@ Task 7.1 evidence (2026-07-30):
   not globally reject future absolute URLs, while the sole reviewed production
   caller uses constant relative `/token`; no PDG/taint and callback/property
   under-modeling remain.
-- Task 7 release bytes must be built from detached exact source
-  `eff8624eb9cbdc199b006e265f12ece5098e9d0d`, not from the later evidence-only
-  commit.
-- [x] 7.2 Build and validate non-empty Wasm files at
+- The original Task 7 release bytes were required to be built from detached
+  exact source `eff8624eb9cbdc199b006e265f12ece5098e9d0d`, not an evidence-only
+  commit. The later reproducibility finding and independently reviewed
+  `-trimpath` fix supersede that result with clean source
+  `59447726256efa0a3fc1c39b65fd7c662f2c67ed`; all replacement release bytes
+  must be built from this exact commit.
+- [ ] 7.2 Build and validate non-empty Wasm files at
   `build/plugins/ai-proxy/1.0.2/plugin.wasm`,
   `build/plugins/ai-billing/0.1.5/plugin.wasm`,
   `build/plugins/ai-quota/1.0.2/plugin.wasm`, and
@@ -2698,7 +2701,7 @@ Task 7.2 evidence (2026-07-30):
   file. This is recorded as a parser limitation, not a passing validation;
   build-toolchain evidence comes from the exact build environment and embedded
   target strings.
-- [x] 7.3 Record a release evidence manifest for each artifact containing
+- [ ] 7.3 Record a release evidence manifest for each artifact containing
   repository, intentional base, reviewed result commit, plugin/version,
   versioned path, SHA-256, toolchain, exact build/test commands, and
   provenance.
@@ -2723,10 +2726,10 @@ Task 7.3 evidence (2026-07-30):
 - No expanded token, Authorization value, Secret, kubeconfig, provider
   credential, or plaintext password is present. Upload and retrieval facts
   remain explicitly `pending`/`null`; Tasks 7.4 and 7.5 are not claimed.
-- [x] 7.4 Upload the exact four tested Wasm byte sequences to the supported
+- [ ] 7.4 Upload the exact four tested Wasm byte sequences to the supported
   local plugin server and verify each version is available through its normal
   local service interface.
-- [x] 7.5 Retrieve all four served artifacts and prove byte-for-byte SHA-256
+- [ ] 7.5 Retrieve all four served artifacts and prove byte-for-byte SHA-256
   identity with the tested local files; reject and replace any mismatch.
 
 Tasks 7.4 and 7.5 evidence (2026-07-30):
@@ -2748,6 +2751,26 @@ Tasks 7.4 and 7.5 evidence (2026-07-30):
   `2026-07-29T19:06:43Z` through `2026-07-29T19:06:49Z`. The manifest records
   the upload status and both retrieval results independently for each version;
   no mismatch required replacement.
+
+Task 7 reproducibility invalidation (2026-07-30):
+
+- Task 8.1 rebuilt the exact reviewed source from a different detached absolute
+  path and correctly rejected all four old artifact identities: the source
+  path was embedded in Wasm debug information and the Go build ID because the
+  default Make build omitted `-trimpath`.
+- Same-path rebuilds were stable, and a controlled two-path experiment proved
+  that `-trimpath` makes all four artifacts byte-identical while removing the
+  changing detached build-worktree and output paths. Absolute external
+  `go.mod replace` dependency paths remain embedded and are recorded as
+  dependency provenance. A behavior-level RED contract reproduced the detached
+  worktree leak and cross-path mismatch; the minimal Make default fix and
+  isolated hostile-env test then passed independent review with zero findings.
+- Source commit `59447726256efa0a3fc1c39b65fd7c662f2c67ed`
+  supersedes `eff8624eb9cbdc199b006e265f12ece5098e9d0d` as the reviewed result.
+  Consequently, the old formal hashes, manifest provenance, local upload, and
+  retrieval facts are historical superseded evidence. Tasks 7.2 through 7.5
+  are reopened until reproducible bytes from `5944772` are rebuilt, retested,
+  recorded, uploaded, and retrieved.
 
 ## 8. Final Verification, Spec Sync, And Archive
 
