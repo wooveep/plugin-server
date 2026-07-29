@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
@@ -71,6 +72,31 @@ func TestAIProxyPathScopeContract(t *testing.T) {
 			"qwenEnableCompatible": true,
 			"capabilities": {
 				"openai/v1/responses": ""
+			}
+		}
+	}`)
+	boundTargetFailoverRetryConfig := json.RawMessage(`{
+		"path_scope": "bound_target",
+		"enable_path_suffixes": ["/vendor/jobs"],
+		"enable_methods": ["PATCH"],
+		"provider": {
+			"type": "qwen",
+			"apiTokens": ["provider-token-a", "provider-token-b"],
+			"qwenDomain": "provider.example",
+			"qwenEnableCompatible": true,
+			"capabilities": {
+				"openai/v1/responses": ""
+			},
+			"failover": {
+				"enabled": true,
+				"failureThreshold": 1,
+				"cooldownDuration": 60000,
+				"failoverOnStatus": ["429"]
+			},
+			"retryOnFailure": {
+				"enabled": true,
+				"maxRetries": 1,
+				"retryOnStatus": ["429"]
 			}
 		}
 	}`)
@@ -244,6 +270,99 @@ func TestAIProxyPathScopeContract(t *testing.T) {
 					require.Equal(t, body, host.GetRequestBody())
 				})
 			}
+		})
+
+		t.Run("bound_target_mismatch_preserves_response_headers_and_body", func(t *testing.T) {
+			host := startRequest(
+				t,
+				boundTargetIntersectionConfig,
+				"POST",
+				"/api/v1/vendor/jobs",
+			)
+			assertSkipped(t, host)
+
+			require.NoError(t, host.SetProperty(
+				[]string{"response", "code_details"},
+				[]byte("via_upstream"),
+			))
+			responseHeaders := [][2]string{
+				{":status", "200"},
+				{"content-type", "application/octet-stream"},
+				{"content-length", "20"},
+				{"x-upstream-marker", "preserved"},
+			}
+			action := host.CallOnHttpResponseHeaders(responseHeaders)
+			require.Equal(t, types.ActionContinue, action)
+			assert.ElementsMatch(t, responseHeaders, host.GetResponseHeaders())
+
+			responseBody := []byte("opaque-response-body")
+			action = host.CallOnHttpResponseBody(responseBody)
+			require.Equal(t, types.ActionContinue, action)
+			require.Equal(t, responseBody, host.GetResponseBody())
+			assert.ElementsMatch(t, responseHeaders, host.GetResponseHeaders())
+		})
+
+		t.Run("bound_target_mismatch_does_not_mutate_token_inventory_or_retry", func(t *testing.T) {
+			host, status := wasmhost.NewTestHost(boundTargetFailoverRetryConfig)
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+			t.Cleanup(host.Reset)
+
+			providerTokens := []string{
+				"Bearer provider-token-a",
+				"Bearer provider-token-b",
+			}
+			admittedHeaders := [][2]string{
+				{":authority", "client.example"},
+				{":path", "/api/v1/vendor/jobs"},
+				{":method", "PATCH"},
+				{"authorization", "Bearer client-token"},
+				{"content-type", "application/json"},
+			}
+			host.CallOnHttpRequestHeaders(admittedHeaders)
+			firstAuthorization, hasFirstAuthorization := wasmhost.GetHeaderValue(
+				host.GetRequestHeaders(),
+				"authorization",
+			)
+			require.True(t, hasFirstAuthorization)
+			require.Contains(t, providerTokens, firstAuthorization)
+			host.CallOnHttpRequestBody([]byte(`{"model":"qwen-plus"}`))
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "client.example"},
+				{":path", "/api/v1/vendor/jobs"},
+				{":method", "POST"},
+				{"authorization", "Bearer client-token"},
+				{"content-type", "application/json"},
+			})
+			assertSkipped(t, host)
+
+			require.NoError(t, host.SetProperty(
+				[]string{"response", "code_details"},
+				[]byte("via_upstream"),
+			))
+			calloutCountBefore := len(host.GetHttpCalloutAttributes())
+			action := host.CallOnHttpResponseHeaders([][2]string{
+				{":status", "429"},
+				{"content-type", "application/json"},
+			})
+			assert.Equal(t, types.ActionContinue, action)
+			assert.Len(t, host.GetHttpCalloutAttributes(), calloutCountBefore)
+
+			debugLogCount := len(host.GetDebugLogs())
+			host.CallOnHttpRequestHeaders(admittedHeaders)
+			nextAuthorization, hasNextAuthorization := wasmhost.GetHeaderValue(
+				host.GetRequestHeaders(),
+				"authorization",
+			)
+			require.True(t, hasNextAuthorization)
+			require.Contains(t, providerTokens, nextAuthorization)
+
+			newDebugLogs := strings.Join(host.GetDebugLogs()[debugLogCount:], "\n")
+			assert.Contains(
+				t,
+				newDebugLogs,
+				"apiTokens: [provider-token-a provider-token-b], unavailableApiTokens: []",
+			)
 		})
 	})
 }

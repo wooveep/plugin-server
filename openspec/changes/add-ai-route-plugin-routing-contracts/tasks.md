@@ -331,6 +331,17 @@ Task 2.7 evidence (2026-07-29):
   operation, provider match, capability match, and usage profile. Bound-target
   mismatch returns before reroute, context, token, host/authentication, or body
   work and preserves client authority/authentication/body ownership.
+- Independent review found that `DontReadResponseBody` did not suppress the
+  registered response-header callback, so a bound-target mismatch could still
+  remove `Content-Length`, update failover token inventory, and issue a retry.
+  A real HostEmulator RED reproduced all three effects, including same-context
+  request re-entry. Every request-header entry now clears a request-scope skip
+  marker plus both Claude and Responses conversion markers; a bound-target
+  mismatch sets the skip marker, and the response-header callback returns
+  before upstream classification, failover/retry, header transformation, or
+  response-body setup. The regression proves exact response header/body
+  preservation and unchanged two-token availability on the next admitted
+  request, with no retry callout.
 - GREEN commands passed independently:
   `go test ./config -run '^TestPluginConfigRoutingParserContract$' -count=1`,
   `go test . -run '^TestKnownQwenResponsesAdapterContract$' -count=1`, and

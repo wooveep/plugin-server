@@ -34,6 +34,7 @@ const (
 	ctxOriginalHost                = "original_host"
 	ctxOriginalAuth                = "original_auth"
 	ctxUpstreamErrorResponseStatus = "upstream_error_response_status"
+	ctxSkipAIProxyLifecycle        = "skip_ai_proxy_lifecycle"
 )
 
 type pair[K, V any] struct {
@@ -215,9 +216,12 @@ func saveContextsToHeaders(ctx wrapper.HttpContext) {
 }
 
 func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
+	ctx.SetContext(ctxSkipAIProxyLifecycle, false)
+	ctx.SetContext("needClaudeResponseConversion", false)
+	ctx.SetContext(provider.CtxKeyNeedResponsesResponseConversion, false)
+
 	activeProvider := pluginConfig.GetProvider()
 	publishNoAdapterMetadata(pluginConfig.GetProtocolMode())
-	ctx.SetContext(provider.CtxKeyNeedResponsesResponseConversion, false)
 
 	if activeProvider == nil {
 		log.Debugf("[onHttpRequestHeader] no active provider, skip processing")
@@ -230,6 +234,7 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 	rawPath := ctx.Path()
 	path, _ := url.Parse(rawPath)
 	if !pluginConfig.MatchesBoundTargetFilters(ctx.Method(), path.Path) {
+		ctx.SetContext(ctxSkipAIProxyLifecycle, true)
 		ctx.DontReadRequestBody()
 		ctx.DontReadResponseBody()
 		return types.ActionContinue
@@ -376,6 +381,11 @@ func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
+	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
+
 	if !wrapper.IsResponseFromUpstream() {
 		// Response is not coming from the upstream. Let it pass through.
 		ctx.DontReadResponseBody()
