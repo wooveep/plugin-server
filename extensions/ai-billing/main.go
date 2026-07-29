@@ -36,10 +36,6 @@ const (
 	PathScopeLegacySuffixes = "legacy_suffixes"
 	PathScopeBoundTarget    = "bound_target"
 
-	maxRoutingFilterEntries = 64
-	maxPathSuffixBytes      = 256
-	maxHTTPMethodBytes      = 32
-
 	eventKindUsage               = "usage"
 	eventKindCustomerUsageLegacy = "customer_usage"
 	eventKindInternalCost        = "internal_cost"
@@ -1177,9 +1173,9 @@ func parsePathSuffixesForScope(result gjson.Result, pathScope string) ([]string,
 		}
 		return defaultPathSuffixes(), nil
 	}
-	suffixes, err := parseRoutingStringList(result, maxPathSuffixBytes, false)
+	suffixes, err := parseRoutingStringList(result, false)
 	if err != nil {
-		return nil, errors.New("enable_path_suffixes must be an array of bounded strings")
+		return nil, errors.New("enable_path_suffixes must be an array of strings")
 	}
 	if pathScope == PathScopeLegacySuffixes && len(suffixes) == 0 {
 		return nil, errors.New("enable_path_suffixes must not be empty")
@@ -1191,25 +1187,21 @@ func parseHTTPMethods(result gjson.Result) ([]string, error) {
 	if !result.Exists() {
 		return nil, nil
 	}
-	methods, err := parseRoutingStringList(result, maxHTTPMethodBytes, true)
+	methods, err := parseRoutingStringList(result, true)
 	if err != nil {
-		return nil, errors.New("enable_methods must be an array of bounded HTTP method strings")
+		return nil, errors.New("enable_methods must be an array of HTTP method strings")
 	}
 	return methods, nil
 }
 
 func parseRoutingStringList(
 	result gjson.Result,
-	maxEntryBytes int,
-	normalizeMethod bool,
+	validateMethod bool,
 ) ([]string, error) {
 	if !result.IsArray() {
 		return nil, errors.New("routing filter must be an array")
 	}
 	values := result.Array()
-	if len(values) > maxRoutingFilterEntries {
-		return nil, errors.New("routing filter has too many entries")
-	}
 	normalized := make([]string, 0, len(values))
 	seen := make(map[string]struct{}, len(values))
 	for _, value := range values {
@@ -1220,20 +1212,17 @@ func parseRoutingStringList(
 		if entry == "" {
 			continue
 		}
-		if len(entry) > maxEntryBytes {
-			return nil, errors.New("routing filter entry is too long")
-		}
-		if normalizeMethod {
-			entry = strings.ToUpper(entry)
-			if !isHTTPToken(entry) {
-				return nil, errors.New("routing filter entry is not an HTTP token")
-			}
+		if validateMethod && !isHTTPToken(entry) {
+			return nil, errors.New("routing filter entry is not an HTTP token")
 		}
 		if _, exists := seen[entry]; exists {
 			continue
 		}
 		seen[entry] = struct{}{}
 		normalized = append(normalized, entry)
+	}
+	if len(values) > 0 && len(normalized) == 0 {
+		return nil, errors.New("routing filter must contain a usable entry")
 	}
 	return normalized, nil
 }
@@ -1250,7 +1239,6 @@ func cloneStrings(values []string) []string {
 }
 
 func matchesHTTPMethod(methods []string, requestMethod string) bool {
-	requestMethod = strings.ToUpper(strings.TrimSpace(requestMethod))
 	for _, method := range methods {
 		if method == requestMethod {
 			return true

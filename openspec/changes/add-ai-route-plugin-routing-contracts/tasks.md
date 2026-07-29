@@ -990,18 +990,20 @@ Task 3.4 evidence (2026-07-29):
   post-edit command passes.
 - `BillingConfig` now carries route-effective `path_scope` and
   `enable_methods`. Global and rule parsers default omitted scope to
-  `legacy_suffixes`, reject unsupported scope values, normalize and validate
-  bounded/deduplicated HTTP method tokens, preserve legacy default/explicit
-  suffix behavior, and accept absent or explicitly empty advanced filters
-  only as non-narrowing bound-target projections. A rule changing from legacy
-  to bound-target scope does not inherit the legacy suffix projection; rule
-  filters still replace only their corresponding request gate, while the
-  complete global Redis target and omitted business fields remain inherited.
-  Removed `billing_service` and rule-level `redis_stream` rejection are
-  unchanged.
+  `legacy_suffixes`, reject unsupported scope values, trim and validate
+  case-sensitive/deduplicated HTTP method tokens, preserve legacy
+  default/explicit suffix behavior without new count or length limits, and
+  accept absent or literal-empty advanced filters only as non-narrowing
+  bound-target projections. A source list that is non-empty but normalizes to
+  no usable entry is rejected rather than becoming an allow-all projection. A
+  rule changing from legacy to bound-target scope does not inherit the legacy
+  suffix projection; rule filters still replace only their corresponding
+  request gate, while the complete global Redis target and omitted business
+  fields remain inherited. Removed `billing_service` and rule-level
+  `redis_stream` rejection are unchanged.
 - Request admission remains suffix-required in legacy mode. Bound-target mode
   admits the already selected Higress target when filters are absent/empty,
-  while each explicit non-empty suffix or normalized method list narrows it
+  while each explicit non-empty suffix or exact-case method list narrows it
   and two lists intersect. The gate continues model traffic when billing is
   out of scope and does not alter event truth, Redis delivery, internal-cost
   attribution, or response-correlation code.
@@ -1018,9 +1020,29 @@ Task 3.4 evidence (2026-07-29):
   The subsequent GitNexus refresh generated eight repository-instruction
   diffs, all of which were restored. Branch-wide comparison against `main`
   retains the expected CRITICAL result from 63 files of already committed
-  change history; task-local detection is LOW across exactly two changed
-  files with zero affected processes. The retained source/spec delta is
-  limited to this routing gate and its Task 3.4 evidence.
+  change history; the initial task-local detection was LOW across exactly two
+  changed files with zero affected processes.
+- Independent production review returned `NEEDS_FIXES` for three
+  configuration-boundary defects, all repaired with separate RED/GREEN
+  cycles. Blank-only bound filters first failed at four global/rule
+  suffix/method parser leaves, then passed after non-empty normalized-empty
+  lists became errors. Mixed-case method coverage first failed at two leaves
+  because `MiXeD` collapsed with `mixed`/`MIXED`, then passed after configured
+  token case and exact request matching were preserved. Compatibility
+  coverage first failed at three leaves because 65 suffixes, a suffix longer
+  than 256 bytes, and a valid method longer than 32 bytes were rejected, then
+  passed after the undocumented 64/256/32 limits were removed.
+- The repair-round routing regression suite and original Task 3.1 command
+  pass, as do all 16 HIGH dependents and the complete focused
+  config/delivery/correlation/internal/cache/stream/security baseline.
+  Task 3.2 remains exactly three RED leaves, Task 3.3 remains exactly six RED
+  leaves, and the complete module contains only those nine later-task
+  failures. Repair-round formatting, vet, strict OpenSpec, diff, Graphify,
+  GitNexus analyze, and staged change-detection gates were rerun before the
+  scoped repair commit. Graphify rebuilt 11,125 nodes, 14,940 edges, and 874
+  communities; GitNexus rebuilt 12,952 nodes, 40,595 edges, 292 clusters, and
+  300 flows. The eight generated repository-instruction diffs were restored,
+  and task-local detection remained LOW with zero affected processes.
 
 - [ ] 3.5 Implement truthful provider-native/opaque-response event handling
   while preserving global inherited Redis delivery, exact correlation, and
