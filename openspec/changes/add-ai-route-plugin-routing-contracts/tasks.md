@@ -2777,6 +2777,12 @@ Tasks 7.4 and 7.5 evidence (2026-07-30):
   each stale pre-upload identity, upload status, and both replacement retrieval
   results independently for every version; all four detected mismatches were
   replaced successfully.
+- The first committed reproducible availability evidence is immutable commit
+  `e2f8010f6f7384ca2146b1051447b80516d64224`, which the current manifest
+  records as `repository.availability_evidence_commit`. Independent live
+  re-retrieval through the normal Service DNS repeated all four size, SHA-256,
+  Wasm magic, and byte-identity checks and returned `APPROVED` with zero
+  findings.
 
 Task 7 reproducibility invalidation (2026-07-30):
 

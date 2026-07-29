@@ -9,8 +9,8 @@
     "reviewed_result_commit": "59447726256efa0a3fc1c39b65fd7c662f2c67ed",
     "evidence_commit": "07ac833e525a99e9aaa835961f68dd253a39bef4",
     "evidence_commit_state": "recorded-first-reproducible-manifest-commit",
-    "availability_evidence_commit": null,
-    "availability_evidence_commit_state": "pending-reproducible-availability-commit",
+    "availability_evidence_commit": "e2f8010f6f7384ca2146b1051447b80516d64224",
+    "availability_evidence_commit_state": "recorded-first-reproducible-availability-commit",
     "clean_before_build": true
   },
   "superseded_release": {
