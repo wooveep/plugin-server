@@ -175,10 +175,6 @@ func TestBillingRoutingAndDeliveryConfigContract(t *testing.T) {
 			config["enable_path_suffixes"] = []string{}
 			config["enable_methods"] = []string{}
 
-			host, status := test.NewTestHost(mustBillingConfig(t, config))
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
 			runBillingRoutingRequest(
 				t,
 				config,
