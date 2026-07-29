@@ -6,7 +6,7 @@ PLUGIN ?=
 WASM_BUILDER ?= go
 GO ?= go
 TINYGO ?= tinygo
-GO_BUILD_FLAGS ?= -buildmode=c-shared
+GO_BUILD_FLAGS ?= -buildmode=c-shared -trimpath
 TINYGO_FLAGS ?= -scheduler=none -target=wasi -gc=custom
 TINYGO_BASE_TAGS ?= custommalloc nottinygc_finalizer
 EXTRA_TAGS ?=
