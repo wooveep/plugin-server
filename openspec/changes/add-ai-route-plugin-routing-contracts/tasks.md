@@ -898,13 +898,62 @@ Task 3.2 evidence (2026-07-29):
   reports LOW risk across three changed files and ten test/documentation
   symbols, with zero affected production processes.
 
-- [ ] 3.3 Add RED regression/security fixtures for all five internal-cost
+- [x] 3.3 Add RED regression/security fixtures for all five internal-cost
   scenarios (complete pair, absent-pair fallback, partial suppression,
   empty/oversized/invalid-character suppression, and customer no-spoof) and
   the exact `x-ocmf-gateway-request-id` lifecycle (replace-not-append,
   canonical-absent removal, non-streaming, streaming, and local/cache paths);
   also preserve event identity, idempotent streaming delivery, cache facts,
   Redis credential redaction, and submitted-value non-leakage.
+
+Task 3.3 evidence (2026-07-29):
+
+- The current Graphify report, accepted and delta `ai-billing-events`
+  specifications, change design/tasks, and both active correlation and
+  internal-cost dependency changes and tests were reviewed before source
+  inspection. GitNexus located the real request/response lifecycle,
+  attribution, cache-origin, streaming-delivery, and HostEmulator seams.
+  Pre-edit impact for both new test-only symbols was UNKNOWN with zero indexed
+  dependents; the documentation file was likewise unindexed with zero
+  dependents. No production symbol or CRITICAL shared `RunGoTest`/
+  `NewTestHost` harness was modified, and every subtest owns a fresh host.
+- The pre-change delivery/correlation/internal-cost/cache/stream baseline
+  passed:
+  `go test . -run
+  '^(TestBillingEventDelivery|TestUnsafeInternalAttributionDoesNotLogSubmittedValue|TestBillingResponseRequestIDHeader|TestBuildBillingEvent_TrustedCacheReplayFacts|TestBuildBillingEvent_UsesLocalResponseCodeDetailsForCacheReplay|TestBillingEventIgnoresUserSuppliedUpstreamInvokedFields|TestSendBillingEventReusesEventIdempotencyKey|TestInitBillingRequestContextSetsEventID|TestOnHttpStreamingResponseBodyEndOfStreamDeliversAndMarksDelivered|TestStreamDoneFallbackSkipsAfterNormalDelivery|TestRedisFailOpenContract|TestBillingRedisFailOpenContract)$'
+  -count=1`.
+- `extensions/ai-billing/internal_cost_security_contract_test.go` passes with
+  `go test . -run '^TestBillingInternalCostAndSensitiveDataContract$'
+  -count=1`. Real request/response/event observations prove a complete valid
+  pair is authoritative, an absent pair retains the configured fallback,
+  source-only/worker-only/trimmed-empty/oversized/invalid-character pairs
+  suppress event delivery without suppressing model traffic or leaking the
+  submitted marker at trace-through-critical host log levels, and customer
+  headers cannot spoof internal fields, `event_kind`, or `bill_customer`.
+- Focused RED command:
+  `go test . -run '^TestBillingCorrelationLifecycleContract$' -count=1`.
+  It compiles and fails only at six missing security/lifecycle contracts:
+  non-streaming, streaming, cache replay, and gateway-local responses retain
+  the second upstream correlation value before the canonical ID instead of
+  replacing all values; a response without canonical context retains an
+  upstream value instead of removing the header; and a submitted query marker
+  enters `request_path` in the serialized event. The same uninterrupted
+  lifecycle leaves prove event correlation exactly matches the canonical
+  request ID, non-empty `event_id` equals `idempotency_key`, streaming emits
+  exactly one `XADD` even after stream completion, and cache/local origin
+  remains `upstream_invoked=false`. Redis credentials and submitted
+  header/body/internal-attribution values remain absent from serialized events
+  and trace-through-critical host logs.
+- These are independent RED regression/security fixtures only; no production
+  or shared test-harness code changed. Exact changed-file `gofmt`, extension
+  vet, `git diff --check`, strict OpenSpec validation, Graphify refresh, and
+  staged GitNexus change detection complete the Task 3.3 handoff. `graphify
+  update .` rebuilt 11,109 nodes, 14,889 edges, and 877 communities without
+  tracked generated-file changes. After restoring the eight
+  GitNexus-generated instruction files, staged detection reports LOW risk
+  across three changed files and nine test/documentation symbols, with zero
+  affected production processes.
+
 - [ ] 3.4 Implement ai-billing path-scope parsing and bound-target/advanced
   filter gating without widening legacy configurations.
 - [ ] 3.5 Implement truthful provider-native/opaque-response event handling
