@@ -2590,9 +2590,37 @@ Task 6.7 verification evidence (2026-07-30):
   separate Task 6 risk audit and is not attributed to this mechanical
   dependency-hygiene delta.
 
-- [ ] 6.8 Obtain an independent versions/schemas/resources/documentation
+- [x] 6.8 Obtain an independent versions/schemas/resources/documentation
   review, resolve every finding, and rerun all affected alignment, schema,
   documentation, and module checks.
+
+Task 6.8 independent final-review evidence (2026-07-30):
+
+- Ignored review record
+  `.superpowers/sdd/add-ai-route-plugin-routing-contracts/task-6.8-final-review.md`
+  has SHA-256 `d6330d681fb971b828a0e15df83e9b7f872a6598e5b3d4d400e24284b24059e4`.
+  Independent review is `APPROVED` with zero Critical, Important, or Minor
+  findings; no finding required changes. The clean reviewed result is
+  `983be931929ca065e2f7a9c3b06606831cbbc6bb`, range `7459e67..983be93`
+  (47 files, 3,254 insertions, 807 deletions), with current GitNexus result
+  193 symbols/47 files/0 flows/LOW.
+- Review covered 38 version surfaces; schemas, examples, and runtime truth;
+  16 bilingual READMEs and ownership; security/lifecycle (Vertex sensitive
+  OAuth, Bedrock exact signing, transparent retry re-auth, billing
+  XADD/correlation/trust, quota read-only admission, and statistics bounded
+  facts); and module dependencies/tests.
+- Fresh root focused alignment/schema/example and full test results passed;
+  all four modules passed `go mod tidy -diff`, `go mod verify`, module
+  `gofmt`, `go vet ./...`, ordinary full suites, and focused security/lifecycle
+  controls as recorded in the independent review. Root `go vet ./...` is NOT
+  PASS solely for pre-existing unchanged
+  `pkg/ai/sessionctx/sessionctx.go:512:2: unreachable code`.
+- Aggregate ai-proxy Go+Wasm race is NOT claimed PASS because of the known
+  Wazero/provider timeout; the corrected all-Go race and changed focused real
+  Go/Wasm controls passed. The current GitNexus index has no PDG/taint layer;
+  callback, closure, and property-flow blind spots were covered by direct
+  source review and focused Go/Wasm tests, so zero taint findings are not
+  safety proof.
 
 ## 7. Reviewed Artifacts And Local Availability
 
