@@ -247,9 +247,50 @@ Task 2.5 evidence (2026-07-29):
   execution flows, and LOW risk; the stale index mapped only adjacent task
   sections and did not yet resolve the new test symbol.
 
-- [ ] 2.6 Add RED path-scope tests proving legacy replay, bound-target
+- [x] 2.6 Add RED path-scope tests proving legacy replay, bound-target
   provider-native coverage without synthesized suffixes, and explicit
   non-empty suffix/method intersections.
+
+Task 2.6 evidence (2026-07-29):
+
+- The current Graphify report, focused task 2.6 audit, design, ai-proxy routing
+  and Responses deltas, task plan, existing Qwen Responses fallback control,
+  and HostEmulator lifecycle patterns were reviewed before the test was added.
+  Upstream impact for the new `TestAIProxyPathScopeContract` symbol was UNKNOWN
+  with zero indexed dependents. The CRITICAL shared `RunGoTest` and
+  `NewTestHost` helpers were only reused and were not modified.
+- The existing legacy Qwen fallback baseline passed:
+  `go test . -run '^TestQwenResponsesFallbackConvertsNonStreamingRequestAndResponse$' -count=1`.
+  `extensions/ai-proxy/path_scope_contract_test.go` then added one compile-safe
+  Go-mode contract using only literal `json.RawMessage` configuration and a
+  fresh HostEmulator for every request. It does not reference future
+  protocol/path-scope production fields, getters, enums, or shared helpers.
+- Independent positive guards passed for omitted and explicit
+  `legacy_suffixes` Qwen Responses classification, `bound_target` without
+  advanced filters, `bound_target` with both filter arrays empty, and the
+  non-empty suffix/method both-match case. They prove the current
+  `/compatible-mode/v1/chat/completions` legacy replay, provider-native path
+  coverage without synthesized suffixes, empty-filter no-narrowing, and
+  provider authority/authentication on an admitted match. Opaque request bytes
+  are checked only as an auxiliary positive guard.
+- Focused RED command:
+  `go test . -run '^TestAIProxyPathScopeContract$' -count=1`.
+  It compiled and failed only for the missing non-empty filter intersection.
+  The suffix-mismatch, method-mismatch, and both-mismatch requests all changed
+  authority from `client.example` to `provider.example` and authorization from
+  `Bearer client-token` to `Bearer provider-path-scope-token`; the contract
+  requires those skipped requests to retain the client values. A dedicated
+  mismatch-only rerun reproduced the same six real assertions independently.
+- The HostEmulator represents traffic already selected by the Higress binding
+  target, so the fixture tests only in-plugin narrowing and does not claim that
+  a filter can expand an external binding. No exact callback action is asserted,
+  and no production source or shared test harness changed.
+- `gofmt`, `git diff --check`, and strict OpenSpec validation pass.
+  `graphify update .` refreshed the local AST graph without adding tracked
+  generated output. Staged GitNexus change detection reported two changed
+  files, zero affected execution flows, and LOW risk; its stale symbol mapping
+  resolved only adjacent task sections and not the newly added test symbol.
+
 - [ ] 2.7 Implement validated protocol/path-scope parsing, stable adapter
   resolution, trusted adapter metadata, and Responses adapter registration.
 - [ ] 2.8 Implement transparent unknown fallback and forced passthrough while
