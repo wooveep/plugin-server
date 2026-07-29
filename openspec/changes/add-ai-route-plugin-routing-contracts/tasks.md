@@ -1744,10 +1744,69 @@ Task 5.1 review-fix evidence (2026-07-29):
   the review-fix commit, and all generated repository-instruction rewrites
   were restored.
 
-- [ ] 5.2 Add RED lifecycle/metric tests proving opaque success and error
+- [x] 5.2 Add RED lifecycle/metric tests proving opaque success and error
   responses emit bounded route/path attribution, method, status, latency,
   bounded error, request count, and duration independently of model/token
   parsing.
+
+Task 5.2 evidence (2026-07-29):
+
+- The current Graphify report, change proposal/design/tasks, all seven delta
+  capabilities, accepted resource specification, ai-statistics lifecycle and
+  metric tests, and the real HostEmulator AILog/filter-state and counter
+  surfaces were reviewed before the fixture was added. GitNexus located the
+  request, non-streaming response, streaming end-of-stream, AILog, and
+  `writeMetric` usage-gate boundaries. Pre-edit impact for the new
+  `TestStatisticsOpaqueBaseFactsContract` symbol was UNKNOWN with zero indexed
+  dependents or processes; the AI Statistics task section was LOW with zero
+  dependents, processes, or modules. No production, existing test, shared
+  harness, schema, documentation, or version surface was modified.
+- Pre-edit baselines reproduced the exact existing Task 5.1 boundary:
+  `go test . -run '^TestStatisticsRoutingScopeContract$' -count=1` failed at
+  its documented 15 leaves, and `go test ./... -count=1` failed only at those
+  same 15 leaves in `32.911s`.
+- `extensions/ai-statistics/opaque_base_facts_contract_test.go` defines its
+  reader-facing AILog and metric contract locally rather than importing future
+  production constants or getters. Every leaf owns a fresh Go HostEmulator,
+  selects `bound_target` with literal-empty advanced filters, uses the trusted
+  route `statistics-base-facts-route`, and leaves adapter metadata absent so
+  path attribution must be the fixed `provider_native_unknown` sentinel.
+- The three independent lifecycle leaves cover an opaque `202` success with
+  `disable_openai_usage: true`, an opaque `201` success with usage/model facts
+  missing, and an opaque streaming `503` error completed at end of stream.
+  Each leaf asserts six base fields (`route`, `path`, `method`, `status_code`,
+  positive numeric `latency_ms`, and bounded `error_class`), six unavailable
+  optional dimensions remain absent, exact response headers/body remain
+  transparent, and the exact reader-facing `request_count=1` and positive
+  `request_duration_ms` counter metrics exist. Counter names contain only the
+  bounded route/path/method/status/error projection.
+- Each leaf also rejects response-body/provider-error text, request
+  authorization, provider trace metadata, and the raw provider-native path
+  from AILog; the body and authorization markers are rejected across every
+  HostEmulator log level. The two expected metric names independently reject
+  the raw path and submitted markers. This supplies the fixed opaque fallback
+  and error-secrecy boundary without adding Task 5.3's route/template
+  cardinality matrix.
+- Focused RED command:
+  `go test . -run '^TestStatisticsOpaqueBaseFactsContract$' -count=1`. It
+  compiles and fails at exactly three executable leaves. Current AILog lacks
+  all six safe base fields and emits the fabricated optional `api:"-"`; both
+  exact counters are absent because `writeMetric` returns for disabled or
+  missing usage. Response transparency, positive observable legacy duration,
+  optional model/token absence, and every submitted-value secrecy control pass
+  before those intended failures.
+- The retained metric, non-streaming, streaming, and disabled-usage controls
+  pass together in `7.710s`. Task 5.1 remains exactly 15 RED leaves. The
+  complete module fails only at the union of those 15 leaves and the three new
+  Task 5.2 leaves (`18` total) in a final-source rerun of `33.228s`. Exact
+  changed-file formatting, extension vet, diff checks, and strict OpenSpec
+  validation pass. `graphify update .` rebuilt 11,170 nodes, 15,059 edges, and
+  854 communities without tracked generated output. GitNexus incremental
+  analysis rebuilt 13,008 nodes, 40,989 edges, 292 clusters, and 300 flows; its
+  eight generated repository-instruction rewrites were restored. Final staged
+  detection is LOW across exactly two files and 14 test/documentation symbols,
+  with zero affected execution processes.
+
 - [ ] 5.3 Add RED trust/cardinality fixtures proving: raw
   `/v1/files/<uuid>?api_key=secret` plus trusted
   `/v1/files/{file_id}` emits only the template; unknown
