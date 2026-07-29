@@ -1531,9 +1531,63 @@ Task 4.4 evidence (2026-07-29):
   compare-to-`main` result is CRITICAL across the cumulative 75-file change
   branch (547 symbols and 59 flows), rather than the isolated Task 4.4 delta.
 
-- [ ] 4.5 Run focused and complete independent ai-quota unit, Redis admission,
+- [x] 4.5 Run focused and complete independent ai-quota unit, Redis admission,
   proxy-wasm lifecycle/integration, no-deduction regression, and security
   suites.
+
+Task 4.5 evidence (2026-07-29):
+
+- Independent verification used reviewed source result
+  `aec0cdfab4f9b796f97da29b06741bf6dd191b3c`; the separate Task 4.4
+  implementation/ownership review was `APPROVED`. This task changes only this
+  checkbox and evidence. It does not modify production, test, schema,
+  example, or documentation files, and Task 4.6 remains open.
+- The focused parser command
+  `go test . -run
+  '^(TestParseConfig|TestRemovedSettlementConfigIsRejected)$' -count=1`
+  passed 12 leaves in `0.171s`. It covers the admission defaults plus
+  global/rule rejection of all five removed settlement fields. The combined
+  routing configuration, admission, validation, raw fail-closed, no-cap,
+  rule-isolation, query, and scope-switch regression command passed 37 leaves
+  in `0.174s`.
+- Real Redis admission passed in both Go and Wasm modes with
+  `go test . -run '^TestRequestAdmission$' -count=1`: 14 executable leaves,
+  zero failures, `1.987s`. The lifecycle covers positive, zero, negative,
+  malformed, and missing balances, missing identity, exact balance-key
+  dispatch, fixed denial/error responses, request resume only when allowed,
+  and legacy admin-path exclusion.
+- The combined ownership/no-deduction command
+  `go test . -run
+  '^(TestQuotaAdmissionOwnershipContract|TestAdmissionOnlyDoesNotDeduct)$'
+  -count=1` passed 18 leaves in `3.733s`. Seven response classes in both Go
+  and Wasm modes provide the 14 ownership leaves; four additional leaves
+  preserve no-deduction behavior. Recognizable, opaque, streaming, error,
+  local, cache, and missing-usage responses remain byte/status/header
+  transparent and dispatch no response-stage Redis callout or account
+  mutation.
+- The structured resource/schema/example/bilingual-documentation contract
+  passed four leaves in `0.176s`, and `go test ./util -count=1` passed six
+  leaves in `0.128s`. Scoped scans passed with no credential-like literals or
+  credential-bearing log calls, no removed settlement fields/wording in the
+  current schema/examples/docs, and no response callback registration or
+  Redis mutation command in the ai-quota runtime.
+- The complete isolated module gate `go test ./... -count=1` passed both
+  packages and all 92 leaves in `5.410s`. The exact race gate
+  `go test -race ./... -count=1` also passed without a Wasm/harness
+  exception: ai-quota `54.148s`, util `1.005s`, wall `56.989s`.
+- Verification used Go `1.26.3` on `linux/amd64`. `go vet ./...` passed in
+  `0.036s`; exact `gofmt -l` inspection passed all eight Go files;
+  `git diff --check` passed; and
+  `openspec validate add-ai-route-plugin-routing-contracts --strict` passed
+  in `1.098s`.
+- `graphify update .` refreshed 11,166 nodes, 15,049 edges, and 880
+  communities without tracked generated output. GitNexus incremental analysis
+  refreshed 12,986 nodes, 40,897 edges, 291 clusters, and 300 flows; its
+  eight generated repository-instruction rewrites were restored. Final staged
+  detection is LOW across exactly one changed documentation file and two
+  indexed documentation sections (the quota section plus the line-shifted
+  following statistics section), with zero affected execution processes.
+
 - [ ] 4.6 Obtain an independent ai-quota implementation/ownership review,
   resolve every finding, and rerun the affected RED/GREEN and complete module
   suites before beginning the statistics implementation.
