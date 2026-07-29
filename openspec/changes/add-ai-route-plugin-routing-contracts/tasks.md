@@ -1588,9 +1588,56 @@ Task 4.5 evidence (2026-07-29):
   indexed documentation sections (the quota section plus the line-shifted
   following statistics section), with zero affected execution processes.
 
-- [ ] 4.6 Obtain an independent ai-quota implementation/ownership review,
+- [x] 4.6 Obtain an independent ai-quota implementation/ownership review,
   resolve every finding, and rerun the affected RED/GREEN and complete module
   suites before beginning the statistics implementation.
+
+Task 4.6 evidence (2026-07-29):
+
+- Independent review of exact immutable range
+  `85d943350b98ab913b6f0b4056e75b14a1b426f5..39299baefa59910c877a4b8344184adcae644c64`
+  is `APPROVED` with no unresolved finding. The byte-identical review package
+  `review-ai-quota-85d9433..39299ba.diff` has SHA-256
+  `bba11d994777e44de99aac1f88e6cc3b3dfb040c56cc51c6ba25db2212917d5e`.
+  The ignored reviewer report
+  `.superpowers/sdd/add-ai-route-plugin-routing-contracts/task-4.6-reviewer.md`
+  has SHA-256
+  `d83bdb204bd8062a44e9fb4a16a8da806491ba49e6cadcf80cdfaf217d36a0d1`.
+- Runtime and contract review confirmed legacy and unfiltered bound-target
+  routing, non-empty suffix/method intersection, exact-case method matching,
+  query exclusion and invalid/raw fail-closed behavior. Eligible requests
+  perform exactly one real Redis `GET`; strict `balance > 0`, zero/negative,
+  missing, malformed, Redis-error, and missing-identity outcomes match the
+  contract. No response callback is registered and all 14 ownership leaves
+  preserve response bytes/status/headers with zero response-stage Redis
+  callout, mutation, or settlement state.
+- Global and rule parsing reject all five removed settlement fields. The
+  plugin schema, resource schema, examples, and four bilingual READMEs are
+  aligned on read-only admission and Console/billing-service settlement
+  ownership; route overrides cannot replace Redis infrastructure. Credential
+  examples remain placeholders, source/config errors do not expose submitted
+  credentials, versions remain `1.0.1`, and the accepted specs/Purpose are
+  untouched for their later assigned tasks.
+- Historical Task 4.1 RED was independently reproduced at detached commit
+  `033be91`: the focused routing contract exited non-zero with nine visible
+  failing semantic leaves; the current same contract is GREEN. Task 4.2's
+  historical ownership RED is traceable to pre-admission-only source
+  `ad1e61a2`, where response settlement/EVAL behavior failed the documented
+  four semantic/eight Go-Wasm leaves. Task 4.4's APPROVED report SHA and Task
+  4.5 evidence were checked and are consistent with the reviewed range.
+- The focused parser, removed-field, real Redis admission, routing,
+  regression, ownership, no-deduction, and resource contract command passed.
+  `go test ./... -count=1` passed (`ai-quota` `5.471s`, `util` `0.002s`);
+  `go test -race ./... -count=1` passed (`54.427s` and `1.005s`);
+  `go vet ./...`, all-module `gofmt -l`, exact-range `git diff --check`, and
+  strict OpenSpec validation passed. Direct YAML parsing passed both YAML
+  files and all eight README examples (`10` documents total).
+- GitNexus exact-range detection is HIGH across 13 files, 81 symbols, and six
+  processes: five `init` registration fanout flows plus
+  `ParseConfig -> RedisClusterClient`, all directly covered by the reviewed
+  suites. Compare-to-`main` is CRITICAL across the cumulative 76-file branch
+  (555 symbols and 59 flows), not an isolated ai-quota finding. Task 5.1 may
+  begin after this evidence-only closeout commit.
 
 ## 5. AI Statistics Red-Green Contracts
 
