@@ -31,6 +31,8 @@ description: Key 认证插件配置参考
 | `in_header`   | bool            | `in_query` 和 `in_header` 至少有一个为 true | true   | 配置 true 时，网关会尝试从 HTTP 请求头中解析 API Key                                                                                                                            |
 | `realm`       | string          | 选填                                        | `MSE Gateway` | 认证失败时 `WWW-Authenticate` 响应头中的 realm。                                                                                                                               |
 
+显式配置 `consumers: []` 表示当前没有有效调用方；所有需要认证的请求都会被拒绝。路由或域名规则中的 `allow: []` 表示拒绝所有调用方，认证仍然生效。只有未匹配任何规则且 `global_auth: false` 时，请求才不需要认证。单个调用方的 `credentials` 仍必须为非空列表。
+
 `consumers`中每一项的配置字段说明如下：
 
 | 名称          | 数据类型        | 填写要求                                    | 默认值 | 描述 |

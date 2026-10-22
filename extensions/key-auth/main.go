@@ -126,7 +126,7 @@ type credentialCandidate struct {
 // @Description zh-CN 本插件实现了实现了基于 API Key 进行认证鉴权的功能.
 // @Description en-US This plugin implements an authentication function based on API Key Auth standard.
 // @IconUrl https://img.alicdn.com/imgextra/i4/O1CN01BPFGlT1pGZ2VDLgaH_!!6000000005333-2-tps-42-42.png
-// @Version 1.0.0
+// @Version 1.0.3
 //
 // @Contact.name Higress Team
 // @Contact.url http://higress.io/
@@ -189,7 +189,8 @@ type KeyAuthConfig struct {
 	// @Title en-US Allowed Consumers
 	// @Description 对于匹配上述条件的请求，允许访问的调用方列表。
 	// @Description en-US Consumers to be allowed for matched requests.
-	allow []string `yaml:"allow"`
+	allow           []string `yaml:"allow"`
+	allowConfigured bool
 
 	// @Title 认证失败响应 Realm
 	// @Title en-US Authentication Failure Response Realm
@@ -269,11 +270,14 @@ func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) er
 				return err
 			}
 		}
+		if json.Get("allow").Exists() {
+			return parseOverrideRuleConfig(json, *global, global, log)
+		}
 		return nil
 	}
 
-	if len(consumers.Array()) == 0 {
-		return errors.New("consumers cannot be empty")
+	if !consumers.IsArray() {
+		return errors.New("consumers must be an array")
 	}
 
 	for _, item := range consumers.Array() {
@@ -322,6 +326,10 @@ func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) er
 			}
 		}
 	}
+	// Higress can merge a matched rule into the top-level plugin configuration.
+	if json.Get("allow").Exists() {
+		return parseOverrideRuleConfig(json, *global, global, log)
+	}
 	return nil
 }
 
@@ -334,9 +342,12 @@ func parseOverrideRuleConfig(json gjson.Result, global KeyAuthConfig, config *Ke
 	if !allow.Exists() {
 		return errors.New("allow is required")
 	}
-	if len(allow.Array()) == 0 {
-		return errors.New("allow cannot be empty")
+	if !allow.IsArray() {
+		return errors.New("allow must be an array")
 	}
+	// An explicit empty rule denies every consumer; it must not become a public route.
+	config.allowConfigured = true
+	config.allow = nil
 
 	for _, item := range allow.Array() {
 		config.allow = append(config.allow, item.String())
@@ -358,9 +369,11 @@ func parseOverrideRuleConfig(json gjson.Result, global KeyAuthConfig, config *Ke
 // - global_auth 未设置：
 //   - 若没有一个 domain/route 配置该插件：则遵循 (1*)
 //   - 若有至少一个 domain/route 配置该插件：则遵循 (2*)
+//
+// 显式配置 allow: [] 仍启用认证，并拒绝所有调用方。
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log.Log) types.Action {
 	var (
-		noAllow            = len(config.allow) == 0 // 未配置 allow 列表，表示插件在该 domain/route 未生效
+		noAllow            = !config.allowConfigured // No matching rule leaves scoped authentication disabled.
 		globalAuthNoSet    = config.globalAuth == nil
 		globalAuthSetTrue  = !globalAuthNoSet && *config.globalAuth
 		globalAuthSetFalse = !globalAuthNoSet && !*config.globalAuth

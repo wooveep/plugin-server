@@ -1,0 +1,713 @@
+{
+  "schema_version": 1,
+  "verified_at_utc": "2026-10-22T07:35:51.941324+00:00",
+  "status": "passed",
+  "environment": {
+    "name": "modelfusion-dev",
+    "orchestration": "K3S + Helm",
+    "namespace": "higress-system",
+    "helm_revision": 7,
+    "public_gateway_domains": [
+      "admin.ai.lc.wooveep.com",
+      "user.ai.lc.wooveep.com",
+      "api.ai.lc.wooveep.com",
+      "model.ai.lc.wooveep.com"
+    ]
+  },
+  "plugin_artifact": {
+    "plugin": "key-auth",
+    "version": "1.0.3",
+    "upload_http_status": 201,
+    "sha256": "e07da394d797bfec33fa55c1ccc6153e442407b7a5166fe6a91a68a353c95e77",
+    "size_bytes": 6250662,
+    "roundtrip_hash_matches": true
+  },
+  "gateway_checks": [
+    {
+      "case": "surviving-key-after-restart",
+      "checked_at_utc": "2026-10-22T07:32:48.321898+00:00",
+      "expected_http_status": 400,
+      "actual_http_status": 400,
+      "provider_error_code": "InvalidParameter",
+      "duration_seconds": 0.603,
+      "passed": true
+    },
+    {
+      "case": "previously-revoked-key-a",
+      "checked_at_utc": "2026-10-22T07:32:48.357168+00:00",
+      "expected_http_status": 403,
+      "actual_http_status": 403,
+      "provider_error_code": null,
+      "duration_seconds": 0.007,
+      "passed": true
+    },
+    {
+      "case": "originally-revoked-key",
+      "checked_at_utc": "2026-10-22T07:32:48.389506+00:00",
+      "expected_http_status": 403,
+      "actual_http_status": 403,
+      "provider_error_code": null,
+      "duration_seconds": 0.006,
+      "passed": true
+    },
+    {
+      "case": "random-key",
+      "checked_at_utc": "2026-10-22T07:32:48.420579+00:00",
+      "expected_http_status": 403,
+      "actual_http_status": 403,
+      "provider_error_code": null,
+      "duration_seconds": 0.006,
+      "passed": true
+    },
+    {
+      "case": "missing-key",
+      "checked_at_utc": "2026-10-22T07:32:48.451980+00:00",
+      "expected_http_status": 401,
+      "actual_http_status": 401,
+      "provider_error_code": null,
+      "duration_seconds": 0.006,
+      "passed": true
+    },
+    {
+      "case": "empty-allow-denies-valid-key",
+      "checked_at_utc": "2026-10-22T07:32:55.658564+00:00",
+      "expected_http_status": 403,
+      "actual_http_status": 403,
+      "provider_error_code": null,
+      "duration_seconds": 0.006,
+      "passed": true
+    },
+    {
+      "case": "restored-grant-valid-key",
+      "checked_at_utc": "2026-10-22T07:33:01.624688+00:00",
+      "expected_http_status": 400,
+      "actual_http_status": 400,
+      "provider_error_code": "InvalidParameter",
+      "duration_seconds": 0.628,
+      "passed": true
+    },
+    {
+      "case": "last-test-key-revoked",
+      "checked_at_utc": "2026-10-22T07:33:10.176564+00:00",
+      "expected_http_status": 403,
+      "actual_http_status": 403,
+      "provider_error_code": null,
+      "duration_seconds": 0.006,
+      "passed": true
+    },
+    {
+      "case": "previously-revoked-key-after-last",
+      "checked_at_utc": "2026-10-22T07:33:10.208100+00:00",
+      "expected_http_status": 403,
+      "actual_http_status": 403,
+      "provider_error_code": null,
+      "duration_seconds": 0.006,
+      "passed": true
+    },
+    {
+      "case": "random-key-after-last",
+      "checked_at_utc": "2026-10-22T07:33:10.241622+00:00",
+      "expected_http_status": 403,
+      "actual_http_status": 403,
+      "provider_error_code": null,
+      "duration_seconds": 0.006,
+      "passed": true
+    },
+    {
+      "case": "missing-key-after-last",
+      "checked_at_utc": "2026-10-22T07:33:10.273905+00:00",
+      "expected_http_status": 401,
+      "actual_http_status": 401,
+      "provider_error_code": null,
+      "duration_seconds": 0.006,
+      "passed": true
+    },
+    {
+      "case": "disabled-route-no-match",
+      "checked_at_utc": "2026-10-22T07:33:46.624945+00:00",
+      "expected_http_status": 404,
+      "actual_http_status": 404,
+      "provider_error_code": null,
+      "duration_seconds": 0.006,
+      "passed": true
+    },
+    {
+      "case": "reenabled-route-still-rejects-revoked-key",
+      "checked_at_utc": "2026-10-22T07:33:54.749834+00:00",
+      "expected_http_status": 403,
+      "actual_http_status": 403,
+      "provider_error_code": null,
+      "duration_seconds": 0.006,
+      "passed": true
+    },
+    {
+      "case": "cleanup-disabled-route",
+      "checked_at_utc": "2026-10-22T07:34:32.757855+00:00",
+      "expected_http_status": 404,
+      "actual_http_status": 404,
+      "provider_error_code": null,
+      "duration_seconds": 0.007,
+      "passed": true
+    }
+  ],
+  "runtime_snapshots": [
+    {
+      "phase": "complete-before-final-tests",
+      "checked_at_utc": "2026-10-22T07:32:26.497743+00:00",
+      "url": "http://higress-plugin-server.higress-system.svc/plugins/key-auth/1.0.3/plugin.wasm",
+      "global_allow_present": false,
+      "consumer_count": 2,
+      "rules": [
+        {
+          "ingress": [
+            "default"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-qwen-media-image-k3s-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "ai-route-qwen-media-speech-k3s-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "ai-route-credential-route-regression-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "ai-route-credential-route-debug-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "ai-route-memory-text-analysis-dev.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-memory-embedding-dev.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-memory-chat-dev.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "modelfusion-admin"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "modelfusion-user"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        }
+      ],
+      "loaded": [
+        {
+          "sha256": "e07da394d797bfec33fa55c1ccc6153e442407b7a5166fe6a91a68a353c95e77",
+          "global_auth": false,
+          "global_allow_present": false,
+          "consumer_count": 2,
+          "rules": [
+            {
+              "routes": [
+                "ai-route-qwen-media-image-k3s-20261022.internal"
+              ],
+              "allow_count": 1
+            },
+            {
+              "routes": [
+                "ai-route-qwen-media-speech-k3s-20261022.internal"
+              ],
+              "allow_count": 1
+            },
+            {
+              "routes": [
+                "ai-route-credential-route-regression-20261022.internal"
+              ],
+              "allow_count": 1
+            },
+            {
+              "routes": [
+                "ai-route-credential-route-debug-20261022.internal"
+              ],
+              "allow_count": 1
+            },
+            {
+              "routes": [
+                "ai-route-memory-text-analysis-dev.internal"
+              ],
+              "allow_count": 0
+            },
+            {
+              "routes": [
+                "ai-route-memory-embedding-dev.internal"
+              ],
+              "allow_count": 0
+            },
+            {
+              "routes": [
+                "ai-route-memory-chat-dev.internal"
+              ],
+              "allow_count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "complete-empty-route-allow",
+      "checked_at_utc": "2026-10-22T07:32:55.628241+00:00",
+      "url": "http://higress-plugin-server.higress-system.svc/plugins/key-auth/1.0.3/plugin.wasm",
+      "global_allow_present": false,
+      "consumer_count": 2,
+      "rules": [
+        {
+          "ingress": [
+            "default"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-qwen-media-image-k3s-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "ai-route-qwen-media-speech-k3s-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "ai-route-credential-route-regression-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "ai-route-memory-text-analysis-dev.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-memory-embedding-dev.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-memory-chat-dev.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "modelfusion-admin"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "modelfusion-user"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-credential-route-debug-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        }
+      ],
+      "loaded": [
+        {
+          "sha256": "e07da394d797bfec33fa55c1ccc6153e442407b7a5166fe6a91a68a353c95e77",
+          "global_auth": false,
+          "global_allow_present": false,
+          "consumer_count": 2,
+          "rules": [
+            {
+              "routes": [
+                "ai-route-qwen-media-image-k3s-20261022.internal"
+              ],
+              "allow_count": 1
+            },
+            {
+              "routes": [
+                "ai-route-qwen-media-speech-k3s-20261022.internal"
+              ],
+              "allow_count": 1
+            },
+            {
+              "routes": [
+                "ai-route-credential-route-regression-20261022.internal"
+              ],
+              "allow_count": 1
+            },
+            {
+              "routes": [
+                "ai-route-memory-text-analysis-dev.internal"
+              ],
+              "allow_count": 0
+            },
+            {
+              "routes": [
+                "ai-route-memory-embedding-dev.internal"
+              ],
+              "allow_count": 0
+            },
+            {
+              "routes": [
+                "ai-route-memory-chat-dev.internal"
+              ],
+              "allow_count": 1
+            },
+            {
+              "routes": [
+                "ai-route-credential-route-debug-20261022.internal"
+              ],
+              "allow_count": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "complete-last-test-key-revoked",
+      "checked_at_utc": "2026-10-22T07:33:10.146460+00:00",
+      "url": "http://higress-plugin-server.higress-system.svc/plugins/key-auth/1.0.3/plugin.wasm",
+      "global_allow_present": false,
+      "consumer_count": 1,
+      "rules": [
+        {
+          "ingress": [
+            "default"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-memory-chat-dev.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "modelfusion-admin"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "modelfusion-user"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-memory-embedding-dev.internal"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-memory-text-analysis-dev.internal"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-qwen-media-image-k3s-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-qwen-media-speech-k3s-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-credential-route-regression-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-credential-route-debug-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        }
+      ],
+      "loaded": [
+        {
+          "sha256": "e07da394d797bfec33fa55c1ccc6153e442407b7a5166fe6a91a68a353c95e77",
+          "global_auth": false,
+          "global_allow_present": false,
+          "consumer_count": 1,
+          "rules": [
+            {
+              "routes": [
+                "ai-route-memory-chat-dev.internal"
+              ],
+              "allow_count": 1
+            },
+            {
+              "routes": [
+                "ai-route-qwen-media-image-k3s-20261022.internal"
+              ],
+              "allow_count": 0
+            },
+            {
+              "routes": [
+                "ai-route-qwen-media-speech-k3s-20261022.internal"
+              ],
+              "allow_count": 0
+            },
+            {
+              "routes": [
+                "ai-route-credential-route-regression-20261022.internal"
+              ],
+              "allow_count": 0
+            },
+            {
+              "routes": [
+                "ai-route-credential-route-debug-20261022.internal"
+              ],
+              "allow_count": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "cleanup",
+      "checked_at_utc": "2026-10-22T07:34:32.927152+00:00",
+      "url": "http://higress-plugin-server.higress-system.svc/plugins/key-auth/1.0.3/plugin.wasm",
+      "global_allow_present": false,
+      "consumer_count": 1,
+      "rules": [
+        {
+          "ingress": [
+            "default"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-memory-chat-dev.internal"
+          ],
+          "disabled": false,
+          "allow_count": 1
+        },
+        {
+          "ingress": [
+            "modelfusion-admin"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "modelfusion-user"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-memory-embedding-dev.internal"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-memory-text-analysis-dev.internal"
+          ],
+          "disabled": true,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-qwen-media-image-k3s-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-qwen-media-speech-k3s-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-credential-route-regression-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        },
+        {
+          "ingress": [
+            "ai-route-credential-route-debug-20261022.internal"
+          ],
+          "disabled": false,
+          "allow_count": 0
+        }
+      ],
+      "loaded": [
+        {
+          "sha256": "e07da394d797bfec33fa55c1ccc6153e442407b7a5166fe6a91a68a353c95e77",
+          "global_auth": false,
+          "global_allow_present": false,
+          "consumer_count": 1,
+          "rules": [
+            {
+              "routes": [
+                "ai-route-memory-chat-dev.internal"
+              ],
+              "allow_count": 1
+            },
+            {
+              "routes": [
+                "ai-route-qwen-media-image-k3s-20261022.internal"
+              ],
+              "allow_count": 0
+            },
+            {
+              "routes": [
+                "ai-route-qwen-media-speech-k3s-20261022.internal"
+              ],
+              "allow_count": 0
+            },
+            {
+              "routes": [
+                "ai-route-credential-route-regression-20261022.internal"
+              ],
+              "allow_count": 0
+            },
+            {
+              "routes": [
+                "ai-route-credential-route-debug-20261022.internal"
+              ],
+              "allow_count": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "public_api": {
+    "checked_at_utc": "2026-10-22T07:34:32.985255+00:00",
+    "checks": [
+      {
+        "case": "admin-login-public-gateway",
+        "http_status": 200,
+        "api_json": true,
+        "passed": true
+      },
+      {
+        "case": "admin-list-routes-public-gateway",
+        "http_status": 200,
+        "api_json": true,
+        "passed": true
+      },
+      {
+        "case": "admin-domain-root",
+        "http_status": 200,
+        "passed": true
+      },
+      {
+        "case": "user-domain-root",
+        "http_status": 200,
+        "passed": true
+      },
+      {
+        "case": "api-domain-root",
+        "http_status": 200,
+        "passed": true
+      },
+      {
+        "case": "model-domain-root",
+        "http_status": 200,
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "coverage_limits": [
+    "Live revocation covers the last key of the dedicated test user; other tasks retain their active consumers. A globally empty registry is covered by native and actual Wasm regression tests.",
+    "Invalid voice requests provide an authorization control; upstream HTTP 400 is not a successful speech generation or billing assertion.",
+    "Extended catalog has two existing baseline failures; no claim of a full workspace test pass."
+  ],
+  "native_verification": {
+    "go_and_wasm": "passed",
+    "go_vet": "passed",
+    "new_regression_scenarios": 12,
+    "execution_modes": [
+      "native Go",
+      "Wasm"
+    ]
+  },
+  "impact_review": {
+    "gitnexus_staged_risk": "high",
+    "affected_execution_flows": 7,
+    "files_reviewed": 13,
+    "validation": "Full native/Wasm tests, go vet, live public-scope and protected-scope controls passed."
+  }
+}

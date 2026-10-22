@@ -78,3 +78,5 @@ go test ./provider -run 'TestQwenProvider.*(ImageGeneration|AudioSpeech)' -count
 命令在 `extensions/ai-proxy` 执行，并使用上述仅修正依赖路径的私有 workspace。线上检查通过后再更新[文档索引](../README.md)中的两项状态。提交前另检查 JSON、相对链接、敏感值和暂存改动范围；GitNexus 使用 `--index-only` 刷新并运行 `detect-changes --scope staged`。
 
 复核前先处理上述令牌生命周期缺陷，或明确隔离测试路由；测试期间在 UserWeb 创建新令牌，在忽略目录保存原始响应，避免将 API Key 或临时签名 URL 放入文档、命令日志或 Git。本文与 JSON 均只保留必要的状态码、请求 ID、配置键、媒体元数据及哈希，未收录登录态、凭据、原始媒体 URL 或含凭据的原始业务配置。
+
+后续修复验收见 [Key Auth 1.0.3 与平台缺陷回归](2026-10-22-key-auth-revocation-k3s.md)。上文“未修复”为媒体验证时的历史状态，最终状态以该回归记录为准。

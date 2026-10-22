@@ -377,11 +377,11 @@ func TestParseGlobalConfig(t *testing.T) {
 			require.Equal(t, types.OnPluginStartStatusFailed, status)
 		})
 
-		// 测试无效配置 - 空的 consumers
-		t.Run("invalid empty consumers config", func(t *testing.T) {
+		// An empty credential registry remains a valid deny-all state.
+		t.Run("empty consumers config", func(t *testing.T) {
 			host, status := test.NewTestHost(invalidEmptyConsumersConfig)
 			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusFailed, status)
+			require.Equal(t, types.OnPluginStartStatusOK, status)
 		})
 
 		// 测试无效配置 - 缺少 in_query 和 in_header
@@ -418,11 +418,11 @@ func TestParseRuleConfig(t *testing.T) {
 			// allow 字段的解析可能需要更复杂的配置结构
 		})
 
-		// 测试无效的规则配置 - 空的 allow 列表
-		t.Run("invalid rule config - empty allow", func(t *testing.T) {
+		// Explicitly empty allow lists remain configured and deny all consumers.
+		t.Run("empty allow rule config", func(t *testing.T) {
 			host, status := test.NewTestHost(invalidRuleConfig)
 			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusFailed, status)
+			require.Equal(t, types.OnPluginStartStatusOK, status)
 		})
 	})
 }

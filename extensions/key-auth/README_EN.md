@@ -27,6 +27,8 @@ Plugin Execution Priority: `310`
 | `in_header`   | bool             | At least one of `in_query` and `in_header` must be true | true          | When configured as true, the gateway will attempt to parse the API Key from HTTP request headers.                                                                                      |
 | `realm`       | string           | Optional                                        | `MSE Gateway` | Realm used in `WWW-Authenticate` response headers when authentication fails.                                                                                                            |
 
+An explicit `consumers: []` means no valid consumers remain, so all requests requiring authentication are rejected. A route or domain rule with `allow: []` denies every consumer while keeping authentication enabled. With `global_auth: false`, requests remain public only when no rule matches. Each consumer's `credentials` list must still be nonempty.
+
 The configuration field descriptions for each item in `consumers` are as follows:
 | Name          | Data Type       | Requirements                               | Default Value | Description |
 | ------------- | --------------- | ------------------------------------------ | ------------- | ----------- |

@@ -44,4 +44,4 @@ git show 6a291d9558093a13e92e5ae8e906e5cbf55a70b4:openspec/specs/ai-billing-even
 
 原任务和设计可在上述清理前提交的 `openspec/changes/archive/2026-06-29-support-qwen-dashscope-openai-media-conversion/` 下查阅。此次验收基于真实网关调用；语音接口返回带音频 URL 的 JSON。上游返回 HTTP URL、WAV 声明长度与实际数据不一致的限制已在验收记录中注明。
 
-附加收尾检查发现令牌吊销后仍能到达上游的独立缺陷，已记录并关闭本次测试路由。本表仅表示两项媒体任务通过，不表示凭据吊销或整套环境验收通过。
+附加收尾检查发现令牌吊销后仍能到达上游的独立缺陷，已记录并关闭本次测试路由。本表仅表示两项媒体任务通过，不表示凭据吊销或整套环境验收通过。后续修复和专项验收见 [Key Auth 1.0.3 回归记录](release-evidence/2026-10-22-key-auth-revocation-k3s.md)。

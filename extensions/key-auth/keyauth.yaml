@@ -67,5 +67,5 @@ spec:
       configDisable: false
       ingress:
         - ingress-keyauth-httpbin
-  url: http://higress-plugin-server.higress-system.svc/plugins/key-auth/1.0.1/plugin.wasm
+  url: http://higress-plugin-server.higress-system.svc/plugins/key-auth/1.0.3/plugin.wasm
   imagePullPolicy: Always

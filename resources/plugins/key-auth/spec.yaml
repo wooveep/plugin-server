@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/key-auth/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/key-auth/README_EN.md
-  version: 1.0.1
+  version: 1.0.3
   contact:
     name: Higress Team
     url: http://higress.io/
@@ -41,9 +41,9 @@ spec:
           title: 调用方列表
           x-title-i18n:
             en-US: Consumer List
-          description: 服务调用方列表，用于对请求进行认证。与顶层 credentials 二选一。
+          description: 服务调用方列表，用于对请求进行认证。与顶层 credentials 二选一。允许空列表；需要认证的请求在无调用方时全部拒绝。
           x-description-i18n:
-            en-US: Service consumers used for request authentication. Mutually exclusive with top-level credentials.
+            en-US: Service consumers used for request authentication. Mutually exclusive with top-level credentials. An empty list rejects all requests requiring authentication.
           x-scope: GLOBAL
           items:
             type: object
@@ -186,9 +186,9 @@ spec:
           title: 授权访问的调用方列表
           x-title-i18n:
             en-US: Allowed Consumers
-          description: 对于匹配上述条件的请求，允许访问的调用方列表。
+          description: 对于匹配上述条件的请求，允许访问的调用方列表。空列表拒绝所有调用方，不会关闭认证。
           x-description-i18n:
-            en-US: Consumers allowed for matched requests.
+            en-US: Consumers allowed for matched requests. An empty list denies every consumer and does not disable authentication.
           x-scope: RULE
           items:
             type: string
