@@ -27,7 +27,7 @@ embedding、vector indexing、pricing、settlement、repair、deletion 和 recon
 ## 运行属性
 
 插件执行阶段：`default`
-插件执行优先级：`800`
+插件执行优先级：`250`
 
 ## 运行职责
 
@@ -177,3 +177,9 @@ policy、management API 和 authorization boundary。
 缓存回放时，`ai-cache` 会设置可信网关事实，例如 `upstream_invoked=false`，供 `ai-billing`
 消费。真实上游 provider 调用会发出 `upstream_invoked=true`。这些事实不会加入用户可见的
 OpenAI 响应体，用户请求或响应体中的同名字段也不能控制它们。
+
+## Redis 认证与共享连接
+
+`materialized_lookup.redis` 和 `redis_stream` 支持 `username`、`password`、`database`（默认 0）。同一服务和端口使用共享原始 Redis 连接，两个目标的认证与数据库必须一致；初始化使用较短的有效超时和立即投递。凭据只进入受保护的运行配置，不写入事件或日志。
+
+1.0.3 的 memory-aware 策略将基础策略、memory policy 和可信摘要组合后，以 `cache-v<整数>` 结尾；查询、Console lookup 和 CacheEvent 使用同一有效版本，保证 Console 解析及物化读写 key 一致。

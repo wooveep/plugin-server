@@ -17,7 +17,7 @@ func TestThinCacheEventRedisDisablesBuffering(t *testing.T) {
 		t.Run("shared endpoint reuses one immediate-dispatch client", func(t *testing.T) {
 			logs := thinCacheRedisStartupLogs(t, thinResponseCaptureConfig(t))
 			require.Equal(t, 1, strings.Count(logs, "[redis init] upstream:"), logs)
-			require.Contains(t, logs, "[redis init] upstream: outbound|6379||redis.static?buffer_flush_timeout=0&max_buffer_size_before_flush=0, username: , timeout: 120")
+			require.Contains(t, logs, "[redis init] upstream: outbound|6379||redis.static?buffer_flush_timeout=0&max_buffer_size_before_flush=0, username: , timeout: 80")
 			require.NotContains(t, logs, "buffer_flush_timeout=3&max_buffer_size_before_flush=1024")
 		})
 

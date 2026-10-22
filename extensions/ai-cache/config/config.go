@@ -46,6 +46,9 @@ type RedisEndpointConfig struct {
 	Enabled     bool
 	ServiceName string
 	ServicePort int
+	Username    string
+	Password    string
+	Database    int
 	KeyPrefix   string
 	Timeout     int
 }
@@ -67,6 +70,9 @@ type RedisStreamConfig struct {
 	Enabled     bool
 	ServiceName string
 	ServicePort int
+	Username    string
+	Password    string
+	Database    int
 	Stream      string
 	Field       string
 	Timeout     int
@@ -111,6 +117,9 @@ func (c *PluginConfig) FromJson(json gjson.Result, _ log.Log) {
 		Enabled:     json.Get("materialized_lookup.redis.enabled").Bool(),
 		ServiceName: json.Get("materialized_lookup.redis.service_name").String(),
 		ServicePort: int(json.Get("materialized_lookup.redis.service_port").Int()),
+		Username:    json.Get("materialized_lookup.redis.username").String(),
+		Password:    json.Get("materialized_lookup.redis.password").String(),
+		Database:    int(json.Get("materialized_lookup.redis.database").Int()),
 		KeyPrefix:   json.Get("materialized_lookup.redis.key_prefix").String(),
 		Timeout:     int(json.Get("materialized_lookup.redis.timeout").Int()),
 	}
@@ -129,6 +138,9 @@ func (c *PluginConfig) FromJson(json gjson.Result, _ log.Log) {
 		Enabled:     json.Get("redis_stream.enabled").Bool(),
 		ServiceName: json.Get("redis_stream.service_name").String(),
 		ServicePort: int(json.Get("redis_stream.service_port").Int()),
+		Username:    json.Get("redis_stream.username").String(),
+		Password:    json.Get("redis_stream.password").String(),
+		Database:    int(json.Get("redis_stream.database").Int()),
 		Stream:      json.Get("redis_stream.stream").String(),
 		Field:       json.Get("redis_stream.field").String(),
 		Timeout:     int(json.Get("redis_stream.timeout").Int()),
@@ -271,12 +283,24 @@ func (c *PluginConfig) HasThinConfig() bool {
 
 func (c *PluginConfig) Complete(_ log.Log) error {
 	if c.MaterializedLookup.Redis.Enabled && c.Event.RedisStream.Enabled &&
+		sameRedisEndpoint(c.MaterializedLookup.Redis, c.Event.RedisStream) &&
+		(c.MaterializedLookup.Redis.Username != c.Event.RedisStream.Username ||
+			c.MaterializedLookup.Redis.Password != c.Event.RedisStream.Password ||
+			c.MaterializedLookup.Redis.Database != c.Event.RedisStream.Database) {
+		return fmt.Errorf("shared cache Redis endpoint requires matching credentials and database")
+	}
+	if c.MaterializedLookup.Redis.Enabled && c.Event.RedisStream.Enabled &&
 		sameRedisEndpoint(c.MaterializedLookup.Redis, c.Event.RedisStream) {
 		client := wrapper.NewRedisClusterClient(wrapper.FQDNCluster{
 			FQDN: c.Event.RedisStream.ServiceName,
 			Port: int64(c.Event.RedisStream.ServicePort),
 		})
-		if err := client.Init("", "", int64(c.Event.RedisStream.Timeout), wrapper.WithDisableBuffer()); err != nil {
+		timeout := c.Event.RedisStream.Timeout
+		if c.MaterializedLookup.Redis.Timeout > 0 && (timeout <= 0 || c.MaterializedLookup.Redis.Timeout < timeout) {
+			timeout = c.MaterializedLookup.Redis.Timeout
+		}
+		if err := client.Init(c.Event.RedisStream.Username, c.Event.RedisStream.Password, int64(timeout),
+			wrapper.WithDisableBuffer(), wrapper.WithDataBase(c.Event.RedisStream.Database)); err != nil {
 			return err
 		}
 		c.materializedRedis = client
@@ -288,7 +312,8 @@ func (c *PluginConfig) Complete(_ log.Log) error {
 			FQDN: c.MaterializedLookup.Redis.ServiceName,
 			Port: int64(c.MaterializedLookup.Redis.ServicePort),
 		})
-		if err := c.materializedRedis.Init("", "", int64(c.MaterializedLookup.Redis.Timeout)); err != nil {
+		if err := c.materializedRedis.Init(c.MaterializedLookup.Redis.Username, c.MaterializedLookup.Redis.Password,
+			int64(c.MaterializedLookup.Redis.Timeout), wrapper.WithDataBase(c.MaterializedLookup.Redis.Database)); err != nil {
 			return err
 		}
 	} else {
@@ -299,7 +324,8 @@ func (c *PluginConfig) Complete(_ log.Log) error {
 			FQDN: c.Event.RedisStream.ServiceName,
 			Port: int64(c.Event.RedisStream.ServicePort),
 		})
-		if err := c.eventRedis.Init("", "", int64(c.Event.RedisStream.Timeout), wrapper.WithDisableBuffer()); err != nil {
+		if err := c.eventRedis.Init(c.Event.RedisStream.Username, c.Event.RedisStream.Password,
+			int64(c.Event.RedisStream.Timeout), wrapper.WithDisableBuffer(), wrapper.WithDataBase(c.Event.RedisStream.Database)); err != nil {
 			return err
 		}
 	} else {
@@ -373,6 +399,15 @@ func mergeRedisEndpoint(base RedisEndpointConfig, value gjson.Result) RedisEndpo
 	if value.Get("service_port").Exists() {
 		base.ServicePort = int(value.Get("service_port").Int())
 	}
+	if value.Get("username").Exists() {
+		base.Username = value.Get("username").String()
+	}
+	if value.Get("password").Exists() {
+		base.Password = value.Get("password").String()
+	}
+	if value.Get("database").Exists() {
+		base.Database = int(value.Get("database").Int())
+	}
 	if value.Get("key_prefix").Exists() {
 		base.KeyPrefix = value.Get("key_prefix").String()
 	}
@@ -419,6 +454,15 @@ func mergeRedisStream(base RedisStreamConfig, value gjson.Result) RedisStreamCon
 	}
 	if value.Get("service_port").Exists() {
 		base.ServicePort = int(value.Get("service_port").Int())
+	}
+	if value.Get("username").Exists() {
+		base.Username = value.Get("username").String()
+	}
+	if value.Get("password").Exists() {
+		base.Password = value.Get("password").String()
+	}
+	if value.Get("database").Exists() {
+		base.Database = int(value.Get("database").Int())
 	}
 	if value.Get("stream").Exists() {
 		base.Stream = value.Get("stream").String()

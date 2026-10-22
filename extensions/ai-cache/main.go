@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-cache/config"
@@ -35,6 +36,7 @@ const (
 	CACHE_STREAM_CAPTURE_KEY   = "cacheStreamCapture"
 	CACHE_RESPONSE_CAPTURE_KEY = "cacheResponseCapture"
 	CACHE_MEMORY_DIGEST_KEY    = "cacheMemoryDigest"
+	CACHE_POLICY_VERSION_KEY   = "cacheEffectivePolicyVersion"
 
 	DEFAULT_MAX_BODY_BYTES uint32 = 100 * 1024 * 1024
 )
@@ -223,6 +225,7 @@ func onThinHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body 
 	ctx.SetContext(CACHE_MODEL_CONTEXT_KEY, material.Model)
 	ctx.SetContext(CACHE_DIGEST_CONTEXT_KEY, material.RequestDigest)
 	ctx.SetContext(CACHE_MATERIALIZED_KEY, material.RedisKey)
+	ctx.SetContext(CACHE_POLICY_VERSION_KEY, material.CachePolicyVersion)
 	storeThinRequestEventContext(ctx, body, log)
 
 	if !c.MaterializedLookup.Redis.Enabled || !c.RoutePolicy.EnableRedisLookup {
@@ -248,11 +251,21 @@ func thinEffectiveCachePolicyVersion(ctx wrapper.HttpContext, c config.PluginCon
 		log.Warnf("[thinEffectiveCachePolicyVersion] trusted memory digest property is missing, fail open")
 		return "", false
 	}
+	version := c.CachePolicyVersion
+	if index := strings.LastIndex(version, "-v"); index >= 0 {
+		version = version[index+2:]
+	}
+	parsed, err := strconv.ParseInt(version, 10, 64)
+	if err != nil || parsed <= 0 {
+		log.Warn("memory-aware cache requires a positive numeric policy version or final -v<integer> suffix")
+		return "", false
+	}
 	return strings.Join([]string{
 		c.CachePolicyVersion,
 		"memory",
 		c.RoutePolicy.Memory.PolicyVersion,
 		digest,
+		"cache-v" + strconv.FormatInt(parsed, 10),
 	}, "|"), true
 }
 

@@ -203,7 +203,7 @@ func buildThinCacheEvent(ctx wrapper.HttpContext, c config.PluginConfig, kind pr
 		RequestPath:        ctx.GetStringContext(CACHE_PATH_CONTEXT_KEY, ""),
 		Protocol:           kind,
 		CacheScope:         c.CacheScope,
-		CachePolicyVersion: c.CachePolicyVersion,
+		CachePolicyVersion: ctx.GetStringContext(CACHE_POLICY_VERSION_KEY, c.CachePolicyVersion),
 		StatusCode:         statusCode,
 		IsStream:           stream,
 		ContainsToolCalls:  facts.containsToolCalls,

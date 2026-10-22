@@ -64,7 +64,7 @@ func TestThinMemoryAwareCache(t *testing.T) {
 				Model:              adjustedModel,
 				Protocol:           protocol.ProtocolChatCompletions,
 				RequestDigest:      adjustedDigest,
-				CachePolicyVersion: strings.Join([]string{"policy-v1", "memory", "memory-policy-v1", "memory-digest-a"}, "|"),
+				CachePolicyVersion: strings.Join([]string{"policy-v1", "memory", "memory-policy-v1", "memory-digest-a", "cache-v1"}, "|"),
 			})
 			require.NoError(t, err)
 			require.Equal(t, adjustedMaterial.RedisKey, adjustedKey)

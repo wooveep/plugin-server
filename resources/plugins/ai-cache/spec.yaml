@@ -14,13 +14,13 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-cache/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-cache/README_EN.md
-  version: 1.0.0
+  version: 1.0.3
   contact:
     name: johnlanni
   gatewayMinVersion: "2.0.0"
 spec:
   phase: default
-  priority: 800
+  priority: 250
   configSchema:
     openAPIV3Schema:
       title: ai-cache
@@ -65,6 +65,20 @@ spec:
                   x-title-i18n:
                     en-US: Redis Service Port
                   default: 6379
+                username:
+                  type: string
+                  title: Redis Username
+                password:
+                  type: string
+                  title: Redis Password
+                  format: password
+                  x-sensitive: true
+                  writeOnly: true
+                database:
+                  type: integer
+                  title: Redis Database
+                  default: 0
+                  minimum: 0
                 key_prefix:
                   type: string
                   title: 回放 Key 前缀
@@ -151,6 +165,20 @@ spec:
               x-title-i18n:
                 en-US: Redis Service Port
               default: 6379
+            username:
+              type: string
+              title: Redis Username
+            password:
+              type: string
+              title: Redis Password
+              format: password
+              x-sensitive: true
+              writeOnly: true
+            database:
+              type: integer
+              title: Redis Database
+              default: 0
+              minimum: 0
             stream:
               type: string
               title: Stream 名称

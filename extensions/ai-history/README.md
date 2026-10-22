@@ -173,3 +173,7 @@ curl 'http://example.com/api/openai/v1/chat/completions/ai-history/query?cnt=3' 
 ```
 
 返回三个历史对话,如果未传入 cnt 默认返回所有缓存历史对话。
+
+## 多模态消息与上下文
+
+0.1.1 在追加历史时保留当前请求的原始内容块，包括 `image_url`；历史用户问题仅保存文本块。当前 system/developer 指令保留在历史之前。已有多轮上下文（多个 user 消息）保持原样，避免重复填充。历史按 `fillHistoryCnt` 裁剪，使用 `cacheTTL` 设置保留时间；请求方仍需为追加历史预留模型上下文预算。正常日志不记录请求原文或身份键。
