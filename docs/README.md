@@ -15,6 +15,7 @@
 
 ## 设计与验证资料
 
+- [Higress 上游基线与独立插件维护边界](2026-10-22-upstream-boundary.md)
 - [缓存与记忆共享运行时设计](2026-06-26-ai-cache-memory-shared-runtime-design.md)
 - [薄缓存设计](ai-cache-thin-plugin-design.md)
 - [Wasm 镜像规范](wasm-image-spec.md)与[插件构建入口](../Makefile)
