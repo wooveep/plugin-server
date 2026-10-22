@@ -1,9 +1,13 @@
+## Project Documentation
+
+Use [docs/README.md](docs/README.md) for current plugin contracts, design notes, and outstanding verification records.
+
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
 This project is indexed by GitNexus as **wasm-go** (12728 symbols, 32177 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
-> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze --index-only` in terminal first.
 
 ## Always Do
 
@@ -31,13 +35,12 @@ This project is indexed by GitNexus as **wasm-go** (12728 symbols, 32177 relatio
 
 ## CLI
 
-| Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+When MCP tools are unavailable, use the corresponding `npx gitnexus` command:
+`query`, `context`, `impact`, or `detect-changes`. Pass `--repo <absolute-repository-path>`
+to select a repository, and use `npx gitnexus help <command>` for its arguments.
+Before committing, use `detect-changes --scope staged` to review the proposed commit.
+
+Refresh indexes with `npx gitnexus analyze --index-only` so indexing preserves the
+repository's agent instructions and skill files.
 
 <!-- gitnexus:end -->
