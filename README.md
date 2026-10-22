@@ -2,6 +2,8 @@
 
 HTTP server for Higress Wasm plugins
 
+需求、计划和验收使用普通 Markdown 文档与 Git/PR 记录维护，不使用 Superpowers 或 OpenSpec；历史计划中的工具执行要求不再生效。
+
 运行时支持两个能力：
 
 - 下载插件：`GET /plugins/{name}/{version}/plugin.wasm`

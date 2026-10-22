@@ -1,6 +1,6 @@
 # Plugin Upload API CLI Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> Historical plan from 2026-05-13, retained at its original path for traceability. Its former framework execution requirements are inactive. Current work follows ordinary Markdown project documents and Git/PR validation records, as described in the [project workflow](../../../README.md); this checklist is not evidence of current completion.
 
 **Goal:** Add an authenticated API for pushing built Wasm plugins to the plugin server, plus a local CLI that uploads plugin files.
 
