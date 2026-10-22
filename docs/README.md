@@ -33,13 +33,15 @@ git show 6a291d9558093a13e92e5ae8e906e5cbf55a70b4:openspec/specs/ai-billing-even
 
 现行插件 README 与资源 schema 保留在上表所列位置；GitNexus 的使用入口在 [AGENTS.md](../AGENTS.md)。
 
-## 待核验的历史验证事项
+## Qwen/DashScope 历史事项核验
 
-清理时，原 `support-qwen-dashscope-openai-media-conversion` 归档的可选线上兼容性检查仍有两项未勾选，未找到对应独立验收证据。本次将它们转记如下，状态均为“待核验”；负责人和期限待确认。
+清理时，原 `support-qwen-dashscope-openai-media-conversion` 归档仍有两项可选线上兼容性检查未勾选。2026-10-22 已在默认 `modelfusion-dev` VM K3S + Helm 环境完成核验，详见[验收记录与 Higress 更新分析](release-evidence/2026-10-22-qwen-dashscope-k3s.md)和[脱敏证据](release-evidence/2026-10-22-qwen-dashscope-k3s.json)。
 
-| 原任务 | 待核验事项 | 状态 |
+| 原任务 | 核验事项 | 状态 |
 | --- | --- | --- |
-| 6.2 | 对更新后的 ai-proxy 运行 Modelfusion 本地媒体验证，确认图片生成和语音合成不再报告 `plugin_conversion_gap`。 | 待核验 |
-| 6.3 | 保存剩余上游 provider 错误的脱敏证据，排除 API key、临时 URL 和凭据。 | 待核验 |
+| 6.2 | 对更新后的 ai-proxy 运行 Modelfusion 本地媒体验证，确认图片生成和语音合成不再报告 `plugin_conversion_gap`。 | 已核验：两项 HTTP 200，PNG 与实际 PCM 数据检查通过。 |
+| 6.3 | 保存剩余上游 provider 错误的脱敏证据，排除 API key、临时 URL 和凭据。 | 已核验：保留非法音色的上游 `InvalidParameter` 400；临时媒体 URL 已整体替换，凭据未入库。 |
 
-原任务和设计可在上述清理前提交的 `openspec/changes/archive/2026-06-29-support-qwen-dashscope-openai-media-conversion/` 下查阅。元数据清理与单元测试结果不作为这两项线上检查的验收证据。
+原任务和设计可在上述清理前提交的 `openspec/changes/archive/2026-06-29-support-qwen-dashscope-openai-media-conversion/` 下查阅。此次验收基于真实网关调用；语音接口返回带音频 URL 的 JSON。上游返回 HTTP URL、WAV 声明长度与实际数据不一致的限制已在验收记录中注明。
+
+附加收尾检查发现令牌吊销后仍能到达上游的独立缺陷，已记录并关闭本次测试路由。本表仅表示两项媒体任务通过，不表示凭据吊销或整套环境验收通过。
