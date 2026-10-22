@@ -509,7 +509,6 @@ func (c *StreamCapture) AppendSSE(chunk []byte) error {
 			}
 		}
 	}
-	return nil
 }
 
 func (c *StreamCapture) AssistantContent() string {
