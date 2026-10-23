@@ -1024,8 +1024,12 @@ func providerSlugFromCluster(cluster string) string {
 	switch {
 	case strings.HasSuffix(slug, ".internal.dns"):
 		slug = strings.TrimSuffix(slug, ".internal.dns")
+	case strings.HasSuffix(slug, ".internal.static"):
+		slug = strings.TrimSuffix(slug, ".internal.static")
 	case strings.HasSuffix(slug, ".dns"):
 		slug = strings.TrimSuffix(slug, ".dns")
+	case strings.HasSuffix(slug, ".static"):
+		slug = strings.TrimSuffix(slug, ".static")
 	default:
 		return ""
 	}

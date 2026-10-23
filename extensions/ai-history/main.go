@@ -50,7 +50,7 @@ func init() {
 // @Title zh-CN AI History
 // @Description zh-CN 大模型对话历史缓存
 // @IconUrl
-// @Version 0.1.0
+// @Version 0.1.2
 //
 // @Contact.name sakura
 // @Contact.url
@@ -180,7 +180,8 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config PluginConfig, log log.
 	// get identity key
 	identityKey, _ := proxywasm.GetHttpRequestHeader(config.IdentityHeader)
 	if identityKey == "" {
-		log.Warnf("identity key is empty")
+		ctx.DontReadRequestBody()
+		ctx.DontReadResponseBody()
 		return types.ActionContinue
 	}
 	identityKey = strings.ReplaceAll(identityKey, " ", "")

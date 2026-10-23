@@ -1907,6 +1907,8 @@ func TestPathFiltering(t *testing.T) {
 }
 
 func TestProviderSlugFromCluster(t *testing.T) {
+	require.Equal(t, "load-all-256k-20261023", providerSlugFromCluster("outbound|80||llm-load-all-256k-20261023.internal.static"))
+	require.Equal(t, "load-all-256k-20261023", providerSlugFromCluster("llm-load-all-256k-20261023.static"))
 	require.Equal(t, "qwen-019ebb2c", providerSlugFromCluster("llm-qwen-019ebb2c.internal.dns"))
 	require.Equal(t, "qwen-019ebb2c", providerSlugFromCluster("outbound|443||llm-qwen-019ebb2c.internal.dns"))
 	require.Equal(t, "qwen-019ebb2c", providerSlugFromCluster("llm-qwen-019ebb2c.dns"))

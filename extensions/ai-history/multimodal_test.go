@@ -28,3 +28,14 @@ func TestHistoryInjectionPreservesMultimodalContent(t *testing.T) {
 		require.JSONEq(t, `[{"type":"text","text":"current question"},{"type":"image_url","image_url":{"url":"data:image/png;base64,AA=="}}]`, string(body.Messages[3].Content))
 	})
 }
+
+func TestMissingIdentityDoesNotReadOrCacheHistory(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		host, _ := test.NewTestHost(basicRedisConfig)
+		defer host.Reset()
+		host.CallOnHttpRequestHeaders([][2]string{{":authority", "example.com"}, {":method", "POST"},
+			{":path", "/v1/chat/completions"}, {"content-type", "application/json"}})
+		host.CallOnHttpRequestBody([]byte(`{"messages":[{"role":"user","content":"unscoped request"}]}`))
+		require.Empty(t, host.GetRedisCalloutAttributes())
+	})
+}
