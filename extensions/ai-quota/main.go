@@ -221,7 +221,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 
 	err := config.redisClient.Get(balanceKey, func(response resp.Value) {
 		if err := response.Error(); err != nil {
-			log.Errorf("ai-quota redis balance read failed: %v", err)
+			log.Errorf("ai-quota redis balance read failed (service=%s timeout_ms=%d): %v", config.redisInfo.ServiceName, config.redisInfo.Timeout, err)
 			util.SendResponse(http.StatusServiceUnavailable, "ai-quota.redis_error", "text/plain", "Request denied by ai quota check. Redis balance read failed.")
 			return
 		}
@@ -247,7 +247,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 		proxywasm.ResumeHttpRequest()
 	})
 	if err != nil {
-		log.Errorf("ai-quota redis balance dispatch failed: %v", err)
+		log.Errorf("ai-quota redis balance dispatch failed (service=%s timeout_ms=%d): %v", config.redisInfo.ServiceName, config.redisInfo.Timeout, err)
 		util.SendResponse(http.StatusServiceUnavailable, "ai-quota.redis_error", "text/plain", "Request denied by ai quota check. Redis balance read failed.")
 		return types.ActionContinue
 	}
