@@ -12,7 +12,7 @@ import (
 
 const (
 	memoryEventSchemaVersion = 1
-	memoryEventPluginVersion = "0.1.1"
+	memoryEventPluginVersion = "0.1.2"
 	memoryEventKind          = "memory_event"
 	memoryEventField         = "event"
 

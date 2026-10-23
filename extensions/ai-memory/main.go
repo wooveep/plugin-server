@@ -225,6 +225,12 @@ func memoryConsoleAssembleConfigured(c config.PluginConfig) bool {
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) types.Action {
+	// Assembly is complete before upstream response headers arrive. Keep only
+	// the small event facts while the model's streaming response stays open.
+	ctx.SetContext(memoryUserContentContextKey, strings.Clone(ctx.GetStringContext(memoryUserContentContextKey, "")))
+	ctx.SetContext(memoryModelContextKey, strings.Clone(ctx.GetStringContext(memoryModelContextKey, "")))
+	ctx.SetContext(memoryOriginalBodyContextKey, nil)
+	ctx.SetContext(memoryCurrentMessagesContextKey, nil)
 	if memoryResponseIsCacheReplay() {
 		markMemoryGate(ctx, "cache-replay")
 		ctx.DontReadResponseBody()

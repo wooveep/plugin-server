@@ -80,7 +80,7 @@ func TestMemoryEventStructJSONShape(t *testing.T) {
 			"output": float64(5),
 			"total":  float64(17),
 		}, payload["usage"])
-		require.Equal(t, "0.1.1", payload["plugin_version"])
+		require.Equal(t, memoryEventPluginVersion, payload["plugin_version"])
 	})
 
 	t.Run("omits optional empty fields", func(t *testing.T) {
