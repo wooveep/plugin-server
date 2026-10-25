@@ -1,0 +1,598 @@
+{
+  "fixture_format": "wasm-d0-draft-v1",
+  "status": "draft",
+  "prepared_on": "2026-10-25",
+  "owner_card": "D0-WG-02",
+  "delegate": "Codex agent",
+  "natural_person": "待确认",
+  "backup": "待确认",
+  "branch": "codex/cache-auth-history-20261023",
+  "source_revision": "99a51c9e1e8a0f189f0d277628a5c1e3d41c8dd1",
+  "evidence_level": "offline_fixture",
+  "subject_layer": "contract_fixture",
+  "domain_validation": "not_run",
+  "host_emulator_validation": "not_run",
+  "real_gateway_validation": "not_run",
+  "input_refs": [
+    {
+      "card": "D0-MF-01",
+      "fragment": "common",
+      "source_revision": null,
+      "manifest_sha256": null,
+      "status": "pending_freeze"
+    },
+    {
+      "card": "D0-MF-02",
+      "fragment": "identity/body/outcome",
+      "source_revision": null,
+      "manifest_sha256": null,
+      "status": "pending_freeze"
+    },
+    {
+      "card": "D0-WG-01",
+      "fragment": "batch-A/loader",
+      "source_revision": null,
+      "manifest_sha256": null,
+      "status": "not_imported"
+    }
+  ],
+  "validation": {
+    "kind": "semantic",
+    "validator_id": "wasm-go:d0:matcher-draft:v1",
+    "registration_status": "proposed_not_implemented",
+    "selection": {
+      "mode": "json_pointer",
+      "pointer": "/cases"
+    },
+    "expected_stage": "fixture_semantic"
+  },
+  "digest_note": "input_sha256 hashes exactly input_json_utf8.encode(UTF-8); it is fixture-byte integrity only, not mf-json.v1, a bundle digest, or an IF BodyBasis digest. Raw body SHA256 values hash the literal UTF-8 sample bytes only.",
+  "cases": [
+    {
+      "case_id": "D0-WG02-MATCH-001",
+      "name": "One managed route selects one target",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-A",
+        "rules": [
+          {
+            "category": "route",
+            "match": "route-A",
+            "config_label": "config-A"
+          }
+        ],
+        "global_config": null,
+        "mutations": []
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-A\",\"rules\":[{\"category\":\"route\",\"match\":\"route-A\",\"config_label\":\"config-A\"}],\"global_config\":null,\"mutations\":[]}",
+      "input_sha256": "39352f9096749a2a4ffb3cca85700a246f0c55798aafb0dc5270bb467d13a2f4",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "selection_label": "selection-A"
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": "config-A",
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG02-MATCH-002",
+      "name": "Shared DNS binding A remains tied to route A",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-A",
+        "rules": [
+          {
+            "category": "route",
+            "match": "route-A",
+            "config_label": "config-A"
+          },
+          {
+            "category": "route",
+            "match": "route-B",
+            "config_label": "config-B"
+          }
+        ],
+        "global_config": null,
+        "mutations": []
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-A\",\"rules\":[{\"category\":\"route\",\"match\":\"route-A\",\"config_label\":\"config-A\"},{\"category\":\"route\",\"match\":\"route-B\",\"config_label\":\"config-B\"}],\"global_config\":null,\"mutations\":[]}",
+      "input_sha256": "4b659b205d5b90bcdd810695bc504f09f1dc93c081dcfc50253e3592bf737487",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "selection_label": "selection-A"
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": "config-A",
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG02-MATCH-003",
+      "name": "Shared DNS binding B remains tied to route B",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-B",
+        "rules": [
+          {
+            "category": "route",
+            "match": "route-A",
+            "config_label": "config-A"
+          },
+          {
+            "category": "route",
+            "match": "route-B",
+            "config_label": "config-B"
+          }
+        ],
+        "global_config": null,
+        "mutations": []
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-B\",\"rules\":[{\"category\":\"route\",\"match\":\"route-A\",\"config_label\":\"config-A\"},{\"category\":\"route\",\"match\":\"route-B\",\"config_label\":\"config-B\"}],\"global_config\":null,\"mutations\":[]}",
+      "input_sha256": "122ec5bfc16e3dda962b9ec39e0dbe4bc81748fbf9d12fa6221df724299ab166",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "selection_label": "selection-B"
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": "config-B",
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG02-MATCH-004",
+      "name": "First route rule wins when route and service rules both match",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-A",
+        "rules": [
+          {
+            "category": "route",
+            "match": "route-A",
+            "config_label": "config-route"
+          },
+          {
+            "category": "service",
+            "match": "svc-A.fixture.invalid:443",
+            "config_label": "config-service"
+          }
+        ],
+        "global_config": null,
+        "mutations": []
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-A\",\"rules\":[{\"category\":\"route\",\"match\":\"route-A\",\"config_label\":\"config-route\"},{\"category\":\"service\",\"match\":\"svc-A.fixture.invalid:443\",\"config_label\":\"config-service\"}],\"global_config\":null,\"mutations\":[]}",
+      "input_sha256": "21e492ab7371ea2a2fdbf8b5081c78aa80be1383208668dfee9316b44f15bad3",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "selected_rule_index": 0
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": "config-route",
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG02-MATCH-005",
+      "name": "First service rule wins when ordered before the matching route",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-A",
+        "rules": [
+          {
+            "category": "service",
+            "match": "svc-A.fixture.invalid:443",
+            "config_label": "config-service"
+          },
+          {
+            "category": "route",
+            "match": "route-A",
+            "config_label": "config-route"
+          }
+        ],
+        "global_config": null,
+        "mutations": []
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-A\",\"rules\":[{\"category\":\"service\",\"match\":\"svc-A.fixture.invalid:443\",\"config_label\":\"config-service\"},{\"category\":\"route\",\"match\":\"route-A\",\"config_label\":\"config-route\"}],\"global_config\":null,\"mutations\":[]}",
+      "input_sha256": "4554396813fde75f0f23774c69f73b318e296fd4c6c382231b21f8b49dc4ada4",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "selected_rule_index": 0
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": "config-service",
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG02-MATCH-006",
+      "name": "Unmatched route falls back to explicit global config",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-A",
+        "rules": [
+          {
+            "category": "route",
+            "match": "route-unmatched",
+            "config_label": "config-unused"
+          }
+        ],
+        "global_config": "config-global",
+        "mutations": []
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-A\",\"rules\":[{\"category\":\"route\",\"match\":\"route-unmatched\",\"config_label\":\"config-unused\"}],\"global_config\":\"config-global\",\"mutations\":[]}",
+      "input_sha256": "affe747382a27c1307f8fde07d2d27580a786d6b5c8524b6627685b14ee160bd",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "fallback": "global"
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": "config-global",
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG02-MATCH-007",
+      "name": "Unmatched route without global has no managed config",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-A",
+        "rules": [
+          {
+            "category": "route",
+            "match": "route-unmatched",
+            "config_label": "config-unused"
+          }
+        ],
+        "global_config": null,
+        "mutations": []
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-A\",\"rules\":[{\"category\":\"route\",\"match\":\"route-unmatched\",\"config_label\":\"config-unused\"}],\"global_config\":null,\"mutations\":[]}",
+      "input_sha256": "4600f14ffc52d679df0d3bbc38f282ead127f644590670aa19469691954f9e11",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_DRAFT_MANAGED_CONFIG_MISSING",
+        "stage": "fixture_semantic",
+        "production_rejection_observed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": null,
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG02-MATCH-008",
+      "name": "Invalid current rule may load old backup; managed selection must detect old release",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-A",
+        "rule_level_isolation": true,
+        "previous_valid_rule": {
+          "category": "route",
+          "match": "route-A",
+          "config_label": "config-old",
+          "release_label": "release-old"
+        },
+        "rules": [
+          {
+            "category": "route",
+            "match": "route-A",
+            "config_label": "config-invalid",
+            "parse_result": "error"
+          }
+        ],
+        "global_config": null,
+        "mutations": []
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-A\",\"rule_level_isolation\":true,\"previous_valid_rule\":{\"category\":\"route\",\"match\":\"route-A\",\"config_label\":\"config-old\",\"release_label\":\"release-old\"},\"rules\":[{\"category\":\"route\",\"match\":\"route-A\",\"config_label\":\"config-invalid\",\"parse_result\":\"error\"}],\"global_config\":null,\"mutations\":[]}",
+      "input_sha256": "16a621aec8a28f1a049a727be4690d1965067a7e251524a30bebd3c1d95983c3",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_DRAFT_BACKUP_RELEASE_MISMATCH",
+        "stage": "fixture_semantic",
+        "production_rejection_observed": false,
+        "known_gap": "Existing backup path can preserve old config; no production release guard is implemented by this corpus."
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": "config-old",
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG02-MATCH-009",
+      "name": "Binding change before matching selects the new binding consistently",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-A",
+        "rules": [
+          {
+            "category": "route",
+            "match": "route-A",
+            "config_label": "config-A"
+          },
+          {
+            "category": "route",
+            "match": "route-B",
+            "config_label": "config-B"
+          }
+        ],
+        "global_config": null,
+        "mutations": [
+          {
+            "phase": "before_match",
+            "request_binding": "binding-B",
+            "selection_label": "selection-B"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-A\",\"rules\":[{\"category\":\"route\",\"match\":\"route-A\",\"config_label\":\"config-A\"},{\"category\":\"route\",\"match\":\"route-B\",\"config_label\":\"config-B\"}],\"global_config\":null,\"mutations\":[{\"phase\":\"before_match\",\"request_binding\":\"binding-B\",\"selection_label\":\"selection-B\"}]}",
+      "input_sha256": "f81d19f9943b070609fb5cef16b8b474ae2302ecd221f8a23ed5b794d5104b85",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "selection_label": "selection-B"
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": "config-B",
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG02-MATCH-010",
+      "name": "Change after matching must not send B with cached A config",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-A",
+        "rules": [
+          {
+            "category": "route",
+            "match": "route-A",
+            "config_label": "config-A"
+          },
+          {
+            "category": "route",
+            "match": "route-B",
+            "config_label": "config-B"
+          }
+        ],
+        "global_config": null,
+        "mutations": [
+          {
+            "phase": "after_match",
+            "request_binding": "binding-B",
+            "selection_label": "selection-B"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-A\",\"rules\":[{\"category\":\"route\",\"match\":\"route-A\",\"config_label\":\"config-A\"},{\"category\":\"route\",\"match\":\"route-B\",\"config_label\":\"config-B\"}],\"global_config\":null,\"mutations\":[{\"phase\":\"after_match\",\"request_binding\":\"binding-B\",\"selection_label\":\"selection-B\"}]}",
+      "input_sha256": "dacfa837469c1ad2c03444ea25a803d4240a4071a13adce39de551033c4bf196",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_DRAFT_MATCHED_SELECTION_MISMATCH",
+        "stage": "fixture_semantic",
+        "production_rejection_observed": false,
+        "known_gap": "OnHttpRequestHeaders caches config-A; OnHttpRequestBody reuses it. The source does not establish the future selection guard."
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": "config-A",
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG02-MATCH-011",
+      "name": "Same DNS cannot justify assigning binding A config to binding B",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V03",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "not_run",
+      "input": {
+        "request_binding": "binding-B",
+        "rules": [
+          {
+            "category": "route",
+            "match": "route-A",
+            "config_label": "config-A"
+          },
+          {
+            "category": "route",
+            "match": "route-B",
+            "config_label": "config-B"
+          }
+        ],
+        "global_config": null,
+        "mutations": [],
+        "captured_selection_label": "selection-A"
+      },
+      "input_json_utf8": "{\"request_binding\":\"binding-B\",\"rules\":[{\"category\":\"route\",\"match\":\"route-A\",\"config_label\":\"config-A\"},{\"category\":\"route\",\"match\":\"route-B\",\"config_label\":\"config-B\"}],\"global_config\":null,\"mutations\":[],\"captured_selection_label\":\"selection-A\"}",
+      "input_sha256": "50af8f66383d5352b1b220b487f7adda285cf2ebe68dcd7689b13a13e9a56f26",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_DRAFT_BINDING_CORRELATION_MISMATCH",
+        "stage": "fixture_semantic",
+        "production_rejection_observed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "current_matcher_static_prediction": {
+        "config_label": "config-B",
+        "basis": "CodeGraph current source; not executed",
+        "runtime_observed": false
+      }
+    }
+  ],
+  "next_step": "Use the existing exported matcher/config parser through WG03 loader after batch A; record runtime actual separately from static predictions. Production freeze/guard remains P1.",
+  "notation_note": "match/category/config_label are local scenario notation; WG02 must map them to existing _rules_ configuration without copying production matcher logic. expected concerns the intended fixture correlation guard. current_matcher_static_prediction is a source-based prediction, never runtime actual.",
+  "bindings": {
+    "binding-A": {
+      "authority": "shared.fixture.invalid",
+      "route_name": "route-A",
+      "cluster_name": "outbound|443||svc-A.fixture.invalid",
+      "selection_label": "selection-A",
+      "release_label": "release-A"
+    },
+    "binding-B": {
+      "authority": "shared.fixture.invalid",
+      "route_name": "route-B",
+      "cluster_name": "outbound|443||svc-B.fixture.invalid",
+      "selection_label": "selection-B",
+      "release_label": "release-A"
+    }
+  },
+  "preparation_check": {
+    "status": "passed",
+    "checked_on": "2026-10-25",
+    "scope": "data_integrity_only",
+    "case_count": 11,
+    "reproduce": "README.md data self-check",
+    "domain_claim": false
+  }
+}
