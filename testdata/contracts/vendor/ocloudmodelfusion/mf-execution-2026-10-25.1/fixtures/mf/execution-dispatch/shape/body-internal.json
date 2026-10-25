@@ -1,0 +1,7 @@
+{
+  "call_id": "call-internal-1",
+  "operation_kind": "text_generate",
+  "release_id": "release-1",
+  "original_body_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "body_canonicalization": "operation-json.v1"
+}

@@ -1,0 +1,70 @@
+{
+  "source_revision": "753704b29a6ea40815d45dcbbce16cc0d91bace2",
+  "producer_project": "wooveep/ocloudmodelfusion",
+  "files": [
+    {
+      "path": "python/scripts/contracts/validate_bundle.py",
+      "sha256": "a127dd932a91d78200a627354fd0f10b52e40465af40fcc6d784f47e4f861868"
+    },
+    {
+      "path": "python/scripts/contracts/requirements.lock",
+      "sha256": "24027e30d0bccc836695e6853e480b11ee89b5cf965aaa754882b24035309b24"
+    },
+    {
+      "path": "python/scripts/contracts/assertions.schema.json",
+      "sha256": "d96eae80a1183d04a45016d2a07e574d3c7887205171d02cc8c2813e264d3546"
+    },
+    {
+      "path": "python/contracts/v1/common.schema.json",
+      "sha256": "d79294f7a3c9beaa9674a0534f804a999d9a3c30b388828db5f250239b2eccfd"
+    },
+    {
+      "path": "python/contracts/v1/fixture-validation.schema.json",
+      "sha256": "84680cc76c8aadeda3545645ecf0a238da5b01de24a21dbe1baa3a61b5abb156"
+    },
+    {
+      "path": "python/contracts/v1/bundle.schema.json",
+      "sha256": "40720ff8d9b8a992d02e0d7976b3f808570f840ecd9ef6abe16eb3aa7e6a0d49"
+    },
+    {
+      "path": "python/contracts/v1/lock.schema.json",
+      "sha256": "cea9237eab483632b6a9ce1671fee595af4ac164fa93bcd576d0926db6d8f5ee"
+    },
+    {
+      "path": "python/contracts/v1/vendor/json-schema.lock.json",
+      "sha256": "c79fc7642e1652586f9a21dcd48db6be541ad8ab3b60608604785688450be540"
+    },
+    {
+      "path": "python/contracts/v1/vendor/json-schema/2020-12/metaschema.json",
+      "sha256": "41da76f5afb7ce062d248f762463a92f7ca47e4e0f905b224ba6afeef91ded0f"
+    },
+    {
+      "path": "python/contracts/v1/vendor/json-schema/2020-12/vocabularies/applicator",
+      "sha256": "c4a6e4147b91fef7fea6dc058cb1bf93402f7414b76578a8b16aaf1dad6aacef"
+    },
+    {
+      "path": "python/contracts/v1/vendor/json-schema/2020-12/vocabularies/content",
+      "sha256": "08343747764e4a5814262793cf4d652057a7913863c5950d43297e8e1fdac5b6"
+    },
+    {
+      "path": "python/contracts/v1/vendor/json-schema/2020-12/vocabularies/core",
+      "sha256": "c2d12a8e4dd11d336dfc83a3f663aa4c69f0b49b3beb094ffeb25b5316f4803d"
+    },
+    {
+      "path": "python/contracts/v1/vendor/json-schema/2020-12/vocabularies/format-annotation",
+      "sha256": "abc775adfefd89d22358170d9bf93f4ebd2349563bbbedd60f02bef7c812bcc0"
+    },
+    {
+      "path": "python/contracts/v1/vendor/json-schema/2020-12/vocabularies/meta-data",
+      "sha256": "8f76d6e14f41b9b92ef933b708cdc5144c8b5268651ad11918485fb1754f1c76"
+    },
+    {
+      "path": "python/contracts/v1/vendor/json-schema/2020-12/vocabularies/unevaluated",
+      "sha256": "2dbfbcb73994b670b0976492adee1fffb46c21682784d2f5a4ca561f9e2d0cb4"
+    },
+    {
+      "path": "python/contracts/v1/vendor/json-schema/2020-12/vocabularies/validation",
+      "sha256": "7010a31e541f32d2be721e2de348df75c9b36876a3ed304877fc0abda1d37a58"
+    }
+  ]
+}

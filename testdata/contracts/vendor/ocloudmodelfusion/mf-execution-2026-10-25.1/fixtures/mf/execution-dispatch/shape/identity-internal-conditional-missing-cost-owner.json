@@ -1,0 +1,13 @@
+{
+  "schema_version": "execution.v1",
+  "call_id": "call-internal-1",
+  "request_id": "http-prepare-1",
+  "billing_mode": "internal_cost",
+  "principal_kind": "service",
+  "principal_id": "memory-service-1",
+  "operation_kind": "text_generate",
+  "release_id": "release-1",
+  "route_id": "route-1",
+  "auth_decision_ref": "auth-1",
+  "public_model": "text-public"
+}

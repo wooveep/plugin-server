@@ -1,0 +1,5 @@
+{
+  "retryability": "read_state",
+  "resource_ref": "dispatch-1",
+  "current_revision": "2"
+}

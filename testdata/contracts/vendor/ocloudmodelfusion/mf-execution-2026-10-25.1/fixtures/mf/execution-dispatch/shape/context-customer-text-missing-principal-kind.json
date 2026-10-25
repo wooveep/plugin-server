@@ -1,0 +1,17 @@
+{
+  "schema_version": "execution.v1",
+  "call_id": "call-text-1",
+  "request_id": "http-prepare-1",
+  "billing_mode": "customer",
+  "principal_id": "user-1",
+  "tenant_id": "tenant-1",
+  "account_id": "wallet-1",
+  "sales_asset_id": "sale-image-1",
+  "operation_kind": "text_generate",
+  "release_id": "release-1",
+  "route_id": "route-1",
+  "auth_decision_ref": "auth-1",
+  "public_model": "text-public",
+  "original_body_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "body_canonicalization": "operation-json.v1"
+}

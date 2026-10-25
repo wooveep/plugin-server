@@ -1,0 +1,6 @@
+{
+  "call_id": "call-text-1",
+  "operation_kind": "text_generate",
+  "release_id": "release-1",
+  "original_body_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

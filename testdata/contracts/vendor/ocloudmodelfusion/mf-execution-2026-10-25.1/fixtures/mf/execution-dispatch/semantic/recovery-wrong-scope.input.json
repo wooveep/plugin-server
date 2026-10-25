@@ -1,0 +1,51 @@
+{
+  "internal_context": {
+    "schema_version": "execution.v1",
+    "call_id": "call-internal-1",
+    "request_id": "http-prepare-1",
+    "billing_mode": "internal_cost",
+    "principal_kind": "service",
+    "principal_id": "memory-service-1",
+    "operation_kind": "text_generate",
+    "release_id": "release-1",
+    "route_id": "route-1",
+    "auth_decision_ref": "auth-1",
+    "public_model": "text-public",
+    "original_body_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "body_canonicalization": "operation-json.v1",
+    "cost_owner": {
+      "kind": "platform",
+      "owner_id": "platform-1",
+      "source_job_id": "job-1"
+    }
+  },
+  "internal_parent": {
+    "call_id": "call-internal-1",
+    "parent_call_id": "call-text-1",
+    "source_job_id": "job-1"
+  },
+  "parent_call_id": "call-text-1",
+  "required_scopes": [
+    {
+      "claim_ref": "recovery-1",
+      "scope_id": "cooldown-purchase-1-image",
+      "call_id": "call-image-1",
+      "attempt_id": "attempt-create-1",
+      "selection_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  ],
+  "claims": [
+    {
+      "claim_ref": "recovery-1",
+      "scope_id": "cooldown-purchase-2-image",
+      "call_id": "call-image-1",
+      "attempt_id": "attempt-create-1",
+      "selection_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  ],
+  "body_evidence": {
+    "original_body_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "outbound_body_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "response_body_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+  }
+}

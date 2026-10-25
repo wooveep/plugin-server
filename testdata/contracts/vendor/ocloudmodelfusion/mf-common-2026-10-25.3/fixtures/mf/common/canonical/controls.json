@@ -1,0 +1,5 @@
+{
+  "input_asset": "controls-input.bin",
+  "expected_asset": "controls-expected.bin",
+  "expected_digest": "sha256:f902b4673dc19f16cf587a40e83f6a183438f3cc639937b83a69819a35de9fc5"
+}

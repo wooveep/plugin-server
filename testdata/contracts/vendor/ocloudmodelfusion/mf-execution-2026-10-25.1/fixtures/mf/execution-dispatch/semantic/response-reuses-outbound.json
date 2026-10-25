@@ -1,0 +1,126 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "corpus",
+      "path": "fixtures/mf/execution-dispatch/semantic/response-reuses-outbound.input.json",
+      "asset_id": "MF02-response-reuses-outbound-input",
+      "sha256": "92e33a9a8ccea34fd1e3487e0c16a043eda6519e47cc6eb96c6f8df3ad84bb8d",
+      "schema_ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/BoundaryCorpus"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/internal_parent/call_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/internal_context/call_id"
+      },
+      "error_code": "MF02_INTERNAL_PARENT_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/internal_parent/parent_call_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/parent_call_id"
+      },
+      "error_code": "MF02_INTERNAL_PARENT_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/internal_parent/source_job_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/internal_context/cost_owner/source_job_id"
+      },
+      "error_code": "MF02_INTERNAL_PARENT_MISMATCH"
+    },
+    {
+      "op": "ne",
+      "left": {
+        "input": "corpus",
+        "pointer": "/internal_parent/call_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/parent_call_id"
+      },
+      "error_code": "MF02_INTERNAL_PARENT_COLLAPSED"
+    },
+    {
+      "op": "join",
+      "left": {
+        "input": "corpus",
+        "pointer": "/required_scopes"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/claims"
+      },
+      "left_keys": [
+        "/claim_ref",
+        "/scope_id",
+        "/call_id",
+        "/attempt_id",
+        "/selection_digest"
+      ],
+      "right_keys": [
+        "/claim_ref",
+        "/scope_id",
+        "/call_id",
+        "/attempt_id",
+        "/selection_digest"
+      ],
+      "min": 1,
+      "max": 1,
+      "error_code": "MF02_RECOVERY_SCOPE_MISMATCH"
+    },
+    {
+      "op": "ne",
+      "left": {
+        "input": "corpus",
+        "pointer": "/body_evidence/original_body_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/body_evidence/outbound_body_digest"
+      },
+      "error_code": "MF02_BODY_BASIS_COLLAPSED"
+    },
+    {
+      "op": "ne",
+      "left": {
+        "input": "corpus",
+        "pointer": "/body_evidence/original_body_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/body_evidence/response_body_digest"
+      },
+      "error_code": "MF02_BODY_BASIS_COLLAPSED"
+    },
+    {
+      "op": "ne",
+      "left": {
+        "input": "corpus",
+        "pointer": "/body_evidence/outbound_body_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/body_evidence/response_body_digest"
+      },
+      "error_code": "MF02_BODY_BASIS_COLLAPSED"
+    }
+  ]
+}

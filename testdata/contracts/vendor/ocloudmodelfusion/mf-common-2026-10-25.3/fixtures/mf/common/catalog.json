@@ -1,0 +1,946 @@
+{
+  "task_id": "D0-MF-01",
+  "assignee": "待确认",
+  "backup": "待确认",
+  "acting_agent": "Codex /root",
+  "source_branch": "chore/e2e-evidence-doc-paths-20261022",
+  "input_source_revision": "2bd6c53339e5c08c42b5168a9f07a3dc36b71210",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "spec_refs": [
+    "docs/plans/2026-10-25-p0-d0-task-cards.md",
+    "docs/contracts/2026-10-25-canonical-json-profile.md"
+  ],
+  "required_cases": [
+    {
+      "case_id": "id",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "large-revision",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "zero-revision",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "utc",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "utc-offset",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "digest",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "large-money",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "negative-money",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "zero-money",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "empty-id",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "number-id",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "number-revision",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "negative-revision",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "leading-zero-revision",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "missing-utc",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "offset-time",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "invalid-day",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "invalid-hour",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "short-digest",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "uppercase-digest",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "number-money",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "wrong-scale",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "missing-currency",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "newline-revision",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "newline-amount",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "newline-currency",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "newline-digest",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "pointer-money",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "anchor-revision",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "ndjson-revisions",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "bad-ndjson",
+      "layer": "json_schema",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
+    },
+    {
+      "case_id": "canonical-object-order",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "canonical",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "canonical-decimals",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "canonical",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "canonical-string-numbers",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "canonical",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "canonical-controls",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "canonical",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "canonical-scalar-order",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "canonical",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "canonical-unicode-not-normalized",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "canonical",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "canonical-absence-null",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "canonical",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "canonical-array-order",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "canonical",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "canonical-container-limit",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_LIMIT"
+      }
+    },
+    {
+      "case_id": "canonical-output-limit",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_LIMIT"
+      }
+    },
+    {
+      "case_id": "canonical-duplicate-key",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_DUPLICATE_KEY"
+      }
+    },
+    {
+      "case_id": "canonical-bad-utf8",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UTF8"
+      }
+    },
+    {
+      "case_id": "canonical-surrogate",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SURROGATE"
+      }
+    },
+    {
+      "case_id": "canonical-nan",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_JSON"
+      }
+    },
+    {
+      "case_id": "canonical-infinity",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_JSON"
+      }
+    },
+    {
+      "case_id": "canonical-expansion",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_LIMIT"
+      }
+    },
+    {
+      "case_id": "resolver-unknown_urn",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UNKNOWN_REF"
+      }
+    },
+    {
+      "case_id": "resolver-duplicate_urn",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_DUPLICATE_URN"
+      }
+    },
+    {
+      "case_id": "resolver-missing_file",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_FILE"
+      }
+    },
+    {
+      "case_id": "resolver-digest_mismatch",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_DIGEST"
+      }
+    },
+    {
+      "case_id": "resolver-path_escape",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_PATH"
+      }
+    },
+    {
+      "case_id": "resolver-absolute_path",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_PATH"
+      }
+    },
+    {
+      "case_id": "resolver-symlink_escape",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_PATH"
+      }
+    },
+    {
+      "case_id": "resolver-network_ref",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_NETWORK_REF"
+      }
+    },
+    {
+      "case_id": "resolver-unknown_fragment",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_FRAGMENT"
+      }
+    },
+    {
+      "case_id": "resolver-dynamic_ref",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_DYNAMIC_REF"
+      }
+    },
+    {
+      "case_id": "resolver-duplicate_path",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_DUPLICATE_PATH"
+      }
+    },
+    {
+      "case_id": "resolver-wrong_dialect",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "shape",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_MANIFEST"
+      }
+    },
+    {
+      "case_id": "resolver-missing_asset",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_ASSET_REF"
+      }
+    },
+    {
+      "case_id": "resolver-unknown_validator",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_VALIDATOR"
+      }
+    },
+    {
+      "case_id": "resolver-unused_bad_ref",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UNKNOWN_REF"
+      }
+    },
+    {
+      "case_id": "resolver-duplicate_anchor",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_FRAGMENT"
+      }
+    },
+    {
+      "case_id": "resolver-legacy_definition_ref",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_NETWORK_REF"
+      }
+    },
+    {
+      "case_id": "resolver-legacy_dependency_ref",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UNKNOWN_REF"
+      }
+    },
+    {
+      "case_id": "resolver-fragment_target_ref",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UNKNOWN_REF"
+      }
+    },
+    {
+      "case_id": "resolver-annotation_data",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "resolver-empty_selection",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_NO_CHECKS"
+      }
+    },
+    {
+      "case_id": "resolver-missing_pointer",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SELECTION"
+      }
+    },
+    {
+      "case_id": "resolver-semantic_input_ref",
+      "layer": "raw_case",
+      "required": true,
+      "expected_stage": "parse",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UNKNOWN_REF"
+      }
+    },
+    {
+      "case_id": "assertions-positive-eq",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-positive-ne",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-positive-unique",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-positive-contains",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-positive-cardinality",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-positive-int_compare",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-positive-int_add",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-positive-int_sub",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-positive-join",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-positive-key_intersection",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-positive-partial_order",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "assertions-negative-eq",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_EQ"
+      }
+    },
+    {
+      "case_id": "assertions-negative-ne",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_NE"
+      }
+    },
+    {
+      "case_id": "assertions-negative-unique",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_UNIQUE"
+      }
+    },
+    {
+      "case_id": "assertions-negative-contains",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_CONTAINS"
+      }
+    },
+    {
+      "case_id": "assertions-negative-cardinality",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_CARDINALITY"
+      }
+    },
+    {
+      "case_id": "assertions-negative-int_compare",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_INT_COMPARE"
+      }
+    },
+    {
+      "case_id": "assertions-negative-int_add",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_INT_ADD"
+      }
+    },
+    {
+      "case_id": "assertions-negative-int_sub",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_INT_SUB"
+      }
+    },
+    {
+      "case_id": "assertions-negative-join",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_JOIN"
+      }
+    },
+    {
+      "case_id": "assertions-negative-key_intersection",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_KEY_INTERSECTION"
+      }
+    },
+    {
+      "case_id": "assertions-negative-partial_order",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_PARTIAL_ORDER"
+      }
+    },
+    {
+      "case_id": "assertions-pointer-input",
+      "layer": "semantic",
+      "required": true,
+      "expected_stage": "semantic",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    }
+  ]
+}

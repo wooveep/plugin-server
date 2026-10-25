@@ -1,0 +1,18 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [],
+  "assertions": [
+    {
+      "op": "cardinality",
+      "error_code": "A_CARDINALITY",
+      "collection": {
+        "literal": [
+          1,
+          2
+        ]
+      },
+      "min": 2,
+      "max": 2
+    }
+  ]
+}

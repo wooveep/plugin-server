@@ -1,0 +1,29 @@
+{
+  "dispatch_id": "dispatch-1",
+  "operation_id": "operation-1",
+  "call_id": "call-image-1",
+  "attempt_id": "attempt-create-1",
+  "worker_claim_epoch": "9007199254740993",
+  "dispatch_revision": "1",
+  "release_id": "release-1",
+  "operation_kind": "image_generate",
+  "prepared_candidate_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "original_body_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "prepared_at": "2026-10-25T02:00:01Z",
+  "dispatch_deadline": "2026-10-25T02:10:00Z",
+  "state": "prepared",
+  "observation_state": "no_observation",
+  "grant": {
+    "schema_version": "dispatch-grant.v1",
+    "grant_id": "grant-once-1",
+    "dispatch_id": "dispatch-1",
+    "attempt_id": "attempt-create-1",
+    "invocation_id": "invocation-1",
+    "gateway_boot_id": "gateway-boot-1",
+    "context_generation": "9007199254740993",
+    "release_id": "release-1",
+    "selection_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "original_body_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "not_after": "2026-10-25T02:10:00Z"
+  }
+}

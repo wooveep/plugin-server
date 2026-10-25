@@ -1,0 +1,301 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "corpus",
+      "path": "fixtures/mf/execution-dispatch/semantic/call-operation-wrong-link.input.json",
+      "asset_id": "MF02-call-operation-wrong-link-input",
+      "sha256": "3a183fff52171519f3fceda8a86a8914694476bab2016cf8d627d6970694db45",
+      "schema_ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/IdentityCorpus"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "unique",
+      "collection": {
+        "input": "corpus",
+        "pointer": "/calls"
+      },
+      "keys": [
+        "/call_id"
+      ],
+      "error_code": "MF02_CALL_OPERATION_NOT_ONE_TO_ONE"
+    },
+    {
+      "op": "unique",
+      "collection": {
+        "input": "corpus",
+        "pointer": "/operations"
+      },
+      "keys": [
+        "/operation_id"
+      ],
+      "error_code": "MF02_CALL_OPERATION_NOT_ONE_TO_ONE"
+    },
+    {
+      "op": "join",
+      "left": {
+        "input": "corpus",
+        "pointer": "/calls"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/operations"
+      },
+      "left_keys": [
+        "/call_id",
+        "/operation_id"
+      ],
+      "right_keys": [
+        "/call_id",
+        "/operation_id"
+      ],
+      "min": 1,
+      "max": 1,
+      "error_code": "MF02_CALL_OPERATION_LINK_MISMATCH"
+    },
+    {
+      "op": "join",
+      "left": {
+        "input": "corpus",
+        "pointer": "/operations"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/calls"
+      },
+      "left_keys": [
+        "/call_id",
+        "/operation_id"
+      ],
+      "right_keys": [
+        "/call_id",
+        "/operation_id"
+      ],
+      "min": 1,
+      "max": 1,
+      "error_code": "MF02_CALL_OPERATION_LINK_MISMATCH"
+    },
+    {
+      "op": "unique",
+      "collection": {
+        "input": "corpus",
+        "pointer": "/descriptors"
+      },
+      "keys": [
+        "/release_id",
+        "/target_id"
+      ],
+      "error_code": "MF02_TARGET_REFERENCE_NOT_UNIQUE"
+    },
+    {
+      "op": "join",
+      "left": {
+        "input": "corpus",
+        "pointer": "/selections"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/descriptors"
+      },
+      "left_keys": [
+        "/release_id",
+        "/target_id",
+        "/binding_id",
+        "/provider_account_id",
+        "/upstream_model",
+        "/cluster_ref",
+        "/mapper_digest",
+        "/proxy_digest",
+        "/descriptor_digest"
+      ],
+      "right_keys": [
+        "/release_id",
+        "/target_id",
+        "/binding_id",
+        "/provider_account_id",
+        "/upstream_model",
+        "/cluster_ref",
+        "/mapper_digest",
+        "/proxy_digest",
+        "/descriptor_digest"
+      ],
+      "min": 1,
+      "max": 1,
+      "error_code": "MF02_SELECTION_TARGET_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/selections/1/call_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/selections/0/call_id"
+      },
+      "error_code": "MF02_QUERY_ORIGIN_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/selections/1/operation_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/selections/0/operation_id"
+      },
+      "error_code": "MF02_QUERY_ORIGIN_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/selections/1/release_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/selections/0/release_id"
+      },
+      "error_code": "MF02_QUERY_ORIGIN_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/selections/1/provider_account_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/selections/0/provider_account_id"
+      },
+      "error_code": "MF02_QUERY_ORIGIN_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/selections/1/upstream_model"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/selections/0/upstream_model"
+      },
+      "error_code": "MF02_QUERY_ORIGIN_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/selections/1/cluster_ref"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/selections/0/cluster_ref"
+      },
+      "error_code": "MF02_QUERY_ORIGIN_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/outcomes/0"
+      },
+      "right": {
+        "literal": {
+          "send_state": "observed_sent",
+          "acceptance": "accepted",
+          "execution_result": "partial",
+          "http_status": 202,
+          "headers_complete": true,
+          "body_complete": true,
+          "provider_task_id": "provider-task-shared",
+          "outbound_body_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "response_body_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+          "response_model": "provider-response-alias",
+          "occurred_at": "2026-10-25T02:00:01Z",
+          "observed_at": "2026-10-25T02:00:02Z"
+        }
+      },
+      "error_code": "MF02_OUTCOME_DIMENSIONS_LOST"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/outcomes/1"
+      },
+      "right": {
+        "literal": {
+          "send_state": "unknown",
+          "acceptance": "unknown",
+          "execution_result": "unknown",
+          "headers_complete": false,
+          "body_complete": false,
+          "transport_error": "response-lost",
+          "occurred_at": "2026-10-25T02:00:01Z",
+          "observed_at": "2026-10-25T02:00:02Z"
+        }
+      },
+      "error_code": "MF02_OUTCOME_DIMENSIONS_LOST"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/outcomes/2"
+      },
+      "right": {
+        "literal": {
+          "send_state": "not_sent",
+          "acceptance": "not_sent",
+          "execution_result": "pending",
+          "headers_complete": false,
+          "body_complete": false,
+          "occurred_at": "2026-10-25T02:00:01Z",
+          "observed_at": "2026-10-25T02:00:02Z"
+        }
+      },
+      "error_code": "MF02_OUTCOME_DIMENSIONS_LOST"
+    },
+    {
+      "op": "ne",
+      "left": {
+        "input": "corpus",
+        "pointer": "/descriptors/0/binding_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/descriptors/1/binding_id"
+      },
+      "error_code": "MF02_SAME_PROVIDER_BINDINGS_COLLAPSED"
+    },
+    {
+      "op": "ne",
+      "left": {
+        "input": "corpus",
+        "pointer": "/provider_tasks/0/provider_account_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/provider_tasks/1/provider_account_id"
+      },
+      "error_code": "MF02_PROVIDER_TASK_NAMESPACE_COLLAPSED"
+    },
+    {
+      "op": "unique",
+      "collection": {
+        "input": "corpus",
+        "pointer": "/provider_tasks"
+      },
+      "keys": [
+        "/provider_account_id",
+        "/region_endpoint_ref",
+        "/operation_kind",
+        "/provider_task_id"
+      ],
+      "error_code": "MF02_PROVIDER_TASK_NAMESPACE_COLLAPSED"
+    }
+  ]
+}

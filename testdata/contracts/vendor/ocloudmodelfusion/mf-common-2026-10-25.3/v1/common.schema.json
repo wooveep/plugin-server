@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:modelfusion:contracts:v1:common",
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Revision": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "$anchor": "revision",
+      "not": {
+        "pattern": "\\s"
+      }
+    },
+    "Time": {
+      "type": "string",
+      "format": "mf-utc"
+    },
+    "Digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "minLength": 71,
+      "maxLength": 71
+    },
+    "IntegerAmount": {
+      "type": "string",
+      "pattern": "^(0|-?[1-9][0-9]*)$",
+      "not": {
+        "pattern": "\\s"
+      }
+    },
+    "Money": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/IntegerAmount"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "minLength": 3,
+          "maxLength": 3
+        },
+        "scale": {
+          "type": "integer",
+          "const": 10
+        }
+      },
+      "required": [
+        "amount",
+        "currency",
+        "scale"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": "execution.v1",
+  "request_id": "http-prepare-1",
+  "billing_mode": "customer",
+  "principal_kind": "user",
+  "principal_id": "user-1",
+  "tenant_id": "tenant-1",
+  "account_id": "wallet-1",
+  "sales_asset_id": "sale-image-1",
+  "operation_kind": "image_generate",
+  "operation_id": "operation-1",
+  "release_id": "release-1",
+  "route_id": "route-1",
+  "auth_decision_ref": "auth-1",
+  "public_model": "image-public",
+  "accepted_at": "2026-10-25T02:00:00Z",
+  "dispatch_deadline": "2026-10-25T02:10:00Z"
+}

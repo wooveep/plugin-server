@@ -1,0 +1,5 @@
+{
+  "input_asset": "decimals-input.bin",
+  "expected_asset": "decimals-expected.bin",
+  "expected_digest": "sha256:e4269890c1d66677706f250127896a7034c305ea738ef96787243cdc62468bf9"
+}

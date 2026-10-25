@@ -1,0 +1,19 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [],
+  "assertions": [
+    {
+      "op": "int_sub",
+      "error_code": "A_INT_SUB",
+      "left": {
+        "literal": "6"
+      },
+      "right": {
+        "literal": "8"
+      },
+      "result": {
+        "literal": "2"
+      }
+    }
+  ]
+}

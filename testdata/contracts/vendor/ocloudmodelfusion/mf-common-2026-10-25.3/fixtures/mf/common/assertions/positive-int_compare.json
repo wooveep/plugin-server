@@ -1,0 +1,17 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [],
+  "assertions": [
+    {
+      "op": "int_compare",
+      "error_code": "A_INT_COMPARE",
+      "left": {
+        "literal": "9007199254740993"
+      },
+      "right": {
+        "literal": "9007199254740992"
+      },
+      "comparison": "gt"
+    }
+  ]
+}

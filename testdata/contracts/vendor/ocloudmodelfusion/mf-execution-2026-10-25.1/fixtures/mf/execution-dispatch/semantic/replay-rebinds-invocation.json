@@ -1,0 +1,971 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "corpus",
+      "path": "fixtures/mf/execution-dispatch/semantic/replay-rebinds-invocation.input.json",
+      "asset_id": "MF02-replay-rebinds-invocation-input",
+      "sha256": "4ed870168c928b9df9364c91a3a5ae3802dd2705be9d17d1c92a0e47719ec2cb",
+      "schema_ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/DispatchCorpus"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/call_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/call_id"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/release_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/release_id"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/target_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/target_id"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/binding_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/binding_id"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/operation_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/operation_id"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/operation_kind"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/operation_kind"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/provider_account_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/provider_account_id"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/upstream_model"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/upstream_model"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/cluster_ref"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/cluster_ref"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/credential_ref"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/credential_ref"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/credential_revision"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/credential_revision"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/selection_generation"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/selection_generation"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/original_body_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/original_body_digest"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/mapper_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/mapper_digest"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/proxy_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/proxy_digest"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/mechanism"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/mechanism"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/send_transport"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/send_transport"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/recording_owner"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/recording_owner"
+      },
+      "error_code": "MF02_PREPARE_CANDIDATE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/operation_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/operation_id"
+      },
+      "error_code": "MF02_PREPARE_IDENTITY_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/call_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/call_id"
+      },
+      "error_code": "MF02_PREPARE_IDENTITY_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/release_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/release_id"
+      },
+      "error_code": "MF02_PREPARE_IDENTITY_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/operation_kind"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/operation_kind"
+      },
+      "error_code": "MF02_PREPARE_IDENTITY_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/prepare_input/candidate/original_body_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/original_body_digest"
+      },
+      "error_code": "MF02_PREPARE_IDENTITY_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/dispatch_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/dispatch_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/attempt_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/attempt_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/call_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/call_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/operation_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/operation_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/release_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/release_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/original_body_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/original_body_digest"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/call_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/call_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/release_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/release_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/target_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/target_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/binding_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/binding_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/operation_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/operation_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/operation_kind"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/operation_kind"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/provider_account_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/provider_account_id"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/upstream_model"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/upstream_model"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/cluster_ref"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/cluster_ref"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/credential_ref"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/credential_ref"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/credential_revision"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/credential_revision"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/selection_generation"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/selection_generation"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/original_body_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/original_body_digest"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/mapper_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/mapper_digest"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/proxy_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/proxy_digest"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/mechanism"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/mechanism"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/send_transport"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/send_transport"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/recording_owner"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/candidate/recording_owner"
+      },
+      "error_code": "MF02_CONSUME_PREPARED_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/invocation_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/invocation_id"
+      },
+      "error_code": "MF02_CONSUME_CONTEXT_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/gateway_boot_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/gateway_boot_id"
+      },
+      "error_code": "MF02_CONSUME_CONTEXT_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/consume_input/context_generation"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/context_generation"
+      },
+      "error_code": "MF02_CONSUME_CONTEXT_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/grant/dispatch_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/dispatch_id"
+      },
+      "error_code": "MF02_GRANT_BINDING_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/grant/attempt_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/attempt_id"
+      },
+      "error_code": "MF02_GRANT_BINDING_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/grant/invocation_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/invocation_id"
+      },
+      "error_code": "MF02_GRANT_BINDING_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/grant/gateway_boot_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/gateway_boot_id"
+      },
+      "error_code": "MF02_GRANT_BINDING_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/grant/context_generation"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/context_generation"
+      },
+      "error_code": "MF02_GRANT_BINDING_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/grant/release_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/release_id"
+      },
+      "error_code": "MF02_GRANT_BINDING_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/grant/selection_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/selection_digest"
+      },
+      "error_code": "MF02_GRANT_BINDING_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/grant/original_body_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/consume_input/selection/original_body_digest"
+      },
+      "error_code": "MF02_GRANT_BINDING_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/dispatch/dispatch_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot/dispatch_id"
+      },
+      "error_code": "MF02_READ_CHANGES_CONSUMED_IDENTITY"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/dispatch/attempt_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot/attempt_id"
+      },
+      "error_code": "MF02_READ_CHANGES_CONSUMED_IDENTITY"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/dispatch/call_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot/call_id"
+      },
+      "error_code": "MF02_READ_CHANGES_CONSUMED_IDENTITY"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/dispatch/operation_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot/operation_id"
+      },
+      "error_code": "MF02_READ_CHANGES_CONSUMED_IDENTITY"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/dispatch/release_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot/release_id"
+      },
+      "error_code": "MF02_READ_CHANGES_CONSUMED_IDENTITY"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/dispatch/selection_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot/selection_digest"
+      },
+      "error_code": "MF02_READ_CHANGES_CONSUMED_IDENTITY"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/dispatch/original_body_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot/original_body_digest"
+      },
+      "error_code": "MF02_READ_CHANGES_CONSUMED_IDENTITY"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/dispatch/invocation_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot/invocation_id"
+      },
+      "error_code": "MF02_READ_CHANGES_CONSUMED_IDENTITY"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/dispatch/gateway_boot_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot/gateway_boot_id"
+      },
+      "error_code": "MF02_READ_CHANGES_CONSUMED_IDENTITY"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/dispatch/context_generation"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot/context_generation"
+      },
+      "error_code": "MF02_READ_CHANGES_CONSUMED_IDENTITY"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/replay/dispatch"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/read_snapshot"
+      },
+      "error_code": "MF02_REPLAY_CHANGES_CONSUMED_STATE"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/recovery_input/recovery_claim_refs"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/recovery_input/selection/recovery_claim_refs"
+      },
+      "error_code": "MF02_RECOVERY_CLAIMS_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/query_input/provider_task/provider_account_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/query_input/execution_selection/provider_account_id"
+      },
+      "error_code": "MF02_QUERY_TASK_NAMESPACE_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/query_input/provider_task/provider_task_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/query_output/outcome/provider_task_id"
+      },
+      "error_code": "MF02_QUERY_TASK_NAMESPACE_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/query_input/execution_context/call_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/query_input/execution_selection/call_id"
+      },
+      "error_code": "MF02_QUERY_IDENTITY_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/query_input/execution_context/operation_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/query_input/execution_selection/operation_id"
+      },
+      "error_code": "MF02_QUERY_IDENTITY_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/query_input/execution_context/release_id"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/query_input/execution_selection/release_id"
+      },
+      "error_code": "MF02_QUERY_IDENTITY_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/query_input/execution_context/original_body_digest"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/query_input/execution_selection/original_body_digest"
+      },
+      "error_code": "MF02_QUERY_IDENTITY_MISMATCH"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/first_consume/grant/not_after"
+      },
+      "right": {
+        "input": "corpus",
+        "pointer": "/prepare_output/dispatch/dispatch_deadline"
+      },
+      "error_code": "MF02_GRANT_DEADLINE_CHANGED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/unknown_snapshot/state"
+      },
+      "right": {
+        "literal": "consumed"
+      },
+      "error_code": "MF02_UNKNOWN_REOPENS_CREATE"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/unknown_snapshot/observation_state"
+      },
+      "right": {
+        "literal": "unknown"
+      },
+      "error_code": "MF02_UNKNOWN_RISK_ERASED"
+    },
+    {
+      "op": "eq",
+      "left": {
+        "input": "corpus",
+        "pointer": "/unknown_error/retryability"
+      },
+      "right": {
+        "literal": "read_state"
+      },
+      "error_code": "MF02_UNKNOWN_REOPENS_CREATE"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [],
+  "assertions": [
+    {
+      "op": "join",
+      "error_code": "A_JOIN",
+      "left": {
+        "literal": [
+          {
+            "id": "call-1"
+          }
+        ]
+      },
+      "right": {
+        "literal": [
+          {
+            "call": "call-1"
+          }
+        ]
+      },
+      "left_keys": [
+        "/id"
+      ],
+      "right_keys": [
+        "/call"
+      ],
+      "min": 1,
+      "max": 1
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "region_endpoint_ref": "region-1",
+  "operation_kind": "image_generate",
+  "provider_task_id": "provider-task-shared"
+}

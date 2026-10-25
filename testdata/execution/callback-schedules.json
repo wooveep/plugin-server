@@ -1,6 +1,6 @@
 {
   "fixture_format": "wasm-d0-draft-v1",
-  "status": "draft",
+  "status": "frozen",
   "prepared_on": "2026-10-25",
   "owner_card": "D0-WG-03",
   "delegate": "Codex agent",
@@ -10,43 +10,29 @@
   "source_revision": "99a51c9e1e8a0f189f0d277628a5c1e3d41c8dd1",
   "evidence_level": "offline_fixture",
   "subject_layer": "contract_fixture",
-  "domain_validation": "not_run",
+  "domain_validation": "runner_required",
   "host_emulator_validation": "not_run",
   "real_gateway_validation": "not_run",
   "input_refs": [
     {
-      "card": "D0-MF-01",
-      "fragment": "common",
-      "source_revision": null,
-      "manifest_sha256": null,
-      "status": "pending_freeze"
+      "bundle_version": "mf-common-2026-10-25.3",
+      "manifest_sha256": "09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5",
+      "vendor_root": "testdata/contracts/vendor/ocloudmodelfusion/mf-common-2026-10-25.3"
     },
     {
-      "card": "D0-MF-02",
-      "fragment": "identity/body/outcome",
-      "source_revision": null,
-      "manifest_sha256": null,
-      "status": "pending_freeze"
-    },
-    {
-      "card": "D0-WG-01",
-      "fragment": "batch-A/loader",
-      "source_revision": null,
-      "manifest_sha256": null,
-      "status": "not_imported"
+      "bundle_version": "mf-execution-2026-10-25.1",
+      "manifest_sha256": "7b2d3d58939302bb9baf736713d2e92338e341a373b2829b43b09805f6c1ce49",
+      "vendor_root": "testdata/contracts/vendor/ocloudmodelfusion/mf-execution-2026-10-25.1"
     }
   ],
   "validation": {
-    "kind": "semantic",
-    "validator_id": "wasm-go:d0:callback-schedule-draft:v1",
-    "registration_status": "proposed_not_implemented",
-    "selection": {
-      "mode": "json_pointer",
-      "pointer": "/cases"
-    },
-    "expected_stage": "fixture_semantic"
+    "validator_id": "wg-execution-fixture.v1",
+    "registration_status": "registered_test_only",
+    "entrypoint": "go test ./internal/executionfixture",
+    "authoritative_transport": "locked MF02 defs",
+    "algorithm": "local fixture lifecycle plus actual SDK/matcher observations"
   },
-  "digest_note": "input_sha256 hashes exactly input_json_utf8.encode(UTF-8); it is fixture-byte integrity only, not mf-json.v1, a bundle digest, or an IF BodyBasis digest. Raw body SHA256 values hash the literal UTF-8 sample bytes only.",
+  "digest_note": "input_sha256 绑定保存的input_json_utf8原字节；正文raw与固定mf-json.v1 canonical摘要分列；空正文仅raw-bytes.v1。",
   "cases": [
     {
       "case_id": "D0-WG03-CB-001",
@@ -60,7 +46,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -140,7 +126,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -221,7 +207,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -260,7 +246,7 @@
       "input_sha256": "4dbc497092b23f95a990c2754df7167e12f4b7981d0e71882eaa1dd05c3e719e",
       "expected": {
         "verdict": "reject",
-        "error_code": "WG_DRAFT_CALLOUT_UNKNOWN",
+        "error_code": "WG_FIXTURE_CALLOUT_UNKNOWN",
         "stage": "fixture_semantic",
         "pending_remaining": [
           101,
@@ -292,7 +278,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -388,7 +374,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -468,7 +454,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -518,7 +504,7 @@
       "input_sha256": "dd93f1ed448eed74e09f4823c7ce36837511dab30118c73fd94899e00d61d74c",
       "expected": {
         "verdict": "reject",
-        "error_code": "WG_DRAFT_CALLBACK_GENERATION_MISMATCH",
+        "error_code": "WG_FIXTURE_CALLBACK_GENERATION_MISMATCH",
         "stage": "fixture_semantic",
         "resume_current_context": false,
         "record_count": 0
@@ -547,7 +533,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -591,7 +577,7 @@
       "input_sha256": "63a6c2d3814424f33d99f20eff0d64837e4d58bdbb6a8c6420abdef99052e811",
       "expected": {
         "verdict": "reject",
-        "error_code": "WG_DRAFT_CONTEXT_CLOSED",
+        "error_code": "WG_FIXTURE_CONTEXT_CLOSED",
         "stage": "fixture_semantic",
         "resume_current_context": false,
         "record_count": 0
@@ -620,7 +606,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -664,7 +650,7 @@
       "input_sha256": "56e5a75a08988e9aa0af172740f43dae3b13ad57bdc1d660b679e4076969081d",
       "expected": {
         "verdict": "reject",
-        "error_code": "WG_DRAFT_CALLBACK_DUPLICATE",
+        "error_code": "WG_FIXTURE_CALLBACK_DUPLICATE",
         "stage": "fixture_semantic",
         "record_count": 1,
         "duplicate_record_count": 0
@@ -693,7 +679,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -764,7 +750,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -835,7 +821,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -906,7 +892,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -945,7 +931,7 @@
       "input_sha256": "2e765377f757e84c6c01ec483692e96057b36cab808aa18e5140aa9523fb952e",
       "expected": {
         "verdict": "reject",
-        "error_code": "WG_DRAFT_CALLBACK_BODY_TRUNCATED",
+        "error_code": "WG_FIXTURE_CALLBACK_BODY_TRUNCATED",
         "stage": "fixture_semantic",
         "record_count": 1,
         "http_status": 201,
@@ -977,7 +963,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -1016,7 +1002,7 @@
       "input_sha256": "708bb1293e7d4ee89fbd013245ca18643595cf67b62ef29f5460ddf8a688b6f8",
       "expected": {
         "verdict": "reject",
-        "error_code": "WG_DRAFT_CALLBACK_BODY_READ_FAILED",
+        "error_code": "WG_FIXTURE_CALLBACK_BODY_READ_FAILED",
         "stage": "fixture_semantic",
         "record_count": 1,
         "http_status": 200,
@@ -1047,7 +1033,7 @@
         "EB02-V04"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -1087,7 +1073,7 @@
       "input_sha256": "fa70d2a59d05a8e7c12c246550d7ffd5d37b71b6fc92b3b6356a1b81c7dfce0a",
       "expected": {
         "verdict": "reject",
-        "error_code": "WG_DRAFT_CALLOUT_SNAPSHOT_MISMATCH",
+        "error_code": "WG_FIXTURE_CALLOUT_SNAPSHOT_MISMATCH",
         "stage": "fixture_semantic",
         "record_count": 0,
         "pending_remaining": [
@@ -1119,7 +1105,7 @@
         "EB02-V02"
       ],
       "assertion_layer": "fixture",
-      "domain_validation": "not_run",
+      "domain_validation": "runner_required",
       "input": {
         "pending": [
           {
@@ -1216,9 +1202,9 @@
       }
     }
   ],
-  "next_step": "WG03 implements a thin host adapter and immutable snapshots after WG01 batch-A import, binds actual captured SDK IDs to synthetic IDs, probes duplicate/closed-context emulator support, then WG04 consumes the report.",
-  "callout_id_note": "101/202/999 are explicit synthetic schedule IDs only. At execution the WG03 adapter must read actual HostEmulator callout attributes, assert at least two pending, and record synthetic-to-captured-ID bindings; never use attrs[0] as callback selection. No host IDs were captured during this data preparation.",
-  "snapshot_note": "Snapshot values and errors are local draft notation, not IF DTOs or production guard outcomes. Mutable source objects must be deep-copied before dispatch; callback results must not be reconstructed from latest parent streamInfo.",
+  "next_step": "运行 scripts/verify-d0-contracts.sh batch A；生产可信writer/guard/retry、真实EB与IF09导出另行验收。",
+  "callout_id_note": "101/202/999是稳定合成调度ID；实际SDK CalloutID由薄adapter按唯一upstream捕获（0也是合法ID），映射逐案写入fixture-tests.log，输入模板不写运行值。",
+  "snapshot_note": "本地纯测试模型快照；map、slice、正文均深拷贝，单独记录host_emulator实际callback与contract_fixture生命周期拒绝。",
   "snapshots": {
     "snapshot-A": {
       "snapshot_id": "snapshot-A",
@@ -1394,5 +1380,9 @@
     "case_count": 15,
     "reproduce": "README.md data self-check",
     "domain_claim": false
+  },
+  "fixed_common_input": {
+    "bundle_version": "mf-common-2026-10-25.3",
+    "manifest_sha256": "09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5"
   }
 }

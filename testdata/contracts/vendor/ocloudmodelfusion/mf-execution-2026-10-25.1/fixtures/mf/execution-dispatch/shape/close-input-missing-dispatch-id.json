@@ -1,0 +1,5 @@
+{
+  "expected_dispatch_revision": "1",
+  "expected_worker_epoch": "9007199254740993",
+  "close_reason": "cancelled"
+}

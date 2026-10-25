@@ -1,0 +1,2529 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:modelfusion:contracts:v1:execution-dispatch",
+  "description": "IF01/02 offline machine contracts. Shape checks do not execute dispatch or authorization.",
+  "$defs": {
+    "OperationKind": {
+      "enum": [
+        "text_generate",
+        "image_generate",
+        "video_generate",
+        "task_query"
+      ]
+    },
+    "CostOwner": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "platform",
+            "tenant"
+          ]
+        },
+        "owner_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "source_job_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        }
+      },
+      "required": [
+        "kind",
+        "owner_id",
+        "source_job_id"
+      ],
+      "additionalProperties": false
+    },
+    "CallIdentity": {
+      "type": "object",
+      "properties": {
+        "call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "request_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "principal_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "release_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "route_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "auth_decision_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "tenant_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "account_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "sales_asset_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "client_request_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "operation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "schema_version": {
+          "const": "execution.v1"
+        },
+        "billing_mode": {
+          "enum": [
+            "customer",
+            "internal_cost"
+          ]
+        },
+        "principal_kind": {
+          "enum": [
+            "user",
+            "service"
+          ]
+        },
+        "cost_owner": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/CostOwner"
+        },
+        "operation_kind": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/OperationKind"
+        },
+        "public_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "accepted_at": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        },
+        "dispatch_deadline": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        }
+      },
+      "required": [
+        "schema_version",
+        "call_id",
+        "request_id",
+        "billing_mode",
+        "principal_kind",
+        "principal_id",
+        "operation_kind",
+        "release_id",
+        "route_id",
+        "auth_decision_ref",
+        "public_model"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "billing_mode": {
+                "const": "customer"
+              }
+            },
+            "required": [
+              "billing_mode"
+            ]
+          },
+          "then": {
+            "required": [
+              "tenant_id",
+              "account_id",
+              "sales_asset_id"
+            ],
+            "properties": {
+              "principal_kind": {
+                "const": "user"
+              }
+            },
+            "not": {
+              "required": [
+                "cost_owner"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "billing_mode": {
+                "const": "internal_cost"
+              }
+            },
+            "required": [
+              "billing_mode"
+            ]
+          },
+          "then": {
+            "required": [
+              "cost_owner"
+            ],
+            "properties": {
+              "principal_kind": {
+                "const": "service"
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "account_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "sales_asset_id"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation_kind": {
+                "enum": [
+                  "image_generate",
+                  "video_generate",
+                  "task_query"
+                ]
+              }
+            },
+            "required": [
+              "operation_kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "operation_id",
+              "accepted_at",
+              "dispatch_deadline"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation_kind": {
+                "const": "text_generate"
+              }
+            },
+            "required": [
+              "operation_kind"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "operation_id"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "BodyBasis": {
+      "type": "object",
+      "properties": {
+        "call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "release_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "operation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "original_body_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "original_body_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "operation_kind": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/OperationKind"
+        },
+        "body_canonicalization": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "call_id",
+        "release_id",
+        "operation_kind",
+        "original_body_digest",
+        "body_canonicalization"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation_kind": {
+                "enum": [
+                  "image_generate",
+                  "video_generate",
+                  "task_query"
+                ]
+              }
+            },
+            "required": [
+              "operation_kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "operation_id",
+              "original_body_ref"
+            ]
+          }
+        }
+      ]
+    },
+    "ExecutionContext": {
+      "type": "object",
+      "properties": {
+        "call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "request_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "principal_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "release_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "route_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "auth_decision_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "tenant_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "account_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "sales_asset_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "client_request_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "operation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "schema_version": {
+          "const": "execution.v1"
+        },
+        "billing_mode": {
+          "enum": [
+            "customer",
+            "internal_cost"
+          ]
+        },
+        "principal_kind": {
+          "enum": [
+            "user",
+            "service"
+          ]
+        },
+        "cost_owner": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/CostOwner"
+        },
+        "operation_kind": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/OperationKind"
+        },
+        "public_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "accepted_at": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        },
+        "dispatch_deadline": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        },
+        "original_body_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "original_body_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "body_canonicalization": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "schema_version",
+        "call_id",
+        "request_id",
+        "billing_mode",
+        "principal_kind",
+        "principal_id",
+        "operation_kind",
+        "release_id",
+        "route_id",
+        "auth_decision_ref",
+        "public_model",
+        "original_body_digest",
+        "body_canonicalization"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "billing_mode": {
+                "const": "customer"
+              }
+            },
+            "required": [
+              "billing_mode"
+            ]
+          },
+          "then": {
+            "required": [
+              "tenant_id",
+              "account_id",
+              "sales_asset_id"
+            ],
+            "properties": {
+              "principal_kind": {
+                "const": "user"
+              }
+            },
+            "not": {
+              "required": [
+                "cost_owner"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "billing_mode": {
+                "const": "internal_cost"
+              }
+            },
+            "required": [
+              "billing_mode"
+            ]
+          },
+          "then": {
+            "required": [
+              "cost_owner"
+            ],
+            "properties": {
+              "principal_kind": {
+                "const": "service"
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "account_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "sales_asset_id"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation_kind": {
+                "enum": [
+                  "image_generate",
+                  "video_generate",
+                  "task_query"
+                ]
+              }
+            },
+            "required": [
+              "operation_kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "operation_id",
+              "accepted_at",
+              "dispatch_deadline"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation_kind": {
+                "const": "text_generate"
+              }
+            },
+            "required": [
+              "operation_kind"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "operation_id"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation_kind": {
+                "enum": [
+                  "image_generate",
+                  "video_generate",
+                  "task_query"
+                ]
+              }
+            },
+            "required": [
+              "operation_kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "operation_id",
+              "original_body_ref"
+            ]
+          }
+        }
+      ]
+    },
+    "ProviderTaskIdentity": {
+      "type": "object",
+      "properties": {
+        "provider_account_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "region_endpoint_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "provider_task_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "operation_kind": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/OperationKind"
+        }
+      },
+      "required": [
+        "provider_account_id",
+        "region_endpoint_ref",
+        "provider_task_id",
+        "operation_kind"
+      ],
+      "additionalProperties": false
+    },
+    "OperationCapability": {
+      "type": "object",
+      "properties": {
+        "send_mode": {
+          "enum": [
+            "single_send",
+            "observable_retry"
+          ]
+        },
+        "response_classifier_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "query_capability_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "provider_idempotency_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "max_fallback_hops": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      },
+      "required": [
+        "send_mode",
+        "response_classifier_ref",
+        "max_attempts",
+        "max_fallback_hops"
+      ],
+      "additionalProperties": false
+    },
+    "TargetExecutionDescriptor": {
+      "type": "object",
+      "properties": {
+        "release_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "target_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "binding_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "provider_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "provider_account_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "region_endpoint_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "service_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "cluster_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "credential_pool_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "adapter_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "credential_pool_revision": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "adapter_revision": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "mapper_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "proxy_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "descriptor_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "upstream_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config_canonicalization": {
+          "type": "string",
+          "minLength": 1
+        },
+        "transport_contract": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sni": {
+              "type": "string"
+            },
+            "path_adapter_ref": {
+              "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+            }
+          },
+          "required": [
+            "host",
+            "sni",
+            "path_adapter_ref"
+          ],
+          "additionalProperties": false
+        },
+        "capabilities": {
+          "type": "object",
+          "minProperties": 1,
+          "properties": {
+            "text_generate": {
+              "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/OperationCapability"
+            },
+            "image_generate": {
+              "allOf": [
+                {
+                  "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/OperationCapability"
+                },
+                {
+                  "properties": {
+                    "send_mode": {
+                      "const": "single_send"
+                    },
+                    "max_attempts": {
+                      "const": 1
+                    },
+                    "max_fallback_hops": {
+                      "const": 0
+                    }
+                  }
+                }
+              ]
+            },
+            "video_generate": {
+              "allOf": [
+                {
+                  "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/OperationCapability"
+                },
+                {
+                  "properties": {
+                    "send_mode": {
+                      "const": "single_send"
+                    },
+                    "max_attempts": {
+                      "const": 1
+                    },
+                    "max_fallback_hops": {
+                      "const": 0
+                    }
+                  }
+                }
+              ]
+            },
+            "task_query": {
+              "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/OperationCapability"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "release_id",
+        "target_id",
+        "binding_id",
+        "provider_id",
+        "provider_account_id",
+        "region_endpoint_ref",
+        "service_ref",
+        "cluster_ref",
+        "credential_pool_ref",
+        "adapter_ref",
+        "credential_pool_revision",
+        "adapter_revision",
+        "mapper_digest",
+        "proxy_digest",
+        "descriptor_digest",
+        "upstream_model",
+        "config_canonicalization",
+        "transport_contract",
+        "capabilities"
+      ],
+      "additionalProperties": false
+    },
+    "ExecutionSelection": {
+      "type": "object",
+      "properties": {
+        "call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "release_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "target_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "binding_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "attempt_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "operation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "dispatch_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "provider_account_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "cluster_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "credential_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "invocation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "gateway_boot_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "parent_attempt_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "credential_revision": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "selection_generation": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "context_generation": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "selection_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "original_body_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "mapper_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "proxy_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "descriptor_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "operation_kind": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/OperationKind"
+        },
+        "upstream_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selection_canonicalization": {
+          "const": "selection-json.v1"
+        },
+        "mechanism": {
+          "enum": [
+            "router",
+            "credential_retry",
+            "fallback",
+            "native_retry",
+            "task_query"
+          ]
+        },
+        "send_transport": {
+          "enum": [
+            "router",
+            "http_call"
+          ]
+        },
+        "recording_owner": {
+          "enum": [
+            "router_observer",
+            "ai_proxy"
+          ]
+        },
+        "recovery_claim_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "call_id",
+        "release_id",
+        "target_id",
+        "binding_id",
+        "attempt_id",
+        "operation_kind",
+        "provider_account_id",
+        "upstream_model",
+        "cluster_ref",
+        "credential_ref",
+        "credential_revision",
+        "selection_generation",
+        "selection_digest",
+        "selection_canonicalization",
+        "original_body_digest",
+        "mapper_digest",
+        "proxy_digest",
+        "descriptor_digest",
+        "mechanism",
+        "send_transport",
+        "recording_owner"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation_kind": {
+                "enum": [
+                  "image_generate",
+                  "video_generate"
+                ]
+              }
+            },
+            "required": [
+              "operation_kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "operation_id",
+              "dispatch_id",
+              "invocation_id",
+              "gateway_boot_id",
+              "context_generation"
+            ],
+            "properties": {
+              "mechanism": {
+                "const": "router"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation_kind": {
+                "const": "task_query"
+              }
+            },
+            "required": [
+              "operation_kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "operation_id"
+            ],
+            "properties": {
+              "mechanism": {
+                "const": "task_query"
+              }
+            },
+            "not": {
+              "required": [
+                "dispatch_id"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation_kind": {
+                "const": "text_generate"
+              }
+            },
+            "required": [
+              "operation_kind"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "operation_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "dispatch_id"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mechanism": {
+                "enum": [
+                  "credential_retry",
+                  "fallback",
+                  "native_retry"
+                ]
+              }
+            },
+            "required": [
+              "mechanism"
+            ]
+          },
+          "then": {
+            "required": [
+              "parent_attempt_id"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "send_transport": {
+                "const": "router"
+              }
+            },
+            "required": [
+              "send_transport"
+            ]
+          },
+          "then": {
+            "properties": {
+              "recording_owner": {
+                "const": "router_observer"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "send_transport": {
+                "const": "http_call"
+              }
+            },
+            "required": [
+              "send_transport"
+            ]
+          },
+          "then": {
+            "properties": {
+              "recording_owner": {
+                "const": "ai_proxy"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AttemptOutcome": {
+      "type": "object",
+      "properties": {
+        "send_state": {
+          "enum": [
+            "not_sent",
+            "handed_off",
+            "observed_sent",
+            "unknown"
+          ]
+        },
+        "acceptance": {
+          "enum": [
+            "not_sent",
+            "rejected_before_acceptance",
+            "accepted",
+            "unknown"
+          ]
+        },
+        "execution_result": {
+          "enum": [
+            "pending",
+            "succeeded",
+            "partial",
+            "failed",
+            "unknown"
+          ]
+        },
+        "http_status": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "transport_error": {
+          "type": "string",
+          "minLength": 1
+        },
+        "headers_complete": {
+          "type": "boolean"
+        },
+        "body_complete": {
+          "type": "boolean"
+        },
+        "provider_error": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider_task_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "outbound_body_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "response_body_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "response_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retry_after": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        },
+        "occurred_at": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        },
+        "observed_at": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        }
+      },
+      "required": [
+        "send_state",
+        "acceptance",
+        "execution_result",
+        "headers_complete",
+        "body_complete",
+        "occurred_at",
+        "observed_at"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "send_state": {
+                "const": "not_sent"
+              }
+            },
+            "required": [
+              "send_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "acceptance": {
+                "const": "not_sent"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "headers_complete": {
+                "const": true
+              }
+            },
+            "required": [
+              "headers_complete"
+            ]
+          },
+          "then": {
+            "required": [
+              "http_status"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "body_complete": {
+                "const": true
+              }
+            },
+            "required": [
+              "body_complete"
+            ]
+          },
+          "then": {
+            "required": [
+              "response_body_digest"
+            ]
+          }
+        }
+      ]
+    },
+    "AttemptOutcomeWithOutbound": {
+      "allOf": [
+        {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/AttemptOutcome"
+        },
+        {
+          "required": [
+            "outbound_body_digest"
+          ]
+        }
+      ]
+    },
+    "AttemptOutcomeWithResponse": {
+      "allOf": [
+        {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/AttemptOutcome"
+        },
+        {
+          "required": [
+            "response_body_digest"
+          ]
+        }
+      ]
+    },
+    "CallOperationLink": {
+      "type": "object",
+      "properties": {
+        "call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "operation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        }
+      },
+      "required": [
+        "call_id",
+        "operation_id"
+      ],
+      "additionalProperties": false
+    },
+    "IdentityCorpus": {
+      "type": "object",
+      "properties": {
+        "calls": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/CallOperationLink"
+          },
+          "minItems": 1
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/CallOperationLink"
+          },
+          "minItems": 1
+        },
+        "descriptors": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/TargetExecutionDescriptor"
+          },
+          "minItems": 1
+        },
+        "selections": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ExecutionSelection"
+          },
+          "minItems": 1
+        },
+        "contexts": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ExecutionContext"
+          },
+          "minItems": 1
+        },
+        "outcomes": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/AttemptOutcome"
+          },
+          "minItems": 1
+        },
+        "provider_tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ProviderTaskIdentity"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "calls",
+        "operations",
+        "descriptors",
+        "selections",
+        "contexts",
+        "outcomes",
+        "provider_tasks"
+      ],
+      "additionalProperties": false
+    },
+    "PrepareCandidate": {
+      "type": "object",
+      "properties": {
+        "call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "release_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "target_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "binding_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "operation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "operation_kind": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/OperationKind"
+        },
+        "provider_account_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "upstream_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cluster_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "credential_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "credential_revision": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "selection_generation": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "original_body_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "mapper_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "proxy_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "mechanism": {
+          "enum": [
+            "router",
+            "credential_retry",
+            "fallback",
+            "native_retry",
+            "task_query"
+          ]
+        },
+        "send_transport": {
+          "enum": [
+            "router",
+            "http_call"
+          ]
+        },
+        "recording_owner": {
+          "enum": [
+            "router_observer",
+            "ai_proxy"
+          ]
+        }
+      },
+      "required": [
+        "call_id",
+        "release_id",
+        "target_id",
+        "binding_id",
+        "operation_id",
+        "operation_kind",
+        "provider_account_id",
+        "upstream_model",
+        "cluster_ref",
+        "credential_ref",
+        "credential_revision",
+        "selection_generation",
+        "original_body_digest",
+        "mapper_digest",
+        "proxy_digest",
+        "mechanism",
+        "send_transport",
+        "recording_owner"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "operation_kind": {
+              "enum": [
+                "image_generate",
+                "video_generate"
+              ]
+            },
+            "mechanism": {
+              "const": "router"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "send_transport": {
+                "const": "router"
+              }
+            },
+            "required": [
+              "send_transport"
+            ]
+          },
+          "then": {
+            "properties": {
+              "recording_owner": {
+                "const": "router_observer"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "send_transport": {
+                "const": "http_call"
+              }
+            },
+            "required": [
+              "send_transport"
+            ]
+          },
+          "then": {
+            "properties": {
+              "recording_owner": {
+                "const": "ai_proxy"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Dispatch": {
+      "type": "object",
+      "properties": {
+        "dispatch_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "operation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "attempt_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "release_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "invocation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "gateway_boot_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "worker_claim_epoch": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "dispatch_revision": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "context_generation": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "prepared_candidate_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "original_body_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "selection_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "prepared_at": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        },
+        "dispatch_deadline": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        },
+        "consumed_at": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        },
+        "operation_kind": {
+          "enum": [
+            "image_generate",
+            "video_generate"
+          ]
+        },
+        "state": {
+          "enum": [
+            "prepared",
+            "consumed",
+            "closed_unconsumed"
+          ]
+        },
+        "close_reason": {
+          "enum": [
+            "cancelled",
+            "deadline_expired",
+            "authorization_revoked",
+            "reselection",
+            "worker_replaced",
+            "validation_failed"
+          ]
+        },
+        "observation_state": {
+          "enum": [
+            "no_observation",
+            "accepted",
+            "unknown",
+            "terminal",
+            "conflicted"
+          ]
+        }
+      },
+      "required": [
+        "dispatch_id",
+        "operation_id",
+        "call_id",
+        "attempt_id",
+        "worker_claim_epoch",
+        "dispatch_revision",
+        "release_id",
+        "operation_kind",
+        "prepared_candidate_digest",
+        "original_body_digest",
+        "prepared_at",
+        "dispatch_deadline",
+        "state",
+        "observation_state"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "consumed"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "required": [
+              "selection_digest",
+              "consumed_at",
+              "invocation_id",
+              "gateway_boot_id",
+              "context_generation"
+            ],
+            "not": {
+              "required": [
+                "close_reason"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "closed_unconsumed"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "required": [
+              "close_reason"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "selection_digest"
+                  ]
+                },
+                {
+                  "required": [
+                    "consumed_at"
+                  ]
+                },
+                {
+                  "required": [
+                    "invocation_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "gateway_boot_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "context_generation"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "prepared"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "selection_digest"
+                  ]
+                },
+                {
+                  "required": [
+                    "consumed_at"
+                  ]
+                },
+                {
+                  "required": [
+                    "invocation_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "gateway_boot_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "context_generation"
+                  ]
+                },
+                {
+                  "required": [
+                    "close_reason"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "DispatchGrant": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": "dispatch-grant.v1"
+        },
+        "grant_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "dispatch_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "attempt_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "invocation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "gateway_boot_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "release_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "context_generation": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "selection_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "original_body_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "not_after": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+        }
+      },
+      "required": [
+        "schema_version",
+        "grant_id",
+        "dispatch_id",
+        "attempt_id",
+        "invocation_id",
+        "gateway_boot_id",
+        "release_id",
+        "context_generation",
+        "selection_digest",
+        "original_body_digest",
+        "not_after"
+      ],
+      "additionalProperties": false
+    },
+    "PrepareDispatchInput": {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "prepare_request_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "worker_claim_epoch": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "request_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "request_canonicalization": {
+          "const": "prepare-json.v1"
+        },
+        "candidate": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/PrepareCandidate"
+        }
+      },
+      "required": [
+        "operation_id",
+        "prepare_request_id",
+        "worker_claim_epoch",
+        "request_digest",
+        "request_canonicalization",
+        "candidate"
+      ],
+      "additionalProperties": false
+    },
+    "PrepareDispatchOutput": {
+      "type": "object",
+      "properties": {
+        "dispatch": {
+          "allOf": [
+            {
+              "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/Dispatch"
+            },
+            {
+              "properties": {
+                "state": {
+                  "const": "prepared"
+                }
+              }
+            }
+          ]
+        },
+        "candidate": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/PrepareCandidate"
+        }
+      },
+      "required": [
+        "dispatch",
+        "candidate"
+      ],
+      "additionalProperties": false
+    },
+    "ConsumeDispatchInput": {
+      "type": "object",
+      "properties": {
+        "dispatch_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "invocation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "gateway_boot_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "expected_dispatch_revision": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "worker_claim_epoch": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "context_generation": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "selection": {
+          "allOf": [
+            {
+              "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ExecutionSelection"
+            },
+            {
+              "properties": {
+                "operation_kind": {
+                  "enum": [
+                    "image_generate",
+                    "video_generate"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "recovery_claim_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "dispatch_id",
+        "expected_dispatch_revision",
+        "worker_claim_epoch",
+        "selection",
+        "invocation_id",
+        "gateway_boot_id",
+        "context_generation"
+      ],
+      "additionalProperties": false
+    },
+    "ConsumeDispatchWithRecovery": {
+      "allOf": [
+        {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ConsumeDispatchInput"
+        },
+        {
+          "required": [
+            "recovery_claim_refs"
+          ],
+          "properties": {
+            "selection": {
+              "required": [
+                "recovery_claim_refs"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ConsumeDispatchResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "granted",
+            "state"
+          ]
+        },
+        "dispatch": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/Dispatch"
+        },
+        "grant": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/DispatchGrant"
+        }
+      },
+      "required": [
+        "status",
+        "dispatch"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "granted"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "grant"
+            ],
+            "properties": {
+              "dispatch": {
+                "properties": {
+                  "state": {
+                    "const": "consumed"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "state"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "grant"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ClosePreparedInput": {
+      "type": "object",
+      "properties": {
+        "dispatch_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "expected_dispatch_revision": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "expected_worker_epoch": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "close_reason": {
+          "enum": [
+            "cancelled",
+            "deadline_expired",
+            "authorization_revoked",
+            "reselection",
+            "worker_replaced",
+            "validation_failed"
+          ]
+        }
+      },
+      "required": [
+        "dispatch_id",
+        "expected_dispatch_revision",
+        "expected_worker_epoch",
+        "close_reason"
+      ],
+      "additionalProperties": false
+    },
+    "ClosePreparedOutput": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "closed_unconsumed",
+            "already_consumed"
+          ]
+        },
+        "dispatch_revision": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        }
+      },
+      "required": [
+        "status",
+        "dispatch_revision"
+      ],
+      "additionalProperties": false
+    },
+    "ReadDispatchInput": {
+      "type": "object",
+      "properties": {
+        "dispatch_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        }
+      },
+      "required": [
+        "dispatch_id"
+      ],
+      "additionalProperties": false
+    },
+    "ReadDispatchOutput": {
+      "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/Dispatch"
+    },
+    "DispatchObservationAssociation": {
+      "type": "object",
+      "properties": {
+        "dispatch_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "attempt_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "operation_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "outcome": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/AttemptOutcome"
+        }
+      },
+      "required": [
+        "dispatch_id",
+        "attempt_id",
+        "operation_id",
+        "call_id",
+        "outcome"
+      ],
+      "additionalProperties": false
+    },
+    "ObserveDispatchOutput": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "stored",
+            "duplicate",
+            "quarantined"
+          ]
+        },
+        "fact_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        }
+      },
+      "required": [
+        "status",
+        "fact_ref"
+      ],
+      "additionalProperties": false
+    },
+    "TaskQueryInput": {
+      "type": "object",
+      "properties": {
+        "execution_context": {
+          "allOf": [
+            {
+              "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ExecutionContext"
+            },
+            {
+              "properties": {
+                "operation_kind": {
+                  "const": "task_query"
+                }
+              }
+            }
+          ]
+        },
+        "execution_selection": {
+          "allOf": [
+            {
+              "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ExecutionSelection"
+            },
+            {
+              "properties": {
+                "operation_kind": {
+                  "const": "task_query"
+                }
+              }
+            }
+          ]
+        },
+        "provider_task": {
+          "allOf": [
+            {
+              "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ProviderTaskIdentity"
+            },
+            {
+              "properties": {
+                "operation_kind": {
+                  "enum": [
+                    "image_generate",
+                    "video_generate"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "execution_context",
+        "execution_selection",
+        "provider_task"
+      ],
+      "additionalProperties": false
+    },
+    "TaskQueryOutput": {
+      "type": "object",
+      "properties": {
+        "outcome": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/AttemptOutcome"
+        }
+      },
+      "required": [
+        "outcome"
+      ],
+      "additionalProperties": false
+    },
+    "DispatchErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "enum": [
+            "execution_schema_unsupported",
+            "execution_identity_conflict",
+            "execution_release_unavailable",
+            "execution_selection_mismatch",
+            "execution_observation_unsupported",
+            "dispatch_idempotency_conflict",
+            "dispatch_stale_epoch",
+            "dispatch_already_consumed",
+            "dispatch_closed",
+            "dispatch_deadline_expired",
+            "dispatch_admission_denied",
+            "dispatch_candidate_unavailable",
+            "dispatch_commit_unknown",
+            "dispatch_observation_conflict"
+          ]
+        },
+        "retryability": {
+          "enum": [
+            "never",
+            "same_request",
+            "read_state",
+            "after_change"
+          ]
+        },
+        "resource_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "current_revision": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        }
+      },
+      "required": [
+        "code",
+        "retryability"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "execution_schema_unsupported"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "never"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "execution_identity_conflict"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "never"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "execution_release_unavailable"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "after_change"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "execution_selection_mismatch"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "never"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "execution_observation_unsupported"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "never"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "dispatch_idempotency_conflict"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "never"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "dispatch_stale_epoch"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "read_state"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "dispatch_already_consumed"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "read_state"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "dispatch_closed"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "never"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "dispatch_deadline_expired"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "never"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "dispatch_admission_denied"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "after_change"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "dispatch_candidate_unavailable"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "after_change"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "dispatch_commit_unknown"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "read_state"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "dispatch_observation_conflict"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryability": {
+                "const": "never"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "DispatchCorpus": {
+      "type": "object",
+      "properties": {
+        "prepare_input": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/PrepareDispatchInput"
+        },
+        "prepare_output": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/PrepareDispatchOutput"
+        },
+        "consume_input": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ConsumeDispatchInput"
+        },
+        "first_consume": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ConsumeDispatchResponse"
+        },
+        "replay": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ConsumeDispatchResponse"
+        },
+        "read_snapshot": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ReadDispatchOutput"
+        },
+        "close_input": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ClosePreparedInput"
+        },
+        "close_output": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ClosePreparedOutput"
+        },
+        "unknown_error": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/DispatchErrorResponse"
+        },
+        "unknown_snapshot": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ReadDispatchOutput"
+        },
+        "query_input": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/TaskQueryInput"
+        },
+        "query_output": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/TaskQueryOutput"
+        },
+        "recovery_input": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ConsumeDispatchWithRecovery"
+        }
+      },
+      "required": [
+        "prepare_input",
+        "prepare_output",
+        "consume_input",
+        "first_consume",
+        "replay",
+        "read_snapshot",
+        "close_input",
+        "close_output",
+        "unknown_error",
+        "unknown_snapshot",
+        "query_input",
+        "query_output",
+        "recovery_input"
+      ],
+      "additionalProperties": false
+    },
+    "BoundaryLink": {
+      "type": "object",
+      "properties": {
+        "call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "parent_call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "source_job_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        }
+      },
+      "required": [
+        "call_id",
+        "parent_call_id",
+        "source_job_id"
+      ],
+      "additionalProperties": false
+    },
+    "RecoveryScopeLink": {
+      "type": "object",
+      "properties": {
+        "claim_ref": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "scope_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "attempt_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "selection_digest": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        }
+      },
+      "required": [
+        "claim_ref",
+        "scope_id",
+        "call_id",
+        "attempt_id",
+        "selection_digest"
+      ],
+      "additionalProperties": false
+    },
+    "BoundaryCorpus": {
+      "type": "object",
+      "properties": {
+        "internal_context": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/ExecutionContext"
+        },
+        "internal_parent": {
+          "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/BoundaryLink"
+        },
+        "parent_call_id": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+        },
+        "required_scopes": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/RecoveryScopeLink"
+          },
+          "minItems": 1
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:modelfusion:contracts:v1:execution-dispatch#/$defs/RecoveryScopeLink"
+          },
+          "minItems": 1
+        },
+        "body_evidence": {
+          "type": "object",
+          "properties": {
+            "original_body_digest": {
+              "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+            },
+            "outbound_body_digest": {
+              "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+            },
+            "response_body_digest": {
+              "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+            }
+          },
+          "required": [
+            "original_body_digest",
+            "outbound_body_digest",
+            "response_body_digest"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "internal_context",
+        "internal_parent",
+        "parent_call_id",
+        "required_scopes",
+        "claims",
+        "body_evidence"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
