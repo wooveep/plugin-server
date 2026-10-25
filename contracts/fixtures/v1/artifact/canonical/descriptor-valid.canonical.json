@@ -1,0 +1,5 @@
+{
+  "input_asset": "descriptor-valid-projection",
+  "expected_asset": "artifact-base-golden",
+  "expected_digest": "sha256:417833fc771c08ed4176e48fa5b58ae523168cb14011f4b5e141b202cf97d498"
+}

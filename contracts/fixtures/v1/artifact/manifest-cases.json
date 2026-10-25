@@ -1,395 +1,502 @@
 {
-  "preparation_status": "draft",
-  "domain_validation": "not_run",
-  "consumer_receipts": "not_run",
-  "assignment": {
-    "acting_agent": "Codex agent /root/artifact_fixture_prep",
-    "assignee": "待确认",
-    "backup": "待确认",
-    "source_branch": "chore/retire-legacy-workflow-20261022",
-    "source_revision": "08ea31ddc2f9b077573961a5cd0d31fbcaf593e0",
-    "planned_date": "待确认"
-  },
-  "input_bundle_refs": [
-    {
-      "task_id": "D0-MF-01",
-      "bundle_version": null,
-      "manifest_sha256": null,
-      "status": "awaiting_frozen_input"
-    },
-    {
-      "task_id": "D0-ART-01@manifest",
-      "bundle_version": null,
-      "manifest_sha256": null,
-      "status": "not_produced"
-    }
-  ],
-  "schema_version_proposal": "artifact.v1-draft",
-  "schema_version_is_frozen": false,
-  "expected_is": "Intended oracle only; no schema or semantic validator has run. Unregistered detailed codes/stages remain proposals.",
+  "fixture_format_version": "artifact-manifest-cases-v1",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
   "cases": [
     {
-      "case_id": "ART-MAN-001",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": null,
+      "case_id": "descriptor-valid",
+      "path": "manifests/descriptor-valid.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "accept",
+        "stage": "complete",
         "error_code": null,
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Base legacy_unknown descriptor; compatibility only, no verified new publish."
+        "pointer": ""
+      }
     },
     {
-      "case_id": "ART-MAN-002",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor-permuted.json",
-        "sha256": "35b5153023b48465563b6420325dc0311e8d26c57d41a12e6666706419aa5bae"
-      },
-      "mutation_recipe": null,
+      "case_id": "manifest-valid",
+      "path": "manifests/manifest-valid.json",
+      "document_kind": "manifest",
       "expected": {
         "verdict": "accept",
+        "stage": "complete",
         "error_code": null,
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Object/file declaration order changes preserve projected content digest."
+        "pointer": ""
+      }
     },
     {
-      "case_id": "ART-MAN-003",
-      "input_ref": {
-        "path": "manifests/minimal-server-manifest.json",
-        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
-      },
-      "mutation_recipe": null,
+      "case_id": "server-field-in-descriptor",
+      "path": "manifests/server-field-in-descriptor.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
+    },
+    {
+      "case_id": "descriptor-reordered",
+      "path": "manifests/descriptor-reordered.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "accept",
+        "stage": "complete",
         "error_code": null,
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Synthetic server output, outside archive; not an upload receipt."
+        "pointer": ""
+      }
     },
     {
-      "case_id": "ART-MAN-004",
-      "input_ref": {
-        "path": "manifests/minimal-server-manifest.json",
-        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
-      },
-      "mutation_recipe": {
-        "replace": {
-          "/artifact_id": "synthetic-other-artifact",
-          "/archive_digest": "sha256:472079989f5cb9493889c27de7b076356ab5d2b56433c85e491a1872fafcb404",
-          "/created_at": "2026-10-25T01:00:00Z",
-          "/created_by": "synthetic-other-service",
-          "/download_url": "https://artifact.invalid/other/plugin.wasm"
-        }
-      },
+      "case_id": "manifest-transport-only",
+      "path": "manifests/manifest-transport-only.json",
+      "document_kind": "manifest",
       "expected": {
         "verdict": "accept",
+        "stage": "complete",
         "error_code": null,
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Excluded receipt fields do not affect content projection."
+        "pointer": ""
+      }
     },
     {
-      "case_id": "ART-MAN-005",
-      "input_ref": {
-        "path": "manifests/docs-changed-descriptor.json",
-        "sha256": "5e2e4e6d67d01e6d95d0baaa2e57a93453f2850064c427e09ff812da12da23ba"
-      },
-      "mutation_recipe": null,
+      "case_id": "legacy-unknown-valid",
+      "path": "manifests/legacy-unknown-valid.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "accept",
+        "stage": "complete",
         "error_code": null,
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Same name/version and Wasm, different docs; package-validity proposal does not authorize version overwrite."
+        "pointer": ""
+      }
     },
     {
-      "case_id": "ART-MAN-006",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "remove": [
-          "/defaults_path"
-        ]
-      },
+      "case_id": "oci-valid",
+      "path": "manifests/oci-valid.json",
+      "document_kind": "descriptor",
       "expected": {
-        "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Required field missing."
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      }
     },
     {
-      "case_id": "ART-MAN-007",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "replace": {
-          "/schema_version": "unknown-version"
-        }
-      },
+      "case_id": "missing-canonicalization_version",
+      "path": "manifests/missing-canonicalization_version.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Unknown schema version; exact accepted version awaits ART01."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-008",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "replace": {
-          "/canonicalization_version": "artifact-json.unknown"
-        }
-      },
+      "case_id": "missing-schema_version",
+      "path": "manifests/missing-schema_version.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Unknown algorithm, no serializer fallback."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-009",
-      "input_ref": {
-        "path": "manifests/minimal-server-manifest.json",
-        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
-      },
-      "mutation_recipe": {
-        "replace": {
-          "/content_digest": "sha256:abc"
-        }
-      },
+      "case_id": "missing-plugin_name",
+      "path": "manifests/missing-plugin_name.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Short digest."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-010",
-      "input_ref": {
-        "path": "manifests/minimal-server-manifest.json",
-        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
-      },
-      "mutation_recipe": {
-        "replace": {
-          "/content_digest": "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-        }
-      },
+      "case_id": "missing-plugin_version",
+      "path": "manifests/missing-plugin_version.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Upper-case hex forbidden."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-011",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "copy_file_entry": "README.md"
-      },
+      "case_id": "missing-files",
+      "path": "manifests/missing-files.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Duplicate file path requires semantic uniqueness, not first-member selection."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-012",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "replace": {
-          "/files/0/path": "../plugin.wasm"
-        }
-      },
+      "case_id": "missing-wasm_path",
+      "path": "manifests/missing-wasm_path.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Path traversal."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-013",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "replace": {
-          "/source/verification": "verified"
-        }
-      },
+      "case_id": "missing-config_schema_path",
+      "path": "manifests/missing-config_schema_path.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "legacy_unknown cannot become verified."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-014",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "replace": {
-          "/source": {
-            "kind": "local_build",
-            "verification": "unknown",
-            "repo": "https://source.invalid/d0-fixture",
-            "commit": "0000000000000000000000000000000000000000",
-            "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
-        }
-      },
+      "case_id": "missing-defaults_path",
+      "path": "manifests/missing-defaults_path.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "local_build missing build_inputs_digest; no source authenticity is asserted."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-015",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "source_branch": "oci_import",
-        "missing_documented_field": "layer_digest",
-        "exact_original_ref_machine_key": "awaiting_ART01_freeze"
-      },
+      "case_id": "missing-documentation_paths",
+      "path": "manifests/missing-documentation_paths.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "OCI selected layer is mandatory; exact original-ref key is unresolved, no invented schema."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-016",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "add": {
-          "/artifact_id": "synthetic-client-chosen",
-          "/archive_digest": "sha256:f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
-        }
-      },
+      "case_id": "missing-environment_refs",
+      "path": "manifests/missing-environment_refs.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Client descriptor may not carry server receipt fields."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-017",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "append_environment_refs": [
-          {
-            "name": "D0_REF",
-            "kind": "setting",
-            "required": false
-          },
-          {
-            "name": "D0_REF",
-            "kind": "setting",
-            "required": true
-          }
-        ]
-      },
+      "case_id": "missing-source",
+      "path": "manifests/missing-source.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Environment names unique."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      }
     },
     {
-      "case_id": "ART-MAN-018",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "replace": {
-          "/documentation_paths": [
-            "README.md",
-            "README.md"
-          ]
-        }
-      },
+      "case_id": "unknown-schema",
+      "path": "manifests/unknown-schema.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "Documentation paths unique."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/schema_version"
+      }
     },
     {
-      "case_id": "ART-MAN-019",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "raw_utf8": "{\"plugin_name\":\"first\",\"plugin_name\":\"second\"}"
-      },
+      "case_id": "unknown-canonicalization",
+      "path": "manifests/unknown-canonicalization.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "parse"
-      },
-      "assertion": "Duplicate JSON keys must fail parsing before schema/projecting."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/canonicalization_version"
+      }
     },
     {
-      "case_id": "ART-MAN-020",
-      "input_ref": {
-        "path": "manifests/minimal-descriptor.json",
-        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
-      },
-      "mutation_recipe": {
-        "replace": {
-          "/files/0/size_bytes": 8
-        }
-      },
+      "case_id": "unsafe-plugin-name",
+      "path": "manifests/unsafe-plugin-name.json",
+      "document_kind": "descriptor",
       "expected": {
         "verdict": "reject",
-        "error_code": "invalid_schema",
-        "stage": "schema_or_semantic_pending_owner_split"
-      },
-      "assertion": "File size is a decimal string, not a JSON number."
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/plugin_name"
+      }
+    },
+    {
+      "case_id": "invalid-semver",
+      "path": "manifests/invalid-semver.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/plugin_version"
+      }
+    },
+    {
+      "case_id": "short-digest",
+      "path": "manifests/short-digest.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/sha256"
+      }
+    },
+    {
+      "case_id": "uppercase-digest",
+      "path": "manifests/uppercase-digest.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/sha256"
+      }
+    },
+    {
+      "case_id": "number-size",
+      "path": "manifests/number-size.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/size_bytes"
+      }
+    },
+    {
+      "case_id": "duplicate-file-path",
+      "path": "manifests/duplicate-file-path.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_DUPLICATE_PATH",
+        "pointer": "/files"
+      }
+    },
+    {
+      "case_id": "duplicate-environment-name",
+      "path": "manifests/duplicate-environment-name.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_DUPLICATE_ENV",
+        "pointer": "/environment_refs"
+      }
+    },
+    {
+      "case_id": "missing-selected-file",
+      "path": "manifests/missing-selected-file.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_REFERENCE",
+        "pointer": "/wasm_path"
+      }
+    },
+    {
+      "case_id": "wrong-file-role",
+      "path": "manifests/wrong-file-role.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_REFERENCE",
+        "pointer": "/wasm_path"
+      }
+    },
+    {
+      "case_id": "two-wasm-declarations",
+      "path": "manifests/two-wasm-declarations.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_CARDINALITY",
+        "pointer": "/files"
+      }
+    },
+    {
+      "case_id": "unreferenced-doc",
+      "path": "manifests/unreferenced-doc.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_REFERENCE",
+        "pointer": "/documentation_paths"
+      }
+    },
+    {
+      "case_id": "absolute-path",
+      "path": "manifests/absolute-path.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      }
+    },
+    {
+      "case_id": "parent-path",
+      "path": "manifests/parent-path.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      }
+    },
+    {
+      "case_id": "backslash-path",
+      "path": "manifests/backslash-path.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      }
+    },
+    {
+      "case_id": "empty-path-segment",
+      "path": "manifests/empty-path-segment.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      }
+    },
+    {
+      "case_id": "dot-path",
+      "path": "manifests/dot-path.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      }
+    },
+    {
+      "case_id": "legacy-verified-forgery",
+      "path": "manifests/legacy-verified-forgery.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/source"
+      }
+    },
+    {
+      "case_id": "local-missing-build-input",
+      "path": "manifests/local-missing-build-input.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/source"
+      }
+    },
+    {
+      "case_id": "oci-missing-layer",
+      "path": "manifests/oci-missing-layer.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/source"
+      }
+    },
+    {
+      "case_id": "wrong-content-digest",
+      "path": "manifests/wrong-content-digest.json",
+      "document_kind": "manifest",
+      "expected": {
+        "verdict": "reject",
+        "stage": "canonical",
+        "error_code": "ART_CONTENT_DIGEST",
+        "pointer": "/content_digest"
+      }
+    },
+    {
+      "case_id": "changed-wasm",
+      "path": "manifests/changed-wasm.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      }
+    },
+    {
+      "case_id": "changed-config_schema",
+      "path": "manifests/changed-config_schema.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      }
+    },
+    {
+      "case_id": "changed-defaults",
+      "path": "manifests/changed-defaults.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      }
+    },
+    {
+      "case_id": "changed-documentation",
+      "path": "manifests/changed-documentation.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      }
+    },
+    {
+      "case_id": "changed-source",
+      "path": "manifests/changed-source.json",
+      "document_kind": "descriptor",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      }
     }
   ]
 }

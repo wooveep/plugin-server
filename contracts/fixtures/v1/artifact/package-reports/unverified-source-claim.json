@@ -1,0 +1,23 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "unverified-source-claim",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "provenance",
+  "errors": [
+    {
+      "code": "ART_SOURCE_EVIDENCE",
+      "pointer": "/source"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 972,
+    "members": 5,
+    "payload_bytes": 246
+  },
+  "archive_digest": "sha256:2e782dd51a0902610393f70efc1c7d5bbc53316e813badee3acb7267695f4128",
+  "descriptor_digest": "sha256:2583ee71dcea23613fffb7166b166e5181d2479b8cabf3fd9ce728cdf61dc8cc"
+}

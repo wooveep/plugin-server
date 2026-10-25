@@ -1,0 +1,23 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "wasm-magic",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "wasm",
+  "errors": [
+    {
+      "code": "ART_WASM",
+      "pointer": "/wasm_path"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 974,
+    "members": 5,
+    "payload_bytes": 246
+  },
+  "archive_digest": "sha256:144d8f62b4d1b4003d40d4c4cd6f2b273865e5d6f153fb43c26d11458f6c49c1",
+  "descriptor_digest": "sha256:c80de395dbefb1696f3f52682f56fd95ce69956b51b05d5b001117ee571677a2"
+}

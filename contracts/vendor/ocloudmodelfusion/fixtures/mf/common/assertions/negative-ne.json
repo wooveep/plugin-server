@@ -1,0 +1,16 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [],
+  "assertions": [
+    {
+      "op": "ne",
+      "error_code": "A_NE",
+      "left": {
+        "literal": "a"
+      },
+      "right": {
+        "literal": "a"
+      }
+    }
+  ]
+}

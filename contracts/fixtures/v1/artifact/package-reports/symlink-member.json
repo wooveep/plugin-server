@@ -1,0 +1,22 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "symlink-member",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "archive",
+  "errors": [
+    {
+      "code": "ART_ARCHIVE_LINK",
+      "pointer": ""
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 973,
+    "members": 2,
+    "payload_bytes": 0
+  },
+  "archive_digest": "sha256:f5858c3fc4bf87e5d91d3e16d92c280be4f78dfab9b5453682127778f7391701"
+}

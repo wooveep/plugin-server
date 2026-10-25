@@ -1,0 +1,16 @@
+{
+  "packages": [
+    {
+      "bundle_version": "mf-common-2026-10-25.3",
+      "producer_project": "wooveep/ocloudmodelfusion",
+      "manifest_sha256": "09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5",
+      "vendor_root": "contracts/vendor/ocloudmodelfusion",
+      "imported_schema_ids": [
+        "urn:modelfusion:contracts:v1:common",
+        "urn:modelfusion:contracts:v1:fixture-validation",
+        "urn:modelfusion:contracts:v1:bundle",
+        "urn:modelfusion:contracts:v1:lock"
+      ]
+    }
+  ]
+}

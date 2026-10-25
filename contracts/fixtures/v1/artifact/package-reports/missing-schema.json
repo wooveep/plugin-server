@@ -1,0 +1,23 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "missing-schema",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "payload",
+  "errors": [
+    {
+      "code": "ART_FILE_SET",
+      "pointer": "/files"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 868,
+    "members": 4,
+    "payload_bytes": 75
+  },
+  "archive_digest": "sha256:74d7de2923f7015705eb07dd7ed760039acf24a8b7c6a8a0051d180b61b7acf9",
+  "descriptor_digest": "sha256:dbaad179dd9a5abaf4e391d067a7fa7e7597144e7d81f310220263c56a36d27a"
+}

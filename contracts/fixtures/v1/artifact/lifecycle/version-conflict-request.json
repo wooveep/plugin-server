@@ -1,0 +1,11 @@
+{
+  "upload_id": "upload-fixture-002",
+  "plugin_name": "offline-demo",
+  "plugin_version": "1.0.0",
+  "content_digest": "sha256:5eada2d27f23a7aa67be7587f81c09e85287cd832099b508b89c77ff848f6f49",
+  "archive_digest": "sha256:2bfb41f753965b9ecf32c50eb404696b17a06861ce920a4cf6686f235af194eb",
+  "archive_ref": {
+    "path": "packages/changed-docs-valid.tgz",
+    "sha256": "2bfb41f753965b9ecf32c50eb404696b17a06861ce920a4cf6686f235af194eb"
+  }
+}

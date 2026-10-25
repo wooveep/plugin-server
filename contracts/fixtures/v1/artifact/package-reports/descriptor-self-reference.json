@@ -1,0 +1,23 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "descriptor-self-reference",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "semantic",
+  "errors": [
+    {
+      "code": "ART_DESCRIPTOR_SELF_REFERENCE",
+      "pointer": "/files"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 989,
+    "members": 5,
+    "payload_bytes": 246
+  },
+  "archive_digest": "sha256:7e56ac985cdcc7bae777ad276a298f31fb061265ca92f2e0e5e03376e32c4435",
+  "descriptor_digest": "sha256:8a9d74078bfbfdeaa37611256f81e928d595fec093d49dcd988616927ce0b9fb"
+}

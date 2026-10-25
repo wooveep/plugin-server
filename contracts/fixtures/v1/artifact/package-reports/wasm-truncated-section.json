@@ -1,0 +1,23 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "wasm-truncated-section",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "wasm",
+  "errors": [
+    {
+      "code": "ART_WASM",
+      "pointer": "/wasm_path"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 975,
+    "members": 5,
+    "payload_bytes": 249
+  },
+  "archive_digest": "sha256:6c98125eb225413bf0913d72735032d36e0ad015dda52393397e7b7f9ffc294d",
+  "descriptor_digest": "sha256:f6f95ce8328b8fc556d0c1b6b7270096a18c206a71d57d1a76d56db2d120fbcd"
+}

@@ -1,0 +1,22 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "package-executable-script",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "archive",
+  "errors": [
+    {
+      "code": "ART_ARCHIVE_EXECUTABLE",
+      "pointer": ""
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 1059,
+    "members": 6,
+    "payload_bytes": 246
+  },
+  "archive_digest": "sha256:d28f476cd9c4725f162810cc0d0a3cfb19595e0969dfff34fbce530827afc215"
+}

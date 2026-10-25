@@ -1,0 +1,4 @@
+{
+  "result": "rejected",
+  "error_code": "idempotency_conflict"
+}

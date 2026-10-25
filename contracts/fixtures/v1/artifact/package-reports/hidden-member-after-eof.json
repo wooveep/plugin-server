@@ -1,0 +1,22 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "hidden-member-after-eof",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "archive",
+  "errors": [
+    {
+      "code": "ART_ARCHIVE",
+      "pointer": ""
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 982,
+    "members": 0,
+    "payload_bytes": 0
+  },
+  "archive_digest": "sha256:ea6a7e3651b69226b1723e7da53833af35270406ba47fe9b20b61c0a0e81959f"
+}

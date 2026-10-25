@@ -1,0 +1,25 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "descriptor",
+      "asset_id": "duplicate-env-invariant-input",
+      "path": "fixtures/artifact/canonical/duplicate-env-invariant.input.json",
+      "sha256": "76080aa96d0076b2884b2975fa5fb5127f8cf0605e3305cc77e3cb3f95e07e6b",
+      "schema_ref": "urn:modelfusion:contracts:v1:package-descriptor"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "unique",
+      "collection": {
+        "input": "descriptor",
+        "pointer": "/environment_refs"
+      },
+      "keys": [
+        "/name"
+      ],
+      "error_code": "ART_DUPLICATE_ENV"
+    }
+  ]
+}

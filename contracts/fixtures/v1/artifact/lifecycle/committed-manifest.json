@@ -1,0 +1,59 @@
+{
+  "canonicalization_version": "artifact-json.v1",
+  "schema_version": "artifact.v1",
+  "plugin_name": "offline-demo",
+  "plugin_version": "1.0.0",
+  "files": [
+    {
+      "path": "plugin.wasm",
+      "size_bytes": "8",
+      "sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+      "role": "wasm"
+    },
+    {
+      "path": "config.schema.json",
+      "size_bytes": "171",
+      "sha256": "sha256:c5a0e86b87dc62fba1def1dd561fa490a6929ee9334e56c24699797254e9f3de",
+      "role": "config_schema"
+    },
+    {
+      "path": "defaults.json",
+      "size_bytes": "17",
+      "sha256": "sha256:a050ef06ea542b8fd8781f1e945f9adcd03c7ae5190719e66ba826e2059fce12",
+      "role": "defaults"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": "50",
+      "sha256": "sha256:0d9e2bfd03787d4d3ad842ef14be80eca39ee36c4df79cef5774f16fbd9a2fb9",
+      "role": "documentation"
+    }
+  ],
+  "wasm_path": "plugin.wasm",
+  "config_schema_path": "config.schema.json",
+  "defaults_path": "defaults.json",
+  "documentation_paths": [
+    "README.md"
+  ],
+  "environment_refs": [
+    {
+      "name": "TEST_ENDPOINT",
+      "kind": "endpoint",
+      "required": false
+    }
+  ],
+  "source": {
+    "kind": "local_build",
+    "verification": "verified",
+    "repo": "https://example.invalid/fixture",
+    "commit": "1111111111111111111111111111111111111111",
+    "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build_inputs_digest": "sha256:2947f79a3a73a2f06f43896a835440cf78d28887e4c57d69369ad3861c3c66fb"
+  },
+  "artifact_id": "artifact-fixture-001",
+  "content_digest": "sha256:417833fc771c08ed4176e48fa5b58ae523168cb14011f4b5e141b202cf97d498",
+  "archive_digest": "sha256:f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+  "created_at": "2026-10-25T00:00:00Z",
+  "created_by": "fixture-principal",
+  "download_url": "http://artifact.invalid/plugins/offline-demo/1.0.0/plugin.wasm"
+}

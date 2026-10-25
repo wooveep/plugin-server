@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:modelfusion:contracts:v1:fixture-validation",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "json_schema"
+        },
+        "schema_ref": {
+          "type": "string",
+          "pattern": "^urn:[^\\s#]+(?:#.*)?$"
+        },
+        "selection": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "const": "document"
+                }
+              },
+              "required": [
+                "mode"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "const": "ndjson_records"
+                }
+              },
+              "required": [
+                "mode"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "const": "json_pointer"
+                },
+                "pointer": {
+                  "type": "string",
+                  "pattern": "^(|/.*)$"
+                }
+              },
+              "required": [
+                "mode",
+                "pointer"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "expected_stage": {
+          "enum": [
+            "parse",
+            "shape"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "schema_ref",
+        "selection",
+        "expected_stage"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "semantic",
+            "raw_case"
+          ]
+        },
+        "validator_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selection": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "const": "document"
+                }
+              },
+              "required": [
+                "mode"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "const": "ndjson_records"
+                }
+              },
+              "required": [
+                "mode"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "const": "json_pointer"
+                },
+                "pointer": {
+                  "type": "string",
+                  "pattern": "^(|/.*)$"
+                }
+              },
+              "required": [
+                "mode",
+                "pointer"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "expected_stage": {
+          "enum": [
+            "parse",
+            "shape",
+            "semantic",
+            "canonical"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "validator_id",
+        "selection",
+        "expected_stage"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "backslash-member",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "archive",
+  "errors": [
+    {
+      "code": "ART_ARCHIVE_PATH",
+      "pointer": ""
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 973,
+    "members": 2,
+    "payload_bytes": 0
+  },
+  "archive_digest": "sha256:170f324dcc753b419244cf8576ece916d7c38b166e7a15ea0caa4efc2f6724fa"
+}

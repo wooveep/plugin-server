@@ -1,0 +1,24 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "schema-unknown-local-ref",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "schema",
+  "errors": [
+    {
+      "code": "ART_CONFIG_SCHEMA",
+      "pointer": "/config_schema_path",
+      "path": "config.schema.json"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 929,
+    "members": 5,
+    "payload_bytes": 162
+  },
+  "archive_digest": "sha256:c7f9bb37492658ca775935da319ecd5f6612f6576dc32f95fa8842c512d11a32",
+  "descriptor_digest": "sha256:ba622618ab2a18e8069a3ae4bebc6ba91a17112edf48a7d1399f0c5c444d2da5"
+}

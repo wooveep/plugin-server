@@ -1,0 +1,22 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "max_member_bytes-over",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "limits",
+  "errors": [
+    {
+      "code": "ART_LIMIT",
+      "pointer": ""
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 971,
+    "members": 1,
+    "payload_bytes": 0
+  },
+  "archive_digest": "sha256:f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c"
+}

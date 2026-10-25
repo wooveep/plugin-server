@@ -1,0 +1,5 @@
+{
+  "input_asset": "unicode-not-normalized-input.bin",
+  "expected_asset": "unicode-not-normalized-expected.bin",
+  "expected_digest": "sha256:4f9aefe2a56dde33aa0522021cb5e8692f35b700043dbee664b3611e2b92f724"
+}

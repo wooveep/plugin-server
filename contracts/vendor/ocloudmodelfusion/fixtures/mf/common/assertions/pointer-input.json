@@ -1,0 +1,24 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "seed",
+      "asset_id": "frozen-input",
+      "path": "fixtures/mf/common/assertions/frozen-input.json",
+      "sha256": "955cff403884ba2aca575c4fa511d01b63a8413c4717042e9f54cce459d09502"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "eq",
+      "error_code": "A_EQ",
+      "left": {
+        "input": "seed",
+        "pointer": "/revision"
+      },
+      "right": {
+        "literal": "9007199254740993"
+      }
+    }
+  ]
+}

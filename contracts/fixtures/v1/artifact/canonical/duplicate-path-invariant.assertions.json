@@ -1,0 +1,25 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "descriptor",
+      "asset_id": "duplicate-path-invariant-input",
+      "path": "fixtures/artifact/canonical/duplicate-path-invariant.input.json",
+      "sha256": "5e14323fcac11c3eb4c2e75825538a921590955db73298cc22f5248bdaa122f5",
+      "schema_ref": "urn:modelfusion:contracts:v1:package-descriptor"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "unique",
+      "collection": {
+        "input": "descriptor",
+        "pointer": "/files"
+      },
+      "keys": [
+        "/path"
+      ],
+      "error_code": "ART_DUPLICATE_PATH"
+    }
+  ]
+}

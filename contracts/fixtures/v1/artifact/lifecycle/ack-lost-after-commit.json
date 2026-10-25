@@ -1,0 +1,98 @@
+{
+  "trace_format_version": "artifact-lifecycle-trace-v1",
+  "case_id": "ack-lost-after-commit",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "original_request_ref": {
+    "path": "lifecycle/original-request.json",
+    "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+  },
+  "original_result_ref": {
+    "path": "lifecycle/result-committed.json",
+    "sha256": "b612e1f456cc490341d61851e6c041a688c0963d1798a5482fbb7220d5c21bae"
+  },
+  "steps": [
+    {
+      "case_id": "ack-lost-after-commit",
+      "step": "1",
+      "actor_kind": "artifact_service",
+      "command": "state",
+      "input_ref": {
+        "path": "lifecycle/original-request.json",
+        "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+      },
+      "observed_result_ref": {
+        "path": "lifecycle/result-receiving.json",
+        "sha256": "1d75cd23730155c86c066c32629f617179475661330ebb8d3e46d912ae42253e"
+      },
+      "expected_next_action": "validate_payload",
+      "expected_side_effects": []
+    },
+    {
+      "case_id": "ack-lost-after-commit",
+      "step": "2",
+      "actor_kind": "artifact_service",
+      "command": "state",
+      "input_ref": {
+        "path": "lifecycle/original-request.json",
+        "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+      },
+      "observed_result_ref": {
+        "path": "lifecycle/result-validating.json",
+        "sha256": "71edc45c005dce76703032e455aa747de16f1e7a1831b82b09d530d42486e16e"
+      },
+      "expected_next_action": "commit_or_reject",
+      "expected_side_effects": []
+    },
+    {
+      "case_id": "ack-lost-after-commit",
+      "step": "3",
+      "actor_kind": "artifact_service",
+      "command": "state",
+      "input_ref": {
+        "path": "lifecycle/original-request.json",
+        "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+      },
+      "observed_result_ref": {
+        "path": "lifecycle/result-committed.json",
+        "sha256": "b612e1f456cc490341d61851e6c041a688c0963d1798a5482fbb7220d5c21bae"
+      },
+      "expected_next_action": "return_committed_artifact",
+      "expected_side_effects": [
+        "artifact_visible_once"
+      ]
+    },
+    {
+      "case_id": "ack-lost-after-commit",
+      "step": "4",
+      "actor_kind": "consumer",
+      "command": "response_timeout",
+      "input_ref": {
+        "path": "lifecycle/original-request.json",
+        "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+      },
+      "observed_result_ref": {
+        "path": "lifecycle/result-timeout.json",
+        "sha256": "4f8e22eceb622084da7593794c77da51233772f0e14761d5a332a32f3554bba8"
+      },
+      "expected_next_action": "query_original_identity",
+      "expected_side_effects": []
+    },
+    {
+      "case_id": "ack-lost-after-commit",
+      "step": "5",
+      "actor_kind": "consumer",
+      "command": "query",
+      "input_ref": {
+        "path": "lifecycle/original-request.json",
+        "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+      },
+      "observed_result_ref": {
+        "path": "lifecycle/result-query-committed.json",
+        "sha256": "850492140cbe816b167bb8044c508f35dce5b08acda425122491220883399c9c"
+      },
+      "expected_next_action": "use_original_result",
+      "expected_side_effects": []
+    }
+  ]
+}

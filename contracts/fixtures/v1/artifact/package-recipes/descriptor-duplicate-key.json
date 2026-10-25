@@ -1,0 +1,27 @@
+{
+  "recipe_version": "artifact-archive-recipe-v1",
+  "gzip_mtime": 0,
+  "tar_mtime": 0,
+  "members": [
+    {
+      "path": "package.json",
+      "text": "{\"plugin_name\":\"one\",\"plugin_name\":\"two\"}"
+    },
+    {
+      "path": "plugin.wasm",
+      "base64": "AGFzbQEAAAA="
+    },
+    {
+      "path": "config.schema.json",
+      "base64": "eyIkc2NoZW1hIjoiaHR0cHM6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQvMjAyMC0xMi9zY2hlbWEiLCJ0eXBlIjoib2JqZWN0IiwicHJvcGVydGllcyI6eyJlbmFibGVkIjp7InR5cGUiOiJib29sZWFuIn19LCJyZXF1aXJlZCI6WyJlbmFibGVkIl0sImFkZGl0aW9uYWxQcm9wZXJ0aWVzIjpmYWxzZX0K"
+    },
+    {
+      "path": "defaults.json",
+      "base64": "eyJlbmFibGVkIjp0cnVlfQo="
+    },
+    {
+      "path": "README.md",
+      "base64": "IyBPZmZsaW5lIGZpeHR1cmUKTm8gZ2F0ZXdheSBjb21wYXRpYmlsaXR5IGNsYWltLgo="
+    }
+  ]
+}

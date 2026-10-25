@@ -1,0 +1,27 @@
+{
+  "recipe_version": "artifact-archive-recipe-v1",
+  "gzip_mtime": 0,
+  "tar_mtime": 0,
+  "members": [
+    {
+      "path": "package.json",
+      "base64": "eyJjYW5vbmljYWxpemF0aW9uX3ZlcnNpb24iOiJhcnRpZmFjdC1qc29uLnYxIiwic2NoZW1hX3ZlcnNpb24iOiJhcnRpZmFjdC52MSIsInBsdWdpbl9uYW1lIjoib2ZmbGluZS1kZW1vIiwicGx1Z2luX3ZlcnNpb24iOiIxLjAuMCIsImZpbGVzIjpbeyJwYXRoIjoicGx1Z2luLndhc20iLCJzaXplX2J5dGVzIjoiOCIsInNoYTI1NiI6InNoYTI1Njo5M2E0NGJiYjk2Yzc1MTIxOGU0YzAwZDQ3OWU0YzE0MzU4MTIyYTM4OWFjY2ExNjIwNWIxZTRkMGRjNWY5NDc2Iiwicm9sZSI6Indhc20ifSx7InBhdGgiOiJjb25maWcuc2NoZW1hLmpzb24iLCJzaXplX2J5dGVzIjoiOTkiLCJzaGEyNTYiOiJzaGEyNTY6ZDRjOTE0NWJmMTNiMmQwMThjMjM5ZTUxOGE1ODMzOWY2YmJkZGZiMDlhY2VkZTM0Y2RmN2IwYzRhOTUzMDQ4YyIsInJvbGUiOiJjb25maWdfc2NoZW1hIn0seyJwYXRoIjoiZGVmYXVsdHMuanNvbiIsInNpemVfYnl0ZXMiOiIxNyIsInNoYTI1NiI6InNoYTI1NjphMDUwZWYwNmVhNTQyYjhmZDg3ODFmMWU5NDVmOWFkY2QwM2M3YWU1MTkwNzE5ZTY2YmE4MjZlMjA1OWZjZTEyIiwicm9sZSI6ImRlZmF1bHRzIn0seyJwYXRoIjoiUkVBRE1FLm1kIiwic2l6ZV9ieXRlcyI6IjUwIiwic2hhMjU2Ijoic2hhMjU2OjBkOWUyYmZkMDM3ODdkNGQzYWQ4NDJlZjE0YmU4MGVjYTM5ZWUzNmM0ZGY3OWNlZjU3NzRmMTZmYmQ5YTJmYjkiLCJyb2xlIjoiZG9jdW1lbnRhdGlvbiJ9XSwid2FzbV9wYXRoIjoicGx1Z2luLndhc20iLCJjb25maWdfc2NoZW1hX3BhdGgiOiJjb25maWcuc2NoZW1hLmpzb24iLCJkZWZhdWx0c19wYXRoIjoiZGVmYXVsdHMuanNvbiIsImRvY3VtZW50YXRpb25fcGF0aHMiOlsiUkVBRE1FLm1kIl0sImVudmlyb25tZW50X3JlZnMiOlt7Im5hbWUiOiJURVNUX0VORFBPSU5UIiwia2luZCI6ImVuZHBvaW50IiwicmVxdWlyZWQiOmZhbHNlfV0sInNvdXJjZSI6eyJraW5kIjoibG9jYWxfYnVpbGQiLCJ2ZXJpZmljYXRpb24iOiJ2ZXJpZmllZCIsInJlcG8iOiJodHRwczovL2V4YW1wbGUuaW52YWxpZC9maXh0dXJlIiwiY29tbWl0IjoiMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMSIsImRpcnR5X2RpZ2VzdCI6InNoYTI1NjplM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiYnVpbGRfaW5wdXRzX2RpZ2VzdCI6InNoYTI1NjoyOTQ3Zjc5YTNhNzNhMmYwNmY0Mzg5NmE4MzU0NDBjZjc4ZDI4ODg3ZTRjNTdkNjkzNjlhZDM4NjFjM2M2NmZiIn19Cg=="
+    },
+    {
+      "path": "plugin.wasm",
+      "base64": "AGFzbQEAAAA="
+    },
+    {
+      "path": "config.schema.json",
+      "base64": "eyIkc2NoZW1hIjoiaHR0cHM6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQvMjAyMC0xMi9zY2hlbWEiLCIkcmVmIjoiaHR0cHM6Ly9ibG9ja2VkLmludmFsaWQvc2NoZW1hIn0K"
+    },
+    {
+      "path": "defaults.json",
+      "base64": "eyJlbmFibGVkIjp0cnVlfQo="
+    },
+    {
+      "path": "README.md",
+      "base64": "IyBPZmZsaW5lIGZpeHR1cmUKTm8gZ2F0ZXdheSBjb21wYXRpYmlsaXR5IGNsYWltLgo="
+    }
+  ]
+}

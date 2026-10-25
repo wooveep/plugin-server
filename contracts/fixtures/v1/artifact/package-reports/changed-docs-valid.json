@@ -1,0 +1,50 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "changed-docs-valid",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "valid",
+  "validation_stage": "complete",
+  "errors": [],
+  "statistics": {
+    "archive_bytes": 948,
+    "members": 5,
+    "payload_bytes": 220
+  },
+  "archive_digest": "sha256:2bfb41f753965b9ecf32c50eb404696b17a06861ce920a4cf6686f235af194eb",
+  "descriptor_digest": "sha256:dd3ea43220f4d10f413d036c1b3e2490a03282032ebd3a75861245f17298812c",
+  "normalized_content_digest": "sha256:5eada2d27f23a7aa67be7587f81c09e85287cd832099b508b89c77ff848f6f49",
+  "expected_files": [
+    {
+      "path": "package.json",
+      "size_bytes": "1277",
+      "sha256": "sha256:dd3ea43220f4d10f413d036c1b3e2490a03282032ebd3a75861245f17298812c"
+    },
+    {
+      "path": "plugin.wasm",
+      "size_bytes": "8",
+      "sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+      "role": "wasm"
+    },
+    {
+      "path": "config.schema.json",
+      "size_bytes": "171",
+      "sha256": "sha256:c5a0e86b87dc62fba1def1dd561fa490a6929ee9334e56c24699797254e9f3de",
+      "role": "config_schema"
+    },
+    {
+      "path": "defaults.json",
+      "size_bytes": "17",
+      "sha256": "sha256:a050ef06ea542b8fd8781f1e945f9adcd03c7ae5190719e66ba826e2059fce12",
+      "role": "defaults"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": "24",
+      "sha256": "sha256:c5080328d0ffe9aa422a4cacfd8ecb8f7e621c6b267d02e4efec7ed18c98f620",
+      "role": "documentation"
+    }
+  ]
+}

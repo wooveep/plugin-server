@@ -1,0 +1,5 @@
+{
+  "input_asset": "absence-null-input.bin",
+  "expected_asset": "absence-null-expected.bin",
+  "expected_digest": "sha256:af8ee4aeeda18e78cdd4f9d13793860638807cabb9f9ef368ed653f821539a05"
+}

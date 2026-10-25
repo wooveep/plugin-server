@@ -1,0 +1,24 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "spec-wrapper-is-not-schema",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "schema",
+  "errors": [
+    {
+      "code": "ART_CONFIG_SCHEMA",
+      "pointer": "/config_schema_path",
+      "path": "config.schema.json"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 920,
+    "members": 5,
+    "payload_bytes": 139
+  },
+  "archive_digest": "sha256:a5f8ab8b962fe44320d35a75e09608d421962cbba4346dcd02e2fbdf87947e09",
+  "descriptor_digest": "sha256:5d8b82b7c9172a7a1f6f32bd5e0d266813bbe1aa4258fd5cc1b0815430f5d962"
+}

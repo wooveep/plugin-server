@@ -1,0 +1,8 @@
+{
+  "retention_action": "retain",
+  "references": [
+    "active_release",
+    "media_operation",
+    "rollback"
+  ]
+}

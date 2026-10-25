@@ -1,0 +1,23 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "forged-server-receipt",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "shape",
+  "errors": [
+    {
+      "code": "E_SCHEMA_SHAPE",
+      "pointer": "/"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 983,
+    "members": 5,
+    "payload_bytes": 246
+  },
+  "archive_digest": "sha256:67553fd8b4a55675ecbba4532a8a9908397da460b346b6d8770678adc8dff44b",
+  "descriptor_digest": "sha256:e0048a7568b33b4ee0da4448c7ce00bfb632b7cff24730256e8aef8d8e351141"
+}

@@ -1,0 +1,22 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "hardlink-member",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "archive",
+  "errors": [
+    {
+      "code": "ART_ARCHIVE_LINK",
+      "pointer": ""
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 973,
+    "members": 2,
+    "payload_bytes": 0
+  },
+  "archive_digest": "sha256:68ad73171aea7c3875b02b678afc4945f27e5e5cd3dbc2d1a17e1107cd640fd5"
+}

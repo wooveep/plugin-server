@@ -1,74 +1,517 @@
 {
-  "preparation_status": "draft",
-  "domain_validation": "not_run",
-  "prepared_for_card": "D0-ART-03",
-  "integration_owner": "D0-ART-01",
-  "not_a_bundle_or_lock": true,
-  "registration_status": "proposed_only; no frozen validator/schema_ref and no publication manifest exists",
-  "proposals": [
+  "owner": "D0-ART-03",
+  "bundle_input": "art-contracts-2026-10-25.2",
+  "assets": [
     {
-      "source_ref": {
-        "path": "lifecycle-cases.json",
-        "sha256": "73bcd2998d706227a46118028280ad7552e364808387e1f30f7a22550973a872"
-      },
-      "proposed_package_path": "fixtures/artifact/lifecycle-cases.json",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/consumer-expectations.md",
+      "path": "fixtures/artifact/consumer-expectations.md",
+      "sha256": "6f835579f56160ffca7cb5ee024e64004b21c63420a743d49ff766bc324ac2c8",
+      "asset_id": "artifact-lifecycle-artifact-consumer-expectations-md",
+      "media_type": "text/markdown"
     },
     {
-      "source_ref": {
-        "path": "lifecycle/inputs.json",
-        "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138"
-      },
-      "proposed_package_path": "fixtures/artifact/lifecycle/inputs.json",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/consumer-handoff.json",
+      "path": "fixtures/artifact/consumer-handoff.json",
+      "sha256": "c5005a846a89b46a4fd667821e517e7a738e45553f01099686b7e88191b3b1d2",
+      "asset_id": "artifact-lifecycle-artifact-consumer-handoff-json",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "lifecycle/observations.json",
-        "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb"
-      },
-      "proposed_package_path": "fixtures/artifact/lifecycle/observations.json",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/lifecycle/ack-lost-after-commit.json",
+      "path": "fixtures/artifact/lifecycle/ack-lost-after-commit.json",
+      "sha256": "cb95d0970ba9a6651e880a1b0169a932581189f98e57819110d90659a2766e42",
+      "asset_id": "artifact-lifecycle-lifecycle-ack-lost-after-commit-json",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab"
-      },
-      "proposed_package_path": "fixtures/artifact/lifecycle/scenarios.json",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/lifecycle/active-media-rollback-retained.json",
+      "path": "fixtures/artifact/lifecycle/active-media-rollback-retained.json",
+      "sha256": "3367851c381bdc3ac7739dd7416cc0229f6f12d3f66b3b5f8d02acc4a2485ee0",
+      "asset_id": "artifact-lifecycle-lifecycle-active-media-rollback-retained-json",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "readback/expected-files.json",
-        "sha256": "63f507541d59bd54e5cd18b28053f3ee6d59f3c79e4ee7d4f00476595c5b8a46"
-      },
-      "proposed_package_path": "fixtures/artifact/readback/expected-files.json",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/lifecycle/alternate-compression-request.json",
+      "path": "fixtures/artifact/lifecycle/alternate-compression-request.json",
+      "sha256": "3d0e179a3b360256305dfb064720efdb39ce182e6ba0bc4c12d94b5b9a7736da",
+      "asset_id": "artifact-lifecycle-lifecycle-alternate-compression-request-json",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "readback/cases.json",
-        "sha256": "b74951fb68d7c8089a8666ee9a1f404505abc879858c33dbc8331187b975820a"
-      },
-      "proposed_package_path": "fixtures/artifact/readback/cases.json",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/lifecycle/catalog-registration-failed.json",
+      "path": "fixtures/artifact/lifecycle/catalog-registration-failed.json",
+      "sha256": "953e3ea4b7faee2f1da43d09583a9088e9d596f3c00cdb9c130d75536f5d4a1f",
+      "asset_id": "artifact-lifecycle-lifecycle-catalog-registration-failed-json",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "consumer-handoff.json",
-        "sha256": "e85409b34d1d6052a3ae53401f879bbbadaaf7037092613e2fa0c1be2c1dbc0d"
-      },
-      "proposed_package_path": "fixtures/artifact/consumer-handoff.json",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/lifecycle/changed-content-request.json",
+      "path": "fixtures/artifact/lifecycle/changed-content-request.json",
+      "sha256": "bcd46befe374b58aa51a9a01e37faeaa02c5b3e00a7525cb586fcda30209892a",
+      "asset_id": "artifact-lifecycle-lifecycle-changed-content-request-json",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "consumer-expectations.md",
-        "sha256": "fefdbab0ed98a4c1d9e23415a38393f613c3e110dc38009e3241fe1abab17c30"
-      },
-      "proposed_package_path": "fixtures/artifact/consumer-expectations.md",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/lifecycle/commit-success.json",
+      "path": "fixtures/artifact/lifecycle/commit-success.json",
+      "sha256": "1e09b63f07b5ead07750b23d73a8b7ff2e9354ea6648ec7b841e8ce5a7d0dd2a",
+      "asset_id": "artifact-lifecycle-lifecycle-commit-success-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/committed-manifest.json",
+      "path": "fixtures/artifact/lifecycle/committed-manifest.json",
+      "sha256": "16c9b6c9ff69558c723a05a93be6dd6677e6ca9bbbf6ae43299e9d0a012f6417",
+      "asset_id": "artifact-lifecycle-lifecycle-committed-manifest-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/delete-response-unknown.json",
+      "path": "fixtures/artifact/lifecycle/delete-response-unknown.json",
+      "sha256": "2244fa00916b5949c15dd5e80b6b6d759197aa177fa625e53a50297d55be4264",
+      "asset_id": "artifact-lifecycle-lifecycle-delete-response-unknown-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/disconnect-before-commit.json",
+      "path": "fixtures/artifact/lifecycle/disconnect-before-commit.json",
+      "sha256": "5e593f1d7c266db5dadc55e4121db02064a7af6392da323d0bd1c5715add7c0a",
+      "asset_id": "artifact-lifecycle-lifecycle-disconnect-before-commit-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/http-readback-unavailable.json",
+      "path": "fixtures/artifact/lifecycle/http-readback-unavailable.json",
+      "sha256": "3630fca92fc1db15ed7ed85d710ec2a05e0776f62509a2969c13c424e10eede7",
+      "asset_id": "artifact-lifecycle-lifecycle-http-readback-unavailable-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/inputs.json",
+      "path": "fixtures/artifact/lifecycle/inputs.json",
+      "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+      "asset_id": "artifact-lifecycle-lifecycle-inputs-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-artifact-implies-ready.json",
+      "path": "fixtures/artifact/lifecycle/invalid-artifact-implies-ready.json",
+      "sha256": "021e797042544802934f9847b05099961804fd359faa57388f164e87d9cf9eba",
+      "asset_id": "artifact-lifecycle-lifecycle-invalid-artifact-implies-ready-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-committed-regression.json",
+      "path": "fixtures/artifact/lifecycle/invalid-committed-regression.json",
+      "sha256": "d060c4d77dd78a143b3cc9dcee9df03a792f712094381bd49600b336db90661a",
+      "asset_id": "artifact-lifecycle-lifecycle-invalid-committed-regression-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-delete-live-reference.json",
+      "path": "fixtures/artifact/lifecycle/invalid-delete-live-reference.json",
+      "sha256": "d8aaee4fdcb3518fe80ca9efde50825116fb42be36cb15f74d0d2933cb143929",
+      "asset_id": "artifact-lifecycle-lifecycle-invalid-delete-live-reference-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-first-archive-overwrite.json",
+      "path": "fixtures/artifact/lifecycle/invalid-first-archive-overwrite.json",
+      "sha256": "4d67609f0de227f89a782182a634446e405b7d774bdec098f84bdd0e6c5c684d",
+      "asset_id": "artifact-lifecycle-lifecycle-invalid-first-archive-overwrite-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-unknown-as-failed.json",
+      "path": "fixtures/artifact/lifecycle/invalid-unknown-as-failed.json",
+      "sha256": "a87055a10613a768e9eee38eef73c1d966e3a922679b71504d4c4741cb42d9da",
+      "asset_id": "artifact-lifecycle-lifecycle-invalid-unknown-as-failed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-version-overwrite.json",
+      "path": "fixtures/artifact/lifecycle/invalid-version-overwrite.json",
+      "sha256": "801fafeee38f5716ddfd92c8a5d093b47b0af50647f2e3a14cd5b65e04e531f0",
+      "asset_id": "artifact-lifecycle-lifecycle-invalid-version-overwrite-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/io-failed-before-commit.json",
+      "path": "fixtures/artifact/lifecycle/io-failed-before-commit.json",
+      "sha256": "566bf57a482e39e7725a6608f2f12fe6a821f571d8b0372829d5c7b85431659f",
+      "asset_id": "artifact-lifecycle-lifecycle-io-failed-before-commit-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/legacy-compatible-read.json",
+      "path": "fixtures/artifact/lifecycle/legacy-compatible-read.json",
+      "sha256": "ac52a0ceb34d0cde645ef76c71bcb81e2892229e6fdd056e99f7933f7720be80",
+      "asset_id": "artifact-lifecycle-lifecycle-legacy-compatible-read-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/observations.json",
+      "path": "fixtures/artifact/lifecycle/observations.json",
+      "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+      "asset_id": "artifact-lifecycle-lifecycle-observations-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/original-request.json",
+      "path": "fixtures/artifact/lifecycle/original-request.json",
+      "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21",
+      "asset_id": "artifact-lifecycle-lifecycle-original-request-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/query-itself-times-out.json",
+      "path": "fixtures/artifact/lifecycle/query-itself-times-out.json",
+      "sha256": "55eaf9f4f5d17c01f964cd91bcfb5c22036355c8a79879f2803d4197b4116b48",
+      "asset_id": "artifact-lifecycle-lifecycle-query-itself-times-out-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-committed.json",
+      "path": "fixtures/artifact/lifecycle/result-committed.json",
+      "sha256": "b612e1f456cc490341d61851e6c041a688c0963d1798a5482fbb7220d5c21bae",
+      "asset_id": "artifact-lifecycle-lifecycle-result-committed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-delete-unknown.json",
+      "path": "fixtures/artifact/lifecycle/result-delete-unknown.json",
+      "sha256": "d8841e3a4c703232f6449413cf35596892a9e6ef581be0c2db5466abca259451",
+      "asset_id": "artifact-lifecycle-lifecycle-result-delete-unknown-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-failed.json",
+      "path": "fixtures/artifact/lifecycle/result-failed.json",
+      "sha256": "1727501da98fc695dd4fcc47734ab92af816c75d9c5a6470256180b74ded7045",
+      "asset_id": "artifact-lifecycle-lifecycle-result-failed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-http-unreadable.json",
+      "path": "fixtures/artifact/lifecycle/result-http-unreadable.json",
+      "sha256": "fb9a510abaa68d33f151d564279194a33ec746e2e3a360eab65779a6eb1a2e77",
+      "asset_id": "artifact-lifecycle-lifecycle-result-http-unreadable-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-idempotency-conflict.json",
+      "path": "fixtures/artifact/lifecycle/result-idempotency-conflict.json",
+      "sha256": "ca86a729fef07e3441191d4e86126e28559d953612a0a65f2290a94866e9fe21",
+      "asset_id": "artifact-lifecycle-lifecycle-result-idempotency-conflict-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-invalid-conflict.json",
+      "path": "fixtures/artifact/lifecycle/result-invalid-conflict.json",
+      "sha256": "37bbe8c714f3d08ab5e756bde1ba13742c9d6ea133b79b8509a8abc4acfa5b71",
+      "asset_id": "artifact-lifecycle-lifecycle-result-invalid-conflict-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-invalid-ready.json",
+      "path": "fixtures/artifact/lifecycle/result-invalid-ready.json",
+      "sha256": "ffd535e3d6b8aeb1d9cde177919e38a99283380a33fd654954e32f8febabc0d2",
+      "asset_id": "artifact-lifecycle-lifecycle-result-invalid-ready-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-invalid-replay.json",
+      "path": "fixtures/artifact/lifecycle/result-invalid-replay.json",
+      "sha256": "1d48fe5be62f50de7934c769c657d83cc17a68bea48d0fc979f3575423a43fc4",
+      "asset_id": "artifact-lifecycle-lifecycle-result-invalid-replay-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-invalid-retention.json",
+      "path": "fixtures/artifact/lifecycle/result-invalid-retention.json",
+      "sha256": "f28686cfbd31be5b6b99e7671a10e23764d243f69387ebdbdb706c01155949ae",
+      "asset_id": "artifact-lifecycle-lifecycle-result-invalid-retention-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-invalid-timeout.json",
+      "path": "fixtures/artifact/lifecycle/result-invalid-timeout.json",
+      "sha256": "bf5c5dcdbac46e2f1ffe3054a253feba0c114ad524a61b2ea232eef488987d2f",
+      "asset_id": "artifact-lifecycle-lifecycle-result-invalid-timeout-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-legacy.json",
+      "path": "fixtures/artifact/lifecycle/result-legacy.json",
+      "sha256": "73041f61408308867fb64306e161d561b80c28ca5dd0bb07fecb3f2cbfcbabb9",
+      "asset_id": "artifact-lifecycle-lifecycle-result-legacy-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-query-committed.json",
+      "path": "fixtures/artifact/lifecycle/result-query-committed.json",
+      "sha256": "850492140cbe816b167bb8044c508f35dce5b08acda425122491220883399c9c",
+      "asset_id": "artifact-lifecycle-lifecycle-result-query-committed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-query-missing.json",
+      "path": "fixtures/artifact/lifecycle/result-query-missing.json",
+      "sha256": "d16cf9de40920a3fcc9e44ac24a11fea33947edaad9350c448b7802a5d1e706f",
+      "asset_id": "artifact-lifecycle-lifecycle-result-query-missing-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-query-timeout.json",
+      "path": "fixtures/artifact/lifecycle/result-query-timeout.json",
+      "sha256": "4f8e22eceb622084da7593794c77da51233772f0e14761d5a332a32f3554bba8",
+      "asset_id": "artifact-lifecycle-lifecycle-result-query-timeout-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-receiving.json",
+      "path": "fixtures/artifact/lifecycle/result-receiving.json",
+      "sha256": "1d75cd23730155c86c066c32629f617179475661330ebb8d3e46d912ae42253e",
+      "asset_id": "artifact-lifecycle-lifecycle-result-receiving-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-registration-failed.json",
+      "path": "fixtures/artifact/lifecycle/result-registration-failed.json",
+      "sha256": "344775cd08b35cb038f6dd07e8f670fe0b5126fc9e98a2018546dcc2e42b329d",
+      "asset_id": "artifact-lifecycle-lifecycle-result-registration-failed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-rejected.json",
+      "path": "fixtures/artifact/lifecycle/result-rejected.json",
+      "sha256": "f9752bf51c42fc00d7148a91cf4dcd2f7e1ebc85fd873bd9a5935d8e9f95e61a",
+      "asset_id": "artifact-lifecycle-lifecycle-result-rejected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-replay.json",
+      "path": "fixtures/artifact/lifecycle/result-replay.json",
+      "sha256": "8739906a2428c44f826f983bde6ad5b89a0a1e668e0b5387da71e32e9ae66e46",
+      "asset_id": "artifact-lifecycle-lifecycle-result-replay-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-retain-live.json",
+      "path": "fixtures/artifact/lifecycle/result-retain-live.json",
+      "sha256": "151e2c174b8072922e4a5e395cc6868cebc01dd67c0747b0ae867ca54bffb9ed",
+      "asset_id": "artifact-lifecycle-lifecycle-result-retain-live-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-timeout.json",
+      "path": "fixtures/artifact/lifecycle/result-timeout.json",
+      "sha256": "4f8e22eceb622084da7593794c77da51233772f0e14761d5a332a32f3554bba8",
+      "asset_id": "artifact-lifecycle-lifecycle-result-timeout-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-validating.json",
+      "path": "fixtures/artifact/lifecycle/result-validating.json",
+      "sha256": "71edc45c005dce76703032e455aa747de16f1e7a1831b82b09d530d42486e16e",
+      "asset_id": "artifact-lifecycle-lifecycle-result-validating-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-version-conflict.json",
+      "path": "fixtures/artifact/lifecycle/result-version-conflict.json",
+      "sha256": "93046eaab9e111e14264718eb6ca139945923aad5e0bd596bf2b4aa3db995d59",
+      "asset_id": "artifact-lifecycle-lifecycle-result-version-conflict-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/same-content-different-archive.json",
+      "path": "fixtures/artifact/lifecycle/same-content-different-archive.json",
+      "sha256": "6ddb46cf64d2d15376948e8b86ebe3540bc399afa28f2fd4bfb3198cfdccd188",
+      "asset_id": "artifact-lifecycle-lifecycle-same-content-different-archive-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/same-key-different-content.json",
+      "path": "fixtures/artifact/lifecycle/same-key-different-content.json",
+      "sha256": "b2897a1c6cdbb5d708094db0f0e6970cf1286422b62e3be988b87fd1140af54d",
+      "asset_id": "artifact-lifecycle-lifecycle-same-key-different-content-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/same-upload-replay.json",
+      "path": "fixtures/artifact/lifecycle/same-upload-replay.json",
+      "sha256": "7037b2ce1afc2b737bcde59763584e960134a420ceb4d63799626b7d2652bc40",
+      "asset_id": "artifact-lifecycle-lifecycle-same-upload-replay-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/same-version-different-content.json",
+      "path": "fixtures/artifact/lifecycle/same-version-different-content.json",
+      "sha256": "6c2d11082f1a40afb5a768e186d0f03f44567201c41246825c4bee97c364c2af",
+      "asset_id": "artifact-lifecycle-lifecycle-same-version-different-content-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/scenarios.json",
+      "path": "fixtures/artifact/lifecycle/scenarios.json",
+      "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+      "asset_id": "artifact-lifecycle-lifecycle-scenarios-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/validation-rejected.json",
+      "path": "fixtures/artifact/lifecycle/validation-rejected.json",
+      "sha256": "12bf4a5f16c56789a7ad95ae82eea379d0b914f634bf4dd8b5a6f79c2d729487",
+      "asset_id": "artifact-lifecycle-lifecycle-validation-rejected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/version-conflict-request.json",
+      "path": "fixtures/artifact/lifecycle/version-conflict-request.json",
+      "sha256": "ef07b464bd458aaeb7b0b5c3c730f1c39cab432d94c8106b5751ec9e8dde4a86",
+      "asset_id": "artifact-lifecycle-lifecycle-version-conflict-request-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle-cases.json",
+      "path": "fixtures/artifact/lifecycle-cases.json",
+      "sha256": "30f5d2b5056e68a3eafa90c5b290e16b41180d61bee159f678aff765a25b0f8c",
+      "asset_id": "artifact-lifecycle-artifact-lifecycle-cases-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/all-instances-complete.expected.json",
+      "path": "fixtures/artifact/readback/all-instances-complete.expected.json",
+      "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8",
+      "asset_id": "artifact-lifecycle-readback-all-instances-complete-expected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/all-instances-complete.observed.json",
+      "path": "fixtures/artifact/readback/all-instances-complete.observed.json",
+      "sha256": "811bfa97bb703860662160eeddbc29ebf8c803aa00aef9697c692e0e770f48ae",
+      "asset_id": "artifact-lifecycle-readback-all-instances-complete-observed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/cases.json",
+      "path": "fixtures/artifact/readback/cases.json",
+      "sha256": "a943e6e184a9df152e2f8b72f8939d3f88da2ed043155cb229c393f521258c54",
+      "asset_id": "artifact-lifecycle-readback-cases-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/empty-expected.expected.json",
+      "path": "fixtures/artifact/readback/empty-expected.expected.json",
+      "sha256": "a17c3799d4766fe6f4bbbd4844e7d647a4937bf7b0bd6714b2d67bc9a5b9d389",
+      "asset_id": "artifact-lifecycle-readback-empty-expected-expected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/empty-expected.observed.json",
+      "path": "fixtures/artifact/readback/empty-expected.observed.json",
+      "sha256": "811bfa97bb703860662160eeddbc29ebf8c803aa00aef9697c692e0e770f48ae",
+      "asset_id": "artifact-lifecycle-readback-empty-expected-observed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/expected-files.json",
+      "path": "fixtures/artifact/readback/expected-files.json",
+      "sha256": "63f507541d59bd54e5cd18b28053f3ee6d59f3c79e4ee7d4f00476595c5b8a46",
+      "asset_id": "artifact-lifecycle-readback-expected-files-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/expected-missing-manifest.expected.json",
+      "path": "fixtures/artifact/readback/expected-missing-manifest.expected.json",
+      "sha256": "6bc899367c1a36cf399dd28fb8819b2d4826c44a8c123de1a8e4538befd58d97",
+      "asset_id": "artifact-lifecycle-readback-expected-missing-manifest-expected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/expected-missing-manifest.observed.json",
+      "path": "fixtures/artifact/readback/expected-missing-manifest.observed.json",
+      "sha256": "811bfa97bb703860662160eeddbc29ebf8c803aa00aef9697c692e0e770f48ae",
+      "asset_id": "artifact-lifecycle-readback-expected-missing-manifest-observed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/expected.json",
+      "path": "fixtures/artifact/readback/expected.json",
+      "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8",
+      "asset_id": "artifact-lifecycle-readback-expected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/http-200-wrong-digest.expected.json",
+      "path": "fixtures/artifact/readback/http-200-wrong-digest.expected.json",
+      "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8",
+      "asset_id": "artifact-lifecycle-readback-http-200-wrong-digest-expected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/http-200-wrong-digest.observed.json",
+      "path": "fixtures/artifact/readback/http-200-wrong-digest.observed.json",
+      "sha256": "d007e3094f7df7b7855306dd5ec042d5c46052bdd955ceb7d2c91824440b9238",
+      "asset_id": "artifact-lifecycle-readback-http-200-wrong-digest-observed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/manifest-http-missing.expected.json",
+      "path": "fixtures/artifact/readback/manifest-http-missing.expected.json",
+      "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8",
+      "asset_id": "artifact-lifecycle-readback-manifest-http-missing-expected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/manifest-http-missing.observed.json",
+      "path": "fixtures/artifact/readback/manifest-http-missing.observed.json",
+      "sha256": "36ae5c5da959d5dc3ca1f98fb404571fae9157498a853cf66c97210bfc4af922",
+      "asset_id": "artifact-lifecycle-readback-manifest-http-missing-observed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/observed-missing-payload.expected.json",
+      "path": "fixtures/artifact/readback/observed-missing-payload.expected.json",
+      "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8",
+      "asset_id": "artifact-lifecycle-readback-observed-missing-payload-expected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/observed-missing-payload.observed.json",
+      "path": "fixtures/artifact/readback/observed-missing-payload.observed.json",
+      "sha256": "e75585012fb85bf0cea8822571f9cd6ba2afee482f4796dd4bea2b36ab30cd0e",
+      "asset_id": "artifact-lifecycle-readback-observed-missing-payload-observed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/only-first-instance.expected.json",
+      "path": "fixtures/artifact/readback/only-first-instance.expected.json",
+      "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8",
+      "asset_id": "artifact-lifecycle-readback-only-first-instance-expected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/only-first-instance.observed.json",
+      "path": "fixtures/artifact/readback/only-first-instance.observed.json",
+      "sha256": "2d226bf33f93ca79ca77ff55ee447002aad9e524fcd8527074fb8a176bf26cdc",
+      "asset_id": "artifact-lifecycle-readback-only-first-instance-observed-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/temporary-directory-only.expected.json",
+      "path": "fixtures/artifact/readback/temporary-directory-only.expected.json",
+      "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8",
+      "asset_id": "artifact-lifecycle-readback-temporary-directory-only-expected-json",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/temporary-directory-only.observed.json",
+      "path": "fixtures/artifact/readback/temporary-directory-only.observed.json",
+      "sha256": "c0e23b25e9f515c3d76448f23c5750478908d4453284b7a9d601e9d8aed7e651",
+      "asset_id": "artifact-lifecycle-readback-temporary-directory-only-observed-json",
+      "media_type": "application/json"
     }
   ]
 }

@@ -1,0 +1,82 @@
+{
+  "trace_format_version": "artifact-lifecycle-trace-v1",
+  "case_id": "same-version-different-content",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "original_request_ref": {
+    "path": "lifecycle/original-request.json",
+    "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+  },
+  "original_result_ref": {
+    "path": "lifecycle/result-committed.json",
+    "sha256": "b612e1f456cc490341d61851e6c041a688c0963d1798a5482fbb7220d5c21bae"
+  },
+  "steps": [
+    {
+      "case_id": "same-version-different-content",
+      "step": "1",
+      "actor_kind": "artifact_service",
+      "command": "state",
+      "input_ref": {
+        "path": "lifecycle/original-request.json",
+        "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+      },
+      "observed_result_ref": {
+        "path": "lifecycle/result-receiving.json",
+        "sha256": "1d75cd23730155c86c066c32629f617179475661330ebb8d3e46d912ae42253e"
+      },
+      "expected_next_action": "validate_payload",
+      "expected_side_effects": []
+    },
+    {
+      "case_id": "same-version-different-content",
+      "step": "2",
+      "actor_kind": "artifact_service",
+      "command": "state",
+      "input_ref": {
+        "path": "lifecycle/original-request.json",
+        "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+      },
+      "observed_result_ref": {
+        "path": "lifecycle/result-validating.json",
+        "sha256": "71edc45c005dce76703032e455aa747de16f1e7a1831b82b09d530d42486e16e"
+      },
+      "expected_next_action": "commit_or_reject",
+      "expected_side_effects": []
+    },
+    {
+      "case_id": "same-version-different-content",
+      "step": "3",
+      "actor_kind": "artifact_service",
+      "command": "state",
+      "input_ref": {
+        "path": "lifecycle/original-request.json",
+        "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+      },
+      "observed_result_ref": {
+        "path": "lifecycle/result-committed.json",
+        "sha256": "b612e1f456cc490341d61851e6c041a688c0963d1798a5482fbb7220d5c21bae"
+      },
+      "expected_next_action": "return_committed_artifact",
+      "expected_side_effects": [
+        "artifact_visible_once"
+      ]
+    },
+    {
+      "case_id": "same-version-different-content",
+      "step": "4",
+      "actor_kind": "artifact_service",
+      "command": "compare_identity",
+      "input_ref": {
+        "path": "lifecycle/version-conflict-request.json",
+        "sha256": "ef07b464bd458aaeb7b0b5c3c730f1c39cab432d94c8106b5751ec9e8dde4a86"
+      },
+      "observed_result_ref": {
+        "path": "lifecycle/result-version-conflict.json",
+        "sha256": "93046eaab9e111e14264718eb6ca139945923aad5e0bd596bf2b4aa3db995d59"
+      },
+      "expected_next_action": "reconcile_identity",
+      "expected_side_effects": []
+    }
+  ]
+}

@@ -1,785 +1,634 @@
 {
-  "preparation_status": "draft",
-  "domain_validation": "not_run",
-  "consumer_receipts": "not_run",
-  "assignment": {
-    "acting_agent": "Codex agent /root/artifact_fixture_prep",
-    "assignee": "待确认",
-    "backup": "待确认",
-    "source_branch": "chore/retire-legacy-workflow-20261022",
-    "source_revision": "08ea31ddc2f9b077573961a5cd0d31fbcaf593e0",
-    "planned_date": "待确认"
+  "fixture_format_version": "artifact-package-cases-v1",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "policy": {
+    "policy_version": "offline-fixture-limits-v1",
+    "max_archive_bytes": 65536,
+    "max_tar_bytes": 131072,
+    "max_members": 12,
+    "max_total_payload_bytes": 32768,
+    "max_member_bytes": 16384,
+    "allowed_environment_refs": [
+      {
+        "name": "TEST_ENDPOINT",
+        "kind": "endpoint",
+        "required": false
+      }
+    ],
+    "synthetic_forbidden_marker": "SYNTHETIC_SECRET_DO_NOT_PUBLISH",
+    "approved_source_digests": [
+      "sha256:8e130f83cf9f674476afde7ca8358f7bcd589455727208c1a94944b9104228a1"
+    ]
   },
-  "input_bundle_refs": [
-    {
-      "task_id": "D0-MF-01",
-      "bundle_version": null,
-      "manifest_sha256": null,
-      "status": "awaiting_frozen_input"
-    },
-    {
-      "task_id": "D0-ART-01@manifest",
-      "bundle_version": null,
-      "manifest_sha256": null,
-      "status": "not_produced"
-    }
-  ],
   "cases": [
     {
-      "case_id": "ART-PKG-001",
-      "archive_ref": {
-        "path": "packages/minimal-a.tar.gz",
-        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
-      },
-      "recipe_ref": {
-        "path": "package-recipes/minimal.json",
-        "sha256": "4bc89a60c6d426f29596097401c399a34f5ee23fbe188bc9c42bba1dbf2c2fd6"
-      },
+      "case_id": "package-valid",
+      "recipe": "package-recipes/package-valid.json",
+      "archive": "packages/package-valid.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "valid",
-        "stage": "complete",
-        "error_code": null,
-        "content_digest": "sha256:b6c8be8990230750dc2e5ab60a8e2dca2efa91f6f3add4a4acf44dceaea940af"
-      },
-      "materialized": true,
-      "domain_validation": "not_run"
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-PKG-002",
-      "archive_ref": {
-        "path": "packages/minimal-b.tar.gz",
-        "sha256": "472079989f5cb9493889c27de7b076356ab5d2b56433c85e491a1872fafcb404"
-      },
-      "recipe_ref": {
-        "path": "package-recipes/minimal.json",
-        "sha256": "4bc89a60c6d426f29596097401c399a34f5ee23fbe188bc9c42bba1dbf2c2fd6"
-      },
+      "case_id": "package-same-content-different-compression",
+      "recipe": "package-recipes/package-same-content-different-compression.json",
+      "archive": "packages/package-same-content-different-compression.tgz",
+      "archive_sha256": "952b3aee9fdfbef56752c2f9288425a7ea91ac7abfd41b2202a12aa53902f3cf",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "valid",
-        "stage": "complete",
-        "error_code": null,
-        "content_digest": "sha256:b6c8be8990230750dc2e5ab60a8e2dca2efa91f6f3add4a4acf44dceaea940af"
-      },
-      "materialized": true,
-      "domain_validation": "not_run"
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-PKG-003",
-      "archive_ref": {
-        "path": "packages/minimal-docs-changed.tar.gz",
-        "sha256": "2f57918d9832912ecbddfff1341f3f1e5057e359838b6c3c0ca8057469ca26e2"
-      },
-      "recipe_ref": {
-        "path": "package-recipes/minimal.json",
-        "sha256": "4bc89a60c6d426f29596097401c399a34f5ee23fbe188bc9c42bba1dbf2c2fd6"
-      },
+      "case_id": "truncated-gzip",
+      "recipe": "package-recipes/truncated-gzip.json",
+      "archive": "packages/truncated-gzip.tgz",
+      "archive_sha256": "93d3a2e99966e9ed528003367ed79ebe3f5107f0ba44a7c88a0828593e069299",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "valid",
-        "stage": "complete",
-        "error_code": null,
-        "content_digest": "sha256:5b55b06baad7d084be85092c1f8e673f5b32029582fd90c54a94437634577ffb"
-      },
-      "materialized": true,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      }
     },
     {
-      "case_id": "ART-PKG-004",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/0"
-      },
+      "case_id": "truncated-tar",
+      "recipe": "package-recipes/truncated-tar.json",
+      "archive": "packages/truncated-tar.tgz",
+      "archive_sha256": "606444ae8acc9e5ce3cd155ef1aa3aaff9146771adbcc6ae8f843b639c3bcf9b",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      }
     },
     {
-      "case_id": "ART-PKG-005",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/1"
-      },
+      "case_id": "declared-length-mismatch",
+      "recipe": "package-recipes/declared-length-mismatch.json",
+      "archive": "packages/declared-length-mismatch.tgz",
+      "archive_sha256": "8ab930b95bd6e864b347f0022f6b5d42f0e8e60caebe398b33bb952cab5e518f",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      }
     },
     {
-      "case_id": "ART-PKG-006",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/2"
-      },
+      "case_id": "absolute-member",
+      "recipe": "package-recipes/absolute-member.json",
+      "archive": "packages/absolute-member.tgz",
+      "archive_sha256": "3e2dbcdf386f31508848efc4c744aba0f22dd3d16d8556a96664d5f642fa3c31",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      }
     },
     {
-      "case_id": "ART-PKG-007",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/3"
-      },
+      "case_id": "parent-member",
+      "recipe": "package-recipes/parent-member.json",
+      "archive": "packages/parent-member.tgz",
+      "archive_sha256": "892ba2b487c5a4f200ab123618023c0030ec16f642133597eaad568f9a8a993b",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "payload",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      }
     },
     {
-      "case_id": "ART-PKG-008",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/4"
-      },
+      "case_id": "dot-member",
+      "recipe": "package-recipes/dot-member.json",
+      "archive": "packages/dot-member.tgz",
+      "archive_sha256": "9bb332c659f627bf507679a6ee65098012814946890d76fda0d9e36cb0db3eb2",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "payload",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      }
     },
     {
-      "case_id": "ART-PKG-009",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/5"
-      },
+      "case_id": "double-slash-member",
+      "recipe": "package-recipes/double-slash-member.json",
+      "archive": "packages/double-slash-member.tgz",
+      "archive_sha256": "82a1424a09aa73723be3dc80769b6a6ca4a2a3820bfffafc07dbfdc9631831da",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "payload",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      }
     },
     {
-      "case_id": "ART-PKG-010",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/6"
-      },
+      "case_id": "backslash-member",
+      "recipe": "package-recipes/backslash-member.json",
+      "archive": "packages/backslash-member.tgz",
+      "archive_sha256": "170f324dcc753b419244cf8576ece916d7c38b166e7a15ea0caa4efc2f6724fa",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "payload",
-        "error_code": "invalid_digest"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      }
     },
     {
-      "case_id": "ART-PKG-011",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/7"
-      },
+      "case_id": "symlink-member",
+      "recipe": "package-recipes/symlink-member.json",
+      "archive": "packages/symlink-member.tgz",
+      "archive_sha256": "f5858c3fc4bf87e5d91d3e16d92c280be4f78dfab9b5453682127778f7391701",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_LINK"
+      }
     },
     {
-      "case_id": "ART-PKG-012",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/8"
-      },
+      "case_id": "hardlink-member",
+      "recipe": "package-recipes/hardlink-member.json",
+      "archive": "packages/hardlink-member.tgz",
+      "archive_sha256": "68ad73171aea7c3875b02b678afc4945f27e5e5cd3dbc2d1a17e1107cd640fd5",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_LINK"
+      }
     },
     {
-      "case_id": "ART-PKG-013",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/9"
-      },
+      "case_id": "duplicate-member",
+      "recipe": "package-recipes/duplicate-member.json",
+      "archive": "packages/duplicate-member.tgz",
+      "archive_sha256": "106be5ecd40d7a4a21900827ded6a4c94e1d7d225dff8858ea7cd4521170f4fd",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_DUPLICATE"
+      }
     },
     {
-      "case_id": "ART-PKG-014",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/10"
-      },
+      "case_id": "undeclared-member",
+      "recipe": "package-recipes/undeclared-member.json",
+      "archive": "packages/undeclared-member.tgz",
+      "archive_sha256": "7edec59efdaa80ac04033e672fca546be64bc080c9a19259f72ff22b698c588d",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      }
     },
     {
-      "case_id": "ART-PKG-015",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/11"
-      },
+      "case_id": "missing-docs",
+      "recipe": "package-recipes/missing-docs.json",
+      "archive": "packages/missing-docs.tgz",
+      "archive_sha256": "cf911f8909c83101459da4577a94c8d3d2f71d4d4bad742c8e4ce28c844cc91b",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      }
     },
     {
-      "case_id": "ART-PKG-016",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/12"
-      },
+      "case_id": "missing-schema",
+      "recipe": "package-recipes/missing-schema.json",
+      "archive": "packages/missing-schema.tgz",
+      "archive_sha256": "74d7de2923f7015705eb07dd7ed760039acf24a8b7c6a8a0051d180b61b7acf9",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      }
     },
     {
-      "case_id": "ART-PKG-017",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/13"
-      },
+      "case_id": "missing-defaults",
+      "recipe": "package-recipes/missing-defaults.json",
+      "archive": "packages/missing-defaults.tgz",
+      "archive_sha256": "ff2bb933ad1815f9148a18dec5c017571fa9bf4513fe0f1e318d9e18d02f864c",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      }
     },
     {
-      "case_id": "ART-PKG-018",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/14"
-      },
+      "case_id": "wasm-magic",
+      "recipe": "package-recipes/wasm-magic.json",
+      "archive": "packages/wasm-magic.tgz",
+      "archive_sha256": "144d8f62b4d1b4003d40d4c4cd6f2b273865e5d6f153fb43c26d11458f6c49c1",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      }
     },
     {
-      "case_id": "ART-PKG-019",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/15"
-      },
+      "case_id": "wasm-version",
+      "recipe": "package-recipes/wasm-version.json",
+      "archive": "packages/wasm-version.tgz",
+      "archive_sha256": "002c886ff0c37b235961011d882e013c85ef2fff8056cdec4c2c46a633f48c6f",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      }
     },
     {
-      "case_id": "ART-PKG-020",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/16"
-      },
+      "case_id": "wasm-truncated-section",
+      "recipe": "package-recipes/wasm-truncated-section.json",
+      "archive": "packages/wasm-truncated-section.tgz",
+      "archive_sha256": "6c98125eb225413bf0913d72735032d36e0ad015dda52393397e7b7f9ffc294d",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "descriptor_semantic",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      }
     },
     {
-      "case_id": "ART-PKG-021",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/17"
-      },
+      "case_id": "wasm-invalid-leb",
+      "recipe": "package-recipes/wasm-invalid-leb.json",
+      "archive": "packages/wasm-invalid-leb.tgz",
+      "archive_sha256": "a55955672a3f6b463ca59cb3963712cf5d8cb47a0e7871963f4d95b2e986256a",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      }
     },
     {
-      "case_id": "ART-PKG-022",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/18"
-      },
+      "case_id": "wrong-payload-sha",
+      "recipe": "package-recipes/wrong-payload-sha.json",
+      "archive": "packages/wrong-payload-sha.tgz",
+      "archive_sha256": "5cd7bf29cb1a265a960f8012f1d4239c0142e14ec4f59bea0df204af66c082cf",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SIZE"
+      }
     },
     {
-      "case_id": "ART-PKG-023",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/19"
-      },
+      "case_id": "wrong-payload-digest",
+      "recipe": "package-recipes/wrong-payload-digest.json",
+      "archive": "packages/wrong-payload-digest.tgz",
+      "archive_sha256": "add3648ac742d3b67366929e00c34503aeb2e5a6a1ddcd6f16b03c550bcb6c21",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_DIGEST"
+      }
     },
     {
-      "case_id": "ART-PKG-024",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/20"
-      },
+      "case_id": "two-wasm",
+      "recipe": "package-recipes/two-wasm.json",
+      "archive": "packages/two-wasm.tgz",
+      "archive_sha256": "3142abe797ca02c4f0077b2a03cca6a96992e461b90903b064cfe4b022999376",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "descriptor_semantic",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "semantic",
+        "error_code": "ART_ROLE_CARDINALITY"
+      }
     },
     {
-      "case_id": "ART-PKG-025",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/21"
-      },
+      "case_id": "forged-server-receipt",
+      "recipe": "package-recipes/forged-server-receipt.json",
+      "archive": "packages/forged-server-receipt.tgz",
+      "archive_sha256": "67553fd8b4a55675ecbba4532a8a9908397da460b346b6d8770678adc8dff44b",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "defaults",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE"
+      }
     },
     {
-      "case_id": "ART-PKG-026",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/22"
-      },
+      "case_id": "descriptor-self-reference",
+      "recipe": "package-recipes/descriptor-self-reference.json",
+      "archive": "packages/descriptor-self-reference.tgz",
+      "archive_sha256": "7e56ac985cdcc7bae777ad276a298f31fb061265ca92f2e0e5e03376e32c4435",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "schema_closure",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "semantic",
+        "error_code": "ART_DESCRIPTOR_SELF_REFERENCE"
+      }
     },
     {
-      "case_id": "ART-PKG-027",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/23"
-      },
+      "case_id": "defaults-invalid",
+      "recipe": "package-recipes/defaults-invalid.json",
+      "archive": "packages/defaults-invalid.tgz",
+      "archive_sha256": "8efcec226cffa09d42370cfe96741c7fdafd5726a41f4db2d858974dbcceb98d",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "schema_closure",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "defaults",
+        "error_code": "ART_DEFAULTS"
+      }
     },
     {
-      "case_id": "ART-PKG-028",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/24"
-      },
+      "case_id": "schema-network-ref",
+      "recipe": "package-recipes/schema-network-ref.json",
+      "archive": "packages/schema-network-ref.tgz",
+      "archive_sha256": "df8103c4ed327b2279c11490d92bc3d08d58a92affb4391307fb35894e13d07c",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "environment_policy",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "schema",
+        "error_code": "ART_CONFIG_SCHEMA"
+      }
     },
     {
-      "case_id": "ART-PKG-029",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/25"
-      },
+      "case_id": "schema-unknown-local-ref",
+      "recipe": "package-recipes/schema-unknown-local-ref.json",
+      "archive": "packages/schema-unknown-local-ref.tgz",
+      "archive_sha256": "c7f9bb37492658ca775935da319ecd5f6612f6576dc32f95fa8842c512d11a32",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "environment_policy",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "schema",
+        "error_code": "ART_CONFIG_SCHEMA"
+      }
     },
     {
-      "case_id": "ART-PKG-030",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/26"
-      },
+      "case_id": "spec-wrapper-is-not-schema",
+      "recipe": "package-recipes/spec-wrapper-is-not-schema.json",
+      "archive": "packages/spec-wrapper-is-not-schema.tgz",
+      "archive_sha256": "a5f8ab8b962fe44320d35a75e09608d421962cbba4346dcd02e2fbdf87947e09",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "schema",
+        "error_code": "ART_CONFIG_SCHEMA"
+      }
     },
     {
-      "case_id": "ART-PKG-031",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/27"
-      },
+      "case_id": "unknown-environment-ref",
+      "recipe": "package-recipes/unknown-environment-ref.json",
+      "archive": "packages/unknown-environment-ref.tgz",
+      "archive_sha256": "c506d2724e4f1b824c752cbfddea54c55d86bd9261d8eacaa80e5119ccfd1f25",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "descriptor_semantic",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "policy",
+        "error_code": "ART_ENVIRONMENT_REF"
+      }
     },
     {
-      "case_id": "ART-PKG-032",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/28"
-      },
+      "case_id": "synthetic-secret",
+      "recipe": "package-recipes/synthetic-secret.json",
+      "archive": "packages/synthetic-secret.tgz",
+      "archive_sha256": "bbd8df0b70d22d05a7a114b3b016fb403b72f5003ec7b4e525e3bee0a673cdc7",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "policy",
+        "error_code": "ART_SYNTHETIC_SECRET"
+      }
     },
     {
-      "case_id": "ART-PKG-033",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/29"
-      },
+      "case_id": "unverified-source-claim",
+      "recipe": "package-recipes/unverified-source-claim.json",
+      "archive": "packages/unverified-source-claim.tgz",
+      "archive_sha256": "2e782dd51a0902610393f70efc1c7d5bbc53316e813badee3acb7267695f4128",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "schema_closure",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "provenance",
+        "error_code": "ART_SOURCE_EVIDENCE"
+      }
     },
     {
-      "case_id": "ART-PKG-034",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/30"
-      },
+      "case_id": "changed-docs-valid",
+      "recipe": "package-recipes/changed-docs-valid.json",
+      "archive": "packages/changed-docs-valid.tgz",
+      "archive_sha256": "2bfb41f753965b9ecf32c50eb404696b17a06861ce920a4cf6686f235af194eb",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "descriptor_semantic",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-PKG-035",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/31"
-      },
+      "case_id": "changed-defaults-valid",
+      "recipe": "package-recipes/changed-defaults-valid.json",
+      "archive": "packages/changed-defaults-valid.tgz",
+      "archive_sha256": "ae3d8fd00f31b7c60b991c58b586b1a8fc353ba8875dda7df544d7d1a5601bee",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "descriptor_semantic",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-PKG-036",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/32"
-      },
+      "case_id": "local-schema-closure-valid",
+      "recipe": "package-recipes/local-schema-closure-valid.json",
+      "archive": "packages/local-schema-closure-valid.tgz",
+      "archive_sha256": "b52719c5b943edcb68dc072a353558bd7c5f74b8bbd3d3da7adc18f5ec941d21",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "archive",
-        "error_code": "invalid_archive"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-PKG-037",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/33"
-      },
+      "case_id": "package-executable-script",
+      "recipe": "package-recipes/package-executable-script.json",
+      "archive": "packages/package-executable-script.tgz",
+      "archive_sha256": "d28f476cd9c4725f162810cc0d0a3cfb19595e0969dfff34fbce530827afc215",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "source_verification",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_EXECUTABLE"
+      }
     },
     {
-      "case_id": "ART-PKG-038",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/34"
-      },
+      "case_id": "hidden-member-after-eof",
+      "recipe": "package-recipes/hidden-member-after-eof.json",
+      "archive": "packages/hidden-member-after-eof.tgz",
+      "archive_sha256": "ea6a7e3651b69226b1723e7da53833af35270406ba47fe9b20b61c0a0e81959f",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "parse",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      }
     },
     {
-      "case_id": "ART-PKG-039",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/35"
-      },
+      "case_id": "descriptor-duplicate-key",
+      "recipe": "package-recipes/descriptor-duplicate-key.json",
+      "archive": "packages/descriptor-duplicate-key.tgz",
+      "archive_sha256": "90e0785a3e5d44c5548c3573b075ea873ff2afb2032d3e242349246843c39653",
+      "policy_overrides": {},
       "expected": {
-        "outcome": "invalid",
-        "stage": "descriptor_schema",
-        "error_code": "invalid_schema"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "parse",
+        "error_code": "E_DUPLICATE_KEY"
+      }
     },
     {
-      "case_id": "ART-PKG-040",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/36"
+      "case_id": "max_archive_bytes-equal",
+      "recipe": "package-recipes/max_archive_bytes-equal.json",
+      "archive": "packages/max_archive_bytes-equal.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {
+        "max_archive_bytes": 971
       },
       "expected": {
-        "outcome": "execution_error",
-        "stage": "io",
-        "error_code": "storage_unavailable"
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-PKG-041",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/37"
+      "case_id": "max_archive_bytes-over",
+      "recipe": "package-recipes/max_archive_bytes-over.json",
+      "archive": "packages/max_archive_bytes-over.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {
+        "max_archive_bytes": 970
       },
       "expected": {
-        "outcome": "valid",
-        "stage": "limits",
-        "error_code": null,
-        "http_mapping_proposal": null
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      }
     },
     {
-      "case_id": "ART-PKG-042",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/38"
+      "case_id": "max_tar_bytes-equal",
+      "recipe": "package-recipes/max_tar_bytes-equal.json",
+      "archive": "packages/max_tar_bytes-equal.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {
+        "max_tar_bytes": 10240
       },
       "expected": {
-        "outcome": "invalid",
-        "stage": "limits",
-        "error_code": "invalid_archive",
-        "http_mapping_proposal": 413
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-PKG-043",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/39"
+      "case_id": "max_tar_bytes-over",
+      "recipe": "package-recipes/max_tar_bytes-over.json",
+      "archive": "packages/max_tar_bytes-over.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {
+        "max_tar_bytes": 10239
       },
       "expected": {
-        "outcome": "valid",
-        "stage": "limits",
-        "error_code": null,
-        "http_mapping_proposal": null
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      }
     },
     {
-      "case_id": "ART-PKG-044",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/40"
+      "case_id": "max_members-equal",
+      "recipe": "package-recipes/max_members-equal.json",
+      "archive": "packages/max_members-equal.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {
+        "max_members": 5
       },
       "expected": {
-        "outcome": "invalid",
-        "stage": "limits",
-        "error_code": "invalid_archive",
-        "http_mapping_proposal": 413
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-PKG-045",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/41"
+      "case_id": "max_members-over",
+      "recipe": "package-recipes/max_members-over.json",
+      "archive": "packages/max_members-over.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {
+        "max_members": 4
       },
       "expected": {
-        "outcome": "valid",
-        "stage": "limits",
-        "error_code": null,
-        "http_mapping_proposal": null
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      }
     },
     {
-      "case_id": "ART-PKG-046",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/42"
+      "case_id": "max_total_payload_bytes-equal",
+      "recipe": "package-recipes/max_total_payload_bytes-equal.json",
+      "archive": "packages/max_total_payload_bytes-equal.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {
+        "max_total_payload_bytes": 246
       },
       "expected": {
-        "outcome": "invalid",
-        "stage": "limits",
-        "error_code": "invalid_archive",
-        "http_mapping_proposal": 413
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-PKG-047",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/43"
+      "case_id": "max_total_payload_bytes-over",
+      "recipe": "package-recipes/max_total_payload_bytes-over.json",
+      "archive": "packages/max_total_payload_bytes-over.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {
+        "max_total_payload_bytes": 245
       },
       "expected": {
-        "outcome": "valid",
-        "stage": "limits",
-        "error_code": null,
-        "http_mapping_proposal": null
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      }
     },
     {
-      "case_id": "ART-PKG-048",
-      "recipe_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
-        "pointer": "/recipes/44"
+      "case_id": "max_member_bytes-equal",
+      "recipe": "package-recipes/max_member_bytes-equal.json",
+      "archive": "packages/max_member_bytes-equal.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {
+        "max_member_bytes": 1277
       },
       "expected": {
-        "outcome": "invalid",
-        "stage": "limits",
-        "error_code": "invalid_archive",
-        "http_mapping_proposal": 413
-      },
-      "materialized": false,
-      "domain_validation": "not_run"
-    }
-  ],
-  "relations": [
-    {
-      "case_ids": [
-        "ART-PKG-001",
-        "ART-PKG-002"
-      ],
-      "expected": "same content digest, different archive digest; first committed archive retained"
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      }
     },
     {
-      "case_ids": [
-        "ART-PKG-001",
-        "ART-PKG-003"
-      ],
-      "expected": "same Wasm digest, different docs/content digest; same name/version conflicts only at commit"
+      "case_id": "max_member_bytes-over",
+      "recipe": "package-recipes/max_member_bytes-over.json",
+      "archive": "packages/max_member_bytes-over.tgz",
+      "archive_sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "policy_overrides": {
+        "max_member_bytes": 1276
+      },
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      }
     }
   ]
 }

@@ -1,0 +1,24 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "descriptor",
+      "asset_id": "wasm-count-invariant-input",
+      "path": "fixtures/artifact/canonical/wasm-count-invariant.input.json",
+      "sha256": "db6af0539bf4b2fbd32ae66cdcf43092068d64e15882acf5915aa4a84691b296",
+      "schema_ref": "urn:modelfusion:contracts:v1:package-descriptor"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "cardinality",
+      "collection": {
+        "input": "descriptor",
+        "pointer": "/files"
+      },
+      "min": 4,
+      "max": 4,
+      "error_code": "ART_ROLE_CARDINALITY"
+    }
+  ]
+}

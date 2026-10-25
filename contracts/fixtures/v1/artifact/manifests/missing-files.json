@@ -1,0 +1,27 @@
+{
+  "canonicalization_version": "artifact-json.v1",
+  "schema_version": "artifact.v1",
+  "plugin_name": "offline-demo",
+  "plugin_version": "1.0.0",
+  "wasm_path": "plugin.wasm",
+  "config_schema_path": "config.schema.json",
+  "defaults_path": "defaults.json",
+  "documentation_paths": [
+    "README.md"
+  ],
+  "environment_refs": [
+    {
+      "name": "TEST_ENDPOINT",
+      "kind": "endpoint",
+      "required": false
+    }
+  ],
+  "source": {
+    "kind": "local_build",
+    "verification": "verified",
+    "repo": "https://example.invalid/fixture",
+    "commit": "1111111111111111111111111111111111111111",
+    "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build_inputs_digest": "sha256:2947f79a3a73a2f06f43896a835440cf78d28887e4c57d69369ad3861c3c66fb"
+  }
+}

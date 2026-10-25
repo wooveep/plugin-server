@@ -1,0 +1,6 @@
+{
+  "retention_action": "delete_allowed",
+  "references": [
+    "media_operation"
+  ]
+}

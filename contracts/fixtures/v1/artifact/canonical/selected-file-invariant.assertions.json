@@ -1,0 +1,30 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "descriptor",
+      "asset_id": "selected-file-invariant-input",
+      "path": "fixtures/artifact/canonical/selected-file-invariant.input.json",
+      "sha256": "3fbb54d5429f8e7f31abe6a67404c4cc1e6c1fc4d2f2b556a17d185864e70ccb",
+      "schema_ref": "urn:modelfusion:contracts:v1:package-descriptor"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "contains",
+      "collection": {
+        "literal": [
+          "plugin.wasm",
+          "config.schema.json",
+          "defaults.json",
+          "README.md"
+        ]
+      },
+      "value": {
+        "input": "descriptor",
+        "pointer": "/wasm_path"
+      },
+      "error_code": "ART_ROLE_REFERENCE"
+    }
+  ]
+}

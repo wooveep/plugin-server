@@ -1,0 +1,24 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "wrong-payload-digest",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "payload",
+  "errors": [
+    {
+      "code": "ART_FILE_DIGEST",
+      "pointer": "/files",
+      "path": "plugin.wasm"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 935,
+    "members": 5,
+    "payload_bytes": 246
+  },
+  "archive_digest": "sha256:add3648ac742d3b67366929e00c34503aeb2e5a6a1ddcd6f16b03c550bcb6c21",
+  "descriptor_digest": "sha256:f485156d87abe7d3dc3d4d3889907b20201fe546f11ea1cc1142ab482605c22a"
+}

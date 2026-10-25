@@ -1,0 +1,26 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [],
+  "assertions": [
+    {
+      "op": "unique",
+      "error_code": "A_UNIQUE",
+      "collection": {
+        "literal": [
+          {
+            "a": 1,
+            "b": 2
+          },
+          {
+            "a": 1,
+            "b": 3
+          }
+        ]
+      },
+      "keys": [
+        "/a",
+        "/b"
+      ]
+    }
+  ]
+}

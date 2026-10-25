@@ -1,0 +1,23 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "unknown-environment-ref",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "policy",
+  "errors": [
+    {
+      "code": "ART_ENVIRONMENT_REF",
+      "pointer": "/environment_refs"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 971,
+    "members": 5,
+    "payload_bytes": 246
+  },
+  "archive_digest": "sha256:c506d2724e4f1b824c752cbfddea54c55d86bd9261d8eacaa80e5119ccfd1f25",
+  "descriptor_digest": "sha256:c30b34ae08984fd69fa6e3c42c6140eb3936c5e3c21d7282cca3fc8cfa5bcd36"
+}

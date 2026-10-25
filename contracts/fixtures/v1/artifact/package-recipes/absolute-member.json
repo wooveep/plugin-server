@@ -1,0 +1,27 @@
+{
+  "recipe_version": "artifact-archive-recipe-v1",
+  "gzip_mtime": 0,
+  "tar_mtime": 0,
+  "members": [
+    {
+      "path": "package.json",
+      "base64": "eyJjYW5vbmljYWxpemF0aW9uX3ZlcnNpb24iOiJhcnRpZmFjdC1qc29uLnYxIiwic2NoZW1hX3ZlcnNpb24iOiJhcnRpZmFjdC52MSIsInBsdWdpbl9uYW1lIjoib2ZmbGluZS1kZW1vIiwicGx1Z2luX3ZlcnNpb24iOiIxLjAuMCIsImZpbGVzIjpbeyJwYXRoIjoicGx1Z2luLndhc20iLCJzaXplX2J5dGVzIjoiOCIsInNoYTI1NiI6InNoYTI1Njo5M2E0NGJiYjk2Yzc1MTIxOGU0YzAwZDQ3OWU0YzE0MzU4MTIyYTM4OWFjY2ExNjIwNWIxZTRkMGRjNWY5NDc2Iiwicm9sZSI6Indhc20ifSx7InBhdGgiOiJjb25maWcuc2NoZW1hLmpzb24iLCJzaXplX2J5dGVzIjoiMTcxIiwic2hhMjU2Ijoic2hhMjU2OmM1YTBlODZiODdkYzYyZmJhMWRlZjFkZDU2MWZhNDkwYTY5MjllZTkzMzRlNTZjMjQ2OTk3OTcyNTRlOWYzZGUiLCJyb2xlIjoiY29uZmlnX3NjaGVtYSJ9LHsicGF0aCI6ImRlZmF1bHRzLmpzb24iLCJzaXplX2J5dGVzIjoiMTciLCJzaGEyNTYiOiJzaGEyNTY6YTA1MGVmMDZlYTU0MmI4ZmQ4NzgxZjFlOTQ1ZjlhZGNkMDNjN2FlNTE5MDcxOWU2NmJhODI2ZTIwNTlmY2UxMiIsInJvbGUiOiJkZWZhdWx0cyJ9LHsicGF0aCI6IlJFQURNRS5tZCIsInNpemVfYnl0ZXMiOiI1MCIsInNoYTI1NiI6InNoYTI1NjowZDllMmJmZDAzNzg3ZDRkM2FkODQyZWYxNGJlODBlY2EzOWVlMzZjNGRmNzljZWY1Nzc0ZjE2ZmJkOWEyZmI5Iiwicm9sZSI6ImRvY3VtZW50YXRpb24ifV0sIndhc21fcGF0aCI6InBsdWdpbi53YXNtIiwiY29uZmlnX3NjaGVtYV9wYXRoIjoiY29uZmlnLnNjaGVtYS5qc29uIiwiZGVmYXVsdHNfcGF0aCI6ImRlZmF1bHRzLmpzb24iLCJkb2N1bWVudGF0aW9uX3BhdGhzIjpbIlJFQURNRS5tZCJdLCJlbnZpcm9ubWVudF9yZWZzIjpbeyJuYW1lIjoiVEVTVF9FTkRQT0lOVCIsImtpbmQiOiJlbmRwb2ludCIsInJlcXVpcmVkIjpmYWxzZX1dLCJzb3VyY2UiOnsia2luZCI6ImxvY2FsX2J1aWxkIiwidmVyaWZpY2F0aW9uIjoidmVyaWZpZWQiLCJyZXBvIjoiaHR0cHM6Ly9leGFtcGxlLmludmFsaWQvZml4dHVyZSIsImNvbW1pdCI6IjExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTEiLCJkaXJ0eV9kaWdlc3QiOiJzaGEyNTY6ZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImJ1aWxkX2lucHV0c19kaWdlc3QiOiJzaGEyNTY6Mjk0N2Y3OWEzYTczYTJmMDZmNDM4OTZhODM1NDQwY2Y3OGQyODg4N2U0YzU3ZDY5MzY5YWQzODYxYzNjNjZmYiJ9fQo="
+    },
+    {
+      "path": "/escape.wasm",
+      "base64": "AGFzbQEAAAA="
+    },
+    {
+      "path": "config.schema.json",
+      "base64": "eyIkc2NoZW1hIjoiaHR0cHM6Ly9qc29uLXNjaGVtYS5vcmcvZHJhZnQvMjAyMC0xMi9zY2hlbWEiLCJ0eXBlIjoib2JqZWN0IiwicHJvcGVydGllcyI6eyJlbmFibGVkIjp7InR5cGUiOiJib29sZWFuIn19LCJyZXF1aXJlZCI6WyJlbmFibGVkIl0sImFkZGl0aW9uYWxQcm9wZXJ0aWVzIjpmYWxzZX0K"
+    },
+    {
+      "path": "defaults.json",
+      "base64": "eyJlbmFibGVkIjp0cnVlfQo="
+    },
+    {
+      "path": "README.md",
+      "base64": "IyBPZmZsaW5lIGZpeHR1cmUKTm8gZ2F0ZXdheSBjb21wYXRpYmlsaXR5IGNsYWltLgo="
+    }
+  ]
+}

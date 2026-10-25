@@ -1,0 +1,32 @@
+{
+  "trace_format_version": "artifact-lifecycle-trace-v1",
+  "case_id": "legacy-compatible-read",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "original_request_ref": {
+    "path": "lifecycle/original-request.json",
+    "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+  },
+  "original_result_ref": {
+    "path": "lifecycle/result-committed.json",
+    "sha256": "b612e1f456cc490341d61851e6c041a688c0963d1798a5482fbb7220d5c21bae"
+  },
+  "steps": [
+    {
+      "case_id": "legacy-compatible-read",
+      "step": "1",
+      "actor_kind": "consumer",
+      "command": "legacy_read",
+      "input_ref": {
+        "path": "lifecycle/original-request.json",
+        "sha256": "3d4045dd72c6b0caa225d804bcea7d02dcb8c88fb5bba3a5d061928b5f921b21"
+      },
+      "observed_result_ref": {
+        "path": "lifecycle/result-legacy.json",
+        "sha256": "73041f61408308867fb64306e161d561b80c28ca5dd0bb07fecb3f2cbfcbabb9"
+      },
+      "expected_next_action": "legacy_compatibility_read",
+      "expected_side_effects": []
+    }
+  ]
+}

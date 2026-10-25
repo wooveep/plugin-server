@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:modelfusion:contracts:v1:lock",
+  "type": "object",
+  "properties": {
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "bundle_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "producer_project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "vendor_root": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_./-]+$"
+          },
+          "imported_schema_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^urn:[^\\s#]+$"
+            },
+            "minItems": 1,
+            "maxItems": 10000
+          }
+        },
+        "required": [
+          "bundle_version",
+          "producer_project",
+          "manifest_sha256",
+          "vendor_root",
+          "imported_schema_ids"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 10000
+    }
+  },
+  "required": [
+    "packages"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,23 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "two-wasm",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "semantic",
+  "errors": [
+    {
+      "code": "ART_ROLE_CARDINALITY",
+      "pointer": "/files"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 995,
+    "members": 6,
+    "payload_bytes": 254
+  },
+  "archive_digest": "sha256:3142abe797ca02c4f0077b2a03cca6a96992e461b90903b064cfe4b022999376",
+  "descriptor_digest": "sha256:7e6d8ef099b607232eac54b6e99a9bcce087926b7f1207b44e7c4733df8e0a2a"
+}

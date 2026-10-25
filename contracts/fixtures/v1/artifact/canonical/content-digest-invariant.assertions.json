@@ -1,0 +1,25 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "descriptor",
+      "asset_id": "content-digest-invariant-input",
+      "path": "fixtures/artifact/canonical/content-digest-invariant.input.json",
+      "sha256": "8ef665a24aa4c0134f9c60ac4bd62d8a02129ccc1cf69f7c5e48ea742549a758",
+      "schema_ref": "urn:modelfusion:contracts:v1:artifact-manifest"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "eq",
+      "left": {
+        "input": "descriptor",
+        "pointer": "/content_digest"
+      },
+      "right": {
+        "literal": "sha256:417833fc771c08ed4176e48fa5b58ae523168cb14011f4b5e141b202cf97d498"
+      },
+      "error_code": "ART_CONTENT_DIGEST"
+    }
+  ]
+}

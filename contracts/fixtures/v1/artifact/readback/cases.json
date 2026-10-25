@@ -1,127 +1,127 @@
 {
-  "preparation_status": "draft",
-  "domain_validation": "not_run",
-  "consumer_receipts": "not_run",
-  "expected_ref": {
-    "path": "readback/expected-files.json",
-    "sha256": "63f507541d59bd54e5cd18b28053f3ee6d59f3c79e4ee7d4f00476595c5b8a46"
-  },
-  "all_observations_are": "synthetic planned oracle, never HTTP/RuntimeObservation evidence",
-  "error_codes_are": "draft local coverage oracle names, not production API errors",
+  "fixture_format_version": "artifact-readback-cases-v1",
+  "evidence_level": "offline_fixture",
+  "real_http": "not_run",
   "cases": [
     {
-      "case_id": "ART-RB-001",
+      "case_id": "all-instances-complete",
+      "expected_ref": {
+        "path": "readback/all-instances-complete.expected.json",
+        "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8"
+      },
+      "observed_ref": {
+        "path": "readback/all-instances-complete.observed.json",
+        "sha256": "811bfa97bb703860662160eeddbc29ebf8c803aa00aef9697c692e0e770f48ae"
+      },
       "expected": {
         "verdict": "accept",
         "error_code": null
-      },
-      "synthetic_mutation": {
-        "kind": "all_expected_payloads_all_instances",
-        "http_results": "synthetic_matching_200"
-      },
-      "assertion": "Complete synthetic oracle only; no HTTP observation.",
-      "domain_validation": "not_run"
+      }
     },
     {
-      "case_id": "ART-RB-002",
+      "case_id": "empty-expected",
+      "expected_ref": {
+        "path": "readback/empty-expected.expected.json",
+        "sha256": "a17c3799d4766fe6f4bbbd4844e7d647a4937bf7b0bd6714b2d67bc9a5b9d389"
+      },
+      "observed_ref": {
+        "path": "readback/empty-expected.observed.json",
+        "sha256": "811bfa97bb703860662160eeddbc29ebf8c803aa00aef9697c692e0e770f48ae"
+      },
       "expected": {
         "verdict": "reject",
-        "error_code": "empty_expected"
-      },
-      "synthetic_mutation": {
-        "expected_files": []
-      },
-      "assertion": "Empty expected set cannot prove delivery.",
-      "domain_validation": "not_run"
+        "error_code": "ART_READBACK_EXPECTED"
+      }
     },
     {
-      "case_id": "ART-RB-003",
+      "case_id": "expected-missing-manifest",
+      "expected_ref": {
+        "path": "readback/expected-missing-manifest.expected.json",
+        "sha256": "6bc899367c1a36cf399dd28fb8819b2d4826c44a8c123de1a8e4538befd58d97"
+      },
+      "observed_ref": {
+        "path": "readback/expected-missing-manifest.observed.json",
+        "sha256": "811bfa97bb703860662160eeddbc29ebf8c803aa00aef9697c692e0e770f48ae"
+      },
       "expected": {
         "verdict": "reject",
-        "error_code": "missing_expected_member"
-      },
-      "synthetic_mutation": {
-        "omit_expected_path": "config.schema.json"
-      },
-      "assertion": "Cannot omit schema from expected collection.",
-      "domain_validation": "not_run"
+        "error_code": "ART_READBACK_EXPECTED"
+      }
     },
     {
-      "case_id": "ART-RB-004",
+      "case_id": "http-200-wrong-digest",
+      "expected_ref": {
+        "path": "readback/http-200-wrong-digest.expected.json",
+        "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8"
+      },
+      "observed_ref": {
+        "path": "readback/http-200-wrong-digest.observed.json",
+        "sha256": "d007e3094f7df7b7855306dd5ec042d5c46052bdd955ceb7d2c91824440b9238"
+      },
       "expected": {
         "verdict": "reject",
-        "error_code": "digest_mismatch"
-      },
-      "synthetic_mutation": {
-        "response_path": "README.md",
-        "status": 200,
-        "observed_sha256": "sha256:88c719d1f906575fa6c8c74ca44aba18d6eeb66e1d01e036b9852791a270d0f9"
-      },
-      "assertion": "200 is insufficient when bytes differ.",
-      "domain_validation": "not_run"
+        "error_code": "ART_READBACK_DIGEST"
+      }
     },
     {
-      "case_id": "ART-RB-005",
+      "case_id": "observed-missing-payload",
+      "expected_ref": {
+        "path": "readback/observed-missing-payload.expected.json",
+        "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8"
+      },
+      "observed_ref": {
+        "path": "readback/observed-missing-payload.observed.json",
+        "sha256": "e75585012fb85bf0cea8822571f9cd6ba2afee482f4796dd4bea2b36ab30cd0e"
+      },
       "expected": {
         "verdict": "reject",
-        "error_code": "instance_coverage_incomplete"
-      },
-      "synthetic_mutation": {
-        "observed_instances": [
-          "synthetic-instance-a"
-        ]
-      },
-      "assertion": "Do not shrink frozen scope to first replica.",
-      "domain_validation": "not_run"
+        "error_code": "ART_READBACK_FILES"
+      }
     },
     {
-      "case_id": "ART-RB-006",
+      "case_id": "only-first-instance",
+      "expected_ref": {
+        "path": "readback/only-first-instance.expected.json",
+        "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8"
+      },
+      "observed_ref": {
+        "path": "readback/only-first-instance.observed.json",
+        "sha256": "2d226bf33f93ca79ca77ff55ee447002aad9e524fcd8527074fb8a176bf26cdc"
+      },
       "expected": {
         "verdict": "reject",
-        "error_code": "wrong_observation_channel"
-      },
-      "synthetic_mutation": {
-        "observation_channel": "private_stage_filesystem"
-      },
-      "assertion": "Temporary-directory reads do not prove committed HTTP files.",
-      "domain_validation": "not_run"
+        "error_code": "ART_READBACK_INSTANCES"
+      }
     },
     {
-      "case_id": "ART-RB-007",
+      "case_id": "temporary-directory-only",
+      "expected_ref": {
+        "path": "readback/temporary-directory-only.expected.json",
+        "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8"
+      },
+      "observed_ref": {
+        "path": "readback/temporary-directory-only.observed.json",
+        "sha256": "c0e23b25e9f515c3d76448f23c5750478908d4453284b7a9d601e9d8aed7e651"
+      },
       "expected": {
         "verdict": "reject",
-        "error_code": "http_read_failed"
-      },
-      "synthetic_mutation": {
-        "response_path": "defaults.json",
-        "status": 404
-      },
-      "assertion": "Committed identity does not imply full distribution.",
-      "domain_validation": "not_run"
+        "error_code": "ART_READBACK_SOURCE"
+      }
     },
     {
-      "case_id": "ART-RB-008",
+      "case_id": "manifest-http-missing",
+      "expected_ref": {
+        "path": "readback/manifest-http-missing.expected.json",
+        "sha256": "a1d781b74aa00686399ff5ff99187d9396cdd20bf7d633849a6d8ebea45532f8"
+      },
+      "observed_ref": {
+        "path": "readback/manifest-http-missing.observed.json",
+        "sha256": "36ae5c5da959d5dc3ca1f98fb404571fae9157498a853cf66c97210bfc4af922"
+      },
       "expected": {
         "verdict": "reject",
-        "error_code": "missing_observed_member"
-      },
-      "synthetic_mutation": {
-        "omit_observed_path": "README.md"
-      },
-      "assertion": "Every declared member must have returned byte evidence.",
-      "domain_validation": "not_run"
-    },
-    {
-      "case_id": "ART-RB-009",
-      "expected": {
-        "verdict": "reject",
-        "error_code": "unexpected_observed_member"
-      },
-      "synthetic_mutation": {
-        "extra_observed_path": "unlisted.txt"
-      },
-      "assertion": "Declare/observe complete exact payload collection.",
-      "domain_validation": "not_run"
+        "error_code": "ART_READBACK_STATUS"
+      }
     }
   ]
 }

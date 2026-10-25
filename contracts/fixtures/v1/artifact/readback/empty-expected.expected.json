@@ -1,0 +1,15 @@
+{
+  "case_id": "readback-complete",
+  "artifact_id": "artifact-fixture-001",
+  "manifest_ref": {
+    "path": "lifecycle/committed-manifest.json",
+    "sha256": "16c9b6c9ff69558c723a05a93be6dd6677e6ca9bbbf6ae43299e9d0a012f6417"
+  },
+  "required_instances": [
+    "fixture-a",
+    "fixture-b"
+  ],
+  "expected_files": [],
+  "transport": "synthetic_http_observation",
+  "actual_http": "not_run"
+}

@@ -1,0 +1,22 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "declared-length-mismatch",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "archive",
+  "errors": [
+    {
+      "code": "ART_ARCHIVE",
+      "pointer": ""
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 972,
+    "members": 0,
+    "payload_bytes": 0
+  },
+  "archive_digest": "sha256:8ab930b95bd6e864b347f0022f6b5d42f0e8e60caebe398b33bb952cab5e518f"
+}

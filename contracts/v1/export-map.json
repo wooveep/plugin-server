@@ -1,0 +1,1193 @@
+{
+  "export_format_version": "d0-export-v1",
+  "files": [
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/base.json",
+      "path": "fixtures/artifact/canonical/base.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/content-digest-invariant.assertions.json",
+      "path": "fixtures/artifact/canonical/content-digest-invariant.assertions.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/content-digest-invariant.input.json",
+      "path": "fixtures/artifact/canonical/content-digest-invariant.input.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/descriptor-reordered.canonical.json",
+      "path": "fixtures/artifact/canonical/descriptor-reordered.canonical.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/descriptor-reordered.projection.json",
+      "path": "fixtures/artifact/canonical/descriptor-reordered.projection.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/descriptor-valid.canonical.json",
+      "path": "fixtures/artifact/canonical/descriptor-valid.canonical.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/descriptor-valid.projection.json",
+      "path": "fixtures/artifact/canonical/descriptor-valid.projection.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/documentation-invariant.assertions.json",
+      "path": "fixtures/artifact/canonical/documentation-invariant.assertions.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/documentation-invariant.input.json",
+      "path": "fixtures/artifact/canonical/documentation-invariant.input.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/duplicate-env-invariant.assertions.json",
+      "path": "fixtures/artifact/canonical/duplicate-env-invariant.assertions.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/duplicate-env-invariant.input.json",
+      "path": "fixtures/artifact/canonical/duplicate-env-invariant.input.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/duplicate-path-invariant.assertions.json",
+      "path": "fixtures/artifact/canonical/duplicate-path-invariant.assertions.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/duplicate-path-invariant.input.json",
+      "path": "fixtures/artifact/canonical/duplicate-path-invariant.input.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/selected-file-invariant.assertions.json",
+      "path": "fixtures/artifact/canonical/selected-file-invariant.assertions.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/selected-file-invariant.input.json",
+      "path": "fixtures/artifact/canonical/selected-file-invariant.input.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/selected-role-invariant.assertions.json",
+      "path": "fixtures/artifact/canonical/selected-role-invariant.assertions.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/selected-role-invariant.input.json",
+      "path": "fixtures/artifact/canonical/selected-role-invariant.input.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/valid-invariants.assertions.json",
+      "path": "fixtures/artifact/canonical/valid-invariants.assertions.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/valid-invariants.input.json",
+      "path": "fixtures/artifact/canonical/valid-invariants.input.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/wasm-count-invariant.assertions.json",
+      "path": "fixtures/artifact/canonical/wasm-count-invariant.assertions.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/canonical/wasm-count-invariant.input.json",
+      "path": "fixtures/artifact/canonical/wasm-count-invariant.input.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/digests.json",
+      "path": "fixtures/artifact/digests.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifest-cases.json",
+      "path": "fixtures/artifact/manifest-cases.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/absolute-path.json",
+      "path": "fixtures/artifact/manifests/absolute-path.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/backslash-path.json",
+      "path": "fixtures/artifact/manifests/backslash-path.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/changed-config_schema.json",
+      "path": "fixtures/artifact/manifests/changed-config_schema.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/changed-defaults.json",
+      "path": "fixtures/artifact/manifests/changed-defaults.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/changed-documentation.json",
+      "path": "fixtures/artifact/manifests/changed-documentation.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/changed-source.json",
+      "path": "fixtures/artifact/manifests/changed-source.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/changed-wasm.json",
+      "path": "fixtures/artifact/manifests/changed-wasm.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/descriptor-reordered.json",
+      "path": "fixtures/artifact/manifests/descriptor-reordered.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/descriptor-valid.json",
+      "path": "fixtures/artifact/manifests/descriptor-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/dot-path.json",
+      "path": "fixtures/artifact/manifests/dot-path.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/duplicate-environment-name.json",
+      "path": "fixtures/artifact/manifests/duplicate-environment-name.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/duplicate-file-path.json",
+      "path": "fixtures/artifact/manifests/duplicate-file-path.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/empty-path-segment.json",
+      "path": "fixtures/artifact/manifests/empty-path-segment.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/invalid-semver.json",
+      "path": "fixtures/artifact/manifests/invalid-semver.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/legacy-unknown-valid.json",
+      "path": "fixtures/artifact/manifests/legacy-unknown-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/legacy-verified-forgery.json",
+      "path": "fixtures/artifact/manifests/legacy-verified-forgery.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/local-missing-build-input.json",
+      "path": "fixtures/artifact/manifests/local-missing-build-input.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/manifest-transport-only.json",
+      "path": "fixtures/artifact/manifests/manifest-transport-only.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/manifest-valid.json",
+      "path": "fixtures/artifact/manifests/manifest-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-canonicalization_version.json",
+      "path": "fixtures/artifact/manifests/missing-canonicalization_version.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-config_schema_path.json",
+      "path": "fixtures/artifact/manifests/missing-config_schema_path.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-defaults_path.json",
+      "path": "fixtures/artifact/manifests/missing-defaults_path.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-documentation_paths.json",
+      "path": "fixtures/artifact/manifests/missing-documentation_paths.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-environment_refs.json",
+      "path": "fixtures/artifact/manifests/missing-environment_refs.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-files.json",
+      "path": "fixtures/artifact/manifests/missing-files.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-plugin_name.json",
+      "path": "fixtures/artifact/manifests/missing-plugin_name.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-plugin_version.json",
+      "path": "fixtures/artifact/manifests/missing-plugin_version.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-schema_version.json",
+      "path": "fixtures/artifact/manifests/missing-schema_version.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-selected-file.json",
+      "path": "fixtures/artifact/manifests/missing-selected-file.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-source.json",
+      "path": "fixtures/artifact/manifests/missing-source.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/missing-wasm_path.json",
+      "path": "fixtures/artifact/manifests/missing-wasm_path.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/number-size.json",
+      "path": "fixtures/artifact/manifests/number-size.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/oci-missing-layer.json",
+      "path": "fixtures/artifact/manifests/oci-missing-layer.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/oci-valid.json",
+      "path": "fixtures/artifact/manifests/oci-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/parent-path.json",
+      "path": "fixtures/artifact/manifests/parent-path.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/server-field-in-descriptor.json",
+      "path": "fixtures/artifact/manifests/server-field-in-descriptor.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/short-digest.json",
+      "path": "fixtures/artifact/manifests/short-digest.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/two-wasm-declarations.json",
+      "path": "fixtures/artifact/manifests/two-wasm-declarations.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/unknown-canonicalization.json",
+      "path": "fixtures/artifact/manifests/unknown-canonicalization.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/unknown-schema.json",
+      "path": "fixtures/artifact/manifests/unknown-schema.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/unreferenced-doc.json",
+      "path": "fixtures/artifact/manifests/unreferenced-doc.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/unsafe-plugin-name.json",
+      "path": "fixtures/artifact/manifests/unsafe-plugin-name.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/uppercase-digest.json",
+      "path": "fixtures/artifact/manifests/uppercase-digest.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/wrong-content-digest.json",
+      "path": "fixtures/artifact/manifests/wrong-content-digest.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/manifests/wrong-file-role.json",
+      "path": "fixtures/artifact/manifests/wrong-file-role.json"
+    },
+    {
+      "source": "contracts/v1/artifact-manifest.schema.json",
+      "path": "v1/artifact-manifest.schema.json"
+    },
+    {
+      "source": "contracts/v1/package-descriptor.schema.json",
+      "path": "v1/package-descriptor.schema.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-cases.json",
+      "path": "fixtures/artifact/package-cases.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/absolute-member.json",
+      "path": "fixtures/artifact/package-recipes/absolute-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/backslash-member.json",
+      "path": "fixtures/artifact/package-recipes/backslash-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/changed-defaults-valid.json",
+      "path": "fixtures/artifact/package-recipes/changed-defaults-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/changed-docs-valid.json",
+      "path": "fixtures/artifact/package-recipes/changed-docs-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/declared-length-mismatch.json",
+      "path": "fixtures/artifact/package-recipes/declared-length-mismatch.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/defaults-invalid.json",
+      "path": "fixtures/artifact/package-recipes/defaults-invalid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/descriptor-duplicate-key.json",
+      "path": "fixtures/artifact/package-recipes/descriptor-duplicate-key.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/descriptor-self-reference.json",
+      "path": "fixtures/artifact/package-recipes/descriptor-self-reference.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/dot-member.json",
+      "path": "fixtures/artifact/package-recipes/dot-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/double-slash-member.json",
+      "path": "fixtures/artifact/package-recipes/double-slash-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/duplicate-member.json",
+      "path": "fixtures/artifact/package-recipes/duplicate-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/forged-server-receipt.json",
+      "path": "fixtures/artifact/package-recipes/forged-server-receipt.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/hardlink-member.json",
+      "path": "fixtures/artifact/package-recipes/hardlink-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/hidden-member-after-eof.json",
+      "path": "fixtures/artifact/package-recipes/hidden-member-after-eof.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/local-schema-closure-valid.json",
+      "path": "fixtures/artifact/package-recipes/local-schema-closure-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_archive_bytes-equal.json",
+      "path": "fixtures/artifact/package-recipes/max_archive_bytes-equal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_archive_bytes-over.json",
+      "path": "fixtures/artifact/package-recipes/max_archive_bytes-over.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_member_bytes-equal.json",
+      "path": "fixtures/artifact/package-recipes/max_member_bytes-equal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_member_bytes-over.json",
+      "path": "fixtures/artifact/package-recipes/max_member_bytes-over.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_members-equal.json",
+      "path": "fixtures/artifact/package-recipes/max_members-equal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_members-over.json",
+      "path": "fixtures/artifact/package-recipes/max_members-over.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_tar_bytes-equal.json",
+      "path": "fixtures/artifact/package-recipes/max_tar_bytes-equal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_tar_bytes-over.json",
+      "path": "fixtures/artifact/package-recipes/max_tar_bytes-over.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_total_payload_bytes-equal.json",
+      "path": "fixtures/artifact/package-recipes/max_total_payload_bytes-equal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_total_payload_bytes-over.json",
+      "path": "fixtures/artifact/package-recipes/max_total_payload_bytes-over.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/minimal.json",
+      "path": "fixtures/artifact/package-recipes/minimal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/missing-defaults.json",
+      "path": "fixtures/artifact/package-recipes/missing-defaults.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/missing-docs.json",
+      "path": "fixtures/artifact/package-recipes/missing-docs.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/missing-schema.json",
+      "path": "fixtures/artifact/package-recipes/missing-schema.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/negative-recipes.json",
+      "path": "fixtures/artifact/package-recipes/negative-recipes.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/package-executable-script.json",
+      "path": "fixtures/artifact/package-recipes/package-executable-script.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/package-same-content-different-compression.json",
+      "path": "fixtures/artifact/package-recipes/package-same-content-different-compression.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/package-valid.json",
+      "path": "fixtures/artifact/package-recipes/package-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/parent-member.json",
+      "path": "fixtures/artifact/package-recipes/parent-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/schema-network-ref.json",
+      "path": "fixtures/artifact/package-recipes/schema-network-ref.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/schema-unknown-local-ref.json",
+      "path": "fixtures/artifact/package-recipes/schema-unknown-local-ref.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/spec-wrapper-is-not-schema.json",
+      "path": "fixtures/artifact/package-recipes/spec-wrapper-is-not-schema.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/symlink-member.json",
+      "path": "fixtures/artifact/package-recipes/symlink-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/synthetic-secret.json",
+      "path": "fixtures/artifact/package-recipes/synthetic-secret.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/truncated-gzip.json",
+      "path": "fixtures/artifact/package-recipes/truncated-gzip.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/truncated-tar.json",
+      "path": "fixtures/artifact/package-recipes/truncated-tar.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/two-wasm.json",
+      "path": "fixtures/artifact/package-recipes/two-wasm.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/undeclared-member.json",
+      "path": "fixtures/artifact/package-recipes/undeclared-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/unknown-environment-ref.json",
+      "path": "fixtures/artifact/package-recipes/unknown-environment-ref.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/unverified-source-claim.json",
+      "path": "fixtures/artifact/package-recipes/unverified-source-claim.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wasm-invalid-leb.json",
+      "path": "fixtures/artifact/package-recipes/wasm-invalid-leb.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wasm-magic.json",
+      "path": "fixtures/artifact/package-recipes/wasm-magic.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wasm-truncated-section.json",
+      "path": "fixtures/artifact/package-recipes/wasm-truncated-section.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wasm-version.json",
+      "path": "fixtures/artifact/package-recipes/wasm-version.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wrong-payload-digest.json",
+      "path": "fixtures/artifact/package-recipes/wrong-payload-digest.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wrong-payload-sha.json",
+      "path": "fixtures/artifact/package-recipes/wrong-payload-sha.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/absolute-member.json",
+      "path": "fixtures/artifact/package-reports/absolute-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/backslash-member.json",
+      "path": "fixtures/artifact/package-reports/backslash-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/changed-defaults-valid.json",
+      "path": "fixtures/artifact/package-reports/changed-defaults-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/changed-docs-valid.json",
+      "path": "fixtures/artifact/package-reports/changed-docs-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/declared-length-mismatch.json",
+      "path": "fixtures/artifact/package-reports/declared-length-mismatch.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/defaults-invalid.json",
+      "path": "fixtures/artifact/package-reports/defaults-invalid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/descriptor-duplicate-key.json",
+      "path": "fixtures/artifact/package-reports/descriptor-duplicate-key.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/descriptor-self-reference.json",
+      "path": "fixtures/artifact/package-reports/descriptor-self-reference.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/dot-member.json",
+      "path": "fixtures/artifact/package-reports/dot-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/double-slash-member.json",
+      "path": "fixtures/artifact/package-reports/double-slash-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/duplicate-member.json",
+      "path": "fixtures/artifact/package-reports/duplicate-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/forged-server-receipt.json",
+      "path": "fixtures/artifact/package-reports/forged-server-receipt.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/hardlink-member.json",
+      "path": "fixtures/artifact/package-reports/hardlink-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/hidden-member-after-eof.json",
+      "path": "fixtures/artifact/package-reports/hidden-member-after-eof.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/local-schema-closure-valid.json",
+      "path": "fixtures/artifact/package-reports/local-schema-closure-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_archive_bytes-equal.json",
+      "path": "fixtures/artifact/package-reports/max_archive_bytes-equal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_archive_bytes-over.json",
+      "path": "fixtures/artifact/package-reports/max_archive_bytes-over.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_member_bytes-equal.json",
+      "path": "fixtures/artifact/package-reports/max_member_bytes-equal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_member_bytes-over.json",
+      "path": "fixtures/artifact/package-reports/max_member_bytes-over.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_members-equal.json",
+      "path": "fixtures/artifact/package-reports/max_members-equal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_members-over.json",
+      "path": "fixtures/artifact/package-reports/max_members-over.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_tar_bytes-equal.json",
+      "path": "fixtures/artifact/package-reports/max_tar_bytes-equal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_tar_bytes-over.json",
+      "path": "fixtures/artifact/package-reports/max_tar_bytes-over.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_total_payload_bytes-equal.json",
+      "path": "fixtures/artifact/package-reports/max_total_payload_bytes-equal.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_total_payload_bytes-over.json",
+      "path": "fixtures/artifact/package-reports/max_total_payload_bytes-over.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/missing-defaults.json",
+      "path": "fixtures/artifact/package-reports/missing-defaults.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/missing-docs.json",
+      "path": "fixtures/artifact/package-reports/missing-docs.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/missing-schema.json",
+      "path": "fixtures/artifact/package-reports/missing-schema.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/package-executable-script.json",
+      "path": "fixtures/artifact/package-reports/package-executable-script.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/package-same-content-different-compression.json",
+      "path": "fixtures/artifact/package-reports/package-same-content-different-compression.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/package-valid.json",
+      "path": "fixtures/artifact/package-reports/package-valid.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/parent-member.json",
+      "path": "fixtures/artifact/package-reports/parent-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/preparation-self-check.json",
+      "path": "fixtures/artifact/package-reports/preparation-self-check.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/schema-network-ref.json",
+      "path": "fixtures/artifact/package-reports/schema-network-ref.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/schema-unknown-local-ref.json",
+      "path": "fixtures/artifact/package-reports/schema-unknown-local-ref.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/spec-wrapper-is-not-schema.json",
+      "path": "fixtures/artifact/package-reports/spec-wrapper-is-not-schema.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/symlink-member.json",
+      "path": "fixtures/artifact/package-reports/symlink-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/synthetic-secret.json",
+      "path": "fixtures/artifact/package-reports/synthetic-secret.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/truncated-gzip.json",
+      "path": "fixtures/artifact/package-reports/truncated-gzip.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/truncated-tar.json",
+      "path": "fixtures/artifact/package-reports/truncated-tar.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/two-wasm.json",
+      "path": "fixtures/artifact/package-reports/two-wasm.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/undeclared-member.json",
+      "path": "fixtures/artifact/package-reports/undeclared-member.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/unknown-environment-ref.json",
+      "path": "fixtures/artifact/package-reports/unknown-environment-ref.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/unverified-source-claim.json",
+      "path": "fixtures/artifact/package-reports/unverified-source-claim.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wasm-invalid-leb.json",
+      "path": "fixtures/artifact/package-reports/wasm-invalid-leb.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wasm-magic.json",
+      "path": "fixtures/artifact/package-reports/wasm-magic.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wasm-truncated-section.json",
+      "path": "fixtures/artifact/package-reports/wasm-truncated-section.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wasm-version.json",
+      "path": "fixtures/artifact/package-reports/wasm-version.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wrong-payload-digest.json",
+      "path": "fixtures/artifact/package-reports/wrong-payload-digest.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wrong-payload-sha.json",
+      "path": "fixtures/artifact/package-reports/wrong-payload-sha.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/absolute-member.tgz",
+      "path": "fixtures/artifact/packages/absolute-member.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/backslash-member.tgz",
+      "path": "fixtures/artifact/packages/backslash-member.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/changed-defaults-valid.tgz",
+      "path": "fixtures/artifact/packages/changed-defaults-valid.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/changed-docs-valid.tgz",
+      "path": "fixtures/artifact/packages/changed-docs-valid.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/declared-length-mismatch.tgz",
+      "path": "fixtures/artifact/packages/declared-length-mismatch.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/defaults-invalid.tgz",
+      "path": "fixtures/artifact/packages/defaults-invalid.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/descriptor-duplicate-key.tgz",
+      "path": "fixtures/artifact/packages/descriptor-duplicate-key.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/descriptor-self-reference.tgz",
+      "path": "fixtures/artifact/packages/descriptor-self-reference.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/dot-member.tgz",
+      "path": "fixtures/artifact/packages/dot-member.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/double-slash-member.tgz",
+      "path": "fixtures/artifact/packages/double-slash-member.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/duplicate-member.tgz",
+      "path": "fixtures/artifact/packages/duplicate-member.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/forged-server-receipt.tgz",
+      "path": "fixtures/artifact/packages/forged-server-receipt.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/hardlink-member.tgz",
+      "path": "fixtures/artifact/packages/hardlink-member.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/hidden-member-after-eof.tgz",
+      "path": "fixtures/artifact/packages/hidden-member-after-eof.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/local-schema-closure-valid.tgz",
+      "path": "fixtures/artifact/packages/local-schema-closure-valid.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_archive_bytes-equal.tgz",
+      "path": "fixtures/artifact/packages/max_archive_bytes-equal.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_archive_bytes-over.tgz",
+      "path": "fixtures/artifact/packages/max_archive_bytes-over.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_member_bytes-equal.tgz",
+      "path": "fixtures/artifact/packages/max_member_bytes-equal.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_member_bytes-over.tgz",
+      "path": "fixtures/artifact/packages/max_member_bytes-over.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_members-equal.tgz",
+      "path": "fixtures/artifact/packages/max_members-equal.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_members-over.tgz",
+      "path": "fixtures/artifact/packages/max_members-over.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_tar_bytes-equal.tgz",
+      "path": "fixtures/artifact/packages/max_tar_bytes-equal.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_tar_bytes-over.tgz",
+      "path": "fixtures/artifact/packages/max_tar_bytes-over.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_total_payload_bytes-equal.tgz",
+      "path": "fixtures/artifact/packages/max_total_payload_bytes-equal.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_total_payload_bytes-over.tgz",
+      "path": "fixtures/artifact/packages/max_total_payload_bytes-over.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/minimal-a.tar.gz",
+      "path": "fixtures/artifact/packages/minimal-a.tar.gz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/minimal-b.tar.gz",
+      "path": "fixtures/artifact/packages/minimal-b.tar.gz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/minimal-docs-changed.tar.gz",
+      "path": "fixtures/artifact/packages/minimal-docs-changed.tar.gz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/missing-defaults.tgz",
+      "path": "fixtures/artifact/packages/missing-defaults.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/missing-docs.tgz",
+      "path": "fixtures/artifact/packages/missing-docs.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/missing-schema.tgz",
+      "path": "fixtures/artifact/packages/missing-schema.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/package-executable-script.tgz",
+      "path": "fixtures/artifact/packages/package-executable-script.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/package-same-content-different-compression.tgz",
+      "path": "fixtures/artifact/packages/package-same-content-different-compression.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/package-valid.tgz",
+      "path": "fixtures/artifact/packages/package-valid.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/parent-member.tgz",
+      "path": "fixtures/artifact/packages/parent-member.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/schema-network-ref.tgz",
+      "path": "fixtures/artifact/packages/schema-network-ref.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/schema-unknown-local-ref.tgz",
+      "path": "fixtures/artifact/packages/schema-unknown-local-ref.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/spec-wrapper-is-not-schema.tgz",
+      "path": "fixtures/artifact/packages/spec-wrapper-is-not-schema.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/symlink-member.tgz",
+      "path": "fixtures/artifact/packages/symlink-member.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/synthetic-secret.tgz",
+      "path": "fixtures/artifact/packages/synthetic-secret.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/truncated-gzip.tgz",
+      "path": "fixtures/artifact/packages/truncated-gzip.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/truncated-tar.tgz",
+      "path": "fixtures/artifact/packages/truncated-tar.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/two-wasm.tgz",
+      "path": "fixtures/artifact/packages/two-wasm.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/undeclared-member.tgz",
+      "path": "fixtures/artifact/packages/undeclared-member.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/unknown-environment-ref.tgz",
+      "path": "fixtures/artifact/packages/unknown-environment-ref.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/unverified-source-claim.tgz",
+      "path": "fixtures/artifact/packages/unverified-source-claim.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wasm-invalid-leb.tgz",
+      "path": "fixtures/artifact/packages/wasm-invalid-leb.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wasm-magic.tgz",
+      "path": "fixtures/artifact/packages/wasm-magic.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wasm-truncated-section.tgz",
+      "path": "fixtures/artifact/packages/wasm-truncated-section.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wasm-version.tgz",
+      "path": "fixtures/artifact/packages/wasm-version.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wrong-payload-digest.tgz",
+      "path": "fixtures/artifact/packages/wrong-payload-digest.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wrong-payload-sha.tgz",
+      "path": "fixtures/artifact/packages/wrong-payload-sha.tgz"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/consumer-expectations.md",
+      "path": "fixtures/artifact/consumer-expectations.md"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/consumer-handoff.json",
+      "path": "fixtures/artifact/consumer-handoff.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/ack-lost-after-commit.json",
+      "path": "fixtures/artifact/lifecycle/ack-lost-after-commit.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/active-media-rollback-retained.json",
+      "path": "fixtures/artifact/lifecycle/active-media-rollback-retained.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/alternate-compression-request.json",
+      "path": "fixtures/artifact/lifecycle/alternate-compression-request.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/catalog-registration-failed.json",
+      "path": "fixtures/artifact/lifecycle/catalog-registration-failed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/changed-content-request.json",
+      "path": "fixtures/artifact/lifecycle/changed-content-request.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/commit-success.json",
+      "path": "fixtures/artifact/lifecycle/commit-success.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/committed-manifest.json",
+      "path": "fixtures/artifact/lifecycle/committed-manifest.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/delete-response-unknown.json",
+      "path": "fixtures/artifact/lifecycle/delete-response-unknown.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/disconnect-before-commit.json",
+      "path": "fixtures/artifact/lifecycle/disconnect-before-commit.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/http-readback-unavailable.json",
+      "path": "fixtures/artifact/lifecycle/http-readback-unavailable.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/inputs.json",
+      "path": "fixtures/artifact/lifecycle/inputs.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-artifact-implies-ready.json",
+      "path": "fixtures/artifact/lifecycle/invalid-artifact-implies-ready.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-committed-regression.json",
+      "path": "fixtures/artifact/lifecycle/invalid-committed-regression.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-delete-live-reference.json",
+      "path": "fixtures/artifact/lifecycle/invalid-delete-live-reference.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-first-archive-overwrite.json",
+      "path": "fixtures/artifact/lifecycle/invalid-first-archive-overwrite.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-unknown-as-failed.json",
+      "path": "fixtures/artifact/lifecycle/invalid-unknown-as-failed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/invalid-version-overwrite.json",
+      "path": "fixtures/artifact/lifecycle/invalid-version-overwrite.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/io-failed-before-commit.json",
+      "path": "fixtures/artifact/lifecycle/io-failed-before-commit.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/legacy-compatible-read.json",
+      "path": "fixtures/artifact/lifecycle/legacy-compatible-read.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/observations.json",
+      "path": "fixtures/artifact/lifecycle/observations.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/original-request.json",
+      "path": "fixtures/artifact/lifecycle/original-request.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/query-itself-times-out.json",
+      "path": "fixtures/artifact/lifecycle/query-itself-times-out.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-committed.json",
+      "path": "fixtures/artifact/lifecycle/result-committed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-delete-unknown.json",
+      "path": "fixtures/artifact/lifecycle/result-delete-unknown.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-failed.json",
+      "path": "fixtures/artifact/lifecycle/result-failed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-http-unreadable.json",
+      "path": "fixtures/artifact/lifecycle/result-http-unreadable.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-idempotency-conflict.json",
+      "path": "fixtures/artifact/lifecycle/result-idempotency-conflict.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-invalid-conflict.json",
+      "path": "fixtures/artifact/lifecycle/result-invalid-conflict.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-invalid-ready.json",
+      "path": "fixtures/artifact/lifecycle/result-invalid-ready.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-invalid-replay.json",
+      "path": "fixtures/artifact/lifecycle/result-invalid-replay.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-invalid-retention.json",
+      "path": "fixtures/artifact/lifecycle/result-invalid-retention.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-invalid-timeout.json",
+      "path": "fixtures/artifact/lifecycle/result-invalid-timeout.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-legacy.json",
+      "path": "fixtures/artifact/lifecycle/result-legacy.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-query-committed.json",
+      "path": "fixtures/artifact/lifecycle/result-query-committed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-query-missing.json",
+      "path": "fixtures/artifact/lifecycle/result-query-missing.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-query-timeout.json",
+      "path": "fixtures/artifact/lifecycle/result-query-timeout.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-receiving.json",
+      "path": "fixtures/artifact/lifecycle/result-receiving.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-registration-failed.json",
+      "path": "fixtures/artifact/lifecycle/result-registration-failed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-rejected.json",
+      "path": "fixtures/artifact/lifecycle/result-rejected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-replay.json",
+      "path": "fixtures/artifact/lifecycle/result-replay.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-retain-live.json",
+      "path": "fixtures/artifact/lifecycle/result-retain-live.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-timeout.json",
+      "path": "fixtures/artifact/lifecycle/result-timeout.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-validating.json",
+      "path": "fixtures/artifact/lifecycle/result-validating.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/result-version-conflict.json",
+      "path": "fixtures/artifact/lifecycle/result-version-conflict.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/same-content-different-archive.json",
+      "path": "fixtures/artifact/lifecycle/same-content-different-archive.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/same-key-different-content.json",
+      "path": "fixtures/artifact/lifecycle/same-key-different-content.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/same-upload-replay.json",
+      "path": "fixtures/artifact/lifecycle/same-upload-replay.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/same-version-different-content.json",
+      "path": "fixtures/artifact/lifecycle/same-version-different-content.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/scenarios.json",
+      "path": "fixtures/artifact/lifecycle/scenarios.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/validation-rejected.json",
+      "path": "fixtures/artifact/lifecycle/validation-rejected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle/version-conflict-request.json",
+      "path": "fixtures/artifact/lifecycle/version-conflict-request.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/lifecycle-cases.json",
+      "path": "fixtures/artifact/lifecycle-cases.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/all-instances-complete.expected.json",
+      "path": "fixtures/artifact/readback/all-instances-complete.expected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/all-instances-complete.observed.json",
+      "path": "fixtures/artifact/readback/all-instances-complete.observed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/cases.json",
+      "path": "fixtures/artifact/readback/cases.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/empty-expected.expected.json",
+      "path": "fixtures/artifact/readback/empty-expected.expected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/empty-expected.observed.json",
+      "path": "fixtures/artifact/readback/empty-expected.observed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/expected-files.json",
+      "path": "fixtures/artifact/readback/expected-files.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/expected-missing-manifest.expected.json",
+      "path": "fixtures/artifact/readback/expected-missing-manifest.expected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/expected-missing-manifest.observed.json",
+      "path": "fixtures/artifact/readback/expected-missing-manifest.observed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/expected.json",
+      "path": "fixtures/artifact/readback/expected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/http-200-wrong-digest.expected.json",
+      "path": "fixtures/artifact/readback/http-200-wrong-digest.expected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/http-200-wrong-digest.observed.json",
+      "path": "fixtures/artifact/readback/http-200-wrong-digest.observed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/manifest-http-missing.expected.json",
+      "path": "fixtures/artifact/readback/manifest-http-missing.expected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/manifest-http-missing.observed.json",
+      "path": "fixtures/artifact/readback/manifest-http-missing.observed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/observed-missing-payload.expected.json",
+      "path": "fixtures/artifact/readback/observed-missing-payload.expected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/observed-missing-payload.observed.json",
+      "path": "fixtures/artifact/readback/observed-missing-payload.observed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/only-first-instance.expected.json",
+      "path": "fixtures/artifact/readback/only-first-instance.expected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/only-first-instance.observed.json",
+      "path": "fixtures/artifact/readback/only-first-instance.observed.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/temporary-directory-only.expected.json",
+      "path": "fixtures/artifact/readback/temporary-directory-only.expected.json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/readback/temporary-directory-only.observed.json",
+      "path": "fixtures/artifact/readback/temporary-directory-only.observed.json"
+    }
+  ]
+}

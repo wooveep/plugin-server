@@ -1,258 +1,175 @@
 {
-  "preparation_status": "draft",
-  "domain_validation": "not_run",
-  "consumer_receipts": "not_run",
-  "assignment": {
-    "acting_agent": "Codex agent /root/artifact_fixture_prep",
-    "assignee": "待确认",
-    "backup": "待确认",
-    "source_branch": "chore/retire-legacy-workflow-20261022",
-    "source_revision": "08ea31ddc2f9b077573961a5cd0d31fbcaf593e0",
-    "planned_date": "待确认"
-  },
-  "input_bundle_refs": [
-    {
-      "task_id": "D0-MF-01",
-      "bundle_version": null,
-      "manifest_sha256": null,
-      "status": "awaiting_frozen_input"
-    },
-    {
-      "task_id": "D0-ART-01@manifest",
-      "bundle_version": null,
-      "manifest_sha256": null,
-      "status": "not_produced"
-    }
-  ],
+  "fixture_format_version": "artifact-lifecycle-cases-v1",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
   "cases": [
     {
-      "case_id": "ART-LC-001",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/0"
-      },
+      "case_id": "commit-success",
+      "path": "lifecycle/commit-success.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-002",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/1"
-      },
+      "case_id": "validation-rejected",
+      "path": "lifecycle/validation-rejected.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-003",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/2"
-      },
+      "case_id": "io-failed-before-commit",
+      "path": "lifecycle/io-failed-before-commit.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-004",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/3"
-      },
+      "case_id": "same-upload-replay",
+      "path": "lifecycle/same-upload-replay.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-005",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/4"
-      },
+      "case_id": "same-key-different-content",
+      "path": "lifecycle/same-key-different-content.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-006",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/5"
-      },
+      "case_id": "same-version-different-content",
+      "path": "lifecycle/same-version-different-content.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-007",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/6"
-      },
+      "case_id": "ack-lost-after-commit",
+      "path": "lifecycle/ack-lost-after-commit.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-008",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/7"
-      },
+      "case_id": "disconnect-before-commit",
+      "path": "lifecycle/disconnect-before-commit.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-009",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/8"
-      },
+      "case_id": "query-itself-times-out",
+      "path": "lifecycle/query-itself-times-out.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-010",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/9"
-      },
+      "case_id": "same-content-different-archive",
+      "path": "lifecycle/same-content-different-archive.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-011",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/10"
-      },
+      "case_id": "catalog-registration-failed",
+      "path": "lifecycle/catalog-registration-failed.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-012",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/11"
-      },
+      "case_id": "http-readback-unavailable",
+      "path": "lifecycle/http-readback-unavailable.json",
       "expected": {
         "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": null
+      }
     },
     {
-      "case_id": "ART-LC-013",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/12"
-      },
+      "case_id": "active-media-rollback-retained",
+      "path": "lifecycle/active-media-rollback-retained.json",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "delete-response-unknown",
+      "path": "lifecycle/delete-response-unknown.json",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "legacy-compatible-read",
+      "path": "lifecycle/legacy-compatible-read.json",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "invalid-committed-regression",
+      "path": "lifecycle/invalid-committed-regression.json",
       "expected": {
         "verdict": "reject",
-        "error_code": "illegal_state_transition",
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "error_code": "ART_LIFECYCLE_TRANSITION"
+      }
     },
     {
-      "case_id": "ART-LC-014",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/13"
-      },
+      "case_id": "invalid-unknown-as-failed",
+      "path": "lifecycle/invalid-unknown-as-failed.json",
       "expected": {
-        "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "verdict": "reject",
+        "error_code": "ART_UNKNOWN_CLASSIFICATION"
+      }
     },
     {
-      "case_id": "ART-LC-015",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/14"
-      },
+      "case_id": "invalid-first-archive-overwrite",
+      "path": "lifecycle/invalid-first-archive-overwrite.json",
       "expected": {
-        "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "verdict": "reject",
+        "error_code": "ART_FIRST_RESULT"
+      }
     },
     {
-      "case_id": "ART-LC-016",
-      "input_ref": {
-        "path": "lifecycle/scenarios.json",
-        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
-        "pointer": "/scenarios/15"
-      },
+      "case_id": "invalid-version-overwrite",
+      "path": "lifecycle/invalid-version-overwrite.json",
       "expected": {
-        "verdict": "accept",
-        "error_code": null,
-        "stage": "protocol_oracle_draft"
-      },
-      "domain_validation": "not_run"
+        "verdict": "reject",
+        "error_code": "ART_IDENTITY_CONFLICT"
+      }
+    },
+    {
+      "case_id": "invalid-artifact-implies-ready",
+      "path": "lifecycle/invalid-artifact-implies-ready.json",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_RELEASE_AUTHORITY"
+      }
+    },
+    {
+      "case_id": "invalid-delete-live-reference",
+      "path": "lifecycle/invalid-delete-live-reference.json",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_RETENTION"
+      }
     }
-  ],
-  "readback_cases_ref": {
-    "path": "readback/cases.json",
-    "sha256": "b74951fb68d7c8089a8666ee9a1f404505abc879858c33dbc8331187b975820a"
-  },
-  "input_output_references_are": "Closed within this draft directory and raw-file hashed; no dependency package published."
+  ]
 }

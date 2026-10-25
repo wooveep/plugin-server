@@ -1,58 +1,1084 @@
 {
-  "preparation_status": "draft",
-  "domain_validation": "not_run",
-  "prepared_for_card": "D0-ART-02",
-  "integration_owner": "D0-ART-01",
-  "not_a_bundle_or_lock": true,
-  "registration_status": "proposed_only; no frozen validator/schema_ref and no publication manifest exists",
-  "proposals": [
+  "owner": "D0-ART-02",
+  "bundle_input": "art-contracts-2026-10-25.1",
+  "assets": [
     {
-      "source_ref": {
-        "path": "package-cases.json",
-        "sha256": "cb7c12a75480e2c2890202a0a3a66bd0f04b679e774f76b5534559253520d51a"
-      },
-      "proposed_package_path": "fixtures/artifact/package-cases.json",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/package-cases.json",
+      "path": "fixtures/artifact/package-cases.json",
+      "sha256": "7b609394ae9ffb32826228240d25fd8a247ee580f3b80996a0881f14597de707",
+      "asset_id": "artifact-package-artifact-package-cases",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "package-recipes/minimal.json",
-        "sha256": "4bc89a60c6d426f29596097401c399a34f5ee23fbe188bc9c42bba1dbf2c2fd6"
-      },
-      "proposed_package_path": "fixtures/artifact/package-recipes/minimal.json",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/package-recipes/absolute-member.json",
+      "path": "fixtures/artifact/package-recipes/absolute-member.json",
+      "sha256": "153c02cd5df4eee83a1177872f0d01d6c2df295c6bdb31cb3b2a5d43b38408d0",
+      "asset_id": "artifact-package-package-recipes-absolute-member",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "package-recipes/negative-recipes.json",
-        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190"
-      },
-      "proposed_package_path": "fixtures/artifact/package-recipes/negative-recipes.json",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/package-recipes/backslash-member.json",
+      "path": "fixtures/artifact/package-recipes/backslash-member.json",
+      "sha256": "0eaa4da0a783bcc441e43f040f3947264041baa32d673c7a670f1891a29e3878",
+      "asset_id": "artifact-package-package-recipes-backslash-member",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "packages/minimal-a.tar.gz",
-        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
-      },
-      "proposed_package_path": "fixtures/artifact/packages/minimal-a.tar.gz",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/package-recipes/changed-defaults-valid.json",
+      "path": "fixtures/artifact/package-recipes/changed-defaults-valid.json",
+      "sha256": "08af7a92a35f83c15bbcc1b28c771f8c5e390a0c1ee72fdaab2ff8f876241a36",
+      "asset_id": "artifact-package-package-recipes-changed-defaults-valid",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "packages/minimal-b.tar.gz",
-        "sha256": "472079989f5cb9493889c27de7b076356ab5d2b56433c85e491a1872fafcb404"
-      },
-      "proposed_package_path": "fixtures/artifact/packages/minimal-b.tar.gz",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/package-recipes/changed-docs-valid.json",
+      "path": "fixtures/artifact/package-recipes/changed-docs-valid.json",
+      "sha256": "447d14cb7c7e52233d6a7303f48d62ae67482c43a7af2ad8915a401c05a290f1",
+      "asset_id": "artifact-package-package-recipes-changed-docs-valid",
+      "media_type": "application/json"
     },
     {
-      "source_ref": {
-        "path": "packages/minimal-docs-changed.tar.gz",
-        "sha256": "2f57918d9832912ecbddfff1341f3f1e5057e359838b6c3c0ca8057469ca26e2"
-      },
-      "proposed_package_path": "fixtures/artifact/packages/minimal-docs-changed.tar.gz",
-      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+      "source": "contracts/fixtures/v1/artifact/package-recipes/declared-length-mismatch.json",
+      "path": "fixtures/artifact/package-recipes/declared-length-mismatch.json",
+      "sha256": "a4348d89027075d2de8c4499e437e5574d571dcc09ccc82253db221356ab0671",
+      "asset_id": "artifact-package-package-recipes-declared-length-mismatch",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/defaults-invalid.json",
+      "path": "fixtures/artifact/package-recipes/defaults-invalid.json",
+      "sha256": "55b410417dfb1ec3e15abb11d8bcbbb41ed1b093a96badbbcfce9e46e05cd761",
+      "asset_id": "artifact-package-package-recipes-defaults-invalid",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/descriptor-duplicate-key.json",
+      "path": "fixtures/artifact/package-recipes/descriptor-duplicate-key.json",
+      "sha256": "6980aa009fa6034a8006ec766639e19a6caea296f53b6c41d687ce1c1016c722",
+      "asset_id": "artifact-package-package-recipes-descriptor-duplicate-key",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/descriptor-self-reference.json",
+      "path": "fixtures/artifact/package-recipes/descriptor-self-reference.json",
+      "sha256": "5cb792ff6d0b64662bb33fd32a4d9fbe40dd1129f3f4c33811aaaeae3ba4d32f",
+      "asset_id": "artifact-package-package-recipes-descriptor-self-reference",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/dot-member.json",
+      "path": "fixtures/artifact/package-recipes/dot-member.json",
+      "sha256": "dfd9d92eb566155286e87b508418e993af5277db672b9b1f0aef3abc4e3ca20e",
+      "asset_id": "artifact-package-package-recipes-dot-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/double-slash-member.json",
+      "path": "fixtures/artifact/package-recipes/double-slash-member.json",
+      "sha256": "9837934870c93dc1c07632b53569fe9c5d17e23af5e7afaad19bb83103b3f643",
+      "asset_id": "artifact-package-package-recipes-double-slash-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/duplicate-member.json",
+      "path": "fixtures/artifact/package-recipes/duplicate-member.json",
+      "sha256": "71cfd8478e97923ba4a7d94d503c344a57084b27737ef8c95d2cb84257b7ada9",
+      "asset_id": "artifact-package-package-recipes-duplicate-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/forged-server-receipt.json",
+      "path": "fixtures/artifact/package-recipes/forged-server-receipt.json",
+      "sha256": "bbae2397ce68c5eaf7e6610fd263b5940056f3054f12fdd8ed3e29bd9e321a82",
+      "asset_id": "artifact-package-package-recipes-forged-server-receipt",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/hardlink-member.json",
+      "path": "fixtures/artifact/package-recipes/hardlink-member.json",
+      "sha256": "e8666139aa6e10d7eaca92991dc5ce605d68ee180cc9e42c1395dd8699a3a7fc",
+      "asset_id": "artifact-package-package-recipes-hardlink-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/hidden-member-after-eof.json",
+      "path": "fixtures/artifact/package-recipes/hidden-member-after-eof.json",
+      "sha256": "96fece579449f475961f301e9038443b58b55a2b5d57aab7b00b2db396dc19e7",
+      "asset_id": "artifact-package-package-recipes-hidden-member-after-eof",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/local-schema-closure-valid.json",
+      "path": "fixtures/artifact/package-recipes/local-schema-closure-valid.json",
+      "sha256": "3cd85b089dbb365255544a18441287e906f228998bba7f37b9c51d9743b454f7",
+      "asset_id": "artifact-package-package-recipes-local-schema-closure-valid",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_archive_bytes-equal.json",
+      "path": "fixtures/artifact/package-recipes/max_archive_bytes-equal.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-max_archive_bytes-equal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_archive_bytes-over.json",
+      "path": "fixtures/artifact/package-recipes/max_archive_bytes-over.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-max_archive_bytes-over",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_member_bytes-equal.json",
+      "path": "fixtures/artifact/package-recipes/max_member_bytes-equal.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-max_member_bytes-equal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_member_bytes-over.json",
+      "path": "fixtures/artifact/package-recipes/max_member_bytes-over.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-max_member_bytes-over",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_members-equal.json",
+      "path": "fixtures/artifact/package-recipes/max_members-equal.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-max_members-equal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_members-over.json",
+      "path": "fixtures/artifact/package-recipes/max_members-over.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-max_members-over",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_tar_bytes-equal.json",
+      "path": "fixtures/artifact/package-recipes/max_tar_bytes-equal.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-max_tar_bytes-equal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_tar_bytes-over.json",
+      "path": "fixtures/artifact/package-recipes/max_tar_bytes-over.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-max_tar_bytes-over",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_total_payload_bytes-equal.json",
+      "path": "fixtures/artifact/package-recipes/max_total_payload_bytes-equal.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-max_total_payload_bytes-equal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/max_total_payload_bytes-over.json",
+      "path": "fixtures/artifact/package-recipes/max_total_payload_bytes-over.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-max_total_payload_bytes-over",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/minimal.json",
+      "path": "fixtures/artifact/package-recipes/minimal.json",
+      "sha256": "4bc89a60c6d426f29596097401c399a34f5ee23fbe188bc9c42bba1dbf2c2fd6",
+      "asset_id": "artifact-package-package-recipes-minimal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/missing-defaults.json",
+      "path": "fixtures/artifact/package-recipes/missing-defaults.json",
+      "sha256": "0f02577cb51299e397d6129faaece4376365cdec434d48201b658dba17b9d461",
+      "asset_id": "artifact-package-package-recipes-missing-defaults",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/missing-docs.json",
+      "path": "fixtures/artifact/package-recipes/missing-docs.json",
+      "sha256": "340bdeb386978e9fc1d944a5f9f5cfb9bac2256e7eea1c2ac83a5390d3bfb313",
+      "asset_id": "artifact-package-package-recipes-missing-docs",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/missing-schema.json",
+      "path": "fixtures/artifact/package-recipes/missing-schema.json",
+      "sha256": "7a89400a073f2eca64eea1b9c9f398e9c4fdbc5457a20c0375e87c6917038763",
+      "asset_id": "artifact-package-package-recipes-missing-schema",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/negative-recipes.json",
+      "path": "fixtures/artifact/package-recipes/negative-recipes.json",
+      "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+      "asset_id": "artifact-package-package-recipes-negative-recipes",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/package-executable-script.json",
+      "path": "fixtures/artifact/package-recipes/package-executable-script.json",
+      "sha256": "236af8c0957f8c9e6c1bb0adddbebd8d27fb8ae0a31166d5c1c5885df496be7d",
+      "asset_id": "artifact-package-package-recipes-package-executable-script",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/package-same-content-different-compression.json",
+      "path": "fixtures/artifact/package-recipes/package-same-content-different-compression.json",
+      "sha256": "57fa7eadd70a98c0568a2ebc4671300c1d944a8ac8d097a2be26848c88ef8ba2",
+      "asset_id": "artifact-package-package-recipes-package-same-content-different-compression",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/package-valid.json",
+      "path": "fixtures/artifact/package-recipes/package-valid.json",
+      "sha256": "73d644389151f43b71e3607f5ae34947d30a9b70a4315000054729c4f04ccbde",
+      "asset_id": "artifact-package-package-recipes-package-valid",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/parent-member.json",
+      "path": "fixtures/artifact/package-recipes/parent-member.json",
+      "sha256": "a9934d48a48ba95b05c45a479e6a8055bc255d54d5a5daa0d11d75219f3b663a",
+      "asset_id": "artifact-package-package-recipes-parent-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/schema-network-ref.json",
+      "path": "fixtures/artifact/package-recipes/schema-network-ref.json",
+      "sha256": "379a1336934ab9360232d344c0c9d115d1e6c8a907d6ef9554fbb86adf4b1021",
+      "asset_id": "artifact-package-package-recipes-schema-network-ref",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/schema-unknown-local-ref.json",
+      "path": "fixtures/artifact/package-recipes/schema-unknown-local-ref.json",
+      "sha256": "86627f32ea68d922eb752ea1f20fd3ce52679936bfc6ad81fa27772f3c201cea",
+      "asset_id": "artifact-package-package-recipes-schema-unknown-local-ref",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/spec-wrapper-is-not-schema.json",
+      "path": "fixtures/artifact/package-recipes/spec-wrapper-is-not-schema.json",
+      "sha256": "8cdd71f38862294b1e90da4fedeb07bc2c64de82f5c6b81e5452fffa3f01ee44",
+      "asset_id": "artifact-package-package-recipes-spec-wrapper-is-not-schema",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/symlink-member.json",
+      "path": "fixtures/artifact/package-recipes/symlink-member.json",
+      "sha256": "f20a8eaa2af59f6568d8ee34ce72b44e341b800b08513f68b5c6ce27a1f2184b",
+      "asset_id": "artifact-package-package-recipes-symlink-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/synthetic-secret.json",
+      "path": "fixtures/artifact/package-recipes/synthetic-secret.json",
+      "sha256": "01f5314c9b98cbb43427362ed8dc5fa3ed345d2b1c368e07cd9aa04e8829c1a6",
+      "asset_id": "artifact-package-package-recipes-synthetic-secret",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/truncated-gzip.json",
+      "path": "fixtures/artifact/package-recipes/truncated-gzip.json",
+      "sha256": "b31cee5d3b92359d381bc21353594fc0191d19505699ccb99db8d990f9669d0c",
+      "asset_id": "artifact-package-package-recipes-truncated-gzip",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/truncated-tar.json",
+      "path": "fixtures/artifact/package-recipes/truncated-tar.json",
+      "sha256": "7f75e4ad5fedec553944117849e2636d03f90e1a166b0380a073a82f482ec293",
+      "asset_id": "artifact-package-package-recipes-truncated-tar",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/two-wasm.json",
+      "path": "fixtures/artifact/package-recipes/two-wasm.json",
+      "sha256": "96c89ed46aa7074e0925aef02bc91ddcc6246e81c8a962db21caa10aeeffebdb",
+      "asset_id": "artifact-package-package-recipes-two-wasm",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/undeclared-member.json",
+      "path": "fixtures/artifact/package-recipes/undeclared-member.json",
+      "sha256": "3623bbeb351e214bd8f92e9f43a62601f8aeffb6816ab8e081c068d954c6324a",
+      "asset_id": "artifact-package-package-recipes-undeclared-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/unknown-environment-ref.json",
+      "path": "fixtures/artifact/package-recipes/unknown-environment-ref.json",
+      "sha256": "5f3d232560d5f071334df21a385f51634bc7050b2271c6d0298936cc90f4ca90",
+      "asset_id": "artifact-package-package-recipes-unknown-environment-ref",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/unverified-source-claim.json",
+      "path": "fixtures/artifact/package-recipes/unverified-source-claim.json",
+      "sha256": "e8eaab033594625ce657e76213eba8d557f598ea7e2be4b55b793a1461cd6833",
+      "asset_id": "artifact-package-package-recipes-unverified-source-claim",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wasm-invalid-leb.json",
+      "path": "fixtures/artifact/package-recipes/wasm-invalid-leb.json",
+      "sha256": "02d1e04d33fe8225226ec687bfa5737d47d24ca74ccf3785f08db57380a3ec8e",
+      "asset_id": "artifact-package-package-recipes-wasm-invalid-leb",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wasm-magic.json",
+      "path": "fixtures/artifact/package-recipes/wasm-magic.json",
+      "sha256": "ab6bab5332709661b209740a44ca93b77d1e1e475eea91d476c5cc15dd58f04d",
+      "asset_id": "artifact-package-package-recipes-wasm-magic",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wasm-truncated-section.json",
+      "path": "fixtures/artifact/package-recipes/wasm-truncated-section.json",
+      "sha256": "182bb286167f4dd079d56a2b16007884d3a27c83dbd6aaba0b1700d4271afe89",
+      "asset_id": "artifact-package-package-recipes-wasm-truncated-section",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wasm-version.json",
+      "path": "fixtures/artifact/package-recipes/wasm-version.json",
+      "sha256": "76a274316fbe843a32a8ba8014506f22b9f625bdb2eaefc966b3cf18d9331b23",
+      "asset_id": "artifact-package-package-recipes-wasm-version",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wrong-payload-digest.json",
+      "path": "fixtures/artifact/package-recipes/wrong-payload-digest.json",
+      "sha256": "f3c9feb0fdec4b8f3da526ffc1cc5fad7d459c155dfae602b8b606d35fc3207c",
+      "asset_id": "artifact-package-package-recipes-wrong-payload-digest",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-recipes/wrong-payload-sha.json",
+      "path": "fixtures/artifact/package-recipes/wrong-payload-sha.json",
+      "sha256": "00e65de8c11aee67705f56c262afe0ca31add05a2b0a9ac29c99f133d2f420d6",
+      "asset_id": "artifact-package-package-recipes-wrong-payload-sha",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/absolute-member.json",
+      "path": "fixtures/artifact/package-reports/absolute-member.json",
+      "sha256": "e79ee6ca228e03e43342936174e2e1937ef83c38187da46ecb5518fb46cff455",
+      "asset_id": "artifact-package-package-reports-absolute-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/backslash-member.json",
+      "path": "fixtures/artifact/package-reports/backslash-member.json",
+      "sha256": "ed8cda945aeb7d05c20cabee5632a0c5e453fe5ca7c2e18d091cf5097cea242e",
+      "asset_id": "artifact-package-package-reports-backslash-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/changed-defaults-valid.json",
+      "path": "fixtures/artifact/package-reports/changed-defaults-valid.json",
+      "sha256": "2594aa0a2f46066cffd02e3730269c855ba7a4755bd26cf3cf2b9bdf58f9edb3",
+      "asset_id": "artifact-package-package-reports-changed-defaults-valid",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/changed-docs-valid.json",
+      "path": "fixtures/artifact/package-reports/changed-docs-valid.json",
+      "sha256": "6a6d3569e0ccef8d6ff0ad3a3a4ccde656280151bd8a6a38369cc17898fa61a2",
+      "asset_id": "artifact-package-package-reports-changed-docs-valid",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/declared-length-mismatch.json",
+      "path": "fixtures/artifact/package-reports/declared-length-mismatch.json",
+      "sha256": "cc18f34966814033c6d5beec736645b94057b2f1e43ad5fbaefe8fa23a9f095b",
+      "asset_id": "artifact-package-package-reports-declared-length-mismatch",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/defaults-invalid.json",
+      "path": "fixtures/artifact/package-reports/defaults-invalid.json",
+      "sha256": "f382bba345b67fe3b15b993bd172e83ec570061441c9a4e18b9f9dad004a352d",
+      "asset_id": "artifact-package-package-reports-defaults-invalid",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/descriptor-duplicate-key.json",
+      "path": "fixtures/artifact/package-reports/descriptor-duplicate-key.json",
+      "sha256": "7f9b63921d0ae55f7e41deac56c0a96c42a5751ea8b260373b79ba64e33d1f66",
+      "asset_id": "artifact-package-package-reports-descriptor-duplicate-key",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/descriptor-self-reference.json",
+      "path": "fixtures/artifact/package-reports/descriptor-self-reference.json",
+      "sha256": "4b7cf11b2fd3356726a0c4594fa5862a82924e9bae28e397c1a20f11e6d2a32e",
+      "asset_id": "artifact-package-package-reports-descriptor-self-reference",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/dot-member.json",
+      "path": "fixtures/artifact/package-reports/dot-member.json",
+      "sha256": "1c0b437a53de48c4f7ccb244053846db9d6be4907caa93a927ec3168988c8668",
+      "asset_id": "artifact-package-package-reports-dot-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/double-slash-member.json",
+      "path": "fixtures/artifact/package-reports/double-slash-member.json",
+      "sha256": "4c2f44fcaaef6492c328ea6fd78ad7e72e1b12279a43aefd11379cce3c39e340",
+      "asset_id": "artifact-package-package-reports-double-slash-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/duplicate-member.json",
+      "path": "fixtures/artifact/package-reports/duplicate-member.json",
+      "sha256": "73b537b8ca2945c884ad480b5ab922a4fb46654d3d4b72ffe55ca13da036c133",
+      "asset_id": "artifact-package-package-reports-duplicate-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/forged-server-receipt.json",
+      "path": "fixtures/artifact/package-reports/forged-server-receipt.json",
+      "sha256": "7287668100b672485b1351dee7d19441b792fafb977944fdb2582a94a0c3fe8e",
+      "asset_id": "artifact-package-package-reports-forged-server-receipt",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/hardlink-member.json",
+      "path": "fixtures/artifact/package-reports/hardlink-member.json",
+      "sha256": "8e19f548feb0d708599cc035f5afb6623841e198f2daa87d24f3a14c21f53011",
+      "asset_id": "artifact-package-package-reports-hardlink-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/hidden-member-after-eof.json",
+      "path": "fixtures/artifact/package-reports/hidden-member-after-eof.json",
+      "sha256": "9ff35e0a832286415be551ad862fcc32049adecddcd41d18ab7e80b9c10ff230",
+      "asset_id": "artifact-package-package-reports-hidden-member-after-eof",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/local-schema-closure-valid.json",
+      "path": "fixtures/artifact/package-reports/local-schema-closure-valid.json",
+      "sha256": "18482887bd43148716ef2c6ece754e6e34cb5a92491931361eed016af24a34ab",
+      "asset_id": "artifact-package-package-reports-local-schema-closure-valid",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_archive_bytes-equal.json",
+      "path": "fixtures/artifact/package-reports/max_archive_bytes-equal.json",
+      "sha256": "a2644d3fa24bb3e77cd72dbad717d645f834333ba70661ff9f7e5ffe32d5a47b",
+      "asset_id": "artifact-package-package-reports-max_archive_bytes-equal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_archive_bytes-over.json",
+      "path": "fixtures/artifact/package-reports/max_archive_bytes-over.json",
+      "sha256": "c71852ed0d113fd39cd64e831582ca8a1ef545355e88b4b5f6bfc2a0921fc5ff",
+      "asset_id": "artifact-package-package-reports-max_archive_bytes-over",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_member_bytes-equal.json",
+      "path": "fixtures/artifact/package-reports/max_member_bytes-equal.json",
+      "sha256": "db6769f5e35e72d05fa4d031904a0d67c63121ff035a5c9453f25a1b64d45458",
+      "asset_id": "artifact-package-package-reports-max_member_bytes-equal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_member_bytes-over.json",
+      "path": "fixtures/artifact/package-reports/max_member_bytes-over.json",
+      "sha256": "123a1ef7337e62ff7e7dc6762241f3e337eb60e04d5aa1615454abb7863e12b6",
+      "asset_id": "artifact-package-package-reports-max_member_bytes-over",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_members-equal.json",
+      "path": "fixtures/artifact/package-reports/max_members-equal.json",
+      "sha256": "d171f0778d0d739eddd7c0cc04527c4669b44ebe1e6cd8e0fd821413e9355a07",
+      "asset_id": "artifact-package-package-reports-max_members-equal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_members-over.json",
+      "path": "fixtures/artifact/package-reports/max_members-over.json",
+      "sha256": "af0e3887863098ab9966de271c695d4b1e576432347b278a0f96fc8db0ad7a3b",
+      "asset_id": "artifact-package-package-reports-max_members-over",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_tar_bytes-equal.json",
+      "path": "fixtures/artifact/package-reports/max_tar_bytes-equal.json",
+      "sha256": "6ac77c4dafc5d28dbd87e04ef724161e300e4aaa31254f7ff7c50c9ba6fde15c",
+      "asset_id": "artifact-package-package-reports-max_tar_bytes-equal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_tar_bytes-over.json",
+      "path": "fixtures/artifact/package-reports/max_tar_bytes-over.json",
+      "sha256": "1c2028bb24e0c92f10287f884d5e18639351a763851f360bd8bcd831d561b858",
+      "asset_id": "artifact-package-package-reports-max_tar_bytes-over",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_total_payload_bytes-equal.json",
+      "path": "fixtures/artifact/package-reports/max_total_payload_bytes-equal.json",
+      "sha256": "9ed56294f3ff5447a77e5e0b68ac295a73b0b4476489ff005d81b068f405558e",
+      "asset_id": "artifact-package-package-reports-max_total_payload_bytes-equal",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/max_total_payload_bytes-over.json",
+      "path": "fixtures/artifact/package-reports/max_total_payload_bytes-over.json",
+      "sha256": "fe0237a8250c4b900b029e876a8193e0236db1c2d5965c2532f8be617b195a95",
+      "asset_id": "artifact-package-package-reports-max_total_payload_bytes-over",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/missing-defaults.json",
+      "path": "fixtures/artifact/package-reports/missing-defaults.json",
+      "sha256": "265d34913fa176d30e9bfa6e602f48bdb17c0b22a0c4886f4670720743729dc9",
+      "asset_id": "artifact-package-package-reports-missing-defaults",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/missing-docs.json",
+      "path": "fixtures/artifact/package-reports/missing-docs.json",
+      "sha256": "fca38069313b2ffd3560b4c85af2b29310f23008b00fe5aefb54c74c43cfa732",
+      "asset_id": "artifact-package-package-reports-missing-docs",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/missing-schema.json",
+      "path": "fixtures/artifact/package-reports/missing-schema.json",
+      "sha256": "215976a4b67784becf268a8778452c5e6704eb94ec20e373eb52dbd0d399db15",
+      "asset_id": "artifact-package-package-reports-missing-schema",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/package-executable-script.json",
+      "path": "fixtures/artifact/package-reports/package-executable-script.json",
+      "sha256": "a949d6efc5e08c5509b1151f42b978bdcad0ecccec37b0c2cf498fd63c152efc",
+      "asset_id": "artifact-package-package-reports-package-executable-script",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/package-same-content-different-compression.json",
+      "path": "fixtures/artifact/package-reports/package-same-content-different-compression.json",
+      "sha256": "95279ac3f186e89978d1cebc9c1c02e54dc927c08ffd116fffe8c45802327674",
+      "asset_id": "artifact-package-package-reports-package-same-content-different-compression",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/package-valid.json",
+      "path": "fixtures/artifact/package-reports/package-valid.json",
+      "sha256": "bf75f09fbbd0efdf59904b80b06841453e96afa897a1ab982852d3a7040e26a6",
+      "asset_id": "artifact-package-package-reports-package-valid",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/parent-member.json",
+      "path": "fixtures/artifact/package-reports/parent-member.json",
+      "sha256": "980e4aa42e2894491810f6054095f34f2b867157cf65e504880fc768dda7814f",
+      "asset_id": "artifact-package-package-reports-parent-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/preparation-self-check.json",
+      "path": "fixtures/artifact/package-reports/preparation-self-check.json",
+      "sha256": "0e3a32efd642fbe9f1bb5df5eb032126aafa3092c466f6d1ecba0f932bacaca7",
+      "asset_id": "artifact-package-package-reports-preparation-self-check",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/schema-network-ref.json",
+      "path": "fixtures/artifact/package-reports/schema-network-ref.json",
+      "sha256": "56f6748bfe2c36442d45da1ce1215b7806052a3ac6eac0a308a77385c23eb06f",
+      "asset_id": "artifact-package-package-reports-schema-network-ref",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/schema-unknown-local-ref.json",
+      "path": "fixtures/artifact/package-reports/schema-unknown-local-ref.json",
+      "sha256": "5d1787af4ba13f8810f41842af87a3dabdfd2426b3788d4899f656e9222930df",
+      "asset_id": "artifact-package-package-reports-schema-unknown-local-ref",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/spec-wrapper-is-not-schema.json",
+      "path": "fixtures/artifact/package-reports/spec-wrapper-is-not-schema.json",
+      "sha256": "e84392aec879d83104b4879a4b5e67dd371dd4582209919061300f5a1bac0aee",
+      "asset_id": "artifact-package-package-reports-spec-wrapper-is-not-schema",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/symlink-member.json",
+      "path": "fixtures/artifact/package-reports/symlink-member.json",
+      "sha256": "b13ed1d612b52f0e485154ef2eded46e41cbf2122bb01afdd0edb746458cd409",
+      "asset_id": "artifact-package-package-reports-symlink-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/synthetic-secret.json",
+      "path": "fixtures/artifact/package-reports/synthetic-secret.json",
+      "sha256": "d76a254ab41c3f9f3d79909e77804607811c9ee8cfdedbf019196d0c02003fcc",
+      "asset_id": "artifact-package-package-reports-synthetic-secret",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/truncated-gzip.json",
+      "path": "fixtures/artifact/package-reports/truncated-gzip.json",
+      "sha256": "8f51aff4cb0d7365f47b4954f000188a8527f0559d03493c739e34e093fc3dc7",
+      "asset_id": "artifact-package-package-reports-truncated-gzip",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/truncated-tar.json",
+      "path": "fixtures/artifact/package-reports/truncated-tar.json",
+      "sha256": "bd01aa9a8bb21631b34b0dbf17694025fb75a29fb2fe1e68904ec65794b8cdd8",
+      "asset_id": "artifact-package-package-reports-truncated-tar",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/two-wasm.json",
+      "path": "fixtures/artifact/package-reports/two-wasm.json",
+      "sha256": "a9b4b72a7ca6b5b81851b40c48b21ca9f9b1da50edc92060769c9f48ad9bfe7b",
+      "asset_id": "artifact-package-package-reports-two-wasm",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/undeclared-member.json",
+      "path": "fixtures/artifact/package-reports/undeclared-member.json",
+      "sha256": "d10d4b552aca093ff05113c9faf6c85b675b345f49e1b68ca47a129e320e09f4",
+      "asset_id": "artifact-package-package-reports-undeclared-member",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/unknown-environment-ref.json",
+      "path": "fixtures/artifact/package-reports/unknown-environment-ref.json",
+      "sha256": "f07d2673d4355e19aa692bed271eb881fa3ab2541cfc240be04f0a8d44f95b25",
+      "asset_id": "artifact-package-package-reports-unknown-environment-ref",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/unverified-source-claim.json",
+      "path": "fixtures/artifact/package-reports/unverified-source-claim.json",
+      "sha256": "c55a17e34a36011b51e966ef5c508dcbde8b0c954e44d9051f57ce8c9a0a886c",
+      "asset_id": "artifact-package-package-reports-unverified-source-claim",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wasm-invalid-leb.json",
+      "path": "fixtures/artifact/package-reports/wasm-invalid-leb.json",
+      "sha256": "3c93b9e3e71314b16288a3b5dcfb3078c19449e9ebe4671555aa408bac49ff40",
+      "asset_id": "artifact-package-package-reports-wasm-invalid-leb",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wasm-magic.json",
+      "path": "fixtures/artifact/package-reports/wasm-magic.json",
+      "sha256": "06eb6c78e938ecd35e4b1f3338004d1eec6982d6968c10af56895cbc3e98525b",
+      "asset_id": "artifact-package-package-reports-wasm-magic",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wasm-truncated-section.json",
+      "path": "fixtures/artifact/package-reports/wasm-truncated-section.json",
+      "sha256": "b0487d55bf03ec93c6ba3abaa8055b9987363eca5d36774e89a3e2bcbb87e81b",
+      "asset_id": "artifact-package-package-reports-wasm-truncated-section",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wasm-version.json",
+      "path": "fixtures/artifact/package-reports/wasm-version.json",
+      "sha256": "fa6a7e4b717f49cc8863410cb26767a626e54de0f9ffe18e39a05cb3b771b677",
+      "asset_id": "artifact-package-package-reports-wasm-version",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wrong-payload-digest.json",
+      "path": "fixtures/artifact/package-reports/wrong-payload-digest.json",
+      "sha256": "9c5fffe99fa6a8d7517028d8efa9cf4c9079c5aa4e767fbd361cbc09d48041c6",
+      "asset_id": "artifact-package-package-reports-wrong-payload-digest",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/package-reports/wrong-payload-sha.json",
+      "path": "fixtures/artifact/package-reports/wrong-payload-sha.json",
+      "sha256": "b8eb34375559758e52d5001ca24deeafa3b79edcc3bbf83e96d39d364e9c09d4",
+      "asset_id": "artifact-package-package-reports-wrong-payload-sha",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/absolute-member.tgz",
+      "path": "fixtures/artifact/packages/absolute-member.tgz",
+      "sha256": "3e2dbcdf386f31508848efc4c744aba0f22dd3d16d8556a96664d5f642fa3c31",
+      "asset_id": "artifact-package-packages-absolute-member",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/backslash-member.tgz",
+      "path": "fixtures/artifact/packages/backslash-member.tgz",
+      "sha256": "170f324dcc753b419244cf8576ece916d7c38b166e7a15ea0caa4efc2f6724fa",
+      "asset_id": "artifact-package-packages-backslash-member",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/changed-defaults-valid.tgz",
+      "path": "fixtures/artifact/packages/changed-defaults-valid.tgz",
+      "sha256": "ae3d8fd00f31b7c60b991c58b586b1a8fc353ba8875dda7df544d7d1a5601bee",
+      "asset_id": "artifact-package-packages-changed-defaults-valid",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/changed-docs-valid.tgz",
+      "path": "fixtures/artifact/packages/changed-docs-valid.tgz",
+      "sha256": "2bfb41f753965b9ecf32c50eb404696b17a06861ce920a4cf6686f235af194eb",
+      "asset_id": "artifact-package-packages-changed-docs-valid",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/declared-length-mismatch.tgz",
+      "path": "fixtures/artifact/packages/declared-length-mismatch.tgz",
+      "sha256": "8ab930b95bd6e864b347f0022f6b5d42f0e8e60caebe398b33bb952cab5e518f",
+      "asset_id": "artifact-package-packages-declared-length-mismatch",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/defaults-invalid.tgz",
+      "path": "fixtures/artifact/packages/defaults-invalid.tgz",
+      "sha256": "8efcec226cffa09d42370cfe96741c7fdafd5726a41f4db2d858974dbcceb98d",
+      "asset_id": "artifact-package-packages-defaults-invalid",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/descriptor-duplicate-key.tgz",
+      "path": "fixtures/artifact/packages/descriptor-duplicate-key.tgz",
+      "sha256": "90e0785a3e5d44c5548c3573b075ea873ff2afb2032d3e242349246843c39653",
+      "asset_id": "artifact-package-packages-descriptor-duplicate-key",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/descriptor-self-reference.tgz",
+      "path": "fixtures/artifact/packages/descriptor-self-reference.tgz",
+      "sha256": "7e56ac985cdcc7bae777ad276a298f31fb061265ca92f2e0e5e03376e32c4435",
+      "asset_id": "artifact-package-packages-descriptor-self-reference",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/dot-member.tgz",
+      "path": "fixtures/artifact/packages/dot-member.tgz",
+      "sha256": "9bb332c659f627bf507679a6ee65098012814946890d76fda0d9e36cb0db3eb2",
+      "asset_id": "artifact-package-packages-dot-member",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/double-slash-member.tgz",
+      "path": "fixtures/artifact/packages/double-slash-member.tgz",
+      "sha256": "82a1424a09aa73723be3dc80769b6a6ca4a2a3820bfffafc07dbfdc9631831da",
+      "asset_id": "artifact-package-packages-double-slash-member",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/duplicate-member.tgz",
+      "path": "fixtures/artifact/packages/duplicate-member.tgz",
+      "sha256": "106be5ecd40d7a4a21900827ded6a4c94e1d7d225dff8858ea7cd4521170f4fd",
+      "asset_id": "artifact-package-packages-duplicate-member",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/forged-server-receipt.tgz",
+      "path": "fixtures/artifact/packages/forged-server-receipt.tgz",
+      "sha256": "67553fd8b4a55675ecbba4532a8a9908397da460b346b6d8770678adc8dff44b",
+      "asset_id": "artifact-package-packages-forged-server-receipt",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/hardlink-member.tgz",
+      "path": "fixtures/artifact/packages/hardlink-member.tgz",
+      "sha256": "68ad73171aea7c3875b02b678afc4945f27e5e5cd3dbc2d1a17e1107cd640fd5",
+      "asset_id": "artifact-package-packages-hardlink-member",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/hidden-member-after-eof.tgz",
+      "path": "fixtures/artifact/packages/hidden-member-after-eof.tgz",
+      "sha256": "ea6a7e3651b69226b1723e7da53833af35270406ba47fe9b20b61c0a0e81959f",
+      "asset_id": "artifact-package-packages-hidden-member-after-eof",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/local-schema-closure-valid.tgz",
+      "path": "fixtures/artifact/packages/local-schema-closure-valid.tgz",
+      "sha256": "b52719c5b943edcb68dc072a353558bd7c5f74b8bbd3d3da7adc18f5ec941d21",
+      "asset_id": "artifact-package-packages-local-schema-closure-valid",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_archive_bytes-equal.tgz",
+      "path": "fixtures/artifact/packages/max_archive_bytes-equal.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-max_archive_bytes-equal",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_archive_bytes-over.tgz",
+      "path": "fixtures/artifact/packages/max_archive_bytes-over.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-max_archive_bytes-over",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_member_bytes-equal.tgz",
+      "path": "fixtures/artifact/packages/max_member_bytes-equal.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-max_member_bytes-equal",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_member_bytes-over.tgz",
+      "path": "fixtures/artifact/packages/max_member_bytes-over.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-max_member_bytes-over",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_members-equal.tgz",
+      "path": "fixtures/artifact/packages/max_members-equal.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-max_members-equal",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_members-over.tgz",
+      "path": "fixtures/artifact/packages/max_members-over.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-max_members-over",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_tar_bytes-equal.tgz",
+      "path": "fixtures/artifact/packages/max_tar_bytes-equal.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-max_tar_bytes-equal",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_tar_bytes-over.tgz",
+      "path": "fixtures/artifact/packages/max_tar_bytes-over.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-max_tar_bytes-over",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_total_payload_bytes-equal.tgz",
+      "path": "fixtures/artifact/packages/max_total_payload_bytes-equal.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-max_total_payload_bytes-equal",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/max_total_payload_bytes-over.tgz",
+      "path": "fixtures/artifact/packages/max_total_payload_bytes-over.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-max_total_payload_bytes-over",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/minimal-a.tar.gz",
+      "path": "fixtures/artifact/packages/minimal-a.tar.gz",
+      "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76",
+      "asset_id": "artifact-package-packages-minimal-a.tar",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/minimal-b.tar.gz",
+      "path": "fixtures/artifact/packages/minimal-b.tar.gz",
+      "sha256": "472079989f5cb9493889c27de7b076356ab5d2b56433c85e491a1872fafcb404",
+      "asset_id": "artifact-package-packages-minimal-b.tar",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/minimal-docs-changed.tar.gz",
+      "path": "fixtures/artifact/packages/minimal-docs-changed.tar.gz",
+      "sha256": "2f57918d9832912ecbddfff1341f3f1e5057e359838b6c3c0ca8057469ca26e2",
+      "asset_id": "artifact-package-packages-minimal-docs-changed.tar",
+      "media_type": "application/json"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/missing-defaults.tgz",
+      "path": "fixtures/artifact/packages/missing-defaults.tgz",
+      "sha256": "ff2bb933ad1815f9148a18dec5c017571fa9bf4513fe0f1e318d9e18d02f864c",
+      "asset_id": "artifact-package-packages-missing-defaults",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/missing-docs.tgz",
+      "path": "fixtures/artifact/packages/missing-docs.tgz",
+      "sha256": "cf911f8909c83101459da4577a94c8d3d2f71d4d4bad742c8e4ce28c844cc91b",
+      "asset_id": "artifact-package-packages-missing-docs",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/missing-schema.tgz",
+      "path": "fixtures/artifact/packages/missing-schema.tgz",
+      "sha256": "74d7de2923f7015705eb07dd7ed760039acf24a8b7c6a8a0051d180b61b7acf9",
+      "asset_id": "artifact-package-packages-missing-schema",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/package-executable-script.tgz",
+      "path": "fixtures/artifact/packages/package-executable-script.tgz",
+      "sha256": "d28f476cd9c4725f162810cc0d0a3cfb19595e0969dfff34fbce530827afc215",
+      "asset_id": "artifact-package-packages-package-executable-script",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/package-same-content-different-compression.tgz",
+      "path": "fixtures/artifact/packages/package-same-content-different-compression.tgz",
+      "sha256": "952b3aee9fdfbef56752c2f9288425a7ea91ac7abfd41b2202a12aa53902f3cf",
+      "asset_id": "artifact-package-packages-package-same-content-different-compression",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/package-valid.tgz",
+      "path": "fixtures/artifact/packages/package-valid.tgz",
+      "sha256": "f0be745ddfdcec39d12ca9e2812f7e7373b74e4e139f061b6fd73608484c605c",
+      "asset_id": "artifact-package-packages-package-valid",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/parent-member.tgz",
+      "path": "fixtures/artifact/packages/parent-member.tgz",
+      "sha256": "892ba2b487c5a4f200ab123618023c0030ec16f642133597eaad568f9a8a993b",
+      "asset_id": "artifact-package-packages-parent-member",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/schema-network-ref.tgz",
+      "path": "fixtures/artifact/packages/schema-network-ref.tgz",
+      "sha256": "df8103c4ed327b2279c11490d92bc3d08d58a92affb4391307fb35894e13d07c",
+      "asset_id": "artifact-package-packages-schema-network-ref",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/schema-unknown-local-ref.tgz",
+      "path": "fixtures/artifact/packages/schema-unknown-local-ref.tgz",
+      "sha256": "c7f9bb37492658ca775935da319ecd5f6612f6576dc32f95fa8842c512d11a32",
+      "asset_id": "artifact-package-packages-schema-unknown-local-ref",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/spec-wrapper-is-not-schema.tgz",
+      "path": "fixtures/artifact/packages/spec-wrapper-is-not-schema.tgz",
+      "sha256": "a5f8ab8b962fe44320d35a75e09608d421962cbba4346dcd02e2fbdf87947e09",
+      "asset_id": "artifact-package-packages-spec-wrapper-is-not-schema",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/symlink-member.tgz",
+      "path": "fixtures/artifact/packages/symlink-member.tgz",
+      "sha256": "f5858c3fc4bf87e5d91d3e16d92c280be4f78dfab9b5453682127778f7391701",
+      "asset_id": "artifact-package-packages-symlink-member",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/synthetic-secret.tgz",
+      "path": "fixtures/artifact/packages/synthetic-secret.tgz",
+      "sha256": "bbd8df0b70d22d05a7a114b3b016fb403b72f5003ec7b4e525e3bee0a673cdc7",
+      "asset_id": "artifact-package-packages-synthetic-secret",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/truncated-gzip.tgz",
+      "path": "fixtures/artifact/packages/truncated-gzip.tgz",
+      "sha256": "93d3a2e99966e9ed528003367ed79ebe3f5107f0ba44a7c88a0828593e069299",
+      "asset_id": "artifact-package-packages-truncated-gzip",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/truncated-tar.tgz",
+      "path": "fixtures/artifact/packages/truncated-tar.tgz",
+      "sha256": "606444ae8acc9e5ce3cd155ef1aa3aaff9146771adbcc6ae8f843b639c3bcf9b",
+      "asset_id": "artifact-package-packages-truncated-tar",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/two-wasm.tgz",
+      "path": "fixtures/artifact/packages/two-wasm.tgz",
+      "sha256": "3142abe797ca02c4f0077b2a03cca6a96992e461b90903b064cfe4b022999376",
+      "asset_id": "artifact-package-packages-two-wasm",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/undeclared-member.tgz",
+      "path": "fixtures/artifact/packages/undeclared-member.tgz",
+      "sha256": "7edec59efdaa80ac04033e672fca546be64bc080c9a19259f72ff22b698c588d",
+      "asset_id": "artifact-package-packages-undeclared-member",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/unknown-environment-ref.tgz",
+      "path": "fixtures/artifact/packages/unknown-environment-ref.tgz",
+      "sha256": "c506d2724e4f1b824c752cbfddea54c55d86bd9261d8eacaa80e5119ccfd1f25",
+      "asset_id": "artifact-package-packages-unknown-environment-ref",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/unverified-source-claim.tgz",
+      "path": "fixtures/artifact/packages/unverified-source-claim.tgz",
+      "sha256": "2e782dd51a0902610393f70efc1c7d5bbc53316e813badee3acb7267695f4128",
+      "asset_id": "artifact-package-packages-unverified-source-claim",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wasm-invalid-leb.tgz",
+      "path": "fixtures/artifact/packages/wasm-invalid-leb.tgz",
+      "sha256": "a55955672a3f6b463ca59cb3963712cf5d8cb47a0e7871963f4d95b2e986256a",
+      "asset_id": "artifact-package-packages-wasm-invalid-leb",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wasm-magic.tgz",
+      "path": "fixtures/artifact/packages/wasm-magic.tgz",
+      "sha256": "144d8f62b4d1b4003d40d4c4cd6f2b273865e5d6f153fb43c26d11458f6c49c1",
+      "asset_id": "artifact-package-packages-wasm-magic",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wasm-truncated-section.tgz",
+      "path": "fixtures/artifact/packages/wasm-truncated-section.tgz",
+      "sha256": "6c98125eb225413bf0913d72735032d36e0ad015dda52393397e7b7f9ffc294d",
+      "asset_id": "artifact-package-packages-wasm-truncated-section",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wasm-version.tgz",
+      "path": "fixtures/artifact/packages/wasm-version.tgz",
+      "sha256": "002c886ff0c37b235961011d882e013c85ef2fff8056cdec4c2c46a633f48c6f",
+      "asset_id": "artifact-package-packages-wasm-version",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wrong-payload-digest.tgz",
+      "path": "fixtures/artifact/packages/wrong-payload-digest.tgz",
+      "sha256": "add3648ac742d3b67366929e00c34503aeb2e5a6a1ddcd6f16b03c550bcb6c21",
+      "asset_id": "artifact-package-packages-wrong-payload-digest",
+      "media_type": "application/gzip"
+    },
+    {
+      "source": "contracts/fixtures/v1/artifact/packages/wrong-payload-sha.tgz",
+      "path": "fixtures/artifact/packages/wrong-payload-sha.tgz",
+      "sha256": "5cd7bf29cb1a265a960f8012f1d4239c0142e14ec4f59bea0df204af66c082cf",
+      "asset_id": "artifact-package-packages-wrong-payload-sha",
+      "media_type": "application/gzip"
     }
   ]
 }

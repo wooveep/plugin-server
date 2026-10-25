@@ -1,0 +1,46 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "descriptor",
+      "asset_id": "valid-invariants-input",
+      "path": "fixtures/artifact/canonical/valid-invariants.input.json",
+      "sha256": "57d95ec96b5564f5f34f2f98ac4191eab92ccebd9a03844c54e735606b0f6b29",
+      "schema_ref": "urn:modelfusion:contracts:v1:package-descriptor"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "unique",
+      "collection": {
+        "input": "descriptor",
+        "pointer": "/files"
+      },
+      "keys": [
+        "/path"
+      ],
+      "error_code": "ART_DUPLICATE_PATH"
+    },
+    {
+      "op": "unique",
+      "collection": {
+        "input": "descriptor",
+        "pointer": "/environment_refs"
+      },
+      "keys": [
+        "/name"
+      ],
+      "error_code": "ART_DUPLICATE_ENV"
+    },
+    {
+      "op": "cardinality",
+      "collection": {
+        "input": "descriptor",
+        "pointer": "/files"
+      },
+      "min": 4,
+      "max": 4,
+      "error_code": "ART_ROLE_CARDINALITY"
+    }
+  ]
+}

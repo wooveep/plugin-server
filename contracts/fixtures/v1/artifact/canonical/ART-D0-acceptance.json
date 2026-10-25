@@ -1,0 +1,2744 @@
+{
+  "report_format_version": "artifact-d0-acceptance-v1",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "bundle_version": "art-contracts-2026-10-25.3",
+  "bundle_manifest_sha256": "5203514f5510902e39d2e5b45551920defb69b006e2d1b5355122a6828539deb",
+  "common_bundle_version": "mf-common-2026-10-25.3",
+  "common_manifest_sha256": "09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5",
+  "isolation": {
+    "network": "unshare-net",
+    "neighbor_workspace": "masked-tmpfs",
+    "independent_repo": "/tmp/art-d0-independent/repo"
+  },
+  "summary": {
+    "executed": 178,
+    "matched": 178,
+    "domain_cases": 123,
+    "primitive_cases": 55,
+    "failed": 0
+  },
+  "results": [
+    {
+      "group": "manifest",
+      "case_id": "descriptor-valid",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "manifest-valid",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "server-field-in-descriptor",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "descriptor-reordered",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "manifest-transport-only",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "legacy-unknown-valid",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "oci-valid",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-canonicalization_version",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-schema_version",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-plugin_name",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-plugin_version",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-files",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-wasm_path",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-config_schema_path",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-defaults_path",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-documentation_paths",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-environment_refs",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-source",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "unknown-schema",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/schema_version"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/schema_version"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "unknown-canonicalization",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/canonicalization_version"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/canonicalization_version"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "unsafe-plugin-name",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/plugin_name"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/plugin_name"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "invalid-semver",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/plugin_version"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/plugin_version"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "short-digest",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/sha256"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/sha256"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "uppercase-digest",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/sha256"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/sha256"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "number-size",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/size_bytes"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/size_bytes"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "duplicate-file-path",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_DUPLICATE_PATH",
+        "pointer": "/files"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_DUPLICATE_PATH",
+        "pointer": "/files"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "duplicate-environment-name",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_DUPLICATE_ENV",
+        "pointer": "/environment_refs"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_DUPLICATE_ENV",
+        "pointer": "/environment_refs"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "missing-selected-file",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_REFERENCE",
+        "pointer": "/wasm_path"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_REFERENCE",
+        "pointer": "/wasm_path"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "wrong-file-role",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_REFERENCE",
+        "pointer": "/wasm_path"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_REFERENCE",
+        "pointer": "/wasm_path"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "two-wasm-declarations",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_CARDINALITY",
+        "pointer": "/files"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_CARDINALITY",
+        "pointer": "/files"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "unreferenced-doc",
+      "expected": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_REFERENCE",
+        "pointer": "/documentation_paths"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "semantic",
+        "error_code": "ART_ROLE_REFERENCE",
+        "pointer": "/documentation_paths"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "absolute-path",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "parent-path",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "backslash-path",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "empty-path-segment",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "dot-path",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/files/0/path"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "legacy-verified-forgery",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/source"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/source"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "local-missing-build-input",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/source"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/source"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "oci-missing-layer",
+      "expected": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/source"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE",
+        "pointer": "/source"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "wrong-content-digest",
+      "expected": {
+        "verdict": "reject",
+        "stage": "canonical",
+        "error_code": "ART_CONTENT_DIGEST",
+        "pointer": "/content_digest"
+      },
+      "actual": {
+        "verdict": "reject",
+        "stage": "canonical",
+        "error_code": "ART_CONTENT_DIGEST",
+        "pointer": "/content_digest"
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "changed-wasm",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "changed-config_schema",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "changed-defaults",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "changed-documentation",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "manifest",
+      "case_id": "changed-source",
+      "expected": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "actual": {
+        "verdict": "accept",
+        "stage": "complete",
+        "error_code": null,
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "package-valid",
+      "expected": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "actual": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "package-same-content-different-compression",
+      "expected": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "actual": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "truncated-gzip",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "truncated-tar",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "declared-length-mismatch",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "absolute-member",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "parent-member",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "dot-member",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "double-slash-member",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "backslash-member",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_PATH"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "symlink-member",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_LINK"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_LINK"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "hardlink-member",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_LINK"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_LINK"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "duplicate-member",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_DUPLICATE"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_DUPLICATE"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "undeclared-member",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "missing-docs",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "missing-schema",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "missing-defaults",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SET"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "wasm-magic",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "wasm-version",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "wasm-truncated-section",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "wasm-invalid-leb",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "wasm",
+        "error_code": "ART_WASM"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "wrong-payload-sha",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SIZE"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_SIZE"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "wrong-payload-digest",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_DIGEST"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "payload",
+        "error_code": "ART_FILE_DIGEST"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "two-wasm",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "semantic",
+        "error_code": "ART_ROLE_CARDINALITY"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "semantic",
+        "error_code": "ART_ROLE_CARDINALITY"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "forged-server-receipt",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "shape",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "descriptor-self-reference",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "semantic",
+        "error_code": "ART_DESCRIPTOR_SELF_REFERENCE"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "semantic",
+        "error_code": "ART_DESCRIPTOR_SELF_REFERENCE"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "defaults-invalid",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "defaults",
+        "error_code": "ART_DEFAULTS"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "defaults",
+        "error_code": "ART_DEFAULTS"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "schema-network-ref",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "schema",
+        "error_code": "ART_CONFIG_SCHEMA"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "schema",
+        "error_code": "ART_CONFIG_SCHEMA"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "schema-unknown-local-ref",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "schema",
+        "error_code": "ART_CONFIG_SCHEMA"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "schema",
+        "error_code": "ART_CONFIG_SCHEMA"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "spec-wrapper-is-not-schema",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "schema",
+        "error_code": "ART_CONFIG_SCHEMA"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "schema",
+        "error_code": "ART_CONFIG_SCHEMA"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "unknown-environment-ref",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "policy",
+        "error_code": "ART_ENVIRONMENT_REF"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "policy",
+        "error_code": "ART_ENVIRONMENT_REF"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "synthetic-secret",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "policy",
+        "error_code": "ART_SYNTHETIC_SECRET"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "policy",
+        "error_code": "ART_SYNTHETIC_SECRET"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "unverified-source-claim",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "provenance",
+        "error_code": "ART_SOURCE_EVIDENCE"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "provenance",
+        "error_code": "ART_SOURCE_EVIDENCE"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "changed-docs-valid",
+      "expected": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "actual": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "changed-defaults-valid",
+      "expected": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "actual": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "local-schema-closure-valid",
+      "expected": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "actual": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "package-executable-script",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_EXECUTABLE"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE_EXECUTABLE"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "hidden-member-after-eof",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "archive",
+        "error_code": "ART_ARCHIVE"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "descriptor-duplicate-key",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "parse",
+        "error_code": "E_DUPLICATE_KEY"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "parse",
+        "error_code": "E_DUPLICATE_KEY"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "max_archive_bytes-equal",
+      "expected": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "actual": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "max_archive_bytes-over",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "max_tar_bytes-equal",
+      "expected": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "actual": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "max_tar_bytes-over",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "max_members-equal",
+      "expected": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "actual": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "max_members-over",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "max_total_payload_bytes-equal",
+      "expected": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "actual": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "max_total_payload_bytes-over",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "max_member_bytes-equal",
+      "expected": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "actual": {
+        "result": "valid",
+        "validation_stage": "complete",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "packages",
+      "case_id": "max_member_bytes-over",
+      "expected": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      },
+      "actual": {
+        "result": "invalid",
+        "validation_stage": "limits",
+        "error_code": "ART_LIMIT"
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "commit-success",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "validation-rejected",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "io-failed-before-commit",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "same-upload-replay",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "same-key-different-content",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "same-version-different-content",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "ack-lost-after-commit",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "disconnect-before-commit",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "query-itself-times-out",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "same-content-different-archive",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "catalog-registration-failed",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "http-readback-unavailable",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "active-media-rollback-retained",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "delete-response-unknown",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "legacy-compatible-read",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "invalid-committed-regression",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_LIFECYCLE_TRANSITION"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_LIFECYCLE_TRANSITION"
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "invalid-unknown-as-failed",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_UNKNOWN_CLASSIFICATION"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_UNKNOWN_CLASSIFICATION"
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "invalid-first-archive-overwrite",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_FIRST_RESULT"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_FIRST_RESULT"
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "invalid-version-overwrite",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_IDENTITY_CONFLICT"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_IDENTITY_CONFLICT"
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "invalid-artifact-implies-ready",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_RELEASE_AUTHORITY"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_RELEASE_AUTHORITY"
+      },
+      "matched": true
+    },
+    {
+      "group": "lifecycle",
+      "case_id": "invalid-delete-live-reference",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_RETENTION"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_RETENTION"
+      },
+      "matched": true
+    },
+    {
+      "group": "readback",
+      "case_id": "all-instances-complete",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "matched": true
+    },
+    {
+      "group": "readback",
+      "case_id": "empty-expected",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_EXPECTED"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_EXPECTED"
+      },
+      "matched": true
+    },
+    {
+      "group": "readback",
+      "case_id": "expected-missing-manifest",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_EXPECTED"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_EXPECTED"
+      },
+      "matched": true
+    },
+    {
+      "group": "readback",
+      "case_id": "http-200-wrong-digest",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_DIGEST"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_DIGEST"
+      },
+      "matched": true
+    },
+    {
+      "group": "readback",
+      "case_id": "observed-missing-payload",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_FILES"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_FILES"
+      },
+      "matched": true
+    },
+    {
+      "group": "readback",
+      "case_id": "only-first-instance",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_INSTANCES"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_INSTANCES"
+      },
+      "matched": true
+    },
+    {
+      "group": "readback",
+      "case_id": "temporary-directory-only",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_SOURCE"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_SOURCE"
+      },
+      "matched": true
+    },
+    {
+      "group": "readback",
+      "case_id": "manifest-http-missing",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_STATUS"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_READBACK_STATUS"
+      },
+      "matched": true
+    }
+  ],
+  "primitive_results": [
+    {
+      "case_id": "descriptor-valid",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "manifest-valid",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "server-field-in-descriptor",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "descriptor-reordered",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "manifest-transport-only",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "legacy-unknown-valid",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "oci-valid",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-canonicalization_version",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-schema_version",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-plugin_name",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-plugin_version",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-files",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-wasm_path",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-config_schema_path",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-defaults_path",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-documentation_paths",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-environment_refs",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-source",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "unknown-schema",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/schema_version"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "unknown-canonicalization",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/canonicalization_version"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "unsafe-plugin-name",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/plugin_name"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "invalid-semver",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/plugin_version"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "short-digest",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/files/0/sha256"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "uppercase-digest",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/files/0/sha256"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "number-size",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/files/0/size_bytes"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "duplicate-file-path-shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "duplicate-environment-name-shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "missing-selected-file-shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "wrong-file-role-shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "two-wasm-declarations-shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "unreferenced-doc-shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "absolute-path",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/files/0/path"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "parent-path",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/files/0/path"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "backslash-path",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/files/0/path"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "empty-path-segment",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/files/0/path"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "dot-path",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/files/0/path"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "legacy-verified-forgery",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/source"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "local-missing-build-input",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/source"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "oci-missing-layer",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE",
+        "stage": "shape",
+        "pointer": "/source"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "wrong-content-digest-shape",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "changed-wasm",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "changed-config_schema",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "changed-defaults",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "changed-documentation",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "changed-source",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "shape",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "duplicate-path-invariant",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_DUPLICATE_PATH",
+        "stage": "semantic"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_DUPLICATE_PATH",
+        "stage": "semantic",
+        "pointer": "/assertions/0"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "duplicate-env-invariant",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_DUPLICATE_ENV",
+        "stage": "semantic"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_DUPLICATE_ENV",
+        "stage": "semantic",
+        "pointer": "/assertions/0"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "selected-file-invariant",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_ROLE_REFERENCE",
+        "stage": "semantic"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_ROLE_REFERENCE",
+        "stage": "semantic",
+        "pointer": "/assertions/0"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "selected-role-invariant",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_ROLE_REFERENCE",
+        "stage": "semantic"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_ROLE_REFERENCE",
+        "stage": "semantic",
+        "pointer": "/assertions/0"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "wasm-count-invariant",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_ROLE_CARDINALITY",
+        "stage": "semantic"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_ROLE_CARDINALITY",
+        "stage": "semantic",
+        "pointer": "/assertions/0"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "documentation-invariant",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_ROLE_REFERENCE",
+        "stage": "semantic"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_ROLE_REFERENCE",
+        "stage": "semantic",
+        "pointer": "/assertions/0"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "content-digest-invariant",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "ART_CONTENT_DIGEST",
+        "stage": "semantic"
+      },
+      "actual": {
+        "verdict": "reject",
+        "error_code": "ART_CONTENT_DIGEST",
+        "stage": "semantic",
+        "pointer": "/assertions/0"
+      },
+      "matched": true
+    },
+    {
+      "case_id": "valid-invariants",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "semantic"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "semantic",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "descriptor-valid-canonical",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "canonical"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "canonical",
+        "pointer": ""
+      },
+      "matched": true
+    },
+    {
+      "case_id": "descriptor-reordered-canonical",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "canonical"
+      },
+      "actual": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "canonical",
+        "pointer": ""
+      },
+      "matched": true
+    }
+  ],
+  "reproduction": {
+    "cwd": "plugin-server/",
+    "python_environment": "/tmp/modelfusion-d0-venv/bin/python",
+    "type_checker": "mypy 1.18.2",
+    "unit_command": "python -B -m unittest discover -s tests -p 'test_contract_artifact_*.py' -v",
+    "isolation_command": "unshare --user --map-root-user --mount --net bash <isolation_shell>",
+    "isolation_shell": "set -eu\nmount --make-rprivate /\nmount -t tmpfs tmpfs /home/cloudyi/CodeWorkspace\ncd /tmp/art-d0-independent/repo\n/tmp/modelfusion-d0-venv/bin/python -B -m unittest discover -s tests -p 'test_contract_artifact_*.py' -v\n/tmp/modelfusion-d0-venv/bin/python -B /tmp/run_art_d0_acceptance.py\n/tmp/modelfusion-d0-venv/bin/python -B tests/contracts/export_bundle.py --offline --output /tmp/art-d0-independent/rebuilt-art3-pointerfix\n",
+    "acceptance_driver": "import importlib.util,json,sys\nfrom pathlib import Path\nr=Path.cwd();sys.path.insert(0,str(r/'tests/contracts'));sys.path.insert(0,str(r/'tests'))\nfrom artifact_contract_support import ContractError,manifest_bundle,validate_document,sha256\nfrom validate_artifact_fixture import validate_package\nfrom test_contract_artifact_lifecycle import check_trace,check_readback,load_ref\nart=r/'contracts/fixtures/v1/artifact';rows=[]\nfor c in json.loads((art/'manifest-cases.json').read_bytes())['cases']:\n try:validate_document((art/c['path']).read_bytes(),c['document_kind']);actual={'verdict':'accept','stage':'complete','error_code':None,'pointer':''}\n except ContractError as e:actual={'verdict':'reject','stage':e.stage,'error_code':e.code,'pointer':e.pointer}\n rows.append({'group':'manifest','case_id':c['case_id'],'expected':c['expected'],'actual':actual,'matched':c['expected']==actual})\ncat=json.loads((art/'package-cases.json').read_bytes())\nfor c in cat['cases']:\n report=validate_package(art/c['archive'],case_id=c['case_id'],policy={**cat['policy'],**c['policy_overrides']});actual={k:report[k] for k in ['result','validation_stage']};actual['error_code']=report['errors'][0]['code'] if report['errors'] else None\n rows.append({'group':'packages','case_id':c['case_id'],'expected':c['expected'],'actual':actual,'matched':c['expected']==actual})\nfor c in json.loads((art/'lifecycle-cases.json').read_bytes())['cases']:\n try:check_trace(json.loads((art/c['path']).read_bytes()),art);actual={'verdict':'accept','error_code':None}\n except ContractError as e:actual={'verdict':'reject','error_code':e.code}\n rows.append({'group':'lifecycle','case_id':c['case_id'],'expected':c['expected'],'actual':actual,'matched':c['expected']==actual})\nfor c in json.loads((art/'readback/cases.json').read_bytes())['cases']:\n try:check_readback(load_ref(art,c['expected_ref']),load_ref(art,c['observed_ref']),art);actual={'verdict':'accept','error_code':None}\n except ContractError as e:actual={'verdict':'reject','error_code':e.code}\n rows.append({'group':'readback','case_id':c['case_id'],'expected':c['expected'],'actual':actual,'matched':c['expected']==actual})\nbundle=manifest_bundle(Path('/tmp/art-contracts-2026-10-25.3'))\nprimitive=bundle.run_cases()\nreport={'report_format_version':'artifact-d0-acceptance-v1','evidence_level':'offline_fixture','product_execution':'not_run','bundle_version':'art-contracts-2026-10-25.3','bundle_manifest_sha256':sha256(bundle.raw_manifest),'common_bundle_version':'mf-common-2026-10-25.3','common_manifest_sha256':'09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5','isolation':{'network':'unshare-net','neighbor_workspace':'masked-tmpfs','independent_repo':str(r)},'summary':{'executed':len(rows)+len(primitive),'matched':sum(x['matched'] for x in rows)+sum(x['matched'] for x in primitive),'domain_cases':len(rows),'primitive_cases':len(primitive),'failed':sum(not x['matched'] for x in rows+primitive)},'results':rows,'primitive_results':primitive}\nPath('/tmp/ART-D0-isolation-report.json').write_text(json.dumps(report,indent=2)+'\\n')\nprint(json.dumps(report['summary']));sys.exit(0 if report['summary']['failed']==0 else 1)\n",
+    "unit_tests": 14,
+    "type_checked_files": 7
+  },
+  "review_repairs": [
+    "Dependency/tool/unknown failures stay execution_error, cannot satisfy invalid-defaults negative case",
+    "Fixed common resolver handles common/local anchors, encoded anchors and JSON Pointers; unknown anchor ART_CONFIG_REFERENCE",
+    "Encoded pointer retains original spelling so a%252Fb selects literal key a%2Fb with one decode",
+    "Machine bundle assets unchanged; immutable ART.3 digest retained"
+  ]
+}

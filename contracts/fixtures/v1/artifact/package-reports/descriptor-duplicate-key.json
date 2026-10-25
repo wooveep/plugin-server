@@ -1,0 +1,23 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "descriptor-duplicate-key",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "parse",
+  "errors": [
+    {
+      "code": "E_DUPLICATE_KEY",
+      "pointer": ""
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 397,
+    "members": 5,
+    "payload_bytes": 246
+  },
+  "archive_digest": "sha256:90e0785a3e5d44c5548c3573b075ea873ff2afb2032d3e242349246843c39653",
+  "descriptor_digest": "sha256:f99cd1e6fa6dbd6e8e70cdc61a5a73bba89efdea5b596d14aa92ba6775dfb990"
+}

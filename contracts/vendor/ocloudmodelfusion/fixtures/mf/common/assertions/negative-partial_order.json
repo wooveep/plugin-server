@@ -1,0 +1,37 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [],
+  "assertions": [
+    {
+      "op": "partial_order",
+      "error_code": "A_PARTIAL_ORDER",
+      "nodes": {
+        "literal": [
+          "a",
+          "b"
+        ]
+      },
+      "edges": {
+        "literal": [
+          [
+            "a",
+            "b"
+          ],
+          [
+            "b",
+            "a"
+          ]
+        ]
+      },
+      "required": {
+        "literal": [
+          "a",
+          "b"
+        ]
+      },
+      "before": {
+        "literal": []
+      }
+    }
+  ]
+}

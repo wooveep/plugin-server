@@ -1,0 +1,24 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "defaults-invalid",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "defaults",
+  "errors": [
+    {
+      "code": "ART_DEFAULTS",
+      "pointer": "/defaults_path",
+      "path": "defaults.json"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 971,
+    "members": 5,
+    "payload_bytes": 247
+  },
+  "archive_digest": "sha256:8efcec226cffa09d42370cfe96741c7fdafd5726a41f4db2d858974dbcceb98d",
+  "descriptor_digest": "sha256:9785c676b8c34e86a7ba7b486ca4ce3a55f461f5cb7377065adef79a498f2cc9"
+}

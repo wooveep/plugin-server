@@ -1,0 +1,24 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "wrong-payload-sha",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "payload",
+  "errors": [
+    {
+      "code": "ART_FILE_SIZE",
+      "pointer": "/files",
+      "path": "plugin.wasm"
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 974,
+    "members": 5,
+    "payload_bytes": 247
+  },
+  "archive_digest": "sha256:5cd7bf29cb1a265a960f8012f1d4239c0142e14ec4f59bea0df204af66c082cf",
+  "descriptor_digest": "sha256:dbaad179dd9a5abaf4e391d067a7fa7e7597144e7d81f310220263c56a36d27a"
+}

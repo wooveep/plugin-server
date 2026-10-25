@@ -1,0 +1,5 @@
+{
+  "input_asset": "array-order-input.bin",
+  "expected_asset": "array-order-expected.bin",
+  "expected_digest": "sha256:af1a1fc110b6094c48582b0ef83553cb7908d7a4365424eef28e76ef6c88d630"
+}

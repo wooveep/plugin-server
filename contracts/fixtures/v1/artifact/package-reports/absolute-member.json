@@ -1,0 +1,22 @@
+{
+  "report_format_version": "artifact-validation-report-v1",
+  "case_id": "absolute-member",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "gateway_abi": "not_run",
+  "wasm_validation_profile": "empty-core-custom-sections-v1",
+  "result": "invalid",
+  "validation_stage": "archive",
+  "errors": [
+    {
+      "code": "ART_ARCHIVE_PATH",
+      "pointer": ""
+    }
+  ],
+  "statistics": {
+    "archive_bytes": 975,
+    "members": 2,
+    "payload_bytes": 0
+  },
+  "archive_digest": "sha256:3e2dbcdf386f31508848efc4c744aba0f22dd3d16d8556a96664d5f642fa3c31"
+}

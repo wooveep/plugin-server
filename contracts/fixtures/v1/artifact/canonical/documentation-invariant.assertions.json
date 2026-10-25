@@ -1,0 +1,46 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [
+    {
+      "input_id": "descriptor",
+      "asset_id": "documentation-invariant-input",
+      "path": "fixtures/artifact/canonical/documentation-invariant.input.json",
+      "sha256": "ce10bc2fd35b49d3042f19ca0f4ef1c7b1f7a877cbd96c0bc6d487f344cd357c",
+      "schema_ref": "urn:modelfusion:contracts:v1:package-descriptor"
+    }
+  ],
+  "assertions": [
+    {
+      "op": "join",
+      "left": {
+        "input": "descriptor",
+        "pointer": "/files"
+      },
+      "right": {
+        "literal": [
+          {
+            "path": "plugin.wasm"
+          },
+          {
+            "path": "config.schema.json"
+          },
+          {
+            "path": "defaults.json"
+          },
+          {
+            "path": "README.md"
+          }
+        ]
+      },
+      "left_keys": [
+        "/path"
+      ],
+      "right_keys": [
+        "/path"
+      ],
+      "min": 1,
+      "max": 1,
+      "error_code": "ART_ROLE_REFERENCE"
+    }
+  ]
+}
