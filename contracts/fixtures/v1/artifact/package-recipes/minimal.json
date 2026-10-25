@@ -1,0 +1,107 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "recipe_id": "ART-PKG-BASE",
+  "descriptor_ref": {
+    "path": "manifests/minimal-descriptor.json",
+    "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+  },
+  "changed_descriptor_ref": {
+    "path": "manifests/docs-changed-descriptor.json",
+    "sha256": "5e2e4e6d67d01e6d95d0baaa2e57a93453f2850064c427e09ff812da12da23ba"
+  },
+  "payload_ref": {
+    "path": "digests.json",
+    "sha256": "b0fe9539006bd03073378225d71baef190868a015c6964476fe8840e89004c87",
+    "pointer": "/payloads"
+  },
+  "changed_docs_utf8": "D0 fixture changed docs.\n",
+  "archive_layout": "Root package.json plus exactly the declared payloads. No ArtifactManifest or upload record in archive.",
+  "tar": {
+    "format": "USTAR",
+    "member_order": [
+      "README.md",
+      "config.schema.json",
+      "defaults.json",
+      "package.json",
+      "plugin.wasm"
+    ],
+    "entry_type": "regular_file",
+    "mode": "0644",
+    "uid": 0,
+    "gid": 0,
+    "mtime": 0,
+    "uname": "",
+    "gname": "",
+    "stream_size_bytes": "10240",
+    "stream_sha256": {
+      "minimal-a": "651b589ab80450802ce60ace503bb8419997fd3936064fbfe43114ad5d2202ea",
+      "minimal-b": "651b589ab80450802ce60ace503bb8419997fd3936064fbfe43114ad5d2202ea",
+      "minimal-docs-changed": "44db770b6ed9125b2275b0e46c4a21987afad0e81d1497309e775e153e54f3f0"
+    }
+  },
+  "gzip": {
+    "compression_level": 9,
+    "filename": "",
+    "mtime_by_archive": {
+      "minimal-a": 0,
+      "minimal-b": 1,
+      "minimal-docs-changed": 0
+    },
+    "toolchain": {
+      "python": "3.13.5",
+      "zlib_compile": "1.3.1",
+      "zlib_runtime": "1.3.1"
+    },
+    "cross_toolchain_rule": "Compare the recorded raw archive digest; matching semantic payloads alone is insufficient for an archive-byte lock."
+  },
+  "archives": [
+    {
+      "path": "packages/minimal-a.tar.gz",
+      "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76",
+      "size_bytes": "774"
+    },
+    {
+      "path": "packages/minimal-b.tar.gz",
+      "sha256": "472079989f5cb9493889c27de7b076356ab5d2b56433c85e491a1872fafcb404",
+      "size_bytes": "774"
+    },
+    {
+      "path": "packages/minimal-docs-changed.tar.gz",
+      "sha256": "2f57918d9832912ecbddfff1341f3f1e5057e359838b6c3c0ca8057469ca26e2",
+      "size_bytes": "778"
+    }
+  ],
+  "statistics": {
+    "minimal-a": {
+      "archive_bytes": 774,
+      "expanded_bytes": 1321,
+      "member_count": 5,
+      "max_member_bytes": 1189
+    },
+    "minimal-b": {
+      "archive_bytes": 774,
+      "expanded_bytes": 1321,
+      "member_count": 5,
+      "max_member_bytes": 1189
+    },
+    "minimal-docs-changed": {
+      "archive_bytes": 778,
+      "expanded_bytes": 1329,
+      "member_count": 5,
+      "max_member_bytes": 1189
+    }
+  },
+  "fixture_policy": {
+    "scope": "small synthetic per-case limits, not product defaults",
+    "equal_limits_for_minimal_a": {
+      "archive_bytes": 774,
+      "expanded_bytes": 1321,
+      "member_count": 5,
+      "max_member_bytes": 1189
+    }
+  },
+  "wasm_scope": "8-byte empty Wasm module; structural fixture only, no gateway ABI/factory/runtime claim.",
+  "source_scope": "legacy_unknown/unknown is intentional compatibility data; no authentic build/OCI proof."
+}

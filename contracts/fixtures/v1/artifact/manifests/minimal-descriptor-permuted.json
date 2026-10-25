@@ -1,0 +1,43 @@
+{
+  "source": {
+    "kind": "legacy_unknown",
+    "verification": "unknown"
+  },
+  "environment_refs": [],
+  "documentation_paths": [
+    "README.md"
+  ],
+  "defaults_path": "defaults.json",
+  "config_schema_path": "config.schema.json",
+  "wasm_path": "plugin.wasm",
+  "files": [
+    {
+      "path": "README.md",
+      "size_bytes": "17",
+      "sha256": "sha256:ebe7221b98e5c3e6bcd53c7e91fdc2a1ed04bcf79d64c87d5b0feffb05c522c9",
+      "role": "documentation"
+    },
+    {
+      "path": "defaults.json",
+      "size_bytes": "3",
+      "sha256": "sha256:ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "role": "defaults"
+    },
+    {
+      "path": "config.schema.json",
+      "size_bytes": "104",
+      "sha256": "sha256:67c0a3e017f62ab8fa45adf3782967e9fd83fd25da2b4cecd06cfb1ca77e2afa",
+      "role": "config_schema"
+    },
+    {
+      "path": "plugin.wasm",
+      "size_bytes": "8",
+      "sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+      "role": "wasm"
+    }
+  ],
+  "plugin_version": "0.0.0-d0.1",
+  "plugin_name": "d0-fixture",
+  "schema_version": "artifact.v1-draft",
+  "canonicalization_version": "artifact-json.v1"
+}

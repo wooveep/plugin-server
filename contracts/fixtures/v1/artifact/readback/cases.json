@@ -1,0 +1,127 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "expected_ref": {
+    "path": "readback/expected-files.json",
+    "sha256": "63f507541d59bd54e5cd18b28053f3ee6d59f3c79e4ee7d4f00476595c5b8a46"
+  },
+  "all_observations_are": "synthetic planned oracle, never HTTP/RuntimeObservation evidence",
+  "error_codes_are": "draft local coverage oracle names, not production API errors",
+  "cases": [
+    {
+      "case_id": "ART-RB-001",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "synthetic_mutation": {
+        "kind": "all_expected_payloads_all_instances",
+        "http_results": "synthetic_matching_200"
+      },
+      "assertion": "Complete synthetic oracle only; no HTTP observation.",
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-RB-002",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "empty_expected"
+      },
+      "synthetic_mutation": {
+        "expected_files": []
+      },
+      "assertion": "Empty expected set cannot prove delivery.",
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-RB-003",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "missing_expected_member"
+      },
+      "synthetic_mutation": {
+        "omit_expected_path": "config.schema.json"
+      },
+      "assertion": "Cannot omit schema from expected collection.",
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-RB-004",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "digest_mismatch"
+      },
+      "synthetic_mutation": {
+        "response_path": "README.md",
+        "status": 200,
+        "observed_sha256": "sha256:88c719d1f906575fa6c8c74ca44aba18d6eeb66e1d01e036b9852791a270d0f9"
+      },
+      "assertion": "200 is insufficient when bytes differ.",
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-RB-005",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "instance_coverage_incomplete"
+      },
+      "synthetic_mutation": {
+        "observed_instances": [
+          "synthetic-instance-a"
+        ]
+      },
+      "assertion": "Do not shrink frozen scope to first replica.",
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-RB-006",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "wrong_observation_channel"
+      },
+      "synthetic_mutation": {
+        "observation_channel": "private_stage_filesystem"
+      },
+      "assertion": "Temporary-directory reads do not prove committed HTTP files.",
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-RB-007",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "http_read_failed"
+      },
+      "synthetic_mutation": {
+        "response_path": "defaults.json",
+        "status": 404
+      },
+      "assertion": "Committed identity does not imply full distribution.",
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-RB-008",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "missing_observed_member"
+      },
+      "synthetic_mutation": {
+        "omit_observed_path": "README.md"
+      },
+      "assertion": "Every declared member must have returned byte evidence.",
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-RB-009",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "unexpected_observed_member"
+      },
+      "synthetic_mutation": {
+        "extra_observed_path": "unlisted.txt"
+      },
+      "assertion": "Declare/observe complete exact payload collection.",
+      "domain_validation": "not_run"
+    }
+  ]
+}

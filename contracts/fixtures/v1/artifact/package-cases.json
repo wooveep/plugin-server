@@ -1,0 +1,785 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "assignment": {
+    "acting_agent": "Codex agent /root/artifact_fixture_prep",
+    "assignee": "待确认",
+    "backup": "待确认",
+    "source_branch": "chore/retire-legacy-workflow-20261022",
+    "source_revision": "08ea31ddc2f9b077573961a5cd0d31fbcaf593e0",
+    "planned_date": "待确认"
+  },
+  "input_bundle_refs": [
+    {
+      "task_id": "D0-MF-01",
+      "bundle_version": null,
+      "manifest_sha256": null,
+      "status": "awaiting_frozen_input"
+    },
+    {
+      "task_id": "D0-ART-01@manifest",
+      "bundle_version": null,
+      "manifest_sha256": null,
+      "status": "not_produced"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "ART-PKG-001",
+      "archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "recipe_ref": {
+        "path": "package-recipes/minimal.json",
+        "sha256": "4bc89a60c6d426f29596097401c399a34f5ee23fbe188bc9c42bba1dbf2c2fd6"
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "complete",
+        "error_code": null,
+        "content_digest": "sha256:b6c8be8990230750dc2e5ab60a8e2dca2efa91f6f3add4a4acf44dceaea940af"
+      },
+      "materialized": true,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-002",
+      "archive_ref": {
+        "path": "packages/minimal-b.tar.gz",
+        "sha256": "472079989f5cb9493889c27de7b076356ab5d2b56433c85e491a1872fafcb404"
+      },
+      "recipe_ref": {
+        "path": "package-recipes/minimal.json",
+        "sha256": "4bc89a60c6d426f29596097401c399a34f5ee23fbe188bc9c42bba1dbf2c2fd6"
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "complete",
+        "error_code": null,
+        "content_digest": "sha256:b6c8be8990230750dc2e5ab60a8e2dca2efa91f6f3add4a4acf44dceaea940af"
+      },
+      "materialized": true,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-003",
+      "archive_ref": {
+        "path": "packages/minimal-docs-changed.tar.gz",
+        "sha256": "2f57918d9832912ecbddfff1341f3f1e5057e359838b6c3c0ca8057469ca26e2"
+      },
+      "recipe_ref": {
+        "path": "package-recipes/minimal.json",
+        "sha256": "4bc89a60c6d426f29596097401c399a34f5ee23fbe188bc9c42bba1dbf2c2fd6"
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "complete",
+        "error_code": null,
+        "content_digest": "sha256:5b55b06baad7d084be85092c1f8e673f5b32029582fd90c54a94437634577ffb"
+      },
+      "materialized": true,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-004",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/0"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-005",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/1"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-006",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/2"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-007",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/3"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "payload",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-008",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/4"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "payload",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-009",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/5"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "payload",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-010",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/6"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "payload",
+        "error_code": "invalid_digest"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-011",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/7"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-012",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/8"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-013",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/9"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-014",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/10"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-015",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/11"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-016",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/12"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-017",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/13"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-018",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/14"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-019",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/15"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-020",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/16"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_semantic",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-021",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/17"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-022",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/18"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-023",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/19"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-024",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/20"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_semantic",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-025",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/21"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "defaults",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-026",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/22"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "schema_closure",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-027",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/23"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "schema_closure",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-028",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/24"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "environment_policy",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-029",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/25"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "environment_policy",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-030",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/26"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-031",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/27"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_semantic",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-032",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/28"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-033",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/29"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "schema_closure",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-034",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/30"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_semantic",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-035",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/31"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_semantic",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-036",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/32"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-037",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/33"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "source_verification",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-038",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/34"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "parse",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-039",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/35"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_schema",
+        "error_code": "invalid_schema"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-040",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/36"
+      },
+      "expected": {
+        "outcome": "execution_error",
+        "stage": "io",
+        "error_code": "storage_unavailable"
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-041",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/37"
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "limits",
+        "error_code": null,
+        "http_mapping_proposal": null
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-042",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/38"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "limits",
+        "error_code": "invalid_archive",
+        "http_mapping_proposal": 413
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-043",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/39"
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "limits",
+        "error_code": null,
+        "http_mapping_proposal": null
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-044",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/40"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "limits",
+        "error_code": "invalid_archive",
+        "http_mapping_proposal": 413
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-045",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/41"
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "limits",
+        "error_code": null,
+        "http_mapping_proposal": null
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-046",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/42"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "limits",
+        "error_code": "invalid_archive",
+        "http_mapping_proposal": 413
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-047",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/43"
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "limits",
+        "error_code": null,
+        "http_mapping_proposal": null
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-PKG-048",
+      "recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/44"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "limits",
+        "error_code": "invalid_archive",
+        "http_mapping_proposal": 413
+      },
+      "materialized": false,
+      "domain_validation": "not_run"
+    }
+  ],
+  "relations": [
+    {
+      "case_ids": [
+        "ART-PKG-001",
+        "ART-PKG-002"
+      ],
+      "expected": "same content digest, different archive digest; first committed archive retained"
+    },
+    {
+      "case_ids": [
+        "ART-PKG-001",
+        "ART-PKG-003"
+      ],
+      "expected": "same Wasm digest, different docs/content digest; same name/version conflicts only at commit"
+    }
+  ]
+}

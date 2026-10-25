@@ -1,0 +1,138 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "synthetic": true,
+  "logical_commands_only": true,
+  "production_http_mappings": "not_defined_here",
+  "requests": {
+    "submit_a": {
+      "logical_command": "submit_package",
+      "upload_id": "synthetic-upload-a",
+      "descriptor_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      }
+    },
+    "submit_same": {
+      "logical_command": "submit_package",
+      "upload_id": "synthetic-upload-a",
+      "descriptor_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      }
+    },
+    "submit_samekey_changed": {
+      "logical_command": "submit_package",
+      "upload_id": "synthetic-upload-a",
+      "descriptor_ref": {
+        "path": "manifests/docs-changed-descriptor.json",
+        "sha256": "5e2e4e6d67d01e6d95d0baaa2e57a93453f2850064c427e09ff812da12da23ba"
+      },
+      "archive_ref": {
+        "path": "packages/minimal-docs-changed.tar.gz",
+        "sha256": "2f57918d9832912ecbddfff1341f3f1e5057e359838b6c3c0ca8057469ca26e2"
+      }
+    },
+    "submit_newkey_changed": {
+      "logical_command": "submit_package",
+      "upload_id": "synthetic-upload-changed",
+      "descriptor_ref": {
+        "path": "manifests/docs-changed-descriptor.json",
+        "sha256": "5e2e4e6d67d01e6d95d0baaa2e57a93453f2850064c427e09ff812da12da23ba"
+      },
+      "archive_ref": {
+        "path": "packages/minimal-docs-changed.tar.gz",
+        "sha256": "2f57918d9832912ecbddfff1341f3f1e5057e359838b6c3c0ca8057469ca26e2"
+      }
+    },
+    "submit_compression_b": {
+      "logical_command": "submit_package",
+      "upload_id": "synthetic-upload-b",
+      "descriptor_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "archive_ref": {
+        "path": "packages/minimal-b.tar.gz",
+        "sha256": "472079989f5cb9493889c27de7b076356ab5d2b56433c85e491a1872fafcb404"
+      }
+    },
+    "query_a": {
+      "logical_command": "query_original_upload_identity",
+      "upload_id": "synthetic-upload-a",
+      "plugin_name": "d0-fixture",
+      "plugin_version": "0.0.0-d0.1",
+      "content_digest": "sha256:b6c8be8990230750dc2e5ab60a8e2dca2efa91f6f3add4a4acf44dceaea940af"
+    },
+    "register": {
+      "logical_command": "register_artifact_same_intent",
+      "idempotency_key": "synthetic-registration-a",
+      "artifact_ref": {
+        "path": "manifests/minimal-server-manifest.json",
+        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
+      }
+    },
+    "readback": {
+      "logical_command": "read_all_expected_artifact_files",
+      "expected_ref": {
+        "path": "readback/expected-files.json",
+        "sha256": "63f507541d59bd54e5cd18b28053f3ee6d59f3c79e4ee7d4f00476595c5b8a46"
+      }
+    },
+    "retain": {
+      "logical_command": "retention_preflight",
+      "artifact_id": "synthetic-artifact-d0-01",
+      "references": [
+        {
+          "kind": "active_release",
+          "ref_id": "synthetic-active_release"
+        },
+        {
+          "kind": "inflight_call",
+          "ref_id": "synthetic-inflight_call"
+        },
+        {
+          "kind": "media_operation",
+          "ref_id": "synthetic-media_operation"
+        },
+        {
+          "kind": "historical_fact",
+          "ref_id": "synthetic-historical_fact"
+        },
+        {
+          "kind": "rollback",
+          "ref_id": "synthetic-rollback"
+        }
+      ]
+    },
+    "delete_query": {
+      "logical_command": "query_original_delete_intent",
+      "delete_intent_id": "synthetic-delete-a"
+    },
+    "legacy_publish": {
+      "logical_command": "evaluate_new_production_source",
+      "descriptor_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      }
+    },
+    "submit_invalid": {
+      "logical_command": "submit_package",
+      "upload_id": "synthetic-upload-invalid",
+      "archive_recipe_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190",
+        "pointer": "/recipes/0"
+      }
+    }
+  }
+}

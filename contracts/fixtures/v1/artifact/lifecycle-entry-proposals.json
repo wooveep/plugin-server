@@ -1,0 +1,74 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "prepared_for_card": "D0-ART-03",
+  "integration_owner": "D0-ART-01",
+  "not_a_bundle_or_lock": true,
+  "registration_status": "proposed_only; no frozen validator/schema_ref and no publication manifest exists",
+  "proposals": [
+    {
+      "source_ref": {
+        "path": "lifecycle-cases.json",
+        "sha256": "73bcd2998d706227a46118028280ad7552e364808387e1f30f7a22550973a872"
+      },
+      "proposed_package_path": "fixtures/artifact/lifecycle-cases.json",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "lifecycle/inputs.json",
+        "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138"
+      },
+      "proposed_package_path": "fixtures/artifact/lifecycle/inputs.json",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "lifecycle/observations.json",
+        "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb"
+      },
+      "proposed_package_path": "fixtures/artifact/lifecycle/observations.json",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab"
+      },
+      "proposed_package_path": "fixtures/artifact/lifecycle/scenarios.json",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "readback/expected-files.json",
+        "sha256": "63f507541d59bd54e5cd18b28053f3ee6d59f3c79e4ee7d4f00476595c5b8a46"
+      },
+      "proposed_package_path": "fixtures/artifact/readback/expected-files.json",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "readback/cases.json",
+        "sha256": "b74951fb68d7c8089a8666ee9a1f404505abc879858c33dbc8331187b975820a"
+      },
+      "proposed_package_path": "fixtures/artifact/readback/cases.json",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "consumer-handoff.json",
+        "sha256": "e85409b34d1d6052a3ae53401f879bbbadaaf7037092613e2fa0c1be2c1dbc0d"
+      },
+      "proposed_package_path": "fixtures/artifact/consumer-handoff.json",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "consumer-expectations.md",
+        "sha256": "fefdbab0ed98a4c1d9e23415a38393f613c3e110dc38009e3241fe1abab17c30"
+      },
+      "proposed_package_path": "fixtures/artifact/consumer-expectations.md",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    }
+  ]
+}

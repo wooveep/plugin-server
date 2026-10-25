@@ -1,0 +1,107 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "synthetic": true,
+  "not_a_receipt": "These observations are planned protocol samples; no production call, HTTP receipt, source verification, durable query or deletion occurred.",
+  "observations": {
+    "receiving": {
+      "server_state": "receiving"
+    },
+    "validating": {
+      "server_state": "validating"
+    },
+    "committed": {
+      "server_state": "committed",
+      "artifact_ref": {
+        "path": "manifests/minimal-server-manifest.json",
+        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
+      }
+    },
+    "rejected": {
+      "server_state": "rejected",
+      "error": {
+        "code": "invalid_archive"
+      }
+    },
+    "failed_io": {
+      "server_state": "failed",
+      "error": {
+        "code": "storage_unavailable"
+      },
+      "commit_point_reached": false
+    },
+    "idempotent_original": {
+      "server_state": "committed",
+      "artifact_ref": {
+        "path": "manifests/minimal-server-manifest.json",
+        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
+      },
+      "retained_archive_digest": "sha256:f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+    },
+    "idempotency_conflict": {
+      "error": {
+        "code": "idempotency_conflict"
+      },
+      "original_artifact_preserved": true
+    },
+    "version_conflict": {
+      "error": {
+        "code": "version_conflict"
+      },
+      "original_artifact_preserved": true
+    },
+    "ack_lost": {
+      "client_outcome": "unknown",
+      "client_classification": "outcome_unknown",
+      "synthetic_hidden_server_fact": "committed",
+      "client_may_assume_hidden_fact": false
+    },
+    "disconnected_precommit": {
+      "client_outcome": "unknown",
+      "client_classification": "outcome_unknown",
+      "synthetic_hidden_server_fact": "connection_lost_before_commit",
+      "client_may_assume_hidden_fact": false
+    },
+    "query_not_found": {
+      "query_result": "not_found",
+      "authoritative_for_no_commit": false
+    },
+    "query_timeout": {
+      "client_outcome": "unknown",
+      "query_result": "timeout"
+    },
+    "registration_retry": {
+      "artifact_state": "committed",
+      "catalog_registration_state": "retry_pending",
+      "error": {
+        "code": "storage_unavailable"
+      }
+    },
+    "http_unreadable": {
+      "artifact_state": "committed",
+      "synthetic_http_status": 404,
+      "runtime_ready_observation": "not_run"
+    },
+    "illegal_regression": {
+      "before": "committed",
+      "after": "receiving",
+      "shape_validity": "not_run",
+      "expected_semantic_verdict": "reject"
+    },
+    "references_exist": {
+      "action": "retain",
+      "reference_set_complete": true,
+      "references_empty": false
+    },
+    "delete_unknown": {
+      "client_outcome": "unknown",
+      "deletion_success_proven": false
+    },
+    "legacy_unknown": {
+      "source_verification": "unknown",
+      "compatibility_read": "allowed_by_existing_policy_only",
+      "new_verified_production_source": "deny"
+    }
+  }
+}

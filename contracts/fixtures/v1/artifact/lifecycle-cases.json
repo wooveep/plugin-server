@@ -1,0 +1,258 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "assignment": {
+    "acting_agent": "Codex agent /root/artifact_fixture_prep",
+    "assignee": "待确认",
+    "backup": "待确认",
+    "source_branch": "chore/retire-legacy-workflow-20261022",
+    "source_revision": "08ea31ddc2f9b077573961a5cd0d31fbcaf593e0",
+    "planned_date": "待确认"
+  },
+  "input_bundle_refs": [
+    {
+      "task_id": "D0-MF-01",
+      "bundle_version": null,
+      "manifest_sha256": null,
+      "status": "awaiting_frozen_input"
+    },
+    {
+      "task_id": "D0-ART-01@manifest",
+      "bundle_version": null,
+      "manifest_sha256": null,
+      "status": "not_produced"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "ART-LC-001",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/0"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-002",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/1"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-003",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/2"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-004",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/3"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-005",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/4"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-006",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/5"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-007",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/6"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-008",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/7"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-009",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/8"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-010",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/9"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-011",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/10"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-012",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/11"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-013",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/12"
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "illegal_state_transition",
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-014",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/13"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-015",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/14"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    },
+    {
+      "case_id": "ART-LC-016",
+      "input_ref": {
+        "path": "lifecycle/scenarios.json",
+        "sha256": "3f936fae51898051ef2b6e9e325fc2358f8f89768414ed5f51f9ca85cb3e44ab",
+        "pointer": "/scenarios/15"
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "protocol_oracle_draft"
+      },
+      "domain_validation": "not_run"
+    }
+  ],
+  "readback_cases_ref": {
+    "path": "readback/cases.json",
+    "sha256": "b74951fb68d7c8089a8666ee9a1f404505abc879858c33dbc8331187b975820a"
+  },
+  "input_output_references_are": "Closed within this draft directory and raw-file hashed; no dependency package published."
+}

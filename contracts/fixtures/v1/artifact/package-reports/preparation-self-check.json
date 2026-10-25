@@ -1,0 +1,54 @@
+{
+  "report_kind": "authoring_data_integrity_only",
+  "preparation_status": "draft",
+  "self_check_result": "passed",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "command": "python3 -B - (inline standard-library audit; exact program in this chat tool log)",
+  "cwd": "plugin-server",
+  "tool_versions": {
+    "python": "3.13.5"
+  },
+  "checks": {
+    "strict_json_files": 20,
+    "raw_file_sha256_references": 232,
+    "resolved_json_pointer_references": 109,
+    "unique_indexed_cases": 93,
+    "manifest_cases": 20,
+    "package_cases": 48,
+    "lifecycle_cases": 16,
+    "readback_cases": 9,
+    "materialized_archives": 3,
+    "inspected_regular_members_without_extraction": 15,
+    "complete_expected_payloads": 4,
+    "resolved_markdown_links": 5,
+    "literal_ascii_canonical_vectors": 2,
+    "materialized_malicious_archives": 0
+  },
+  "scope": [
+    "Strict container JSON parse and UTF-8 scalar encoding (duplicate-key raw inputs remain data strings)",
+    "Local raw-file SHA-256 and pointer closure",
+    "Case ID uniqueness/index-to-recipe/trajectory coverage",
+    "Literal ASCII projection association and saved byte digests, not the mf-json.v1 implementation",
+    "Known three archives: read member bytes/headers/statistics only, never extract",
+    "Nonempty exact expected payload set and frozen synthetic instance scope",
+    "Existing Markdown authority-link resolution"
+  ],
+  "not_run": [
+    "domain schema/semantic validators",
+    "negative recipe materialization and rejection",
+    "cross-language canonicalizer tests",
+    "source authenticity",
+    "independent consumer import/receipt",
+    "production imports/HTTP/ORAS",
+    "atomic concurrent commit/persistent unknown query",
+    "gateway ABI/runtime/deploy/build"
+  ],
+  "limitations": [
+    "No ART01 schema/bundle or fixed MF input is imported",
+    "No domain verdict can be inferred from this authoring audit",
+    "Recipe-specific stages/error splits remain draft until owner freeze"
+  ],
+  "report_self_excluded_from_input_counts": true,
+  "input_data_file_count": 24
+}

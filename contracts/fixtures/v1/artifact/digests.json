@@ -1,0 +1,84 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "oracle_method": "Literal ASCII projection authored independently of the future mf-json.v1 / artifact-json.v1 implementations; SHA-256 over saved exact bytes only. Proposed domain schema_version is not frozen.",
+  "vectors": [
+    {
+      "case_id": "ART-CAN-001",
+      "descriptor_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "equivalent_descriptor_ref": {
+        "path": "manifests/minimal-descriptor-permuted.json",
+        "sha256": "35b5153023b48465563b6420325dc0311e8d26c57d41a12e6666706419aa5bae"
+      },
+      "canonical_ref": {
+        "path": "canonical/minimal-content.json",
+        "sha256": "b6c8be8990230750dc2e5ab60a8e2dca2efa91f6f3add4a4acf44dceaea940af"
+      },
+      "content_digest": "sha256:b6c8be8990230750dc2e5ab60a8e2dca2efa91f6f3add4a4acf44dceaea940af"
+    },
+    {
+      "case_id": "ART-CAN-002",
+      "descriptor_ref": {
+        "path": "manifests/docs-changed-descriptor.json",
+        "sha256": "5e2e4e6d67d01e6d95d0baaa2e57a93453f2850064c427e09ff812da12da23ba"
+      },
+      "canonical_ref": {
+        "path": "canonical/docs-changed-content.json",
+        "sha256": "5b55b06baad7d084be85092c1f8e673f5b32029582fd90c54a94437634577ffb"
+      },
+      "content_digest": "sha256:5b55b06baad7d084be85092c1f8e673f5b32029582fd90c54a94437634577ffb",
+      "relation": "same Wasm, different docs bytes => different content identity"
+    }
+  ],
+  "archives": [
+    {
+      "path": "packages/minimal-a.tar.gz",
+      "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76",
+      "size_bytes": "774"
+    },
+    {
+      "path": "packages/minimal-b.tar.gz",
+      "sha256": "472079989f5cb9493889c27de7b076356ab5d2b56433c85e491a1872fafcb404",
+      "size_bytes": "774"
+    },
+    {
+      "path": "packages/minimal-docs-changed.tar.gz",
+      "sha256": "2f57918d9832912ecbddfff1341f3f1e5057e359838b6c3c0ca8057469ca26e2",
+      "size_bytes": "778"
+    }
+  ],
+  "payloads": [
+    {
+      "path": "plugin.wasm",
+      "size_bytes": "8",
+      "sha256": "93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+      "encoding": "hex",
+      "bytes": "0061736d01000000"
+    },
+    {
+      "path": "config.schema.json",
+      "size_bytes": "104",
+      "sha256": "67c0a3e017f62ab8fa45adf3782967e9fd83fd25da2b4cecd06cfb1ca77e2afa",
+      "encoding": "utf8",
+      "bytes": "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"additionalProperties\":false}\n"
+    },
+    {
+      "path": "defaults.json",
+      "size_bytes": "3",
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "encoding": "utf8",
+      "bytes": "{}\n"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": "17",
+      "sha256": "ebe7221b98e5c3e6bcd53c7e91fdc2a1ed04bcf79d64c87d5b0feffb05c522c9",
+      "encoding": "utf8",
+      "bytes": "D0 fixture only.\n"
+    }
+  ]
+}

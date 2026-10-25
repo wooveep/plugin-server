@@ -1,0 +1,982 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "recipe_interpreter": "not_implemented; declarative authoring recipes only, no eval or executable payload",
+  "first_failure_rule": "A future validator must prove earlier stages accepted before claiming the targeted semantic failure. Exact pipeline/stage/code splits await ART01/02 freeze.",
+  "recipes": [
+    {
+      "recipe_id": "gzip-truncated",
+      "case_id": "ART-PKG-004",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "truncate_archive_tail_bytes": 8
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Gzip footer/truncation must be rejected.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "tar-truncated",
+      "case_id": "ART-PKG-005",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "decompress_then_truncate_tar_bytes": 600,
+        "recompress": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "No complete tar stream.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "declared-length-mismatch",
+      "case_id": "ART-PKG-006",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "tar_header_size_for": "plugin.wasm",
+        "declared_size_delta": 1024,
+        "recompute_tar_header_checksum": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Reject a header/member length mismatch.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "wasm-magic",
+      "case_id": "ART-PKG-007",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_payload_hex": {
+          "plugin.wasm": "0161736d01000000"
+        },
+        "refresh_descriptor_file_hash_and_size": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "payload",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Wasm magic invalid after payload hash passes.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "wasm-version",
+      "case_id": "ART-PKG-008",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_payload_hex": {
+          "plugin.wasm": "0061736d02000000"
+        },
+        "refresh_descriptor_file_hash_and_size": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "payload",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Unsupported Wasm binary version.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "wasm-structure",
+      "case_id": "ART-PKG-009",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_payload_hex": {
+          "plugin.wasm": "0061736d0100000003020100"
+        },
+        "refresh_descriptor_file_hash_and_size": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "payload",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Correct 8-byte header but invalid function/type/code section relation; cannot just check header.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "wrong-sha",
+      "case_id": "ART-PKG-010",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_payload_utf8": {
+          "README.md": "corrupted docs\n"
+        },
+        "refresh_descriptor_file_hash_and_size": false
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "payload",
+        "error_code": "invalid_digest"
+      },
+      "assertion": "Payload changed while declared hash remains original.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "absolute-path",
+      "case_id": "ART-PKG-011",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "rename_member": {
+          "README.md": "/escape.txt"
+        },
+        "also_change_descriptor": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Reject before extraction; zero writes outside temporary root.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "parent-path",
+      "case_id": "ART-PKG-012",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "rename_member": {
+          "README.md": "../escape.txt"
+        },
+        "also_change_descriptor": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Reject traversal before extraction.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "backslash-path",
+      "case_id": "ART-PKG-013",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "rename_member": {
+          "README.md": "docs\\README.md"
+        },
+        "also_change_descriptor": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Backslashes rejected; do not normalize.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "empty-segment-path",
+      "case_id": "ART-PKG-014",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "rename_member": {
+          "README.md": "docs//README.md"
+        },
+        "also_change_descriptor": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Empty path segments rejected.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "equivalent-path",
+      "case_id": "ART-PKG-015",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "append_member_from": "README.md",
+        "new_member_name": "./README.md",
+        "also_declare_new_member": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Equivalent path rejected, not normalized into first file.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "symlink",
+      "case_id": "ART-PKG-016",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "change_member_type": "README.md",
+        "type": "symlink",
+        "linkname": "../escape.txt"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "No symlink traversal.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "hardlink",
+      "case_id": "ART-PKG-017",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "change_member_type": "README.md",
+        "type": "hardlink",
+        "linkname": "plugin.wasm"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "No hardlinks even to a member.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "duplicate-member",
+      "case_id": "ART-PKG-018",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "append_exact_duplicate_member": "README.md"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Repeated archive entry rejected.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "unlisted-member",
+      "case_id": "ART-PKG-019",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "append_member_utf8": {
+          "extra.txt": "extra\n"
+        },
+        "declare_member": false
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "No undeclared payload.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "two-wasm",
+      "case_id": "ART-PKG-020",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "append_payload_from": "plugin.wasm",
+        "new_member_name": "other.wasm",
+        "new_file_role": "wasm"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_semantic",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Exactly one selected Wasm role.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "missing-docs",
+      "case_id": "ART-PKG-021",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "remove_archive_member": "README.md",
+        "keep_descriptor_declaration": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Missing declared documentation.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "missing-schema",
+      "case_id": "ART-PKG-022",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "remove_archive_member": "config.schema.json",
+        "keep_descriptor_declaration": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Missing declared schema.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "missing-defaults",
+      "case_id": "ART-PKG-023",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "remove_archive_member": "defaults.json",
+        "keep_descriptor_declaration": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Missing declared default file.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "role-mismatch",
+      "case_id": "ART-PKG-024",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_file_role": {
+          "README.md": "defaults"
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_semantic",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Documentation reference must point to documentation role.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "defaults-invalid",
+      "case_id": "ART-PKG-025",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_payload_utf8": {
+          "defaults.json": "{\"unexpected\":true}\n"
+        },
+        "refresh_descriptor_file_hash_and_size": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "defaults",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Defaults violate independent schema additionalProperties=false.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "schema-network-ref",
+      "case_id": "ART-PKG-026",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_payload_utf8": {
+          "config.schema.json": "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$ref\":\"https://external.invalid/schema\"}\n"
+        },
+        "refresh_descriptor_file_hash_and_size": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "schema_closure",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Reject unavailable external ref without network attempt.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "schema-local-ref-missing",
+      "case_id": "ART-PKG-027",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_payload_utf8": {
+          "config.schema.json": "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$ref\":\"#/$defs/missing\"}\n"
+        },
+        "refresh_descriptor_file_hash_and_size": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "schema_closure",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Reject missing local fragment.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "uncontrolled-env",
+      "case_id": "ART-PKG-028",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "append_environment_ref": {
+          "name": "UNREGISTERED_D0_REF",
+          "kind": "endpoint",
+          "required": true
+        },
+        "controlled_test_registry": []
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "environment_policy",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Explicit controlled-registry rejection, no environment lookup.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "secret-sentinel",
+      "case_id": "ART-PKG-029",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_payload_utf8": {
+          "defaults.json": "{\"fixture_secret\":\"SYNTHETIC_D0_SECRET_DO_NOT_LOG\"}\n"
+        },
+        "replace_schema_for_declared_secret_sentinel_policy": true,
+        "refresh_descriptor_file_hash_and_size": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "environment_policy",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Synthetic marker only; error output must omit its value; no arbitrary credential-detection claim.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "server-receipt-in-archive",
+      "case_id": "ART-PKG-030",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "append_server_manifest_ref": {
+          "path": "manifests/minimal-server-manifest.json",
+          "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
+        },
+        "archive_member_name": "artifact-manifest.json",
+        "declare_member": false
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Server manifest/upload record stays outside archive.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "descriptor-self-reference",
+      "case_id": "ART-PKG-031",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "add_package_json_to_files": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_semantic",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Descriptor cannot hash/list itself.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "second-descriptor",
+      "case_id": "ART-PKG-032",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "append_copy_of_package_json_as": "other-package.json",
+        "declare_member": false
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "No second descriptor/undeclared payload.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "spec-wrapper-as-schema",
+      "case_id": "ART-PKG-033",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_payload_utf8": {
+          "config.schema.json": "{\"spec\":{\"configSchema\":{\"openAPIV3Schema\":{\"type\":\"object\"}}}}\n"
+        },
+        "refresh_descriptor_file_hash_and_size": true
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "schema_closure",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Old OpenAPI/spec wrapper is not the selected standalone Draft 2020-12 schema.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "duplicate-env-name",
+      "case_id": "ART-PKG-034",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "append_environment_refs": [
+          {
+            "name": "D0_REF",
+            "kind": "setting",
+            "required": false
+          },
+          {
+            "name": "D0_REF",
+            "kind": "setting",
+            "required": true
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_semantic",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Names unique.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "duplicate-doc-reference",
+      "case_id": "ART-PKG-035",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_documentation_paths": [
+          "README.md",
+          "README.md"
+        ]
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_semantic",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "No repeated documentation references.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "executable-script",
+      "case_id": "ART-PKG-036",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "append_member_utf8": {
+          "install.sh": "# synthetic forbidden script\n"
+        },
+        "declare_with_role": "documentation",
+        "mode": "0755"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "archive",
+        "error_code": "invalid_archive"
+      },
+      "assertion": "Declared documentation cannot grant executable script permission.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "legacy-verified",
+      "case_id": "ART-PKG-037",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "replace_source": {
+          "kind": "legacy_unknown",
+          "verification": "verified"
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "source_verification",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Unknown provenance cannot self-certify.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "duplicate-descriptor-key",
+      "case_id": "ART-PKG-038",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "duplicate_raw_package_json_key": "plugin_name"
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "parse",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Reject duplicate keys before lossy parsing.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "client-server-fields",
+      "case_id": "ART-PKG-039",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "add_to_package_json": {
+          "state": "committed",
+          "artifact_id": "synthetic-client-id"
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "descriptor_schema",
+        "error_code": "invalid_schema"
+      },
+      "assertion": "Client does not allocate artifact identity or commit state.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "read-io-error",
+      "case_id": "ART-PKG-040",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "injected_failure": "synthetic read error before validation complete"
+      },
+      "expected": {
+        "outcome": "execution_error",
+        "stage": "io",
+        "error_code": "storage_unavailable"
+      },
+      "assertion": "Execution error, not package invalid; no successful canonical digest.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "limit-archive_bytes-equal",
+      "case_id": "ART-PKG-041",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "fixture_policy_limit": {
+          "archive_bytes": 774
+        }
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "limits",
+        "error_code": null,
+        "http_mapping_proposal": null
+      },
+      "assertion": "Observed statistic equals fixed fixture limit.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "limit-archive_bytes-exceeded_by_one",
+      "case_id": "ART-PKG-042",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "fixture_policy_limit": {
+          "archive_bytes": 773
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "limits",
+        "error_code": "invalid_archive",
+        "http_mapping_proposal": 413
+      },
+      "assertion": "Same small archive exceeds frozen test-only limit by exactly one; no large files generated.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "limit-expanded_bytes-equal",
+      "case_id": "ART-PKG-043",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "fixture_policy_limit": {
+          "expanded_bytes": 1321
+        }
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "limits",
+        "error_code": null,
+        "http_mapping_proposal": null
+      },
+      "assertion": "Observed statistic equals fixed fixture limit.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "limit-expanded_bytes-exceeded_by_one",
+      "case_id": "ART-PKG-044",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "fixture_policy_limit": {
+          "expanded_bytes": 1320
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "limits",
+        "error_code": "invalid_archive",
+        "http_mapping_proposal": 413
+      },
+      "assertion": "Same small archive exceeds frozen test-only limit by exactly one; no large files generated.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "limit-member_count-equal",
+      "case_id": "ART-PKG-045",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "fixture_policy_limit": {
+          "member_count": 5
+        }
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "limits",
+        "error_code": null,
+        "http_mapping_proposal": null
+      },
+      "assertion": "Observed statistic equals fixed fixture limit.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "limit-member_count-exceeded_by_one",
+      "case_id": "ART-PKG-046",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "fixture_policy_limit": {
+          "member_count": 4
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "limits",
+        "error_code": "invalid_archive",
+        "http_mapping_proposal": 413
+      },
+      "assertion": "Same small archive exceeds frozen test-only limit by exactly one; no large files generated.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "limit-max_member_bytes-equal",
+      "case_id": "ART-PKG-047",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "fixture_policy_limit": {
+          "max_member_bytes": 1189
+        }
+      },
+      "expected": {
+        "outcome": "valid",
+        "stage": "limits",
+        "error_code": null,
+        "http_mapping_proposal": null
+      },
+      "assertion": "Observed statistic equals fixed fixture limit.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    },
+    {
+      "recipe_id": "limit-max_member_bytes-exceeded_by_one",
+      "case_id": "ART-PKG-048",
+      "base_archive_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "mutation": {
+        "fixture_policy_limit": {
+          "max_member_bytes": 1188
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "stage": "limits",
+        "error_code": "invalid_archive",
+        "http_mapping_proposal": 413
+      },
+      "assertion": "Same small archive exceeds frozen test-only limit by exactly one; no large files generated.",
+      "materialized": false,
+      "domain_validation": "not_run"
+    }
+  ]
+}

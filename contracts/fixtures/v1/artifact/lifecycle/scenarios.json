@@ -1,0 +1,664 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "scenarios": [
+    {
+      "case_id": "ART-LC-001",
+      "description": "receiving -> validating -> committed",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-001",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/receiving"
+          },
+          "expected_next_action": "continue_same_intent",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        },
+        {
+          "case_id": "ART-LC-001",
+          "step": 2,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/validating"
+          },
+          "expected_next_action": "await_result_or_query_original_identity",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        },
+        {
+          "case_id": "ART-LC-001",
+          "step": 3,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "query_original_upload_identity",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/query_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/committed"
+          },
+          "expected_next_action": "return_original_artifact",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-002",
+      "description": "Validation rejection; original invalid bytes not blindly retried.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-002",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_invalid"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/receiving"
+          },
+          "expected_next_action": "continue_validation",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        },
+        {
+          "case_id": "ART-LC-002",
+          "step": 2,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_invalid"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/validating"
+          },
+          "expected_next_action": "reject_invalid_input",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        },
+        {
+          "case_id": "ART-LC-002",
+          "step": 3,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_invalid"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/rejected"
+          },
+          "expected_next_action": "fix_input_then_new_intent",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-003",
+      "description": "Confirmed precommit storage failure differs from caller unknown.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-003",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/validating"
+          },
+          "expected_next_action": "attempt_commit",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        },
+        {
+          "case_id": "ART-LC-003",
+          "step": 2,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/failed_io"
+          },
+          "expected_next_action": "retry_same_key_only_after_original_identity_check",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-004",
+      "description": "Same key/content returns first immutable result.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-004",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_same"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/idempotent_original"
+          },
+          "expected_next_action": "return_original_artifact",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-005",
+      "description": "Same key with changed docs is an idempotency conflict.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-005",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_samekey_changed"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/idempotency_conflict"
+          },
+          "expected_next_action": "reconcile_original_intent_do_not_replace",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-006",
+      "description": "Different key, same name/version, changed docs conflicts.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-006",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_newkey_changed"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/version_conflict"
+          },
+          "expected_next_action": "new_version_required_do_not_overwrite",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-007",
+      "description": "Same content, different compressed bytes preserves first archive identity.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-007",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_compression_b"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/idempotent_original"
+          },
+          "expected_next_action": "return_first_artifact_and_first_archive_digest",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-008",
+      "description": "ACK lost after simulated commit; client unknown resolved by original query.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-008",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/ack_lost"
+          },
+          "expected_next_action": "query_original_upload_identity",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        },
+        {
+          "case_id": "ART-LC-008",
+          "step": 2,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "query_original_upload_identity",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/query_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/committed"
+          },
+          "expected_next_action": "return_original_artifact",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-009",
+      "description": "Not-found query is not proof of no commit; never change contents/key to probe.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-009",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "submit_package",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/submit_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/disconnected_precommit"
+          },
+          "expected_next_action": "query_original_upload_identity",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        },
+        {
+          "case_id": "ART-LC-009",
+          "step": 2,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "query_original_upload_identity",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/query_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/query_not_found"
+          },
+          "expected_next_action": "keep_unknown_until_authoritative_then_same_key_replay",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-010",
+      "description": "Query timeout cannot turn upload into failed.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-010",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "query_original_upload_identity",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/query_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/query_timeout"
+          },
+          "expected_next_action": "keep_unknown_and_query_original_identity",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-011",
+      "description": "Committed artifact retained when Console registration fails.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-011",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "register_artifact_same_intent",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/register"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/registration_retry"
+          },
+          "expected_next_action": "retry_same_registration_intent_keep_artifact",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-012",
+      "description": "Artifact remains committed; no runtime ready/production inference.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-012",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "read_all_expected_artifact_files",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/readback"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/http_unreadable"
+          },
+          "expected_next_action": "collect_full_readback_evidence_keep_unavailable",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-013",
+      "description": "Type-shaped illegal transition; semantic oracle required.",
+      "expected_verdict": "reject_transition",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-013",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "query_original_upload_identity",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/query_a"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/illegal_regression"
+          },
+          "expected_next_action": "reject_committed_regression",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-014",
+      "description": "Current/old release, media, historical facts, rollback all retain.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-014",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "retention_preflight",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/retain"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/references_exist"
+          },
+          "expected_next_action": "retain",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-015",
+      "description": "Unknown delete response cannot claim success or remove reference history.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-015",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "query_original_delete_intent",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/delete_query"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/delete_unknown"
+          },
+          "expected_next_action": "keep_unknown_query_original_delete_and_retain_evidence",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "ART-LC-016",
+      "description": "History unknown cannot become a verified new release.",
+      "expected_verdict": "accept_trace",
+      "domain_validation": "not_run",
+      "steps": [
+        {
+          "case_id": "ART-LC-016",
+          "step": 1,
+          "actor_kind": "client_or_protocol_oracle",
+          "command": "evaluate_new_production_source",
+          "input_ref": {
+            "path": "lifecycle/inputs.json",
+            "sha256": "629722cfb6f6a7cfcedbf9d992468db36442cf11c34f0ffdfd3d8fadfb720138",
+            "pointer": "/requests/legacy_publish"
+          },
+          "observed_result_ref": {
+            "path": "lifecycle/observations.json",
+            "sha256": "e01856c62e41261faf80e6f3ffeef9c222182e67eefa0aee4a4b401990bfa6cb",
+            "pointer": "/observations/legacy_unknown"
+          },
+          "expected_next_action": "keep_compatibility_read_deny_new_verified_production",
+          "expected_side_effects": {
+            "production_io": "none_in_D0",
+            "overwrite_committed": false,
+            "runtime_ready_decision": false,
+            "automatic_prune": false
+          }
+        }
+      ]
+    }
+  ]
+}

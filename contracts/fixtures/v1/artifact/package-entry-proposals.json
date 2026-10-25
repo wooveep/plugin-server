@@ -1,0 +1,58 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "prepared_for_card": "D0-ART-02",
+  "integration_owner": "D0-ART-01",
+  "not_a_bundle_or_lock": true,
+  "registration_status": "proposed_only; no frozen validator/schema_ref and no publication manifest exists",
+  "proposals": [
+    {
+      "source_ref": {
+        "path": "package-cases.json",
+        "sha256": "cb7c12a75480e2c2890202a0a3a66bd0f04b679e774f76b5534559253520d51a"
+      },
+      "proposed_package_path": "fixtures/artifact/package-cases.json",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "package-recipes/minimal.json",
+        "sha256": "4bc89a60c6d426f29596097401c399a34f5ee23fbe188bc9c42bba1dbf2c2fd6"
+      },
+      "proposed_package_path": "fixtures/artifact/package-recipes/minimal.json",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "package-recipes/negative-recipes.json",
+        "sha256": "b36114e2b53486f6360e9d0440a8ef42bdd0326d918d9da184ff0a3d0e011190"
+      },
+      "proposed_package_path": "fixtures/artifact/package-recipes/negative-recipes.json",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "packages/minimal-a.tar.gz",
+        "sha256": "f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+      },
+      "proposed_package_path": "fixtures/artifact/packages/minimal-a.tar.gz",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "packages/minimal-b.tar.gz",
+        "sha256": "472079989f5cb9493889c27de7b076356ab5d2b56433c85e491a1872fafcb404"
+      },
+      "proposed_package_path": "fixtures/artifact/packages/minimal-b.tar.gz",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    },
+    {
+      "source_ref": {
+        "path": "packages/minimal-docs-changed.tar.gz",
+        "sha256": "2f57918d9832912ecbddfff1341f3f1e5057e359838b6c3c0ca8057469ca26e2"
+      },
+      "proposed_package_path": "fixtures/artifact/packages/minimal-docs-changed.tar.gz",
+      "registration_action": "owner selects fixture/asset and frozen validation declaration after input bundle lock"
+    }
+  ]
+}

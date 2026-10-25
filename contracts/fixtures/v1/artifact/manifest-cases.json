@@ -1,0 +1,395 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "assignment": {
+    "acting_agent": "Codex agent /root/artifact_fixture_prep",
+    "assignee": "待确认",
+    "backup": "待确认",
+    "source_branch": "chore/retire-legacy-workflow-20261022",
+    "source_revision": "08ea31ddc2f9b077573961a5cd0d31fbcaf593e0",
+    "planned_date": "待确认"
+  },
+  "input_bundle_refs": [
+    {
+      "task_id": "D0-MF-01",
+      "bundle_version": null,
+      "manifest_sha256": null,
+      "status": "awaiting_frozen_input"
+    },
+    {
+      "task_id": "D0-ART-01@manifest",
+      "bundle_version": null,
+      "manifest_sha256": null,
+      "status": "not_produced"
+    }
+  ],
+  "schema_version_proposal": "artifact.v1-draft",
+  "schema_version_is_frozen": false,
+  "expected_is": "Intended oracle only; no schema or semantic validator has run. Unregistered detailed codes/stages remain proposals.",
+  "cases": [
+    {
+      "case_id": "ART-MAN-001",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": null,
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Base legacy_unknown descriptor; compatibility only, no verified new publish."
+    },
+    {
+      "case_id": "ART-MAN-002",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor-permuted.json",
+        "sha256": "35b5153023b48465563b6420325dc0311e8d26c57d41a12e6666706419aa5bae"
+      },
+      "mutation_recipe": null,
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Object/file declaration order changes preserve projected content digest."
+    },
+    {
+      "case_id": "ART-MAN-003",
+      "input_ref": {
+        "path": "manifests/minimal-server-manifest.json",
+        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
+      },
+      "mutation_recipe": null,
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Synthetic server output, outside archive; not an upload receipt."
+    },
+    {
+      "case_id": "ART-MAN-004",
+      "input_ref": {
+        "path": "manifests/minimal-server-manifest.json",
+        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
+      },
+      "mutation_recipe": {
+        "replace": {
+          "/artifact_id": "synthetic-other-artifact",
+          "/archive_digest": "sha256:472079989f5cb9493889c27de7b076356ab5d2b56433c85e491a1872fafcb404",
+          "/created_at": "2026-10-25T01:00:00Z",
+          "/created_by": "synthetic-other-service",
+          "/download_url": "https://artifact.invalid/other/plugin.wasm"
+        }
+      },
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Excluded receipt fields do not affect content projection."
+    },
+    {
+      "case_id": "ART-MAN-005",
+      "input_ref": {
+        "path": "manifests/docs-changed-descriptor.json",
+        "sha256": "5e2e4e6d67d01e6d95d0baaa2e57a93453f2850064c427e09ff812da12da23ba"
+      },
+      "mutation_recipe": null,
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Same name/version and Wasm, different docs; package-validity proposal does not authorize version overwrite."
+    },
+    {
+      "case_id": "ART-MAN-006",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "remove": [
+          "/defaults_path"
+        ]
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Required field missing."
+    },
+    {
+      "case_id": "ART-MAN-007",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "replace": {
+          "/schema_version": "unknown-version"
+        }
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Unknown schema version; exact accepted version awaits ART01."
+    },
+    {
+      "case_id": "ART-MAN-008",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "replace": {
+          "/canonicalization_version": "artifact-json.unknown"
+        }
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Unknown algorithm, no serializer fallback."
+    },
+    {
+      "case_id": "ART-MAN-009",
+      "input_ref": {
+        "path": "manifests/minimal-server-manifest.json",
+        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
+      },
+      "mutation_recipe": {
+        "replace": {
+          "/content_digest": "sha256:abc"
+        }
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Short digest."
+    },
+    {
+      "case_id": "ART-MAN-010",
+      "input_ref": {
+        "path": "manifests/minimal-server-manifest.json",
+        "sha256": "15d7760aa65f105f4c7b478481bd1c6439624ca92f3265e210dc169bba366ea0"
+      },
+      "mutation_recipe": {
+        "replace": {
+          "/content_digest": "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Upper-case hex forbidden."
+    },
+    {
+      "case_id": "ART-MAN-011",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "copy_file_entry": "README.md"
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Duplicate file path requires semantic uniqueness, not first-member selection."
+    },
+    {
+      "case_id": "ART-MAN-012",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "replace": {
+          "/files/0/path": "../plugin.wasm"
+        }
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Path traversal."
+    },
+    {
+      "case_id": "ART-MAN-013",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "replace": {
+          "/source/verification": "verified"
+        }
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "legacy_unknown cannot become verified."
+    },
+    {
+      "case_id": "ART-MAN-014",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "replace": {
+          "/source": {
+            "kind": "local_build",
+            "verification": "unknown",
+            "repo": "https://source.invalid/d0-fixture",
+            "commit": "0000000000000000000000000000000000000000",
+            "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "local_build missing build_inputs_digest; no source authenticity is asserted."
+    },
+    {
+      "case_id": "ART-MAN-015",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "source_branch": "oci_import",
+        "missing_documented_field": "layer_digest",
+        "exact_original_ref_machine_key": "awaiting_ART01_freeze"
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "OCI selected layer is mandatory; exact original-ref key is unresolved, no invented schema."
+    },
+    {
+      "case_id": "ART-MAN-016",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "add": {
+          "/artifact_id": "synthetic-client-chosen",
+          "/archive_digest": "sha256:f6d406e87378bfb9025db867e025f075eb34db07e82665c20b9f7842c7560a76"
+        }
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Client descriptor may not carry server receipt fields."
+    },
+    {
+      "case_id": "ART-MAN-017",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "append_environment_refs": [
+          {
+            "name": "D0_REF",
+            "kind": "setting",
+            "required": false
+          },
+          {
+            "name": "D0_REF",
+            "kind": "setting",
+            "required": true
+          }
+        ]
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Environment names unique."
+    },
+    {
+      "case_id": "ART-MAN-018",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "replace": {
+          "/documentation_paths": [
+            "README.md",
+            "README.md"
+          ]
+        }
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "Documentation paths unique."
+    },
+    {
+      "case_id": "ART-MAN-019",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "raw_utf8": "{\"plugin_name\":\"first\",\"plugin_name\":\"second\"}"
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "parse"
+      },
+      "assertion": "Duplicate JSON keys must fail parsing before schema/projecting."
+    },
+    {
+      "case_id": "ART-MAN-020",
+      "input_ref": {
+        "path": "manifests/minimal-descriptor.json",
+        "sha256": "7358dbe4be7c90c46f182d36bffe4c3939421f874090be95ea3677194e505557"
+      },
+      "mutation_recipe": {
+        "replace": {
+          "/files/0/size_bytes": 8
+        }
+      },
+      "expected": {
+        "verdict": "reject",
+        "error_code": "invalid_schema",
+        "stage": "schema_or_semantic_pending_owner_split"
+      },
+      "assertion": "File size is a decimal string, not a JSON number."
+    }
+  ]
+}

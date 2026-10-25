@@ -1,0 +1,110 @@
+{
+  "preparation_status": "draft",
+  "domain_validation": "not_run",
+  "consumer_receipts": "not_run",
+  "assignment": {
+    "acting_agent": "Codex agent /root/artifact_fixture_prep",
+    "assignee": "待确认",
+    "backup": "待确认",
+    "source_branch": "chore/retire-legacy-workflow-20261022",
+    "source_revision": "08ea31ddc2f9b077573961a5cd0d31fbcaf593e0",
+    "planned_date": "待确认"
+  },
+  "input_bundle_refs": [
+    {
+      "task_id": "D0-MF-01",
+      "bundle_version": null,
+      "manifest_sha256": null,
+      "status": "awaiting_frozen_input"
+    },
+    {
+      "task_id": "D0-ART-01@manifest",
+      "bundle_version": null,
+      "manifest_sha256": null,
+      "status": "not_produced"
+    }
+  ],
+  "responsible_cards": [
+    "D0-ART-01",
+    "D0-ART-02",
+    "D0-ART-03"
+  ],
+  "authoring_only": true,
+  "bundle_manifest_ref": null,
+  "bundle_manifest_status": "Not produced; ART01 alone registers a frozen schema/fixture closure after MF01 input. This file is a handoff checklist, not a second bundle/lock format.",
+  "provenance_refs": [
+    {
+      "kind": "local_git_head",
+      "value": "08ea31ddc2f9b077573961a5cd0d31fbcaf593e0"
+    },
+    {
+      "kind": "CodeGraph_static_source",
+      "queries": [
+        "plugin-server metadata import package commit upload normalize path Archive Format PackageDescriptor ArtifactManifest",
+        "generate_metadata.py pull_plugins.py"
+      ]
+    }
+  ],
+  "result_refs": [
+    {
+      "path": "manifest-cases.json",
+      "sha256": "44a0a3358e898a16ef81dd9098b5248052ac6e5e6cc8d8dd6f7f7e79f50ff7dc"
+    },
+    {
+      "path": "digests.json",
+      "sha256": "b0fe9539006bd03073378225d71baef190868a015c6964476fe8840e89004c87"
+    },
+    {
+      "path": "package-cases.json",
+      "sha256": "cb7c12a75480e2c2890202a0a3a66bd0f04b679e774f76b5534559253520d51a"
+    },
+    {
+      "path": "lifecycle-cases.json",
+      "sha256": "73bcd2998d706227a46118028280ad7552e364808387e1f30f7a22550973a872"
+    },
+    {
+      "path": "readback/expected-files.json",
+      "sha256": "63f507541d59bd54e5cd18b28053f3ee6d59f3c79e4ee7d4f00476595c5b8a46"
+    }
+  ],
+  "consumers": [
+    {
+      "task": "D0-MF-05 / MF-REL01 / MF-REL02",
+      "action": "After ART01 fixed bundle: validate descriptor vs server manifest, original-identity unknown recovery, same-intent registration retry; never infer ready."
+    },
+    {
+      "task": "D0-MF-07 / SDK",
+      "action": "Consume exact package version/content/schema/default/docs; do not fetch latest or load neighboring working tree."
+    },
+    {
+      "task": "DEP FX-02 / FX-06",
+      "action": "Use nonempty exact expected payload collection and frozen instance scope; actual HTTP and runtime evidence remain later-stage."
+    }
+  ],
+  "next_steps": [
+    {
+      "task": "D0-ART-01@manifest",
+      "action": "Freeze schema_version/source-key details and common input; implement owner-only schemas, local resolver and artifact projection; import rather than regenerate MF canonical golden; register data into one bundle."
+    },
+    {
+      "task": "D0-ART-02",
+      "action": "Materialize negative recipes in isolated temporary roots and implement read-only validator only after ART01; prove target-stage preconditions and execution_error distinction."
+    },
+    {
+      "task": "D0-ART-03",
+      "action": "Implement pure protocol/coverage oracle after ART01/02; add independent consumer receipt and frozen output manifest."
+    }
+  ],
+  "not_run": [
+    "artifact JSON Schema validation",
+    "semantic normalization implementation",
+    "Wasm runtime/ABI validation",
+    "archive safety validator execution",
+    "negative recipe materialization",
+    "independent consumer import/receipt",
+    "production import/ORAS/HTTP",
+    "concurrency/atomic commit/persistent query",
+    "gateway readiness/support/production admission",
+    "build/image/deployment"
+  ]
+}
