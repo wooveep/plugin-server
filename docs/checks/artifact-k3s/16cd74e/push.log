@@ -1,0 +1,17 @@
+The push refers to repository [registry.lc.wooveep.com:9980/modelfusion/plugin-server]
+44136fa355b3: Already exists
+b58c28b8a8d2: Pushed
+19f81082f6f0: Layer already exists
+799df5177ae2: Layer already exists
+66cd357cf7a1: Layer already exists
+f26a7934f3b2: Layer already exists
+87657d573e1e: Layer already exists
+b1e85e40f9df: Layer already exists
+2bc5c23f23f9: Pushed
+59e22667830b: Layer already exists
+078d84cab645: Layer already exists
+c83e7af31283: Layer already exists
+87f07b5f660a: Layer already exists
+c659ce5b93e9: Pushed
+cace363bcca3: Pushed
+artifact-k3s-16cd74e: digest: sha256:e338c5b762029cad77587db98eec1b4368a4ec07f575b230a492f8a3ca474365 size: 856

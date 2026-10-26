@@ -7,3 +7,5 @@ DEP-IF05实际预检默认VM K3S revision37：在线卷250文件、125个历史W
 Dockerfile新增显式LEGACY_PLUGINS_DIR构建输入，默认仍为plugins。此次切换选packages/legacy-empty，只携带完整包增量；DEP从只读旧PVC向新同文件系统的plugins+提交状态卷导入在线历史，再沿ART生产commit提交完整包。没有放宽版本冲突规则，也不把历史unknown来源改为verified。最终镜像/逐文件HTTP/重启验证另记；旧镜像/旧卷保留供回退。
 
 验收：增量镜像必须有非空完整包inventory，legacy为空应与已锁输入一致；本机实际容器与DEP实际K3S分别记录，完成后回填ART06。该镜像不是独立历史目录来源，fresh部署若需要历史版本须另选已锁输入；inert完整包不代表网关ABI/生产支持。
+
+本机与仓库验收：源码16cd74e；镜像`artifact-k3s-16cd74e@sha256:e338c5b762029cad77587db98eec1b4368a4ec07f575b230a492f8a3ca474365`已构建、推送并按digest拉回，实际容器9文件/1完整包/0 legacy，上传鉴权/冲突/私有状态拒绝及重启查回通过。[机器回执](artifact-k3s/16cd74e/acceptance.json)锁定构建参数、原日志和HTTP摘要。DEP d2c4b42两路独立复核均0遗留，seed10/template4/legacy5及两项中断探针通过；实际VM验收另由DEP记录。

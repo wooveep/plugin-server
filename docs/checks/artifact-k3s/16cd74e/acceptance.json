@@ -1,0 +1,67 @@
+{
+  "source_commit": "16cd74e",
+  "production_base_commit": "2522236d8ead83f2955e68908b203f199d861482",
+  "image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:artifact-k3s-16cd74e",
+  "image_digest": "sha256:e338c5b762029cad77587db98eec1b4368a4ec07f575b230a492f8a3ca474365",
+  "build_args": {
+    "LEGACY_PLUGINS_DIR": "packages/legacy-empty"
+  },
+  "expected_inventory": {
+    "complete": 1,
+    "legacy": 0,
+    "http_files": 9
+  },
+  "result": "passed",
+  "checks": [
+    "actual-image-build",
+    "actual-container-http",
+    "upload-conflicts-auth-private-state",
+    "restart-query-and-same-intent-replay",
+    "harbor-push",
+    "pull-by-digest"
+  ],
+  "default_k3s": "recorded separately in DEP actual rollout",
+  "gateway_abi": "not_run",
+  "files": [
+    {
+      "path": "build.log",
+      "sha256": "sha256:9672a542199d1fbcdb864457182cb24e76e23d2fd08ba5fe19a958ef64d44625",
+      "size_bytes": "5277"
+    },
+    {
+      "path": "container/acceptance.json",
+      "sha256": "sha256:a628ef55996837ddb47689d886396624f069c713068325f179d55fb00f1a9632",
+      "size_bytes": "858"
+    },
+    {
+      "path": "container/http-files.json",
+      "sha256": "sha256:3cbcffa01e918a3bb174592d472e969239613d3d3647f9fde344bd305753c506",
+      "size_bytes": "1633"
+    },
+    {
+      "path": "container/image-inventory.json",
+      "sha256": "sha256:59a3316d7afde5d536dfaec4a5845095111846a94de344deeff7356f3e5cd725",
+      "size_bytes": "1588"
+    },
+    {
+      "path": "container/runtime-upload.json",
+      "sha256": "sha256:eb8ea4a4fed32e4e83b69c48d7aab89e633cd0d0e9e36794c2a88f626d624fd7",
+      "size_bytes": "1566"
+    },
+    {
+      "path": "container.log",
+      "sha256": "sha256:8d9166d468358499b1ccfc20001124b3e47724337dbabfcef70dab0df285b911",
+      "size_bytes": "906"
+    },
+    {
+      "path": "pull.log",
+      "sha256": "sha256:83de41ebce0e5fded62cb635f011ee0624b018c12c61e8e6cf307548ac842956",
+      "size_bytes": "533"
+    },
+    {
+      "path": "push.log",
+      "sha256": "sha256:a5785f2dcf7286f0aabcc079cc77ddf15308f8b8272861e7371eee932acf1f58",
+      "size_bytes": "662"
+    }
+  ]
+}

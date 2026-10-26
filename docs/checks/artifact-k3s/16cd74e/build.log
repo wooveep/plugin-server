@@ -1,0 +1,89 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.94kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.13.5-slim-bookworm@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 128B done
+#3 DONE 0.0s
+
+#4 [builder  1/11] FROM docker.io/library/python:3.13.5-slim-bookworm@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419
+#4 resolve docker.io/library/python:3.13.5-slim-bookworm@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419 done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 1.28kB 0.0s done
+#5 DONE 0.0s
+
+#6 [builder  6/11] COPY artifact_schemas/ ./artifact_schemas/
+#6 CACHED
+
+#7 [builder  2/11] WORKDIR /work
+#7 CACHED
+
+#8 [builder  3/11] COPY requirements.lock ./
+#8 CACHED
+
+#9 [builder  4/11] RUN python3 -m pip install --no-cache-dir --require-hashes -r requirements.lock
+#9 CACHED
+
+#10 [builder  5/11] COPY artifact_contract.py artifact_import.py artifact_packaging.py artifact_storage.py mf_canonical.py plugin_schema_conversion.py plugin_server.py upload_plugin.py pull_plugins.py generate_metadata.py ./
+#10 CACHED
+
+#11 [builder  7/11] COPY scripts/ ./scripts/
+#11 CACHED
+
+#12 [builder  8/11] COPY packages/legacy-empty/ ./plugins/
+#12 DONE 0.1s
+
+#13 [builder  9/11] COPY packages/ ./packages/
+#13 DONE 0.0s
+
+#14 [builder 10/11] RUN python3 scripts/seed-artifact-packages.py --source packages --destination plugins --policy packages/policy.json
+#14 0.308 {"seeded_complete_packages":"1","uploads":[{"artifact_id":"f0093ad3-8ffa-493e-a07d-9453046c9492","content_digest":"sha256:9384420e4a513d7789e531053222cddd9c27998478dceca91edf5e9081639588","manifest":{"archive_digest":"sha256:31a8ad3451e1af5a9e64d4faa1ed479955c3c1e34760ffd199ad27e02a880236","artifact_id":"f0093ad3-8ffa-493e-a07d-9453046c9492","canonicalization_version":"artifact-json.v1","config_schema_path":"config.schema.json","content_digest":"sha256:9384420e4a513d7789e531053222cddd9c27998478dceca91edf5e9081639588","created_at":"2026-10-26T08:28:41.913636Z","created_by":"artifact-service","defaults_path":"defaults.json","documentation_paths":["docs/README.md"],"download_url":"http://higress-plugin-server.higress-system.svc:8080/plugins/artifact-delivery-fixture/0.0.1/plugin.wasm","environment_refs":[],"files":[{"path":"config.schema.json","role":"config_schema","sha256":"sha256:593339c3c3c9b08cae3e6b5db979c8930eb8328e84f189c4e337a9fc5d1994f0","size_bytes":"7752"},{"path":"defaults.json","role":"defaults","sha256":"sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","size_bytes":"2"},{"path":"docs/README.md","role":"documentation","sha256":"sha256:45d83aaaa3d667568601ed030743c8d235af81acda45d19d138fe59e7cc05015","size_bytes":"51"},{"path":"plugin.wasm","role":"wasm","sha256":"sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476","size_bytes":"8"},{"path":"route.schema.json","role":"config_schema","sha256":"sha256:f181114a1188c10943684ae96243afaadb1818be1d20bbb2f76e2ddfeb735881","size_bytes":"379"}],"plugin_name":"artifact-delivery-fixture","plugin_version":"0.0.1","schema_version":"artifact.v1","source":{"kind":"legacy_unknown","verification":"unknown"},"wasm_path":"plugin.wasm"},"state":"committed","upload_id":"sync:31a8ad3451e1af5a9e64d4faa1ed479955c3c1e34760ffd199ad27e02a880236"}]}
+#14 DONE 0.3s
+
+#15 [builder 11/11] RUN python3 scripts/export-artifact-inventory.py --plugins-dir plugins --output artifact-inventory.json
+#15 DONE 0.3s
+
+#16 [stage-1  3/10] COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
+#16 CACHED
+
+#17 [stage-1  4/10] COPY --from=builder /work/*.py ./
+#17 CACHED
+
+#18 [stage-1  5/10] COPY --from=builder /work/artifact_schemas/ ./artifact_schemas/
+#18 CACHED
+
+#19 [stage-1  6/10] COPY --from=builder /work/requirements.lock ./requirements.lock
+#19 CACHED
+
+#20 [stage-1  2/10] WORKDIR /opt/plugin-server
+#20 CACHED
+
+#21 [stage-1  7/10] COPY --from=builder /work/packages/policy.json ./policy.json
+#21 CACHED
+
+#22 [stage-1  8/10] COPY --from=builder /work/artifact-inventory.json ./artifact-inventory.json
+#22 DONE 0.0s
+
+#23 [stage-1  9/10] COPY --from=builder /work/plugins/ /usr/share/plugin-server/plugins/
+#23 DONE 0.0s
+
+#24 [stage-1 10/10] COPY --from=builder /work/.plugins-artifact-state/ /usr/share/plugin-server/.plugins-artifact-state/
+#24 DONE 0.1s
+
+#25 exporting to image
+#25 exporting layers 0.1s done
+#25 exporting manifest sha256:8cb4a299662b3037eed74ffc46f3a73eb2837f43d511de7ab420ae553c162128 done
+#25 exporting config sha256:be04f9160fad854449d1ca808f4ffc2cf7eb328f5537172e56f0f6bba5a691e8
+#25 exporting config sha256:be04f9160fad854449d1ca808f4ffc2cf7eb328f5537172e56f0f6bba5a691e8 done
+#25 exporting attestation manifest sha256:241d0bb5e2dda91603755881a6013effcfe1ba04ff562be967268236b0124721 done
+#25 exporting manifest list sha256:e338c5b762029cad77587db98eec1b4368a4ec07f575b230a492f8a3ca474365 done
+#25 naming to docker.io/library/modelfusion-artifact-k3s:16cd74e done
+#25 unpacking to docker.io/library/modelfusion-artifact-k3s:16cd74e 0.0s done
+#25 DONE 0.2s
