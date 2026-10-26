@@ -7,10 +7,10 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from artifact_contract import (ArtifactError, ValidationPolicy, digest, json_bytes,
+from artifact_contract import (ValidationPolicy, digest, json_bytes,
                                validate_document, validate_package)
 from artifact_packaging import build_archive
-from mf_canonical import ContractError, canonicalize, parse_json
+from mf_canonical import ContractError, canonicalize
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -167,6 +167,32 @@ class ArtifactContractTests(unittest.TestCase):
         validate_package(example_archive(payload))
         payload["defaults.json"] = b'{"rev":1.1}'
         self.assert_code("ART_DEFAULTS", lambda: validate_package(example_archive(payload)))
+
+    def test_reference_into_instance_data_is_not_a_schema_location(self):
+        for target in ("#/default", "#/examples/0"):
+            payload = example_payload()
+            payload["config.schema.json"] = json_bytes({"$schema": "https://json-schema.org/draft/2020-12/schema", "$ref": target,
+                                                        "default": {"type": "string", "minimum": "bad"}, "examples": [{"typo": "ignored"}]})
+            payload["defaults.json"] = b'"text"'
+            self.assert_code("ART_CONFIG_REFERENCE", lambda: validate_package(example_archive(payload)))
+
+    def test_multiple_of_uses_exact_math_beyond_decimal_context_precision(self):
+        payload = example_payload()
+        payload["config.schema.json"] = b'{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"number","multipleOf":0.1}'
+        payload["defaults.json"] = b'9999999999999999999999999999.1'
+        validate_package(example_archive(payload))
+        payload["defaults.json"] = b'9999999999999999999999999999.11'
+        self.assert_code("ART_DEFAULTS", lambda: validate_package(example_archive(payload)))
+
+    def test_percent_encoded_schema_pointer_decodes_once(self):
+        payload = example_payload()
+        payload["config.schema.json"] = b'{"$schema":"https://json-schema.org/draft/2020-12/schema","$ref":"#/$defs/percent%25key","$defs":{"percent%key":{"type":"object"}}}'
+        validate_package(example_archive(payload))
+
+    def test_nonterminating_reference_is_a_protocol_rejection(self):
+        payload = example_payload()
+        payload["config.schema.json"] = b'{"$schema":"https://json-schema.org/draft/2020-12/schema","$ref":"#"}'
+        self.assert_code("ART_CONFIG_REFERENCE", lambda: validate_package(example_archive(payload)))
 
     def test_literal_secrets_and_unapproved_environment_references(self):
         payload = example_payload()

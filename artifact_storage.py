@@ -23,7 +23,7 @@ from artifact_contract import (ArtifactError, ValidationPolicy, digest, json_byt
                                safe_path, validate_document, validate_package)
 from mf_canonical import ContractError, parse_json
 
-SEGMENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,199}\Z")
+SEGMENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,199}\Z")
 UPLOAD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\Z")
 
 
@@ -184,7 +184,7 @@ class ArtifactStore:
                 stage.mkdir(mode=0o700)
                 manifest = {**desc, "artifact_id": str(uuid.uuid4()), "content_digest": validated.content_digest,
                             "archive_digest": validated.archive_digest, "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                            "created_by": created_by, "download_url": self.base_url + "/plugins/" + quote(name, safe="") + "/" + quote(version, safe="") + "/" + desc["wasm_path"]}
+                            "created_by": created_by, "download_url": self.base_url + "/plugins/" + quote(name, safe="") + "/" + quote(version, safe="") + "/" + quote(desc["wasm_path"], safe="/")}
                 manifest_raw = json_bytes(manifest)
                 validate_document(manifest_raw, "manifest")
                 for path, content in validated.payload.items():
@@ -265,3 +265,9 @@ class ArtifactStore:
         if path == "archive.tgz" and digest(raw) != manifest["archive_digest"]:
             raise StorageUnavailable("committed archive bytes differ")
         return raw
+
+    def list_manifests(self) -> list[dict]:
+        """Read committed versions for a producer inventory; never select latest."""
+        with self._locked() as db:
+            self._recover(db)
+            return [parse_json(row["manifest"]) for row in db.execute("SELECT manifest FROM artifacts ORDER BY name,version")]

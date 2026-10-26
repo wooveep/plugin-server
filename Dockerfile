@@ -1,51 +1,31 @@
-# 构建阶段：处理插件和元数据
-ARG PYTHON_IMAGE=higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/python:3.11-alpine
-ARG ALPINE_MIRROR=""
+# Runtime/toolchain and Python wheels are both immutable, independently locked inputs.
+ARG PYTHON_IMAGE=python:3.13.5-slim-bookworm@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419
+FROM ${PYTHON_IMAGE} AS builder
+WORKDIR /work
+COPY requirements.lock ./
+RUN python3 -m pip install --no-cache-dir --require-hashes -r requirements.lock
+COPY artifact_contract.py artifact_import.py artifact_packaging.py artifact_storage.py mf_canonical.py plugin_schema_conversion.py plugin_server.py upload_plugin.py pull_plugins.py generate_metadata.py ./
+COPY artifact_schemas/ ./artifact_schemas/
+COPY scripts/ ./scripts/
+COPY plugins/ ./plugins/
+ARG PACKAGES_DIR=packages
+COPY ${PACKAGES_DIR}/ ./packages/
+RUN python3 scripts/seed-artifact-packages.py --source packages --destination plugins --policy packages/policy.json
+RUN python3 scripts/export-artifact-inventory.py --plugins-dir plugins --output artifact-inventory.json
 
-FROM $PYTHON_IMAGE AS builder
-
-# 配置 Alpine 镜像源（可选，本地构建时可指定国内镜像加速）
-ARG ALPINE_MIRROR
-RUN if [ -n "$ALPINE_MIRROR" ]; then \
-        sed -i "s|dl-cdn.alpinelinux.org|$ALPINE_MIRROR|g" /etc/apk/repositories; \
-    fi
-
-# 安装系统依赖
-RUN apk add --no-cache \
-    wget \
-    ca-certificates \
-    && update-ca-certificates
-
-# 安装 ORAS 客户端
-RUN set -eux; \
-    ORAS_VERSION="1.2.3"; \
-    ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/'); \
-    wget -O /tmp/oras.tar.gz "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_$(echo ${ORAS_VERSION})_linux_${ARCH}.tar.gz" \
-    && tar -zxvf /tmp/oras.tar.gz -C /usr/local/bin \
-    && rm -rf /tmp/oras.tar.gz oras \
-    && oras version
-
-# 创建工作目录
-WORKDIR /workspace
-
-# 复制脚本和本地插件缓存
-COPY pull_plugins.py plugins.properties ./
-COPY plugins ./plugins
-
-# 执行构建操作
-RUN python3 pull_plugins.py --download-v2
-
-# 运行阶段：最终镜像
-FROM $PYTHON_IMAGE
-
-# 从构建阶段复制生成的文件
-COPY --from=builder /workspace/plugins /usr/share/plugin-server/plugins
-
-# 复制上传/下载服务
-COPY plugin_server.py /usr/local/bin/plugin_server.py
-
-# 暴露端口
+FROM ${PYTHON_IMAGE}
+WORKDIR /opt/plugin-server
+COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
+COPY --from=builder /work/*.py ./
+COPY --from=builder /work/artifact_schemas/ ./artifact_schemas/
+COPY --from=builder /work/requirements.lock ./requirements.lock
+COPY --from=builder /work/packages/policy.json ./policy.json
+COPY --from=builder /work/artifact-inventory.json ./artifact-inventory.json
+COPY --from=builder /work/plugins/ /usr/share/plugin-server/plugins/
+COPY --from=builder /work/.plugins-artifact-state/ /usr/share/plugin-server/.plugins-artifact-state/
+ENV PLUGIN_SERVER_PLUGINS_DIR=/usr/share/plugin-server/plugins
+ENV PLUGIN_SERVER_STATE_DIR=/usr/share/plugin-server/.plugins-artifact-state
+ENV PLUGIN_SERVER_POLICY_FILE=/opt/plugin-server/policy.json
+VOLUME ["/usr/share/plugin-server"]
 EXPOSE 8080
-
-# 启动插件服务
-CMD ["python3", "/usr/local/bin/plugin_server.py"]
+CMD ["python3", "/opt/plugin-server/plugin_server.py"]

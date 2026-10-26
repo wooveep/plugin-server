@@ -11,9 +11,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from artifact_contract import ValidationPolicy, json_bytes, safe_path
+from artifact_contract import json_bytes, load_policy, safe_path
 from artifact_storage import ArtifactStore, SEGMENT, StorageConflict, StorageUnavailable
-from mf_canonical import ContractError, parse_json
+from mf_canonical import ContractError
 
 
 def parse_plugin_upload_path(path):
@@ -172,12 +172,7 @@ def main():
     parser.add_argument("--upload-token", default=os.getenv("PLUGIN_SERVER_UPLOAD_TOKEN"))
     parser.add_argument("--policy", type=Path, default=os.getenv("PLUGIN_SERVER_POLICY_FILE"))
     args = parser.parse_args()
-    policy = ValidationPolicy()
-    if args.policy:
-        value = parse_json(args.policy.read_bytes())
-        allowed = tuple((r["name"], r["kind"], r["required"]) for r in value.get("allowed_environment_refs", []))
-        receipts = frozenset((r["source_digest"], r["wasm_digest"], r["content_digest"]) for r in value.get("provenance_receipts", []))
-        policy = ValidationPolicy(allowed_environment_refs=allowed, provenance_receipts=receipts)
+    policy = load_policy(args.policy)
     run_server(args.host, args.port, args.plugins_dir, args.upload_token, state_dir=args.state_dir,
                public_base_url=args.public_base_url, policy=policy)
 

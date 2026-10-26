@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import date
 from decimal import Decimal
 from typing import Any
 
@@ -132,5 +133,20 @@ def schema_numbers(value: Any) -> Any:
     if isinstance(value, list):
         return [schema_numbers(item) for item in value]
     return value
+
+
+
+def utc_timestamp(value: Any) -> bool:
+    if not isinstance(value, str):
+        return True  # JSON Schema type owns non-strings.
+    match = re.fullmatch(r'(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:[Zz]|\+00:00)', value, re.ASCII)
+    if not match:
+        return False
+    year, month, day, hour, minute, second = map(int, match.groups())
+    try:
+        date(year, month, day)
+    except ValueError:
+        return False
+    return hour < 24 and minute < 60 and (second < 60 or (second == 60 and hour == 23 and minute == 59))
 
 

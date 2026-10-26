@@ -4,19 +4,21 @@ from __future__ import annotations
 import copy
 import json
 from decimal import Decimal
+from functools import lru_cache
+from importlib.resources import files as resource_files
 from typing import Any
 
 import yaml
 
-from artifact_contract import (ArtifactError, DIALECT, SCHEMA_KEYWORDS, digest,
-                               json_bytes, safe_path)
-from mf_canonical import canonicalize, parse_json
+from artifact_contract import (ArtifactError, DIALECT, SCHEMA_KEYWORDS, SCHEMA_MAP_KEYS, SCHEMA_SINGLE_KEYS, SCHEMA_ARRAY_KEYS, digest,
+                               check_shape, contract_registry, registry_for)
+from mf_canonical import canonicalize, parse_json, schema_numbers
 
 VERSION = "higress-conversion.v1"
 UI_KEYS = frozenset(("x-title-i18n", "x-description-i18n", "x-scope"))
-SCHEMA_MAPS = frozenset(("properties", "patternProperties", "$defs", "dependentSchemas"))
-SCHEMA_SINGLES = frozenset(("items", "contains", "additionalProperties", "not", "if", "then", "else"))
-SCHEMA_ARRAYS = frozenset(("allOf", "anyOf", "oneOf", "prefixItems"))
+SCHEMA_MAPS = frozenset(SCHEMA_MAP_KEYS)
+SCHEMA_SINGLES = frozenset(SCHEMA_SINGLE_KEYS)
+SCHEMA_ARRAYS = frozenset(SCHEMA_ARRAY_KEYS)
 
 
 def unsupported(detail: str):
@@ -64,27 +66,16 @@ def encode_yaml_value(value: Any) -> bytes:
         raise AssertionError from exc
 
 
+@lru_cache(maxsize=1)
+def extension_schema():
+    schema = schema_numbers(parse_json(resource_files("artifact_schemas").joinpath("higress-conversion.schema.json").read_bytes()))
+    schemas, _ = contract_registry()
+    return schema, registry_for({**schemas, schema["$id"]: schema})
+
+
 def validate_extension(value: Any) -> None:
-    fields = {"schema_version", "converter_version", "info", "phase", "priority", "global_schema_path",
-              "route_schema_path", "external_resources", "annotations", "source_spec_digest"}
-    if not isinstance(value, dict) or set(value) != fields:
-        unsupported("unknown/missing controlled Higress extension fields")
-    if value["schema_version"] != VERSION or value["converter_version"] != VERSION:
-        unsupported("unknown converter version")
-    if not isinstance(value["info"], dict) or not value["info"].get("name") or not value["info"].get("version"):
-        unsupported("plugin identity metadata is required")
-    if value["phase"] not in ("default", "UNSPECIFIED_PHASE", "AUTHN", "AUTHZ", "STATS"):
-        unsupported("unknown Higress phase")
-    priority = value["priority"]
-    if isinstance(priority, bool) or not isinstance(priority, (int, Decimal)) or priority != int(priority) or not -(2**31) <= priority < 2**31:
-        unsupported("priority must be an exact int32")
-    if not safe_path(value["global_schema_path"]) or (value["route_schema_path"] is not None and not safe_path(value["route_schema_path"])):
-        unsupported("invalid schema payload paths")
-    for key in ("external_resources", "annotations"):
-        if not isinstance(value[key], dict) or set(value[key]) != {"global", "route"}:
-            unsupported("scope metadata must preserve both global and route")
-    if not isinstance(value["source_spec_digest"], str) or len(value["source_spec_digest"]) != 71 or not value["source_spec_digest"].startswith("sha256:"):
-        unsupported("invalid source spec identity")
+    schema, registry = extension_schema()
+    check_shape(value, schema, registry, "unsupported_schema_conversion")
 
 
 def _convert_schema(schema: Any, annotations: dict[str, Any], pointer: str = "") -> Any:

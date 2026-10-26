@@ -9,14 +9,16 @@ ALPINE_MIRROR ?=
 PLATFORMS ?= linux/amd64
 CLI_DIST ?= dist/upload-plugin
 PLUGIN_SERVER_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-PLUGIN_ARTIFACTS_DIR ?= $(abspath $(PLUGIN_SERVER_ROOT)/../higress-plugin/wasm-go/build)
+PLUGIN_ARTIFACTS_DIR ?= $(abspath $(PLUGIN_SERVER_ROOT)/packages)
+PACKAGES_DIR ?= packages
 PLUGIN_DIR ?= plugins
 SYNC_PLUGIN_SCRIPT ?= scripts/sync-plugin-artifacts.sh
 SYNC_PLUGIN_ARGS ?=
 
 SERVER ?= http://localhost:8080
 TOKEN ?=
-PLUGIN_FILE ?= ./plugin.wasm
+PLUGIN_FILE ?= ./plugin.tgz
+UPLOAD_ID ?=
 PLUGIN_NAME ?= demo
 PLUGIN_VERSION ?= 1.0.0
 
@@ -36,14 +38,11 @@ help:
 
 test:
 	$(PYTHON) -m unittest discover -s tests -v
-	$(PYTHON) -m py_compile plugin_server.py upload_plugin.py pull_plugins.py generate_metadata.py
-	bash tests/test_sync_plugin_artifacts.sh
+	$(PYTHON) -m py_compile plugin_server.py upload_plugin.py pull_plugins.py generate_metadata.py artifact_contract.py artifact_storage.py artifact_import.py artifact_packaging.py plugin_schema_conversion.py mf_canonical.py
+	PYTHON=$(PYTHON) bash tests/test_sync_plugin_artifacts.sh
 
 build-cli:
-	@mkdir -p $(dir $(CLI_DIST))
-	@printf '%s\n' '#!/usr/bin/env python3' > $(CLI_DIST)
-	@sed '1{/^#!/d;}' upload_plugin.py >> $(CLI_DIST)
-	@chmod +x $(CLI_DIST)
+	$(PYTHON) scripts/build-upload-cli.py --output $(CLI_DIST)
 	@printf 'Built %s\n' '$(CLI_DIST)'
 
 clean:
@@ -52,8 +51,9 @@ clean:
 sync-plugin-artifacts:
 	$(SYNC_PLUGIN_SCRIPT) --source "$(PLUGIN_ARTIFACTS_DIR)" --destination "$(PLUGIN_DIR)" $(SYNC_PLUGIN_ARGS)
 
-docker-build: sync-plugin-artifacts
+docker-build:
 	docker build \
+		--build-arg PACKAGES_DIR=$(PACKAGES_DIR) \
 		$(if $(ALPINE_MIRROR),--build-arg ALPINE_MIRROR=$(ALPINE_MIRROR),) \
 		-t $(TAG) \
 		-f $(DOCKERFILE) \
@@ -63,8 +63,9 @@ docker-push:
 	docker tag $(TAG) $(REMOTE_TAG)
 	docker push $(REMOTE_TAG)
 
-docker-buildx-push: sync-plugin-artifacts
+docker-buildx-push:
 	docker buildx build \
+		--build-arg PACKAGES_DIR=$(PACKAGES_DIR) \
 		--platform $(PLATFORMS) \
 		$(if $(ALPINE_MIRROR),--build-arg ALPINE_MIRROR=$(ALPINE_MIRROR),) \
 		-t $(REMOTE_TAG) \
@@ -80,9 +81,11 @@ run:
 
 upload: build-cli
 	@test -n "$(TOKEN)" || (printf '%s\n' 'TOKEN is required, for example: make upload TOKEN=change-me' && exit 1)
-	$(CLI_DIST) \
+	@test -n "$(UPLOAD_ID)" || (printf '%s\n' 'UPLOAD_ID is required and must be reused after unknown outcomes' && exit 1)
+	$(PYTHON) $(CLI_DIST) \
 		--server $(SERVER) \
 		--token $(TOKEN) \
 		--file $(PLUGIN_FILE) \
 		--name $(PLUGIN_NAME) \
-		--version $(PLUGIN_VERSION)
+		--version $(PLUGIN_VERSION) \
+		--upload-id $(UPLOAD_ID)

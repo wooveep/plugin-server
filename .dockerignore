@@ -1,0 +1,11 @@
+.git
+.codegraph
+.gitnexus
+.local
+.venv
+__pycache__
+**/__pycache__
+tests
+docs
+dist
+*.log

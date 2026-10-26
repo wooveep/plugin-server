@@ -2,6 +2,7 @@ import tempfile
 import threading
 import unittest
 import json
+from urllib.request import urlopen
 from http.client import HTTPConnection
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -95,6 +96,23 @@ class PluginServerTest(unittest.TestCase):
                                     headers={"Authorization": "Bearer secret-token", "Idempotency-Key": "wrong"})
         self.assertEqual(status, 422)
         self.assertFalse((self.plugins_dir / "wrong").exists())
+
+    def test_semver_build_metadata_and_special_wasm_path_url_round_trip(self):
+        payload = example_payload()
+        wasm = payload.pop("plugin.wasm")
+        name = "bin/plugin?#% 空格.wasm"
+        payload[name] = wasm
+        desc = descriptor(payload, "1.0.0+build.1")
+        desc["wasm_path"] = name
+        for item in desc["files"]:
+            if item["path"] == name:
+                item["role"] = "wasm"
+        self.server.RequestHandlerClass.store.base_url = f"http://{self.host}:{self.port}"
+        status, _, raw = self.request("PUT", "/uploads/special", body=build_archive(desc, payload), headers={"Authorization": "Bearer secret-token"})
+        self.assertEqual(status, 201, raw)
+        url = json.loads(raw)["manifest"]["download_url"]
+        with urlopen(url, timeout=3) as response:
+            self.assertEqual(response.read(), wasm)
 
     def test_put_plugin_without_token_is_rejected(self):
         status, _, _ = self.request(

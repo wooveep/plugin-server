@@ -1,11 +1,9 @@
-import copy
-import json
 import unittest
 from pathlib import Path
 
-from artifact_contract import ArtifactError, check_shape, config_schemas, json_bytes, validate_package
+from artifact_contract import ArtifactError, check_shape, config_schemas, validate_package
 from artifact_packaging import package_plugin
-from plugin_schema_conversion import convert_spec, encode_yaml_value
+from plugin_schema_conversion import convert_spec
 from mf_canonical import parse_json
 
 ROOT = Path(__file__).parent / "fixtures/schema-conversion"
@@ -49,3 +47,9 @@ class SchemaConversionTests(unittest.TestCase):
         self.assertEqual(schema["properties"]["text"]["type"], ["string", "null"])
         self.assertIn(b'"exclusiveMinimum":0.00000000000000000001', converted["schemas"]["config.schema.json"])
         self.assertEqual(converted, convert_spec(raw))
+
+    def test_schema_subpositions_share_one_recursive_keyword_table(self):
+        raw = b'apiVersion: 1.0.0\ninfo: {name: demo, version: 1.0.0}\nspec:\n  phase: default\n  priority: 1\n  configSchema:\n    openAPIV3Schema:\n      type: object\n      propertyNames: {type: string, x-description-i18n: {en-US: Property}}\n      unevaluatedProperties: {type: string, x-title-i18n: {en-US: Value}}\n'
+        converted = convert_spec(raw)
+        self.assertEqual(converted["metadata"]["annotations"]["global"]["/propertyNames"]["x-description-i18n"]["en-US"], "Property")
+        package_plugin(spec=raw, wasm=b"\0asm\1\0\0\0", defaults=b"{}", documentation={"docs/README.md": b"Docs"}, source={"kind": "legacy_unknown", "verification": "unknown"})

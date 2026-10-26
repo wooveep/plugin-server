@@ -13,10 +13,9 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
-from artifact_contract import (ArtifactError, ValidationPolicy, digest, json_bytes,
+from artifact_contract import (ValidationPolicy, digest, json_bytes, load_policy,
                                safe_path, validate_document, validate_package, validate_wasm)
-from artifact_packaging import package_plugin
-from artifact_storage import ArtifactStore, StorageConflict
+from artifact_storage import ArtifactStore
 from mf_canonical import parse_json
 
 
@@ -51,6 +50,7 @@ class ArtifactClient:
             return self._request("GET", upload_id)
         except HTTPError as error:
             if error.code == 404:
+                error.close()
                 return None
             raise
 
@@ -85,6 +85,7 @@ class ArtifactClient:
                     finally:
                         error.close()
                     raise ImportRejected(code) from None
+                error.close()
             except (URLError, OSError):
                 pass
             # A lost ACK is neither rejection nor a reason to allocate a new key.
@@ -182,13 +183,14 @@ def main() -> int:
     parser.add_argument("--destination", type=Path, required=True)
     parser.add_argument("--public-base-url", default="http://higress-plugin-server.higress-system.svc:8080")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--policy", type=Path)
     parser.add_argument("--prune", action="store_true", help="rejected: retention requires Console coordination")
     args = parser.parse_args()
     if args.prune:
         raise ImportRejected("retention_coordination_required")
     with tempfile.TemporaryDirectory(prefix="artifact-preflight-") as temp:
         destination = Path(temp) / "plugins" if args.dry_run else args.destination
-        results = sync_packages(args.source, ArtifactStore(destination, public_base_url=args.public_base_url))
+        results = sync_packages(args.source, ArtifactStore(destination, public_base_url=args.public_base_url, policy=load_policy(args.policy)))
     print(json.dumps({"committed": len(results), "uploads": results}))
     return 0
 

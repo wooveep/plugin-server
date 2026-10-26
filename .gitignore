@@ -173,3 +173,6 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .idea
+
+# Complete generated packages are locked by their delivery inventory.
+/packages/*.tgz

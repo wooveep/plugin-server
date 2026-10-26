@@ -9,7 +9,7 @@ import tarfile
 from pathlib import Path
 from typing import Any
 
-from artifact_contract import (ArtifactError, ValidationPolicy, digest, json_bytes,
+from artifact_contract import (ArtifactError, ValidationPolicy, digest, json_bytes, load_policy,
                                safe_path, validate_package)
 from mf_canonical import parse_json
 from plugin_schema_conversion import convert_spec
@@ -73,13 +73,14 @@ def main() -> int:
     parser.add_argument("--documentation", type=Path, required=True)
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--policy", type=Path, help="independent trusted provenance/environment receipts")
     args = parser.parse_args()
     result = package_plugin(spec=args.spec.read_bytes(), wasm=args.wasm.read_bytes(), defaults=args.defaults.read_bytes(),
-                            documentation={"docs/README.md": args.documentation.read_bytes()}, source=parse_json(args.source.read_bytes()))
+                            documentation={"docs/README.md": args.documentation.read_bytes()}, source=parse_json(args.source.read_bytes()), policy=load_policy(args.policy))
     # Refuse to replace a prepared delivery; publishing is an independent action.
     with args.output.open("xb") as stream:
         stream.write(result)
-    validated = validate_package(result)
+    validated = validate_package(result, load_policy(args.policy))
     print(json.dumps({"content_digest": validated.content_digest, "archive_digest": validated.archive_digest}))
     return 0
 

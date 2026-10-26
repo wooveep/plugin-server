@@ -16,9 +16,10 @@ import re
 import tarfile
 import zlib
 from dataclasses import dataclass, field
-from datetime import datetime
 from decimal import Decimal
 from functools import lru_cache
+from fractions import Fraction
+from importlib.resources import files as resource_files
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping
@@ -26,19 +27,23 @@ from urllib.parse import quote, unquote, urldefrag
 
 from jsonschema import Draft202012Validator, FormatChecker, validators
 from jsonschema.exceptions import SchemaError
+from jsonschema.exceptions import ValidationError
 from referencing import Registry, Resource
 from referencing.exceptions import Unresolvable
 from referencing.jsonschema import DRAFT202012
 from wasmtime import Engine, Module, WasmtimeError
 
-from mf_canonical import ContractError, canonicalize, parse_json, schema_numbers, sha256
+from mf_canonical import ContractError, canonicalize, parse_json, schema_numbers, sha256, utc_timestamp
 
 DIALECT = "https://json-schema.org/draft/2020-12/schema"
 COMMON = "urn:modelfusion:contracts:v1:common"
 FIELDS = ("canonicalization_version", "schema_version", "plugin_name", "plugin_version",
           "files", "wasm_path", "config_schema_path", "defaults_path",
           "documentation_paths", "environment_refs", "source")
-SCHEMAS = Path(__file__).with_name("artifact_schemas")
+SCHEMA_MAP_KEYS = ("$defs", "properties", "patternProperties", "dependentSchemas")
+SCHEMA_SINGLE_KEYS = ("items", "contains", "additionalProperties", "unevaluatedProperties",
+                      "unevaluatedItems", "propertyNames", "not", "if", "then", "else", "contentSchema")
+SCHEMA_ARRAY_KEYS = ("prefixItems", "allOf", "anyOf", "oneOf")
 SCHEMA_KEYWORDS = frozenset("""
     $schema $id $ref $anchor $defs $comment type enum const title description
     default examples deprecated readOnly writeOnly multipleOf minimum maximum
@@ -89,6 +94,21 @@ class ValidatedPackage:
         return parse_json(self.descriptor_bytes)
 
 
+def load_policy(path: Path | None) -> ValidationPolicy:
+    if path is None:
+        return ValidationPolicy()
+    value = parse_json(Path(path).read_bytes())
+    if not isinstance(value, dict) or set(value) - {"allowed_environment_refs", "provenance_receipts"}:
+        raise ValueError("invalid trusted artifact policy")
+    allowed = tuple((r["name"], r["kind"], r["required"]) for r in value.get("allowed_environment_refs", []))
+    receipts = frozenset((r["source_digest"], r["wasm_digest"], r["content_digest"]) for r in value.get("provenance_receipts", []))
+    if any(not isinstance(name, str) or not name or kind not in ("secret", "endpoint", "setting") or not isinstance(required, bool) for name, kind, required in allowed):
+        raise ValueError("invalid environment reference policy")
+    if any(not isinstance(d, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", d) is None for receipt in receipts for d in receipt):
+        raise ValueError("invalid provenance receipt")
+    return ValidationPolicy(allowed_environment_refs=allowed, provenance_receipts=receipts)
+
+
 def digest(raw: bytes) -> str:
     return "sha256:" + sha256(raw)
 
@@ -106,44 +126,46 @@ def safe_path(name: str) -> bool:
 
 
 FORMATS = FormatChecker()
+FORMATS.checks("mf-utc")(utc_timestamp)
 
 
-@FORMATS.checks("mf-utc")
-def utc_time(value: Any) -> bool:
-    if not isinstance(value, str):
-        return True
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|\+00:00)", value):
-        return False
-    try:
-        datetime.fromisoformat(value.upper().replace("Z", "+00:00"))
-        return True
-    except ValueError:
-        return False
+def exact_multiple_of(validator, divisor, instance, schema):
+    if validator.is_type(instance, "number") and (Fraction(instance) / Fraction(divisor)).denominator != 1:
+        yield ValidationError("value is not an exact multiple of the declared divisor")
 
 
 SchemaValidator = validators.extend(
     Draft202012Validator,
+    validators={"multipleOf": exact_multiple_of},
     type_checker=Draft202012Validator.TYPE_CHECKER.redefine(
         "integer", lambda checker, value: not isinstance(value, bool) and
         (isinstance(value, int) or isinstance(value, Decimal) and value == value.to_integral_value())),
 )
 
 
-def schema_nodes(schema: Any):
-    """Walk schema positions only; example/default objects are instance data."""
+def schema_positions(schema: Any, pointer: str = ""):
+    """Enumerate schema locations, including boolean schemas, without instance data."""
+    if not isinstance(schema, (dict, bool)):
+        return
+    yield pointer, schema
     if not isinstance(schema, dict):
         return
-    yield schema
-    for key in ("$defs", "properties", "patternProperties", "dependentSchemas"):
-        for child in schema.get(key, {}).values():
-            yield from schema_nodes(child)
-    for key in ("items", "contains", "additionalProperties", "unevaluatedProperties",
-                "unevaluatedItems", "propertyNames", "not", "if", "then", "else", "contentSchema"):
+    for key in SCHEMA_MAP_KEYS:
+        for name, child in schema.get(key, {}).items():
+            escaped = name.replace("~", "~0").replace("/", "~1")
+            yield from schema_positions(child, pointer + "/" + key + "/" + escaped)
+    for key in SCHEMA_SINGLE_KEYS:
         if key in schema:
-            yield from schema_nodes(schema[key])
-    for key in ("prefixItems", "allOf", "anyOf", "oneOf"):
-        for child in schema.get(key, []):
-            yield from schema_nodes(child)
+            yield from schema_positions(schema[key], pointer + "/" + key)
+    for key in SCHEMA_ARRAY_KEYS:
+        for index, child in enumerate(schema.get(key, [])):
+            yield from schema_positions(child, pointer + "/" + key + "/" + str(index))
+
+
+def schema_nodes(schema: Any):
+    for _, node in schema_positions(schema):
+        if isinstance(node, dict):
+            yield node
 
 
 def registry_for(schemas: Mapping[str, Any]) -> Registry:
@@ -156,6 +178,8 @@ def check_shape(value: Any, schema: Any, registry: Registry, code: str) -> None:
         error = next(SchemaValidator(schema, registry=registry, format_checker=FORMATS).iter_errors(value), None)
     except Unresolvable as exc:
         raise ArtifactError("ART_CONFIG_REFERENCE", "unresolvable schema reference", "schema") from exc
+    except RecursionError as exc:
+        raise ArtifactError("ART_CONFIG_REFERENCE", "schema reference evaluation did not terminate", "schema") from exc
     if error is not None:
         pointer = "/" + "/".join(str(v).replace("~", "~0").replace("/", "~1") for v in error.absolute_path)
         raise ArtifactError(code, "schema keyword failed: " + str(error.validator), "shape", pointer)
@@ -165,7 +189,7 @@ def check_shape(value: Any, schema: Any, registry: Registry, code: str) -> None:
 def contract_registry() -> tuple[dict[str, Any], Registry]:
     schemas = {}
     for name in ("common", "package-descriptor", "artifact-manifest"):
-        schema = schema_numbers(parse_json((SCHEMAS / f"{name}.schema.json").read_bytes()))
+        schema = schema_numbers(parse_json(resource_files("artifact_schemas").joinpath(f"{name}.schema.json").read_bytes()))
         Draft202012Validator.check_schema(schema)
         schemas[schema["$id"]] = schema
     return schemas, registry_for(schemas)
@@ -218,7 +242,9 @@ def config_schemas(descriptor: dict[str, Any], payload: Mapping[str, bytes]) -> 
     """Validate and bind every local schema, including unused reference branches."""
     declared = {e["path"] for e in descriptor["files"] if e["role"] == "config_schema"}
     schemas = {}
+    references = []
     for name in declared:
+        canonicalize(payload[name])  # enforce exact-number expansion limits before schema arithmetic
         value = schema_numbers(parse_json(payload[name]))
         if not isinstance(value, dict) or value.get("$schema") != DIALECT:
             raise ArtifactError("ART_CONFIG_SCHEMA", "standalone Draft 2020-12 schema required", "schema")
@@ -249,12 +275,24 @@ def config_schemas(descriptor: dict[str, Any], payload: Mapping[str, bytes]) -> 
                     if not safe_path(target) or target not in declared:
                         raise ArtifactError("ART_CONFIG_REFERENCE", "undeclared schema reference", "schema")
                     target_uri = "urn:modelfusion:payload:" + quote(target, safe="")
+                if re.search(r"%(?![0-9a-fA-F]{2})", fragment):
+                    raise ArtifactError("ART_CONFIG_REFERENCE", "invalid percent escape", "schema")
                 fragment = unquote(fragment, errors="strict")
-                node["$ref"] = target_uri + ("#" + fragment if fragment else "")
+                if fragment.startswith("/") and re.search(r"~(?![01])", fragment):
+                    raise ArtifactError("ART_CONFIG_REFERENCE", "invalid JSON Pointer escape", "schema")
+                references.append((node, target_uri, fragment))
+                node["$ref"] = target_uri + ("#" + quote(fragment, safe="/~") if fragment else "")
         value["$id"] = uri
         schemas[uri] = value
     common_schemas, _ = contract_registry()
-    registry = registry_for({COMMON: common_schemas[COMMON], **schemas})
+    bound = {COMMON: common_schemas[COMMON], **schemas}
+    locations = {uri: dict(schema_positions(schema)) for uri, schema in bound.items()}
+    anchors = {uri: {node["$anchor"] for node in schema_nodes(schema) if "$anchor" in node} for uri, schema in bound.items()}
+    for _, target_uri, fragment in references:
+        valid = fragment in locations[target_uri] if not fragment or fragment.startswith("/") else fragment in anchors[target_uri]
+        if not valid:
+            raise ArtifactError("ART_CONFIG_REFERENCE", "reference target is not a declared schema location", "schema")
+    registry = registry_for(bound)
     for uri, schema in schemas.items():
         for node in schema_nodes(schema):
             if "$ref" in node:
@@ -280,6 +318,7 @@ def config_schemas(descriptor: dict[str, Any], payload: Mapping[str, bytes]) -> 
 def validate_defaults(descriptor: dict[str, Any], payload: Mapping[str, bytes]) -> None:
     schemas, registry = config_schemas(descriptor, payload)
     uri = "urn:modelfusion:payload:" + quote(descriptor["config_schema_path"], safe="")
+    canonicalize(payload[descriptor["defaults_path"]])
     check_shape(schema_numbers(parse_json(payload[descriptor["defaults_path"]])), schemas[uri], registry, "ART_DEFAULTS")
 
 
