@@ -1,0 +1,9 @@
+# 默认K3S切换专用完整包增量镜像
+
+状态：2026-10-26进行中；ART06单写Dockerfile及构建输入。上一生产源码2522236、71 tests和镜像b6aed1e7验收继续有效，不覆盖旧回执。
+
+DEP-IF05实际预检默认VM K3S revision37：在线卷250文件、125个历史Wasm版本；原镜像23个legacy预置版本与在线18个版本路径重叠，其中14个同路径Wasm字节冲突。旧版按版本可原位上传的历史现象不能通过覆盖在线内容处理，旧PVC保持原样。
+
+Dockerfile新增显式LEGACY_PLUGINS_DIR构建输入，默认仍为plugins。此次切换选packages/legacy-empty，只携带完整包增量；DEP从只读旧PVC向新同文件系统的plugins+提交状态卷导入在线历史，再沿ART生产commit提交完整包。没有放宽版本冲突规则，也不把历史unknown来源改为verified。最终镜像/逐文件HTTP/重启验证另记；旧镜像/旧卷保留供回退。
+
+验收：增量镜像必须有非空完整包inventory，legacy为空应与已锁输入一致；本机实际容器与DEP实际K3S分别记录，完成后回填ART06。该镜像不是独立历史目录来源，fresh部署若需要历史版本须另选已锁输入；inert完整包不代表网关ABI/生产支持。

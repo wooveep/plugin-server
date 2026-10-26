@@ -7,7 +7,8 @@ RUN python3 -m pip install --no-cache-dir --require-hashes -r requirements.lock
 COPY artifact_contract.py artifact_import.py artifact_packaging.py artifact_storage.py mf_canonical.py plugin_schema_conversion.py plugin_server.py upload_plugin.py pull_plugins.py generate_metadata.py ./
 COPY artifact_schemas/ ./artifact_schemas/
 COPY scripts/ ./scripts/
-COPY plugins/ ./plugins/
+ARG LEGACY_PLUGINS_DIR=plugins
+COPY ${LEGACY_PLUGINS_DIR}/ ./plugins/
 ARG PACKAGES_DIR=packages
 COPY ${PACKAGES_DIR}/ ./packages/
 RUN python3 scripts/seed-artifact-packages.py --source packages --destination plugins --policy packages/policy.json
