@@ -21,8 +21,16 @@ class ArtifactInventoryTests(unittest.TestCase):
             receipt = store.commit("inventory", example_archive())
             result = inventory.export_inventory(store)
             self.assertEqual(len(result["artifacts"]), 1)
-            self.assertEqual(len(result["artifacts"][0]["files"]), 4)
+            self.assertEqual(len(result["artifacts"][0]["files"]), 7)
             self.assertEqual(result["artifacts"][0]["content_digest"], receipt["content_digest"])
             (store.root / "test-plugin/1.0.0/plugin.wasm").write_bytes(b"wrong")
+            with self.assertRaises(StorageUnavailable):
+                inventory.export_inventory(store)
+
+    def test_missing_archive_cannot_receive_success_inventory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = ArtifactStore(Path(temporary) / "plugins")
+            store.commit("inventory", example_archive())
+            (store.root / "test-plugin/1.0.0/archive.tgz").unlink()
             with self.assertRaises(StorageUnavailable):
                 inventory.export_inventory(store)

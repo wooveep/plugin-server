@@ -259,7 +259,10 @@ class ArtifactStore:
         target = self.root / name / version / path
         if target.is_symlink() or not target.resolve().is_relative_to(self.root):
             raise StorageUnavailable("unexpected file alias")
-        raw = target.read_bytes()
+        try:
+            raw = target.read_bytes()
+        except OSError as exc:
+            raise StorageUnavailable("committed artifact member is unavailable") from exc
         if path in allowed and (digest(raw) != allowed[path]["sha256"] or str(len(raw)) != allowed[path]["size_bytes"]):
             raise StorageUnavailable("committed payload bytes differ")
         if path == "archive.tgz" and digest(raw) != manifest["archive_digest"]:

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/tmp/modelfusion-artifact-p1-py313/bin/python",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-v"
+  ],
+  "cwd": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server",
+  "exit_code": 1,
+  "python": "3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]",
+  "log_sha256": "6a747f5584275723416ba355270b03bc0c8cae8f2c248bb8e77a426a296d2165"
+}

@@ -23,6 +23,11 @@ def export_inventory(store: ArtifactStore) -> dict:
             if raw is None:
                 raise StorageUnavailable("inventory missing committed payload")
             files.append({"path": entry["path"], "size_bytes": str(len(raw)), "sha256": digest(raw)})
+        for member_name in ("package.json", "archive.tgz", "metadata.txt"):
+            raw = store.read_file(name, version, member_name)
+            if raw is None:
+                raise StorageUnavailable("inventory missing committed archive/descriptor")
+            files.append({"path": member_name, "size_bytes": str(len(raw)), "sha256": digest(raw)})
         raw_manifest = (store.root / name / version / "manifest.json").read_bytes()
         if json_bytes(manifest) != raw_manifest:
             raise StorageUnavailable("inventory persisted manifest differs")

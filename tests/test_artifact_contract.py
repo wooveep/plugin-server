@@ -189,6 +189,13 @@ class ArtifactContractTests(unittest.TestCase):
         payload["config.schema.json"] = b'{"$schema":"https://json-schema.org/draft/2020-12/schema","$ref":"#/$defs/percent%25key","$defs":{"percent%key":{"type":"object"}}}'
         validate_package(example_archive(payload))
 
+    def test_percent_encoded_schema_file_path_decodes_once(self):
+        for name, reference in (("types file.json", "types%20file.json"), ("literal%20file.json", "literal%2520file.json")):
+            payload = example_payload()
+            payload["config.schema.json"] = json_bytes({"$schema": "https://json-schema.org/draft/2020-12/schema", "$ref": reference + "#/$defs/object"})
+            payload[name] = b'{"$schema":"https://json-schema.org/draft/2020-12/schema","$defs":{"object":{"type":"object"}}}'
+            validate_package(example_archive(payload))
+
     def test_nonterminating_reference_is_a_protocol_rejection(self):
         payload = example_payload()
         payload["config.schema.json"] = b'{"$schema":"https://json-schema.org/draft/2020-12/schema","$ref":"#"}'

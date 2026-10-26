@@ -72,6 +72,41 @@ class ArtifactImportTests(unittest.TestCase):
         self.assertEqual([method for method, _ in calls], ["PUT", "GET"])
         self.assertTrue(all(url.endswith("/uploads/fixed-key") for _, url in calls))
 
+    def test_partial_ack_json_and_short_http_body_query_original_commit(self):
+        for mode in ("invalid_json", "short_http_body"):
+            with self.subTest(mode=mode):
+                handler = PluginRequestHandler.create(self.root / mode / "plugins", "service-token")
+                class PartialAckHandler(handler):
+                    lost = False
+                    queries = 0
+                    def _reply(self, status, raw, content_type="application/json"):
+                        if self.command == "GET" and self.path.startswith("/uploads/"):
+                            type(self).queries += 1
+                        if self.command == "PUT" and status == 201 and not type(self).lost:
+                            type(self).lost = True
+                            if mode == "invalid_json":
+                                return super()._reply(status, raw[:20], content_type)
+                            self.send_response(status)
+                            self.send_header("Content-Length", str(len(raw)))
+                            self.end_headers()
+                            self.wfile.write(raw[:20])
+                            self.close_connection = True
+                            return
+                        super()._reply(status, raw, content_type)
+                server = ThreadingHTTPServer(("127.0.0.1", 0), PartialAckHandler)
+                thread = threading.Thread(target=server.serve_forever)
+                thread.start()
+                try:
+                    client = ArtifactClient("http://127.0.0.1:" + str(server.server_port), "service-token", timeout=2)
+                    receipt = client.commit("partial-ack", example_archive())
+                    self.assertEqual(receipt["state"], "committed")
+                    self.assertEqual(PartialAckHandler.queries, 1)
+                    self.assertEqual(receipt, handler.store.query("partial-ack"))
+                finally:
+                    server.shutdown()
+                    thread.join(timeout=5)
+                    server.server_close()
+
     def test_sync_preflights_all_packages_and_retains_old_versions(self):
         source = self.root / "source"
         source.mkdir()

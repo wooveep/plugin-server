@@ -8,6 +8,7 @@ import json
 import re
 import tarfile
 import tempfile
+from http.client import HTTPException
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
@@ -16,7 +17,7 @@ from urllib.request import Request, urlopen
 from artifact_contract import (ValidationPolicy, digest, json_bytes, load_policy,
                                safe_path, validate_document, validate_package, validate_wasm)
 from artifact_storage import ArtifactStore
-from mf_canonical import parse_json
+from mf_canonical import ContractError, parse_json
 
 
 class UploadUnknown(Exception):
@@ -31,6 +32,10 @@ class ImportRejected(Exception):
         super().__init__(code)
 
 
+class MalformedUploadResponse(Exception):
+    pass
+
+
 class ArtifactClient:
     def __init__(self, server, token, *, timeout=30, opener=urlopen, policy=None):
         if not re.fullmatch(r"https?://[^\s]+", server):
@@ -43,7 +48,10 @@ class ArtifactClient:
         request = Request(self.server + "/uploads/" + quote(upload_id, safe=""), method=method, data=raw,
                           headers={"Authorization": "Bearer " + self.token, "Content-Type": "application/gzip"})
         with self.opener(request, timeout=self.timeout) as response:
-            return parse_json(response.read(1_048_577))
+            try:
+                return parse_json(response.read(1_048_577))
+            except (ContractError, HTTPException) as exc:
+                raise MalformedUploadResponse("upload response was incomplete or malformed") from exc
 
     def query(self, upload_id):
         try:
@@ -57,15 +65,18 @@ class ArtifactClient:
     @staticmethod
     def _committed(receipt, upload_id, expected_digest):
         if not isinstance(receipt, dict) or receipt.get("upload_id") != upload_id:
-            raise ImportRejected("invalid_upload_receipt")
+            raise MalformedUploadResponse("invalid_upload_receipt")
         if receipt.get("state") == "rejected":
             raise ImportRejected(receipt.get("error", "rejected"))
         if receipt.get("state") != "committed":
             return None
         manifest = receipt.get("manifest")
         if not isinstance(manifest, dict):
-            raise ImportRejected("invalid_upload_receipt")
-        checked = validate_document(json_bytes(manifest), "manifest")
+            raise MalformedUploadResponse("invalid_upload_receipt")
+        try:
+            checked = validate_document(json_bytes(manifest), "manifest")
+        except (ContractError, TypeError, ValueError) as exc:
+            raise MalformedUploadResponse("invalid_upload_receipt") from exc
         if checked["content_digest"] != expected_digest or receipt.get("content_digest") != expected_digest or receipt.get("artifact_id") != manifest["artifact_id"]:
             raise ImportRejected("upload_receipt_identity_mismatch")
         return receipt
@@ -86,7 +97,7 @@ class ArtifactClient:
                         error.close()
                     raise ImportRejected(code) from None
                 error.close()
-            except (URLError, OSError):
+            except (URLError, OSError, HTTPException, MalformedUploadResponse):
                 pass
             # A lost ACK is neither rejection nor a reason to allocate a new key.
             try:
@@ -97,7 +108,7 @@ class ArtifactClient:
                         return committed
                     if receipt.get("content_digest") not in (None, expected):
                         raise ImportRejected("idempotency_conflict")
-            except (URLError, OSError):
+            except (URLError, OSError, HTTPException, MalformedUploadResponse):
                 raise UploadUnknown(upload_id) from None
             if attempt:
                 break

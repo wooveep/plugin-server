@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import copy
 import json
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from functools import lru_cache
 from importlib.resources import files as resource_files
 from typing import Any
@@ -42,7 +42,17 @@ def _mapping(loader, node):
 StrictLoader.add_constructor("tag:yaml.org,2002:map", _mapping)
 # YAML non-decimal numbers/dates are not JSON. Aliases are permitted but recursive
 # or oversized expansions are rejected by the bounded JSON canonicalizer below.
-StrictLoader.add_constructor("tag:yaml.org,2002:float", lambda loader, node: Decimal(node.value))
+def _yaml_decimal(loader, node):
+    try:
+        value = Decimal(node.value)
+    except InvalidOperation as exc:
+        raise ArtifactError("unsupported_schema_conversion", "non-JSON YAML number", "conversion") from exc
+    if not value.is_finite():
+        unsupported("non-finite YAML number")
+    return value
+
+
+StrictLoader.add_constructor("tag:yaml.org,2002:float", _yaml_decimal)
 
 
 def _json_text(value: Any) -> str:

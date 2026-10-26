@@ -271,13 +271,22 @@ def config_schemas(descriptor: dict[str, Any], payload: Mapping[str, bytes]) -> 
                 else:
                     if ":" in base or base.startswith("/") or "\\" in base:
                         raise ArtifactError("ART_CONFIG_REFERENCE", "non-local schema reference", "schema")
+                    if re.search(r"%(?![0-9a-fA-F]{2})", base):
+                        raise ArtifactError("ART_CONFIG_REFERENCE", "invalid URI path escape", "schema")
+                    try:
+                        base = unquote(base, errors="strict")
+                    except UnicodeError as exc:
+                        raise ArtifactError("ART_CONFIG_REFERENCE", "invalid URI path encoding", "schema") from exc
                     target = posixpath.normpath(posixpath.join(posixpath.dirname(name), base)) if base else name
                     if not safe_path(target) or target not in declared:
                         raise ArtifactError("ART_CONFIG_REFERENCE", "undeclared schema reference", "schema")
                     target_uri = "urn:modelfusion:payload:" + quote(target, safe="")
                 if re.search(r"%(?![0-9a-fA-F]{2})", fragment):
                     raise ArtifactError("ART_CONFIG_REFERENCE", "invalid percent escape", "schema")
-                fragment = unquote(fragment, errors="strict")
+                try:
+                    fragment = unquote(fragment, errors="strict")
+                except UnicodeError as exc:
+                    raise ArtifactError("ART_CONFIG_REFERENCE", "invalid fragment encoding", "schema") from exc
                 if fragment.startswith("/") and re.search(r"~(?![01])", fragment):
                     raise ArtifactError("ART_CONFIG_REFERENCE", "invalid JSON Pointer escape", "schema")
                 references.append((node, target_uri, fragment))

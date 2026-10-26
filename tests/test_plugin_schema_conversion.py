@@ -53,3 +53,10 @@ class SchemaConversionTests(unittest.TestCase):
         converted = convert_spec(raw)
         self.assertEqual(converted["metadata"]["annotations"]["global"]["/propertyNames"]["x-description-i18n"]["en-US"], "Property")
         package_plugin(spec=raw, wasm=b"\0asm\1\0\0\0", defaults=b"{}", documentation={"docs/README.md": b"Docs"}, source={"kind": "legacy_unknown", "verification": "unknown"})
+
+    def test_non_json_yaml_numbers_have_explicit_conversion_rejection(self):
+        base = b'apiVersion: 1.0.0\ninfo: {name: demo, version: 1.0.0}\nspec:\n  phase: default\n  priority: 1\n  configSchema:\n    openAPIV3Schema: {type: number, minimum: '
+        for value in (b'.inf', b'-.inf', b'.nan'):
+            with self.subTest(value=value), self.assertRaises(ArtifactError) as raised:
+                convert_spec(base + value + b'}')
+            self.assertEqual(raised.exception.code, "unsupported_schema_conversion")

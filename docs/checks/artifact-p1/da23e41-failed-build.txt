@@ -1,0 +1,111 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.90kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.13.5-slim-bookworm@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 128B done
+#3 DONE 0.0s
+
+#4 [builder  1/11] FROM docker.io/library/python:3.13.5-slim-bookworm@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419
+#4 resolve docker.io/library/python:3.13.5-slim-bookworm@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 71.84kB done
+#5 DONE 0.0s
+
+#6 [builder  2/11] WORKDIR /work
+#6 CACHED
+
+#7 [builder  3/11] COPY requirements.lock ./
+#7 CACHED
+
+#8 [builder  4/11] RUN python3 -m pip install --no-cache-dir --require-hashes -r requirements.lock
+#8 CACHED
+
+#9 [builder  5/11] COPY artifact_contract.py artifact_import.py artifact_packaging.py artifact_storage.py mf_canonical.py plugin_schema_conversion.py plugin_server.py upload_plugin.py pull_plugins.py generate_metadata.py ./
+#9 DONE 0.1s
+
+#10 [builder  6/11] COPY artifact_schemas/ ./artifact_schemas/
+#10 DONE 0.0s
+
+#11 [builder  7/11] COPY scripts/ ./scripts/
+#11 DONE 0.0s
+
+#12 [builder  8/11] COPY plugins/ ./plugins/
+#12 DONE 0.2s
+
+#13 [builder  9/11] COPY packages/ ./packages/
+#13 DONE 0.0s
+
+#14 [builder 10/11] RUN python3 scripts/seed-artifact-packages.py --source packages --destination plugins --policy packages/policy.json
+#14 0.303 Traceback (most recent call last):
+#14 0.304   File "/work/scripts/seed-artifact-packages.py", line 26, in <module>
+#14 0.304     main()
+#14 0.304     ~~~~^^
+#14 0.304   File "/work/scripts/seed-artifact-packages.py", line 21, in main
+#14 0.304     results = sync_packages(args.source, store) if any(args.source.glob("*.tgz")) else []
+#14 0.304               ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+#14 0.304   File "/work/artifact_import.py", line 116, in sync_packages
+#14 0.304     return [store.commit("sync:" + digest(raw).removeprefix("sha256:"), raw) for _, raw in items]
+#14 0.304             ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#14 0.304   File "/work/artifact_storage.py", line 189, in commit
+#14 0.304     validate_document(manifest_raw, "manifest")
+#14 0.304     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+#14 0.304   File "/work/artifact_contract.py", line 204, in validate_document
+#14 0.304     check_shape(value, schemas[uri], registry, "ART_DESCRIPTOR")
+#14 0.304     ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#14 0.304   File "/work/artifact_contract.py", line 178, in check_shape
+#14 0.304     error = next(SchemaValidator(schema, registry=registry, format_checker=FORMATS).iter_errors(value), None)
+#14 0.304   File "/usr/local/lib/python3.13/site-packages/jsonschema/validators.py", line 384, in iter_errors
+#14 0.304     for error in errors:
+#14 0.304                  ^^^^^^
+#14 0.304   File "/usr/local/lib/python3.13/site-packages/jsonschema/_keywords.py", line 296, in properties
+#14 0.304     yield from validator.descend(
+#14 0.304     ...<4 lines>...
+#14 0.304     )
+#14 0.304   File "/usr/local/lib/python3.13/site-packages/jsonschema/validators.py", line 432, in descend
+#14 0.304     for error in errors:
+#14 0.304                  ^^^^^^
+#14 0.304   File "/usr/local/lib/python3.13/site-packages/jsonschema/_keywords.py", line 275, in ref
+#14 0.304     yield from validator._validate_reference(ref=ref, instance=instance)
+#14 0.304   File "/usr/local/lib/python3.13/site-packages/jsonschema/validators.py", line 432, in descend
+#14 0.304     for error in errors:
+#14 0.304                  ^^^^^^
+#14 0.304   File "/usr/local/lib/python3.13/site-packages/jsonschema/_keywords.py", line 226, in format
+#14 0.304     validator.format_checker.check(instance, format)
+#14 0.304     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+#14 0.304   File "/usr/local/lib/python3.13/site-packages/jsonschema/_format.py", line 138, in check
+#14 0.304     result = func(instance)
+#14 0.304   File "/work/mf_canonical.py", line 142, in utc_timestamp
+#14 0.304     match = re.fullmatch(r'(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:[Zz]|\+00:00)', value, re.ASCII)
+#14 0.304             ^^
+#14 0.304 NameError: name 're' is not defined. Did you forget to import 're'?
+#14 ERROR: process "/bin/sh -c python3 scripts/seed-artifact-packages.py --source packages --destination plugins --policy packages/policy.json" did not complete successfully: exit code: 1
+------
+ > [builder 10/11] RUN python3 scripts/seed-artifact-packages.py --source packages --destination plugins --policy packages/policy.json:
+0.304                  ^^^^^^
+0.304   File "/usr/local/lib/python3.13/site-packages/jsonschema/_keywords.py", line 226, in format
+0.304     validator.format_checker.check(instance, format)
+0.304     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+0.304   File "/usr/local/lib/python3.13/site-packages/jsonschema/_format.py", line 138, in check
+0.304     result = func(instance)
+0.304   File "/work/mf_canonical.py", line 142, in utc_timestamp
+0.304     match = re.fullmatch(r'(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:[Zz]|\+00:00)', value, re.ASCII)
+0.304             ^^
+0.304 NameError: name 're' is not defined. Did you forget to import 're'?
+------
+Dockerfile:13
+--------------------
+  11 |     ARG PACKAGES_DIR=packages
+  12 |     COPY ${PACKAGES_DIR}/ ./packages/
+  13 | >>> RUN python3 scripts/seed-artifact-packages.py --source packages --destination plugins --policy packages/policy.json
+  14 |     RUN python3 scripts/export-artifact-inventory.py --plugins-dir plugins --output artifact-inventory.json
+  15 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c python3 scripts/seed-artifact-packages.py --source packages --destination plugins --policy packages/policy.json" did not complete successfully: exit code: 1
