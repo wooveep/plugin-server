@@ -1,0 +1,87 @@
+{
+  "source_revision": "2522236d8ead83f2955e68908b203f199d861482",
+  "image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:artifact-p1-2522236",
+  "image_digest": "sha256:b6aed1e7a5e2678d26641698b4e7235fe63d328de5ebe88edd368898a8f8dacb",
+  "remote_push_exit_code": 0,
+  "remote_digest_pull_exit_code": 0,
+  "tests": {
+    "count": 71,
+    "exit_code": 0,
+    "command_receipt": "2522236-unittest.json"
+  },
+  "reviews": "2522236-reviews.json",
+  "container_receipt": "2522236-container/acceptance.json",
+  "evidence_level": "actual_container_http",
+  "gateway_abi": "not_run",
+  "default_k3s": "not_run",
+  "catalog_integration": "not_run",
+  "coordinated_deletion": "not_run",
+  "fixture_classification": "One inert eight-byte Wasm complete delivery fixture; 23 legacy source_unknown versions. No ready/supported decision.",
+  "files": [
+    {
+      "path": "2522236-build.txt",
+      "size_bytes": "5278",
+      "sha256": "sha256:df1cb43cfc898fc5580de245403ee4573e4581fcbb1a21a57c27243614f10559"
+    },
+    {
+      "path": "2522236-codegraph-sync.txt",
+      "size_bytes": "199",
+      "sha256": "sha256:a6a9ff11c12e5d4ef2720e2eb7f7245616c83415a3bd47c74e7541681b3f18da"
+    },
+    {
+      "path": "2522236-codegraph.txt",
+      "size_bytes": "19177",
+      "sha256": "sha256:62e5a5ead1330405905f0e3c0a88646de9edf197dd111a678904ce0bc4b9866f"
+    },
+    {
+      "path": "2522236-container/acceptance.json",
+      "size_bytes": "860",
+      "sha256": "sha256:d80ac4c7b38b0cdf7c1c69f7597961fddb62e16e1be108f706ccea6346224c7f"
+    },
+    {
+      "path": "2522236-container/http-files.json",
+      "size_bytes": "9326",
+      "sha256": "sha256:1012468570430db0a01b5420e555dc5767577214a1fbcc14d9a8c754dffadd12"
+    },
+    {
+      "path": "2522236-container/image-inventory.json",
+      "size_bytes": "9681",
+      "sha256": "sha256:14fa30e591c9fdde93dd792caea986de84804ed5221a6113bb65cf84116556a4"
+    },
+    {
+      "path": "2522236-container/runtime-upload.json",
+      "size_bytes": "1566",
+      "sha256": "sha256:690a172e03e0b97026b3185b040ee81fac89d540a865aac25d9313ed1e977341"
+    },
+    {
+      "path": "2522236-push.txt",
+      "size_bytes": "551",
+      "sha256": "sha256:7f9764994974444b38512dd58529aa0228e9c4ff67c6cdab70ce9e41937b50ec"
+    },
+    {
+      "path": "2522236-reviews.json",
+      "size_bytes": "638",
+      "sha256": "sha256:8c43d3341b025e30f37eb24e547ecec23c9f18f78116e31611795df9e7f34863"
+    },
+    {
+      "path": "2522236-unittest.json",
+      "size_bytes": "465",
+      "sha256": "sha256:6f51921e1c4a689dc33281de1f2e62f2826c866fa69b91bb0a121dba0bed6ad6"
+    },
+    {
+      "path": "2522236-unittest.txt",
+      "size_bytes": "14358",
+      "sha256": "sha256:a9e98cbc6b20a86c4dfe80670fc8f6841fa20636725a9e3c879bf5eae087ba73"
+    },
+    {
+      "path": "artifact-delivery-fixture.tgz",
+      "size_bytes": "3374",
+      "sha256": "sha256:31a8ad3451e1af5a9e64d4faa1ed479955c3c1e34760ffd199ad27e02a880236"
+    },
+    {
+      "path": "spec-review-2522236-unittest.txt",
+      "size_bytes": "14358",
+      "sha256": "sha256:ba267007d394ed8e27ed50151bb6222b807239f91f84c5f9fc4b29e3e0c1db83"
+    }
+  ]
+}

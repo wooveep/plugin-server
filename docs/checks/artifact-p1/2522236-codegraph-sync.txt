@@ -1,0 +1,13 @@
+┌  Syncing CodeGraph
+│
+Scanning files...
+Parsing code...
+Resolving refs...
+Linking dynamic dispatch...
+│
+◆  Synced 10 changed files
+│
+●  Modified: 10 — 273 nodes in 95ms
+│
+└  Done
+

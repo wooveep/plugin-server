@@ -1,0 +1,17 @@
+{
+  "source_revision": "2522236d8ead83f2955e68908b203f199d861482",
+  "method": "Two code-review skill agents independently read git archive of the exact commit and ran the complete test suite.",
+  "standards": {
+    "remaining_findings": 0,
+    "tests": 71,
+    "exit_code": 0,
+    "reported_elapsed_seconds": 13.549
+  },
+  "spec": {
+    "remaining_findings_in_scope": 0,
+    "tests": 71,
+    "exit_code": 0,
+    "reported_elapsed_seconds": 13.56
+  },
+  "scope": "ART01-04 production implementation, ART05 retain/preflight, ART06 local image delivery. Does not decide gateway ABI, K3S, Console catalog/release or coordinated deletion."
+}

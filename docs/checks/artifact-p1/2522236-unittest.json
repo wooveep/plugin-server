@@ -1,0 +1,17 @@
+{
+  "source_revision": "2522236d8ead83f2955e68908b203f199d861482",
+  "command": [
+    "/tmp/modelfusion-artifact-p1-py313/bin/python",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-v"
+  ],
+  "cwd": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server",
+  "exit_code": 0,
+  "python": "3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]",
+  "log_sha256": "a9e98cbc6b20a86c4dfe80670fc8f6841fa20636725a9e3c879bf5eae087ba73"
+}

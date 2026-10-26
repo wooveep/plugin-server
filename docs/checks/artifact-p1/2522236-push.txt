@@ -1,0 +1,17 @@
+The push refers to repository [registry.lc.wooveep.com:9980/modelfusion/plugin-server]
+af66ceafb1e5: Pushed
+44136fa355b3: Mounted from modelfusion/modelfusion-userweb
+19f81082f6f0: Pushed
+078d84cab645: Pushed
+59e22667830b: Pushed
+f26a7934f3b2: Pushed
+87657d573e1e: Pushed
+c83e7af31283: Pushed
+c9aed8ad37fd: Pushed
+87f07b5f660a: Pushed
+799df5177ae2: Pushed
+66cd357cf7a1: Pushed
+5f1489fc73f2: Pushed
+b1e85e40f9df: Pushed
+b3b1c862e72d: Pushed
+artifact-p1-2522236: digest: sha256:b6aed1e7a5e2678d26641698b4e7235fe63d328de5ebe88edd368898a8f8dacb size: 856

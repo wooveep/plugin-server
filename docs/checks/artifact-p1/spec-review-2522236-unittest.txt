@@ -1,0 +1,101 @@
+test_bounded_archive_and_invalid_wasm_rejected (test_artifact_contract.ArtifactContractTests.test_bounded_archive_and_invalid_wasm_rejected) ... ok
+test_defaults_and_unreachable_schema_references_are_checked (test_artifact_contract.ArtifactContractTests.test_defaults_and_unreachable_schema_references_are_checked) ... ok
+test_duplicate_roles_paths_environment_and_server_fields_rejected (test_artifact_contract.ArtifactContractTests.test_duplicate_roles_paths_environment_and_server_fields_rejected) ... ok
+test_frozen_artifact_projection_goldens (test_artifact_contract.ArtifactContractTests.test_frozen_artifact_projection_goldens) ... ok
+test_full_package_and_compression_independent_identity (test_artifact_contract.ArtifactContractTests.test_full_package_and_compression_independent_identity) ... ok
+test_literal_secrets_and_unapproved_environment_references (test_artifact_contract.ArtifactContractTests.test_literal_secrets_and_unapproved_environment_references) ... ok
+test_local_schema_closure_and_anchor (test_artifact_contract.ArtifactContractTests.test_local_schema_closure_and_anchor) ... ok
+test_missing_extra_wrong_hash_and_wrong_length_rejected (test_artifact_contract.ArtifactContractTests.test_missing_extra_wrong_hash_and_wrong_length_rejected) ... ok
+test_multiple_of_uses_exact_math_beyond_decimal_context_precision (test_artifact_contract.ArtifactContractTests.test_multiple_of_uses_exact_math_beyond_decimal_context_precision) ... ok
+test_nonterminating_reference_is_a_protocol_rejection (test_artifact_contract.ArtifactContractTests.test_nonterminating_reference_is_a_protocol_rejection) ... ok
+test_percent_encoded_schema_file_path_decodes_once (test_artifact_contract.ArtifactContractTests.test_percent_encoded_schema_file_path_decodes_once) ... ok
+test_percent_encoded_schema_pointer_decodes_once (test_artifact_contract.ArtifactContractTests.test_percent_encoded_schema_pointer_decodes_once) ... ok
+test_public_canonical_exact_numbers_unicode_and_control_bytes (test_artifact_contract.ArtifactContractTests.test_public_canonical_exact_numbers_unicode_and_control_bytes) ... ok
+test_reference_into_instance_data_is_not_a_schema_location (test_artifact_contract.ArtifactContractTests.test_reference_into_instance_data_is_not_a_schema_location) ... ok
+test_schema_docs_defaults_and_source_all_change_identity (test_artifact_contract.ArtifactContractTests.test_schema_docs_defaults_and_source_all_change_identity) ... ok
+test_unsafe_tar_member_kinds_paths_and_hidden_trailing_data (test_artifact_contract.ArtifactContractTests.test_unsafe_tar_member_kinds_paths_and_hidden_trailing_data) ... ok
+test_verified_source_requires_trusted_independent_policy (test_artifact_contract.ArtifactContractTests.test_verified_source_requires_trusted_independent_policy) ... ok
+test_verified_package_packaging_zipapp_upload_sync_and_seed_share_policy (test_artifact_delivery.ArtifactDeliveryTests.test_verified_package_packaging_zipapp_upload_sync_and_seed_share_policy) ... 127.0.0.1 - - [26/Oct/2026 15:24:55] "PUT /uploads/explicit HTTP/1.1" 201 -
+ok
+test_lost_ack_queries_same_intent_and_returns_original_manifest (test_artifact_import.ArtifactImportTests.test_lost_ack_queries_same_intent_and_returns_original_manifest) ... 127.0.0.1 - - [26/Oct/2026 15:24:56] "GET /uploads/same-intent HTTP/1.1" 200 -
+127.0.0.1 - - [26/Oct/2026 15:24:56] "PUT /uploads/same-intent HTTP/1.1" 201 -
+127.0.0.1 - - [26/Oct/2026 15:24:56] "GET /uploads/same-intent HTTP/1.1" 200 -
+ok
+test_oci_exact_manifest_selection_ports_tag_at_digest_and_blob_identity (test_artifact_import.ArtifactImportTests.test_oci_exact_manifest_selection_ports_tag_at_digest_and_blob_identity) ... ok
+test_oci_non_wasm_layer_and_mismatched_ref_rejected (test_artifact_import.ArtifactImportTests.test_oci_non_wasm_layer_and_mismatched_ref_rejected) ... ok
+test_oci_pinned_source_lock_commits_through_same_store (test_artifact_import.ArtifactImportTests.test_oci_pinned_source_lock_commits_through_same_store) ... ok
+test_partial_ack_json_and_short_http_body_query_original_commit (test_artifact_import.ArtifactImportTests.test_partial_ack_json_and_short_http_body_query_original_commit) ... 127.0.0.1 - - [26/Oct/2026 15:24:56] "PUT /uploads/partial-ack HTTP/1.1" 201 -
+127.0.0.1 - - [26/Oct/2026 15:24:56] "GET /uploads/partial-ack HTTP/1.1" 200 -
+127.0.0.1 - - [26/Oct/2026 15:24:57] "PUT /uploads/partial-ack HTTP/1.1" 201 -
+127.0.0.1 - - [26/Oct/2026 15:24:57] "GET /uploads/partial-ack HTTP/1.1" 200 -
+ok
+test_sync_preflights_all_packages_and_retains_old_versions (test_artifact_import.ArtifactImportTests.test_sync_preflights_all_packages_and_retains_old_versions) ... ok
+test_unreachable_query_remains_unknown_without_changing_key (test_artifact_import.ArtifactImportTests.test_unreachable_query_remains_unknown_without_changing_key) ... ok
+test_missing_archive_cannot_receive_success_inventory (test_artifact_inventory.ArtifactInventoryTests.test_missing_archive_cannot_receive_success_inventory) ... ok
+test_nonempty_complete_inventory_verifies_actual_payload_bytes (test_artifact_inventory.ArtifactInventoryTests.test_nonempty_complete_inventory_verifies_actual_payload_bytes) ... ok
+test_identical_inputs_produce_identical_complete_archive_bytes (test_artifact_packaging.ArtifactPackagingTests.test_identical_inputs_produce_identical_complete_archive_bytes) ... ok
+test_default_explicit_and_all_reference_kinds_retain (test_artifact_retention.ArtifactRetentionTests.test_default_explicit_and_all_reference_kinds_retain) ... ok
+test_commit_readback_and_recompression_preserve_first_manifest (test_artifact_storage.ArtifactStorageTests.test_commit_readback_and_recompression_preserve_first_manifest) ... ok
+test_get_waits_for_whole_commit_and_corruption_fails_closed (test_artifact_storage.ArtifactStorageTests.test_get_waits_for_whole_commit_and_corruption_fails_closed) ... ok
+test_independent_processes_share_posix_commit_lock (test_artifact_storage.ArtifactStorageTests.test_independent_processes_share_posix_commit_lock) ... ok
+test_invalid_request_has_durable_rejected_query (test_artifact_storage.ArtifactStorageTests.test_invalid_request_has_durable_rejected_query) ... ok
+test_legacy_version_cannot_be_overwritten (test_artifact_storage.ArtifactStorageTests.test_legacy_version_cannot_be_overwritten) ... ok
+test_process_exit_before_and_after_publish_recovers_by_same_key (test_artifact_storage.ArtifactStorageTests.test_process_exit_before_and_after_publish_recovers_by_same_key) ... ok
+test_storage_fault_preserves_old_version_and_queryable_intent (test_artifact_storage.ArtifactStorageTests.test_storage_fault_preserves_old_version_and_queryable_intent) ... ok
+test_threads_compete_different_content_only_one_wins (test_artifact_storage.ArtifactStorageTests.test_threads_compete_different_content_only_one_wins) ... ok
+test_version_and_idempotency_conflicts_never_change_old_files (test_artifact_storage.ArtifactStorageTests.test_version_and_idempotency_conflicts_never_change_old_files) ... ok
+test_all_protocol_traces_match_fixed_actions_and_reject_type_correct_illegal_moves (test_contract_artifact_lifecycle.ArtifactLifecycleCorpusTest.test_all_protocol_traces_match_fixed_actions_and_reject_type_correct_illegal_moves) ... ok
+test_readback_requires_nonempty_full_files_and_every_frozen_instance (test_contract_artifact_lifecycle.ArtifactLifecycleCorpusTest.test_readback_requires_nonempty_full_files_and_every_frozen_instance) ... ok
+test_type_correct_committed_regression_is_rejected (test_contract_artifact_lifecycle.ArtifactLifecycleTest.test_type_correct_committed_regression_is_rejected) ... ok
+test_all_frozen_domain_cases_match_stage_code_and_pointer (test_contract_artifact_manifest.ArtifactCorpusTest.test_all_frozen_domain_cases_match_stage_code_and_pointer) ... ok
+test_projected_identity_matches_independent_golden_and_excludes_receipt_fields (test_contract_artifact_manifest.ArtifactCorpusTest.test_projected_identity_matches_independent_golden_and_excludes_receipt_fields) ... ok
+test_client_descriptor_cannot_assign_server_identity (test_contract_artifact_manifest.ArtifactManifestContractTest.test_client_descriptor_cannot_assign_server_identity) ... ok
+test_complete_export_is_immutable_and_executes_primitive_corpus (test_contract_artifact_manifest.OfflineArtifactBundleTest.test_complete_export_is_immutable_and_executes_primitive_corpus) ... ok
+test_tampered_missing_network_ref_and_duplicate_urn_packages_fail_closed (test_contract_artifact_manifest.OfflineArtifactBundleTest.test_tampered_missing_network_ref_and_duplicate_urn_packages_fail_closed) ... ok
+test_compression_preserves_content_but_docs_and_defaults_change_it (test_contract_artifact_packages.DeterministicArchiveTest.test_compression_preserves_content_but_docs_and_defaults_change_it) ... ok
+test_each_frozen_archive_rebuilds_exact_bytes_without_network_or_filesystem_writes (test_contract_artifact_packages.DeterministicArchiveTest.test_each_frozen_archive_rebuilds_exact_bytes_without_network_or_filesystem_writes) ... ok
+test_missing_archive_is_execution_error_without_fake_package_verdict (test_contract_artifact_packages.OfflinePackageTest.test_missing_archive_is_execution_error_without_fake_package_verdict) ... ok
+test_effective_archives_execute_offline_not_just_their_catalog (test_contract_artifact_packages.PackageFixtureCorpusTest.test_effective_archives_execute_offline_not_just_their_catalog) ... ok
+test_dependency_and_unknown_validator_faults_cannot_match_invalid_defaults (test_contract_artifact_packages.PackageToolFailureTest.test_dependency_and_unknown_validator_faults_cannot_match_invalid_defaults) ... ok
+test_locked_common_anchor_and_encoded_fragment_resolve_and_unknown_anchor_rejects (test_contract_artifact_packages.PackageToolFailureTest.test_locked_common_anchor_and_encoded_fragment_resolve_and_unknown_anchor_rejects) ... ok
+test_exact_decimal_bounds_and_nullable_conversion (test_plugin_schema_conversion.SchemaConversionTests.test_exact_decimal_bounds_and_nullable_conversion) ... ok
+test_non_json_yaml_numbers_have_explicit_conversion_rejection (test_plugin_schema_conversion.SchemaConversionTests.test_non_json_yaml_numbers_have_explicit_conversion_rejection) ... ok
+test_real_key_auth_and_billing_preserve_complete_scope_metadata (test_plugin_schema_conversion.SchemaConversionTests.test_real_key_auth_and_billing_preserve_complete_scope_metadata) ... ok
+test_schema_subpositions_share_one_recursive_keyword_table (test_plugin_schema_conversion.SchemaConversionTests.test_schema_subpositions_share_one_recursive_keyword_table) ... ok
+test_unknown_or_lossy_input_fails_closed (test_plugin_schema_conversion.SchemaConversionTests.test_unknown_or_lossy_input_fails_closed) ... ok
+test_get_serves_uploaded_plugin (test_plugin_server.PluginServerTest.test_get_serves_uploaded_plugin) ... 127.0.0.1 - - [26/Oct/2026 15:25:03] "GET /plugins/demo/1.2.3/plugin.wasm HTTP/1.1" 200 -
+ok
+test_no_directory_listing_or_private_state_download (test_plugin_server.PluginServerTest.test_no_directory_listing_or_private_state_download) ... 127.0.0.1 - - [26/Oct/2026 15:25:04] "GET / HTTP/1.1" 404 -
+127.0.0.1 - - [26/Oct/2026 15:25:04] "GET /plugins/ HTTP/1.1" 404 -
+127.0.0.1 - - [26/Oct/2026 15:25:04] "GET /.plugins-artifact-state/state.sqlite3 HTTP/1.1" 404 -
+127.0.0.1 - - [26/Oct/2026 15:25:04] "GET /plugins/../.plugins-artifact-state/store.lock HTTP/1.1" 404 -
+ok
+test_package_url_identity_cannot_disagree_with_descriptor (test_plugin_server.PluginServerTest.test_package_url_identity_cannot_disagree_with_descriptor) ... 127.0.0.1 - - [26/Oct/2026 15:25:04] "PUT /plugins/wrong/1.0.0/package.tgz HTTP/1.1" 422 -
+ok
+test_put_complete_package_writes_immutable_files_and_manifest (test_plugin_server.PluginServerTest.test_put_complete_package_writes_immutable_files_and_manifest) ... 127.0.0.1 - - [26/Oct/2026 15:25:05] "PUT /plugins/demo/1.2.3/package.tgz HTTP/1.1" 201 -
+127.0.0.1 - - [26/Oct/2026 15:25:05] "GET /plugins/demo/1.2.3/manifest.json HTTP/1.1" 200 -
+ok
+test_put_plugin_rejects_invalid_plugin_path (test_plugin_server.PluginServerTest.test_put_plugin_rejects_invalid_plugin_path) ... 127.0.0.1 - - [26/Oct/2026 15:25:05] "PUT /plugins/../bad/1.2.3/plugin.wasm HTTP/1.1" 400 -
+ok
+test_put_plugin_without_token_is_rejected (test_plugin_server.PluginServerTest.test_put_plugin_without_token_is_rejected) ... 127.0.0.1 - - [26/Oct/2026 15:25:06] "PUT /plugins/demo/1.2.3/plugin.wasm HTTP/1.1" 401 -
+ok
+test_raw_wasm_write_cannot_bypass_package_commit (test_plugin_server.PluginServerTest.test_raw_wasm_write_cannot_bypass_package_commit) ... 127.0.0.1 - - [26/Oct/2026 15:25:06] "PUT /plugins/demo/1.2.3/plugin.wasm HTTP/1.1" 400 -
+ok
+test_semver_build_metadata_and_special_wasm_path_url_round_trip (test_plugin_server.PluginServerTest.test_semver_build_metadata_and_special_wasm_path_url_round_trip) ... 127.0.0.1 - - [26/Oct/2026 15:25:07] "PUT /uploads/special HTTP/1.1" 201 -
+127.0.0.1 - - [26/Oct/2026 15:25:07] "GET /plugins/test-plugin/1.0.0%2Bbuild.1/bin/plugin%3F%23%25%20%E7%A9%BA%E6%A0%BC.wasm HTTP/1.1" 200 -
+ok
+test_truncated_or_negative_body_is_rejected (test_plugin_server.PluginServerTest.test_truncated_or_negative_body_is_rejected) ... 127.0.0.1 - - [26/Oct/2026 15:25:07] "PUT /uploads/negative HTTP/1.1" 400 -
+127.0.0.1 - - [26/Oct/2026 15:25:07] "PUT /uploads/broken HTTP/1.1" 422 -
+ok
+test_upload_query_requires_service_authentication (test_plugin_server.PluginServerTest.test_upload_query_requires_service_authentication) ... 127.0.0.1 - - [26/Oct/2026 15:25:08] "GET /uploads/unknown HTTP/1.1" 401 -
+127.0.0.1 - - [26/Oct/2026 15:25:08] "GET /uploads/unknown HTTP/1.1" 404 -
+ok
+test_raw_local_file_does_not_bypass_source_lock_and_full_package (test_pull_plugins.PullPluginsTest.test_raw_local_file_does_not_bypass_source_lock_and_full_package) ... ok
+test_upload_cli_delegates_same_complete_bytes_and_explicit_key (test_upload_plugin.UploadPluginCliTest.test_upload_cli_delegates_same_complete_bytes_and_explicit_key) ... ok
+test_upload_plugin_rejects_missing_file (test_upload_plugin.UploadPluginCliTest.test_upload_plugin_rejects_missing_file) ... ok
+test_upload_plugin_rejects_wrong_identity_before_network (test_upload_plugin.UploadPluginCliTest.test_upload_plugin_rejects_wrong_identity_before_network) ... ok
+
+----------------------------------------------------------------------
+Ran 71 tests in 13.560s
+
+OK

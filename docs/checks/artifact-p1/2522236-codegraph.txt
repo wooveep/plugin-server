@@ -1,0 +1,328 @@
+**Flow (call path among the symbols you queried)**
+
+1. commit (artifact_storage.py:136)
+   ↓ calls
+2. validate_package (artifact_contract.py:359)
+   ↓ calls
+3. validate_defaults (artifact_contract.py:327)
+   ↓ calls
+4. config_schemas (artifact_contract.py:241)
+
+> Full source for these symbols is below — the call flow among them, followed by their bodies.
+**Exploration: ArtifactStore.commit ArtifactClient.commit validate_package config_schemas**
+
+Found 64 symbols across 4 files.
+
+**Blast radius — what depends on these (update/verify before editing)**
+
+- `ArtifactStore` (artifact_storage.py:55) — 22 callers in `pull_plugins.py`, `scripts/seed-artifact-packages.py`, `plugin_server.py`, `artifact_import.py` +1 more; tests: `tests/test_artifact_storage.py`, `tests/test_artifact_import.py`, `tests/test_artifact_inventory.py`
+- `config_schemas` (artifact_contract.py:241) — 3 callers in `artifact_contract.py`; tests: `tests/test_plugin_schema_conversion.py`
+- `validate_package` (artifact_contract.py:359) — 13 callers in `artifact_packaging.py`, `pull_plugins.py`, `upload_plugin.py`, `artifact_import.py` +1 more; tested via callers: `tests/test_artifact_packaging.py`, `tests/test_plugin_schema_conversion.py` +5
+- `ArtifactClient` (artifact_import.py:39) — 6 callers in `upload_plugin.py`; tests: `tests/test_artifact_import.py`
+- `validate_package` (tests/contracts/validate_artifact_fixture.py:158) — 27 callers; tests: `tests/contracts/validate_artifact_fixture.py`, `tests/test_artifact_packaging.py`, `tests/test_contract_artifact_packages.py`, `tests/test_artifact_contract.py` +1
+
+**Source Code**
+
+> The code below is the **verbatim, current on-disk source** of these files — re-read from disk on this call and line-numbered, byte-for-byte identical to what the Read tool returns. It is NOT a summary, outline, or stale cache. Treat each block as a Read you have already performed: do not Read a file shown here.
+
+**`artifact_contract.py`** — ArtifactError(instantiates), schema_positions(calls), parse_json(calls), digest(calls), schema_numbers(calls), +28 more
+
+```python
+238	    return {"document": value, "canonical_bytes": normalized, "content_digest": content_digest}
+239	
+240	
+241	def config_schemas(descriptor: dict[str, Any], payload: Mapping[str, bytes]) -> tuple[dict[str, Any], Registry]:
+242	    """Validate and bind every local schema, including unused reference branches."""
+243	    declared = {e["path"] for e in descriptor["files"] if e["role"] == "config_schema"}
+244	    schemas = {}
+245	    references = []
+246	    for name in declared:
+247	        canonicalize(payload[name])  # enforce exact-number expansion limits before schema arithmetic
+248	        value = schema_numbers(parse_json(payload[name]))
+249	        if not isinstance(value, dict) or value.get("$schema") != DIALECT:
+250	            raise ArtifactError("ART_CONFIG_SCHEMA", "standalone Draft 2020-12 schema required", "schema")
+251	        try:
+252	            Draft202012Validator.check_schema(value)
+253	        except SchemaError as exc:
+254	            raise ArtifactError("ART_CONFIG_SCHEMA", "invalid schema", "schema") from exc
+255	        value = copy.deepcopy(value)
+256	        uri = "urn:modelfusion:payload:" + quote(name, safe="")
+257	        anchors = set()
+258	        for node in schema_nodes(value):
+259	            if set(node) - SCHEMA_KEYWORDS or (node is not value and ("$id" in node or "x-higress" in node)):
+260	                raise ArtifactError("ART_CONFIG_SCHEMA", "unsupported schema keyword or nested resource", "schema")
+261	            if "format" in node and node["format"] not in FORMATS.checkers:
+262	                raise ArtifactError("ART_CONFIG_SCHEMA", "unsupported schema format", "schema")
+263	            if "$anchor" in node:
+264	                if node["$anchor"] in anchors:
+265	                    raise ArtifactError("ART_CONFIG_REFERENCE", "duplicate schema anchor", "schema")
+266	                anchors.add(node["$anchor"])
+267	            if "$ref" in node:
+268	                base, fragment = urldefrag(node["$ref"])
+269	                if base == COMMON:
+270	                    target_uri = COMMON
+271	                else:
+272	                    if ":" in base or base.startswith("/") or "\\" in base:
+273	                        raise ArtifactError("ART_CONFIG_REFERENCE", "non-local schema reference", "schema")
+274	                    if re.search(r"%(?![0-9a-fA-F]{2})", base):
+
+... (gap) ...
+
+347	    return Engine()
+348	
+349	
+350	def validate_wasm(raw: bytes) -> None:
+351	    if raw[:8] != b"\x00asm\x01\x00\x00\x00":
+352	        raise ArtifactError("ART_WASM", "expected a binary core WebAssembly module", "wasm")
+353	    try:
+354	        Module.validate(wasm_engine(), raw)
+355	    except WasmtimeError as exc:
+356	        raise ArtifactError("ART_WASM", "invalid WebAssembly module", "wasm") from exc
+357	
+358	
+359	def validate_package(raw: bytes, policy: ValidationPolicy | None = None) -> ValidatedPackage:
+360	    policy = policy or ValidationPolicy()
+361	    if len(raw) > policy.max_archive_bytes:
+362	        raise ArtifactError("ART_LIMIT", "archive exceeds configured budget", "limits")
+363	    try:
+364	        with gzip.GzipFile(fileobj=io.BytesIO(raw)) as stream:
+365	            tar_bytes = stream.read(policy.max_tar_bytes + 1)
+366	        if len(tar_bytes) > policy.max_tar_bytes:
+367	            raise ArtifactError("ART_LIMIT", "expanded archive exceeds configured budget", "limits")
+368	        if len(tar_bytes) % 512 or len(tar_bytes) < 1024 or tar_bytes[-1024:] != bytes(1024):
+369	            raise ArtifactError("ART_ARCHIVE", "truncated tar archive", "archive")
+370	        members = {}
+371	        total = 0
+372	        payload_end = 0
+373	        with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:") as archive:
+374	            for member in archive:
+375	                if member.offset != payload_end or member.offset_data != member.offset + 512:
+376	                    raise ArtifactError("ART_ARCHIVE", "extended or hidden tar headers are unsupported", "archive")
+377	                if not safe_path(member.name):
+378	                    raise ArtifactError("ART_ARCHIVE_PATH", "unsafe archive member", "archive")
+379	                if member.name in members:
+380	                    raise ArtifactError("ART_ARCHIVE_DUPLICATE", "duplicate archive member", "archive")
+381	                if not member.isfile() or member.type not in (tarfile.REGTYPE, tarfile.AREGTYPE) or member.pax_headers:
+382	                    raise ArtifactError("ART_ARCHIVE_LINK", "only plain regular members are accepted", "archive")
+383	                if member.mode & 0o111 or Path(member.name).suffix.lower() in EXECUTABLE_SUFFIXES:
+384	                    raise ArtifactError("ART_ARCHIVE_EXECUTABLE", "executable archive member", "archive")
+385	                if len(members) >= policy.max_members or member.size > policy.max_member_bytes:
+386	                    raise ArtifactError("ART_LIMIT", "archive member budget exceeded", "limits")
+387	                if member.offset_data + member.size > len(tar_bytes) - 1024:
+388	                    raise ArtifactError("ART_ARCHIVE", "truncated member", "archive")
+389	                content = archive.extractfile(member)
+390	                if content is None:
+391	                    raise ArtifactError("ART_ARCHIVE", "unreadable member", "archive")
+392	                payload = content.read(member.size + 1)
+393	                if len(payload) != member.size:
+394	                    raise ArtifactError("ART_ARCHIVE", "short member", "archive")
+395	                members[member.name] = payload
+396	                total += len(payload)
+397	                if total > policy.max_payload_bytes:
+398	                    raise ArtifactError("ART_LIMIT", "payload budget exceeded", "limits")
+399	                payload_end = member.offset_data + ((member.size + 511) // 512) * 512
+400	        if len(tar_bytes) - payload_end < 1024 or any(tar_bytes[payload_end:]):
+401	            raise ArtifactError("ART_ARCHIVE", "unexpected hidden tar members", "archive")
+402	    except (tarfile.TarError, EOFError, gzip.BadGzipFile, zlib.error) as exc:
+403	        raise ArtifactError("ART_ARCHIVE", "invalid compressed archive", "archive") from exc
+404	    if "package.json" not in members:
+405	        raise ArtifactError("ART_DESCRIPTOR", "missing root package.json", "descriptor")
+406	    validated = validate_document(members["package.json"])
+407	    descriptor = validated["document"]
+408	    declared = {e["path"]: e for e in descriptor["files"]}
+409	    if set(members) != set(declared) | {"package.json"}:
+410	        raise ArtifactError("ART_FILE_SET", "undeclared or missing payload", "payload")
+411	    for name, entry in declared.items():
+412	        if str(len(members[name])) != entry["size_bytes"]:
+413	            raise ArtifactError("ART_FILE_SIZE", "payload size mismatch", "payload")
+414	        if digest(members[name]) != entry["sha256"]:
+415	            raise ArtifactError("ART_FILE_DIGEST", "payload digest mismatch", "payload")
+416	    if any((r["name"], r["kind"], r["required"]) not in policy.allowed_environment_refs for r in descriptor["environment_refs"]):
+417	        raise ArtifactError("ART_ENVIRONMENT_REF", "unapproved environment reference", "policy")
+418	    source = descriptor["source"]
+419	    provenance = (digest(json_bytes(source)), digest(members[descriptor["wasm_path"]]), validated["content_digest"])
+420	    if source["verification"] == "verified" and provenance not in policy.provenance_receipts:
+421	        raise ArtifactError("ART_SOURCE_EVIDENCE", "verified source needs independent trusted receipt", "provenance")
+422	    if any(marker in content for content in members.values() for marker in policy.forbidden_markers):
+423	        raise ArtifactError("ART_SECRET", "forbidden credential marker", "policy")
+424	    reject_credentials(parse_json(members[descriptor["defaults_path"]]))
+425	    validate_defaults(descriptor, members)
+426	    validate_wasm(members[descriptor["wasm_path"]])
+427	    return ValidatedPackage(members["package.json"], validated["canonical_bytes"],
+428	                            validated["content_digest"], digest(raw), MappingProxyType(members))
+429	
+```
+
+**`artifact_storage.py`** — StorageUnavailable(instantiates), _locked(calls), StorageConflict(instantiates), _recover(calls), digest(calls), +38 more
+
+```python
+20	from urllib.parse import quote
+21	
+22	from artifact_contract import (ArtifactError, ValidationPolicy, digest, json_bytes,
+23	                               safe_path, validate_document, validate_package)
+24	from mf_canonical import ContractError, parse_json
+
+... (gap) ...
+
+113	                    raise StorageUnavailable("recovery identity mismatch")
+114	                for path, content in validated.payload.items():
+115	                    if (final / path).read_bytes() != content:
+116	                        raise StorageUnavailable("recovery payload mismatch")
+117	                self._record_committed(db, row["upload_id"], manifest_raw)
+118	            except (OSError, ContractError) as exc:
+119	                raise StorageUnavailable("persisted artifact could not be recovered") from exc
+120	
+121	    @staticmethod
+122	    def _record_committed(db, upload_id, manifest_raw):
+123	        manifest = parse_json(manifest_raw)
+124	        db.execute("BEGIN IMMEDIATE")
+125	        try:
+126	            db.execute("INSERT OR IGNORE INTO artifacts VALUES (?,?,?,?,?)", (manifest["plugin_name"], manifest["plugin_version"], manifest["artifact_id"], manifest["content_digest"], manifest_raw))
+127	            existing = db.execute("SELECT content_digest,manifest FROM artifacts WHERE name=? AND version=?", (manifest["plugin_name"], manifest["plugin_version"])).fetchone()
+128	            if existing["content_digest"] != manifest["content_digest"] or existing["manifest"] != manifest_raw:
+129	                raise StorageConflict("version_conflict")
+130	            db.execute("UPDATE uploads SET state='committed',error=NULL,artifact_id=? WHERE upload_id=?", (manifest["artifact_id"], upload_id))
+131	            db.execute("COMMIT")
+132	        except BaseException:
+133	            db.execute("ROLLBACK")
+134	            raise
+135	
+136	    def commit(self, upload_id: str, raw: bytes, *, created_by: str = "artifact-service",
+137	               expected_identity: tuple[str, str] | None = None) -> dict:
+138	        if not UPLOAD_ID.fullmatch(upload_id) or not created_by or len(created_by) > 200:
+139	            raise ArtifactError("ART_UPLOAD_ID", "invalid upload/principal identity")
+140	        try:
+141	            validated = validate_package(raw, self.policy)
+142	        except ContractError as exc:
+143	            # Determinate invalid requests have durable, content-bound query results.
+144	            with self._locked() as db:
+145	                previous = db.execute("SELECT * FROM uploads WHERE upload_id=?", (upload_id,)).fetchone()
+146	                if previous is not None and previous["content_digest"] != digest(raw):
+147	                    raise StorageConflict("idempotency_conflict") from exc
+148	                if previous is None:
+149	                    db.execute("INSERT INTO uploads VALUES (?,NULL,NULL,?,'rejected',?,NULL)", (upload_id, digest(raw), exc.code))
+150	            raise
+151	        desc = validated.descriptor
+152	        name, version = desc["plugin_name"], desc["plugin_version"]
+153	        if expected_identity is not None and expected_identity != (name, version):
+154	            raise ArtifactError("ART_IDENTITY", "upload URL and package identity differ")
+155	        if not SEGMENT.fullmatch(name) or not SEGMENT.fullmatch(version):
+156	            raise ArtifactError("ART_PATH", "plugin identity exceeds supported path budget")
+157	        stage = None
+158	        renamed = False
+159	        try:
+160	            with self._locked() as db:
+161	                self._recover(db)
+162	                previous = db.execute("SELECT * FROM uploads WHERE upload_id=?", (upload_id,)).fetchone()
+163	                if previous is not None and previous["content_digest"] != validated.content_digest:
+164	                    raise StorageConflict("idempotency_conflict")
+165	                if previous is not None and previous["state"] == "rejected":
+166	                    raise StorageConflict(previous["error"] or "idempotency_conflict")
+167	                existing = db.execute("SELECT * FROM artifacts WHERE name=? AND version=?", (name, version)).fetchone()
+168	                if existing is not None:
+169	                    if existing["content_digest"] != validated.content_digest:
+```
+
+**`artifact_import.py`** — imports(imports), ImportRejected(instantiates), MalformedUploadResponse(instantiates), parse_json(calls), _request(calls), +30 more
+
+```python
+8	import re
+9	import tarfile
+10	import tempfile
+11	from http.client import HTTPException
+12	from pathlib import Path
+13	from urllib.error import HTTPError, URLError
+14	from urllib.parse import quote
+
+... (gap) ...
+
+20	from mf_canonical import ContractError, parse_json
+21	
+22	
+23	class UploadUnknown(Exception):
+24	    def __init__(self, upload_id):
+25	        self.upload_id = upload_id
+26	        super().__init__("upload outcome unknown; query/replay the same upload_id: " + upload_id)
+27	
+28	
+29	class ImportRejected(Exception):
+30	    def __init__(self, code):
+31	        self.code = code
+32	        super().__init__(code)
+33	
+34	
+35	class MalformedUploadResponse(Exception):
+
+... (gap) ...
+
+81	            raise ImportRejected("upload_receipt_identity_mismatch")
+82	        return receipt
+83	
+84	    def commit(self, upload_id, raw):
+85	        expected = validate_package(raw, self.policy).content_digest
+86	        for attempt in range(2):
+87	            try:
+88	                receipt = self._request("PUT", upload_id, raw)
+89	                committed = self._committed(receipt, upload_id, expected)
+90	                if committed is not None:
+91	                    return committed
+92	            except HTTPError as error:
+93	                if error.code < 500:
+94	                    try:
+95	                        code = parse_json(error.read(1_048_577)).get("error", "http_rejection")
+96	                    finally:
+97	                        error.close()
+98	                    raise ImportRejected(code) from None
+99	                error.close()
+100	            except (URLError, OSError, HTTPException, MalformedUploadResponse):
+101	                pass
+102	            # A lost ACK is neither rejection nor a reason to allocate a new key.
+103	            try:
+104	                receipt = self.query(upload_id)
+105	                if receipt is not None:
+106	                    committed = self._committed(receipt, upload_id, expected)
+107	                    if committed is not None:
+108	                        return committed
+109	                    if receipt.get("content_digest") not in (None, expected):
+110	                        raise ImportRejected("idempotency_conflict")
+111	            except (URLError, OSError, HTTPException, MalformedUploadResponse):
+112	                raise UploadUnknown(upload_id) from None
+113	            if attempt:
+114	                break
+115	        raise UploadUnknown(upload_id)
+116	
+117	
+118	def sync_packages(source: Path, store: ArtifactStore) -> list[dict]:
+```
+
+**`mf_canonical.py`** — schema_numbers(calls), schema_numbers(function), ContractError(instantiates)
+
+```python
+123	
+124	
+125	
+126	def schema_numbers(value: Any) -> Any:
+127	    """The schema engine requires native integral keyword values; never use floats."""
+128	    if isinstance(value, Decimal) and value == value.to_integral_value():
+129	        if abs(value.adjusted()) > MAX_NUMBER_CHARS:
+130	            raise ContractError('E_LIMIT', 'schema integer limit exceeded')
+131	        return int(value)
+132	    if isinstance(value, dict):
+133	        return {key: schema_numbers(item) for key, item in value.items()}
+134	    if isinstance(value, list):
+135	        return [schema_numbers(item) for item in value]
+136	    return value
+137	
+138	
+139	
+```
+
+**Not shown above — explore these names for their source**
+
+- plugin_schema_conversion.py: validate_extension:86, encode_yaml_value:71, extension_schema:80, unsupported:24, _yaml_decimal:45, convert_spec:140, +1 more
+- artifact_packaging.py: package_plugin:61, main:68, build_archive:18, prepare_plugin:35, artifact_packaging.py:1
+- plugin_server.py: create:33, do_GET:110, do_PUT:68, plugin_server.py:1
+- tests/test_artifact_import.py: test_sync_preflights_all_packages_and_retains_old_versions:110, test_lost_ack_queries_same_intent_and_returns_original_manifest:40, test_unreachable_query_remains_unknown_without_changing_key:64, test_partial_ack_json_and_short_http_body_query_original_commit:75, test_artifact_import.py:1
+- ... and 13 more files
+
+> Some file sections were trimmed for size. For a specific symbol you still need, run another `codegraph_explore` (or `codegraph_node`) with its exact name — line-numbered source, cheaper and more complete than Read.
