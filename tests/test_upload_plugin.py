@@ -4,47 +4,31 @@ from pathlib import Path
 from unittest.mock import patch
 
 import upload_plugin
+from test_artifact_contract import example_archive
 
 
 class UploadPluginCliTest(unittest.TestCase):
-    def test_upload_plugin_sends_put_request_with_token_and_file_body(self):
-        with tempfile.NamedTemporaryFile() as wasm_file:
-            wasm_file.write(b"\x00asm-cli")
-            wasm_file.flush()
-
-            with patch("upload_plugin.urlopen") as urlopen:
-                response = urlopen.return_value.__enter__.return_value
-                response.status = 201
-                response.read.return_value = b"uploaded\n"
-
-                upload_plugin.upload_plugin(
-                    server="http://localhost:8080/",
-                    token="secret-token",
-                    plugin_file=Path(wasm_file.name),
-                    name="demo",
-                    version="1.2.3",
-                )
-
-        request = urlopen.call_args.args[0]
-        self.assertEqual(
-            request.full_url,
-            "http://localhost:8080/plugins/demo/1.2.3/plugin.wasm",
-        )
-        self.assertEqual(request.get_method(), "PUT")
-        self.assertEqual(request.data, b"\x00asm-cli")
-        self.assertEqual(request.headers["Authorization"], "Bearer secret-token")
-        self.assertEqual(request.headers["Content-type"], "application/wasm")
+    def test_upload_cli_delegates_same_complete_bytes_and_explicit_key(self):
+        with tempfile.NamedTemporaryFile() as archive:
+            archive.write(example_archive())
+            archive.flush()
+            with patch("upload_plugin.ArtifactClient") as client:
+                client.return_value.commit.return_value = {"state": "committed"}
+                result = upload_plugin.upload_plugin("http://localhost:8080", "secret-token", Path(archive.name),
+                                                     "test-plugin", "1.0.0", upload_id="stable-intent")
+        self.assertEqual(client.return_value.commit.call_args.args, ("stable-intent", example_archive()))
+        self.assertEqual(result[0], 201)
 
     def test_upload_plugin_rejects_missing_file(self):
-        with self.assertRaisesRegex(FileNotFoundError, "missing.wasm"):
-            upload_plugin.upload_plugin(
-                server="http://localhost:8080",
-                token="secret-token",
-                plugin_file=Path("missing.wasm"),
-                name="demo",
-                version="1.2.3",
-            )
+        with self.assertRaises(FileNotFoundError):
+            upload_plugin.upload_plugin("http://localhost:8080", "secret", Path("missing.tgz"), "demo", "1.0.0",
+                                        upload_id="missing")
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_upload_plugin_rejects_wrong_identity_before_network(self):
+        with tempfile.NamedTemporaryFile() as archive:
+            archive.write(example_archive())
+            archive.flush()
+            with patch("upload_plugin.ArtifactClient") as client, self.assertRaises(ValueError):
+                upload_plugin.upload_plugin("http://localhost:8080", "secret", Path(archive.name), "wrong", "1.0.0",
+                                            upload_id="wrong")
+            client.assert_not_called()

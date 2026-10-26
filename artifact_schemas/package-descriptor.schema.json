@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:modelfusion:contracts:v1:package-descriptor",
+  "type": "object",
+  "properties": {
+    "canonicalization_version": {
+      "const": "artifact-json.v1"
+    },
+    "schema_version": {
+      "const": "artifact.v1"
+    },
+    "plugin_name": {
+      "$ref": "#/$defs/PluginName"
+    },
+    "plugin_version": {
+      "$ref": "#/$defs/PluginVersion"
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/File"
+      }
+    },
+    "wasm_path": {
+      "$ref": "#/$defs/Path"
+    },
+    "config_schema_path": {
+      "$ref": "#/$defs/Path"
+    },
+    "defaults_path": {
+      "$ref": "#/$defs/Path"
+    },
+    "documentation_paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/Path"
+      }
+    },
+    "environment_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EnvironmentRef"
+      }
+    },
+    "source": {
+      "$ref": "#/$defs/Source"
+    }
+  },
+  "required": [
+    "canonicalization_version",
+    "schema_version",
+    "plugin_name",
+    "plugin_version",
+    "files",
+    "wasm_path",
+    "config_schema_path",
+    "defaults_path",
+    "documentation_paths",
+    "environment_refs",
+    "source"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))[^/\\u0000-\\u001f]+(?:/[^/\\u0000-\\u001f]+)*$",
+      "not": {
+        "pattern": "[\\r\\n]"
+      }
+    },
+    "PluginName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+      "not": {
+        "pattern": "\\s"
+      }
+    },
+    "PluginVersion": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
+      "not": {
+        "pattern": "\\s"
+      }
+    },
+    "Source": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "local_build"
+            },
+            "verification": {
+              "enum": [
+                "verified",
+                "unknown"
+              ]
+            },
+            "repo": {
+              "type": "string",
+              "minLength": 1
+            },
+            "commit": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$",
+              "minLength": 40,
+              "maxLength": 40
+            },
+            "dirty_digest": {
+              "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+            },
+            "build_inputs_digest": {
+              "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+            }
+          },
+          "required": [
+            "kind",
+            "verification",
+            "repo",
+            "commit",
+            "dirty_digest",
+            "build_inputs_digest"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "oci_import"
+            },
+            "verification": {
+              "enum": [
+                "verified",
+                "unknown"
+              ]
+            },
+            "original_ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "manifest_digest": {
+              "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+            },
+            "layer_digest": {
+              "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+            }
+          },
+          "required": [
+            "kind",
+            "verification",
+            "original_ref",
+            "manifest_digest",
+            "layer_digest"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "legacy_unknown"
+            },
+            "verification": {
+              "const": "unknown"
+            }
+          },
+          "required": [
+            "kind",
+            "verification"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "File": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/Path"
+        },
+        "size_bytes": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision"
+        },
+        "sha256": {
+          "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+        },
+        "role": {
+          "enum": [
+            "wasm",
+            "config_schema",
+            "defaults",
+            "documentation"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256",
+        "role"
+      ],
+      "additionalProperties": false
+    },
+    "EnvironmentRef": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "secret",
+            "endpoint",
+            "setting"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "required"
+      ],
+      "additionalProperties": false
+    },
+    "canonicalization_version": {
+      "const": "artifact-json.v1"
+    },
+    "schema_version": {
+      "const": "artifact.v1"
+    },
+    "plugin_name": {
+      "$ref": "#/$defs/PluginName"
+    },
+    "plugin_version": {
+      "$ref": "#/$defs/PluginVersion"
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/File"
+      }
+    },
+    "wasm_path": {
+      "$ref": "#/$defs/Path"
+    },
+    "config_schema_path": {
+      "$ref": "#/$defs/Path"
+    },
+    "defaults_path": {
+      "$ref": "#/$defs/Path"
+    },
+    "documentation_paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/Path"
+      }
+    },
+    "environment_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EnvironmentRef"
+      }
+    },
+    "source": {
+      "$ref": "#/$defs/Source"
+    }
+  }
+}

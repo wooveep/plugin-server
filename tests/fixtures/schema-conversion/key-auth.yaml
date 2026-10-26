@@ -1,0 +1,198 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ""
+  type: oss
+  category: auth
+  image: platform_wasm/key-auth
+  name: key-auth
+  title: Key Auth
+  x-title-i18n:
+    zh-CN: Key 认证
+  description: Authenticate requests with local YAML API keys, support multi-credential consumers, Bearer Authorization extraction, tenant identity propagation, and rule-level consumer allow lists.
+  x-description-i18n:
+    zh-CN: 基于本地 YAML API Key 认证请求，支持多凭证 consumer、Bearer Authorization 提取、租户身份透传和规则级 consumer allow 鉴权。
+  iconUrl: https://img.alicdn.com/imgextra/i4/O1CN01BPFGlT1pGZ2VDLgaH_!!6000000005333-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/key-auth/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/key-auth/README_EN.md
+  version: 1.0.3
+  contact:
+    name: Higress Team
+    url: http://higress.io/
+    email: admin@higress.io
+spec:
+  phase: AUTHN
+  priority: 321
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        global_auth:
+          type: boolean
+          title: 是否开启全局认证
+          x-title-i18n:
+            en-US: Enable Global Auth
+          description: 若不开启全局认证，则全局配置只提供凭证信息。只有在域名或路由上进行了配置才会启用认证。
+          x-description-i18n:
+            en-US: If set to false, only consumer information is accepted from the global config. Authentication only takes effect when a domain or route rule is configured.
+          x-scope: GLOBAL
+        consumers:
+          type: array
+          title: 调用方列表
+          x-title-i18n:
+            en-US: Consumer List
+          description: 服务调用方列表，用于对请求进行认证。与顶层 credentials 二选一。允许空列表；需要认证的请求在无调用方时全部拒绝。
+          x-description-i18n:
+            en-US: Service consumers used for request authentication. Mutually exclusive with top-level credentials. An empty list rejects all requests requiring authentication.
+          x-scope: GLOBAL
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                title: 名称
+                x-title-i18n:
+                  en-US: Name
+                description: 该调用方的名称。
+                x-description-i18n:
+                  en-US: The name of the consumer.
+              credential:
+                type: string
+                title: 访问凭证
+                x-title-i18n:
+                  en-US: Credential
+                description: 该调用方的单个访问凭证。与 credentials 二选一。
+                x-description-i18n:
+                  en-US: The single credential of the consumer. Mutually exclusive with credentials.
+              credentials:
+                type: array
+                title: 访问凭证列表
+                x-title-i18n:
+                  en-US: Credentials
+                description: 该调用方的多个访问凭证，不能为空，且凭证值不能重复。与 credential 二选一。
+                x-description-i18n:
+                  en-US: Multiple credentials of the consumer. The list cannot be empty and credential values cannot be duplicated. Mutually exclusive with credential.
+                items:
+                  type: string
+              tenant:
+                type: string
+                title: 租户
+                x-title-i18n:
+                  en-US: Tenant
+                description: 该调用方所属租户。认证成功后会透传为 X-Mse-Tenant。
+                x-description-i18n:
+                  en-US: Tenant of the consumer. Propagated as X-Mse-Tenant after successful authentication.
+              keys:
+                type: array
+                title: API Key来源字段名称列表
+                x-title-i18n:
+                  en-US: API Key Source Fields
+                description: 当前调用方覆盖全局配置的 API Key 来源字段名称。
+                x-description-i18n:
+                  en-US: Consumer-level API key source field names overriding the global config.
+                items:
+                  type: string
+              in_query:
+                type: boolean
+                title: key是否来源于URL参数
+                x-title-i18n:
+                  en-US: Extract API Key From URL Parameters
+                description: 当前调用方覆盖全局配置的 URL 参数来源开关。
+                x-description-i18n:
+                  en-US: Consumer-level URL parameter source switch overriding the global config.
+              in_header:
+                type: boolean
+                title: key是否来源于Header
+                x-title-i18n:
+                  en-US: Extract API Key From HTTP Headers
+                description: 当前调用方覆盖全局配置的 HTTP 请求头来源开关。
+                x-description-i18n:
+                  en-US: Consumer-level HTTP header source switch overriding the global config.
+            required: [name]
+        credentials:
+          type: array
+          title: 顶层访问凭证列表
+          x-title-i18n:
+            en-US: Top-Level Credentials
+          description: 顶层凭证列表，只做认证，不绑定 consumer 名称或 tenant，也不会注入身份 header。与 consumers 二选一。
+          x-description-i18n:
+            en-US: Top-level credential list for authentication-only mode. It does not bind credentials to a consumer or tenant and does not inject identity headers. Mutually exclusive with consumers.
+          x-scope: GLOBAL
+          items:
+            type: string
+        keys:
+          type: array
+          title: API Key来源字段名称列表
+          x-title-i18n:
+            en-US: API Key Source Fields
+          description: API Key 的来源字段名称，可以是 URL 参数或者 HTTP 请求头名称。配置 Authorization 时支持 Authorization Bearer <api-key>。
+          x-description-i18n:
+            en-US: Source field names for API keys, either URL parameters or HTTP request headers. When Authorization is configured, Authorization Bearer <api-key> is supported.
+          x-scope: GLOBAL
+          items:
+            type: string
+        in_query:
+          type: boolean
+          title: key是否来源于URL参数
+          x-title-i18n:
+            en-US: Extract API Key From URL Parameters
+          description: 配置 true 时，网关会尝试从 URL 参数中解析 API Key。
+          x-description-i18n:
+            en-US: When set to true, the gateway tries to parse the API key from URL parameters.
+          x-scope: GLOBAL
+        in_header:
+          type: boolean
+          title: key是否来源于Header
+          x-title-i18n:
+            en-US: Extract API Key From HTTP Headers
+          description: 配置 true 时，网关会尝试从 HTTP 请求头中解析 API Key。
+          x-description-i18n:
+            en-US: When set to true, the gateway tries to parse the API key from HTTP request headers.
+          x-scope: GLOBAL
+        realm:
+          type: string
+          title: 认证失败响应Realm
+          x-title-i18n:
+            en-US: Authentication Failure Response Realm
+          description: 认证失败时 WWW-Authenticate 响应头中的 realm。
+          x-description-i18n:
+            en-US: Realm in WWW-Authenticate response headers when authentication fails.
+          default: MSE Gateway
+          x-scope: GLOBAL
+      example:
+        global_auth: true
+        consumers:
+        - name: consumer1
+          tenant: tenant-a
+          credentials:
+          - real-api-key-1
+          - real-api-key-2
+          keys:
+          - Authorization
+          in_header: true
+          in_query: false
+        keys:
+        - apikey
+        - x-api-key
+        in_header: true
+        in_query: true
+        realm: MSE Gateway
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        allow:
+          type: array
+          title: 授权访问的调用方列表
+          x-title-i18n:
+            en-US: Allowed Consumers
+          description: 对于匹配上述条件的请求，允许访问的调用方列表。空列表拒绝所有调用方，不会关闭认证。
+          x-description-i18n:
+            en-US: Consumers allowed for matched requests. An empty list denies every consumer and does not disable authentication.
+          x-scope: RULE
+          items:
+            type: string
+      required: [allow]
+      example:
+        allow:
+        - consumer1

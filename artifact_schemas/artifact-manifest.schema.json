@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:modelfusion:contracts:v1:artifact-manifest",
+  "type": "object",
+  "properties": {
+    "canonicalization_version": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/canonicalization_version"
+    },
+    "schema_version": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/schema_version"
+    },
+    "plugin_name": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/plugin_name"
+    },
+    "plugin_version": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/plugin_version"
+    },
+    "files": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/files"
+    },
+    "wasm_path": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/wasm_path"
+    },
+    "config_schema_path": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/config_schema_path"
+    },
+    "defaults_path": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/defaults_path"
+    },
+    "documentation_paths": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/documentation_paths"
+    },
+    "environment_refs": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/environment_refs"
+    },
+    "source": {
+      "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/source"
+    },
+    "artifact_id": {
+      "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+    },
+    "content_digest": {
+      "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+    },
+    "archive_digest": {
+      "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"
+    },
+    "created_at": {
+      "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Time"
+    },
+    "created_by": {
+      "$ref": "urn:modelfusion:contracts:v1:common#/$defs/Id"
+    },
+    "download_url": {
+      "type": "string",
+      "pattern": "^https?://[^\\s]+$",
+      "not": {
+        "pattern": "\\s"
+      }
+    }
+  },
+  "required": [
+    "canonicalization_version",
+    "schema_version",
+    "plugin_name",
+    "plugin_version",
+    "files",
+    "wasm_path",
+    "config_schema_path",
+    "defaults_path",
+    "documentation_paths",
+    "environment_refs",
+    "source",
+    "artifact_id",
+    "content_digest",
+    "archive_digest",
+    "created_at",
+    "created_by",
+    "download_url"
+  ],
+  "additionalProperties": false
+}
