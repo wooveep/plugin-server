@@ -215,7 +215,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 			deniedNoBalance()
 			return
 		}
-		status := http.StatusForbidden
+		status := uint32(http.StatusForbidden)
 		message := "Model request is not allowed for this account."
 		switch result.ReasonCode {
 		case "projection_unready", "wrong_generation", "projection_schema_mismatch", "dependency_unavailable", "invalid_amount":

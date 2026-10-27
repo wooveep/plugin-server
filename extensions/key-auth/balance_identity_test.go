@@ -112,7 +112,7 @@ func TestUnconfiguredCredentialDoesNotInstallAnyBalanceIdentity(t *testing.T) {
 		require.Equal(t, types.OnPluginStartStatusOK, status)
 		headers := append([][2]string{{":authority", "example.test"}, {":path", "/v1/chat/completions"}, {":method", "POST"}, {"Authorization", "Bearer unknown-synthetic-key"}}, firstBalanceIdentity.Headers()...)
 		host.CallOnHttpRequestHeaders(headers)
-		require.Equal(t, uint32(http.StatusUnauthorized), host.GetLocalResponse().StatusCode)
+		require.Equal(t, uint32(http.StatusForbidden), host.GetLocalResponse().StatusCode)
 		_, err := balanceidentity.Read(host.GetRequestHeaders())
 		require.Error(t, err)
 		host.CompleteHttp()
