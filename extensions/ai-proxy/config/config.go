@@ -14,7 +14,7 @@ import (
 // @Title zh-CN AI代理
 // @Description zh-CN 通过AI助手提供智能对话服务
 // @IconUrl https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
-// @Version 1.0.2
+// @Version 2.0.0
 //
 // @Contact.name CH3CHO
 // @Contact.url https://github.com/CH3CHO
@@ -24,6 +24,9 @@ import (
 // { "protocol_mode": "auto", "path_scope": "legacy_suffixes", "provider": { "type": "qwen", "apiToken": "YOUR_DASHSCOPE_API_TOKEN", "modelMapping": { "*": "qwen-turbo" } } }
 // @End
 type PluginConfig struct {
+	// ManagedExecution is installed only from one complete, verified route rule.
+	ManagedExecution any `json:"-" yaml:"-"`
+
 	// @Title zh-CN AI服务提供商配置
 	// @Description zh-CN AI服务提供商配置，包含API接口、模型和知识库文件等信息
 	providerConfigs []provider.ProviderConfig `required:"true" yaml:"providers"`

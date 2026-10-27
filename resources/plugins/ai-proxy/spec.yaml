@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 1.0.2
+  version: 2.0.0
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -27,6 +27,103 @@ spec:
     openAPIV3Schema:
       type: object
       properties:
+        managed_execution:
+          type: object
+          additionalProperties: false
+          required:
+          - producer_id
+          - private_stream
+          - redis
+          - upstream_path
+          - authority
+          - credential_value
+          properties:
+            input_protocol:
+              type: string
+              enum: [openai_chat, openai_responses, anthropic_messages]
+            upstream_protocol:
+              type: string
+              enum: [openai_chat, openai_responses, anthropic_messages]
+            producer_id:
+              type: string
+              minLength: 1
+            private_stream:
+              type: string
+              minLength: 1
+            redis:
+              type: object
+              additionalProperties: false
+              required:
+              - service_name
+              properties:
+                service_name:
+                  type: string
+                  minLength: 1
+                service_port:
+                  type: integer
+                  minimum: 1
+                  maximum: 65535
+                username:
+                  type: string
+                password:
+                  type: string
+                  writeOnly: true
+                database:
+                  type: integer
+                  minimum: 0
+                timeout:
+                  type: integer
+                  minimum: 1
+            upstream_path:
+              type: string
+              minLength: 1
+            authority:
+              type: string
+              minLength: 1
+            credential_value:
+              type: string
+              minLength: 1
+              writeOnly: true
+            timeout_ms:
+              type: integer
+              minimum: 1
+              maximum: 4294967295
+        _modelfusion_execution:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          required:
+          - schema_version
+          - descriptor
+          - route_id
+          - sales_asset_id
+          - public_model
+          - credential_ref
+          - credential_revision
+          properties:
+            schema_version:
+              type: string
+              enum:
+              - modelfusion-execution.v1
+            descriptor:
+              type: object
+              description: Server-frozen IF01 execution descriptor, independently validated by the runtime.
+              additionalProperties: true
+            route_id:
+              type: string
+              minLength: 1
+            sales_asset_id:
+              type: string
+              minLength: 1
+            public_model:
+              type: string
+              minLength: 1
+            credential_ref:
+              type: string
+              minLength: 1
+            credential_revision:
+              type: string
+              pattern: ^[1-9][0-9]*$
         protocol_mode:
           type: string
           title: 协议模式
@@ -89,7 +186,7 @@ spec:
             type: object
             required: [type]
             additionalProperties: true
-            properties:
+            properties: &providerConfigProperties
               id:
                 type: string
                 title: Provider ID
@@ -678,7 +775,10 @@ spec:
                   en-US: Zhipu AI Code Plan Mode
                 default: false
         provider:
-          <<: *providerConfigSchema
+          type: object
+          required: [type]
+          additionalProperties: true
+          properties: *providerConfigProperties
           title: 单 Provider配置
           x-title-i18n:
             en-US: Single Provider Configuration
@@ -711,6 +811,103 @@ spec:
     openAPIV3Schema:
       type: object
       properties:
+        managed_execution:
+          type: object
+          additionalProperties: false
+          required:
+          - producer_id
+          - private_stream
+          - redis
+          - upstream_path
+          - authority
+          - credential_value
+          properties:
+            input_protocol:
+              type: string
+              enum: [openai_chat, openai_responses, anthropic_messages]
+            upstream_protocol:
+              type: string
+              enum: [openai_chat, openai_responses, anthropic_messages]
+            producer_id:
+              type: string
+              minLength: 1
+            private_stream:
+              type: string
+              minLength: 1
+            redis:
+              type: object
+              additionalProperties: false
+              required:
+              - service_name
+              properties:
+                service_name:
+                  type: string
+                  minLength: 1
+                service_port:
+                  type: integer
+                  minimum: 1
+                  maximum: 65535
+                username:
+                  type: string
+                password:
+                  type: string
+                  writeOnly: true
+                database:
+                  type: integer
+                  minimum: 0
+                timeout:
+                  type: integer
+                  minimum: 1
+            upstream_path:
+              type: string
+              minLength: 1
+            authority:
+              type: string
+              minLength: 1
+            credential_value:
+              type: string
+              minLength: 1
+              writeOnly: true
+            timeout_ms:
+              type: integer
+              minimum: 1
+              maximum: 4294967295
+        _modelfusion_execution:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          required:
+          - schema_version
+          - descriptor
+          - route_id
+          - sales_asset_id
+          - public_model
+          - credential_ref
+          - credential_revision
+          properties:
+            schema_version:
+              type: string
+              enum:
+              - modelfusion-execution.v1
+            descriptor:
+              type: object
+              description: Server-frozen IF01 execution descriptor, independently validated by the runtime.
+              additionalProperties: true
+            route_id:
+              type: string
+              minLength: 1
+            sales_asset_id:
+              type: string
+              minLength: 1
+            public_model:
+              type: string
+              minLength: 1
+            credential_ref:
+              type: string
+              minLength: 1
+            credential_revision:
+              type: string
+              pattern: ^[1-9][0-9]*$
         protocol_mode:
           type: string
           title: 协议模式
@@ -769,7 +966,10 @@ spec:
             en-US: Route-level provider list override. Inherits global configuration when omitted.
           items: *providerConfigSchema
         provider:
-          <<: *providerConfigSchema
+          type: object
+          required: [type]
+          additionalProperties: true
+          properties: *providerConfigProperties
           title: 单 Provider配置
           x-title-i18n:
             en-US: Single Provider Configuration

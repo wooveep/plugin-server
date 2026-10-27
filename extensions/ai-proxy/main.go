@@ -112,6 +112,7 @@ func init() {
 		wrapper.ProcessResponseHeaders(onHttpResponseHeaders),
 		wrapper.ProcessStreamingResponseBody(onStreamingResponseBody),
 		wrapper.ProcessResponseBody(onHttpResponseBody),
+		wrapper.ProcessStreamDone(onManagedStreamDone),
 		wrapper.WithRebuildMaxMemBytes[config.PluginConfig](200*1024*1024),
 	)
 }
@@ -129,7 +130,7 @@ func parseGlobalConfig(json gjson.Result, pluginConfig *config.PluginConfig) err
 		return err
 	}
 
-	return nil
+	return configureManagedExecution(json, pluginConfig)
 }
 
 func parseOverrideRuleConfig(json gjson.Result, global config.PluginConfig, pluginConfig *config.PluginConfig) error {
@@ -147,7 +148,7 @@ func parseOverrideRuleConfig(json gjson.Result, global config.PluginConfig, plug
 		return err
 	}
 
-	return nil
+	return configureManagedExecution(json, pluginConfig)
 }
 
 func initContext(ctx wrapper.HttpContext) {
@@ -215,6 +216,9 @@ func saveContextsToHeaders(ctx wrapper.HttpContext) {
 }
 
 func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
+	if action, handled := onManagedRequestHeaders(ctx, pluginConfig); handled {
+		return action
+	}
 	activeProvider := pluginConfig.GetProvider()
 	protocolMode := pluginConfig.GetProtocolMode()
 	initializeProtocolLifecycle(ctx, protocolMode)
@@ -384,6 +388,9 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, body []byte) types.Action {
+	if action, handled := onManagedRequestBody(ctx, pluginConfig, body); handled {
+		return action
+	}
 	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
 		return types.ActionContinue
 	}

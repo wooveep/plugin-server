@@ -25,9 +25,107 @@ spec:
     openAPIV3Schema:
       type: object
       additionalProperties: false
+      allOf: &quota_managed_scope
+      - if:
+          required: [execution_admission]
+        then:
+          required: [redis, balance_scope_id, cache_generation, projection_schema, path_scope]
+          properties:
+            path_scope: {const: bound_target}
+            enable_methods: {maxItems: 0}
+            enable_path_suffixes: {maxItems: 0}
       required: [redis, balance_scope_id, cache_generation, projection_schema]
       properties:
-        redis:
+        execution_admission: &quota_execution_admission
+          type: object
+          readOnly: true
+          additionalProperties: false
+          title: 受管逐调用准入
+          description: 仅由 Console 受控发布注入完整对象，不继承其他发布的准入身份，不接受请求覆盖或手工方法/路径过滤。字符串字节边界及 HTTP authority 仍由插件原解析器严格校验。
+          required: [schema_version, release_id, route_id, purpose, combination_key, profile_id, console_internal]
+          properties:
+            schema_version:
+              type: string
+              const: managed-execution-admission.v1
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+              pattern: '^[^\s\x00-\x1f\x7f](?:[^\x00-\x1f\x7f]*[^\s\x00-\x1f\x7f])?$'
+              description: 原受控发布标识，UTF-8 编码最多 256 字节，无控制字符或首尾空白。
+            route_id:
+              type: string
+              pattern: '^(?!00000000-0000-0000-0000-000000000000$)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+            purpose:
+              type: string
+              enum: [validation, production]
+            combination_key:
+              type: string
+              pattern: '^sha256:[0-9a-f]{64}$'
+            profile_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+              pattern: '^[^\s\x00-\x1f\x7f](?:[^\x00-\x1f\x7f]*[^\s\x00-\x1f\x7f])?$'
+              description: 冻结的支持 profile，UTF-8 编码最多 256 字节，无控制字符或首尾空白。
+            access_id:
+              type: [string, 'null']
+              minLength: 1
+              maxLength: 256
+              pattern: '^[^\s\x00-\x1f\x7f](?:[^\x00-\x1f\x7f]*[^\s\x00-\x1f\x7f])?$'
+              description: validation 的原服务端许可标识；production 只能缺省或 null。
+            revision:
+              type: [string, 'null']
+              minLength: 1
+              maxLength: 39
+              pattern: '^(?:[1-9][0-9]{0,37}|[1-2][0-9]{38}|3[0-3][0-9]{37}|340[0-1][0-9]{35}|3402[0-7][0-9]{34}|34028[0-1][0-9]{33}|340282[0-2][0-9]{32}|3402823[0-5][0-9]{31}|34028236[0-5][0-9]{30}|340282366[0-8][0-9]{29}|3402823669[0-1][0-9]{28}|340282366920[0-8][0-9]{26}|3402823669209[0-2][0-9]{25}|34028236692093[0-7][0-9]{24}|340282366920938[0-3][0-9]{23}|3402823669209384[0-5][0-9]{22}|34028236692093846[0-2][0-9]{21}|340282366920938463[0-3][0-9]{20}|3402823669209384634[0-5][0-9]{19}|34028236692093846346[0-2][0-9]{18}|340282366920938463463[0-2][0-9]{17}|3402823669209384634633[0-6][0-9]{16}|34028236692093846346337[0-3][0-9]{15}|340282366920938463463374[0-5][0-9]{14}|34028236692093846346337460[0-6][0-9]{12}|340282366920938463463374607[0-3][0-9]{11}|3402823669209384634633746074[0-2][0-9]{10}|340282366920938463463374607430[0-9]{9}|340282366920938463463374607431[0-6][0-9]{8}|3402823669209384634633746074317[0-5][0-9]{7}|34028236692093846346337460743176[0-7][0-9]{6}|340282366920938463463374607431768[0-1][0-9]{5}|34028236692093846346337460743176820[0-9]{4}|340282366920938463463374607431768210[0-9]{3}|340282366920938463463374607431768211[0-3][0-9]{2}|3402823669209384634633746074317682114[0-4][0-9]|34028236692093846346337460743176821145[0-4]|340282366920938463463374607431768211455)$'
+              description: validation 的规范正十进制 uint128 字符串，最大 340282366920938463463374607431768211455；production 只能缺省或 null。
+            console_internal:
+              type: object
+              additionalProperties: false
+              required: [service_name, service_port, host, auth_token, timeout_ms]
+              properties:
+                service_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 253
+                  pattern: '^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$'
+                service_port:
+                  type: integer
+                  minimum: 1
+                  maximum: 65535
+                host:
+                  type: string
+                  minLength: 1
+                  maxLength: 512
+                  pattern: '^[^ /\\?#@%\x00-\x1f\x7f]+$'
+                  description: 原 Console HTTP authority，不含 userinfo、路径、查询或 fragment；可选端口须为规范十进制 1–65535，UTF-8 编码最多 512 字节，由插件核验。
+                auth_token:
+                  type: string
+                  writeOnly: true
+                  minLength: 1
+                  maxLength: 8192
+                  pattern: '^[!-~]+$'
+                  description: 部署受控的 Console 服务认证令牌，秘密引用由发布源单独登记，禁止写入公开默认值。
+                timeout_ms:
+                  type: integer
+                  minimum: 1
+                  maximum: 60000
+          allOf:
+          - if:
+              properties:
+                purpose: {const: validation}
+              required: [purpose]
+            then:
+              required: [access_id, revision]
+              properties:
+                access_id: {type: string}
+                revision: {type: string}
+            else:
+              properties:
+                access_id: {type: 'null'}
+                revision: {type: 'null'}
+        redis: &quota_redis
           type: object
           additionalProperties: false
           title: Redis配置
@@ -89,23 +187,23 @@ spec:
               x-description-i18n:
                 en-US: Redis database index
               default: 0
-        balance_scope_id:
+        balance_scope_id: &quota_balance_scope
           type: string
           title: 余额作用域
           x-title-i18n: {en-US: Balance Scope}
           pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
           description: Console当前受控发布中的非空UUID，禁止由请求覆盖
-        cache_generation:
+        cache_generation: &quota_cache_generation
           type: string
           title: 缓存代际
           x-title-i18n: {en-US: Cache Generation}
           pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
           description: Console当前受控发布中的非空UUID，禁止由请求覆盖
-        projection_schema:
+        projection_schema: &quota_projection_schema
           type: string
           title: 余额协议
           enum: [balance.v1]
-        missing_balance_policy:
+        missing_balance_policy: &quota_missing_balance_policy
           type: string
           title: 缺失余额处理
           enum: [deny]
@@ -140,7 +238,14 @@ spec:
     openAPIV3Schema:
       type: object
       additionalProperties: false
+      allOf: *quota_managed_scope
       properties:
+        execution_admission: *quota_execution_admission
+        redis: *quota_redis
+        balance_scope_id: *quota_balance_scope
+        cache_generation: *quota_cache_generation
+        projection_schema: *quota_projection_schema
+        missing_balance_policy: *quota_missing_balance_policy
         path_scope:
           type: string
           title: 受管新调用路径
@@ -156,4 +261,3 @@ spec:
           items: {type: string, pattern: '.*\S.*'}
       example:
         path_scope: bound_target
-        enable_methods: [POST]

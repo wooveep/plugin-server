@@ -3,7 +3,7 @@ package balanceidentity
 import "testing"
 
 func TestReadRequiresAnExactUniqueNativeIdentity(t *testing.T) {
-	valid := Snapshot{"00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000003", "9007199254740993"}
+	valid := Snapshot{AccountID: "00000000-0000-0000-0000-000000000002", APIKeyID: "00000000-0000-0000-0000-000000000003", CredentialGeneration: "9007199254740993"}
 	actual, err := Read(valid.Headers())
 	if err != nil || actual != valid {
 		t.Fatalf("native identity lost: %v", err)
@@ -24,5 +24,21 @@ func TestReadRequiresAnExactUniqueNativeIdentity(t *testing.T) {
 	}
 	if _, err := Read(append(valid.Headers(), [2]string{AccountHeader, valid.AccountID})); err == nil {
 		t.Fatal("accepted ambiguous duplicate native identity")
+	}
+}
+
+func TestNativeCallerRequiresPairedOriginalIdentities(t *testing.T) {
+	original := Snapshot{AccountID: "00000000-0000-0000-0000-000000000002", APIKeyID: "00000000-0000-0000-0000-000000000003", CredentialGeneration: "9007199254740993", TenantID: "00000000-0000-0000-0000-000000000005", PrincipalID: "00000000-0000-0000-0000-000000000006"}
+	actual, err := Read(original.Headers())
+	if err != nil || actual != original {
+		t.Fatalf("caller identity changed: %v", err)
+	}
+	if _, err := Read(append(original.Headers(), [2]string{PrincipalHeader, original.PrincipalID})); err == nil {
+		t.Fatal("duplicate principal accepted")
+	}
+	invalid := original
+	invalid.PrincipalID = ""
+	if invalid.Validate() == nil {
+		t.Fatal("unpaired caller identity accepted")
 	}
 }

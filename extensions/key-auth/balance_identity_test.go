@@ -12,8 +12,8 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-var firstBalanceIdentity = balanceidentity.Snapshot{AccountID: "00000000-0000-0000-0000-000000000002", APIKeyID: "00000000-0000-0000-0000-000000000003", CredentialGeneration: "9007199254740993"}
-var secondBalanceIdentity = balanceidentity.Snapshot{AccountID: firstBalanceIdentity.AccountID, APIKeyID: "00000000-0000-0000-0000-000000000004", CredentialGeneration: firstBalanceIdentity.CredentialGeneration}
+var firstBalanceIdentity = balanceidentity.Snapshot{AccountID: "00000000-0000-0000-0000-000000000002", APIKeyID: "00000000-0000-0000-0000-000000000003", CredentialGeneration: "9007199254740993", TenantID: "00000000-0000-0000-0000-000000000005", PrincipalID: "00000000-0000-0000-0000-000000000006"}
+var secondBalanceIdentity = balanceidentity.Snapshot{AccountID: firstBalanceIdentity.AccountID, APIKeyID: "00000000-0000-0000-0000-000000000004", CredentialGeneration: firstBalanceIdentity.CredentialGeneration, TenantID: firstBalanceIdentity.TenantID, PrincipalID: firstBalanceIdentity.PrincipalID}
 
 func nativeKeyAuthFixture(bindings bool) json.RawMessage {
 	consumer := map[string]any{"name": "retained-owner", "tenant": "retained-tenant", "credentials": []string{"synthetic-key-one", "synthetic-key-two"}}
@@ -115,6 +115,21 @@ func TestUnconfiguredCredentialDoesNotInstallAnyBalanceIdentity(t *testing.T) {
 		require.Equal(t, uint32(http.StatusForbidden), host.GetLocalResponse().StatusCode)
 		_, err := balanceidentity.Read(host.GetRequestHeaders())
 		require.Error(t, err)
+		host.CompleteHttp()
+	})
+}
+
+func TestNativeCallerCannotRetainClientPrincipalFields(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		host, status := test.NewTestHost(nativeKeyAuthFixture(true))
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		headers := [][2]string{{":authority", "example.test"}, {":path", "/v1/chat/completions"}, {":method", "POST"}, {"Authorization", "Bearer synthetic-key-one"}, {balanceidentity.TenantHeader, "client-selected-tenant"}, {balanceidentity.PrincipalHeader, "client-selected-user"}, {balanceidentity.PrincipalHeader, "duplicate-client-user"}}
+		host.CallOnHttpRequestHeaders(headers)
+		require.Nil(t, host.GetLocalResponse())
+		actual, err := balanceidentity.Read(host.GetRequestHeaders())
+		require.NoError(t, err)
+		require.Equal(t, firstBalanceIdentity, actual)
 		host.CompleteHttp()
 	})
 }

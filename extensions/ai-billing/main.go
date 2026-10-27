@@ -102,6 +102,8 @@ func init() {
 }
 
 type BillingConfig struct {
+	// NativeExecution is installed only by an exact managed route configuration.
+	NativeExecution    any         `json:"-" yaml:"-"`
 	RedisStream        RedisStream `yaml:"redis_stream"`
 	EventKind          string      `yaml:"event_kind"`
 	QuotaScope         string      `yaml:"quota_scope"`
@@ -202,22 +204,42 @@ func (usage BillingUsage) MarshalJSON() ([]byte, error) {
 }
 
 func parseConfig(configJson gjson.Result, config *BillingConfig) error {
-	if configJson.Get("billing_service").Exists() {
-		return errors.New("billing_service is no longer supported; use redis_stream")
-	}
+	*config = BillingConfig{}
 	redisStream := configJson.Get("redis_stream")
 	if !redisStream.Exists() && isRuleOnlyConfig(configJson) {
 		*config = BillingConfig{dormant: true}
 		return nil
 	}
+	var err error
+	if configJson.Get("native_execution").Exists() || configJson.Get("_modelfusion_execution").Exists() {
+		err = errors.New("native billing must be configured in a released route rule")
+	} else {
+		err = parseCompleteBillingConfig(configJson, config)
+	}
+	if err != nil {
+		// A failed non-empty root must not become the matcher's zero-root
+		// fallback, which is reserved for independent complete rules.
+		if rules := configJson.Get("_rules_"); rules.IsArray() && len(rules.Array()) > 0 {
+			*config = BillingConfig{invalidBase: true}
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func parseCompleteBillingConfig(configJson gjson.Result, config *BillingConfig) error {
+	*config = BillingConfig{}
+	if configJson.Get("billing_service").Exists() {
+		return errors.New("billing_service is no longer supported; use redis_stream")
+	}
 	if err := parseConfigFields(configJson, config); err != nil {
 		return err
 	}
-	if !redisStream.Exists() && configJson.Get("_rules_").Exists() {
-		config.invalidBase = true
-		return nil
+	if err := parseRedisStream(configJson.Get("redis_stream"), config); err != nil {
+		return err
 	}
-	return parseRedisStream(redisStream, config)
+	return configureNativeBilling(configJson, config)
 }
 
 func parseRuleConfig(configJson gjson.Result, global BillingConfig, config *BillingConfig) error {
@@ -225,13 +247,16 @@ func parseRuleConfig(configJson gjson.Result, global BillingConfig, config *Bill
 		return errors.New("billing_service is no longer supported; use redis_stream")
 	}
 	if global.invalidBase {
-		return errors.New("missing redis_stream in non-empty base config")
+		return errors.New("invalid non-empty base config")
+	}
+	if configJson.Get("_rules_").Exists() {
+		return errors.New("nested billing rules are not supported")
 	}
 	if global.RedisStream.ServiceName == "" {
 		if !configJson.Get("redis_stream").Exists() {
 			return errors.New("missing redis_stream in scoped config")
 		}
-		return parseConfig(configJson, config)
+		return parseCompleteBillingConfig(configJson, config)
 	}
 	if configJson.Get("redis_stream").Exists() {
 		return errors.New("redis_stream must be configured globally")
@@ -302,7 +327,7 @@ func parseRuleConfig(configJson gjson.Result, global BillingConfig, config *Bill
 		}
 		config.EnableMethods = methods
 	}
-	return nil
+	return configureNativeBilling(configJson, config)
 }
 
 func isRuleOnlyConfig(configJson gjson.Result) bool {
@@ -415,6 +440,9 @@ func parseRedisStream(redisStream gjson.Result, config *BillingConfig) error {
 }
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config BillingConfig) types.Action {
+	if action, handled := onNativeBillingRequestHeaders(ctx, config); handled {
+		return action
+	}
 	if config.dormant {
 		ctx.SetContext(ctxBillingEnabled, false)
 		ctx.DontReadRequestBody()
@@ -542,6 +570,9 @@ func initBillingRequestContext(ctx wrapper.HttpContext, requestPath, requestID, 
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, config BillingConfig) types.Action {
+	if action, handled := onNativeBillingResponseHeaders(ctx, config); handled {
+		return action
+	}
 	billingEnabled := ctx.GetBoolContext(ctxBillingEnabled, false)
 	requestID := ""
 	if billingEnabled {
@@ -608,6 +639,7 @@ func onHttpStreamingResponseBody(ctx wrapper.HttpContext, config BillingConfig, 
 }
 
 func onHttpStreamDone(ctx wrapper.HttpContext, config BillingConfig) {
+	onNativeBillingStreamDone(ctx, config)
 	if !ctx.GetBoolContext(ctxBillingEnabled, false) {
 		return
 	}

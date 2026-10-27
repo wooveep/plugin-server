@@ -88,6 +88,11 @@ type chatCompletionResponseEnvelope struct {
 	Usage   *usage                 `json:"usage,omitempty"`
 }
 
+// ConvertResponsesRequestToChatCompletion reuses the registered Responses fallback adapter.
+func ConvertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
+	return convertResponsesRequestToChatCompletion(body)
+}
+
 func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 	if gjson.GetBytes(body, "previous_response_id").Exists() {
 		return nil, errors.New("previous_response_id is unsupported in Responses fallback mode")

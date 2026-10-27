@@ -17,11 +17,14 @@ spec:
     path_scope: legacy_suffixes
   defaultConfigDisable: true
   matchRules:
+  # Console releases supply a complete rule config, including redis/balance
+  # fields and execution_admission (managed-execution-admission.v1). Its full
+  # schema is resources/plugins/ai-quota/spec.yaml. Do not hand-fill release,
+  # access, revision, Console token, method or path selectors in this example.
   - ingress: [managed-model-invocation]
     configDisable: false
     config:
       path_scope: bound_target
-      enable_methods: [POST]
   phase: UNSPECIFIED_PHASE
   priority: 280
   url: http://higress-plugin-server.higress-system.svc/plugins/ai-quota/2.0.0/plugin.wasm

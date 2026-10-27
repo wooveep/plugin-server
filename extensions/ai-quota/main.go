@@ -45,12 +45,15 @@ func init() {
 }
 
 type QuotaConfig struct {
+	dormant            bool
+	invalidBase        error
 	redisInfo          RedisInfo `yaml:"redis"`
 	namespace          balanceNamespace
 	PathScope          string   `yaml:"path_scope"`
 	EnablePathSuffixes []string `yaml:"enable_path_suffixes"`
 	EnableMethods      []string `yaml:"enable_methods"`
 	redisClient        wrapper.RedisClient
+	ExecutionAdmission any
 }
 
 type RedisInfo struct {
@@ -63,6 +66,40 @@ type RedisInfo struct {
 }
 
 func parseConfig(json gjson.Result, config *QuotaConfig) error {
+	*config = QuotaConfig{}
+	if isRuleOnlyQuotaConfig(json) {
+		config.dormant = true
+		return nil
+	}
+	if err := parseQuotaConfigFields(json, config); err != nil {
+		// The matcher continues parsing rules after a failed non-empty root.
+		// Preserve that failure so its zero fallback cannot authorize a rule.
+		if rules := json.Get("_rules_"); rules.IsArray() && len(rules.Array()) > 0 {
+			*config = QuotaConfig{invalidBase: err}
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func isRuleOnlyQuotaConfig(json gjson.Result) bool {
+	if !json.IsObject() {
+		return false
+	}
+	count, onlyRules := 0, true
+	json.ForEach(func(key, value gjson.Result) bool {
+		count++
+		if key.String() != "_rules_" || !value.IsArray() {
+			onlyRules = false
+			return false
+		}
+		return true
+	})
+	return onlyRules && count == 1
+}
+
+func parseQuotaConfigFields(json gjson.Result, config *QuotaConfig) error {
 	if err := rejectRemovedSettlementConfig(json); err != nil {
 		return err
 	}
@@ -124,10 +161,24 @@ func parseConfig(json gjson.Result, config *QuotaConfig) error {
 		Port: int64(servicePort),
 	})
 
+	if err := configureExecutionAdmission(json, config); err != nil {
+		return err
+	}
 	return config.redisClient.Init(username, password, int64(timeout), wrapper.WithDataBase(database))
 }
 
 func parseRuleConfig(json gjson.Result, global QuotaConfig, config *QuotaConfig) error {
+	if global.invalidBase != nil {
+		return global.invalidBase
+	}
+	if json.Get("_rules_").Exists() {
+		return errors.New("nested quota rules are not supported")
+	}
+	// A root containing only _rules_ skips parseConfig in the real matcher,
+	// which passes a zero global config instead of the explicit dormant value.
+	if global.dormant || (global.redisInfo.ServiceName == "" && global.redisClient == nil) {
+		return parseConfig(json, config)
+	}
 	if global.redisInfo.ServiceName == "" || global.redisClient == nil {
 		return errors.New("missing redis in config")
 	}
@@ -178,10 +229,15 @@ func parseRuleConfig(json gjson.Result, global QuotaConfig, config *QuotaConfig)
 		}
 		config.EnableMethods = methods
 	}
-	return nil
+	return configureExecutionAdmission(json, config)
 }
 
 func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types.Action {
+	if config.dormant {
+		context.DontReadRequestBody()
+		context.DontReadResponseBody()
+		return types.ActionContinue
+	}
 	context.DisableReroute()
 	if !isQuotaRequestEnabled(context.Path(), context.Method(), config) {
 		context.DontReadResponseBody()
@@ -208,7 +264,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 		context.SetUserAttribute("balance_account_version", result.ObservedAccountVersion)
 		context.SetUserAttribute("balance_cache_generation", result.ObservedGeneration)
 		if result.Decision == "allow" {
-			proxywasm.ResumeHttpRequest()
+			checkExecutionAdmission(context, config, identity, func() { proxywasm.ResumeHttpRequest() })
 			return
 		}
 		if result.ReasonCode == "insufficient_balance" {

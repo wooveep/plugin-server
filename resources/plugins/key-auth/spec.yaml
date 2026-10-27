@@ -95,6 +95,14 @@ spec:
                     credential_generation:
                       type: string
                       pattern: '^[1-9][0-9]{0,18}$'
+                    tenant_id:
+                      type: string
+                      description: 与principal_id成对提供原租户UUID，用于可信事实归属。
+                      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+                    principal_id:
+                      type: string
+                      description: 与tenant_id成对提供原用户UUID，认证后覆盖客户端同名字段。
+                      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
               tenant:
                 type: string
                 title: 租户

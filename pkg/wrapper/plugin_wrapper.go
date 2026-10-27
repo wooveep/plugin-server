@@ -42,6 +42,23 @@ type Log log.Log
 type PluginContext iface.PluginContext
 type HttpContext iface.HttpContext
 
+const requiredRequestBodyKey = "wrapper.required_request_body"
+
+// RequireRequestBody buffers and validates the complete request body even when
+// conservative content detection disabled callbacks. A failed host read rejects
+// the request instead of forwarding an unvalidated body. Callers must reject
+// false when their context cannot provide body callbacks.
+func RequireRequestBody(ctx HttpContext) bool {
+	enabler, ok := ctx.(interface{ EnableRequestBody() })
+	if !ok {
+		return false
+	}
+	enabler.EnableRequestBody()
+	ctx.BufferRequestBody()
+	ctx.SetContext(requiredRequestBodyKey, true)
+	return true
+}
+
 const (
 	CustomLogKey         = "custom_log"
 	AILogKey             = "ai_log"
@@ -1116,9 +1133,21 @@ func (ctx *CommonHttpCtx[PluginConfig]) OnHttpRequestBody(bodySize int, endOfStr
 		if !endOfStream {
 			return types.ActionPause
 		}
+		// An empty completed body is still input to the registered validator.
+		// The host reports NotFound for a zero-length buffer; skipping the
+		// callback would bypass plugins that must reject a missing JSON body.
+		if ctx.requestBodySize == 0 {
+			return ctx.plugin.vm.onHttpRequestBody(ctx, *ctx.config, nil)
+		}
 		body, err := proxywasm.GetHttpRequestBody(0, ctx.requestBodySize)
 		if err != nil {
 			ctx.plugin.vm.log.Warnf("get request body failed: %v", err)
+			if ctx.GetBoolContext(requiredRequestBodyKey, false) {
+				ctx.DontReadRequestBody()
+				_ = proxywasm.SendHttpResponse(500, [][2]string{{"content-type", "application/json"}},
+					[]byte(`{"error":{"code":"request_body_unavailable"}}`), -1)
+				return types.ActionPause
+			}
 			return types.ActionContinue
 		}
 		return ctx.plugin.vm.onHttpRequestBody(ctx, *ctx.config, body)

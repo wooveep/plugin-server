@@ -4,9 +4,41 @@ keywords: [AI网关, AI代理]
 description: AI 代理插件配置参考
 ---
 
-> 插件版本：`1.0.2`
+> 交付版本：`2.0.0`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。
 
-## 功能说明
+## 托管原生执行
+
+托管执行通过同一条有效配置中的 `managed_execution` 与 SDK 保留对象 `_modelfusion_execution` 启用。两者必须成对、完整，不能继承另一个目标的运行身份。`path_scope` 固定为 `bound_target`；`enable_methods`、`enable_path_suffixes` 只能省略或为空数组，范围随绑定路由覆盖全部方法，无需手填 URL 白名单。下游当前仍只接受受支持的 POST JSON 文本生成请求，绑定全部方法不等于支持全部操作。
+
+| 配置 | 实际含义 |
+| --- | --- |
+| `managed_execution.producer_id`、`private_stream`、`redis` | 受控事实生产者与私有 Redis Stream 连接；生产者权限由接收端配置的 transport grant 确定 |
+| `upstream_path`、`authority`、`credential_value` | 本目标的实际 callout 路径、主机与受控上游凭据；authority 必须与冻结 transport 一致 |
+| `timeout_ms` | callout 超时，默认 120000，最大 600000 毫秒 |
+| `input_protocol`、`upstream_protocol` | 冻结协议 profile，缺省各为 `openai_chat`，不由最终 URL 或响应 model 推断 |
+| `_modelfusion_execution` | `modelfusion-execution.v1`，包含完整 descriptor、原 route/sales_asset/public_model、credential ref/revision；由 SDK 注入，非客户端输入 |
+
+完整 descriptor 固定 release/target/binding/provider/account、发现与 cluster、credential pool/adapter 版本、mapper/proxy/descriptor 摘要、上游模型、transport 及 capabilities。解析器核对结构、精确版本和 transport，并对收到的完整 descriptor 对象仅移除 `descriptor_digest` 自身，按 `mf-json.v1` 重算 SHA-256 后比较。`mapper_digest`、`proxy_digest` 由 SDK 按 IF01 的完整目标语义配置计算；插件消费这两项已发布摘要，不在缺少完整 mapper 配置及受控 Secret 归一化输入时另算替代值。配置中的真实凭据仅由受控 Secret 注入，不写入日志或示例。
+
+同一有效配置仍须有合法 `provider`。当前托管分支接受 `openai`、`generic`，以及上游协议为 `anthropic_messages` 时的 `claude`；下文其他兼容 provider 不会自动获得托管执行能力。
+
+请求先经过 key-auth 和 ai-quota。proxy 要求存在与本 release 相同、尚有效的本调用准入回执，清除客户端残留的执行字段，并保留原可信 caller 身份。mapper 必须在其之前以 `capture_body_basis: true` 固定原始正文依据和公开模型：原正文 raw bytes 保持不变，`original_body_digest` 使用映射前原 JSON 的 `mf-json.v1` 规范摘要。proxy 核对该公开模型及映射后的上游模型，随后冻结完整 selection；实际出站及观察到的响应正文摘要使用 `raw-bytes.v1`，与原正文规范摘要分别记录。不能从最终 model 或 URL 猜测钱包、销售归属、采购目标或原请求。
+
+当前协议组合如下；不支持的组合会在配置阶段拒绝：
+
+| 输入 | 上游 |
+| --- | --- |
+| `openai_chat` | `openai_chat` |
+| `openai_responses` | `openai_responses` 或 `openai_chat` |
+| `anthropic_messages` | `anthropic_messages` 或 `openai_chat` |
+
+托管分支使用实际 `DispatchHttpCall` 执行一次业务发送，不再进入兼容 router 的第二次转发；每次发送建立独立 attempt。当前单次 callout 聚合响应，SSE 在完整收齐后处理，并非逐 chunk 透传。dispatch 成功只说明已交接，不能自行证明上游已接收；用量来自原始上游响应，协议转换产生的默认值或合成事件不作为用量证据。缺失/不完整用量明确保持 missing，不能据此免费或估算结算。
+
+发送方向私有 Stream 分别投递 `execution_registration` 登记和 `observation` attempt 事实。最终 `call_delivery` 冻结成规范 Snapshot，通过内部 `x-modelfusion-delivery-observation` 响应桥交给 ai-billing；proxy 先清除上游所有同名值，再安装本次桥。billing 核对原身份及发布归属后投递同一字节、同 event/source/revision 的 delivery，避免兼容 BillingEvent 与原生事实并发生成。响应桥不向客户端提供事实写入权限。
+
+Redis/事实投递失败沿 Q41 记录 gap 或 unknown，实际响应继续；没有回调或流已关闭时不能伪造成功 delivery。源码、Go/Wasm 宿主验证、真实网关加载与支持组合验收各自记录。
+
+## 兼容代理功能
 
 `AI 代理`插件实现了基于 OpenAI API 契约的 AI 代理功能。目前支持 OpenAI、Azure OpenAI、月之暗面（Moonshot）和通义千问等 AI
 服务提供商。
@@ -34,6 +66,8 @@ description: AI 代理插件配置参考
 > 请求路径后缀匹配 `/v1/images/generations` 时，对应文生图场景，会用 OpenAI 的图片生成协议解析请求 Body，再转换为对应 LLM 厂商的图片生成协议
 
 ## 路由模式与作用域
+
+本节与下文 provider 功能说明适用于兼容代理分支；托管分支使用上节的完整冻结配置与更严格的过滤约束，不继承这里的自动路径分类或手工交集配置。
 
 - `protocol_mode: auto` 是兼容默认值，使用已注册适配器并在无匹配时保留透明转发；`passthrough` 强制跳过协议转换。
 - 缺省或显式 `path_scope: legacy_suffixes` 保留 ai-proxy 历史操作分类；`path_scope: bound_target` 处理 Higress 绑定目标已经选中的请求。

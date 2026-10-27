@@ -1,0 +1,45 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: 2.0.0
+  type: oss
+  category: ai
+  name: model-mapper
+  image: platform_wasm/model-mapper
+  title: Exact Model Mapper
+  version: 1.0.0
+  description: Maps an exact public model and captures immutable original request bytes before rewriting.
+spec:
+  phase: default
+  priority: 200
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      required:
+      - modelMapping
+      properties:
+        modelMapping:
+          type: object
+          minProperties: 1
+          additionalProperties:
+            type: string
+            minLength: 1
+        capture_body_basis:
+          type: boolean
+          default: false
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      required:
+      - modelMapping
+      properties:
+        modelMapping:
+          type: object
+          minProperties: 1
+          additionalProperties:
+            type: string
+            minLength: 1
+        capture_body_basis:
+          type: boolean
+          default: false
