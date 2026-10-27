@@ -8,7 +8,7 @@
 
 单个Redis脚本同次读取同slot的control、account和具体Key mapping。必须scope/generation/schema一致、三者ready、账户与Key映射的授权版本和凭据代际一致且Key enabled。金额、account_version和授权版本均按规范整数字符串精确读取，支持超过2^53与有符号i64边界。只有严格正余额允许；零余额和负余额拒绝。缺失、旧代、blocked/building、旧资格、格式/单位错误分别保留原因；Redis故障或不明结果503，不继续请求。
 
-`path_scope: legacy_suffixes`默认只匹配 `/v1/chat/completions` 和 `/v1/messages`；`bound_target`用于已经绑定为新调用的执行入口。`enable_path_suffixes`与`enable_methods`是交集过滤器，不改变账户、代际或Redis连接，规则不能覆盖这些全局值。GET/HEAD已有任务查询绕过新销售余额准入；内部事实、结算与已受理任务查询入口不绑定本插件。模型创建入口应显式限定相应方法，例如POST，不能拿任意任务管理路由当新销售入口。
+`path_scope: legacy_suffixes`默认只匹配 `/v1/chat/completions` 和 `/v1/messages`；`bound_target`用于已经绑定为新调用的执行入口。`enable_path_suffixes`与`enable_methods`是交集过滤器，不改变账户、代际或Redis连接，规则不能覆盖这些全局值。已受理任务查询通过路由绑定或方法过滤排除；GET/HEAD若被分类为新调用仍执行准入；内部事实、结算与已受理任务查询入口不绑定本插件。模型创建入口应显式限定相应方法，例如POST，不能拿任意任务管理路由当新销售入口。
 
 所有三类key使用 `mf:balance:{scope}:...` 同一hash slot。普通资金通知不能为缺失记录开户或解除冲突。维护时拒绝新调用；恢复开放由Console/REL/DEP完成真实配置和受控请求观察，插件没有维护或ready写入口。
 

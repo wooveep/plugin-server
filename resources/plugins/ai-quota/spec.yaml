@@ -115,7 +115,7 @@ spec:
           default: legacy_suffixes
           title: 受管新调用路径
           enum: [legacy_suffixes, bound_target]
-          description: legacy_suffixes使用默认模型后缀；bound_target使用已绑定的新调用入口。GET和HEAD查询不做新销售余额准入。
+          description: legacy_suffixes使用默认模型后缀；bound_target使用已绑定的新调用入口。已受理任务查询由路由或方法过滤排除，GET/HEAD新调用仍执行准入。
         enable_path_suffixes:
           type: array
           title: 路径后缀交集
@@ -145,7 +145,7 @@ spec:
           type: string
           title: 受管新调用路径
           enum: [legacy_suffixes, bound_target]
-          description: legacy_suffixes使用默认模型后缀；bound_target使用已绑定的新调用入口。GET和HEAD查询不做新销售余额准入。
+          description: legacy_suffixes使用默认模型后缀；bound_target使用已绑定的新调用入口。已受理任务查询由路由或方法过滤排除，GET/HEAD新调用仍执行准入。
         enable_path_suffixes:
           type: array
           title: 路径后缀交集

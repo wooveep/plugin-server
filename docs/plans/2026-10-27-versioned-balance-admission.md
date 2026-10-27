@@ -21,7 +21,7 @@ CodeGraph先定位，graphify报告作为仓库地图；GitNexus原索引落后6
 1. key-auth按实际成功认证的credential读取完整绑定，携带原PG账户、具体Key ID、字符串credential_generation。先清理客户端同名字段；public/unmatched、auth-only和无原生绑定旧consumer不能留下原生钱包身份。既有consumer名称/allow-list语义保持。
 2. quota消费该可信链和全局受控scope/generation，一次只读Lua读取同slot control/account/key mapping；同代/schema/ready、账户与授权版本/凭据代际/当前Key enabled均匹配后才判断正余额。钱和版本只做规范字符串精确校验，不转double。
 3. 缺失、旧代、未就绪、旧授权、非法金额和依赖失败分别记录原因。拒绝后不Resume；不计价、不预扣、不结算、不写余额/映射/ready，不因响应或迟到usage再判一次。
-4. 规则只收窄路径/方法交集，不能替换账户或全局namespace/Redis。GET/HEAD已有任务查询不做新销售余额准入；内部事实、结算和任务查询入口不绑定quota。实际发布必须证明新调用入口分类和完整过滤器顺序。
+4. 选中规则内的路径与方法形成交集，保留既有规则覆盖过滤器的语义；规则不能替换账户或全局namespace/Redis。已受理任务查询不做新销售余额准入，通过路由绑定和方法过滤排除，不能仅按GET/HEAD跳过已分类的新调用；内部事实、结算和任务查询入口不绑定quota。实际发布必须证明新调用入口分类和完整过滤器顺序。
 5. 新读写协议一起发布。quota2.0.0明确拒绝旧模板与allow-missing；key-auth1.1.0提供可选原生绑定，缺绑定不能通过新quota。两个嵌套模块的失效绝对replace改为真实仓库相对路径，模块解析和实际Wasm字节分别留证。
 
 ## 验证与出口

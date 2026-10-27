@@ -204,6 +204,34 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 	})
 }
 
+func TestBoundTargetReadMethodsRequireAdmission(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		for _, method := range []string{http.MethodGet, http.MethodHead} {
+			t.Run(method, func(t *testing.T) {
+				config := quotaRoutingContractConfig()
+				config["path_scope"] = "bound_target"
+				config["enable_methods"] = []string{method}
+				runQuotaRoutingAdmission(t, config, "", method, "/native/generate", 100, true, false, testAccountKey(), "redis.static")
+				runQuotaRoutingAdmission(t, config, "", method, "/native/generate", 0, true, true, testAccountKey(), "redis.static")
+
+				host, status := test.NewTestHost(mustQuotaRoutingConfig(t, config))
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+				host.CallOnHttpRequestHeaders([][2]string{{":authority", "example.test"}, {":path", "/native/generate"}, {":method", method}})
+				response := host.GetLocalResponse()
+				require.NotNil(t, response)
+				require.Equal(t, uint32(http.StatusForbidden), response.StatusCode)
+				require.Equal(t, "ai-quota.missing_identity", response.StatusCodeDetail)
+				require.Empty(t, host.GetRedisCalloutAttributes())
+				host.CompleteHttp()
+				host.Reset()
+
+				config["enable_methods"] = []string{http.MethodPost}
+				runQuotaRoutingAdmission(t, config, "", method, "/native/tasks/task-42", 0, false, false, "", "")
+			})
+		}
+	})
+}
+
 func quotaRoutingContractConfig() map[string]interface{} {
 	var config map[string]interface{}
 	_ = json.Unmarshal(monetaryConfig, &config)

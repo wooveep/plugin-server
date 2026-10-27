@@ -260,10 +260,6 @@ func isAIPathEnabled(requestPath string, enabledSuffixes []string) bool {
 }
 
 func isQuotaRequestEnabled(requestPath string, requestMethod string, config QuotaConfig) bool {
-	if requestMethod == http.MethodGet || requestMethod == http.MethodHead {
-		return false
-	}
-
 	pathScope := normalizedPathScope(config.PathScope)
 	if pathScope == PathScopeLegacySuffixes &&
 		!isAIPathEnabled(requestPath, config.EnablePathSuffixes) {
