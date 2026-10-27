@@ -90,7 +90,7 @@ func TestQuotaRoutingFiltersHaveNoUndocumentedCaps(t *testing.T) {
 
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodPost, "/v2"+suffixes[64],
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 		})
 
@@ -101,7 +101,7 @@ func TestQuotaRoutingFiltersHaveNoUndocumentedCaps(t *testing.T) {
 
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodPost, "/prefix"+suffix,
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 		})
 
@@ -113,7 +113,7 @@ func TestQuotaRoutingFiltersHaveNoUndocumentedCaps(t *testing.T) {
 
 			runQuotaRoutingAdmission(
 				t, config, "", method, "/vendor/jobs/job-42",
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodPost, "/vendor/jobs/job-42",
@@ -129,61 +129,26 @@ func TestQuotaRuleOverrideIsolationRegression(t *testing.T) {
 		config["path_scope"] = "bound_target"
 		config["enable_path_suffixes"] = []string{"/global"}
 		config["enable_methods"] = []string{http.MethodPost}
-		config["tenant_header"] = "x-global-tenant"
-		config["consumer_header"] = "x-global-consumer"
-		config["balance_key_template"] = "global:{tenant}:{quota_scope}:{consumer}"
-		config["missing_balance_policy"] = "deny"
-		config["redis"] = map[string]interface{}{
-			"service_name": "redis.global",
-			"service_port": 6382,
-			"timeout":      901,
-			"database":     5,
-		}
-		config["_rules_"] = []map[string]interface{}{
-			{
-				"_match_route_":          []string{"route-isolated"},
-				"quota_scope":            "route-scope",
-				"provider":               "anthropic",
-				"enable_path_suffixes":   []string{"/rule"},
-				"tenant_header":          "x-rule-tenant",
-				"consumer_header":        "x-rule-consumer",
-				"balance_key_template":   "rule:{tenant}:{quota_scope}:{consumer}",
-				"missing_balance_policy": "allow",
-				"redis": map[string]interface{}{
-					"service_name": "redis.rule",
-					"service_port": 6399,
-					"timeout":      222,
-					"database":     9,
-				},
-			},
-		}
-
+		config["redis"] = map[string]any{"service_name": "redis.global", "service_port": 6382, "timeout": 901, "database": 5}
+		config["_rules_"] = []map[string]any{{"_match_route_": []string{"route-isolated"}, "enable_path_suffixes": []string{"/rule"}}}
 		host, status := test.NewTestHost(mustQuotaRoutingConfig(t, config))
 		defer host.Reset()
 		require.Equal(t, types.OnPluginStartStatusOK, status)
 		require.NoError(t, host.SetRouteName("route-isolated"))
-
-		matchConfig, err := host.GetMatchConfig()
+		match, err := host.GetMatchConfig()
 		require.NoError(t, err)
-		ruleConfig := matchConfig.(*QuotaConfig)
-		require.Equal(t, "route-scope", ruleConfig.QuotaScope)
-		require.Equal(t, "anthropic", ruleConfig.Provider)
-		require.Equal(t, "x-global-tenant", ruleConfig.TenantHeader)
-		require.Equal(t, "x-global-consumer", ruleConfig.ConsumerHeader)
-		require.Equal(t, "global:{tenant}:{quota_scope}:{consumer}", ruleConfig.BalanceKeyTemplate)
-		require.Equal(t, MissingPolicyDeny, ruleConfig.MissingBalancePolicy)
-		require.Equal(t, "redis.global", ruleConfig.redisInfo.ServiceName)
-		require.Equal(t, 6382, ruleConfig.redisInfo.ServicePort)
-		require.Equal(t, 901, ruleConfig.redisInfo.Timeout)
-		require.Equal(t, 5, ruleConfig.redisInfo.Database)
-		require.Equal(t, []string{"/rule"}, ruleConfig.EnablePathSuffixes)
-
-		ruleConfig.EnablePathSuffixes[0] = "/mutated"
+		rule := match.(*QuotaConfig)
+		require.Equal(t, testNamespace, rule.namespace)
+		require.Equal(t, "redis.global", rule.redisInfo.ServiceName)
+		require.Equal(t, 6382, rule.redisInfo.ServicePort)
+		require.Equal(t, 901, rule.redisInfo.Timeout)
+		require.Equal(t, 5, rule.redisInfo.Database)
+		require.Equal(t, []string{"/rule"}, rule.EnablePathSuffixes)
+		rule.EnablePathSuffixes[0] = "/mutated"
 		require.NoError(t, host.SetRouteName("route-global"))
-		globalMatch, err := host.GetMatchConfig()
+		match, err = host.GetMatchConfig()
 		require.NoError(t, err)
-		globalConfig := globalMatch.(*QuotaConfig)
-		require.Equal(t, []string{"/global"}, globalConfig.EnablePathSuffixes)
+		require.Equal(t, []string{"/global"}, match.(*QuotaConfig).EnablePathSuffixes)
 	})
 }
 
@@ -201,7 +166,7 @@ func TestQuotaRoutingQueryAndScopeSwitchRegression(t *testing.T) {
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodPost,
 				"/v1/chat/completions?next=/unrelated",
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 		})
 
@@ -218,7 +183,7 @@ func TestQuotaRoutingQueryAndScopeSwitchRegression(t *testing.T) {
 			runQuotaRoutingAdmission(
 				t, config, "route-legacy", http.MethodPost,
 				"/v1/chat/completions",
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 			runQuotaRoutingAdmission(
 				t, config, "route-legacy", http.MethodPost,

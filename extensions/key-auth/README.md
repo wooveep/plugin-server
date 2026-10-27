@@ -199,3 +199,12 @@ in_query: false
 | 401         | Request denied by Key Auth check. No API key found in request | 请求未提供 API Key      |
 | 401         | Request denied by Key Auth check. Invalid API key         | 不允许当前 API Key 访问 |
 | 403         | Request denied by Key Auth check. Unauthorized consumer   | 请求的调用方无访问权限  |
+
+
+## 1.1.0 原生余额身份绑定
+
+受管版本化余额准入必须为consumer的每个实际credential配置 `credential_bindings`，每项含 `credential`、原PG `account_id`、`api_key_id`与字符串 `credential_generation`。绑定必须完整且凭据唯一；UUID为规范非空值，代际为1到i64上限的规范十进制字符串。示例中的凭据只是占位，不应入真实配置。
+
+认证成功后安装当前实际credential的原账户/具体Key/代际，先删除客户端同名字段；public/unmatched、仅顶层credentials或未提供原生绑定的旧consumer不会留下任何原生钱包身份。consumer名称与既有allow-list语义保持；一个用户名的多个Key仍携带各自Key ID，余额读端核当前Key映射而非只看用户名。
+
+该绑定描述不自行授予业务资格；只有同代Redis的当前账户和Key映射都ready、版本/代际匹配且enabled时，ai-quota才允许正余额的新模型调用。生产配置生成和实际观察由Console/CUT/SDK/DEP负责，参见[余额读端说明](../ai-quota/README.md)。

@@ -23,6 +23,7 @@ import (
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -109,6 +110,7 @@ type credentialIdentity struct {
 	Tenant   string
 	Consumer bool
 	Plan     extractionPlan
+	Balance  *balanceidentity.Snapshot
 }
 
 type credentialCandidate struct {
@@ -309,6 +311,10 @@ func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) er
 		if err != nil {
 			return err
 		}
+		balances, err := parseBalanceCredentialBindings(item, credentials)
+		if err != nil {
+			return err
+		}
 		plan, err := resolveConsumerExtractionPlan(*global, consumer)
 		if err != nil {
 			return err
@@ -316,11 +322,16 @@ func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) er
 
 		global.consumers = append(global.consumers, consumer)
 		for _, credential := range credentials {
+			var balance *balanceidentity.Snapshot
+			if snapshot, exists := balances[credential]; exists {
+				balance = &snapshot
+			}
 			if err := addCredentialIdentity(global.credentialIdentities, credential, credentialIdentity{
 				Name:     consumer.Name,
 				Tenant:   consumer.Tenant,
 				Consumer: true,
 				Plan:     plan,
+				Balance:  balance,
 			}); err != nil {
 				return err
 			}
@@ -372,6 +383,11 @@ func parseOverrideRuleConfig(json gjson.Result, global KeyAuthConfig, config *Ke
 //
 // 显式配置 allow: [] 仍启用认证，并拒绝所有调用方。
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log.Log) types.Action {
+	// Even an unmatched/public authentication rule must remove client-selected
+	// native account/key fields before a later managed quota filter can see them.
+	if err := removeBalanceIdentityHeaders(); err != nil {
+		return deniedUnauthorizedConsumer(config.Realm)
+	}
 	var (
 		noAllow            = !config.allowConfigured // No matching rule leaves scoped authentication disabled.
 		globalAuthNoSet    = config.globalAuth == nil
@@ -421,7 +437,9 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 	}
 
 	name := identity.Name
-	propagateTrustedIdentity(identity)
+	if err := propagateTrustedIdentity(identity); err != nil {
+		return deniedUnauthorizedConsumer(config.Realm)
+	}
 
 	// 全局生效：
 	// - global_auth == true 且 当前 domain/route 未配置该插件
@@ -694,12 +712,13 @@ func candidateAllowedByPlan(candidate credentialCandidate, plan extractionPlan) 
 	return contains(plan.Keys, candidate.Key)
 }
 
-func propagateTrustedIdentity(identity credentialIdentity) {
+func propagateTrustedIdentity(identity credentialIdentity) error {
 	removeTrustedIdentityHeaders()
 	_ = proxywasm.AddHttpRequestHeader(consumerHeaderName, identity.Name)
 	if identity.Tenant != "" {
 		_ = proxywasm.AddHttpRequestHeader(tenantHeaderName, identity.Tenant)
 	}
+	return installBalanceIdentity(identity.Balance)
 }
 
 func removeTrustedIdentityHeaders() {

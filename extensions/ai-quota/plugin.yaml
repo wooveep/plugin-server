@@ -4,31 +4,24 @@ metadata:
   name: ai-quota
   namespace: higress-system
 spec:
+  # Example scope/generation only. Use the Console's observed current values.
   defaultConfig:
-    # ai-quota makes the final account enforcement decision from read-only
-    # Console-derived Redis balance hot data during request admission.
+    balance_scope_id: 00000000-0000-0000-0000-000000000005
+    cache_generation: 00000000-0000-0000-0000-000000000006
+    projection_schema: balance.v1
+    missing_balance_policy: deny
     redis:
-      service_name: redis-service.default.svc.cluster.local
+      service_name: redis-service.higress-system.svc.cluster.local
       service_port: 6379
       timeout: 1000
-    tenant_header: x-mse-tenant
-    consumer_header: x-mse-consumer
-    balance_key_template: "billing:balance:{tenant}:{quota_scope}:{consumer}"
     path_scope: legacy_suffixes
-    missing_balance_policy: deny
-  defaultConfigDisable: false
+  defaultConfigDisable: true
   matchRules:
-  - ingress:
-    - qwen
+  - ingress: [managed-model-invocation]
+    configDisable: false
     config:
-      quota_scope: route:qwen
-      # The Higress binding target defines the request set; omitted filters
-      # do not synthesize a path list.
       path_scope: bound_target
-  - ingress:
-    - deepseek
-    config:
-      quota_scope: route:deepseek
+      enable_methods: [POST]
   phase: UNSPECIFIED_PHASE
   priority: 280
-  url: http://higress-plugin-server.higress-system.svc/plugins/ai-quota/1.0.2/plugin.wasm
+  url: http://higress-plugin-server.higress-system.svc/plugins/ai-quota/2.0.0/plugin.wasm

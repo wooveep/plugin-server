@@ -50,48 +50,16 @@ func TestQuotaRoutingConfigurationContract(t *testing.T) {
 			})
 		}
 
-		t.Run("rule inherits global admission infrastructure and overrides route context", func(t *testing.T) {
-			config := quotaRoutingContractConfig()
-			config["quota_scope"] = "global-scope"
-			config["provider"] = "openai"
-			config["tenant_header"] = "x-global-tenant"
-			config["consumer_header"] = "x-global-consumer"
-			config["missing_balance_policy"] = "allow"
-			config["enable_path_suffixes"] = []string{"/v1/chat/completions"}
-			config["redis"] = map[string]interface{}{
-				"service_name": "redis.global",
-				"service_port": 6382,
-				"timeout":      901,
-				"database":     5,
-			}
-			config["_rules_"] = []map[string]interface{}{
-				{
-					"_match_route_": []string{"route-native-inherited"},
-					"path_scope":    "bound_target",
-					"quota_scope":   "route-scope",
-					"provider":      "anthropic",
-				},
-			}
+		for _, field := range []string{"redis", "balance_scope_id", "cache_generation", "projection_schema", "missing_balance_policy"} {
+			t.Run("rule cannot replace "+field, func(t *testing.T) {
+				config := quotaRoutingContractConfig()
+				config["_rules_"] = []map[string]any{{"_match_route_": []string{"route-native"}, field: config[field]}}
+				host, status := test.NewTestHost(mustQuotaRoutingConfig(t, config))
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusFailed, status)
+			})
+		}
 
-			host, status := test.NewTestHost(mustQuotaRoutingConfig(t, config))
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-			require.NoError(t, host.SetRouteName("route-native-inherited"))
-
-			matchConfig, err := host.GetMatchConfig()
-			require.NoError(t, err)
-			quotaConfig := matchConfig.(*QuotaConfig)
-			require.Equal(t, "route-scope", quotaConfig.QuotaScope)
-			require.Equal(t, "anthropic", quotaConfig.Provider)
-			require.Equal(t, "x-global-tenant", quotaConfig.TenantHeader)
-			require.Equal(t, "x-global-consumer", quotaConfig.ConsumerHeader)
-			require.Equal(t, "billing:balance:{tenant}:{quota_scope}:{consumer}", quotaConfig.BalanceKeyTemplate)
-			require.Equal(t, MissingPolicyAllow, quotaConfig.MissingBalancePolicy)
-			require.Equal(t, "redis.global", quotaConfig.redisInfo.ServiceName)
-			require.Equal(t, 6382, quotaConfig.redisInfo.ServicePort)
-			require.Equal(t, 901, quotaConfig.redisInfo.Timeout)
-			require.Equal(t, 5, quotaConfig.redisInfo.Database)
-		})
 	})
 }
 
@@ -102,10 +70,10 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodPost, "/v1/chat/completions",
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 			runQuotaRoutingAdmission(
-				t, config, "", http.MethodPost, "/vendor/jobs/job-42",
+				t, config, "", http.MethodPost, "/vendor/native-generate",
 				100, false, false, "", "",
 			)
 		})
@@ -117,7 +85,7 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodPost, "/v2/vendor/allowed",
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodPost, "/v1/chat/completions",
@@ -130,16 +98,16 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 			config["path_scope"] = "bound_target"
 
 			runQuotaRoutingAdmission(
-				t, config, "", http.MethodPatch, "/vendor/jobs/job-42:cancel",
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				t, config, "", http.MethodPatch, "/vendor/native-generate",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 			runQuotaRoutingAdmission(
-				t, config, "", http.MethodPatch, "/vendor/jobs/job-42:cancel",
-				0, true, true, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				t, config, "", http.MethodPatch, "/vendor/native-generate",
+				0, true, true, testAccountKey(), "redis.static",
 			)
 			runQuotaRoutingAdmission(
-				t, config, "", http.MethodPatch, "/vendor/jobs/job-42:cancel",
-				-1, true, true, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				t, config, "", http.MethodPatch, "/vendor/native-generate",
+				-1, true, true, testAccountKey(), "redis.static",
 			)
 		})
 
@@ -151,13 +119,12 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodDelete, "/native/files/file-42",
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 		})
 
 		t.Run("rule bound target inherits global redis without legacy suffix gating", func(t *testing.T) {
 			config := quotaRoutingContractConfig()
-			config["quota_scope"] = "global-scope"
 			config["enable_path_suffixes"] = []string{"/v1/chat/completions"}
 			config["redis"] = map[string]interface{}{
 				"service_name": "redis.global",
@@ -167,15 +134,13 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 				{
 					"_match_route_": []string{"route-native-omitted-filters"},
 					"path_scope":    "bound_target",
-					"quota_scope":   "route-scope",
-					"provider":      "anthropic",
 				},
 			}
 
 			runQuotaRoutingAdmission(
 				t, config, "route-native-omitted-filters", http.MethodPut,
 				"/native/messages/batches/batch-42", -1, true, true,
-				"billing:balance:tenant-a:route-scope:consumer-a", "redis.global",
+				testAccountKey(), "redis.global",
 			)
 		})
 
@@ -186,7 +151,6 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 				{
 					"_match_route_":        []string{"route-native-empty-filters"},
 					"path_scope":           "bound_target",
-					"quota_scope":          "route-empty-scope",
 					"enable_path_suffixes": []string{},
 					"enable_methods":       []string{},
 				},
@@ -195,7 +159,7 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 			runQuotaRoutingAdmission(
 				t, config, "route-native-empty-filters", http.MethodDelete,
 				"/native/files/file-42", 100, true, false,
-				"billing:balance:tenant-a:route-empty-scope:consumer-a", "redis.static",
+				testAccountKey(), "redis.static",
 			)
 		})
 
@@ -207,7 +171,7 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodPost, "/v2/vendor/jobs",
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 			runQuotaRoutingAdmission(
 				t, config, "", http.MethodGet, "/v2/vendor/jobs",
@@ -226,7 +190,7 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 
 			runQuotaRoutingAdmission(
 				t, config, "", "MiXeD", "/v1/chat/completions",
-				100, true, false, "billing:balance:tenant-a:global:consumer-a", "redis.static",
+				100, true, false, testAccountKey(), "redis.static",
 			)
 			runQuotaRoutingAdmission(
 				t, config, "", "mixed", "/v1/chat/completions",
@@ -241,18 +205,10 @@ func TestQuotaRoutingAdmissionContract(t *testing.T) {
 }
 
 func quotaRoutingContractConfig() map[string]interface{} {
-	return map[string]interface{}{
-		"quota_scope":            "global",
-		"provider":               "openai",
-		"tenant_header":          "x-tenant-id",
-		"consumer_header":        "x-consumer-id",
-		"balance_key_template":   "billing:balance:{tenant}:{quota_scope}:{consumer}",
-		"missing_balance_policy": "deny",
-		"redis": map[string]interface{}{
-			"service_name": "redis.static",
-			"service_port": 6379,
-		},
-	}
+	var config map[string]interface{}
+	_ = json.Unmarshal(monetaryConfig, &config)
+	delete(config, "enable_path_suffixes")
+	return config
 }
 
 func mustQuotaRoutingConfig(t *testing.T, config map[string]interface{}) json.RawMessage {
@@ -282,13 +238,7 @@ func runQuotaRoutingAdmission(
 		require.NoError(t, host.SetRouteName(routeName))
 	}
 
-	action := host.CallOnHttpRequestHeaders([][2]string{
-		{":authority", "example.com"},
-		{":method", method},
-		{":path", path},
-		{"x-tenant-id", "tenant-a"},
-		{"x-consumer-id", "consumer-a"},
-	})
+	action := host.CallOnHttpRequestHeaders(nativeAdmissionHeaders(path, method))
 	redisCalls := host.GetRedisCalloutAttributes()
 	if !wantAdmission {
 		require.Equal(t, types.ActionContinue, action)
@@ -303,7 +253,11 @@ func runQuotaRoutingAdmission(
 	require.Contains(t, string(redisCalls[0].Query), wantBalanceKey)
 	require.Contains(t, redisCalls[0].Upstream, wantRedisService)
 
-	host.CallOnRedisCall(0, test.CreateRedisRespInt(balance))
+	reason := "ok"
+	if balance <= 0 {
+		reason = "insufficient_balance"
+	}
+	host.CallOnRedisCall(0, admissionReply(reason))
 	if wantDenied {
 		response := host.GetLocalResponse()
 		require.NotNil(t, response)

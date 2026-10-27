@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
@@ -110,26 +109,16 @@ func TestQuotaAdmissionOwnershipContract(t *testing.T) {
 					[]byte(testCase.codeDetails),
 				))
 
-				action := host.CallOnHttpRequestHeaders([][2]string{
-					{":authority", "provider.example.com"},
-					{":path", testCase.path},
-					{":method", "POST"},
-					{"x-tenant-id", "tenant-a"},
-					{"x-consumer-id", "consumer-a"},
-				})
+				action := host.CallOnHttpRequestHeaders(nativeAdmissionHeaders(testCase.path, "POST"))
 				require.Equal(t, types.HeaderStopAllIterationAndWatermark, action)
 
-				balanceKey := "billing:balance:tenant-a:global:consumer-a"
 				admissionCalls := host.GetRedisCalloutAttributes()
 				require.Len(t, admissionCalls, 1)
 				require.Equal(t, "outbound|6379||redis.static", admissionCalls[0].Upstream)
-				require.Equal(
-					t,
-					fmt.Sprintf("*2\r\n$3\r\nget\r\n$%d\r\n%s\r\n", len(balanceKey), balanceKey),
-					string(admissionCalls[0].Query),
-				)
+				require.Contains(t, string(admissionCalls[0].Query), testAccountKey())
+				require.Contains(t, string(admissionCalls[0].Query), ":principal:key:"+testAPIKey)
 
-				host.CallOnRedisCall(0, test.CreateRedisRespInt(1000))
+				host.CallOnRedisCall(0, admissionReply("ok"))
 				require.Equal(t, types.ActionContinue, host.GetHttpStreamAction())
 				require.Nil(t, host.GetLocalResponse())
 				require.Empty(t, host.GetRedisCalloutAttributes())

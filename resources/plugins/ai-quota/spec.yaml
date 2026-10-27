@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README_EN.md
-  version: 1.0.3
+  version: 2.0.0
   contact:
     name: 2456868764
 spec:
@@ -25,6 +25,7 @@ spec:
     openAPIV3Schema:
       type: object
       additionalProperties: false
+      required: [redis, balance_scope_id, cache_generation, projection_schema]
       properties:
         redis:
           type: object
@@ -88,161 +89,71 @@ spec:
               x-description-i18n:
                 en-US: Redis database index
               default: 0
-        quota_scope:
+        balance_scope_id:
           type: string
-          title: 额度作用域
-          x-title-i18n:
-            en-US: Quota Scope
-          description: 当前路由或规则的额度作用域
-          x-description-i18n:
-            en-US: Quota scope for the current route or rule
-          default: global
-        provider:
+          title: 余额作用域
+          x-title-i18n: {en-US: Balance Scope}
+          pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+          description: Console当前受控发布中的非空UUID，禁止由请求覆盖
+        cache_generation:
           type: string
-          title: AI Provider
-          description: 当前准入上下文的 AI provider 标识
-          x-description-i18n:
-            en-US: AI provider identifier for the current admission context
-          default: default
-        tenant_header:
+          title: 缓存代际
+          x-title-i18n: {en-US: Cache Generation}
+          pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+          description: Console当前受控发布中的非空UUID，禁止由请求覆盖
+        projection_schema:
           type: string
-          title: 租户请求头
-          x-title-i18n:
-            en-US: Tenant Header
-          description: 租户身份请求头
-          x-description-i18n:
-            en-US: Request header containing tenant identity
-          default: x-mse-tenant
-        consumer_header:
-          type: string
-          title: Consumer请求头
-          x-title-i18n:
-            en-US: Consumer Header
-          description: Consumer 身份请求头
-          x-description-i18n:
-            en-US: Request header containing consumer identity
-          default: x-mse-consumer
-        balance_key_template:
-          type: string
-          title: 余额Key模板
-          x-title-i18n:
-            en-US: Balance Key Template
-          description: Redis 余额 key 模板，支持 {tenant}、{quota_scope}、{consumer}
-          x-description-i18n:
-            en-US: Redis balance key template supporting {tenant}, {quota_scope}, and {consumer}
-          default: "billing:balance:{tenant}:{quota_scope}:{consumer}"
-        path_scope:
-          type: string
-          title: 路径作用域
-          x-title-i18n:
-            en-US: Path Scope
-          description: legacy_suffixes 保留默认 /v1/chat/completions 与 /v1/messages 后缀门控；bound_target 使用已绑定目标，缺省或空过滤器不额外收窄
-          x-description-i18n:
-            en-US: legacy_suffixes preserves the /v1/chat/completions and /v1/messages default gates; bound_target uses the bound target, with absent or empty filters adding no narrowing
-          enum: [legacy_suffixes, bound_target]
-          default: legacy_suffixes
-        enable_path_suffixes:
-          type: array
-          title: 生效路径后缀
-          x-title-i18n:
-            en-US: Enabled Path Suffixes
-          description: legacy_suffixes 的路径门控，或 bound_target 的可选非空交集过滤器
-          x-description-i18n:
-            en-US: Legacy path gating or an optional non-empty intersection filter for bound_target; omission or [] adds no bound-target narrowing
-          items:
-            type: string
-            pattern: '.*\S.*'
-        enable_methods:
-          type: array
-          title: 生效HTTP方法
-          x-title-i18n:
-            en-US: Enabled HTTP Methods
-          description: 可选非空的精确大小写 HTTP 方法交集过滤器
-          x-description-i18n:
-            en-US: Optional non-empty exact-case HTTP-method intersection filter; omission or [] adds no bound-target narrowing
-          items:
-            type: string
-            pattern: '.*\S.*'
+          title: 余额协议
+          enum: [balance.v1]
         missing_balance_policy:
           type: string
-          title: 余额缺失策略
-          x-title-i18n:
-            en-US: Missing Balance Policy
-          description: 余额 key 缺失时拒绝或放行请求
-          x-description-i18n:
-            en-US: Deny or allow the request when the balance key is missing
-          enum: [deny, allow]
+          title: 缺失余额处理
+          enum: [deny]
           default: deny
-      required: [redis]
+        path_scope:
+          type: string
+          default: legacy_suffixes
+          title: 受管新调用路径
+          enum: [legacy_suffixes, bound_target]
+          description: legacy_suffixes使用默认模型后缀；bound_target使用已绑定的新调用入口。GET和HEAD查询不做新销售余额准入。
+        enable_path_suffixes:
+          type: array
+          title: 路径后缀交集
+          items: {type: string, pattern: '.*\S.*'}
+        enable_methods:
+          type: array
+          title: 方法交集
+          items: {type: string, pattern: '.*\S.*'}
       example:
+        balance_scope_id: 00000000-0000-0000-0000-000000000005
+        cache_generation: 00000000-0000-0000-0000-000000000006
+        projection_schema: balance.v1
+        missing_balance_policy: deny
         redis:
-          service_name: redis-service.default.svc.cluster.local
+          service_name: redis-service.higress-system.svc.cluster.local
           service_port: 6379
-          username: <redis-username>
-          password: <redis-password>
           timeout: 1000
           database: 0
-        quota_scope: global
-        provider: default
-        tenant_header: x-mse-tenant
-        consumer_header: x-mse-consumer
-        balance_key_template: "billing:balance:{tenant}:{quota_scope}:{consumer}"
         path_scope: legacy_suffixes
-        enable_path_suffixes:
-        - /v1/chat/completions
-        - /v1/messages
-        missing_balance_policy: deny
+        enable_path_suffixes: [/v1/chat/completions, /v1/messages]
   routeConfigSchema:
     openAPIV3Schema:
       type: object
       additionalProperties: false
       properties:
-        quota_scope:
-          type: string
-          title: 额度作用域
-          x-title-i18n:
-            en-US: Quota Scope
-          description: 匹配路由的额度作用域
-          x-description-i18n:
-            en-US: Quota scope for the matched route
-        provider:
-          type: string
-          title: AI Provider
-          description: 匹配路由准入上下文的 AI provider 标识
-          x-description-i18n:
-            en-US: AI provider identifier for the matched admission context
         path_scope:
           type: string
-          title: 路径作用域
-          x-title-i18n:
-            en-US: Path Scope
-          description: legacy_suffixes 保留旧后缀门控；bound_target 使用已绑定目标，缺省或空过滤器不额外收窄
-          x-description-i18n:
-            en-US: legacy_suffixes preserves legacy suffix gating; bound_target uses the bound target, with absent or empty filters adding no narrowing
+          title: 受管新调用路径
           enum: [legacy_suffixes, bound_target]
+          description: legacy_suffixes使用默认模型后缀；bound_target使用已绑定的新调用入口。GET和HEAD查询不做新销售余额准入。
         enable_path_suffixes:
           type: array
-          title: 生效路径后缀
-          x-title-i18n:
-            en-US: Enabled Path Suffixes
-          description: 可选非空路径交集过滤器
-          x-description-i18n:
-            en-US: Optional non-empty path intersection filter; omission or [] adds no bound-target narrowing
-          items:
-            type: string
-            pattern: '.*\S.*'
+          title: 路径后缀交集
+          items: {type: string, pattern: '.*\S.*'}
         enable_methods:
           type: array
-          title: 生效HTTP方法
-          x-title-i18n:
-            en-US: Enabled HTTP Methods
-          description: 可选非空的精确大小写 HTTP 方法交集过滤器
-          x-description-i18n:
-            en-US: Optional non-empty exact-case HTTP-method intersection filter
-          items:
-            type: string
-            pattern: '.*\S.*'
+          title: 方法交集
+          items: {type: string, pattern: '.*\S.*'}
       example:
-        quota_scope: route:qwen
-        provider: dashscope
         path_scope: bound_target
+        enable_methods: [POST]

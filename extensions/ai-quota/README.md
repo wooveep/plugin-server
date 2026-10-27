@@ -1,93 +1,15 @@
----
-title: AI 金额配额
-keywords: [AI网关, AI配额, 金额配额]
-description: ai-quota 只读 Redis 余额准入插件配置参考
----
+# AI Quota：版本化余额只读准入
 
-> 插件版本：`1.0.2`
+版本 `2.0.0`，协议 `balance.v1`。仅给受管的新模型调用入口绑定本插件。PostgreSQL原钱包是资金权威；Console是余额/资格投影和维护状态的唯一写者。ai-quota不计价、不预扣、不结算、不写余额或ready；响应正文、缓存命中、错误和迟到用量均不触发第二次配额判断。
 
-## 功能说明
+配置全局必填 `balance_scope_id`、`cache_generation`、`projection_schema: balance.v1` 和 `redis`。两个UUID必须来自Console本次受控发布，不能使用示例值代表真实生效配置。`missing_balance_policy`只接受 `deny`。旧用户名余额key、`balance_key_template`、`tenant_header`、`consumer_header`、`quota_scope`和`provider`配置已退役；旧裸整数GET不会作为新协议后备。
 
-`ai-quota` 在请求头阶段读取 Console 或 billing-service 派生的 Redis
-热余额。余额大于 `0` 时放行；零余额和负余额返回固定的 `403 no_balance`；
-余额 key 不存在时由 `missing_balance_policy` 决定拒绝或放行。
+受管链必须先执行支持原生 `credential_bindings` 的key-auth（本批版本1.1.0），它按实际成功认证的credential安装原PG `account_id`、`api_key_id`和`credential_generation`，先清除客户端同名字段。不得把任意客户端钱包header直接当可信身份，也不得把旧consumer别名替代具体Key。没有原生绑定、重复或非法身份字段均拒绝。Console/CUT/SDK生成并观察该配置后才可发布真实组合；仅升级二进制不会补出原账户绑定。
 
-这次请求准入是插件对该请求的最终账户执法动作。插件把 Redis 余额热数据
-作为只读输入，不修改账户状态。Console 或 billing-service 负责权威账户、
-结算、账单、对账以及 Redis 热数据重建。
+单个Redis脚本同次读取同slot的control、account和具体Key mapping。必须scope/generation/schema一致、三者ready、账户与Key映射的授权版本和凭据代际一致且Key enabled。金额、account_version和授权版本均按规范整数字符串精确读取，支持超过2^53与有符号i64边界。只有严格正余额允许；零余额和负余额拒绝。缺失、旧代、blocked/building、旧资格、格式/单位错误分别保留原因；Redis故障或不明结果503，不继续请求。
 
-可识别、不透明、流式、缓存、本地、错误和 usage 缺失响应
-不会触发第二次配额判断、价格查询、Redis 写入或账户修改。
+`path_scope: legacy_suffixes`默认只匹配 `/v1/chat/completions` 和 `/v1/messages`；`bound_target`用于已经绑定为新调用的执行入口。`enable_path_suffixes`与`enable_methods`是交集过滤器，不改变账户、代际或Redis连接，规则不能覆盖这些全局值。GET/HEAD已有任务查询绕过新销售余额准入；内部事实、结算与已受理任务查询入口不绑定本插件。模型创建入口应显式限定相应方法，例如POST，不能拿任意任务管理路由当新销售入口。
 
-## 请求范围
+所有三类key使用 `mf:balance:{scope}:...` 同一hash slot。普通资金通知不能为缺失记录开户或解除冲突。维护时拒绝新调用；恢复开放由Console/REL/DEP完成真实配置和受控请求观察，插件没有维护或ready写入口。
 
-- 缺省或显式 `path_scope: legacy_suffixes` 保留历史后缀门控，默认后缀为
-  `/v1/chat/completions` 和 `/v1/messages`。
-- `path_scope: bound_target` 默认处理 Higress 绑定目标已经选中的全部请求；
-  缺省或字面空数组过滤器不额外收窄，也不要求合成路径列表。
-- 在 `bound_target` 下，显式非空的 `enable_path_suffixes` 和
-  `enable_methods` 都是与绑定目标求交集的高级过滤器；同时配置时必须全部
-  匹配，过滤器不会扩大绑定目标。
-
-## 配置说明
-
-| 名称 | 类型 | 默认值 | 说明 |
-| --- | --- | --- | --- |
-| `redis` | object | 无 | Redis 连接配置；`service_name` 必填 |
-| `quota_scope` | string | `global` | 当前路由或规则的额度作用域 |
-| `provider` | string | `default` | 当前准入上下文的 provider 标识 |
-| `tenant_header` | string | `x-mse-tenant` | 租户身份请求头 |
-| `consumer_header` | string | `x-mse-consumer` | consumer 身份请求头 |
-| `balance_key_template` | string | `billing:balance:{tenant}:{quota_scope}:{consumer}` | 余额 key 模板 |
-| `path_scope` | string | `legacy_suffixes` | `legacy_suffixes` 或 `bound_target` |
-| `enable_path_suffixes` | []string | 历史默认后缀 | 可选路径过滤器 |
-| `enable_methods` | []string | 无 | 可选 HTTP 方法过滤器，按精确大小写匹配 |
-| `missing_balance_policy` | string | `deny` | 余额缺失策略：`deny` 或 `allow` |
-
-`redis` 支持 `service_name`、`service_port`、`username`、`password`、
-`timeout` 和 `database`。默认端口为 `6379`（static 服务为 `80`），默认
-超时为 `1000ms`，默认 database 为 `0`。
-
-## 配置示例
-
-```yaml
-redis:
-  service_name: redis-service.default.svc.cluster.local
-  service_port: 6379
-  username: <redis-username>
-  password: <redis-password>
-  timeout: 1000
-  database: 0
-tenant_header: x-mse-tenant
-consumer_header: x-mse-consumer
-balance_key_template: "billing:balance:{tenant}:{quota_scope}:{consumer}"
-path_scope: legacy_suffixes
-enable_path_suffixes:
-  - /v1/chat/completions
-  - /v1/messages
-missing_balance_policy: deny
-```
-
-规则只覆盖 `quota_scope`、`provider`、`path_scope` 及显式路径/方法过滤器。
-Redis、身份请求头、余额 key 模板和余额缺失策略由全局配置继承。例如，
-绑定到 provider-native 路由且无需额外过滤时：
-
-```yaml
-quota_scope: route:qwen
-provider: dashscope
-path_scope: bound_target
-```
-
-显式非空过滤器只收窄绑定目标。`enable_methods` 按精确大小写匹配，示例使用
-规范的大写方法：
-
-```yaml
-path_scope: bound_target
-enable_path_suffixes:
-  - /v1/responses
-enable_methods:
-  - POST
-```
-
-`ai-quota`、`ai-billing` 和 `ai-statistics` 不共享私有运行时状态，可以
-独立部署。
+本批源码与原生/模拟宿主结果、Wasm构建、实际K3S加载必须分别记录。参见[实施计划](../../docs/plans/2026-10-27-versioned-balance-admission.md)；未取得实际联合证据前，不把本地Redis或模拟宿主称为生产链通过。
