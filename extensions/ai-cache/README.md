@@ -31,6 +31,10 @@ embedding、vector indexing、pricing、settlement、repair、deletion 和 recon
 
 ## 运行职责
 
+仅同步文本输出请求参与缓存；明确请求非文本输出或 Responses 后台执行时直接旁路，文本与音频等混合响应也不生成文本缓存。图片、音频和文件等输入附件仍可用于文本输出请求。
+
+用量从原 JSON/SSE 计数保留，区分字段缺失与明确的 `0`，不推算缺项、总量或供应商缓存拆分。平台缓存命中不改写供应商缓存计数；原生计费桥遇到不完整用量时仍报告 missing，交由账务挂账处理。
+
 插件负责：
 
 - 按 JSON `content-type`、`route_policy.enabled_path_suffixes` 和 no-store 信号做 request gating。

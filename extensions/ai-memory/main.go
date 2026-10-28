@@ -220,6 +220,10 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 	}
 	path := ctx.GetStringContext(memoryRequestPathContextKey, "")
 	kind := protocol.ProtocolKind(ctx.GetStringContext(memoryProtocolContextKey, ""))
+	if reason := memoryRequestOutputGate(kind, body); reason != "" {
+		markMemoryGate(ctx, reason)
+		return types.ActionContinue
+	}
 	adapter := memoryProtocolAdapterForKind(kind)
 	method, _ := proxywasm.GetHttpRequestHeader(":method")
 	bodyDigest, err := adapter.BuildCacheDigest(protocol.RequestParseInput{

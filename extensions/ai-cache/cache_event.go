@@ -107,6 +107,10 @@ func handleThinResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chun
 			emitThinCacheEvent(ctx, c, kind, thinResponseFacts{parseFailed: true}, true, log)
 			return
 		}
+		if reason := thinReplayOutputGate(kind, exchange.Replay); reason != "" {
+			markCacheGate(ctx, reason)
+			return
+		}
 		facts := thinResponseFactsFromExchange(kind, exchange)
 		facts.parseFailed = facts.parseFailed || capture.parseFailed
 		emitThinCacheEvent(ctx, c, kind, facts, true, log)
@@ -124,6 +128,10 @@ func handleThinResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chun
 	if err != nil {
 		log.Warnf("[%s] [handleThinResponseBody] parse non-streaming response failed: %v", PLUGIN_NAME, err)
 		emitThinCacheEvent(ctx, c, kind, thinResponseFacts{parseFailed: true}, false, log)
+		return
+	}
+	if reason := thinReplayOutputGate(kind, exchange.Replay); reason != "" {
+		markCacheGate(ctx, reason)
 		return
 	}
 	facts := thinResponseFactsFromExchange(kind, exchange)
@@ -278,7 +286,7 @@ func thinUsageEmpty(usage json.RawMessage) bool {
 	if len(usage) == 0 {
 		return true
 	}
-	var fields map[string]interface{}
+	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(usage, &fields); err != nil {
 		return false
 	}

@@ -30,6 +30,10 @@ Plugin execution priority: `250`
 
 ## Runtime Responsibilities
 
+Only synchronous text output participates in caching. Explicit nontext output, Responses background execution, and actual mixed text/media output bypass text caching. Image, audio, and file input attachments remain supported for text output.
+
+Usage retains the original JSON/SSE quantities, including explicit zeroes and absent fields. It does not synthesize totals or provider-cache splits. A platform cache hit does not change provider-cache quantities; incomplete usage remains missing at the native billing bridge for accounting review.
+
 Managed routes choose an existing adapter from trusted publication fields
 `client_protocol` and `operation_kind`, independently of URL aliases, client
 protocol headers, or later `ai-proxy` context. Omitting both retains legacy path

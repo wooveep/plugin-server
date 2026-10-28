@@ -19,6 +19,8 @@ backend model cost attribution.
 
 ## Responsibilities
 
+Only synchronous text output participates in memory lookup, injection, and capture. Explicit nontext output and Responses background execution bypass these steps; actual mixed text/media responses are not captured as text memory. Image, audio, and file input attachments remain supported for text output.
+
 The plugin handles only request-time and response-time gateway work:
 
 - Request gating by path suffix and JSON `content-type`.

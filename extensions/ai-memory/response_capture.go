@@ -113,7 +113,19 @@ func memoryCaptureNonStreamingResponseChunkWithLimit(ctx wrapper.HttpContext, c 
 	if value, ok := ctx.GetContext(memoryResponseStatusContextKey).(int); ok {
 		statusCode = value
 	}
-	capture := memoryCaptureNonStreamingResponseForProtocol(body, statusCode, protocol.ProtocolKind(ctx.GetStringContext(memoryProtocolContextKey, "")), c.Route.ResponseValueFrom, c.Route.ToolCallsFrom)
+	kind := protocol.ProtocolKind(ctx.GetStringContext(memoryProtocolContextKey, ""))
+	if reason := memoryOutputGate(kind, body); reason != "" {
+		if reason == "response-parse-failed" {
+			// Retain the existing safe failure event, never extracted text from
+			// a response whose output shape could not be classified.
+			ctx.SetContext(memoryResponseCaptureContextKey, memoryResponseCapture{StatusCode: statusCode, ParseFailed: true})
+		} else {
+			markMemoryGate(ctx, reason)
+		}
+		ctx.SetContext(memoryResponseBodyBufferContextKey, nil)
+		return
+	}
+	capture := memoryCaptureNonStreamingResponseForProtocol(body, statusCode, kind, c.Route.ResponseValueFrom, c.Route.ToolCallsFrom)
 	if capture.ParseFailed {
 		log.Warnf("[ai-memory] parse non-streaming response failed open")
 	}
@@ -135,6 +147,11 @@ func memoryCaptureStreamingResponseChunk(ctx wrapper.HttpContext, c config.Plugi
 			log.Warn("[ai-memory] parse streaming response failed open")
 			ctx.SetContext(memoryStreamParseFailedContextKey, true)
 		}
+	}
+	if capture.outputGate != "" {
+		markMemoryGate(ctx, capture.outputGate)
+		ctx.SetContext(memoryStreamCaptureContextKey, nil)
+		return
 	}
 	if !isLastChunk {
 		return
@@ -193,6 +210,14 @@ func memoryCaptureProtocolStreamingResponseChunk(ctx wrapper.HttpContext, c conf
 		})
 		return
 	}
+	kind := protocol.ProtocolKind(ctx.GetStringContext(memoryProtocolContextKey, ""))
+	for _, frame := range exchange.StreamChunks {
+		if reason := memoryOutputGate(kind, frame.Data); reason != "" {
+			markMemoryGate(ctx, reason)
+			ctx.SetContext(memoryStreamChunksContextKey, nil)
+			return
+		}
+	}
 	responseCapture := memoryResponseCaptureFromProtocolExchange(statusCode, true, exchange)
 	ctx.SetContext(memoryResponseCaptureContextKey, memoryApplyRawContentGate(ctx, c, responseCapture))
 }
@@ -239,6 +264,7 @@ type memoryStreamingCapture struct {
 	streamValueFrom string
 	content         strings.Builder
 	buffer          string
+	outputGate      string
 }
 
 func newMemoryStreamingCapture(streamValueFrom string, toolCallPaths []string) *memoryStreamingCapture {
@@ -272,6 +298,10 @@ func (c *memoryStreamingCapture) AppendSSE(chunk []byte) error {
 		payload := strings.TrimSpace(strings.TrimPrefix(line, "data:"))
 		if payload == "" || payload == "[DONE]" {
 			continue
+		}
+		if reason := memoryOutputGate(protocol.ProtocolChatCompletions, []byte(payload)); reason != "" {
+			c.outputGate = reason
+			return nil
 		}
 		c.content.WriteString(memoryAssistantContentFromPath([]byte(payload), c.streamValueFrom, ""))
 	}

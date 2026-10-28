@@ -30,6 +30,10 @@ Plugin execution priority: `250`
 
 ## Runtime Responsibilities
 
+Only synchronous text output participates in caching. Explicit nontext output, Responses background execution, and actual mixed text/media output bypass text caching. Image, audio, and file input attachments remain supported for text output.
+
+Usage retains the original JSON/SSE quantities, including explicit zeroes and absent fields. It does not synthesize totals or provider-cache splits. A platform cache hit does not change provider-cache quantities; incomplete usage remains missing at the native billing bridge for accounting review.
+
 The plugin is responsible for:
 
 - Applying request gating by JSON `content-type`, `route_policy.enabled_path_suffixes`, and no-store signals.

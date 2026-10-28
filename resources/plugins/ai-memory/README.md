@@ -20,6 +20,8 @@ deletion、repair、management API，以及 backend model cost attribution 都�
 
 ## 运行职责
 
+仅同步文本输出参与记忆查询、注入与采集；明确请求非文本输出或 Responses 后台执行时直接旁路，实际文本与媒体混合响应也不采集为文本记忆。图片、音频和文件等输入附件仍可用于文本输出请求。
+
 插件负责：
 
 - 按 `enable_path_suffixes` 和 JSON `content-type` 做 request gating。

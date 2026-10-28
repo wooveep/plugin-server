@@ -404,7 +404,7 @@ func TestThinMessagesResponseCapture(t *testing.T) {
 		require.Equal(t, false, event["contains_tool_calls"])
 		require.Equal(t, false, event["no_store"])
 		require.Equal(t, false, event["sensitive"])
-		requireThinMessagesResponseCaptureUsage(t, event, 14, 7, 21)
+		requireThinMessagesResponseCaptureUsage(t, event, 14, 7)
 		requireThinResponseNoLegacyCacheSet(t, host)
 	})
 }
@@ -776,13 +776,13 @@ func requireThinResponseCaptureUsage(t *testing.T, event map[string]interface{},
 	require.EqualValues(t, totalTokens, usage["total_tokens"])
 }
 
-func requireThinMessagesResponseCaptureUsage(t *testing.T, event map[string]interface{}, inputTokens, outputTokens, totalTokens int) {
+func requireThinMessagesResponseCaptureUsage(t *testing.T, event map[string]interface{}, inputTokens, outputTokens int) {
 	t.Helper()
 	usage, ok := event["usage"].(map[string]interface{})
 	require.Truef(t, ok, "event usage must be an object; event=%s", thinResponseCaptureEventSnippet(t, event))
 	require.EqualValues(t, inputTokens, usage["input_tokens"])
 	require.EqualValues(t, outputTokens, usage["output_tokens"])
-	require.EqualValues(t, totalTokens, usage["total_tokens"])
+	require.NotContains(t, usage, "total_tokens", "the original Messages response did not report a total")
 }
 
 func requireThinResponsesResponseCaptureUsage(t *testing.T, event map[string]interface{}, inputTokens, outputTokens, totalTokens int) {

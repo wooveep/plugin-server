@@ -184,7 +184,7 @@ func TestAIPluginVersionAlignmentContract(t *testing.T) {
 		},
 		{
 			name:            "ai-cache",
-			selectedVersion: "1.0.4",
+			selectedVersion: "1.0.5",
 		},
 		{
 			name:            "ai-proxy",

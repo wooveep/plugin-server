@@ -21,6 +21,8 @@ cost attribution are outside the gateway plugin.
 
 ## Runtime Responsibilities
 
+Only synchronous text output participates in memory lookup, injection, and capture. Explicit nontext output and Responses background execution bypass these steps; actual mixed text/media responses are not captured as text memory. Image, audio, and file input attachments remain supported for text output.
+
 The plugin:
 
 - Runs request gating by `enable_path_suffixes` and JSON `content-type`.

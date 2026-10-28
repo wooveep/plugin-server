@@ -152,17 +152,24 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 		}
 		var tenant, consumer string
 		if c.NativeIdentity != nil {
-			headers, err := proxywasm.GetHttpRequestHeaders()
-			if err != nil {
-				markCacheGate(ctx, "native-caller-unavailable")
-				ctx.DontReadRequestBody()
-				return types.ActionContinue
-			}
-			caller, err := balanceidentity.Read(headers)
-			if err != nil || caller.TenantID == "" || caller.PrincipalID == "" {
-				markCacheGate(ctx, "native-caller-unavailable")
-				ctx.DontReadRequestBody()
-				return types.ActionContinue
+			var caller balanceidentity.Snapshot
+			if c.NativeExecution != nil {
+				// prepareNativeCacheHeaders already authenticated this same
+				// request and retained the caller before clearing basis headers.
+				caller = ctx.GetContext(nativeCacheDeliveryContext).(*nativeCacheDeliveryState).caller
+			} else {
+				headers, err := proxywasm.GetHttpRequestHeaders()
+				if err != nil {
+					markCacheGate(ctx, "native-caller-unavailable")
+					ctx.DontReadRequestBody()
+					return types.ActionContinue
+				}
+				caller, err = balanceidentity.Read(headers)
+				if err != nil || caller.TenantID == "" || caller.PrincipalID == "" {
+					markCacheGate(ctx, "native-caller-unavailable")
+					ctx.DontReadRequestBody()
+					return types.ActionContinue
+				}
 			}
 			// Native key authentication cleared client fields and installed this
 			// credential's five facts. Retain one snapshot for lookup and response.
@@ -221,6 +228,11 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 
 	if !c.HasThinConfig() {
 		log.Warn("[onHttpRequestBody] thin cache config is disabled, fail open")
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
+	if reason := thinRequestOutputGate(c.ProtocolForPath(ctx.GetStringContext(CACHE_PATH_CONTEXT_KEY, "")), bodyJson); reason != "" {
+		markCacheGate(ctx, reason)
 		ctx.DontReadResponseBody()
 		return types.ActionContinue
 	}

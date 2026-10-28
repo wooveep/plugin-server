@@ -28,23 +28,71 @@ func thinProtocolAdapterForKind(kind protocol.ProtocolKind) (thinProtocolAdapter
 	}
 }
 
-func thinEventUsage(kind protocol.ProtocolKind, usage protocol.Usage) json.RawMessage {
-	if usage == (protocol.Usage{}) {
-		return nil
+// Usage is projected from original protocol bytes. Normalized integer fields
+// cannot distinguish an absent count from an explicitly reported zero.
+func thinEventUsage(kind protocol.ProtocolKind, replay protocol.ReplayPayload) json.RawMessage {
+	fields := map[string]json.RawMessage{}
+	input, output := "input_tokens", "output_tokens"
+	if kind == protocol.ProtocolChatCompletions {
+		input, output = "prompt_tokens", "completion_tokens"
 	}
-
-	fields := map[string]int{}
-	switch kind {
-	case protocol.ProtocolChatCompletions:
-		addPositiveIntField(fields, "prompt_tokens", usage.InputTokens)
-		addPositiveIntField(fields, "completion_tokens", usage.OutputTokens)
-	default:
-		addPositiveIntField(fields, "input_tokens", usage.InputTokens)
-		addPositiveIntField(fields, "output_tokens", usage.OutputTokens)
+	copyFields := func(usage map[string]json.RawMessage, names ...string) {
+		for _, name := range names {
+			if value, exists := usage[name]; exists {
+				fields[name] = value
+			}
+		}
 	}
-	addPositiveIntField(fields, "input_cache_hit_tokens", usage.InputCacheHitTokens)
-	addPositiveIntField(fields, "input_cache_miss_tokens", usage.InputCacheMissTokens)
-	addPositiveIntField(fields, "total_tokens", usage.TotalTokens)
+	type frame struct {
+		Type    string                     `json:"type"`
+		Usage   map[string]json.RawMessage `json:"usage"`
+		Message struct {
+			Usage map[string]json.RawMessage `json:"usage"`
+		} `json:"message"`
+		Response struct {
+			Usage map[string]json.RawMessage `json:"usage"`
+		} `json:"response"`
+	}
+	if len(replay.Body) > 0 {
+		var response frame
+		if json.Unmarshal(replay.Body, &response) != nil {
+			return nil
+		}
+		copyFields(response.Usage, input, output, "total_tokens", "input_cache_hit_tokens", "input_cache_miss_tokens")
+	} else {
+		for _, chunk := range replay.StreamChunks {
+			var response frame
+			if json.Unmarshal(chunk.Data, &response) != nil {
+				return nil
+			}
+			event := chunk.Event
+			if event == "" {
+				event = response.Type
+			}
+			switch kind {
+			case protocol.ProtocolChatCompletions:
+				if response.Usage != nil {
+					// Each Chat usage object is an actual report, not a patch
+					// to synthesize missing fields from an earlier frame.
+					clear(fields)
+					copyFields(response.Usage, input, output, "total_tokens", "input_cache_hit_tokens", "input_cache_miss_tokens")
+				}
+			case protocol.ProtocolMessages:
+				switch event {
+				case "message_start":
+					copyFields(response.Message.Usage, input, "input_cache_hit_tokens", "input_cache_miss_tokens")
+				case "message_delta":
+					// The start frame's output zero is not final usage.
+					copyFields(response.Usage, output, "total_tokens")
+				}
+			case protocol.ProtocolResponses:
+				if event == "response.completed" {
+					clear(fields)
+					copyFields(response.Response.Usage, input, output, "total_tokens", "input_cache_hit_tokens", "input_cache_miss_tokens")
+				}
+			}
+		}
+	}
 	if len(fields) == 0 {
 		return nil
 	}
@@ -55,17 +103,11 @@ func thinEventUsage(kind protocol.ProtocolKind, usage protocol.Usage) json.RawMe
 	return body
 }
 
-func addPositiveIntField(fields map[string]int, name string, value int) {
-	if value > 0 {
-		fields[name] = value
-	}
-}
-
 func thinResponseFactsFromExchange(kind protocol.ProtocolKind, exchange protocol.NormalizedExchange) thinResponseFacts {
 	return thinResponseFacts{
 		assistantContent:  exchange.Response.Text,
 		finishReason:      exchange.Response.FinishReason,
-		usage:             thinEventUsage(kind, exchange.Usage),
+		usage:             thinEventUsage(kind, exchange.Replay),
 		containsToolCalls: exchange.Response.ContainsToolCalls,
 		parseFailed:       exchange.Response.ParseFailed,
 	}

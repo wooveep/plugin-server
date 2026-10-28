@@ -111,10 +111,19 @@ func validateReplayRecordScopeAndPayload(record MaterializedReplayRecord, materi
 			if err := requireJSONObject(chunk, "stream chunk"); err != nil {
 				return err
 			}
+			if reason := thinOutputGate(record.Protocol, chunk); reason != "" {
+				return errors.New(reason)
+			}
 		}
 		return nil
 	}
-	return requireJSONObject(record.Response, "response")
+	if err := requireJSONObject(record.Response, "response"); err != nil {
+		return err
+	}
+	if reason := thinOutputGate(record.Protocol, record.Response); reason != "" {
+		return errors.New(reason)
+	}
+	return nil
 }
 
 func replayMaterializedRecord(record MaterializedReplayRecord, stream bool, ctx wrapper.HttpContext, log logs.Log) error {
