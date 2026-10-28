@@ -15,13 +15,19 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README_EN.md
-  version: 1.0.0
+  version: 0.1.9
   contact:
     name: 2456868764
 spec:
   phase: default
   priority: 270
   configSchema:
+    x-higress-external-resource:
+      kind: redis
+      registryType: dns
+      domainPath: redis_stream.service_name
+      portPath: redis_stream.service_port
+      projectedNamePath: redis_stream.service_name
     openAPIV3Schema:
       type: object
       additionalProperties: false
@@ -31,7 +37,11 @@ spec:
           additionalProperties: false
           required:
           - producer_id
+          - call_identity_source
           properties:
+            call_identity_source:
+              type: string
+              const: admission
             producer_id:
               type: string
               minLength: 1
@@ -102,6 +112,8 @@ spec:
               x-title-i18n:
                 en-US: Redis Username
             password:
+              writeOnly: true
+              x-sensitive: true
               type: string
               title: Redis密码
               x-title-i18n:
@@ -245,13 +257,11 @@ spec:
           service_name: redis-stack-server.dns
           service_port: 6379
           username: <redis-username>
-          password: <redis-password>
           database: 0
           timeout: 500
           stream: billing:events
         event_kind: usage
         quota_scope: global
-        provider: default
         tenant_header: x-mse-tenant
         consumer_header: x-mse-consumer
         path_scope: legacy_suffixes
@@ -284,7 +294,11 @@ spec:
           additionalProperties: false
           required:
           - producer_id
+          - call_identity_source
           properties:
+            call_identity_source:
+              type: string
+              const: admission
             producer_id:
               type: string
               minLength: 1
@@ -433,13 +447,11 @@ spec:
           service_name: redis-stack-server.dns
           service_port: 6379
           username: <redis-username>
-          password: <redis-password>
           database: 0
           timeout: 500
           stream: billing:events
         event_kind: internal_cost
         quota_scope: internal:ai-memory.digest
-        provider: dashscope
         cost_source: ai-memory
         worker_kind: digest
         bill_customer: false

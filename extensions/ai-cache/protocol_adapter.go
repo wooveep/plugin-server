@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
@@ -14,17 +15,16 @@ type thinProtocolAdapter interface {
 	SerializeReplay(protocol.ReplayPayload) (protocol.SerializedReplay, error)
 }
 
-func thinProtocolAdapterForPath(path string) (protocol.ProtocolKind, thinProtocolAdapter, bool) {
-	kind := protocol.DetectProtocolKind(path)
+func thinProtocolAdapterForKind(kind protocol.ProtocolKind) (thinProtocolAdapter, bool) {
 	switch kind {
 	case protocol.ProtocolChatCompletions:
-		return kind, protocol.ChatCompletionsAdapter{}, true
+		return protocol.ChatCompletionsAdapter{}, true
 	case protocol.ProtocolMessages:
-		return kind, protocol.MessagesAdapter{}, true
+		return protocol.MessagesAdapter{}, true
 	case protocol.ProtocolResponses:
-		return kind, protocol.ResponsesAdapter{}, true
+		return protocol.ResponsesAdapter{}, true
 	default:
-		return protocol.ProtocolUnknown, nil, false
+		return nil, false
 	}
 }
 
@@ -116,95 +116,121 @@ func thinReplayStreamEvent(kind protocol.ProtocolKind, raw json.RawMessage) stri
 	return event.Type
 }
 
-func thinCurrentUserPromptForPath(path string, body []byte) (string, error) {
-	kind := protocol.DetectProtocolKind(path)
+// The slot paths are generated only by the protocol query extractor below.
+// They refer to the exact text values used to build Text, never matching text
+// elsewhere in the request (for example system instructions or tool metadata).
+type thinQueryTextSlot struct {
+	pointer string
+	path    string
+}
+
+type thinQueryTextSelection struct {
+	Text  string
+	Slots []thinQueryTextSlot
+}
+
+func thinCurrentUserPrompt(kind protocol.ProtocolKind, body []byte) (thinQueryTextSelection, error) {
+	fields, err := decodeJSONObject(body)
+	if err != nil {
+		return thinQueryTextSelection{}, err
+	}
 	switch kind {
 	case protocol.ProtocolChatCompletions, protocol.ProtocolMessages:
-		fields, err := decodeJSONObject(body)
-		if err != nil {
-			return "", err
-		}
 		return thinCurrentUserPromptFromMessages(fields["messages"])
 	case protocol.ProtocolResponses:
-		fields, err := decodeJSONObject(body)
-		if err != nil {
-			return "", err
-		}
 		return thinCurrentUserPromptFromResponsesInput(fields["input"])
 	default:
-		return "", nil
+		return thinQueryTextSelection{}, nil
 	}
 }
 
-func thinCurrentUserPromptFromMessages(raw json.RawMessage) (string, error) {
+func thinCurrentUserPromptFromMessages(raw json.RawMessage) (thinQueryTextSelection, error) {
 	if len(raw) == 0 {
-		return "", nil
+		return thinQueryTextSelection{}, nil
 	}
 	var messages []struct {
 		Role    string          `json:"role"`
 		Content json.RawMessage `json:"content"`
 	}
 	if err := json.Unmarshal(raw, &messages); err != nil {
-		return "", err
+		return thinQueryTextSelection{}, err
 	}
 	for i := len(messages) - 1; i >= 0; i-- {
 		if messages[i].Role != "user" {
 			continue
 		}
-		return thinTextFromRawContent(messages[i].Content, "text"), nil
+		index := strconv.Itoa(i)
+		return thinTextFromRawContent(messages[i].Content, "text", thinQueryTextSlot{
+			pointer: "/messages/" + index + "/content", path: "messages." + index + ".content",
+		}), nil
 	}
-	return "", nil
+	return thinQueryTextSelection{}, nil
 }
 
-func thinCurrentUserPromptFromResponsesInput(raw json.RawMessage) (string, error) {
+func thinCurrentUserPromptFromResponsesInput(raw json.RawMessage) (thinQueryTextSelection, error) {
 	if len(raw) == 0 {
-		return "", nil
+		return thinQueryTextSelection{}, nil
 	}
 	var inputText string
 	if err := json.Unmarshal(raw, &inputText); err == nil {
-		return inputText, nil
+		return thinQueryTextSelection{Text: inputText, Slots: []thinQueryTextSlot{{pointer: "/input", path: "input"}}}, nil
 	}
 	var items []struct {
 		Role    string          `json:"role"`
 		Content json.RawMessage `json:"content"`
 	}
 	if err := json.Unmarshal(raw, &items); err != nil {
-		return "", err
+		return thinQueryTextSelection{}, err
 	}
+	latestCandidate := true
 	for i := len(items) - 1; i >= 0; i-- {
 		if items[i].Role != "" && items[i].Role != "user" {
 			continue
 		}
-		if text := thinTextFromRawContent(items[i].Content, "input_text"); text != "" {
-			return text, nil
+		index := strconv.Itoa(i)
+		selection := thinTextFromRawContent(items[i].Content, "input_text", thinQueryTextSlot{
+			pointer: "/input/" + index + "/content", path: "input." + index + ".content",
+		})
+		if selection.Text != "" {
+			if !latestCandidate {
+				// Preserve the existing diagnostic text fallback, but an older
+				// question is not a semantic query for a later attachment-only
+				// or otherwise unrecognized current input.
+				selection.Slots = nil
+			}
+			return selection, nil
 		}
+		latestCandidate = false
 	}
-	return "", nil
+	return thinQueryTextSelection{}, nil
 }
 
-func thinTextFromRawContent(raw json.RawMessage, textType string) string {
+func thinTextFromRawContent(raw json.RawMessage, textType string, contentSlot thinQueryTextSlot) thinQueryTextSelection {
 	if len(raw) == 0 {
-		return ""
+		return thinQueryTextSelection{}
 	}
 	var text string
 	if err := json.Unmarshal(raw, &text); err == nil {
-		return text
+		return thinQueryTextSelection{Text: text, Slots: []thinQueryTextSlot{contentSlot}}
 	}
 	var blocks []struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
 	}
 	if err := json.Unmarshal(raw, &blocks); err != nil {
-		return ""
+		return thinQueryTextSelection{}
 	}
 	var parts []string
-	for _, block := range blocks {
-		if block.Type != textType {
+	var slots []thinQueryTextSlot
+	for i, block := range blocks {
+		if block.Type != textType || block.Text == "" {
 			continue
 		}
-		if block.Text != "" {
-			parts = append(parts, block.Text)
-		}
+		parts = append(parts, block.Text)
+		index := strconv.Itoa(i)
+		slots = append(slots, thinQueryTextSlot{
+			pointer: contentSlot.pointer + "/" + index + "/text", path: contentSlot.path + "." + index + ".text",
+		})
 	}
-	return strings.Join(parts, "")
+	return thinQueryTextSelection{Text: strings.Join(parts, ""), Slots: slots}
 }

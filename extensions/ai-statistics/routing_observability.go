@@ -48,6 +48,20 @@ type statisticsAdapterMetadata struct {
 }
 
 func parseRuleConfig(configJSON gjson.Result, global AIStatisticsConfig, config *AIStatisticsConfig) error {
+	if global.invalidBase {
+		return errors.New("invalid non-empty base statistics config")
+	}
+	if configJSON.Get("_rules_").Exists() {
+		return errors.New("nested statistics rules are not supported")
+	}
+	if !global.initialized {
+		return parseCompleteStatisticsConfig(configJSON, config)
+	}
+	for _, key := range []string{"use_default_attributes", "use_default_response_attributes", "attributes", "disable_openai_usage", "value_length_limit", "enable_content_types", "session_id_header"} {
+		if configJSON.Get(key).Exists() {
+			return fmt.Errorf("%s must be configured globally when the base statistics config is initialized", key)
+		}
+	}
 	*config = global
 	config.enablePathSuffixes = cloneStatisticsStrings(global.enablePathSuffixes)
 	config.enableMethods = cloneStatisticsStrings(global.enableMethods)
@@ -66,6 +80,16 @@ func parseRuleConfig(configJSON gjson.Result, global AIStatisticsConfig, config 
 			}
 		}
 		config.pathScope = pathScope
+	}
+	if config.pathScope == pathScopeBoundTarget {
+		for _, key := range []string{"enable_path_suffixes", "enable_methods"} {
+			if value := configJSON.Get(key); value.Exists() && (!value.IsArray() || len(value.Array()) != 0) {
+				return fmt.Errorf("%s must be omitted or [] for bound_target", key)
+			}
+		}
+		config.enablePathSuffixes = nil
+		config.enableMethods = nil
+		return nil
 	}
 	if value := configJSON.Get("enable_path_suffixes"); value.Exists() {
 		suffixes, err := parseStatisticsPathSuffixes(value)
@@ -100,6 +124,17 @@ func parseStatisticsRouting(
 		legacyDefaults = []string{"/completions", "/messages"}
 	}
 	config.legacyPathSuffixes = cloneStatisticsStrings(legacyDefaults)
+
+	if pathScope == pathScopeBoundTarget {
+		for _, key := range []string{"enable_path_suffixes", "enable_methods"} {
+			if value := configJSON.Get(key); value.Exists() && (!value.IsArray() || len(value.Array()) != 0) {
+				return fmt.Errorf("%s must be omitted or [] for bound_target", key)
+			}
+		}
+		config.enablePathSuffixes = nil
+		config.enableMethods = nil
+		return nil
+	}
 
 	suffixResult := configJSON.Get("enable_path_suffixes")
 	if suffixResult.Exists() {
@@ -232,10 +267,7 @@ func isStatisticsRequestEnabled(requestPath, requestMethod string, config AIStat
 			return false
 		}
 	case pathScopeBoundTarget:
-		if len(config.enablePathSuffixes) > 0 &&
-			!isPathEnabled(requestPath, config.enablePathSuffixes) {
-			return false
-		}
+		return true
 	default:
 		return false
 	}

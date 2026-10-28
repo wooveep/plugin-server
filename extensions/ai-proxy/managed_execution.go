@@ -36,6 +36,7 @@ const (
 	managedAttemptHeader                  = "x-modelfusion-attempt-id"
 	managedAdmissionReleaseHeader         = "x-modelfusion-admission-release-id"
 	managedAdmissionDeadlineHeader        = "x-modelfusion-admission-valid-until"
+	managedAdmissionOccurredHeader        = executionfacts.AdmissionOccurredHeader
 	managedDefaultTimeoutMS        uint32 = 2 * 60 * 1000
 )
 
@@ -99,15 +100,16 @@ type managedRedisSettings struct {
 }
 
 type managedSettings struct {
-	ProducerID       string               `json:"producer_id"`
-	PrivateStream    string               `json:"private_stream"`
-	Redis            managedRedisSettings `json:"redis"`
-	UpstreamPath     string               `json:"upstream_path"`
-	Authority        string               `json:"authority"`
-	CredentialValue  string               `json:"credential_value"`
-	TimeoutMS        uint32               `json:"timeout_ms,omitempty"`
-	InputProtocol    string               `json:"input_protocol,omitempty"`
-	UpstreamProtocol string               `json:"upstream_protocol,omitempty"`
+	ProducerID         string               `json:"producer_id"`
+	CallIdentitySource string               `json:"call_identity_source"`
+	PrivateStream      string               `json:"private_stream"`
+	Redis              managedRedisSettings `json:"redis"`
+	UpstreamPath       string               `json:"upstream_path"`
+	Authority          string               `json:"authority"`
+	CredentialValue    string               `json:"credential_value"`
+	TimeoutMS          uint32               `json:"timeout_ms,omitempty"`
+	InputProtocol      string               `json:"input_protocol,omitempty"`
+	UpstreamProtocol   string               `json:"upstream_protocol,omitempty"`
 }
 
 type managedRedisClient interface {
@@ -193,6 +195,9 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 
 func (c *managedExecutionConfig) validate() error {
 	d := c.release.Descriptor
+	if c.settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission {
+		return errors.New("managed execution requires the original admission call identity capability")
+	}
 	if c.release.SchemaVersion != "modelfusion-execution.v1" || d.ConfigCanonicalization != "mf-json.v1" {
 		return errors.New("unsupported managed execution release schema")
 	}
@@ -286,19 +291,15 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	if err != nil {
 		return rejectManagedRequest(ctx, 403, "authenticated_identity_missing"), true
 	}
-	callID, callErr := managedSingleHeader(headers, managedCallHeader)
-	admittedRelease, releaseErr := managedSingleHeader(headers, managedAdmissionReleaseHeader)
-	deadlineRaw, deadlineErr := managedSingleHeader(headers, managedAdmissionDeadlineHeader)
-	deadline, parseErr := time.Parse(time.RFC3339Nano, deadlineRaw)
-	if callErr != nil || !balanceidentity.ValidID(callID) || releaseErr != nil ||
-		admittedRelease != managed.release.Descriptor.ReleaseID || deadlineErr != nil ||
-		parseErr != nil || !strings.HasSuffix(deadlineRaw, "Z") || !time.Now().Before(deadline) {
+	origin, originErr := executionfacts.ReadAdmittedCall(headers, managed.release.Descriptor.ReleaseID, time.Now())
+	if originErr != nil {
 		return rejectManagedRequest(ctx, 403, "current_execution_admission_required"), true
 	}
 	clean := make([][2]string, 0, len(headers))
 	for _, header := range headers {
 		if strings.EqualFold(header[0], managedCallHeader) || strings.EqualFold(header[0], managedAttemptHeader) ||
-			strings.EqualFold(header[0], managedAdmissionReleaseHeader) || strings.EqualFold(header[0], managedAdmissionDeadlineHeader) {
+			strings.EqualFold(header[0], managedAdmissionReleaseHeader) || strings.EqualFold(header[0], managedAdmissionDeadlineHeader) ||
+			strings.EqualFold(header[0], managedAdmissionOccurredHeader) {
 			continue
 		}
 		clean = append(clean, header)
@@ -323,7 +324,7 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	if err != nil || mediaErr != nil || mediaType != "application/json" || !ctx.HasRequestBody() {
 		return rejectManagedRequest(ctx, 400, "json_body_required"), true
 	}
-	state := &managedExecutionState{config: managed, identity: identity, callID: callID, admissionDeadline: deadline, businessUTC: time.Now().UTC().Format(time.RFC3339Nano), ledger: executionfacts.NewLedger(128), deliveries: map[string]*executionfacts.Delivery{}}
+	state := &managedExecutionState{config: managed, identity: identity, callID: origin.CallID, admissionDeadline: origin.ValidUntil, businessUTC: origin.OccurredAt, ledger: executionfacts.NewLedger(128), deliveries: map[string]*executionfacts.Delivery{}}
 	ctx.SetContext(managedExecutionContextKey, state)
 	if proxywasm.ReplaceHttpRequestHeader(managedCallHeader, state.callID) != nil {
 		return rejectManagedRequest(ctx, 500, "execution_identity_install_failed"), true

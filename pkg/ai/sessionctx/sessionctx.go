@@ -138,7 +138,9 @@ func (request *OpenAIChatRequest) UnmarshalJSON(body []byte) error {
 func (message *OpenAIMessage) UnmarshalJSON(body []byte) error {
 	type messageAlias OpenAIMessage
 	var parsed messageAlias
-	if err := json.Unmarshal(body, &parsed); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+	if err := decoder.Decode(&parsed); err != nil {
 		return err
 	}
 	extra, err := unknownRawFields(body, openAIMessageFields)

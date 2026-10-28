@@ -9,6 +9,7 @@ import (
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-cache/config"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/memorycache"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	logs "github.com/higress-group/wasm-go/pkg/log"
@@ -53,6 +54,13 @@ func LoadAndValidateMaterializedRecord(raw string, material ScopedCacheKeyMateri
 }
 
 func validateMaterializedRecord(record MaterializedReplayRecord, material ScopedCacheKeyMaterial, stream bool, now int64) error {
+	if record.RequestDigest != material.RequestDigest {
+		return errors.New("materialized record request digest mismatch")
+	}
+	return validateReplayRecordScopeAndPayload(record, material, stream, now)
+}
+
+func validateReplayRecordScopeAndPayload(record MaterializedReplayRecord, material ScopedCacheKeyMaterial, stream bool, now int64) error {
 	if record.SchemaVersion != materializedRecordSchemaVersion {
 		return errors.New("unsupported materialized record schema version")
 	}
@@ -79,9 +87,6 @@ func validateMaterializedRecord(record MaterializedReplayRecord, material Scoped
 	}
 	if record.CachePolicyVersion != material.CachePolicyVersion {
 		return errors.New("materialized record policy version mismatch")
-	}
-	if record.RequestDigest != material.RequestDigest {
-		return errors.New("materialized record request digest mismatch")
 	}
 	if record.SoftExpiresAt <= 0 || record.SoftExpiresAt <= now {
 		return errors.New("materialized record soft expiration is expired")
@@ -113,13 +118,11 @@ func validateMaterializedRecord(record MaterializedReplayRecord, material Scoped
 }
 
 func replayMaterializedRecord(record MaterializedReplayRecord, stream bool, ctx wrapper.HttpContext, log logs.Log) error {
-	path := ctx.GetStringContext(CACHE_PATH_CONTEXT_KEY, "")
-	kind, adapter, ok := thinProtocolAdapterForPath(path)
+	// Both Redis and Console callers validate the record against the original
+	// request material before this point. Its protocol is that frozen selection.
+	adapter, ok := thinProtocolAdapterForKind(record.Protocol)
 	if !ok {
-		return fmt.Errorf("unsupported request path for materialized replay: %s", path)
-	}
-	if record.Protocol != kind {
-		return errors.New("materialized record protocol mismatch")
+		return fmt.Errorf("unsupported protocol for materialized replay: %s", record.Protocol)
 	}
 	serialized, err := adapter.SerializeReplay(thinReplayPayload(record.Protocol, record, stream))
 	if err != nil {
@@ -130,11 +133,23 @@ func replayMaterializedRecord(record MaterializedReplayRecord, stream bool, ctx 
 		statusCode = 200
 	}
 
+	bridge, send := nativeCacheBridge(ctx, record)
+	if !send {
+		return nil
+	}
 	ctx.SetUserAttribute("cache_status", "hit")
 	ctx.SetUserAttribute("upstream_invoked", false)
 	ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
-
-	proxywasm.SendHttpResponseWithDetail(uint32(statusCode), memorycache.CacheHitResponseDetail, [][2]string{{"content-type", serialized.ContentType}}, serialized.Body, -1)
+	headers := [][2]string{{"content-type", serialized.ContentType}}
+	if bridge != "" {
+		headers = append(headers, [2]string{executionfacts.DeliveryBridgeHeader, bridge})
+	}
+	if err := proxywasm.SendHttpResponseWithDetail(uint32(statusCode), memorycache.CacheHitResponseDetail, headers, serialized.Body, -1); err != nil {
+		nativeCacheFactGap(ctx, "cache_local_response_outcome_unknown")
+		// The local handoff may already have happened. Never resume into a new
+		// upstream send after its result becomes unknown.
+		return nil
+	}
 	return nil
 }
 

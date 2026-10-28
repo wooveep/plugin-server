@@ -43,6 +43,20 @@ embedding、vector indexing、pricing、settlement、repair、deletion 和 recon
 - 捕获符合策略的上游响应事实，并在响应结束后通过 Redis Stream 投递 `CacheEvent`。
 - 对 Redis、Console、解析、校验、响应捕获和事件投递失败执行 fail-open。
 
+托管路由从可信发布配置的 `client_protocol` 与 `operation_kind` 选择协议适配器，
+不会从自定义 URL、客户端协议头或后置 `ai-proxy` 的 Context 推断。两个字段均省略时
+保留原路径后缀识别；只给一个字段、空值或非字符串会拒绝配置。
+已声明的未知协议、非文本输出、异步及查询操作明确旁路，不退回按路径识别，也不自动开启缓存。
+显式的 `enabled_path_suffixes` 仍是额外交集；托管发布需清除从模板继承的旧后缀，
+让已经启用的路由缓存策略覆盖其真实入口。no-store、bypass、主体隔离、策略指纹、
+工具响应与流式回放条件保持原有语义。
+
+`text_generate` 包含纯文本输入和多模态输入返回文本的情形，不表示输入只能是文本。
+JSON 请求中的图片 URL、文件 ID、内嵌附件及其其他字段参与完整 request digest，
+而语义检索用的当前用户文本只是单独提取的查询信息，不替代该摘要。插件不下载或改写附件；
+URL/文件 ID 按原字段值区分，外部内容本身的版本或摘要由原请求提供。
+图片、音频、视频等非文本输出及异步任务按已发布的原 operation 能力旁路。
+
 插件不负责：
 
 - 在线 embedding、rerank 或 vector search。
@@ -50,6 +64,26 @@ embedding、vector indexing、pricing、settlement、repair、deletion 和 recon
 - provider 价格、折扣、余额、账单结算或 reconciliation。
 - backend model cost attribution。
 - 暴露缓存管理 API 或执行管理面鉴权。
+
+## 原生发布身份
+
+托管规则可声明 `native_identity` 的五个静态字段：`release_id`、`target_id`、
+`route_id`、`policy_id`、`policy_version`。release/target 为原不透明标识，
+route/policy 为规范非空 UUID，policy_version 为正 i64 JSON 整数；
+`cache_policy_version` 配置使用同值的规范十进制字符串。该声明不自动开启缓存，
+也不包含 caller、角色或授权。缺字段、错误类型和额外字段在配置边界拒绝。
+
+前置原生 key-auth 清理客户端字段并安装原账户、具体 Key、凭据代际、tenant、
+principal 五个认证事实；缓存只在请求头阶段通过 `balanceidentity.Read` 保存一次。
+原生声明下缺少完整 caller 时旁路缓存，不按旧头降级。Redis key、Console lookup
+与 CacheEvent 使用同一 tenant UUID、principal UUID、冻结 route UUID、原正文
+public model；lookup 与事件追加相同的 `native_identity.caller`。响应阶段不重读
+认证头，不从 Envoy route 名、发布标识前缀、客户自报头或后置 ai-proxy context 猜身份。
+未声明 native_identity 的旧头路径保持原语义。
+
+memory-aware 的有效 `cache_policy_version` 继续包含原 memory policy/digest 指纹，
+与原生静态 policy_version 分开；Console 消费者须核对同一冻结策略和有效指纹。
+这里的原生身份接线不解决多模态 semantic miss 回退的附件隔离后继问题。
 
 ## 配置说明
 
@@ -101,6 +135,8 @@ fail_policy: open
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
+| client_protocol | string | - | 可信发布的客户端协议，与 operation_kind 成对；支持 openai_chat、openai_responses、anthropic_messages |
+| operation_kind | string | - | 可信发布的原业务操作；仅 text_generate 适用文本缓存，其他操作旁路 |
 | materialized_lookup.redis.enabled | bool | false | 启用 Redis 物化回放查询 |
 | materialized_lookup.redis.service_name | string | - | 物化记录 Redis 服务名 |
 | materialized_lookup.redis.service_port | int | 6379 | Redis 服务端口 |
@@ -110,6 +146,7 @@ fail_policy: open
 | console_lookup.service_name | string | - | Console 服务名 |
 | console_lookup.service_port | int | 80 | Console 服务端口 |
 | console_lookup.path | string | `/internal/cache/lookup` | Console 查询路径 |
+| console_lookup.bearer_token | string | - | Console 查询已有 Bearer 凭据；由可信 secret source 注入，按敏感字段隐藏 |
 | console_lookup.timeout | int | 120 | Console 查询超时时间，单位毫秒 |
 | redis_stream.enabled | bool | false | 启用 `CacheEvent` 投递 |
 | redis_stream.service_name | string | - | 事件 Redis 服务名 |

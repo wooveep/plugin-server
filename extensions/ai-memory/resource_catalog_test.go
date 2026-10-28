@@ -37,6 +37,8 @@ func TestMemoryResourceCatalog(t *testing.T) {
 			routeProps := memoryResourceNestedMap(t, routeSchema, "properties")
 
 			requireMemoryResourceKeys(t, globalProps, []string{
+				"native_identity",
+				"capture_body_basis",
 				"redis_stream",
 				"recent_cache",
 				"console_internal",
@@ -48,6 +50,8 @@ func TestMemoryResourceCatalog(t *testing.T) {
 				"fail_policy",
 			})
 			requireMemoryResourceKeys(t, routeProps, []string{
+				"native_identity",
+				"capture_body_basis",
 				"memory_mode",
 				"recent_window_turns",
 				"memory_token_budget",
@@ -63,13 +67,25 @@ func TestMemoryResourceCatalog(t *testing.T) {
 				"tool_calls_from",
 				"policy_version",
 			})
-			requireMemoryResourceAbsentKeys(t, routeProps, []string{"redis_stream", "recent_cache", "console_internal"})
+			for _, key := range []string{"redis_stream", "recent_cache", "console_internal", "tenant_header", "consumer_header", "session_header", "request_id_header", "fail_policy", "native_identity"} {
+				require.Equal(t, globalProps[key], routeProps[key], "complete standalone rules must expose the original %s shape", key)
+			}
+			for _, properties := range []map[string]interface{}{globalProps, routeProps} {
+				native := memoryResourceNestedMap(t, properties, "native_identity")
+				require.Equal(t, false, native["additionalProperties"])
+				require.ElementsMatch(t, []interface{}{"release_id", "target_id", "route_id", "policy_id", "policy_version"}, native["required"])
+				nativeProps := memoryResourceNestedMap(t, native, "properties")
+				require.Len(t, nativeProps, 5)
+				require.NotContains(t, nativeProps, "caller", "authenticated caller must never be rule configuration")
+				require.Equal(t, "integer", memoryResourceNestedMap(t, nativeProps, "policy_version")["type"])
+				require.Equal(t, "boolean", memoryResourceNestedMap(t, properties, "capture_body_basis")["type"])
+			}
 			requireMemoryResourceAdditionalPropertiesFalse(t, routeSchema)
 			requireMemoryResourceEnum(t, routeProps["memory_mode"], []string{"off", "recent-only", "digest", "semantic"})
 			requireMemoryResourceEnum(t, globalProps["fail_policy"], []string{"open"})
 		})
 
-		t.Run("schema examples show inherited config and secret placeholders", func(t *testing.T) {
+		t.Run("schema examples omit credential values and preserve sensitive field metadata", func(t *testing.T) {
 			globalExample := memoryResourceNestedMap(t, spec, "spec", "configSchema", "openAPIV3Schema", "example")
 			routeExample := memoryResourceNestedMap(t, spec, "spec", "routeConfigSchema", "openAPIV3Schema", "example")
 
@@ -109,8 +125,18 @@ func TestMemoryResourceCatalog(t *testing.T) {
 				"enable_path_suffixes",
 				"fail_policy",
 			})
-			requireMemoryResourceExamplePlaceholders(t, globalExample)
-			requireMemoryResourceSecretPlaceholders(t, "spec.yaml", specText, 1)
+			for _, credential := range []struct{ section, field string }{{"redis_stream", "password"}, {"recent_cache", "password"}, {"console_internal", "auth_token"}} {
+				require.NotContains(t, memoryResourceNestedMap(t, globalExample, credential.section), credential.field)
+				for _, schema := range []string{"configSchema", "routeConfigSchema"} {
+					field := memoryResourceNestedMap(t, spec, "spec", schema, "openAPIV3Schema", "properties", credential.section, "properties", credential.field)
+					require.Equal(t, "password", field["format"])
+					require.Equal(t, true, field["writeOnly"])
+					require.Equal(t, true, field["x-sensitive"])
+					for _, value := range []string{"default", "example", "examples"} {
+						require.NotContains(t, field, value)
+					}
+				}
+			}
 			requireMemoryResourceNoSecretLiterals(t, "spec.yaml", specText)
 			requireMemoryResourceSecretPlaceholders(t, "README.md", readme, 1)
 			requireMemoryResourceNoSecretLiterals(t, "README.md", readme)
@@ -275,14 +301,6 @@ func requireMemoryResourceEnum(t *testing.T, field interface{}, expected []strin
 		values = append(values, value)
 	}
 	require.ElementsMatch(t, expected, values)
-}
-
-func requireMemoryResourceExamplePlaceholders(t *testing.T, globalExample map[string]interface{}) {
-	t.Helper()
-	consoleInternal := memoryResourceNestedMap(t, globalExample, "console_internal")
-	authToken, ok := consoleInternal["auth_token"].(string)
-	require.True(t, ok, "global example console_internal.auth_token must be a string placeholder")
-	require.Equal(t, "<internal-bearer-token>", authToken)
 }
 
 func requireMemoryResourceSecretPlaceholders(t *testing.T, label, text string, minMatches int) {

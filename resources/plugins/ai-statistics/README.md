@@ -4,7 +4,7 @@ keywords: [higress, AI, observability]
 description: AI可观测配置参考
 ---
 
-> 插件版本：`1.0.2`
+> 插件版本：`1.0.3`
 
 ## 介绍
 
@@ -32,8 +32,8 @@ description: AI可观测配置参考
 | `disable_openai_usage` | bool | 非必填  | false   | 非openai兼容协议时，model、token的支持非标，配置为true时可以避免报错 |
 | `value_length_limit` | int | 非必填  | 条件默认值 | 记录的单个 value 的长度限制 |
 | `path_scope` | string | 非必填 | `legacy_suffixes` | `legacy_suffixes` 或 `bound_target` |
-| `enable_path_suffixes` | []string    | 非必填   | 历史行为见下文 | 路径后缀门控或可选交集过滤器，可显式配置 "\*" |
-| `enable_methods` | []string | 非必填 | 无 | 可选 HTTP 方法过滤器，按精确大小写匹配 |
+| `enable_path_suffixes` | []string    | 非必填   | 历史行为见下文 | 仅 legacy_suffixes 的路径门控，可显式配置 "\*"；bound_target 仅允许省略或 [] |
+| `enable_methods` | []string | 非必填 | 无 | legacy_suffixes 下按精确大小写匹配；bound_target 仅允许省略或 [] |
 | `enable_content_types` | []string    | 非必填   | []     | 只对这些内容类型的响应进行缓冲处理。如果为空数组，则对所有内容类型生效                                                           |
 | `session_id_header` | string | 非必填  | -   | 指定读取 session ID 的 header 名称。如果不配置，将按以下优先级自动查找：`x-openclaw-session-key`、`x-clawdbot-session-key`、`x-moltbot-session-key`、`x-agent-session`。session ID 可用于追踪多轮 Agent 对话 |
 
@@ -43,7 +43,7 @@ description: AI可观测配置参考
 
 - 缺省或显式 `path_scope: legacy_suffixes` 保留历史行为：启用任一内置默认属性且省略后缀列表时，有效默认值为 `/completions` 和 `/messages`；未启用内置默认属性时，省略列表保留原有全路径行为。
 - `path_scope: bound_target` 使用 Higress 绑定目标。缺省或字面空数组 `enable_path_suffixes: []`、`enable_methods: []` 不额外收窄，也不会合成路径列表。
-- 显式非空后缀或方法过滤器仅与绑定目标求交集，不能创建或扩大绑定；两个过滤器同时配置时必须同时匹配。
+- bound_target 拒绝任何显式非空路径/方法列表（包括 ["*"]），避免匹配到的 AI 路由漏统计；切换到该作用域时清除继承的 legacy 过滤器。legacy_suffixes 仍保留显式交集行为。
 - ai-statistics 对 `enable_methods` 使用精确大小写匹配，示例采用规范的大写方法。路由级字段缺省时继承全局配置。
 
 ```yaml
@@ -61,19 +61,25 @@ path_scope: bound_target
 ```
 
 ```yaml
-# 可选的显式交集
-path_scope: bound_target
+# 独立 legacy 部署的显式交集
+path_scope: legacy_suffixes
 enable_path_suffixes:
   - /v1/responses
 enable_methods:
   - POST
 ```
 
+空全局且仅含 _rules_ 的配置中，每个匹配规则独立解析完整统计配置；内置属性、内容类型和禁用 usage 等设置必须在该规则给出。有真实有效全局配置时，规则只覆盖原有三项路由设置，其它完整配置字段必须在根级设置，规则中出现会被拒绝。托管发布下发 path_scope: bound_target 且省略或清空两类过滤器，路由匹配由 Higress 绑定决定。
+
 ## 安全基础可观测契约
 
 安全基础事实独立成立；ai-proxy schema-v2 元数据只是可选的可信增强。
 
 每个符合范围且已完成的请求都会输出有界的 `route`、`path`、规范化且有界的 `method`、`status_code`、正值 `latency_ms` 和有界 `error_class`，并恰好输出一次 `request_count` 和 `request_duration_ms`。这些安全基础事实与 model、逻辑 operation、token 或 usage 提取无关；opaque 成功、opaque 错误以及解析失败仍会输出基础事实，可选维度会省略而不是猜测。可信的 provider 解析器可以补充 model/token 信息，但不得从任意路径或 opaque body 推断。原始响应体和无界 provider 错误文本绝不进入指标属性。
+
+托管 bound_target 的 token 扩展只记录有效 JSON/完整 SSE frame 中实际出现的非负整数；input、output、total 分别保持已知或缺失，不把缺字段或无效值补为 0，也不从部分用量推导 total。真实报告的 0 保留。当前复用提取器/指标计数器支持不超过 int64 上限的十进制整数字段，超限值保持未知；正文仍透明透传。SSE 跨块 frame 使用原正文缓冲上限，未完成或超限只停止扩展解析，基本事实仍在原收尾点输出。legacy 提取兼容行为不变。
+
+基础统计覆盖已进入统计回调的匹配请求。前置认证过滤器直接拒绝、未进入统计回调的链路，不能靠本插件补造统计，须在实际过滤顺序和网关原生观测中验证。该源码行为需另构建和登记新精确制品版本，不能由现有版本号推定已生效。
 
 `1.0.2` 还保证每个配置的计数器缓存会在首次使用时初始化，包括规则覆盖生命周期；第一个符合条件的基础指标不会因 nil 缓存而失败。
 

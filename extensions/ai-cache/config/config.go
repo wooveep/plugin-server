@@ -1,8 +1,13 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
+	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -93,10 +98,30 @@ type MemoryPolicyConfig struct {
 	PolicyVersion string
 }
 
+// NativeIdentityConfig is the five static facts frozen by the original route publication.
+// Actual caller identity is captured from native authentication per request, never configured.
+type NativeIdentityConfig struct {
+	ReleaseID     string `json:"release_id"`
+	TargetID      string `json:"target_id"`
+	RouteID       string `json:"route_id"`
+	PolicyID      string `json:"policy_id"`
+	PolicyVersion int64  `json:"policy_version"`
+}
+
 type PluginConfig struct {
 	materializedRedis wrapper.RedisClient
 	eventRedis        wrapper.RedisClient
 	legacyConfig      bool
+	protocolConfigErr error
+	nativeIdentityErr error
+
+	NativeIdentity *NativeIdentityConfig
+	// NativeExecution is a private parsed delivery config; never body-supplied.
+	NativeExecution any
+
+	PublishedProtocolConfigured bool
+	PublishedProtocol           protocol.ProtocolKind
+	ProtocolBypassReason        string
 
 	MaterializedLookup MaterializedLookupConfig
 	ConsoleLookup      ConsoleLookupConfig
@@ -113,6 +138,8 @@ type PluginConfig struct {
 func (c *PluginConfig) FromJson(json gjson.Result, _ log.Log) {
 	*c = PluginConfig{}
 	c.legacyConfig = containsLegacyOnlineCacheConfig(json)
+	c.parsePublishedProtocol(json)
+	c.parseNativeIdentity(json)
 	c.MaterializedLookup.Redis = RedisEndpointConfig{
 		Enabled:     json.Get("materialized_lookup.redis.enabled").Bool(),
 		ServiceName: json.Get("materialized_lookup.redis.service_name").String(),
@@ -195,12 +222,14 @@ func (c *PluginConfig) FromJson(json gjson.Result, _ log.Log) {
 }
 
 func (c *PluginConfig) FromJsonWithGlobal(json gjson.Result, global PluginConfig, log log.Log) {
-	if !global.HasThinConfig() && global.CachePolicyVersion == "" {
+	if !global.HasThinConfig() && global.CachePolicyVersion == "" && !global.PublishedProtocolConfigured && global.NativeIdentity == nil {
 		c.FromJson(json, log)
 		return
 	}
 	*c = global
 	c.legacyConfig = c.legacyConfig || containsLegacyOnlineCacheConfig(json)
+	c.parsePublishedProtocol(json)
+	c.parseNativeIdentity(json)
 	consoleLookupEnabledOverride := json.Get("console_lookup.enabled").Exists()
 	routePolicyConsoleOverride := json.Get("route_policy.enable_console_lookup").Exists()
 	c.MaterializedLookup.Redis = mergeRedisEndpoint(c.MaterializedLookup.Redis, json.Get("materialized_lookup.redis"))
@@ -231,6 +260,12 @@ func (c *PluginConfig) FromJsonWithGlobal(json gjson.Result, global PluginConfig
 }
 
 func (c *PluginConfig) Validate() error {
+	if c.nativeIdentityErr != nil {
+		return c.nativeIdentityErr
+	}
+	if c.protocolConfigErr != nil {
+		return c.protocolConfigErr
+	}
 	if c.legacyConfig {
 		return fmt.Errorf("legacy online cache configuration is not supported")
 	}
@@ -245,6 +280,9 @@ func (c *PluginConfig) Validate() error {
 	}
 	if c.CachePolicyVersion == "" {
 		return fmt.Errorf("cache_policy_version is required when thin cache behavior is enabled")
+	}
+	if c.NativeIdentity != nil && c.CachePolicyVersion != strconv.FormatInt(c.NativeIdentity.PolicyVersion, 10) {
+		return fmt.Errorf("cache_policy_version must equal the canonical native_identity.policy_version")
 	}
 	if c.MaterializedLookup.Redis.Enabled {
 		if err := validateRedisEndpoint(c.MaterializedLookup.Redis); err != nil {
@@ -273,6 +311,61 @@ func (c *PluginConfig) Validate() error {
 		}
 	}
 	return nil
+}
+
+func (c *PluginConfig) parseNativeIdentity(input gjson.Result) {
+	value := input.Get("native_identity")
+	if !value.Exists() {
+		return
+	}
+	c.NativeIdentity = nil
+	c.nativeIdentityErr = nil
+	var identity NativeIdentityConfig
+	decoder := json.NewDecoder(strings.NewReader(value.Raw))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&identity); err != nil {
+		c.nativeIdentityErr = fmt.Errorf("native_identity requires only its five published identity fields: %w", err)
+		return
+	}
+	if identity.ReleaseID == "" || len(identity.ReleaseID) > 256 ||
+		identity.TargetID == "" || len(identity.TargetID) > 256 ||
+		!balanceidentity.ValidID(identity.RouteID) || !balanceidentity.ValidID(identity.PolicyID) || identity.PolicyVersion <= 0 {
+		c.nativeIdentityErr = fmt.Errorf("native_identity requires bounded original release/target IDs, canonical non-nil route/policy UUIDs, and a positive integer policy_version")
+		return
+	}
+	c.NativeIdentity = &identity
+}
+
+func (c *PluginConfig) parsePublishedProtocol(json gjson.Result) {
+	clientProtocol := json.Get("client_protocol")
+	operationKind := json.Get("operation_kind")
+	if !clientProtocol.Exists() && !operationKind.Exists() {
+		return
+	}
+	c.PublishedProtocolConfigured = true
+	c.PublishedProtocol = protocol.ProtocolUnknown
+	c.ProtocolBypassReason = ""
+	c.protocolConfigErr = nil
+	if clientProtocol.Type != gjson.String || operationKind.Type != gjson.String ||
+		clientProtocol.String() == "" || operationKind.String() == "" {
+		c.protocolConfigErr = fmt.Errorf("client_protocol and operation_kind must be supplied together as non-empty strings")
+		return
+	}
+	kind, err := protocol.ParsePublishedTextProtocol(clientProtocol.String(), operationKind.String())
+	if err != nil {
+		c.ProtocolBypassReason = err.Error()
+		return
+	}
+	c.PublishedProtocol = kind
+}
+
+// ProtocolForPath uses the route's published client protocol. Path detection is
+// retained only for configurations that omit both published fields.
+func (c PluginConfig) ProtocolForPath(path string) protocol.ProtocolKind {
+	if c.PublishedProtocolConfigured {
+		return c.PublishedProtocol
+	}
+	return protocol.DetectProtocolKind(path)
 }
 
 func (c *PluginConfig) HasThinConfig() bool {

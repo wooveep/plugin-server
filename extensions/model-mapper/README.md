@@ -1,6 +1,6 @@
 # model-mapper：模型映射与原始正文依据
 
-交付版本 `1.0.0`，字段以 [资源 schema](../../resources/plugins/model-mapper/spec.yaml) 为准。插件把 POST `application/json` 请求根节点的 `model` 精确映射到上游模型；托管链在映射前固定原始正文与公开模型，供 ai-proxy 建立冻结的执行选择。
+交付版本 `1.0.1`，字段以 [资源 schema](../../resources/plugins/model-mapper/spec.yaml) 为准。插件把 POST `application/json` 请求根节点的 `model` 精确映射到上游模型；托管链在映射前固定原始正文与公开模型，供 ai-proxy 建立冻结的执行选择。
 
 ## 实际配置
 
@@ -37,3 +37,7 @@
 ai-proxy 必须同时核对受控发布顺序、原公开模型、实际映射后的模型和原正文依据。`bodybasis.Read` 只校验字段格式及唯一性，本身不证明 header 来源。mapper 不创建 call/attempt，不发布账务事实，也不按映射后正文重算原始摘要。
 
 `main_test.go` 使用 `pkg/test.RunTest` 核对 Go 与 Wasm 宿主生命周期；真实网关配置、加载顺序和上游收件仍由对应发布的运行观察单独证明。
+
+When an earlier trusted history/memory filter captures the original body, publish mapper with `consume_body_basis: true` and `capture_body_basis: false`. Mapper requires one valid original digest/public-model pair, validates the current JSON and unchanged public model, maps only the model, and preserves the original snapshot instead of capturing rewritten context. The flags are mutually exclusive. With no preprocessor, the existing `capture_body_basis: true` behavior clears client values and captures before mapping. The publisher chooses the unique first capturer from exact artifact phase/order; headers do not select it.
+
+The original capture boundary remains 1 MiB. Explicit consume mode validates the injected runtime body under 100 MiB, matching the surrounding history/memory/proxy HTTP limits, without canonicalizing it as a new original request. Duplicate names, malformed Unicode, number/depth/container rules remain strict. No public mf-json canonicalization, FACT or descriptor budget is raised.

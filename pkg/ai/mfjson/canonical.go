@@ -38,7 +38,53 @@ func reject(code, detail string) error { return &Error{Code: code, detail: detai
 // order, with no Unicode normalization. Duplicate keys at any depth, invalid
 // UTF-8, isolated surrogates and resource limit violations are rejected.
 func Canonicalize(raw []byte) ([]byte, error) {
-	if len(raw) > MaxInputBytes {
+	value, err := parseBounded(raw, MaxInputBytes)
+	if err != nil {
+		return nil, err
+	}
+	var output encoder
+	if err := output.value(value); err != nil {
+		return nil, err
+	}
+	return output.bytes, nil
+}
+
+// ValidateRuntimeBody checks a complete runtime request with the caller's
+// existing HTTP body bound. Rewriters may have added prior turns/attachments,
+// so this is not a new mf-json.v1 canonicalization or an original-body capture.
+// It reuses the same duplicate-key, Unicode, number and structural rules, does
+// not emit canonical bytes, and leaves Canonicalize/Digest's frozen limits intact.
+func ValidateRuntimeBody(raw []byte, maxBytes int) error {
+	value, err := parseBounded(raw, maxBytes)
+	if err != nil {
+		return err
+	}
+	var numbers func(any) error
+	numbers = func(value any) error {
+		switch v := value.(type) {
+		case json.Number:
+			_, err := decimal(string(v))
+			return err
+		case []any:
+			for _, item := range v {
+				if err := numbers(item); err != nil {
+					return err
+				}
+			}
+		case map[string]any:
+			for _, item := range v {
+				if err := numbers(item); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+	return numbers(value)
+}
+
+func parseBounded(raw []byte, maxBytes int) (any, error) {
+	if maxBytes <= 0 || len(raw) > maxBytes {
 		return nil, reject("E_LIMIT", "input byte limit exceeded")
 	}
 	if !utf8.Valid(raw) {
@@ -57,11 +103,7 @@ func Canonicalize(raw []byte) ([]byte, error) {
 	if _, err := decoder.Token(); err != io.EOF {
 		return nil, reject("E_JSON", "unexpected data after JSON value")
 	}
-	var output encoder
-	if err := output.value(value); err != nil {
-		return nil, err
-	}
-	return output.bytes, nil
+	return value, nil
 }
 
 // Digest returns sha256: followed by lowercase hex of the complete canonical

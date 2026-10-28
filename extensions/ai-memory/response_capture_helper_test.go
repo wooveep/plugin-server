@@ -417,7 +417,7 @@ type memoryCaptureTestContext struct {
 }
 
 func newMemoryCaptureTestContext() *memoryCaptureTestContext {
-	return &memoryCaptureTestContext{values: map[string]interface{}{}}
+	return &memoryCaptureTestContext{values: map[string]interface{}{memoryProtocolContextKey: "chat_completions"}}
 }
 
 func requireMemoryHostNeedsResponseBody(t *testing.T, host test.TestHost) {

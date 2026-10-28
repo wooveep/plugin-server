@@ -26,9 +26,28 @@ from that request is not emitted as a cache event.
 ## Runtime Properties
 
 Plugin execution phase: `default`
-Plugin execution priority: `800`
+Plugin execution priority: `250`
 
 ## Runtime Responsibilities
+
+Managed routes choose an existing adapter from trusted publication fields
+`client_protocol` and `operation_kind`, independently of URL aliases, client
+protocol headers, or later `ai-proxy` context. Omitting both retains legacy path
+detection. Supplying just one, an empty value, or a non-string rejects the
+configuration. Supported client protocols are `openai_chat`, `openai_responses`,
+and `anthropic_messages` for `text_generate`; other protocols and operations
+bypass cache without enabling it or falling back to URL detection. Explicit
+path suffixes remain an intersection. Managed publication should clear inherited
+legacy suffixes while retaining the route's cache policy, no-store, bypass,
+identity isolation, policy fingerprints, and replay restrictions.
+
+`text_generate` covers both text input and multimodal input with text output.
+The full JSON request, including image URLs, file IDs, inline attachments, and
+their other fields, participates in the request digest. Extracted query text
+does not replace that digest. The plugin neither downloads nor rewrites
+attachments; external content versions or digests must come from the original
+request. Non-text output and asynchronous tasks follow their published operation
+and bypass this text-output cache.
 
 The plugin is responsible for:
 
@@ -49,6 +68,33 @@ The plugin is not responsible for:
 - Provider pricing, discounts, balances, billing settlement, or reconciliation.
 - Backend model cost attribution.
 - Cache management APIs or management-plane authorization.
+
+## Native Publication Identity
+
+A managed rule may declare exactly five static `native_identity` fields:
+`release_id`, `target_id`, `route_id`, `policy_id`, and `policy_version`.
+Release and target remain original opaque IDs; route and policy are canonical
+non-nil UUIDs. The version is a positive i64 JSON integer, and the configured
+`cache_policy_version` is its canonical decimal string. This declaration neither
+enables cache nor supplies a caller, role, or authorization. Invalid or partial
+static tuples and extra fields reject the configuration.
+
+Preceding native key-auth clears client fields and installs the original account,
+API key, credential generation, tenant, and principal. Cache reads these once with
+`balanceidentity.Read` during request headers and retains that snapshot for both
+Console lookup and CacheEvent. Missing native caller facts bypass cache without
+falling back to legacy headers. Keys and payloads use the same tenant UUID,
+principal UUID, frozen route UUID, and original request public model. Both payloads
+add the identical `native_identity.caller`. Response processing never re-reads the
+authentication headers or infers identity from Envoy route names, release prefixes,
+client labels, or later ai-proxy context. Rules without native identity retain the
+existing legacy behavior.
+
+The effective memory-aware cache policy version keeps the original memory
+policy/digest fingerprint, separately from the static native policy revision.
+The Console consumer must verify both against the frozen policy. Native identity
+connectivity does not close the separate multimodal semantic-fallback attachment
+isolation work.
 
 ## Configuration
 
@@ -102,6 +148,8 @@ fail_policy: open
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
+| client_protocol | string | - | Trusted published client protocol, paired with operation_kind; openai_chat, openai_responses, or anthropic_messages |
+| operation_kind | string | - | Trusted published operation; text_generate uses text cache and other operations bypass |
 | materialized_lookup.redis.enabled | bool | false | Enables Redis materialized replay lookup |
 | materialized_lookup.redis.service_name | string | - | Redis service for materialized records |
 | materialized_lookup.redis.service_port | int | 6379 | Redis service port |
@@ -111,6 +159,7 @@ fail_policy: open
 | console_lookup.service_name | string | - | Console service name |
 | console_lookup.service_port | int | 80 | Console service port |
 | console_lookup.path | string | `/internal/cache/lookup` | Console lookup path |
+| console_lookup.bearer_token | string | - | Existing Console Bearer credential, injected by a trusted secret source and hidden as sensitive configuration |
 | console_lookup.timeout | int | 120 | Console lookup timeout in milliseconds |
 | redis_stream.enabled | bool | false | Enables `CacheEvent` delivery |
 | redis_stream.service_name | string | - | Redis service for events |

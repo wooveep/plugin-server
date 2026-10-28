@@ -177,3 +177,34 @@ curl 'http://example.com/api/openai/v1/chat/completions/ai-history/query?cnt=3' 
 ## 多模态消息与上下文
 
 0.1.1 在追加历史时保留当前请求的原始内容块，包括 `image_url`；历史用户问题仅保存文本块。当前 system/developer 指令保留在历史之前。已有多轮上下文（多个 user 消息）保持原样，避免重复填充。历史按 `fillHistoryCnt` 裁剪，使用 `cacheTTL` 设置保留时间；请求方仍需为追加历史预留模型上下文预算。正常日志不记录请求原文或身份键。
+
+## 托管路由与协议适配（源码候选）
+
+托管规则是完整配置，不继承其他路由的身份或策略。只有显式绑定并启用 history 的路由会处理请求；`enabled: false` 与请求/响应 `Cache-Control: no-store` 均旁路。普通路径、别名和上游 URL 不决定客户端协议。
+
+```yaml
+redis:
+  serviceName: redis.dns
+path_scope: bound_target
+client_protocol: openai_chat
+operation_kind: text_generate
+public_model: original-public-model
+native_identity:
+  release_id: original-release-id
+  target_id: original-target-id
+  route_id: 00000000-0000-4000-8000-000000000001
+  policy_id: 00000000-0000-4000-8000-000000000002
+  policy_version: 1
+fillHistoryCnt: 3
+cacheTTL: 3600
+```
+
+`client_protocol` 也支持 `openai_responses` 和 `anthropic_messages`；`text_generate` 同时支持纯文本输入和多模态输入返回文本。其他 operation/协议、非文本输出、未完成响应或待执行工具结果保持透传，并记录 `history_status` 原因。JSON 与 SSE 均复用现有协议适配器采集答案，不转换客户端协议。
+
+配置中的 `native_identity` 只含五个冻结字段，caller 不由用户填写。实际 account/Key/generation/tenant/principal 五字段由前置原生认证提供，请求期读取一次。Redis 命名空间包含这五字段、完整冻结绑定、协议与原 public model 的摘要，绝不使用 Authorization 原值、rel 前缀或后置 ai-proxy Context。缺 caller 或改写前的可信 body basis 时旁路，不回退旧身份头。发布接线必须先清理客户端保留头并在任何 history/memory 改写前捕获原 body basis；本叶不调整全局阶段或优先级。
+
+存储沿原 Redis 连接、`fillHistoryCnt` 轮数和 `cacheTTL`。托管存储保留原生 conversation JSON 项，包括附件、工具上下文、扩展字段及精确数字；注入保持当前 system/developer、Claude system、Responses instructions 与其他正文属性。已含多轮 user 上下文时不重复注入，仍采集最后一轮；provider continuation 管理的 Responses 历史不另注入。工具调用等待结果的响应不保存为伪造文本答案；后续包含原工具链并返回文本的请求会保留该轮输入。托管规则不会把包含 `ai-history/query` 的业务别名短路为旧查询接口。
+
+新精确 ART 版本、Console/SDK 策略投影、可信 body basis 接线、顺序及真实发布联测由共享 owner 统一完成。源码/host 定向检查不代表 Wasm 或实际部署验收。旧独立显式配置仍沿原身份头与查询语义。
+
+可信发布根据精确 ART 的 phase 与同阶段 priority 只指定一个首正文捕获者。History 是最早改写者时显式 `capture_body_basis: true`，会在 enabled/no-store/caller 旁路之前清除客户端 basis 保留头并等待完整原正文，捕获一次后再注入；默认 false 只消费前置可信 basis，不能因客户头存在而自选 capture/consume。后置 Memory 使用 false，mapper 使用 `consume_body_basis: true`；没有前置改写者时 mapper 保持 `capture_body_basis: true`。本叶不改 phase/priority，实际顺序必须由精确制品元数据确认。

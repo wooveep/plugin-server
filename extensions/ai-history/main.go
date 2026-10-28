@@ -35,7 +35,7 @@ func main() {}
 func init() {
 	wrapper.SetCtx(
 		"ai-history",
-		wrapper.ParseConfigBy(parseConfig),
+		wrapper.ParseOverrideConfigBy(parseConfig, parseHistoryRuleConfig),
 		wrapper.ProcessRequestHeadersBy(onHttpRequestHeaders),
 		wrapper.ProcessRequestBodyBy(onHttpRequestBody),
 		wrapper.ProcessResponseHeadersBy(onHttpResponseHeaders),
@@ -45,12 +45,12 @@ func init() {
 
 // @Name ai-history
 // @Category protocol
-// @Phase AUTHN
-// @Priority 10
+// @Phase UNSPECIFIED_PHASE
+// @Priority 650
 // @Title zh-CN AI History
 // @Description zh-CN 大模型对话历史缓存
 // @IconUrl
-// @Version 0.1.2
+// @Version 0.1.3
 //
 // @Contact.name sakura
 // @Contact.url
@@ -115,8 +115,10 @@ type PluginConfig struct {
 	FillHistoryCnt int `required:"false" yaml:"fillHistoryCnt" json:"fillHistoryCnt"`
 	// @Title zh-CN 缓存的过期时间
 	// @Description zh-CN 单位是秒，默认值为0，即永不过期
-	CacheTTL    int                 `required:"false" yaml:"cacheTTL" json:"cacheTTL"`
-	redisClient wrapper.RedisClient `yaml:"-" json:"-"`
+	CacheTTL       int                 `required:"false" yaml:"cacheTTL" json:"cacheTTL"`
+	redisClient    wrapper.RedisClient `yaml:"-" json:"-"`
+	historyEnabled bool
+	historyBinding *historyBinding
 }
 
 type ChatHistory struct {
@@ -125,6 +127,9 @@ type ChatHistory struct {
 }
 
 func parseConfig(json gjson.Result, c *PluginConfig, log log.Log) error {
+	if err := parseHistoryBinding(json, c); err != nil {
+		return err
+	}
 	c.RedisInfo.ServiceName = json.Get("redis.serviceName").String()
 	if c.RedisInfo.ServiceName == "" {
 		return errors.New("redis service name must not be empty")
@@ -162,6 +167,9 @@ func parseConfig(json gjson.Result, c *PluginConfig, log log.Log) error {
 		c.FillHistoryCnt = 3
 	}
 	c.CacheTTL = int(json.Get("cacheTTL").Int())
+	if c.FillHistoryCnt < 0 || c.CacheTTL < 0 {
+		return errors.New("history count and cacheTTL must not be negative")
+	}
 	c.redisClient = wrapper.NewRedisClusterClient(wrapper.FQDNCluster{
 		FQDN: c.RedisInfo.ServiceName,
 		Port: int64(c.RedisInfo.ServicePort),
@@ -169,8 +177,24 @@ func parseConfig(json gjson.Result, c *PluginConfig, log log.Log) error {
 	return c.redisClient.Init(c.RedisInfo.Username, c.RedisInfo.Password, int64(c.RedisInfo.Timeout), wrapper.WithDataBase(c.RedisInfo.Database))
 }
 
+func parseHistoryRuleConfig(json gjson.Result, _ PluginConfig, c *PluginConfig, log log.Log) error {
+	// Route rules are complete configurations; do not inherit another binding.
+	return parseConfig(json, c, log)
+}
+
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config PluginConfig, log log.Log) types.Action {
 	ctx.DisableReroute()
+	if config.historyBinding != nil && config.historyBinding.CaptureBodyBasis {
+		if action := prepareHistoryBodyBasis(ctx); action != types.ActionContinue {
+			return action
+		}
+	}
+	if !config.historyEnabled {
+		return bypassHistory(ctx, "history-off")
+	}
+	if config.historyBinding != nil {
+		return nativeHistoryHeaders(ctx, config)
+	}
 	contentType, _ := proxywasm.GetHttpRequestHeader("content-type")
 	if !strings.Contains(contentType, "application/json") {
 		log.Warnf("content is not json, can't process:%s", contentType)
@@ -198,6 +222,15 @@ func TrimQuote(source string) string {
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, config PluginConfig, body []byte, log log.Log) types.Action {
+	if action := captureHistoryBodyBasis(ctx, body); action != types.ActionContinue {
+		return action
+	}
+	if ctx.GetStringContext(historyGateContextKey, "") != "" {
+		return types.ActionContinue
+	}
+	if config.historyBinding != nil {
+		return nativeHistoryRequestBody(ctx, config, body, log)
+	}
 	bodyJson := gjson.ParseBytes(body)
 	if bodyJson.Get("stream").Bool() {
 		ctx.SetContext(StreamContextKey, struct{}{})
@@ -400,6 +433,13 @@ func processSSEMessage(ctx wrapper.HttpContext, config PluginConfig, sseMessage 
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, config PluginConfig, log log.Log) types.Action {
+	if ctx.GetStringContext(historyGateContextKey, "") != "" {
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
+	if config.historyBinding != nil {
+		return nativeHistoryResponseHeaders(ctx)
+	}
 	contentType, _ := proxywasm.GetHttpResponseHeader("content-type")
 	if strings.Contains(contentType, "text/event-stream") {
 		ctx.SetContext(StreamContextKey, struct{}{})
@@ -407,6 +447,12 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, config PluginConfig, log log
 	return types.ActionContinue
 }
 func onHttpStreamResponseBody(ctx wrapper.HttpContext, config PluginConfig, chunk []byte, isLastChunk bool, log log.Log) []byte {
+	if ctx.GetStringContext(historyGateContextKey, "") != "" {
+		return chunk
+	}
+	if config.historyBinding != nil {
+		return nativeHistoryResponseBody(ctx, config, chunk, isLastChunk, log)
+	}
 	if ctx.GetContext(ToolCallsContextKey) != nil {
 		// we should not cache tool call result
 		return chunk

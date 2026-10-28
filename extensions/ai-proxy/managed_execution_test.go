@@ -37,7 +37,7 @@ func managedConfigFixture() map[string]interface{} {
 	return map[string]interface{}{
 		"provider":      map[string]interface{}{"type": "openai", "apiTokens": []string{"controlled-upstream-key"}},
 		"protocol_mode": "auto", "path_scope": "bound_target",
-		"managed_execution":      managedSettings{ProducerID: "managed-e1", PrivateStream: "private-execution-stream", Redis: managedRedisSettings{ServiceName: "redis.static"}, UpstreamPath: "/custom/provider/answer", Authority: "managed-provider.example", CredentialValue: "controlled-upstream-key"},
+		"managed_execution":      managedSettings{ProducerID: "managed-e1", CallIdentitySource: "admission", PrivateStream: "private-execution-stream", Redis: managedRedisSettings{ServiceName: "redis.static"}, UpstreamPath: "/custom/provider/answer", Authority: "managed-provider.example", CredentialValue: "controlled-upstream-key"},
 		"_modelfusion_execution": managedRelease{SchemaVersion: "modelfusion-execution.v1", Descriptor: descriptor, RouteID: "route-1", SalesAssetID: "asset-1", PublicModel: "public-model", CredentialRef: "credential-1", CredentialRevision: "1"},
 	}
 }
@@ -60,8 +60,12 @@ type managedHost struct {
 
 // These are real Wasm SDK host-call callbacks. They prove transport and send
 // count behavior only; they are not evidence of an external upstream execution.
-func newManagedHost(t *testing.T) *managedHost {
+func newManagedHost(t *testing.T, fixtures ...map[string]interface{}) *managedHost {
 	t.Helper()
+	fixture := managedConfigFixture()
+	if len(fixtures) != 0 {
+		fixture = fixtures[0]
+	}
 	h := &managedHost{}
 	vm := wrapper.NewCommonVmCtx("ai-proxy",
 		wrapper.ParseConfig(func(value gjson.Result, cfg *config.PluginConfig) error {
@@ -95,7 +99,7 @@ func newManagedHost(t *testing.T) *managedHost {
 		}),
 		wrapper.ProcessStreamDone(onManagedStreamDone),
 	)
-	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration(managedFixtureJSON(t, managedConfigFixture())))
+	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration(managedFixtureJSON(t, fixture)))
 	t.Cleanup(reset)
 	h.host = host
 	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
@@ -119,7 +123,8 @@ func managedRequestHeaders(t *testing.T, original []byte) [][2]string {
 	headers = append(headers,
 		[2]string{managedCallHeader, "50000000-0000-0000-0000-000000000001"},
 		[2]string{managedAdmissionReleaseHeader, "release-1"},
-		[2]string{managedAdmissionDeadlineHeader, time.Now().UTC().Add(5 * time.Second).Format(time.RFC3339Nano)})
+		[2]string{managedAdmissionDeadlineHeader, time.Now().UTC().Add(5 * time.Second).Format(time.RFC3339Nano)},
+		[2]string{managedAdmissionOccurredHeader, "2026-10-27T10:00:00Z"})
 	headers = append(headers, balanceidentity.Snapshot{
 		AccountID: "10000000-0000-0000-0000-000000000001", APIKeyID: "20000000-0000-0000-0000-000000000001", CredentialGeneration: "9007199254740993",
 		TenantID: "30000000-0000-0000-0000-000000000001", PrincipalID: "40000000-0000-0000-0000-000000000001",
@@ -209,6 +214,16 @@ func TestManagedRouteBoundConfigurationDoesNotInheritTarget(t *testing.T) {
 	cases := []func(map[string]interface{}){
 		func(o map[string]interface{}) { delete(o, "_modelfusion_execution") },
 		func(o map[string]interface{}) { delete(o, "managed_execution") },
+		func(o map[string]interface{}) {
+			s := o["managed_execution"].(managedSettings)
+			s.CallIdentitySource = ""
+			o["managed_execution"] = s
+		},
+		func(o map[string]interface{}) {
+			s := o["managed_execution"].(managedSettings)
+			s.CallIdentitySource = "proxy"
+			o["managed_execution"] = s
+		},
 		func(o map[string]interface{}) { o["path_scope"] = "legacy_suffixes" },
 		func(o map[string]interface{}) { o["enable_methods"] = []string{"POST"} },
 		func(o map[string]interface{}) { o["enable_path_suffixes"] = []string{"/v1/chat/completions"} },
@@ -385,6 +400,9 @@ func TestManagedSingleSendFreezesOriginalBodyAndOverridesClientIDs(t *testing.T)
 	var registration executionfacts.Registration
 	if err := json.Unmarshal(records[0].raw, &registration); err != nil {
 		t.Fatal(err)
+	}
+	if registration.BusinessOccurredAt != "2026-10-27T10:00:00Z" {
+		t.Fatal("proxy replaced the original committed call time")
 	}
 	var selection map[string]string
 	if err := json.Unmarshal(registration.Selection, &selection); err != nil {

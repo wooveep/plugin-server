@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-history/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-history/README_EN.md
-  version: 0.1.1
+  version: 0.1.3
   contact:
     name: sakura
 spec:
@@ -26,6 +26,66 @@ spec:
       type: object
       required: [redis]
       properties:
+        capture_body_basis:
+          type: boolean
+          default: false
+          description: Trusted publication assigns true only to the first body rewriter according to exact artifact phase and priority. Other preprocessors consume the original basis.
+        enabled:
+          type: boolean
+          default: true
+          description: Enable this explicitly bound history policy.
+        path_scope:
+          type: string
+          enum:
+          - bound_target
+          description: Use the matched published route binding without a second URL list.
+        client_protocol:
+          type: string
+          minLength: 1
+          description: 'Trusted published protocol: openai_chat, openai_responses, anthropic_messages. Other protocols bypass history.'
+        operation_kind:
+          type: string
+          minLength: 1
+          description: Only text_generate supports history, including multimodal input with text output. Other operations bypass history.
+        public_model:
+          type: string
+          minLength: 1
+          description: Original published public model checked against the trusted pre-rewrite body basis.
+        native_identity:
+          type: object
+          additionalProperties: false
+          required:
+          - release_id
+          - target_id
+          - route_id
+          - policy_id
+          - policy_version
+          properties:
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            target_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            route_id:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              not:
+                const: 00000000-0000-0000-0000-000000000000
+            policy_id:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              not:
+                const: 00000000-0000-0000-0000-000000000000
+            policy_version:
+              type: integer
+              minimum: 1
+              maximum: 9223372036854775807
+          description: Five frozen binding fields only. Caller is read once from the preceding authenticated native identity; never supplied in this rule.
         redis:
           type: object
           title: Redis配置
@@ -57,6 +117,9 @@ spec:
                 en-US: Redis Username
             password:
               type: string
+              format: password
+              x-sensitive: true
+              writeOnly: true
               title: Redis密码
               x-title-i18n:
                 en-US: Redis Password
@@ -123,6 +186,66 @@ spec:
       type: object
       required: [redis]
       properties:
+        capture_body_basis:
+          type: boolean
+          default: false
+          description: Trusted publication assigns true only to the first body rewriter according to exact artifact phase and priority. Other preprocessors consume the original basis.
+        enabled:
+          type: boolean
+          default: true
+          description: Enable this explicitly bound history policy.
+        path_scope:
+          type: string
+          enum:
+          - bound_target
+          description: Use the matched published route binding without a second URL list.
+        client_protocol:
+          type: string
+          minLength: 1
+          description: 'Trusted published protocol: openai_chat, openai_responses, anthropic_messages. Other protocols bypass history.'
+        operation_kind:
+          type: string
+          minLength: 1
+          description: Only text_generate supports history, including multimodal input with text output. Other operations bypass history.
+        public_model:
+          type: string
+          minLength: 1
+          description: Original published public model checked against the trusted pre-rewrite body basis.
+        native_identity:
+          type: object
+          additionalProperties: false
+          required:
+          - release_id
+          - target_id
+          - route_id
+          - policy_id
+          - policy_version
+          properties:
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            target_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            route_id:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              not:
+                const: 00000000-0000-0000-0000-000000000000
+            policy_id:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              not:
+                const: 00000000-0000-0000-0000-000000000000
+            policy_version:
+              type: integer
+              minimum: 1
+              maximum: 9223372036854775807
+          description: Five frozen binding fields only. Caller is read once from the preceding authenticated native identity; never supplied in this rule.
         redis:
           type: object
           title: Redis配置
@@ -139,6 +262,9 @@ spec:
               type: string
             password:
               type: string
+              format: password
+              x-sensitive: true
+              writeOnly: true
             timeout:
               type: integer
               default: 1000

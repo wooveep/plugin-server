@@ -4,7 +4,7 @@ keywords: [AI Gateway, AI Proxy]
 description: Reference for configuring the AI Proxy plugin
 ---
 
-> Plugin version: `1.0.2`
+> Plugin version: `2.0.1`
 
 ## Function Description
 
@@ -2461,6 +2461,7 @@ spec:
           - "YOUR_API_TOKEN"
     ingress:
     - groq
+  # Standalone example pinned to upstream ai-proxy 1.0.2; not a native Modelfusion release artifact pin.
   url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.2
 ---
 apiVersion: networking.k8s.io/v1

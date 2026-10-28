@@ -717,6 +717,8 @@ func TestOnHttpResponseBody(t *testing.T) {
 	})
 }
 
+// These requests provide only a client consumer header, without an authenticated
+// native identity. Keep route/model/usage assertions while labeling them anonymous.
 func TestMetrics(t *testing.T) {
 	test.RunTest(t, func(t *testing.T) {
 		// 测试指标收集
@@ -760,31 +762,31 @@ func TestMetrics(t *testing.T) {
 
 			// 5. 验证指标值
 			// 检查输入 token 指标
-			inputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.user1.metric.input_token"
+			inputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.input_token"
 			inputTokenValue, err := host.GetCounterMetric(inputTokenMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(5), inputTokenValue)
 
 			// 检查输出 token 指标
-			outputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.user1.metric.output_token"
+			outputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.output_token"
 			outputTokenValue, err := host.GetCounterMetric(outputTokenMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(8), outputTokenValue)
 
 			// 检查总 token 指标
-			totalTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.user1.metric.total_token"
+			totalTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.total_token"
 			totalTokenValue, err := host.GetCounterMetric(totalTokenMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(13), totalTokenValue)
 
 			// 检查服务时长指标
-			serviceDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.user1.metric.llm_service_duration"
+			serviceDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.llm_service_duration"
 			serviceDurationValue, err := host.GetCounterMetric(serviceDurationMetric)
 			require.NoError(t, err)
 			require.Greater(t, serviceDurationValue, uint64(0))
 
 			// 检查请求计数指标
-			durationCountMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.user1.metric.llm_duration_count"
+			durationCountMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.llm_duration_count"
 			durationCountValue, err := host.GetCounterMetric(durationCountMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(1), durationCountValue)
@@ -860,35 +862,35 @@ func TestMetrics(t *testing.T) {
 
 			// 7. 验证流式响应指标
 			// 检查首 token 延迟指标
-			firstTokenDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.user2.metric.llm_first_token_duration"
+			firstTokenDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.none.metric.llm_first_token_duration"
 			firstTokenDurationValue, err := host.GetCounterMetric(firstTokenDurationMetric)
 			require.NoError(t, err)
 			require.Greater(t, firstTokenDurationValue, uint64(0))
 
 			// 检查流式请求计数指标
-			streamDurationCountMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.user2.metric.llm_stream_duration_count"
+			streamDurationCountMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.none.metric.llm_stream_duration_count"
 			streamDurationCountValue, err := host.GetCounterMetric(streamDurationCountMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(1), streamDurationCountValue)
 
 			// 检查服务时长指标
-			serviceDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.user2.metric.llm_service_duration"
+			serviceDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.none.metric.llm_service_duration"
 			serviceDurationValue, err := host.GetCounterMetric(serviceDurationMetric)
 			require.NoError(t, err)
 			require.Greater(t, serviceDurationValue, uint64(0))
 
 			// 检查 token 指标
-			inputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.user2.metric.input_token"
+			inputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.none.metric.input_token"
 			inputTokenValue, err := host.GetCounterMetric(inputTokenMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(5), inputTokenValue)
 
-			outputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.user2.metric.output_token"
+			outputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.none.metric.output_token"
 			outputTokenValue, err := host.GetCounterMetric(outputTokenMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(8), outputTokenValue)
 
-			totalTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.user2.metric.total_token"
+			totalTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.none.metric.total_token"
 			totalTokenValue, err := host.GetCounterMetric(totalTokenMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(13), totalTokenValue)
@@ -960,31 +962,31 @@ func TestCompleteFlow(t *testing.T) {
 
 			// 6. 验证指标值
 			// 检查输入 token 指标
-			inputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.consumer1.metric.input_token"
+			inputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.input_token"
 			inputTokenValue, err := host.GetCounterMetric(inputTokenMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(5), inputTokenValue)
 
 			// 检查输出 token 指标
-			outputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.consumer1.metric.output_token"
+			outputTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.output_token"
 			outputTokenValue, err := host.GetCounterMetric(outputTokenMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(8), outputTokenValue)
 
 			// 检查总 token 指标
-			totalTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.consumer1.metric.total_token"
+			totalTokenMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.total_token"
 			totalTokenValue, err := host.GetCounterMetric(totalTokenMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(13), totalTokenValue)
 
 			// 检查服务时长指标
-			serviceDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.consumer1.metric.llm_service_duration"
+			serviceDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.llm_service_duration"
 			serviceDurationValue, err := host.GetCounterMetric(serviceDurationMetric)
 			require.NoError(t, err)
 			require.Greater(t, serviceDurationValue, uint64(0))
 
 			// 检查请求计数指标
-			durationCountMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.consumer1.metric.llm_duration_count"
+			durationCountMetric := "route.api-v1.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.llm_duration_count"
 			durationCountValue, err := host.GetCounterMetric(durationCountMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(1), durationCountValue)
@@ -1063,19 +1065,19 @@ func TestCompleteFlow(t *testing.T) {
 
 			// 7. 验证流式响应指标
 			// 检查首 token 延迟指标
-			firstTokenDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.consumer2.metric.llm_first_token_duration"
+			firstTokenDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.none.metric.llm_first_token_duration"
 			firstTokenDurationValue, err := host.GetCounterMetric(firstTokenDurationMetric)
 			require.NoError(t, err)
 			require.Greater(t, firstTokenDurationValue, uint64(0))
 
 			// 检查流式请求计数指标
-			streamDurationCountMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.consumer2.metric.llm_stream_duration_count"
+			streamDurationCountMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.none.metric.llm_stream_duration_count"
 			streamDurationCountValue, err := host.GetCounterMetric(streamDurationCountMetric)
 			require.NoError(t, err)
 			require.Equal(t, uint64(1), streamDurationCountValue)
 
 			// 检查服务时长指标
-			serviceDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.consumer2.metric.llm_service_duration"
+			serviceDurationMetric := "route.api-v1.upstream.cluster-1.model.gpt-4.consumer.none.metric.llm_service_duration"
 			serviceDurationValue, err := host.GetCounterMetric(serviceDurationMetric)
 			require.NoError(t, err)
 			require.Greater(t, serviceDurationValue, uint64(0))

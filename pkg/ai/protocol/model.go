@@ -15,6 +15,29 @@ const (
 	ProtocolResponses       ProtocolKind = "responses"
 )
 
+// ParsePublishedTextProtocol validates trusted route configuration once.
+// It consumes the original published client protocol and operation, never a
+// request path, a client header, or a later plugin's private context. Callers
+// retain the returned kind for their existing adapters; unsupported operations
+// and protocols must not fall back to legacy path detection.
+func ParsePublishedTextProtocol(clientProtocol, operationKind string) (ProtocolKind, error) {
+	if operationKind != "text_generate" {
+		return ProtocolUnknown, errors.New("published operation_kind does not support text protocol adapters")
+	}
+	switch clientProtocol {
+	case "openai_chat":
+		return ProtocolChatCompletions, nil
+	case "openai_responses":
+		return ProtocolResponses, nil
+	case "anthropic_messages":
+		return ProtocolMessages, nil
+	default:
+		return ProtocolUnknown, errors.New("published client_protocol is not supported by text protocol adapters")
+	}
+}
+
+// DetectProtocolKind provides legacy suffix-based compatibility only.
+// Managed route bindings use ParsePublishedTextProtocol at configuration time.
 func DetectProtocolKind(path string) ProtocolKind {
 	pathOnly := strings.TrimSpace(strings.Split(path, "?")[0])
 	switch {

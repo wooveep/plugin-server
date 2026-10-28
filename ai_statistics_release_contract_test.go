@@ -144,9 +144,16 @@ schema:
 			"session_id_header",
 		})
 		assertExactProperties(t, routeProperties, []string{
+			"use_default_attributes",
+			"use_default_response_attributes",
+			"attributes",
+			"disable_openai_usage",
+			"value_length_limit",
 			"path_scope",
 			"enable_path_suffixes",
 			"enable_methods",
+			"enable_content_types",
+			"session_id_header",
 		})
 
 		attributeItems := nestedMapping(t, globalProperties, "attributes", "items")
@@ -170,7 +177,10 @@ schema:
 		assertIntegerDefault(t, globalProperties, "value_length_limit", 32000)
 		assertStringValue(t, nestedMapping(t, globalProperties, "path_scope"), "default", "legacy_suffixes")
 
-		for name, raw := range routeProperties {
+		// Routing overrides inherit the initialized global values. Complete
+		// rule-only configurations also expose the ordinary attribute settings.
+		for _, name := range []string{"path_scope", "enable_path_suffixes", "enable_methods"} {
+			raw := routeProperties[name]
 			field, ok := raw.(map[string]any)
 			if !ok {
 				t.Fatalf("route property %s is %T, want mapping", name, raw)

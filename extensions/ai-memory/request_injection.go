@@ -43,18 +43,14 @@ func replaceMemoryRequestBody(ctx wrapper.HttpContext, input memoryMessageAssemb
 }
 
 func memoryRequestInjectionUsesProtocolAdapter(ctx wrapper.HttpContext) bool {
-	kind, _, ok := memoryProtocolAdapterForPath(ctx.GetStringContext(memoryRequestPathContextKey, ""))
-	return ok && kind != protocol.ProtocolChatCompletions
+	return protocol.ProtocolKind(ctx.GetStringContext(memoryProtocolContextKey, "")) != protocol.ProtocolChatCompletions
 }
 
 func replaceProtocolMemoryRequestBody(ctx wrapper.HttpContext, original []byte, input memoryMessageAssemblyInput, log log.Log) bool {
 	if !hasEffectiveProtocolMemoryInjection(input) {
 		return false
 	}
-	_, adapter, ok := memoryProtocolAdapterForPath(ctx.GetStringContext(memoryRequestPathContextKey, ""))
-	if !ok {
-		return false
-	}
+	adapter := memoryProtocolAdapterForKind(protocol.ProtocolKind(ctx.GetStringContext(memoryProtocolContextKey, "")))
 	replaced, err := adapter.InjectContext(original, memoryProtocolInjectableContext(input))
 	if err != nil {
 		log.Warnf("[ai-memory] request body protocol assembly failed open: %v", err)

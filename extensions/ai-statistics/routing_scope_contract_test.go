@@ -175,9 +175,9 @@ func TestStatisticsRoutingScopeContract(t *testing.T) {
 				wantObserved: false,
 			},
 		} {
-			t.Run("nonempty suffix and exact-case method intersect/"+testCase.name, func(t *testing.T) {
+			t.Run("legacy nonempty suffix and exact-case method intersect/"+testCase.name, func(t *testing.T) {
 				config := fixedMarkerConfig("intersection-marker")
-				config["path_scope"] = "bound_target"
+				config["path_scope"] = "legacy_suffixes"
 				config["enable_path_suffixes"] = []string{"/vendor/jobs"}
 				config["enable_methods"] = []string{"MiXeD"}
 
@@ -287,13 +287,13 @@ func TestStatisticsRoutingScopeContract(t *testing.T) {
 				wantObserved: false,
 			},
 		} {
-			t.Run("rule nonempty suffix and exact-case method intersect/"+testCase.name, func(t *testing.T) {
+			t.Run("legacy rule nonempty suffix and exact-case method intersect/"+testCase.name, func(t *testing.T) {
 				config := fixedMarkerConfig("rule-intersection-marker")
 				config["enable_path_suffixes"] = []string{"/v1/chat/completions"}
 				config["_rules_"] = []map[string]interface{}{
 					{
 						"_match_route_":        []string{"statistics-route-intersection"},
-						"path_scope":           "bound_target",
+						"path_scope":           "legacy_suffixes",
 						"enable_path_suffixes": []string{"/native/rule/jobs"},
 						"enable_methods":       []string{"RuLe"},
 					},

@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
 )
@@ -29,6 +30,7 @@ const (
 	executionAdmissionAttemptHeader  = "x-modelfusion-attempt-id"
 	executionAdmissionReleaseHeader  = "x-modelfusion-admission-release-id"
 	executionAdmissionDeadlineHeader = "x-modelfusion-admission-valid-until"
+	executionAdmissionOccurredHeader = executionfacts.AdmissionOccurredHeader
 	executionAdmissionMaxJSONBytes   = 64 * 1024
 )
 
@@ -41,16 +43,17 @@ type executionAdmissionConsole struct {
 }
 
 type executionAdmissionConfig struct {
-	SchemaVersion  string                    `json:"schema_version"`
-	ReleaseID      string                    `json:"release_id"`
-	RouteID        string                    `json:"route_id"`
-	Purpose        string                    `json:"purpose"`
-	CombinationKey string                    `json:"combination_key"`
-	ProfileID      string                    `json:"profile_id"`
-	AccessID       *string                   `json:"access_id"`
-	Revision       *string                   `json:"revision"`
-	Console        executionAdmissionConsole `json:"console_internal"`
-	cluster        string
+	SchemaVersion      string                    `json:"schema_version"`
+	CallIdentitySource string                    `json:"call_identity_source"`
+	ReleaseID          string                    `json:"release_id"`
+	RouteID            string                    `json:"route_id"`
+	Purpose            string                    `json:"purpose"`
+	CombinationKey     string                    `json:"combination_key"`
+	ProfileID          string                    `json:"profile_id"`
+	AccessID           *string                   `json:"access_id"`
+	Revision           *string                   `json:"revision"`
+	Console            executionAdmissionConsole `json:"console_internal"`
+	cluster            string
 }
 
 // These are the Console CheckRequest and CheckReceipt wires. Nullable fields
@@ -113,13 +116,16 @@ func configureExecutionAdmission(value gjson.Result, cfg *QuotaConfig) error {
 	}
 	var parsed executionAdmissionConfig
 	if err := executionAdmissionDecodeObject([]byte(entry.Raw), []string{
-		"schema_version", "release_id", "route_id", "purpose", "combination_key", "profile_id", "console_internal",
+		"schema_version", "call_identity_source", "release_id", "route_id", "purpose", "combination_key", "profile_id", "console_internal",
 	}, []string{"access_id", "revision"}, &parsed); err != nil {
 		return fmt.Errorf("execution_admission: %w", err)
 	}
 	if parsed.SchemaVersion != executionAdmissionSchema || !executionAdmissionText(parsed.ReleaseID, 256) ||
 		!balanceidentity.ValidID(parsed.RouteID) || !executionAdmissionText(parsed.ProfileID, 256) || !executionAdmissionDigest(parsed.CombinationKey) {
 		return errors.New("execution_admission requires the frozen schema and release scope")
+	}
+	if parsed.CallIdentitySource != executionfacts.CallIdentitySourceAdmission {
+		return errors.New("execution_admission requires the original admission call identity capability")
 	}
 	switch parsed.Purpose {
 	case "validation":
@@ -181,7 +187,7 @@ func checkExecutionAdmission(ctx wrapper.HttpContext, cfg QuotaConfig, identity 
 		}
 	}
 	// Remove every occurrence, including case variants, before minting any call.
-	if err := executionAdmissionInstallHeaders("", "", ""); err != nil {
+	if err := executionAdmissionInstallHeaders("", "", "", ""); err != nil {
 		reject(503, "request_headers_unavailable")
 		return
 	}
@@ -200,7 +206,7 @@ func checkExecutionAdmission(ctx wrapper.HttpContext, cfg QuotaConfig, identity 
 		TenantID: identity.TenantID, RouteID: parsed.RouteID, AccountID: identity.AccountID,
 		PrincipalID: identity.PrincipalID, APIKeyID: identity.APIKeyID, CredentialGeneration: identity.CredentialGeneration,
 	}
-	if err := executionAdmissionInstallHeaders(pending.request.CallID, "", ""); err != nil {
+	if err := executionAdmissionInstallHeaders(pending.request.CallID, "", "", ""); err != nil {
 		reject(503, "request_headers_unavailable")
 		return
 	}
@@ -275,8 +281,21 @@ func checkExecutionAdmission(ctx wrapper.HttpContext, cfg QuotaConfig, identity 
 			reject(503, "permit_invalid")
 			return
 		}
-		// Install only the original returned deadline, never an extended local TTL.
-		if err := executionAdmissionInstallHeaders(pending.request.CallID, parsed.ReleaseID, *receipt.ValidUntil); err != nil {
+		occurredAt, occurredOK := executionAdmissionSingleHeader(responseHeaders, executionAdmissionOccurredHeader)
+		// The JSON receipt stays frozen. This private header is returned only after
+		// Console commits this original call; neither the client nor quota invents it.
+		_, originErr := executionfacts.ReadAdmittedCall([][2]string{
+			{executionAdmissionCallHeader, pending.request.CallID},
+			{executionAdmissionReleaseHeader, parsed.ReleaseID},
+			{executionAdmissionDeadlineHeader, *receipt.ValidUntil},
+			{executionAdmissionOccurredHeader, occurredAt},
+		}, parsed.ReleaseID, time.Now())
+		if !occurredOK || originErr != nil {
+			reject(503, "original_call_missing")
+			return
+		}
+		// Install only the original returned time/deadline, never an extended TTL.
+		if err := executionAdmissionInstallHeaders(pending.request.CallID, parsed.ReleaseID, *receipt.ValidUntil, occurredAt); err != nil {
 			reject(503, "request_headers_unavailable")
 			return
 		}
@@ -301,15 +320,15 @@ func executionAdmissionSameString(left, right *string) bool {
 	return left == nil && right == nil || left != nil && right != nil && *left == *right
 }
 
-func executionAdmissionInstallHeaders(callID, releaseID, deadline string) error {
+func executionAdmissionInstallHeaders(callID, releaseID, deadline, occurredAt string) error {
 	headers, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil {
 		return err
 	}
-	clean := make([][2]string, 0, len(headers)+3)
+	clean := make([][2]string, 0, len(headers)+4)
 	for _, pair := range headers {
 		switch strings.ToLower(pair[0]) {
-		case executionAdmissionCallHeader, executionAdmissionAttemptHeader, executionAdmissionReleaseHeader, executionAdmissionDeadlineHeader:
+		case executionAdmissionCallHeader, executionAdmissionAttemptHeader, executionAdmissionReleaseHeader, executionAdmissionDeadlineHeader, executionAdmissionOccurredHeader:
 			continue
 		}
 		clean = append(clean, pair)
@@ -317,8 +336,8 @@ func executionAdmissionInstallHeaders(callID, releaseID, deadline string) error 
 	if callID != "" {
 		clean = append(clean, [2]string{executionAdmissionCallHeader, callID})
 	}
-	if releaseID != "" && deadline != "" {
-		clean = append(clean, [2]string{executionAdmissionReleaseHeader, releaseID}, [2]string{executionAdmissionDeadlineHeader, deadline})
+	if releaseID != "" && deadline != "" && occurredAt != "" {
+		clean = append(clean, [2]string{executionAdmissionReleaseHeader, releaseID}, [2]string{executionAdmissionDeadlineHeader, deadline}, [2]string{executionAdmissionOccurredHeader, occurredAt})
 	}
 	return proxywasm.ReplaceHttpRequestHeaders(clean)
 }

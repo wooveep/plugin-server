@@ -4,7 +4,7 @@ keywords: [AI网关, AI代理]
 description: AI 代理插件配置参考
 ---
 
-> 交付版本：`2.0.0`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。
+> 交付版本：`2.0.1`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。
 
 ## 托管原生执行
 
@@ -2723,6 +2723,7 @@ spec:
             - 'YOUR_API_TOKEN'
       ingress:
         - groq
+  # Standalone example pinned to upstream ai-proxy 1.0.2; not a native Modelfusion release artifact pin.
   url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.2
 ---
 apiVersion: networking.k8s.io/v1

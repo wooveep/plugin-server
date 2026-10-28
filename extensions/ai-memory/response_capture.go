@@ -61,11 +61,12 @@ func memoryCaptureNonStreamingResponse(body []byte, statusCode int, responseValu
 	return capture
 }
 
-func memoryCaptureNonStreamingResponseForPath(body []byte, statusCode int, path string, responseValueFrom string, toolCallPaths []string) memoryResponseCapture {
-	kind, adapter, ok := memoryProtocolAdapterForPath(path)
-	if !ok || kind == protocol.ProtocolChatCompletions {
+func memoryCaptureNonStreamingResponseForProtocol(body []byte, statusCode int, kind protocol.ProtocolKind, responseValueFrom string, toolCallPaths []string) memoryResponseCapture {
+	if kind == protocol.ProtocolChatCompletions {
 		return memoryCaptureNonStreamingResponse(body, statusCode, responseValueFrom, toolCallPaths)
 	}
+
+	adapter := memoryProtocolAdapterForKind(kind)
 	exchange, err := adapter.CaptureResponse(protocolResponseCaptureInput(statusCode, body))
 	if err != nil {
 		return memoryResponseCapture{StatusCode: statusCode, ParseFailed: true}
@@ -112,7 +113,7 @@ func memoryCaptureNonStreamingResponseChunkWithLimit(ctx wrapper.HttpContext, c 
 	if value, ok := ctx.GetContext(memoryResponseStatusContextKey).(int); ok {
 		statusCode = value
 	}
-	capture := memoryCaptureNonStreamingResponseForPath(body, statusCode, ctx.GetStringContext(memoryRequestPathContextKey, ""), c.Route.ResponseValueFrom, c.Route.ToolCallsFrom)
+	capture := memoryCaptureNonStreamingResponseForProtocol(body, statusCode, protocol.ProtocolKind(ctx.GetStringContext(memoryProtocolContextKey, "")), c.Route.ResponseValueFrom, c.Route.ToolCallsFrom)
 	if capture.ParseFailed {
 		log.Warnf("[ai-memory] parse non-streaming response failed open")
 	}
@@ -159,8 +160,7 @@ func memoryCaptureStreamingResponseChunk(ctx wrapper.HttpContext, c config.Plugi
 }
 
 func memoryStreamingCaptureUsesProtocolAdapter(ctx wrapper.HttpContext) bool {
-	kind, _, ok := memoryProtocolAdapterForPath(ctx.GetStringContext(memoryRequestPathContextKey, ""))
-	return ok && kind != protocol.ProtocolChatCompletions
+	return protocol.ProtocolKind(ctx.GetStringContext(memoryProtocolContextKey, "")) != protocol.ProtocolChatCompletions
 }
 
 func memoryCaptureProtocolStreamingResponseChunk(ctx wrapper.HttpContext, c config.PluginConfig, chunk []byte, isLastChunk bool, log logs.Log) {
@@ -181,15 +181,7 @@ func memoryCaptureProtocolStreamingResponseChunk(ctx wrapper.HttpContext, c conf
 		})
 		return
 	}
-	_, adapter, ok := memoryProtocolAdapterForPath(ctx.GetStringContext(memoryRequestPathContextKey, ""))
-	if !ok {
-		ctx.SetContext(memoryResponseCaptureContextKey, memoryResponseCapture{
-			StatusCode:  statusCode,
-			ParseFailed: true,
-			IsStream:    true,
-		})
-		return
-	}
+	adapter := memoryProtocolAdapterForKind(protocol.ProtocolKind(ctx.GetStringContext(memoryProtocolContextKey, "")))
 	chunks, _ := ctx.GetContext(memoryStreamChunksContextKey).([][]byte)
 	exchange, err := adapter.CaptureStream(protocolResponseStreamInput(statusCode, chunks))
 	if err != nil {

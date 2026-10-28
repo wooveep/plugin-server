@@ -12,6 +12,7 @@ import (
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/tokenusage"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -443,6 +444,8 @@ type Attribute struct {
 }
 
 type AIStatisticsConfig struct {
+	initialized bool
+	invalidBase bool
 	// Metrics
 	// TODO: add more metrics in Gauge and Histogram format
 	counterMetrics map[string]proxywasm.MetricCounter
@@ -551,6 +554,19 @@ func isContentTypeEnabled(contentType string, enabledContentTypes []string) bool
 }
 
 func parseConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
+	if err := parseCompleteStatisticsConfig(configJson, config); err != nil {
+		// The wrapper otherwise supplies a zero global config to valid rules.
+		if configJson.Get("_rules_").Exists() {
+			*config = AIStatisticsConfig{invalidBase: true}
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func parseCompleteStatisticsConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
+	*config = AIStatisticsConfig{}
 	// Check if use_default_attributes is enabled
 	useDefaultAttributes := configJson.Get("use_default_attributes").Bool()
 	// Check if use_default_response_attributes is enabled (lightweight mode)
@@ -660,10 +676,13 @@ func parseConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
 		config.sessionIdHeader = sessionIdHeader.String()
 	}
 
+	config.initialized = true
 	return nil
 }
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) types.Action {
+	// This filter runs before authentication; incoming consumer fields are untrusted.
+	ctx.SetContext(ConsumerKey, "none")
 	requestPath, _ := proxywasm.GetHttpRequestHeader(":path")
 	requestMethod, _ := proxywasm.GetHttpRequestHeader(":method")
 	if !isStatisticsRequestEnabled(requestPath, requestMethod, config) {
@@ -690,9 +709,6 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) ty
 	if requestPath, _ := proxywasm.GetHttpRequestHeader(":path"); requestPath != "" {
 		ctx.SetContext(RequestPath, requestPath)
 	}
-	if consumer, _ := proxywasm.GetHttpRequestHeader(ConsumerKey); consumer != "" {
-		ctx.SetContext(ConsumerKey, consumer)
-	}
 
 	// Always buffer request body to extract model field
 	// This is essential for metrics and logging
@@ -715,9 +731,18 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) ty
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body []byte) types.Action {
+	ctx.SetContext(ConsumerKey, "none")
 	// Check if processing should be skipped
 	if ctx.GetBoolContext(SkipProcessing, false) {
 		return types.ActionContinue
+	}
+
+	// Later authentication filters have completed before this body callback.
+	// Local authentication replies never reach it; an unsubscribed body stays anonymous.
+	if headers, err := proxywasm.GetHttpRequestHeaders(); config.pathScope == pathScopeBoundTarget && err == nil {
+		if identity, err := balanceidentity.Read(headers); err == nil && identity.PrincipalID != "" {
+			ctx.SetContext(ConsumerKey, identity.PrincipalID)
+		}
 	}
 
 	// Only process request body if we need to extract attributes from it
@@ -847,7 +872,7 @@ func onHttpStreamingBody(ctx wrapper.HttpContext, config AIStatisticsConfig, dat
 
 	// Set information about this request
 	if !config.disableOpenaiUsage {
-		if usage := tokenusage.GetTokenUsage(ctx, data); usage.TotalToken > 0 {
+		if usage := observeStatisticsUsage(ctx, config, data, true); usage.TotalToken > 0 {
 			// Set span attributes for ARMS.
 			setSpanAttribute(ArmsTotalToken, usage.TotalToken)
 			setSpanAttribute(ArmsModelName, usage.Model)
@@ -916,7 +941,7 @@ func onHttpResponseBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body
 
 	// Set information about this request
 	if !config.disableOpenaiUsage {
-		if usage := tokenusage.GetTokenUsage(ctx, body); usage.TotalToken > 0 {
+		if usage := observeStatisticsUsage(ctx, config, body, false); usage.TotalToken > 0 {
 			// Set span attributes for ARMS.
 			setSpanAttribute(ArmsModelName, usage.Model)
 			setSpanAttribute(ArmsInputToken, usage.InputToken)
@@ -1385,12 +1410,12 @@ func writeMetric(ctx wrapper.HttpContext, config AIStatisticsConfig) {
 		return
 	}
 
-	if ctx.GetUserAttribute(tokenusage.CtxKeyModel) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyInputToken) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyOutputToken) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyTotalToken) == nil {
+	if config.pathScope != pathScopeBoundTarget && (ctx.GetUserAttribute(tokenusage.CtxKeyModel) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyInputToken) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyOutputToken) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyTotalToken) == nil) {
 		log.Info("get usage information failed, skip metric record")
 		return
 	}
 	model, ok = ctx.GetUserAttribute(tokenusage.CtxKeyModel).(string)
-	if !ok {
+	if !ok || config.pathScope == pathScopeBoundTarget && (model == "" || model == tokenusage.ModelUnknown) {
 		log.Info("Model type assert failed, skip metric record")
 		return
 	}

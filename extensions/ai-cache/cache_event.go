@@ -8,6 +8,7 @@ import (
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-cache/config"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/ai/sessionctx"
 	logs "github.com/higress-group/wasm-go/pkg/log"
@@ -18,25 +19,39 @@ import (
 const thinCacheEventKind = "cache_event"
 const thinCachePluginVersion = "ai-cache-thin-v1"
 
+// nativeCacheProcessingIdentity is captured once from the controlled rule and
+// preceding native authentication. It is not decoded from client input.
+type nativeCacheProcessingIdentity struct {
+	config.NativeIdentityConfig
+	Caller balanceidentity.Snapshot `json:"caller"`
+}
+
+func cacheNativeIdentity(ctx wrapper.HttpContext) *nativeCacheProcessingIdentity {
+	identity, _ := ctx.GetContext(CACHE_NATIVE_IDENTITY_KEY).(*nativeCacheProcessingIdentity)
+	return identity
+}
+
 type ThinCacheEvent struct {
 	sessionctx.EventEnvelope
-	SessionID          string                `json:"session_id,omitempty"`
-	Route              string                `json:"route"`
-	Model              string                `json:"model"`
-	RequestPath        string                `json:"request_path"`
-	Protocol           protocol.ProtocolKind `json:"protocol"`
-	CacheScope         string                `json:"cache_scope"`
-	CachePolicyVersion string                `json:"cache_policy_version"`
-	StatusCode         int                   `json:"status_code"`
-	IsStream           bool                  `json:"is_stream"`
-	ContainsToolCalls  bool                  `json:"contains_tool_calls"`
-	NoStore            bool                  `json:"no_store"`
-	Sensitive          bool                  `json:"sensitive"`
-	PluginVersion      string                `json:"plugin_version"`
-	UserContent        string                `json:"user_content,omitempty"`
-	AssistantContent   string                `json:"assistant_content,omitempty"`
-	FinishReason       string                `json:"finish_reason,omitempty"`
-	Usage              json.RawMessage       `json:"usage,omitempty"`
+	NativeIdentity        *nativeCacheProcessingIdentity `json:"native_identity,omitempty"`
+	SemanticContextDigest string                         `json:"semantic_context_digest,omitempty"`
+	SessionID             string                         `json:"session_id,omitempty"`
+	Route                 string                         `json:"route"`
+	Model                 string                         `json:"model"`
+	RequestPath           string                         `json:"request_path"`
+	Protocol              protocol.ProtocolKind          `json:"protocol"`
+	CacheScope            string                         `json:"cache_scope"`
+	CachePolicyVersion    string                         `json:"cache_policy_version"`
+	StatusCode            int                            `json:"status_code"`
+	IsStream              bool                           `json:"is_stream"`
+	ContainsToolCalls     bool                           `json:"contains_tool_calls"`
+	NoStore               bool                           `json:"no_store"`
+	Sensitive             bool                           `json:"sensitive"`
+	PluginVersion         string                         `json:"plugin_version"`
+	UserContent           string                         `json:"user_content,omitempty"`
+	AssistantContent      string                         `json:"assistant_content,omitempty"`
+	FinishReason          string                         `json:"finish_reason,omitempty"`
+	Usage                 json.RawMessage                `json:"usage,omitempty"`
 }
 
 type thinResponseFacts struct {
@@ -50,18 +65,6 @@ type thinResponseFacts struct {
 type thinStreamCapture struct {
 	chunks      [][]byte
 	parseFailed bool
-}
-
-func storeThinRequestEventContext(ctx wrapper.HttpContext, body []byte, log logs.Log) {
-	ctx.SetContext(CACHE_EVENT_STARTED_AT_KEY, nowMillis())
-	ctx.SetContext(CACHE_REQUEST_ID_KEY, currentRequestID())
-
-	userPrompt, err := thinCurrentUserPromptForPath(ctx.GetStringContext(CACHE_PATH_CONTEXT_KEY, ""), body)
-	if err != nil {
-		log.Warnf("[%s] [storeThinRequestEventContext] parse request intent failed: %v", PLUGIN_NAME, err)
-		return
-	}
-	ctx.SetContext(CACHE_USER_CONTENT_KEY, userPrompt)
 }
 
 func captureThinResponseHeaders(ctx wrapper.HttpContext, log logs.Log) {
@@ -81,7 +84,8 @@ func handleThinResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chun
 	}
 
 	path := ctx.GetStringContext(CACHE_PATH_CONTEXT_KEY, "")
-	kind, adapter, ok := thinProtocolAdapterForPath(path)
+	kind := c.ProtocolForPath(path)
+	adapter, ok := thinProtocolAdapterForKind(kind)
 	if !ok {
 		log.Warnf("[%s] [handleThinResponseBody] unsupported request path for protocol adapter: %s", PLUGIN_NAME, path)
 		return
@@ -197,20 +201,22 @@ func buildThinCacheEvent(ctx wrapper.HttpContext, c config.PluginConfig, kind pr
 			StartedAtMS:   startedAt,
 			EndedAtMS:     endedAt,
 		}),
-		SessionID:          ctx.GetStringContext(CACHE_SESSION_CONTEXT_KEY, ""),
-		Route:              ctx.GetStringContext(CACHE_ROUTE_CONTEXT_KEY, ""),
-		Model:              ctx.GetStringContext(CACHE_MODEL_CONTEXT_KEY, ""),
-		RequestPath:        ctx.GetStringContext(CACHE_PATH_CONTEXT_KEY, ""),
-		Protocol:           kind,
-		CacheScope:         c.CacheScope,
-		CachePolicyVersion: ctx.GetStringContext(CACHE_POLICY_VERSION_KEY, c.CachePolicyVersion),
-		StatusCode:         statusCode,
-		IsStream:           stream,
-		ContainsToolCalls:  facts.containsToolCalls,
-		NoStore:            noStore,
-		Sensitive:          sensitive,
-		PluginVersion:      thinCachePluginVersion,
-		FinishReason:       facts.finishReason,
+		NativeIdentity:        cacheNativeIdentity(ctx),
+		SemanticContextDigest: ctx.GetStringContext(CACHE_SEMANTIC_CONTEXT_KEY, ""),
+		SessionID:             ctx.GetStringContext(CACHE_SESSION_CONTEXT_KEY, ""),
+		Route:                 ctx.GetStringContext(CACHE_ROUTE_CONTEXT_KEY, ""),
+		Model:                 ctx.GetStringContext(CACHE_MODEL_CONTEXT_KEY, ""),
+		RequestPath:           ctx.GetStringContext(CACHE_PATH_CONTEXT_KEY, ""),
+		Protocol:              kind,
+		CacheScope:            c.CacheScope,
+		CachePolicyVersion:    ctx.GetStringContext(CACHE_POLICY_VERSION_KEY, c.CachePolicyVersion),
+		StatusCode:            statusCode,
+		IsStream:              stream,
+		ContainsToolCalls:     facts.containsToolCalls,
+		NoStore:               noStore,
+		Sensitive:             sensitive,
+		PluginVersion:         thinCachePluginVersion,
+		FinishReason:          facts.finishReason,
 	}
 	if !thinUsageEmpty(facts.usage) {
 		event.Usage = facts.usage

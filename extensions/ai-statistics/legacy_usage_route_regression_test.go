@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// These requests provide only a client consumer header, without an authenticated
+// native identity. Keep route/model/usage assertions while labeling them anonymous.
 func TestStatisticsLegacyUsageRouteCardinalityRegression(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
 		host, status := test.NewTestHost(basicConfig)
@@ -40,7 +42,7 @@ func TestStatisticsLegacyUsageRouteCardinalityRegression(t *testing.T) {
 		}`)))
 		host.CompleteHttp()
 
-		safeInputMetric := "route.route_unknown.upstream.cluster-1.model.gpt-3.5-turbo.consumer.user1.metric.input_token"
+		safeInputMetric := "route.route_unknown.upstream.cluster-1.model.gpt-3.5-turbo.consumer.none.metric.input_token"
 		inputTokens, err := host.GetCounterMetric(safeInputMetric)
 		require.NoError(t, err)
 		require.Equal(t, uint64(5), inputTokens)

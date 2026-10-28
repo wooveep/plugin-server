@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -23,7 +24,8 @@ import (
 const nativeBillingContextKey = "ai-billing-native-execution.v1"
 
 type nativeBillingSettings struct {
-	ProducerID string `json:"producer_id"`
+	ProducerID         string `json:"producer_id"`
+	CallIdentitySource string `json:"call_identity_source"`
 }
 
 // The SDK supplies this complete reserved object after verifying the released
@@ -83,6 +85,7 @@ type nativeBillingConfig struct {
 type nativeBillingState struct {
 	config                         *nativeBillingConfig
 	identity                       balanceidentity.Snapshot
+	origin                         executionfacts.AdmittedCall
 	valid, bridgeSeen, gap, closed bool
 	snapshot                       executionfacts.Snapshot
 	delivery                       *executionfacts.Delivery
@@ -117,6 +120,9 @@ func configureNativeBilling(value gjson.Result, cfg *BillingConfig) error {
 	}
 	if !nativeBillingID(settings.ProducerID) || cfg.RedisStream.Stream == "" {
 		return errors.New("native billing requires a configured producer and private Stream")
+	}
+	if settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission {
+		return errors.New("native billing requires the original admission call identity capability")
 	}
 	if err := validateNativeBillingRelease(releaseValue, release); err != nil {
 		return err
@@ -182,8 +188,8 @@ func validateNativeBillingRelease(value gjson.Result, release nativeBillingRelea
 	return nil
 }
 
-// Billing precedes proxy on request headers. Never read client call/attempt IDs:
-// proxy assigns them later and overwrites upstream bridge response metadata.
+// Quota precedes billing and installs this call's committed admission identity.
+// Proxy or cache later supplies the sole delivery bridge; attempt IDs stay separate.
 func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (types.Action, bool) {
 	if cfg.NativeExecution == nil {
 		return types.ActionContinue, false
@@ -222,7 +228,12 @@ func captureNativeBillingIdentity(ctx executionFactContext, state *nativeBilling
 		nativeBillingGap(ctx, state, "authenticated_identity_missing")
 		return
 	}
-	state.identity, state.valid = identity, true
+	origin, err := executionfacts.ReadAdmittedCall(headers, state.config.release.Descriptor.ReleaseID, time.Now())
+	if err != nil {
+		nativeBillingGap(ctx, state, "original_call_missing")
+		return
+	}
+	state.identity, state.origin, state.valid = identity, origin, true
 }
 
 func onNativeBillingResponseHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (types.Action, bool) {
@@ -290,7 +301,7 @@ func consumeNativeBillingBridge(ctx executionFactContext, cfg BillingConfig, sta
 		}
 		return
 	}
-	// This preserves the proxy's original event/source/revision and byte sequence.
+	// This preserves the finalizer's original event/source/revision and byte sequence.
 	// No legacy BillingEvent, estimated usage, price lookup, or second attempt exists.
 	state.snapshot = snapshot
 	var client executionRedisClient
@@ -305,7 +316,7 @@ func consumeNativeBillingBridge(ctx executionFactContext, cfg BillingConfig, sta
 
 func validateNativeBillingDelivery(state *nativeBillingState, snapshot executionfacts.Snapshot) error {
 	identity, release, fact := state.identity, state.config.release, snapshot.Envelope()
-	if identity.Validate() != nil || identity.TenantID == "" || identity.PrincipalID == "" || snapshot.ProducerID() != state.config.producerID || fact.Kind != "call_delivery" || fact.PrincipalKind != "user" || fact.BillingMode != "customer" || fact.OperationKind != "text_generate" || fact.ReleaseID != release.Descriptor.ReleaseID || fact.RouteID != release.RouteID || fact.SalesAssetID != release.SalesAssetID || fact.PublicModel != release.PublicModel || fact.AccountID != identity.AccountID || fact.TenantID != identity.TenantID || fact.PrincipalID != identity.PrincipalID {
+	if identity.Validate() != nil || identity.TenantID == "" || identity.PrincipalID == "" || snapshot.ProducerID() != state.config.producerID || fact.CallID != state.origin.CallID || fact.OccurredAt != state.origin.OccurredAt || fact.Kind != "call_delivery" || fact.PrincipalKind != "user" || fact.BillingMode != "customer" || fact.OperationKind != "text_generate" || fact.ReleaseID != release.Descriptor.ReleaseID || fact.RouteID != release.RouteID || fact.SalesAssetID != release.SalesAssetID || fact.PublicModel != release.PublicModel || fact.AccountID != identity.AccountID || fact.TenantID != identity.TenantID || fact.PrincipalID != identity.PrincipalID {
 		return errors.New("delivery differs from original caller or released ownership")
 	}
 	// E1 bridges final delivery only. Procurement facts belong to the sender's

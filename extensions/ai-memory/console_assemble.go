@@ -29,25 +29,27 @@ const (
 )
 
 type memoryNamedFact struct {
+	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`
 }
 
 type memoryAssembleRequest struct {
-	SchemaVersion     int             `json:"schema_version"`
-	Tenant            string          `json:"tenant"`
-	Consumer          string          `json:"consumer"`
-	SessionID         string          `json:"session_id,omitempty"`
-	Route             memoryNamedFact `json:"route"`
-	Model             memoryNamedFact `json:"model"`
-	RequestID         string          `json:"request_id"`
-	RequestPath       string          `json:"request_path"`
-	CurrentQuestion   string          `json:"current_question"`
-	MessagesDigest    string          `json:"messages_digest"`
-	MemoryMode        string          `json:"memory_mode"`
-	RecentWindowTurns int             `json:"recent_window_turns,omitempty"`
-	MemoryTokenBudget int             `json:"memory_token_budget,omitempty"`
-	SemanticTopK      int             `json:"semantic_top_k,omitempty"`
-	PolicyVersion     string          `json:"policy_version,omitempty"`
+	NativeIdentity    *memoryNativeIdentity `json:"native_identity,omitempty"`
+	SchemaVersion     int                   `json:"schema_version"`
+	Tenant            string                `json:"tenant"`
+	Consumer          string                `json:"consumer"`
+	SessionID         string                `json:"session_id,omitempty"`
+	Route             memoryNamedFact       `json:"route"`
+	Model             memoryNamedFact       `json:"model"`
+	RequestID         string                `json:"request_id"`
+	RequestPath       string                `json:"request_path"`
+	CurrentQuestion   string                `json:"current_question"`
+	MessagesDigest    string                `json:"messages_digest"`
+	MemoryMode        string                `json:"memory_mode"`
+	RecentWindowTurns int                   `json:"recent_window_turns,omitempty"`
+	MemoryTokenBudget int                   `json:"memory_token_budget,omitempty"`
+	SemanticTopK      int                   `json:"semantic_top_k,omitempty"`
+	PolicyVersion     string                `json:"policy_version,omitempty"`
 }
 
 type memoryConsoleAssembleResponse struct {
@@ -72,12 +74,17 @@ type memoryAssembleMessage struct {
 }
 
 func buildMemoryAssembleRequestBody(ctx wrapper.HttpContext, c config.PluginConfig) ([]byte, error) {
+	route := memoryNamedFact{Name: ctx.GetStringContext(memoryRouteContextKey, "")}
+	if c.NativeIdentity != nil {
+		route = memoryNamedFact{ID: c.NativeIdentity.RouteID, Name: ctx.GetStringContext(memoryRouteNameContextKey, "")}
+	}
 	return json.Marshal(memoryAssembleRequest{
+		NativeIdentity:    nativeMemoryIdentity(ctx, c),
 		SchemaVersion:     memoryAssembleSchemaVersion,
 		Tenant:            ctx.GetStringContext(memoryTenantContextKey, ""),
 		Consumer:          ctx.GetStringContext(memoryConsumerContextKey, ""),
 		SessionID:         ctx.GetStringContext(memorySessionContextKey, ""),
-		Route:             memoryNamedFact{Name: ctx.GetStringContext(memoryRouteContextKey, "")},
+		Route:             route,
 		Model:             memoryNamedFact{Name: ctx.GetStringContext(memoryModelContextKey, "")},
 		RequestID:         ctx.GetStringContext(memoryRequestIDContextKey, ""),
 		RequestPath:       ctx.GetStringContext(memoryRequestPathContextKey, ""),

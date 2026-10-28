@@ -1,7 +1,7 @@
 <!-- Generated package documentation from extensions/ai-quota/README.md. -->
 # AI Quota：版本化余额只读准入
 
-版本 `2.0.0`，协议 `balance.v1`。仅给受管的新模型调用入口绑定本插件。PostgreSQL原钱包是资金权威；Console是余额/资格投影和维护状态的唯一写者。ai-quota不计价、不预扣、不结算、不写余额或ready；响应正文、缓存命中、错误和迟到用量均不触发第二次配额判断。
+版本 `2.0.1`，协议 `balance.v1`。仅给受管的新模型调用入口绑定本插件。PostgreSQL原钱包是资金权威；Console是余额/资格投影和维护状态的唯一写者。ai-quota不计价、不预扣、不结算、不写余额或ready；响应正文、缓存命中、错误和迟到用量均不触发第二次配额判断。
 
 配置全局必填 `balance_scope_id`、`cache_generation`、`projection_schema: balance.v1` 和 `redis`。两个UUID必须来自Console本次受控发布，不能使用示例值代表真实生效配置。`missing_balance_policy`只接受 `deny`。旧用户名余额key、`balance_key_template`、`tenant_header`、`consumer_header`、`quota_scope`和`provider`配置已退役；旧裸整数GET不会作为新协议后备。
 

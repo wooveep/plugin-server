@@ -107,6 +107,8 @@ schema:
 		assertClosedObject(t, routeSchema, "route schema")
 		assertKeyAbsent(t, globalSchema, "required")
 		assertExactProperties(t, globalProperties, []string{
+			"native_execution",
+			"_modelfusion_execution",
 			"redis_stream",
 			"event_kind",
 			"quota_scope",
@@ -122,6 +124,8 @@ schema:
 			"fail_policy",
 		})
 		assertExactProperties(t, routeProperties, []string{
+			"native_execution",
+			"_modelfusion_execution",
 			"redis_stream",
 			"event_kind",
 			"quota_scope",
@@ -161,15 +165,81 @@ schema:
 			assertIntegerDefault(t, redisProperties, "database", 0)
 			assertIntegerDefault(t, redisProperties, "timeout", 500)
 			assertStringValue(t, nestedMapping(t, redisProperties, "stream"), "default", "billing:events")
+			password := nestedMapping(t, redisProperties, "password")
+			assertStringValue(t, password, "type", "string")
+			for _, marker := range []string{"writeOnly", "x-sensitive"} {
+				if password[marker] != true {
+					t.Errorf("%s.password.%s = %#v, want true", name, marker, password[marker])
+				}
+			}
+			assertKeyAbsent(t, password, "default")
+			assertKeyAbsent(t, password, "example")
 		}
 
 		for _, properties := range []map[string]any{globalProperties, routeProperties} {
+			native := nestedMapping(t, properties, "native_execution")
+			assertClosedObject(t, native, "native_execution")
+			assertStringSlice(t, native, "required", []string{"producer_id", "call_identity_source"})
+			nativeProperties := nestedMapping(t, native, "properties")
+			assertExactProperties(t, nativeProperties, []string{"producer_id", "call_identity_source"})
+			assertStringValue(t, nestedMapping(t, nativeProperties, "call_identity_source"), "type", "string")
+			assertStringValue(t, nestedMapping(t, nativeProperties, "call_identity_source"), "const", "admission")
+			producer := nestedMapping(t, nativeProperties, "producer_id")
+			assertStringValue(t, producer, "type", "string")
+			if producer["minLength"] != 1 {
+				t.Errorf("producer_id.minLength = %#v, want 1", producer["minLength"])
+			}
+
+			released := nestedMapping(t, properties, "_modelfusion_execution")
+			assertClosedObject(t, released, "_modelfusion_execution")
+			if released["readOnly"] != true {
+				t.Errorf("_modelfusion_execution.readOnly = %#v, want true", released["readOnly"])
+			}
+			releasedFields := []string{"schema_version", "descriptor", "route_id", "sales_asset_id", "public_model", "credential_ref", "credential_revision"}
+			assertStringSlice(t, released, "required", releasedFields)
+			releasedProperties := nestedMapping(t, released, "properties")
+			assertExactProperties(t, releasedProperties, releasedFields)
+			assertStringSlice(t, nestedMapping(t, releasedProperties, "schema_version"), "enum", []string{"modelfusion-execution.v1"})
+			for _, name := range []string{"route_id", "sales_asset_id", "public_model", "credential_ref"} {
+				field := nestedMapping(t, releasedProperties, name)
+				assertStringValue(t, field, "type", "string")
+				if field["minLength"] != 1 {
+					t.Errorf("%s.minLength = %#v, want 1", name, field["minLength"])
+				}
+			}
+			revision := nestedMapping(t, releasedProperties, "credential_revision")
+			assertStringValue(t, revision, "type", "string")
+			assertStringValue(t, revision, "pattern", "^[1-9][0-9]*$")
+			descriptor := nestedMapping(t, releasedProperties, "descriptor")
+			assertStringValue(t, descriptor, "type", "object")
+			if descriptor["additionalProperties"] != true {
+				t.Errorf("descriptor.additionalProperties = %#v, want true for the runtime-validated IF01 descriptor", descriptor["additionalProperties"])
+			}
+
 			eventKind := nestedMapping(t, properties, "event_kind")
 			assertStringSlice(t, eventKind, "enum", []string{"usage", "internal_cost", "customer_usage"})
 			requireFragments(t, eventKind["description"].(string), []string{"usage", "internal_cost", "customer_usage"})
 			eventKindI18n := nestedMapping(t, eventKind, "x-description-i18n")
 			requireFragments(t, eventKindI18n["en-US"].(string), []string{"usage", "internal_cost", "customer_usage"})
 			assertStringValue(t, nestedMapping(t, properties, "bill_customer"), "type", "boolean")
+		}
+		conditions := nestedSlice(t, routeSchema, "allOf")
+		if len(conditions) != 1 {
+			t.Fatalf("route allOf has %d conditions, want the native paired-envelope condition", len(conditions))
+		}
+		condition, ok := conditions[0].(map[string]any)
+		if !ok {
+			t.Fatalf("native route condition is %T, want mapping", conditions[0])
+		}
+		assertStringSlice(t, nestedMapping(t, condition, "if"), "required", []string{"native_execution"})
+		paired := nestedMapping(t, condition, "then")
+		assertStringSlice(t, paired, "required", []string{"redis_stream", "_modelfusion_execution", "path_scope"})
+		pairedProperties := nestedMapping(t, paired, "properties")
+		assertStringValue(t, nestedMapping(t, pairedProperties, "path_scope"), "const", "bound_target")
+		for _, filter := range []string{"enable_methods", "enable_path_suffixes"} {
+			if field := nestedMapping(t, pairedProperties, filter); field["maxItems"] != 0 {
+				t.Errorf("native %s.maxItems = %#v, want 0", filter, field["maxItems"])
+			}
 		}
 		assertStringValue(t, nestedMapping(t, globalProperties, "event_kind"), "default", "usage")
 		for name, raw := range routeProperties {
@@ -201,7 +271,7 @@ schema:
 		)
 		resourceRedis := nestedMapping(t, globalExample, "redis_stream")
 		assertStringValue(t, resourceRedis, "username", "<redis-username>")
-		assertStringValue(t, resourceRedis, "password", "<redis-password>")
+		assertKeyAbsent(t, resourceRedis, "password")
 		assertStringValue(t, globalExample, "event_kind", "usage")
 		assertStringValue(t, routeExample, "event_kind", "internal_cost")
 		assertStringValue(t, routeExample, "path_scope", "bound_target")
@@ -210,7 +280,7 @@ schema:
 		routeRedis := nestedMapping(t, routeExample, "redis_stream")
 		assertStringValue(t, routeRedis, "service_name", "redis-stack-server.dns")
 		assertStringValue(t, routeRedis, "username", "<redis-username>")
-		assertStringValue(t, routeRedis, "password", "<redis-password>")
+		assertKeyAbsent(t, routeRedis, "password")
 		assertKeyAbsent(t, routeExample, "billing_service")
 		for _, name := range []string{"cost_source", "worker_kind"} {
 			value, exists := routeExample[name]
@@ -290,7 +360,7 @@ schema:
 				name:                "Chinese",
 				extensionPath:       "extensions/ai-billing/README.md",
 				resourcePath:        "resources/plugins/ai-billing/README.md",
-				eventHeading:        "## 账单事件契约",
+				eventHeading:        "## 兼容账单事件契约",
 				trustHeading:        "## 可信内部成本归因",
 				correlationHeading:  "## 响应关联契约",
 				configHeading:       "## 配置与迁移",
@@ -399,7 +469,15 @@ schema:
 				if err != nil {
 					t.Fatalf("read %s: %v", contract.resourcePath, err)
 				}
-				if string(extension) != string(resource) {
+				resourceBody := string(resource)
+				if contract.name == "Chinese" {
+					const extensionSchemaLink = "[资源 schema](../../resources/plugins/ai-billing/spec.yaml)"
+					const resourceSchemaLink = "[资源 schema](spec.yaml)"
+					requireFragments(t, string(extension), []string{extensionSchemaLink})
+					requireFragments(t, resourceBody, []string{resourceSchemaLink})
+					resourceBody = strings.Replace(resourceBody, resourceSchemaLink, extensionSchemaLink, 1)
+				}
+				if string(extension) != resourceBody {
 					t.Errorf("%s extension and resource documentation differ", contract.name)
 				}
 				body := string(extension)

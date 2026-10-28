@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.0
+  version: 2.0.1
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -32,12 +32,16 @@ spec:
           additionalProperties: false
           required:
           - producer_id
+          - call_identity_source
           - private_stream
           - redis
           - upstream_path
           - authority
           - credential_value
           properties:
+            call_identity_source:
+              type: string
+              const: admission
             input_protocol:
               type: string
               enum: [openai_chat, openai_responses, anthropic_messages]
@@ -816,12 +820,16 @@ spec:
           additionalProperties: false
           required:
           - producer_id
+          - call_identity_source
           - private_stream
           - redis
           - upstream_path
           - authority
           - credential_value
           properties:
+            call_identity_source:
+              type: string
+              const: admission
             input_protocol:
               type: string
               enum: [openai_chat, openai_responses, anthropic_messages]

@@ -260,3 +260,54 @@ func requireNormalizedExchangeJSON(t *testing.T, exchange NormalizedExchange, re
 		require.Contains(t, string(body), value)
 	}
 }
+
+func TestParsePublishedTextProtocolKeepsDeclaredKindAcrossRouteAliases(t *testing.T) {
+	cases := []struct {
+		clientProtocol string
+		kind           ProtocolKind
+		body           string
+		build          func(RequestParseInput) (CacheDigestResult, error)
+	}{
+		{"openai_chat", ProtocolChatCompletions, `{"model":"original-model","messages":[{"role":"user","content":"hello"}]}`, ChatCompletionsAdapter{}.BuildCacheDigest},
+		{"openai_responses", ProtocolResponses, `{"model":"original-model","input":"hello"}`, ResponsesAdapter{}.BuildCacheDigest},
+		{"anthropic_messages", ProtocolMessages, `{"model":"original-model","messages":[{"role":"user","content":"hello"}]}`, MessagesAdapter{}.BuildCacheDigest},
+	}
+	for _, example := range cases {
+		t.Run(example.clientProtocol, func(t *testing.T) {
+			kind, err := ParsePublishedTextProtocol(example.clientProtocol, "text_generate")
+			require.NoError(t, err)
+			require.Equal(t, example.kind, kind)
+			var originalDigest string
+			for _, path := range []string{"/custom/sales-alias", "/provider/private/remapped", "/v1/embeddings"} {
+				// Existing adapters consume the configured protocol. Even a path
+				// associated with another operation cannot reinterpret this input.
+				result, err := example.build(RequestParseInput{Method: "POST", Path: path, Body: []byte(example.body)})
+				require.NoError(t, err)
+				require.Equal(t, kind, result.Input.Protocol)
+				if originalDigest == "" {
+					originalDigest = result.Digest
+				}
+				require.Equal(t, originalDigest, result.Digest)
+			}
+		})
+	}
+}
+
+func TestParsePublishedTextProtocolDoesNotTreatOtherOperationsAsText(t *testing.T) {
+	for _, operation := range []string{"", "embedding", "image_generate", "video_generate", "task_query", "unknown", " text_generate", "text_generate "} {
+		kind, err := ParsePublishedTextProtocol("openai_chat", operation)
+		require.Error(t, err, operation)
+		require.Equal(t, ProtocolUnknown, kind, operation)
+	}
+}
+
+func TestParsePublishedTextProtocolDoesNotInferOrNormalizeUnknownProtocols(t *testing.T) {
+	for _, clientProtocol := range []string{"", "unknown", "chat_completions", "messages", "responses", "OPENAI_CHAT", "openai_chat ", "/v1/chat/completions"} {
+		kind, err := ParsePublishedTextProtocol(clientProtocol, "text_generate")
+		require.Error(t, err, clientProtocol)
+		require.Equal(t, ProtocolUnknown, kind, clientProtocol)
+	}
+	// The compatibility detector remains available to explicit legacy callers.
+	require.Equal(t, ProtocolChatCompletions, DetectProtocolKind("/legacy/v1/chat/completions"))
+	require.Equal(t, ProtocolUnknown, DetectProtocolKind("/custom/sales-alias"))
+}

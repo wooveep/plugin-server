@@ -23,7 +23,7 @@ var executionAdmissionCaller = balanceidentity.Snapshot{
 
 func executionAdmissionFixture(purpose string) map[string]interface{} {
 	entry := map[string]interface{}{
-		"schema_version": executionAdmissionSchema, "release_id": "release-original", "route_id": "50000000-0000-0000-0000-000000000001",
+		"schema_version": executionAdmissionSchema, "call_identity_source": "admission", "release_id": "release-original", "route_id": "50000000-0000-0000-0000-000000000001",
 		"purpose": purpose, "combination_key": "sha256:" + strings.Repeat("a", 64), "profile_id": "e1-single-text",
 		"console_internal": map[string]interface{}{
 			"service_name": "modelfusion-console.modelfusion-system.svc.cluster.local", "service_port": 80,
@@ -77,13 +77,16 @@ func TestExecutionAdmissionConfigUsesCompleteRuleAuthority(t *testing.T) {
 
 func TestExecutionAdmissionConfigRejectsAmbiguityAndManualFilters(t *testing.T) {
 	for name, mutate := range map[string]func(map[string]interface{}){
-		"unknown field":       func(entry map[string]interface{}) { entry["role"] = "validation_service" },
-		"schema":              func(entry map[string]interface{}) { entry["schema_version"] = "future.v2" },
-		"missing release":     func(entry map[string]interface{}) { delete(entry, "release_id") },
-		"non native route":    func(entry map[string]interface{}) { entry["route_id"] = "client-route" },
-		"digest":              func(entry map[string]interface{}) { entry["combination_key"] = "sha256:" + strings.Repeat("A", 64) },
-		"production access":   func(entry map[string]interface{}) { entry["access_id"] = "validation-access" },
-		"production revision": func(entry map[string]interface{}) { entry["revision"] = "1" },
+		"unknown field":          func(entry map[string]interface{}) { entry["role"] = "validation_service" },
+		"schema":                 func(entry map[string]interface{}) { entry["schema_version"] = "future.v2" },
+		"missing call origin":    func(entry map[string]interface{}) { delete(entry, "call_identity_source") },
+		"wrong call origin":      func(entry map[string]interface{}) { entry["call_identity_source"] = "proxy" },
+		"non-string call origin": func(entry map[string]interface{}) { entry["call_identity_source"] = true },
+		"missing release":        func(entry map[string]interface{}) { delete(entry, "release_id") },
+		"non native route":       func(entry map[string]interface{}) { entry["route_id"] = "client-route" },
+		"digest":                 func(entry map[string]interface{}) { entry["combination_key"] = "sha256:" + strings.Repeat("A", 64) },
+		"production access":      func(entry map[string]interface{}) { entry["access_id"] = "validation-access" },
+		"production revision":    func(entry map[string]interface{}) { entry["revision"] = "1" },
 		"credential whitespace": func(entry map[string]interface{}) {
 			entry["console_internal"].(map[string]interface{})["auth_token"] = "secret\r\nheader"
 		},
@@ -188,7 +191,7 @@ func (h *executionAdmissionHost) onAllowed() {
 func (h *executionAdmissionHost) start(t *testing.T, identity balanceidentity.Snapshot) executionAdmissionRequest {
 	t.Helper()
 	headers := append([][2]string{{":method", "POST"}, {":path", "/custom/customer/alias"}, {":authority", "gateway.example"}}, identity.Headers()...)
-	for _, name := range []string{executionAdmissionCallHeader, executionAdmissionAttemptHeader, executionAdmissionReleaseHeader, executionAdmissionDeadlineHeader} {
+	for _, name := range []string{executionAdmissionCallHeader, executionAdmissionAttemptHeader, executionAdmissionReleaseHeader, executionAdmissionDeadlineHeader, executionAdmissionOccurredHeader} {
 		headers = append(headers, [2]string{name, "forged-client"}, [2]string{strings.ToUpper(name), "forged-client-duplicate"})
 	}
 	if action := h.host.CallOnRequestHeaders(h.id, headers, false); action != types.HeaderStopAllIterationAndWatermark {
@@ -231,7 +234,7 @@ func (h *executionAdmissionHost) response(t *testing.T, headers [][2]string, raw
 }
 
 func executionAdmissionResponseHeaders() [][2]string {
-	return [][2]string{{":status", "200"}, {"content-type", "application/json"}}
+	return [][2]string{{":status", "200"}, {"content-type", "application/json"}, {executionAdmissionOccurredHeader, "2026-10-27T10:00:00Z"}}
 }
 
 func (h *executionAdmissionHost) assertDenied(t *testing.T, status uint32) {
@@ -240,7 +243,7 @@ func (h *executionAdmissionHost) assertDenied(t *testing.T, status uint32) {
 	if h.allowed != 0 || response == nil || response.StatusCode != status || h.host.GetCurrentHttpStreamAction(h.id) == types.ActionContinue {
 		t.Fatalf("admission escaped: allows=%d response=%#v action=%v", h.allowed, response, h.host.GetCurrentHttpStreamAction(h.id))
 	}
-	for _, name := range []string{executionAdmissionAttemptHeader, executionAdmissionReleaseHeader, executionAdmissionDeadlineHeader} {
+	for _, name := range []string{executionAdmissionAttemptHeader, executionAdmissionReleaseHeader, executionAdmissionDeadlineHeader, executionAdmissionOccurredHeader} {
 		if executionAdmissionHeaderCount(h.host.GetCurrentRequestHeaders(h.id), name) != 0 {
 			t.Fatalf("failed check installed trusted header %s", name)
 		}
@@ -274,7 +277,7 @@ func TestExecutionAdmissionControlledQueryAndExactProductionPermit(t *testing.T)
 	if value, unique := executionAdmissionSingleHeader(before, executionAdmissionCallHeader); !unique || value != request.CallID {
 		t.Fatal("fresh call header missing")
 	}
-	for _, name := range []string{executionAdmissionAttemptHeader, executionAdmissionReleaseHeader, executionAdmissionDeadlineHeader} {
+	for _, name := range []string{executionAdmissionAttemptHeader, executionAdmissionReleaseHeader, executionAdmissionDeadlineHeader, executionAdmissionOccurredHeader} {
 		if executionAdmissionHeaderCount(before, name) != 0 {
 			t.Fatalf("client value survived before receipt: %s", name)
 		}
@@ -285,7 +288,7 @@ func TestExecutionAdmissionControlledQueryAndExactProductionPermit(t *testing.T)
 		t.Fatal("complete current production permit did not invoke allow exactly once")
 	}
 	after := h.host.GetCurrentRequestHeaders(h.id)
-	for name, expected := range map[string]string{executionAdmissionCallHeader: request.CallID, executionAdmissionReleaseHeader: request.ReleaseID, executionAdmissionDeadlineHeader: receipt["valid_until"].(string)} {
+	for name, expected := range map[string]string{executionAdmissionCallHeader: request.CallID, executionAdmissionReleaseHeader: request.ReleaseID, executionAdmissionDeadlineHeader: receipt["valid_until"].(string), executionAdmissionOccurredHeader: "2026-10-27T10:00:00Z"} {
 		if actual, unique := executionAdmissionSingleHeader(after, name); !unique || actual != expected {
 			t.Fatalf("trusted permit header %s: %q unique=%v", name, actual, unique)
 		}
@@ -492,5 +495,27 @@ func TestExecutionAdmissionJSONRejectsDuplicateEscapesAndInvalidUnicode(t *testi
 		if err := executionAdmissionCheckJSON([]byte(raw)); err != nil {
 			t.Fatalf("valid JSON rejected: %s: %v", raw, err)
 		}
+	}
+}
+
+func TestExecutionAdmissionRequiresThisResponsesUniqueOriginalCallTime(t *testing.T) {
+	for _, malformed := range []string{"absent", "duplicate", "future", "non-UTC"} {
+		t.Run(malformed, func(t *testing.T) {
+			h := newExecutionAdmissionHost(t, executionAdmissionFixture("production"))
+			receipt := executionAdmissionAllowedReceipt(h.start(t, executionAdmissionCaller))
+			headers := executionAdmissionResponseHeaders()
+			switch malformed {
+			case "absent":
+				headers = headers[:2]
+			case "duplicate":
+				headers = append(headers, [2]string{strings.ToUpper(executionAdmissionOccurredHeader), "2026-10-27T10:00:00Z"})
+			case "future":
+				headers[2][1] = time.Now().UTC().Add(time.Hour).Format(time.RFC3339Nano)
+			case "non-UTC":
+				headers[2][1] = "2026-10-27T10:00:00+00:00"
+			}
+			h.response(t, headers, executionAdmissionJSON(t, receipt))
+			h.assertDenied(t, 503)
+		})
 	}
 }

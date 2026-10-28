@@ -15,13 +15,19 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README_EN.md
-  version: 2.0.0
+  version: 2.0.1
   contact:
     name: 2456868764
 spec:
   phase: default
   priority: 280
   configSchema:
+    x-higress-external-resource:
+      kind: redis
+      registryType: dns
+      domainPath: redis.service_name
+      portPath: redis.service_port
+      projectedNamePath: redis.service_name
     openAPIV3Schema:
       type: object
       additionalProperties: false
@@ -42,11 +48,15 @@ spec:
           additionalProperties: false
           title: 受管逐调用准入
           description: 仅由 Console 受控发布注入完整对象，不继承其他发布的准入身份，不接受请求覆盖或手工方法/路径过滤。字符串字节边界及 HTTP authority 仍由插件原解析器严格校验。
-          required: [schema_version, release_id, route_id, purpose, combination_key, profile_id, console_internal]
+          required: [schema_version, call_identity_source, release_id, route_id, purpose, combination_key, profile_id, console_internal]
           properties:
             schema_version:
               type: string
               const: managed-execution-admission.v1
+            call_identity_source:
+              type: string
+              const: admission
+              description: 仅使用本次成功准入事务保存的原 Call 身份与时间，不从插件发送时钟重建。
             release_id:
               type: string
               minLength: 1
@@ -235,6 +245,12 @@ spec:
         path_scope: legacy_suffixes
         enable_path_suffixes: [/v1/chat/completions, /v1/messages]
   routeConfigSchema:
+    x-higress-external-resource:
+      kind: redis
+      registryType: dns
+      domainPath: redis.service_name
+      portPath: redis.service_port
+      projectedNamePath: redis.service_name
     openAPIV3Schema:
       type: object
       additionalProperties: false

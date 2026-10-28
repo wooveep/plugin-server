@@ -134,12 +134,86 @@ their independently configured timeouts.
 
 `fail_policy` currently supports only `open`.
 
+### Managed route coverage
+
+For a route whose memory mode is already enabled, the control plane publishes
+the original client protocol and operation in its `matchRules[].config`:
+
+```yaml
+path_scope: bound_target
+client_protocol: openai_responses
+operation_kind: text_generate
+memory_mode: semantic
+```
+
+With `defaultConfigDisable: true`, the controller emits a root containing only
+`_rules_`. That root stays dormant. Each rule contains the complete managed
+configuration: its own `redis_stream`, optional `recent_cache` and
+`console_internal`, identity headers, and the flat memory behavior fields above.
+Only matching route/service requests use those targets; no global memory mode
+is enabled. A real global configuration keeps the existing inherited-target
+contract and rejects external-target overrides in its rules.
+
+`bound_target` uses the matched route directly and discards inherited global
+`enable_path_suffixes`. Additional nonempty path or method filters are rejected.
+The trusted protocol is selected once during configuration loading, then kept
+through request assembly and response capture. Custom aliases and upstream
+path rewrites do not select another adapter, and client headers cannot select
+the protocol. Supported text protocols are `openai_chat`, `openai_responses`,
+and `anthropic_messages`. A complete unsupported protocol/operation binding
+passes through with `unsupported-protocol-or-operation`; incomplete or nonstring
+published fields are configuration errors. A request without the selected
+protocol's messages/input shape passes through with `unsupported-request-content`.
+Gate reasons are written to the existing custom-log field `ai_memory_gate`.
+
+The release may set `capture_body_basis: true` on a supported published text
+binding when memory runs before the model mapper. This designates memory as
+the first original-body capture boundary. It removes all client occurrences of
+`x-modelfusion-original-body-digest` and `x-modelfusion-original-public-model`
+in the header phase, buffers the original JSON even when memory is off or its
+identity gates bypass, then uses `bodybasis.Capture` before any memory rewrite.
+The digest follows `mf-json.v1`; capture does not rewrite the original bytes.
+No-store keeps its existing memory policy and does not disable this basis.
+Invalid JSON/model, unsupported encoding, a missing body, or host capture
+failure rejects the call instead of forwarding an untrusted basis. The default
+is false and keeps legacy behavior. Cache passes the captured basis through.
+The control plane must freeze a matching later mapper source that reads and
+preserves this prior gateway basis; header presence alone never selects trust.
+
+An optional `native_identity` on the same managed rule contains exactly the
+original `release_id`, `target_id`, `route_id`, `policy_id`, and positive i64
+integer `policy_version`. The existing string policy version, when supplied,
+must be its canonical decimal equivalent. Caller fields are not configuration.
+After native key authentication, memory captures the five original
+`balanceidentity` fields once and adds that same caller snapshot to both its
+Console assemble request and `MemoryEvent`. Missing or ambiguous native caller
+identity bypasses memory without a legacy-name lookup or auxiliary call.
+
+Native tenant and consumer facts use the authenticated tenant and principal
+UUIDs. The route context and `route.id` use the original frozen route UUID;
+`route.name` keeps the Envoy route only as a diagnostic. The original request's
+public model remains a diagnostic for Console's frozen-target resolution.
+Native recent-memory Redis keys use Console's existing
+`consumer-name-sha256:<sha256(principal UUID)>` component; event and context
+consumer values retain the UUID itself. Legacy keys and identity behavior stay
+unchanged. This wire requires the matching Console native identity boundary and
+new exact artifact schema before enabling it. Attachment-only requests without
+a text question still have the previously identified Console semantic-assembly
+limitation; this change does not implement that path.
+
+Without published fields, legacy configuration keeps its suffix-based protocol
+selection. Memory remains off unless the route enables its original memory
+mode. Existing no-store, tenant/consumer/session isolation, tool-call capture,
+and cache-replay suppression continue to apply. Background extraction and
+embedding stay in Console and retain their separate internal costs.
+
 ## Request Flow
 
-1. Header phase checks configured path suffixes, JSON content type, tenant
-   identity, and consumer identity. Unsupported or unauthenticated requests
-   continue unchanged.
-2. Body phase parses OpenAI-compatible messages, extracts the latest user
+1. Header phase uses the matched route and published text protocol for managed
+   bindings, or configured suffixes for legacy bindings, then checks JSON
+   content type, request body, tenant identity, and consumer identity.
+   Unsupported or unauthenticated requests continue unchanged.
+2. Body phase uses the selected protocol adapter, extracts the latest user
    content, stores request facts, and builds a stable request digest.
 3. Recent-memory phase reads Console-materialized Redis sorted set key
    `memory:recent:<tenant>:<consumer>` using `ZREVRANGE 0 <recent_window_turns-1>`.
@@ -222,3 +296,7 @@ retention, deletion, management API, authorization, and repair policy.
 When `ai-memory` and `ai-cache` are both enabled, use a conservative cache
 policy such as consumer-scoped cache, memory-policy or digest-aware cache keys,
 or cache bypass until Console materializes memory-aware replay records.
+
+For managed native identity, `capture_body_basis: false` consumes and validates the original basis before auxiliary lookup or injection; a missing or mismatched basis bypasses memory without legacy fallback. Trusted publication assigns capture to the earliest actual history/memory rewriter using exact artifact phase/order, not incoming header presence. A later mapper must explicitly consume that basis. Independent legacy memory mode keeps its existing behavior.
+
+Managed consume validation uses the existing 100 MiB runtime HTTP limit after history injection. It retains the original basis unchanged and applies the shared strict parser without imposing the single canonical document byte budget on the combined conversation.

@@ -7,6 +7,7 @@ import (
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-cache/config"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/memorycache"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/log"
@@ -37,6 +38,8 @@ const (
 	CACHE_RESPONSE_CAPTURE_KEY = "cacheResponseCapture"
 	CACHE_MEMORY_DIGEST_KEY    = "cacheMemoryDigest"
 	CACHE_POLICY_VERSION_KEY   = "cacheEffectivePolicyVersion"
+	CACHE_NATIVE_IDENTITY_KEY  = "cacheNativeIdentity"
+	CACHE_SEMANTIC_CONTEXT_KEY = "cacheSemanticContextDigest"
 
 	DEFAULT_MAX_BODY_BYTES uint32 = 100 * 1024 * 1024
 )
@@ -52,11 +55,15 @@ func init() {
 		wrapper.ProcessRequestBodyBy(onHttpRequestBody),
 		wrapper.ProcessResponseHeadersBy(onHttpResponseHeaders),
 		wrapper.ProcessStreamingResponseBodyBy(onHttpResponseBody),
+		wrapper.ProcessStreamDoneBy(onNativeCacheStreamDone),
 	)
 }
 
 func parseConfig(json gjson.Result, c *config.PluginConfig, log log.Log) error {
 	c.FromJson(json, log)
+	if err := configureNativeCacheDelivery(json, c); err != nil {
+		return err
+	}
 	if err := c.Validate(); err != nil {
 		return err
 	}
@@ -70,6 +77,9 @@ func parseConfig(json gjson.Result, c *config.PluginConfig, log log.Log) error {
 
 func parseOverrideConfig(json gjson.Result, global config.PluginConfig, c *config.PluginConfig, log log.Log) error {
 	c.FromJsonWithGlobal(json, global, log)
+	if err := configureNativeCacheDelivery(json, c); err != nil {
+		return err
+	}
 	if err := c.Validate(); err != nil {
 		return err
 	}
@@ -80,8 +90,24 @@ func parseOverrideConfig(json gjson.Result, global config.PluginConfig, c *confi
 	return nil
 }
 
-func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) types.Action {
+func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) (action types.Action) {
 	ctx.DisableReroute()
+	if c.NativeExecution != nil {
+		if !prepareNativeCacheHeaders(ctx, c) {
+			return types.ActionPause
+		}
+		// Even a user-requested cache bypass must retain the SDK-selected body
+		// basis stage. Later mapper/proxy must not receive client basis headers.
+		defer func() {
+			ctx.SetRequestBodyBufferLimit(DEFAULT_MAX_BODY_BYTES)
+			if !wrapper.RequireRequestBody(ctx) {
+				rejectNativeCache(ctx, nil, 500, "body_context_unavailable")
+				action = types.ActionPause
+				return
+			}
+			action = types.HeaderStopIteration
+		}()
+	}
 	_ = proxywasm.RemoveHttpRequestHeader(memorycache.DeprecatedDigestHeader)
 	skipCache, _ := proxywasm.GetHttpRequestHeader(SKIP_CACHE_HEADER)
 	if isTruthyHeaderValue(skipCache) {
@@ -112,23 +138,51 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 			ctx.DontReadRequestBody()
 			return types.ActionContinue
 		}
+		if c.ProtocolBypassReason != "" {
+			markCacheGate(ctx, "unsupported-published-protocol")
+			log.Debugf("[onHttpRequestHeaders] text cache bypass: %s", c.ProtocolBypassReason)
+			ctx.DontReadRequestBody()
+			return types.ActionContinue
+		}
 		path := requestPath(ctx)
 		if !pathMatchesSuffixes(path, c.RoutePolicy.EnabledPathSuffixes) {
 			markCacheGate(ctx, "unsupported-path")
 			ctx.DontReadRequestBody()
 			return types.ActionContinue
 		}
-		tenant, _ := proxywasm.GetHttpRequestHeader(c.TenantHeader)
-		if strings.TrimSpace(tenant) == "" {
-			markCacheGate(ctx, "missing-tenant")
-			ctx.DontReadRequestBody()
-			return types.ActionContinue
-		}
-		consumer, _ := proxywasm.GetHttpRequestHeader(c.ConsumerHeader)
-		if c.CacheScope == config.CACHE_SCOPE_CONSUMER && strings.TrimSpace(consumer) == "" {
-			markCacheGate(ctx, "missing-consumer")
-			ctx.DontReadRequestBody()
-			return types.ActionContinue
+		var tenant, consumer string
+		if c.NativeIdentity != nil {
+			headers, err := proxywasm.GetHttpRequestHeaders()
+			if err != nil {
+				markCacheGate(ctx, "native-caller-unavailable")
+				ctx.DontReadRequestBody()
+				return types.ActionContinue
+			}
+			caller, err := balanceidentity.Read(headers)
+			if err != nil || caller.TenantID == "" || caller.PrincipalID == "" {
+				markCacheGate(ctx, "native-caller-unavailable")
+				ctx.DontReadRequestBody()
+				return types.ActionContinue
+			}
+			// Native key authentication cleared client fields and installed this
+			// credential's five facts. Retain one snapshot for lookup and response.
+			ctx.SetContext(CACHE_NATIVE_IDENTITY_KEY, &nativeCacheProcessingIdentity{
+				NativeIdentityConfig: *c.NativeIdentity, Caller: caller,
+			})
+			tenant, consumer = caller.TenantID, caller.PrincipalID
+		} else {
+			tenant, _ = proxywasm.GetHttpRequestHeader(c.TenantHeader)
+			if strings.TrimSpace(tenant) == "" {
+				markCacheGate(ctx, "missing-tenant")
+				ctx.DontReadRequestBody()
+				return types.ActionContinue
+			}
+			consumer, _ = proxywasm.GetHttpRequestHeader(c.ConsumerHeader)
+			if c.CacheScope == config.CACHE_SCOPE_CONSUMER && strings.TrimSpace(consumer) == "" {
+				markCacheGate(ctx, "missing-consumer")
+				ctx.DontReadRequestBody()
+				return types.ActionContinue
+			}
 		}
 		ctx.SetContext(CACHE_TENANT_CONTEXT_KEY, tenant)
 		ctx.SetContext(CACHE_CONSUMER_CONTEXT_KEY, consumer)
@@ -146,7 +200,13 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []byte, log log.Log) types.Action {
+	if c.NativeExecution != nil && !prepareNativeCacheBody(ctx, c, body) {
+		return types.ActionPause
+	}
 	consumeThinMemoryDigest(ctx, c)
+	if c.NativeIdentity != nil && cacheNativeIdentity(ctx) == nil {
+		markCacheGate(ctx, "native-caller-unavailable")
+	}
 	if cacheGateReason(ctx) != "" {
 		ctx.DontReadResponseBody()
 		return types.ActionContinue
@@ -179,10 +239,18 @@ func onThinHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body 
 		path = requestPath(ctx)
 		ctx.SetContext(CACHE_PATH_CONTEXT_KEY, path)
 	}
-	kind, adapter, ok := thinProtocolAdapterForPath(path)
+	kind := c.ProtocolForPath(path)
+	adapter, ok := thinProtocolAdapterForKind(kind)
 	if !ok {
 		markCacheGate(ctx, "unsupported-path")
 		log.Warnf("[onThinHttpRequestBody] unsupported request path for protocol adapter: %s", path)
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
+	userPrompt, err := thinCurrentUserPrompt(kind, body)
+	if err != nil {
+		markCacheGate(ctx, "unsupported-content")
+		log.Debugf("[onThinHttpRequestBody] text cache bypass: %v", err)
 		ctx.DontReadResponseBody()
 		return types.ActionContinue
 	}
@@ -204,12 +272,16 @@ func onThinHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body 
 		return types.ActionContinue
 	}
 
+	route := requestRoute()
+	if identity := cacheNativeIdentity(ctx); identity != nil {
+		route = identity.RouteID
+	}
 	material, err := BuildScopedCacheKeyMaterial(ScopedCacheKeyInput{
 		KeyPrefix:          c.MaterializedLookup.Redis.KeyPrefix,
 		Tenant:             ctx.GetStringContext(CACHE_TENANT_CONTEXT_KEY, ""),
 		Consumer:           ctx.GetStringContext(CACHE_CONSUMER_CONTEXT_KEY, ""),
 		CacheScope:         c.CacheScope,
-		Route:              requestRoute(),
+		Route:              route,
 		Model:              digest.Input.Model,
 		Protocol:           kind,
 		RequestDigest:      digest.Digest,
@@ -226,7 +298,16 @@ func onThinHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body 
 	ctx.SetContext(CACHE_DIGEST_CONTEXT_KEY, material.RequestDigest)
 	ctx.SetContext(CACHE_MATERIALIZED_KEY, material.RedisKey)
 	ctx.SetContext(CACHE_POLICY_VERSION_KEY, material.CachePolicyVersion)
-	storeThinRequestEventContext(ctx, body, log)
+	ctx.SetContext(CACHE_EVENT_STARTED_AT_KEY, nowMillis())
+	ctx.SetContext(CACHE_REQUEST_ID_KEY, currentRequestID())
+	ctx.SetContext(CACHE_USER_CONTENT_KEY, userPrompt.Text)
+	semanticContext, err := buildThinSemanticContextDigest(kind, body, userPrompt)
+	if err != nil {
+		// Exact lookup still uses the full original request. An unprovable
+		// semantic context only disables semantic fallback for this request.
+		log.Debugf("[onThinHttpRequestBody] semantic context unavailable, exact lookup only: %v", err)
+	}
+	ctx.SetContext(CACHE_SEMANTIC_CONTEXT_KEY, semanticContext)
 
 	if !c.MaterializedLookup.Redis.Enabled || !c.RoutePolicy.EnableRedisLookup {
 		log.Debug("[onThinHttpRequestBody] materialized Redis lookup is disabled, fail open")

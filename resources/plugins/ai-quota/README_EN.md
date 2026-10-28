@@ -1,7 +1,7 @@
 <!-- Generated package documentation from extensions/ai-quota/README_EN.md. -->
 # AI Quota: versioned readonly balance admission
 
-Version `2.0.0`, wire schema `balance.v1`. Bind this plugin only to managed new model invocations. The original PostgreSQL wallet is the money authority; Console alone writes balance/authorization projections and maintenance state. Quota never prices, reserves, settles, or mutates money/readiness. Response data and late usage do not cause a second quota decision.
+Version `2.0.1`, wire schema `balance.v1`. Bind this plugin only to managed new model invocations. The original PostgreSQL wallet is the money authority; Console alone writes balance/authorization projections and maintenance state. Quota never prices, reserves, settles, or mutates money/readiness. Response data and late usage do not cause a second quota decision.
 
 Global configuration requires `balance_scope_id`, `cache_generation`, `projection_schema: balance.v1`, and `redis`. Use the Console's observed current UUIDs. `missing_balance_policy` accepts only `deny`. Legacy alias-based balance templates and tenant/consumer/quota/provider selectors are rejected; there is no bare-integer GET fallback.
 

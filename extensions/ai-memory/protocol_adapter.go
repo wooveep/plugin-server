@@ -15,22 +15,20 @@ type memoryProtocolAdapter interface {
 	CaptureStream(protocol.ResponseStreamInput) (protocol.NormalizedExchange, error)
 }
 
-func memoryProtocolAdapterForPath(path string) (protocol.ProtocolKind, memoryProtocolAdapter, bool) {
-	kind := protocol.DetectProtocolKind(path)
+func memoryProtocolAdapterForKind(kind protocol.ProtocolKind) memoryProtocolAdapter {
 	switch kind {
 	case protocol.ProtocolChatCompletions:
-		return kind, protocol.ChatCompletionsAdapter{}, true
+		return protocol.ChatCompletionsAdapter{}
 	case protocol.ProtocolMessages:
-		return kind, protocol.MessagesAdapter{}, true
+		return protocol.MessagesAdapter{}
 	case protocol.ProtocolResponses:
-		return kind, protocol.ResponsesAdapter{}, true
+		return protocol.ResponsesAdapter{}
 	default:
-		return protocol.ProtocolUnknown, nil, false
+		return nil
 	}
 }
 
-func memoryProtocolCurrentUserPromptForPath(path string, body []byte) (string, error) {
-	kind := protocol.DetectProtocolKind(path)
+func memoryProtocolCurrentUserPrompt(kind protocol.ProtocolKind, body []byte) (string, error) {
 	switch kind {
 	case protocol.ProtocolChatCompletions, protocol.ProtocolMessages:
 		fields, err := memoryDecodeJSONObject(body)

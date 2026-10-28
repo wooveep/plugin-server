@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -37,10 +38,16 @@ func loadRecentMemory(ctx wrapper.HttpContext, c config.PluginConfig, log log.Lo
 	if stop < 0 {
 		stop = 0
 	}
+	consumer := ctx.GetStringContext(memoryConsumerContextKey, "")
+	if c.NativeIdentity != nil {
+		// Console materializes native user-owned memory with consumer_id=None.
+		// Only its Redis key component is hashed; facts retain the principal UUID.
+		consumer = fmt.Sprintf("consumer-name-sha256:%x", sha256.Sum256([]byte(consumer)))
+	}
 	key := buildRecentMemoryKey(
 		c.RecentCache.KeyPrefix,
 		ctx.GetStringContext(memoryTenantContextKey, ""),
-		ctx.GetStringContext(memoryConsumerContextKey, ""),
+		consumer,
 	)
 	client := c.GetRecentRedisClient()
 	if client == nil {

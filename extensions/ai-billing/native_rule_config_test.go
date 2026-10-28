@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/test"
@@ -42,7 +43,7 @@ func independentNativeBillingRoot(rules ...map[string]interface{}) map[string]in
 func independentNativeBillingDelivery(t *testing.T, config BillingConfig, target string) executionfacts.Snapshot {
 	t.Helper()
 	envelope := nativeBillingDeliveryFixture(t, config).Envelope()
-	envelope.CallID = "proxy-original-call-" + target
+	envelope.CallID = uuid.NewSHA1(uuid.NameSpaceURL, []byte(target)).String()
 	envelope.PayloadDigest = ""
 	snapshot, err := executionfacts.Freeze(envelope)
 	require.NoError(t, err)
@@ -68,7 +69,7 @@ func TestNativeBillingRuleOnlyTargetsDeliverToTheirOwnRedisAndStream(t *testing.
 				require.NoError(t, host.SetClusterName("outbound|8080||"+tc.target+".dns"))
 				headers := append([][2]string{
 					{":authority", "example.test"}, {":path", "/custom/customer/alias"}, {":method", http.MethodPost},
-				}, nativeBillingIdentityFixture().Headers()...)
+				}, nativeBillingAdmittedHeaders(tc.config, uuid.NewSHA1(uuid.NameSpaceURL, []byte(tc.target)).String())...)
 				require.Equal(t, types.ActionContinue, host.CallOnHttpRequestHeaders(headers))
 				require.Empty(t, host.GetRedisCalloutAttributes())
 				require.Empty(t, host.GetHttpCalloutAttributes())
@@ -118,7 +119,7 @@ func TestNativeBillingScopedRuleStillInheritsAnInitializedGlobalRedis(t *testing
 		require.Equal(t, types.OnPluginStartStatusOK, status)
 		require.NoError(t, host.SetRouteName("route-native-inherited"))
 		require.NoError(t, host.SetClusterName("outbound|8080||native-inherited.dns"))
-		headers := append([][2]string{{":authority", "example.test"}, {":path", "/custom/native/alias"}, {":method", http.MethodPost}}, nativeBillingIdentityFixture().Headers()...)
+		headers := append([][2]string{{":authority", "example.test"}, {":path", "/custom/native/alias"}, {":method", http.MethodPost}}, nativeBillingAdmittedHeaders(config, uuid.NewSHA1(uuid.NameSpaceURL, []byte("native-inherited")).String())...)
 		require.Equal(t, types.ActionContinue, host.CallOnHttpRequestHeaders(headers))
 		snapshot := independentNativeBillingDelivery(t, config, "native-inherited")
 		require.Equal(t, types.ActionContinue, host.CallOnHttpResponseHeaders([][2]string{

@@ -17,17 +17,19 @@ import (
 )
 
 type consoleLookupRequest struct {
-	Tenant             string                `json:"tenant"`
-	Consumer           string                `json:"consumer,omitempty"`
-	Session            string                `json:"session,omitempty"`
-	Route              string                `json:"route"`
-	Model              string                `json:"model"`
-	Protocol           protocol.ProtocolKind `json:"protocol"`
-	CacheScope         string                `json:"cache_scope"`
-	CachePolicyVersion string                `json:"cache_policy_version"`
-	RequestDigest      string                `json:"request_digest"`
-	StreamMode         string                `json:"stream_mode"`
-	SemanticQueryText  string                `json:"semantic_query_text,omitempty"`
+	NativeIdentity        *nativeCacheProcessingIdentity `json:"native_identity,omitempty"`
+	Tenant                string                         `json:"tenant"`
+	Consumer              string                         `json:"consumer,omitempty"`
+	Session               string                         `json:"session,omitempty"`
+	Route                 string                         `json:"route"`
+	Model                 string                         `json:"model"`
+	Protocol              protocol.ProtocolKind          `json:"protocol"`
+	CacheScope            string                         `json:"cache_scope"`
+	CachePolicyVersion    string                         `json:"cache_policy_version"`
+	RequestDigest         string                         `json:"request_digest"`
+	StreamMode            string                         `json:"stream_mode"`
+	SemanticQueryText     string                         `json:"semantic_query_text,omitempty"`
+	SemanticContextDigest string                         `json:"semantic_context_digest,omitempty"`
 }
 
 type consoleLookupResponseEnvelope struct {
@@ -36,29 +38,36 @@ type consoleLookupResponseEnvelope struct {
 }
 
 type consoleLookupResponse struct {
-	Decision        string               `json:"decision"`
-	Reason          string               `json:"reason,omitempty"`
-	MaterializedKey string               `json:"materialized_key,omitempty"`
-	ReplayRecord    *consoleReplayRecord `json:"replay_record,omitempty"`
+	Decision        string                `json:"decision"`
+	Reason          string                `json:"reason,omitempty"`
+	MaterializedKey string                `json:"materialized_key,omitempty"`
+	ReplayRecord    *consoleReplayRecord  `json:"replay_record,omitempty"`
+	SemanticMatch   *consoleSemanticMatch `json:"semantic_match,omitempty"`
+}
+
+type consoleSemanticMatch struct {
+	LookupRequestDigest   string `json:"lookup_request_digest"`
+	SemanticContextDigest string `json:"semantic_context_digest"`
 }
 
 type consoleReplayRecord struct {
-	GatewayTenant      string                `json:"gateway_tenant"`
-	GatewayConsumer    string                `json:"gateway_consumer,omitempty"`
-	GatewayRoute       string                `json:"gateway_route"`
-	GatewayModel       string                `json:"gateway_model"`
-	Protocol           protocol.ProtocolKind `json:"protocol"`
-	CacheScope         string                `json:"cache_scope"`
-	CachePolicyVersion string                `json:"cache_policy_version"`
-	RequestDigest      string                `json:"request_digest"`
-	ReplayStatus       string                `json:"replay_status"`
-	ResponseObject     json.RawMessage       `json:"response_object"`
-	UsageSnapshot      json.RawMessage       `json:"usage_snapshot"`
-	FinishReason       string                `json:"finish_reason,omitempty"`
-	StreamMode         string                `json:"stream_mode"`
-	SoftExpiresAt      string                `json:"soft_expires_at,omitempty"`
-	HardExpiresAt      string                `json:"hard_expires_at"`
-	SafeToReplay       bool                  `json:"safe_to_replay"`
+	GatewayTenant         string                `json:"gateway_tenant"`
+	GatewayConsumer       string                `json:"gateway_consumer,omitempty"`
+	GatewayRoute          string                `json:"gateway_route"`
+	GatewayModel          string                `json:"gateway_model"`
+	Protocol              protocol.ProtocolKind `json:"protocol"`
+	CacheScope            string                `json:"cache_scope"`
+	CachePolicyVersion    string                `json:"cache_policy_version"`
+	RequestDigest         string                `json:"request_digest"`
+	SemanticContextDigest string                `json:"semantic_context_digest,omitempty"`
+	ReplayStatus          string                `json:"replay_status"`
+	ResponseObject        json.RawMessage       `json:"response_object"`
+	UsageSnapshot         json.RawMessage       `json:"usage_snapshot"`
+	FinishReason          string                `json:"finish_reason,omitempty"`
+	StreamMode            string                `json:"stream_mode"`
+	SoftExpiresAt         string                `json:"soft_expires_at,omitempty"`
+	HardExpiresAt         string                `json:"hard_expires_at"`
+	SafeToReplay          bool                  `json:"safe_to_replay"`
 }
 
 func shouldUseConsoleLookup(c config.PluginConfig) bool {
@@ -88,25 +97,25 @@ func lookupMaterializedRecordFromConsole(material ScopedCacheKeyMaterial, ctx wr
 }
 
 func buildConsoleLookupRequestBody(material ScopedCacheKeyMaterial, ctx wrapper.HttpContext, stream bool) ([]byte, error) {
-	protocolKind, _, ok := thinProtocolAdapterForPath(ctx.GetStringContext(CACHE_PATH_CONTEXT_KEY, ""))
-	if !ok {
-		return nil, errors.New("unsupported request path for Console lookup")
-	}
-	if material.Protocol != protocolKind {
-		return nil, errors.New("cache key protocol does not match request path")
+	semanticContext := ctx.GetStringContext(CACHE_SEMANTIC_CONTEXT_KEY, "")
+	semanticQuery := ""
+	if semanticContext != "" {
+		semanticQuery = strings.TrimSpace(ctx.GetStringContext(CACHE_USER_CONTENT_KEY, ""))
 	}
 	return json.Marshal(consoleLookupRequest{
-		Tenant:             material.Tenant,
-		Consumer:           material.Consumer,
-		Session:            ctx.GetStringContext(CACHE_SESSION_CONTEXT_KEY, ""),
-		Route:              material.Route,
-		Model:              material.Model,
-		Protocol:           material.Protocol,
-		CacheScope:         material.CacheScope,
-		CachePolicyVersion: material.CachePolicyVersion,
-		RequestDigest:      material.RequestDigest,
-		StreamMode:         consoleLookupStreamMode(stream),
-		SemanticQueryText:  strings.TrimSpace(ctx.GetStringContext(CACHE_USER_CONTENT_KEY, "")),
+		NativeIdentity:        cacheNativeIdentity(ctx),
+		Tenant:                material.Tenant,
+		Consumer:              material.Consumer,
+		Session:               ctx.GetStringContext(CACHE_SESSION_CONTEXT_KEY, ""),
+		Route:                 material.Route,
+		Model:                 material.Model,
+		Protocol:              material.Protocol,
+		CacheScope:            material.CacheScope,
+		CachePolicyVersion:    material.CachePolicyVersion,
+		RequestDigest:         material.RequestDigest,
+		StreamMode:            consoleLookupStreamMode(stream),
+		SemanticQueryText:     semanticQuery,
+		SemanticContextDigest: semanticContext,
 	})
 }
 
@@ -145,6 +154,18 @@ func handleConsoleLookupResponse(material ScopedCacheKeyMaterial, statusCode int
 		proxywasm.ResumeHttpRequest()
 		return
 	}
+	// Older Console versions marked semantic_replay while rewriting the source
+	// exact digest to the current request. That response is not exact evidence.
+	if envelope.Data.Reason == "semantic_replay" && envelope.Data.SemanticMatch == nil {
+		log.Warnf("[%s] [handleConsoleLookupResponse] semantic hit omitted its context proof", PLUGIN_NAME)
+		proxywasm.ResumeHttpRequest()
+		return
+	}
+	if envelope.Data.SemanticMatch != nil && (envelope.Data.MaterializedKey != "" || envelope.Data.ReplayRecord == nil) {
+		log.Warnf("[%s] [handleConsoleLookupResponse] semantic hit must carry a direct source replay record", PLUGIN_NAME)
+		proxywasm.ResumeHttpRequest()
+		return
+	}
 	if envelope.Data.MaterializedKey != "" {
 		if err := fetchConsoleMaterializedKey(material, envelope.Data.MaterializedKey, ctx, c, log, stream); err != nil {
 			log.Warnf("[%s] [handleConsoleLookupResponse] Console lookup materialized key fetch failed for key: %s, error: %v", PLUGIN_NAME, material.RedisKey, err)
@@ -158,7 +179,7 @@ func handleConsoleLookupResponse(material ScopedCacheKeyMaterial, statusCode int
 		proxywasm.ResumeHttpRequest()
 		return
 	}
-	if err := replayConsoleReplayRecord(*envelope.Data.ReplayRecord, material, ctx, log, stream); err != nil {
+	if err := replayConsoleReplayRecord(*envelope.Data.ReplayRecord, envelope.Data.SemanticMatch, material, ctx, log, stream); err != nil {
 		log.Warnf("[%s] [handleConsoleLookupResponse] Console lookup replay record rejected for key: %s, error: %v", PLUGIN_NAME, material.RedisKey, err)
 		proxywasm.ResumeHttpRequest()
 		return
@@ -189,7 +210,7 @@ func fetchConsoleMaterializedKey(material ScopedCacheKeyMaterial, materializedKe
 	})
 }
 
-func replayConsoleReplayRecord(replay consoleReplayRecord, material ScopedCacheKeyMaterial, ctx wrapper.HttpContext, log logs.Log, stream bool) error {
+func replayConsoleReplayRecord(replay consoleReplayRecord, semanticMatch *consoleSemanticMatch, material ScopedCacheKeyMaterial, ctx wrapper.HttpContext, log logs.Log, stream bool) error {
 	if replay.StreamMode != consoleLookupStreamMode(stream) {
 		return errors.New("console replay record stream mode mismatch")
 	}
@@ -197,8 +218,22 @@ func replayConsoleReplayRecord(replay consoleReplayRecord, material ScopedCacheK
 	if err != nil {
 		return err
 	}
-	if err := validateMaterializedRecord(record, material, stream, time.Now().Unix()); err != nil {
-		return err
+	if semanticMatch == nil {
+		if err := validateMaterializedRecord(record, material, stream, time.Now().Unix()); err != nil {
+			return err
+		}
+	} else {
+		contextDigest := ctx.GetStringContext(CACHE_SEMANTIC_CONTEXT_KEY, "")
+		if contextDigest == "" || semanticMatch.LookupRequestDigest != material.RequestDigest ||
+			semanticMatch.SemanticContextDigest != contextDigest || replay.SemanticContextDigest != contextDigest || record.RequestDigest == "" {
+			return errors.New("console semantic match does not prove the current request context")
+		}
+		// Keep the source record's exact digest intact. Semantic matching only
+		// substitutes that one equality check; original scope, expiry, safety,
+		// stream and payload rules still apply independently in this plugin.
+		if err := validateReplayRecordScopeAndPayload(record, material, stream, time.Now().Unix()); err != nil {
+			return err
+		}
 	}
 	return replayMaterializedRecord(record, stream, ctx, log)
 }

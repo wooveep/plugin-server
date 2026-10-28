@@ -12,7 +12,7 @@ import (
 
 const (
 	memoryEventSchemaVersion = 1
-	memoryEventPluginVersion = "0.1.2"
+	memoryEventPluginVersion = "0.1.3"
 	memoryEventKind          = "memory_event"
 	memoryEventField         = "event"
 
@@ -20,7 +20,8 @@ const (
 )
 
 type MemoryEvent struct {
-	SchemaVersion int `json:"schema_version"`
+	SchemaVersion  int                   `json:"schema_version"`
+	NativeIdentity *memoryNativeIdentity `json:"native_identity,omitempty"`
 
 	MemoryEventEnvelope
 	MemoryEventIdentity
@@ -62,6 +63,7 @@ type MemoryEventRequest struct {
 }
 
 type MemoryEventRoute struct {
+	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`
 }
 
@@ -119,7 +121,8 @@ func memoryBuildEvent(ctx wrapper.HttpContext, c config.PluginConfig, capture me
 	})
 
 	event := MemoryEvent{
-		SchemaVersion: memoryEventSchemaVersion,
+		SchemaVersion:  memoryEventSchemaVersion,
+		NativeIdentity: nativeMemoryIdentity(ctx, c),
 		MemoryEventEnvelope: MemoryEventEnvelope{
 			EventID:        envelope.EventID,
 			IdempotencyKey: envelope.IdempotencyKey,
@@ -149,6 +152,9 @@ func memoryBuildEvent(ctx wrapper.HttpContext, c config.PluginConfig, capture me
 	}
 	if route := ctx.GetStringContext(memoryRouteContextKey, ""); route != "" {
 		event.Route = &MemoryEventRoute{Name: route}
+	}
+	if c.NativeIdentity != nil {
+		event.Route = &MemoryEventRoute{ID: c.NativeIdentity.RouteID, Name: ctx.GetStringContext(memoryRouteNameContextKey, "")}
 	}
 	if model := ctx.GetStringContext(memoryModelContextKey, ""); model != "" {
 		event.Model = &MemoryEventModel{Name: model}

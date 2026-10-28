@@ -6,7 +6,7 @@ info:
   name: model-mapper
   image: platform_wasm/model-mapper
   title: Exact Model Mapper
-  version: 1.0.0
+  version: 1.0.1
   description: Maps an exact public model and captures immutable original request bytes before rewriting.
 spec:
   phase: default
@@ -15,6 +15,13 @@ spec:
     openAPIV3Schema:
       type: object
       additionalProperties: false
+      not:
+        required: [capture_body_basis, consume_body_basis]
+        properties:
+          capture_body_basis:
+            const: true
+          consume_body_basis:
+            const: true
       required:
       - modelMapping
       properties:
@@ -24,6 +31,10 @@ spec:
           additionalProperties:
             type: string
             minLength: 1
+        consume_body_basis:
+          type: boolean
+          default: false
+          description: Preserve and validate the original basis from the explicitly configured first preprocessor. Mutually exclusive with capture_body_basis.
         capture_body_basis:
           type: boolean
           default: false
@@ -31,6 +42,13 @@ spec:
     openAPIV3Schema:
       type: object
       additionalProperties: false
+      not:
+        required: [capture_body_basis, consume_body_basis]
+        properties:
+          capture_body_basis:
+            const: true
+          consume_body_basis:
+            const: true
       required:
       - modelMapping
       properties:
@@ -40,6 +58,10 @@ spec:
           additionalProperties:
             type: string
             minLength: 1
+        consume_body_basis:
+          type: boolean
+          default: false
+          description: Preserve and validate the original basis from the explicitly configured first preprocessor. Mutually exclusive with capture_body_basis.
         capture_body_basis:
           type: boolean
           default: false

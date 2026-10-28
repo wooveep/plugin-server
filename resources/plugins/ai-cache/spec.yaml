@@ -14,7 +14,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-cache/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-cache/README_EN.md
-  version: 1.0.3
+  version: 1.0.4
   contact:
     name: johnlanni
   gatewayMinVersion: "2.0.0"
@@ -22,11 +22,131 @@ spec:
   phase: default
   priority: 250
   configSchema:
+    x-higress-external-resources:
+    - kind: redis
+      registryType: dns
+      domainPath: redis_stream.service_name
+      portPath: redis_stream.service_port
+      projectedNamePath: redis_stream.service_name
+    - kind: redis
+      registryType: dns
+      domainPath: materialized_lookup.redis.service_name
+      portPath: materialized_lookup.redis.service_port
+      projectedNamePath: materialized_lookup.redis.service_name
+    - kind: http-callout
+      registryType: dns
+      domainPath: console_lookup.service_name
+      portPath: console_lookup.service_port
+      projectedNamePath: console_lookup.service_name
+      protocol: http
     openAPIV3Schema:
       title: ai-cache
       type: object
       additionalProperties: false
+      dependentRequired:
+        client_protocol: [operation_kind]
+        operation_kind: [client_protocol]
+        native_execution: [native_identity, client_protocol, operation_kind, capture_body_basis, consume_body_basis]
+        _modelfusion_execution: [native_execution]
+        capture_body_basis: [native_execution]
+        consume_body_basis: [native_execution]
+      allOf:
+      - if:
+          required: [native_execution]
+        then:
+          required: [_modelfusion_execution]
+          properties:
+            operation_kind: {const: text_generate}
+            route_policy:
+              properties:
+                enable_replay: {const: true}
+                enable_bypass: {const: false}
+                enabled_path_suffixes: {maxItems: 0}
+          oneOf:
+          - properties:
+              capture_body_basis: {const: true}
+              consume_body_basis: {const: false}
+          - properties:
+              capture_body_basis: {const: false}
+              consume_body_basis: {const: true}
       properties:
+        native_execution:
+          type: object
+          additionalProperties: false
+          required: [producer_id, call_identity_source]
+          description: 由可信发布冻结，与同目标 proxy 和 billing 使用同一私有事实 producer；缓存只构建交付桥，不投递另一份采购或账务事件。
+          properties:
+            producer_id: {type: string, minLength: 1, maxLength: 256}
+            call_identity_source: {type: string, const: admission}
+        capture_body_basis:
+          type: boolean
+          description: 由 SDK 按真实发布顺序选定，清除客户端基线头并在任何改写前固定原正文；与 consume_body_basis 互斥，无默认值。
+        consume_body_basis:
+          type: boolean
+          description: 仅消费前置可信模块保存的原基线，不对已注入正文重新计算 original_body_digest；与 capture_body_basis 互斥，无默认值。
+        _modelfusion_execution:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          required: [schema_version, descriptor, route_id, sales_asset_id, public_model, credential_ref, credential_revision]
+          properties:
+            schema_version: {type: string, const: modelfusion-execution.v1}
+            descriptor:
+              type: object
+              description: 原完整 IF01 descriptor；运行时按 mf-json.v1 排除自身摘要字段后重新核对。
+              additionalProperties: true
+            route_id: {type: string, minLength: 1}
+            sales_asset_id: {type: string, minLength: 1}
+            public_model: {type: string, minLength: 1}
+            credential_ref: {type: string, minLength: 1}
+            credential_revision: {type: string, pattern: '^[1-9][0-9]*$'}
+        native_identity:
+          type: object
+          title: 原生发布缓存身份
+          description: 由可信路由发布冻结的原 release、target、route 与缓存 policy。仅声明五个静态字段；实际 caller 从前置原生认证取得，不接受配置或客户端自授。
+          additionalProperties: false
+          required: [release_id, target_id, route_id, policy_id, policy_version]
+          properties:
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            target_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            route_id:
+              type: string
+              pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+              not:
+                const: '00000000-0000-0000-0000-000000000000'
+            policy_id:
+              type: string
+              pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+              not:
+                const: '00000000-0000-0000-0000-000000000000'
+            policy_version:
+              type: integer
+              minimum: 1
+              maximum: 9223372036854775807
+        client_protocol:
+          type: string
+          minLength: 1
+          title: 路由发布的客户端协议
+          x-title-i18n:
+            en-US: Published Client Protocol
+          description: 与 operation_kind 成对，由可信路由发布配置提供；支持 openai_chat、openai_responses、anthropic_messages。声明后按协议选择适配器，不根据 URL 或客户端头推断。其他协议明确旁路。
+          x-description-i18n:
+            en-US: Paired with operation_kind and supplied by trusted route publication. Supports openai_chat, openai_responses, and anthropic_messages regardless of URL aliases. Other protocols bypass cache.
+        operation_kind:
+          type: string
+          minLength: 1
+          title: 路由发布的业务操作
+          x-title-i18n:
+            en-US: Published Operation Kind
+          description: 与 client_protocol 成对。text_generate 支持纯文本或多模态输入返回文本；非文本输出、异步、查询及其他操作明确旁路。该字段不会自动开启缓存。
+          x-description-i18n:
+            en-US: Paired with client_protocol. text_generate supports text or multimodal input with text output; non-text output, asynchronous, query, and other operations bypass cache. This field does not enable caching.
         materialized_lookup:
           type: object
           title: 物化回放查询
@@ -128,6 +248,15 @@ spec:
               x-title-i18n:
                 en-US: Lookup Path
               default: /internal/cache/lookup
+            bearer_token:
+              type: string
+              title: Console Bearer Token
+              format: password
+              x-sensitive: true
+              writeOnly: true
+              description: Console 内部查询已有的 Bearer 凭据，由可信 secret source 注入，不作为客户端输入或公开配置展示。
+              x-description-i18n:
+                en-US: Existing Console lookup Bearer credential, injected from a trusted secret source and excluded from public configuration display.
             timeout:
               type: integer
               title: Console 超时时间

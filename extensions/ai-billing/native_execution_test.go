@@ -8,6 +8,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
@@ -81,7 +82,7 @@ func nativeBillingConfigFixture(t *testing.T) (BillingConfig, map[string]interfa
 	}
 	descriptor["descriptor_digest"] = digest
 	value := map[string]interface{}{
-		"path_scope": "bound_target", "native_execution": map[string]interface{}{"producer_id": "gateway-native-e1"},
+		"path_scope": "bound_target", "native_execution": map[string]interface{}{"producer_id": "gateway-native-e1", "call_identity_source": "admission"},
 		"_modelfusion_execution": map[string]interface{}{
 			"schema_version": "modelfusion-execution.v1", "descriptor": descriptor,
 			"route_id": nativeRouteFixture, "sales_asset_id": nativeAssetFixture,
@@ -104,7 +105,7 @@ func nativeBillingDeliveryFixture(t *testing.T, cfg BillingConfig) executionfact
 	configured := cfg.NativeExecution.(*nativeBillingConfig)
 	release, identity := configured.release, nativeBillingIdentityFixture()
 	snapshot, err := executionfacts.Freeze(executionfacts.Envelope{
-		ProducerID: configured.producerID, Kind: "call_delivery", CallID: "proxy-generated-original-call",
+		ProducerID: configured.producerID, Kind: "call_delivery", CallID: "50000000-0000-4000-8000-000000000001",
 		ReleaseID: release.Descriptor.ReleaseID, RouteID: release.RouteID, SalesAssetID: release.SalesAssetID,
 		TenantID: identity.TenantID, PrincipalID: identity.PrincipalID, AccountID: identity.AccountID,
 		PrincipalKind: "user", BillingMode: "customer", OperationKind: "text_generate",
@@ -127,12 +128,23 @@ func nativeBillingBridgeFixture(t *testing.T, snapshot executionfacts.Snapshot) 
 	return value
 }
 
+// This fixture models the preceding quota's successful Console response. It is
+// not a client self-grant or a producer authenticated by its payload.
+func nativeBillingAdmittedHeaders(cfg BillingConfig, callID string) [][2]string {
+	release := cfg.NativeExecution.(*nativeBillingConfig).release
+	return append(nativeBillingIdentityFixture().Headers(),
+		[2]string{executionfacts.AdmissionCallHeader, callID},
+		[2]string{executionfacts.AdmissionReleaseHeader, release.Descriptor.ReleaseID},
+		[2]string{executionfacts.AdmissionDeadlineHeader, time.Now().UTC().Add(5 * time.Second).Format(time.RFC3339Nano)},
+		[2]string{executionfacts.AdmissionOccurredHeader, "2026-10-27T10:00:00Z"})
+}
+
 func nativeBillingRequestFixture(t *testing.T, cfg BillingConfig) (*nativeBillingTestContext, *nativeBillingState) {
 	t.Helper()
 	ctx := newNativeBillingTestContext()
 	state := &nativeBillingState{config: cfg.NativeExecution.(*nativeBillingConfig)}
 	ctx.SetContext(nativeBillingContextKey, state)
-	headers := append(nativeBillingIdentityFixture().Headers(), [2]string{"x-modelfusion-call-id", "client-invented-call"}, [2]string{"x-modelfusion-attempt-id", "client-invented-attempt"})
+	headers := nativeBillingAdmittedHeaders(cfg, "50000000-0000-4000-8000-000000000001")
 	captureNativeBillingIdentity(ctx, state, headers)
 	if !state.valid || state.identity.CredentialGeneration != "9007199254740993" {
 		t.Fatal("original exact authenticated caller was not retained")
@@ -147,6 +159,15 @@ func TestNativeBillingRequiresPairedFrozenConfigAndClearsInheritedLegacyScope(t 
 	}
 	changes := []func(map[string]interface{}){
 		func(v map[string]interface{}) { delete(v, "native_execution") },
+		func(v map[string]interface{}) {
+			delete(v["native_execution"].(map[string]interface{}), "call_identity_source")
+		},
+		func(v map[string]interface{}) {
+			v["native_execution"].(map[string]interface{})["call_identity_source"] = "proxy"
+		},
+		func(v map[string]interface{}) {
+			v["native_execution"].(map[string]interface{})["call_identity_source"] = true
+		},
 		func(v map[string]interface{}) { delete(v, "_modelfusion_execution") },
 		func(v map[string]interface{}) { v["path_scope"] = "legacy_suffixes" },
 		func(v map[string]interface{}) { v["enable_methods"] = []string{"POST"} },
@@ -326,6 +347,8 @@ func TestNativeBillingRejectsBridgeCallerReleaseAndProducerDrift(t *testing.T) {
 		cfg, _ := nativeBillingConfigFixture(t)
 		changes := []func(*executionfacts.Envelope){
 			func(e *executionfacts.Envelope) { e.ProducerID = "another-configured-producer" },
+			func(e *executionfacts.Envelope) { e.CallID = "another-original-call" },
+			func(e *executionfacts.Envelope) { e.OccurredAt = "2026-10-27T10:00:00.000001Z" },
 			func(e *executionfacts.Envelope) { e.AccountID = "99999999-9999-9999-9999-999999999999" },
 			func(e *executionfacts.Envelope) { e.TenantID = "99999999-9999-9999-9999-999999999999" },
 			func(e *executionfacts.Envelope) { e.PrincipalID = "99999999-9999-9999-9999-999999999999" },

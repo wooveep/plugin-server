@@ -4,7 +4,7 @@ keywords: [higress, AI, observability]
 description: AI Statistics plugin configuration reference
 ---
 
-> Plugin version: `1.0.2`
+> Plugin version: `1.0.3`
 
 ## Introduction
 
@@ -32,8 +32,8 @@ Users can also expand observable values ​​through configuration:
 | `disable_openai_usage` | bool | optional  | false   | When using a non-OpenAI-compatible protocol, the support for model and token is non-standard. Setting the configuration to true can prevent errors. |
 | `value_length_limit` | int | optional  | conditional | Length limit for each value |
 | `path_scope` | string | optional | `legacy_suffixes` | `legacy_suffixes` or `bound_target` |
-| `enable_path_suffixes` | []string | optional | see legacy behavior below | Path-suffix gate or optional intersection filter; `*` remains an explicit wildcard |
-| `enable_methods` | []string | optional | none | Optional exact-case HTTP-method filter |
+| `enable_path_suffixes` | []string | optional | see legacy behavior below | Legacy-only path gating, including explicit `*`; bound_target only accepts omission or [] |
+| `enable_methods` | []string | optional | none | Optional exact-case filtering in legacy_suffixes; bound_target only accepts omission or [] |
 | `enable_content_types` | []string | optional | all when omitted | Only buffer response bodies for configured content types; an omitted list matches all content types |
 | `session_id_header` | string | optional  | -   | Specify the header name to read session ID from. If not configured, it will automatically search in the following priority: `x-openclaw-session-key`, `x-clawdbot-session-key`, `x-moltbot-session-key`, `x-agent-session`. Session ID can be used to trace multi-turn Agent conversations |
 
@@ -43,7 +43,7 @@ The conditional runtime defaults for `value_length_limit` are `32000` (plain/cus
 
 - Missing or explicit `path_scope: legacy_suffixes` preserves historical behavior. When either built-in default-attribute mode is enabled and suffixes are omitted, the effective defaults are `/completions` and `/messages`; without built-in defaults, omission preserves the existing all-path behavior.
 - `path_scope: bound_target` uses the Higress binding target. Omitted or literal-empty `enable_path_suffixes: []` and `enable_methods: []` add no narrowing and synthesize no path list.
-- Explicit non-empty suffix or method filters only intersect the binding target and never create or expand it. When both filters are supplied, both must match.
+- bound_target rejects every explicit non-empty path/method list, including ["*"], so a matched AI route cannot silently escape statistics. Switching to it clears inherited legacy filters. Explicit intersections remain available in legacy_suffixes.
 - ai-statistics matches `enable_methods` with exact case; examples use canonical uppercase methods. Omitted route-level fields inherit global configuration.
 
 ```yaml
@@ -61,19 +61,25 @@ path_scope: bound_target
 ```
 
 ```yaml
-# Optional explicit intersection
-path_scope: bound_target
+# Explicit intersection for standalone legacy deployments
+path_scope: legacy_suffixes
 enable_path_suffixes:
   - /v1/responses
 enable_methods:
   - POST
 ```
 
+With only _rules_ and no global configuration, each matching rule parses a complete statistics configuration. Set its attributes, content types, and usage options there. With a valid initialized global configuration, rules override only the original three routing fields; other complete configuration fields belong at the root and are rejected in rules. Managed publication uses path_scope: bound_target with both filter lists omitted or empty; Higress bindings determine scope.
+
 ## Safe base observability contract
 
 Safe base facts stand independently; ai-proxy schema-v2 metadata is optional trusted enrichment.
 
 Every eligible completed request emits bounded `route` and `path`, a normalized and bounded `method`, `status_code`, positive `latency_ms`, and bounded `error_class`, plus exactly one `request_count` and one `request_duration_ms`. These safe base facts are independent of model, logical operation, token, or usage extraction. Opaque successes, opaque errors, and parsing failures still emit the base facts; unavailable optional dimensions are omitted rather than guessed. Trusted provider parsers may enrich model/token facts, but arbitrary paths or opaque bodies never authorize inference. Raw response bodies and unbounded provider error text never enter metric attributes.
+
+In bound_target, token extensions retain only nonnegative integers actually present in valid JSON or complete SSE frames. Input, output, and total remain independently known or missing; missing or invalid values are never filled with zero, and partial usage does not derive total. Reported zero is retained. The existing parser/counter supports decimal integers through int64; larger values stay unknown without changing response bytes. Fragmented SSE frames use the existing body limit; incomplete or oversized data only stops optional parsing, while base facts still finalize. Legacy extraction remains compatible.
+
+Base statistics cover matching requests that reached this plugin callback. A preceding authentication filter can reject before it runs; this plugin cannot invent statistics for that path, which requires verification of actual filter order and native gateway observation. These source changes require a newly built, precisely registered artifact; an existing version number does not prove they are active.
 
 Version `1.0.2` also guarantees that the per-configuration counter cache is initialized on first use, including rule-override lifecycle paths, so the first eligible base metric cannot fail on a nil cache.
 

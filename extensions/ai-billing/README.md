@@ -4,7 +4,7 @@ keywords: [AI网关, AI账单, ai-billing]
 description: ai-billing 托管交付事实与兼容账单事件配置参考
 ---
 
-> 交付版本：`1.0.0`，以 [资源 schema](../../resources/plugins/ai-billing/spec.yaml) 为准。
+> 交付版本：`0.1.9`，以 [资源 schema](../../resources/plugins/ai-billing/spec.yaml) 为准。
 
 ## 功能说明
 

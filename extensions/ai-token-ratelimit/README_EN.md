@@ -272,6 +272,7 @@ spec:
           '*': "qwen-turbo"
     ingress:
     - qwen
+  # Standalone example pinned to upstream ai-proxy 1.0.2; not a native Modelfusion release artifact pin.
   url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.2
   phase: UNSPECIFIED_PHASE
   priority: 100

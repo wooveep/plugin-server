@@ -5,12 +5,18 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
 )
 
+type PathScope string
+
 const (
+	PathScopeLegacy      PathScope = "legacy"
+	PathScopeBoundTarget PathScope = "bound_target"
+
 	MemoryModeOff        = "off"
 	MemoryModeRecentOnly = "recent-only"
 	MemoryModeDigest     = "digest"
@@ -80,14 +86,50 @@ type PluginConfig struct {
 	SessionHeader      string                `yaml:"session_header" json:"session_header"`
 	RequestIDHeader    string                `yaml:"request_id_header" json:"request_id_header"`
 	EnablePathSuffixes []string              `yaml:"enable_path_suffixes" json:"enable_path_suffixes"`
+	PathScope          PathScope             `yaml:"path_scope" json:"path_scope"`
+	CaptureBodyBasis   bool                  `yaml:"capture_body_basis" json:"capture_body_basis"`
+	NativeIdentity     *NativeIdentityConfig `yaml:"native_identity" json:"native_identity,omitempty"`
 	FailPolicy         string                `yaml:"fail_policy" json:"fail_policy"`
 	Route              RouteConfig           `yaml:"route" json:"route"`
 
 	unsupportedRouteTarget string
+	publishedProtocol      bool
+	protocolKind           protocol.ProtocolKind
+	requestScopeError      error
+	initialized            bool
+	baseError              error
+}
+
+// ParseRoot loads a real global configuration or leaves a rules-only carrier dormant.
+func (c *PluginConfig) ParseRoot(json gjson.Result, log log.Log) error {
+	*c = defaultPluginConfig()
+	rulesOnly := true
+	for key := range json.Map() {
+		if key != "_rules_" {
+			rulesOnly = false
+			break
+		}
+	}
+	if rulesOnly {
+		return nil
+	}
+	c.FromJson(json, log)
+	err := c.Validate()
+	if err == nil {
+		err = c.Complete(log)
+	}
+	if err != nil && json.Get("_rules_").IsArray() && len(json.Get("_rules_").Array()) > 0 {
+		// The matcher discards a failed base. Retain its error so it cannot be
+		// mistaken for the zero base reserved for complete standalone rules.
+		c.baseError = err
+		return nil
+	}
+	return err
 }
 
 func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
 	*c = defaultPluginConfig()
+	c.initialized = true
 	c.RedisStream = parseRedisStreamConfig(c.RedisStream, json.Get("redis_stream"))
 	c.RecentCache = parseRecentCacheConfig(c.RecentCache, json.Get("recent_cache"))
 	c.ConsoleInternal = parseConsoleInternalConfig(c.ConsoleInternal, json.Get("console_internal"))
@@ -97,9 +139,24 @@ func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
 	c.RequestIDHeader = stringValue(json.Get("request_id_header"), c.RequestIDHeader)
 	c.EnablePathSuffixes = stringSliceValue(json.Get("enable_path_suffixes"), c.EnablePathSuffixes)
 	c.FailPolicy = stringValue(json.Get("fail_policy"), c.FailPolicy)
+	c.parseRequestScope(json)
 }
 
 func (c *PluginConfig) FromJsonWithGlobal(json gjson.Result, global PluginConfig, log log.Log) {
+	if global.baseError != nil {
+		*c = global
+		return
+	}
+	if !global.initialized {
+		// The controller's disabled defaultConfig contains only _rules_. Each
+		// matched managed rule therefore owns its complete targets and behavior.
+		c.FromJson(json, log)
+		c.Route = parseRouteConfig(c.Route, json)
+		if c.requestScopeError == nil && c.PathScope != PathScopeBoundTarget {
+			c.requestScopeError = fmt.Errorf("standalone memory rules require bound_target")
+		}
+		return
+	}
 	*c = global
 	c.unsupportedRouteTarget = ""
 	for _, key := range []string{"redis_stream", "recent_cache", "console_internal"} {
@@ -109,11 +166,22 @@ func (c *PluginConfig) FromJsonWithGlobal(json gjson.Result, global PluginConfig
 		}
 	}
 	c.Route = parseRouteConfig(c.Route, json)
+	c.requestScopeError = nil
+	c.parseRequestScope(json)
 }
 
 func (c PluginConfig) Validate() error {
+	if c.baseError != nil {
+		return c.baseError
+	}
+	if c.requestScopeError != nil {
+		return c.requestScopeError
+	}
 	if c.unsupportedRouteTarget != "" {
 		return fmt.Errorf("route-level %s is not supported", c.unsupportedRouteTarget)
+	}
+	if c.CaptureBodyBasis && (c.PathScope != PathScopeBoundTarget || !c.publishedProtocol || c.protocolKind == protocol.ProtocolUnknown) {
+		return fmt.Errorf("capture_body_basis requires a supported published text protocol on bound_target")
 	}
 	if c.FailPolicy != FailPolicyOpen {
 		return fmt.Errorf("unsupported fail_policy %q", c.FailPolicy)
@@ -140,6 +208,76 @@ func (c PluginConfig) Validate() error {
 		return err
 	}
 	return nil
+}
+
+// ProtocolForPath selects the published protocol, using path detection only for legacy configuration.
+func (c PluginConfig) ProtocolForPath(path string) protocol.ProtocolKind {
+	if c.publishedProtocol {
+		return c.protocolKind
+	}
+	return protocol.DetectProtocolKind(path)
+}
+
+func (c *PluginConfig) parseRequestScope(json gjson.Result) {
+	if identity := json.Get("native_identity"); identity.Exists() {
+		var err error
+		c.NativeIdentity, err = parseNativeIdentity(identity)
+		if err != nil {
+			c.requestScopeError = err
+			return
+		}
+	}
+	if capture := json.Get("capture_body_basis"); capture.Exists() {
+		if capture.Type != gjson.True && capture.Type != gjson.False {
+			c.requestScopeError = fmt.Errorf("capture_body_basis must be a boolean")
+			return
+		}
+		c.CaptureBodyBasis = capture.Bool()
+	}
+	if scope := json.Get("path_scope"); scope.Exists() {
+		value := PathScope(scope.String())
+		if scope.Type != gjson.String || (value != PathScopeLegacy && value != PathScopeBoundTarget) {
+			c.requestScopeError = fmt.Errorf("path_scope must be legacy or bound_target")
+			return
+		}
+		c.PathScope = value
+	}
+	clientProtocol, operation := json.Get("client_protocol"), json.Get("operation_kind")
+	if clientProtocol.Exists() || operation.Exists() {
+		if clientProtocol.Type != gjson.String || operation.Type != gjson.String || clientProtocol.String() == "" || operation.String() == "" {
+			c.requestScopeError = fmt.Errorf("client_protocol and operation_kind must be declared together as nonempty strings")
+			return
+		}
+		c.publishedProtocol = true
+		// A complete unsupported binding stays unsupported; it never falls back to path guessing.
+		c.protocolKind, _ = protocol.ParsePublishedTextProtocol(clientProtocol.String(), operation.String())
+	}
+	if c.PathScope == PathScopeBoundTarget {
+		if !c.publishedProtocol {
+			c.requestScopeError = fmt.Errorf("bound_target requires published client_protocol and operation_kind")
+			return
+		}
+		for _, field := range []string{"enable_path_suffixes", "enable_methods"} {
+			if filter := json.Get(field); filter.Exists() && (!filter.IsArray() || len(filter.Array()) != 0) {
+				c.requestScopeError = fmt.Errorf("bound_target does not permit an additional %s filter", field)
+				return
+			}
+		}
+		// The matched route owns coverage; legacy global suffixes cannot narrow it.
+		c.EnablePathSuffixes = nil
+	}
+	if c.NativeIdentity != nil {
+		if c.PathScope != PathScopeBoundTarget {
+			c.requestScopeError = fmt.Errorf("native_identity requires bound_target")
+			return
+		}
+		version := strconv.FormatInt(c.NativeIdentity.PolicyVersion, 10)
+		if declared := json.Get("policy_version"); declared.Exists() && (declared.Type != gjson.String || declared.Str != version) {
+			c.requestScopeError = fmt.Errorf("policy_version must match native_identity.policy_version as a canonical decimal string")
+			return
+		}
+		c.Route.PolicyVersion = version
+	}
 }
 
 func sharedRedisEndpoint(stream RedisStreamConfig, recent RecentCacheConfig) bool {
@@ -222,6 +360,7 @@ func defaultPluginConfig() PluginConfig {
 		SessionHeader:      "x-mse-session",
 		RequestIDHeader:    "x-request-id",
 		EnablePathSuffixes: []string{"/v1/chat/completions", "/v1/messages", "/v1/responses"},
+		PathScope:          PathScopeLegacy,
 		FailPolicy:         FailPolicyOpen,
 		Route:              defaultRouteConfig(),
 	}

@@ -28,6 +28,7 @@ type pluginReleaseVersionContract struct {
 	metadata           []releaseVersionSurface
 	artifactURLExample string
 	artifactURLDocs    []string
+	artifactURLVersion string
 	documentation      []documentedReleaseVersion
 }
 
@@ -87,6 +88,26 @@ func TestAIPluginVersionParserFixture(t *testing.T) {
 		content string
 		marker  string
 	}{
+		{
+			name:    "delivery marker preserves the current resource link",
+			content: "Builder version: 1.24.4\n交付版本 `9.8.7`，字段以 [资源 schema](../../resources/plugins/model-mapper/spec.yaml) 为准。\n",
+			marker:  "交付版本",
+		},
+		{
+			name:    "resource delivery marker keeps its schema authority",
+			content: "> 交付版本：`9.8.7`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。\n",
+			marker:  "> 交付版本",
+		},
+		{
+			name:    "Chinese quota version is separate from wire schema",
+			content: "版本 `9.8.7`，协议 `balance.v1`。后续说明。\n",
+			marker:  "版本",
+		},
+		{
+			name:    "English quota version is separate from wire schema",
+			content: "Version `9.8.7`, wire schema `balance.v1`. Additional description.\n",
+			marker:  "Version",
+		},
 		{
 			name:    "Chinese release marker ignores unrelated versions",
 			content: "apiVersion: v1\n镜像版本：2.0.0\n> 插件版本：`9.8.7`\n",
@@ -157,11 +178,21 @@ func TestAIPluginVersionAlignmentContract(t *testing.T) {
 
 	contracts := []pluginReleaseVersionContract{
 		{
+			name:            "model-mapper",
+			selectedVersion: "1.0.1",
+			documentation:   []documentedReleaseVersion{{path: "extensions/model-mapper/README.md", marker: "交付版本"}},
+		},
+		{
+			name:            "ai-cache",
+			selectedVersion: "1.0.4",
+		},
+		{
 			name:            "ai-proxy",
-			selectedVersion: "1.0.2",
+			selectedVersion: "2.0.1",
 			metadata: []releaseVersionSurface{
 				{path: "extensions/ai-proxy/option.yaml", yamlPath: []string{"version"}},
 			},
+			artifactURLVersion: "1.0.2",
 			artifactURLDocs: []string{
 				"docs/plugins/ai/api-consumer/ai-token-ratelimit.md",
 				"docs/plugins/ai/api-provider/ai-proxy.md",
@@ -178,19 +209,19 @@ func TestAIPluginVersionAlignmentContract(t *testing.T) {
 		},
 		{
 			name:               "ai-billing",
-			selectedVersion:    "0.1.7",
+			selectedVersion:    "0.1.9",
 			artifactURLExample: "extensions/ai-billing/plugin.yaml",
 			documentation:      releaseDocumentation("ai-billing"),
 		},
 		{
 			name:               "ai-quota",
-			selectedVersion:    "1.0.2",
+			selectedVersion:    "2.0.1",
 			artifactURLExample: "extensions/ai-quota/plugin.yaml",
 			documentation:      releaseDocumentation("ai-quota"),
 		},
 		{
 			name:            "ai-statistics",
-			selectedVersion: "1.0.2",
+			selectedVersion: "1.0.3",
 			documentation:   releaseDocumentation("ai-statistics"),
 		},
 	}
@@ -274,6 +305,9 @@ func TestAIPluginVersionAlignmentContract(t *testing.T) {
 					t.Errorf("read documented OCI artifact URL %s: %v", path, err)
 					continue
 				}
+				if !strings.Contains(string(data), "Standalone example pinned to upstream ai-proxy 1.0.2; not a native Modelfusion release artifact pin.") {
+					t.Errorf("%s must identify its fixed upstream standalone pin", path)
+				}
 				version, parseErr := documentedOCIArtifactVersion(data, contract.name)
 				if parseErr != nil {
 					t.Errorf("%s documented OCI artifact URL: %v", path, parseErr)
@@ -281,9 +315,9 @@ func TestAIPluginVersionAlignmentContract(t *testing.T) {
 				}
 				assertSelectedReleaseVersion(
 					t,
-					path+" documented OCI artifact URL",
+					path+" documented fixed standalone OCI artifact URL",
 					version,
-					contract.selectedVersion,
+					contract.artifactURLVersion,
 				)
 			}
 
@@ -310,12 +344,22 @@ func TestAIPluginVersionAlignmentContract(t *testing.T) {
 }
 
 func releaseDocumentation(plugin string) []documentedReleaseVersion {
-	return []documentedReleaseVersion{
+	documents := []documentedReleaseVersion{
 		{path: "extensions/" + plugin + "/README.md", marker: "插件版本"},
 		{path: "extensions/" + plugin + "/README_EN.md", marker: "Plugin version"},
 		{path: "resources/plugins/" + plugin + "/README.md", marker: "插件版本"},
 		{path: "resources/plugins/" + plugin + "/README_EN.md", marker: "Plugin version"},
 	}
+	switch plugin {
+	case "ai-proxy":
+		documents[0].marker = "> 交付版本"
+	case "ai-billing":
+		documents[0].marker, documents[2].marker = "> 交付版本", "> 交付版本"
+	case "ai-quota":
+		documents[0].marker, documents[2].marker = "版本", "版本"
+		documents[1].marker, documents[3].marker = "Version", "Version"
+	}
+	return documents
 }
 
 func assertYAMLReleaseVersion(t *testing.T, path string, yamlPath []string, want string) {
@@ -434,26 +478,37 @@ func documentedOCIArtifactVersion(data []byte, plugin string) (string, error) {
 
 func documentedVersion(data []byte, marker string) (string, error) {
 	prefix := "> " + marker
-	if marker == "插件版本" {
+	suffix := "`"
+	switch marker {
+	case "交付版本":
+		prefix, suffix = "交付版本 `", "`，字段以 "
+	case "> 交付版本":
+		prefix, suffix = "> 交付版本：`", "`，以 "
+	case "版本":
+		prefix, suffix = "版本 `", "`，协议 `balance.v1`。"
+	case "Version":
+		prefix, suffix = "Version `", "`, wire schema `balance.v1`."
+	case "插件版本":
 		prefix += "：`"
-	} else {
+	default:
 		prefix += ": `"
 	}
-
 	var found []string
 	for _, line := range strings.Split(string(data), "\n") {
-		if !strings.HasPrefix(line, prefix) || !strings.HasSuffix(line, "`") {
+		rest, ok := strings.CutPrefix(line, prefix)
+		if !ok {
 			continue
 		}
-		found = append(found, strings.TrimSuffix(strings.TrimPrefix(line, prefix), "`"))
+		if suffix == "`" {
+			if strings.HasSuffix(rest, suffix) {
+				found = append(found, strings.TrimSuffix(rest, suffix))
+			}
+		} else if version, _, ok := strings.Cut(rest, suffix); ok {
+			found = append(found, version)
+		}
 	}
 	if len(found) != 1 {
-		return "", fmt.Errorf(
-			"found %d exact %q markers, want exactly one line %s<version>`",
-			len(found),
-			marker,
-			prefix,
-		)
+		return "", fmt.Errorf("found %d exact %q markers, want exactly one prefix %s", len(found), marker, prefix)
 	}
 	return found[0], nil
 }

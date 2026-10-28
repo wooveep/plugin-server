@@ -4,7 +4,7 @@ keywords: [AI Gateway, AI Billing, ai-billing]
 description: Configuration reference for request-level AI billing event delivery.
 ---
 
-> Plugin version: `0.1.7`
+> Plugin version: `0.1.9`
 
 ## Overview
 

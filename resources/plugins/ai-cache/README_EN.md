@@ -26,7 +26,7 @@ from that request is not emitted as a cache event.
 ## Runtime Properties
 
 Plugin execution phase: `default`
-Plugin execution priority: `800`
+Plugin execution priority: `250`
 
 ## Runtime Responsibilities
 

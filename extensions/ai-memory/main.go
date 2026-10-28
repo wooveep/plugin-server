@@ -1,12 +1,16 @@
 package main
 
 import (
+	"mime"
 	"strings"
 	"time"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-memory/config"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/ai/sessionctx"
 	"github.com/higress-group/wasm-go/pkg/log"
@@ -25,6 +29,7 @@ const (
 	memoryRouteContextKey           = "memoryRoute"
 	memoryModelContextKey           = "memoryModel"
 	memoryRequestPathContextKey     = "memoryRequestPath"
+	memoryProtocolContextKey        = "memoryProtocol"
 	memoryModeContextKey            = "memoryMode"
 	memoryPolicyVersionContextKey   = "memoryPolicyVersion"
 	memoryStartedAtContextKey       = "memoryStartedAt"
@@ -35,6 +40,8 @@ const (
 	memoryOriginalBodyContextKey    = "memoryOriginalBody"
 	memoryCurrentMessagesContextKey = "memoryCurrentMessages"
 	memoryRecentMessagesContextKey  = "memoryRecentMessages"
+	memoryBodyBasisContextKey       = "memoryBodyBasis"
+	memoryBodyBasisRejectedKey      = "memoryBodyBasisRejected"
 
 	maxRequestBodyBytes  = 100 * 1024 * 1024
 	maxResponseBodyBytes = 100 * 1024 * 1024
@@ -54,11 +61,7 @@ func init() {
 }
 
 func parseConfig(json gjson.Result, c *config.PluginConfig, log log.Log) error {
-	c.FromJson(json, log)
-	if err := c.Validate(); err != nil {
-		return err
-	}
-	return c.Complete(log)
+	return c.ParseRoot(json, log)
 }
 
 func parseOverrideConfig(json gjson.Result, global config.PluginConfig, c *config.PluginConfig, log log.Log) error {
@@ -71,37 +74,92 @@ func parseOverrideConfig(json gjson.Result, global config.PluginConfig, c *confi
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) types.Action {
 	ctx.DisableReroute()
+	if c.CaptureBodyBasis {
+		headers, err := proxywasm.GetHttpRequestHeaders()
+		if err != nil {
+			return rejectMemoryBodyBasis(ctx, 500, "header_read_failed")
+		}
+		filtered := make([][2]string, 0, len(headers))
+		var contentType, encoding string
+		var contentTypes, encodings int
+		for _, header := range headers {
+			switch {
+			case strings.EqualFold(header[0], bodybasis.DigestHeader), strings.EqualFold(header[0], bodybasis.PublicModelHeader):
+				// This release designates memory as the first capture boundary.
+				// Remove every client occurrence before any memory-policy gate.
+				continue
+			case strings.EqualFold(header[0], "content-type"):
+				contentType = header[1]
+				contentTypes++
+			case strings.EqualFold(header[0], "content-encoding"):
+				encoding = header[1]
+				encodings++
+			}
+			filtered = append(filtered, header)
+		}
+		if err := proxywasm.ReplaceHttpRequestHeaders(filtered); err != nil {
+			return rejectMemoryBodyBasis(ctx, 500, "basis_clear_failed")
+		}
+		mediaType, _, err := mime.ParseMediaType(contentType)
+		if contentTypes != 1 || err != nil || !isJSONContentType(mediaType) {
+			return rejectMemoryBodyBasis(ctx, 415, "json_required")
+		}
+		if encodings > 1 || encoding != "" && !strings.EqualFold(encoding, "identity") {
+			return rejectMemoryBodyBasis(ctx, 415, "content_encoding_unsupported")
+		}
+		if !ctx.HasRequestBody() {
+			return rejectMemoryBodyBasis(ctx, 400, "body_required")
+		}
+		ctx.SetRequestBodyBufferLimit(maxRequestBodyBytes)
+		if !wrapper.RequireRequestBody(ctx) {
+			return rejectMemoryBodyBasis(ctx, 500, "body_context_unavailable")
+		}
+	}
 	removeCallerMemoryCacheDigest()
 	if c.Route.MemoryMode == config.MemoryModeOff {
-		markMemoryGate(ctx, "memory-off")
-		ctx.DontReadRequestBody()
-		return types.ActionContinue
+		return skipMemoryRequest(ctx, c, "memory-off")
 	}
 	contentType, _ := proxywasm.GetHttpRequestHeader("content-type")
 	if contentType == "" || !isJSONContentType(contentType) {
-		markMemoryGate(ctx, "unsupported-content-type")
-		ctx.DontReadRequestBody()
-		return types.ActionContinue
+		return skipMemoryRequest(ctx, c, "unsupported-content-type")
 	}
 	path := requestPath(ctx)
-	if !pathMatchesSuffixes(path, c.EnablePathSuffixes) {
-		markMemoryGate(ctx, "unsupported-path")
-		ctx.DontReadRequestBody()
-		return types.ActionContinue
+	if c.PathScope != config.PathScopeBoundTarget && !pathMatchesSuffixes(path, c.EnablePathSuffixes) {
+		return skipMemoryRequest(ctx, c, "unsupported-path")
 	}
-	tenant, _ := proxywasm.GetHttpRequestHeader(c.TenantHeader)
-	tenant = strings.TrimSpace(tenant)
-	if tenant == "" {
-		markMemoryGate(ctx, "missing-tenant")
-		ctx.DontReadRequestBody()
-		return types.ActionContinue
+	kind := c.ProtocolForPath(path)
+	if kind == protocol.ProtocolUnknown {
+		return skipMemoryRequest(ctx, c, "unsupported-protocol-or-operation")
 	}
-	consumer, _ := proxywasm.GetHttpRequestHeader(c.ConsumerHeader)
-	consumer = strings.TrimSpace(consumer)
-	if consumer == "" {
-		markMemoryGate(ctx, "missing-consumer")
-		ctx.DontReadRequestBody()
-		return types.ActionContinue
+	if !ctx.HasRequestBody() {
+		return skipMemoryRequest(ctx, c, "missing-request-body")
+	}
+	var tenant, consumer string
+	route := requestRoute()
+	if c.NativeIdentity != nil {
+		headers, err := proxywasm.GetHttpRequestHeaders()
+		if err != nil {
+			return skipMemoryRequest(ctx, c, "native-caller-unavailable")
+		}
+		caller, err := balanceidentity.Read(headers)
+		if err != nil || caller.TenantID == "" || caller.PrincipalID == "" {
+			return skipMemoryRequest(ctx, c, "native-caller-unavailable")
+		}
+		tenant, consumer = caller.TenantID, caller.PrincipalID
+		ctx.SetContext(memoryNativeCallerContextKey, caller)
+		ctx.SetContext(memoryRouteNameContextKey, route)
+		route = c.NativeIdentity.RouteID
+	} else {
+		tenant, _ = proxywasm.GetHttpRequestHeader(c.TenantHeader)
+		tenant = strings.TrimSpace(tenant)
+		if tenant == "" {
+			return skipMemoryRequest(ctx, c, "missing-tenant")
+		}
+		consumer, _ = proxywasm.GetHttpRequestHeader(c.ConsumerHeader)
+		consumer = strings.TrimSpace(consumer)
+		if consumer == "" {
+			return skipMemoryRequest(ctx, c, "missing-consumer")
+		}
 	}
 	session, _ := proxywasm.GetHttpRequestHeader(c.SessionHeader)
 	requestID := currentRequestID(c.RequestIDHeader)
@@ -109,8 +167,9 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 	ctx.SetContext(memoryConsumerContextKey, consumer)
 	ctx.SetContext(memorySessionContextKey, strings.TrimSpace(session))
 	ctx.SetContext(memoryRequestIDContextKey, requestID)
-	ctx.SetContext(memoryRouteContextKey, requestRoute())
+	ctx.SetContext(memoryRouteContextKey, route)
 	ctx.SetContext(memoryRequestPathContextKey, path)
+	ctx.SetContext(memoryProtocolContextKey, string(kind))
 	ctx.SetContext(memoryModeContextKey, c.Route.MemoryMode)
 	ctx.SetContext(memoryPolicyVersionContextKey, c.Route.PolicyVersion)
 	ctx.SetContext(memoryStartedAtContextKey, nowMillis())
@@ -122,15 +181,46 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []byte, log log.Log) types.Action {
+	if ctx.GetBoolContext(memoryBodyBasisRejectedKey, false) {
+		return types.ActionPause
+	}
+	if c.CaptureBodyBasis && ctx.GetContext(memoryBodyBasisContextKey) == nil {
+		basis, err := bodybasis.Capture(body)
+		if err != nil {
+			return rejectMemoryBodyBasis(ctx, 400, "invalid_model_body")
+		}
+		headers, err := proxywasm.GetHttpRequestHeaders()
+		if err != nil {
+			return rejectMemoryBodyBasis(ctx, 500, "header_read_failed")
+		}
+		if err := proxywasm.ReplaceHttpRequestHeaders(append(headers, basis.Headers()...)); err != nil {
+			return rejectMemoryBodyBasis(ctx, 500, "basis_write_failed")
+		}
+		ctx.SetContext(memoryBodyBasisContextKey, basis)
+	}
 	if memoryGateReason(ctx) != "" {
 		return types.ActionContinue
 	}
-	path := ctx.GetStringContext(memoryRequestPathContextKey, "")
-	kind, adapter, ok := memoryProtocolAdapterForPath(path)
-	if !ok {
-		markMemoryGate(ctx, "unsupported-protocol")
-		return types.ActionContinue
+	if c.NativeIdentity != nil && !c.CaptureBodyBasis {
+		if err := mfjson.ValidateRuntimeBody(body, maxRequestBodyBytes); err != nil {
+			markMemoryGate(ctx, "invalid-runtime-body")
+			return types.ActionContinue
+		}
+		headers, err := proxywasm.GetHttpRequestHeaders()
+		if err != nil {
+			markMemoryGate(ctx, "missing-trusted-body-basis")
+			return types.ActionContinue
+		}
+		basis, err := bodybasis.Read(headers)
+		model := gjson.GetBytes(body, "model")
+		if err != nil || model.Type != gjson.String || model.Str != basis.PublicModel() {
+			markMemoryGate(ctx, "missing-trusted-body-basis")
+			return types.ActionContinue
+		}
 	}
+	path := ctx.GetStringContext(memoryRequestPathContextKey, "")
+	kind := protocol.ProtocolKind(ctx.GetStringContext(memoryProtocolContextKey, ""))
+	adapter := memoryProtocolAdapterForKind(kind)
 	method, _ := proxywasm.GetHttpRequestHeader(":method")
 	bodyDigest, err := adapter.BuildCacheDigest(protocol.RequestParseInput{
 		Method:               method,
@@ -140,6 +230,14 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 	})
 	if err != nil {
 		markMemoryGate(ctx, "request-digest-failed")
+		return types.ActionContinue
+	}
+	content := gjson.ParseBytes(bodyDigest.Input.Fields["messages"])
+	if kind == protocol.ProtocolResponses {
+		content = gjson.ParseBytes(bodyDigest.Input.Fields["input"])
+	}
+	if !content.IsArray() && !(kind == protocol.ProtocolResponses && content.Type == gjson.String) {
+		markMemoryGate(ctx, "unsupported-request-content")
 		return types.ActionContinue
 	}
 	digest, err := sessionctx.BuildScopedRequestDigest(sessionctx.ScopedRequestDigestInput{
@@ -155,7 +253,7 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 		markMemoryGate(ctx, "request-digest-failed")
 		return types.ActionContinue
 	}
-	currentQuestion, err := memoryCurrentQuestion(body, path, c.Route.QuestionFrom)
+	currentQuestion, err := memoryCurrentQuestion(body, kind, c.Route.QuestionFrom)
 	if err != nil {
 		markMemoryGate(ctx, "request-parse-failed")
 		return types.ActionContinue
@@ -200,7 +298,29 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 	return types.ActionContinue
 }
 
-func memoryCurrentQuestion(body []byte, requestPath string, questionFrom string) (string, error) {
+func skipMemoryRequest(ctx wrapper.HttpContext, c config.PluginConfig, reason string) types.Action {
+	markMemoryGate(ctx, reason)
+	if c.CaptureBodyBasis {
+		// Memory can be off or bypassed while the release still needs the
+		// pre-rewrite basis. Downstream headers must wait for that body callback.
+		return types.HeaderStopIteration
+	}
+	ctx.DontReadRequestBody()
+	return types.ActionContinue
+}
+
+func rejectMemoryBodyBasis(ctx wrapper.HttpContext, status uint32, code string) types.Action {
+	ctx.SetContext(memoryBodyBasisRejectedKey, true)
+	markMemoryGate(ctx, "body-basis-"+code)
+	ctx.DontReadRequestBody()
+	response := []byte(`{"error":{"code":"` + code + `","type":"memory_body_basis_error"}}`)
+	if err := proxywasm.SendHttpResponse(status, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
+		proxywasm.LogCritical("ai-memory could not send body-basis rejection")
+	}
+	return types.ActionPause
+}
+
+func memoryCurrentQuestion(body []byte, kind protocol.ProtocolKind, questionFrom string) (string, error) {
 	if questionFrom = strings.TrimSpace(questionFrom); questionFrom != "" {
 		result := gjson.GetBytes(body, questionFrom)
 		if result.Exists() {
@@ -209,7 +329,7 @@ func memoryCurrentQuestion(body []byte, requestPath string, questionFrom string)
 			}
 		}
 	}
-	return memoryProtocolCurrentUserPromptForPath(requestPath, body)
+	return memoryProtocolCurrentUserPrompt(kind, body)
 }
 
 func memoryRecentCacheConfigured(c config.PluginConfig) bool {
@@ -265,6 +385,10 @@ func onHttpResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chunk []
 
 func markMemoryGate(ctx wrapper.HttpContext, reason string) {
 	ctx.SetContext(memoryGateContextKey, reason)
+	ctx.SetUserAttribute("ai_memory_gate", reason)
+	if err := ctx.WriteUserAttributeToLog(); err != nil {
+		log.Warnf("[ai-memory] gate diagnostic unavailable: %v", err)
+	}
 }
 
 func memoryGateReason(ctx wrapper.HttpContext) string {

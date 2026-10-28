@@ -14,7 +14,7 @@ import (
 // @Title zh-CN AI代理
 // @Description zh-CN 通过AI助手提供智能对话服务
 // @IconUrl https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
-// @Version 2.0.0
+// @Version 2.0.1
 //
 // @Contact.name CH3CHO
 // @Contact.url https://github.com/CH3CHO

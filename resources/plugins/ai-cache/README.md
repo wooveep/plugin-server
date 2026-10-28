@@ -27,7 +27,7 @@ embedding、vector indexing、pricing、settlement、repair、deletion 和 recon
 ## 运行属性
 
 插件执行阶段：`default`
-插件执行优先级：`800`
+插件执行优先级：`250`
 
 ## 运行职责
 
