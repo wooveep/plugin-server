@@ -274,6 +274,14 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 			return types.ActionContinue
 		}
 		ctx.SetContext(memoryCurrentMessagesContextKey, append([]sessionctx.OpenAIMessage(nil), request.Messages...))
+		if c.Route.MemoryMode == config.MemoryModeRecentOnly && countCurrentUserMessages(request.Messages) > 1 {
+			// The original assembly rule excludes Recent when the client/History
+			// already supplied multiple user turns. Its lookup cannot change this
+			// effective empty context, including when that lookup fails.
+			if err := writeMemoryCacheDigest(memoryMessageAssemblyInput{}); err != nil {
+				log.Warnf("[ai-memory] trusted cache digest unavailable for complete current context: %v", err)
+			}
+		}
 	} else {
 		ctx.SetContext(memoryCurrentMessagesContextKey, nil)
 	}

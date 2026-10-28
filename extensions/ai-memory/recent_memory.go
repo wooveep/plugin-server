@@ -68,6 +68,11 @@ func handleRecentMemoryResponse(key string, response resp.Value, ctx wrapper.Htt
 		continueAfterRecentMemory(ctx, c, log)
 		return
 	}
+	if response.Type() != resp.Array {
+		log.Warnf("[ai-memory] recent memory lookup returned a non-array for key %s", key)
+		continueAfterRecentMemory(ctx, c, log)
+		return
+	}
 	messages, err := loadAndValidateRecentMemory(response.Array())
 	if err != nil {
 		log.Warnf("[ai-memory] recent memory record rejected for key %s: %v", key, err)

@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"strings"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
@@ -56,9 +55,8 @@ func buildMemoryCacheDigest(input memoryMessageAssemblyInput) (string, error) {
 	for _, message := range effective.Recent {
 		appendMessage(message.Role, message.Content)
 	}
-	if len(messages) == 0 {
-		return "", errors.New("assembled memory context is empty")
-	}
+	// Callers establish the effective context first. An empty message list is
+	// a known context too; it must remain distinct from a failed/unknown read.
 	body, err := json.Marshal(memoryTrustedCacheDigestPayload{
 		SchemaVersion: 1,
 		Messages:      messages,

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 
+	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-memory/config"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/ai/sessionctx"
 	"github.com/higress-group/wasm-go/pkg/log"
@@ -73,6 +74,11 @@ func hasEffectiveProtocolMemoryInjection(input memoryMessageAssemblyInput) bool 
 func replaceMemoryRequestBodyWithRecentFallback(ctx wrapper.HttpContext, log log.Log) bool {
 	recent := recentMemoryMessages(ctx)
 	if len(recent) == 0 {
+		if recent != nil && ctx.GetStringContext(memoryModeContextKey, "") == config.MemoryModeRecentOnly {
+			if err := writeMemoryCacheDigest(memoryMessageAssemblyInput{Recent: recent}); err != nil {
+				log.Warnf("[ai-memory] trusted cache digest unavailable for empty recent context: %v", err)
+			}
+		}
 		return false
 	}
 	return replaceMemoryRequestBody(ctx, memoryMessageAssemblyInput{Recent: recent}, log)
@@ -91,5 +97,7 @@ func recentMemoryMessages(ctx wrapper.HttpContext) []sessionctx.OpenAIMessage {
 	if !ok {
 		return nil
 	}
-	return append([]sessionctx.OpenAIMessage(nil), messages...)
+	// A validated [] means known empty; nil means the read was unavailable or
+	// rejected. append(nil, empty...) would erase this source distinction.
+	return append(make([]sessionctx.OpenAIMessage, 0, len(messages)), messages...)
 }

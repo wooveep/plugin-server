@@ -164,7 +164,23 @@ func handleMemoryAssembleResponse(statusCode int, body []byte, ctx wrapper.HttpC
 	if len(input.Recent) == 0 && memoryAssembleDecisionAllowsRecent(response.Decision) {
 		input.Recent = recentMemoryMessages(ctx)
 	}
-	if input.MemoryMessage != nil || len(input.Recent) > 0 {
+	knownEmpty := false
+	if input.MemoryMessage == nil && memoryAssembleDecisionAllowsRecent(response.Decision) {
+		// Only Chat's original assembly rule excludes Recent for a complete
+		// client/History conversation; other protocols keep their original rule.
+		current, _ := ctx.GetContext(memoryCurrentMessagesContextKey).([]sessionctx.OpenAIMessage)
+		if countCurrentUserMessages(current) > 1 {
+			input.Recent = nil
+			knownEmpty = true
+		} else {
+			knownEmpty = input.Recent != nil && len(input.Recent) == 0
+		}
+	}
+	if knownEmpty {
+		if err := writeMemoryCacheDigest(input); err != nil {
+			log.Warnf("[ai-memory] trusted cache digest unavailable for empty assembled context: %v", err)
+		}
+	} else if input.MemoryMessage != nil || len(input.Recent) > 0 {
 		replaceMemoryRequestBody(ctx, input, log)
 	}
 	proxywasm.ResumeHttpRequest()
