@@ -26,6 +26,8 @@
 
 敏感字段不声明 default、example 或 examples。仅当该 global/route scope 显式声明 x-sensitive:true、writeOnly:true 或 format:password 时，祖先对象的这些数据也按原 ART 凭据策略拒绝字面凭据；未标记的旧 scope 保持原转换行为。defaults.json 的受控引用规则不变，bearer_token 与 auth_token 明确属于凭据字段。转换器拒绝带凭据的样例，不删除原样例后宣称原 spec 已通过。展示消费者需从原 scope/JSON Pointer 恢复两项展示标记；严格的 SDK 扩展 schema 镜像也必须同步，仅改生产者不代表旧消费者已能接收新元资料。
 
+祖先样例按 schema 声明的属性、数组位置及本地引用定位敏感值，不依赖凭据字段的名称；独立 scope 不相互继承标记。组合分支保留各自声明的敏感路径。敏感标记位于无法可靠定位实例的条件、content 或 unevaluated 位置时，返回明确的转换不支持错误，不猜测条件结果或读取外部引用。
+
 真实测试输入为 key-auth 与 ai-billing 的 spec 原字节，固定保存在 tests/fixtures/schema-conversion/。包括不同 global/route、AUTHN/priority，以及 Redis 外部资源声明。测试验证路由 allow 空数组可用、缺字段拒绝、精确小数、nullable 和不支持反例。
 
 打包器固定 USTAR 成员排序/权限/时间和 gzip 头；相同输入归档逐字节一致。content_digest 使用冻结 artifact-json.v1 投影及 MF01 的 mf-json.v1；Wasm/schema/default/docs 全取原字节摘要。schema 转换改变配置解释时必须发布新插件版本。

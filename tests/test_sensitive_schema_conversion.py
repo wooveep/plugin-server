@@ -107,6 +107,130 @@ class SensitiveSchemaConversionTests(unittest.TestCase):
         converted = convert_spec(metadata_bytes({"type": "object", "properties": {"note": {"type": "string", "x-sensitive": False, "default": "public"}}}))
         self.assertEqual(parse_json(converted["schemas"]["config.schema.json"])["properties"]["note"]["default"], "public")
 
+    def test_ancestor_samples_reject_arbitrary_marked_property_literals(self):
+        sentinel = "test-only-opaque-credential"
+        for marker in ({"x-sensitive": True}, {"writeOnly": True}, {"format": "password"}):
+            for keyword in ("default", "example", "examples"):
+                sample = {"opaque": sentinel, "label": "public"}
+                schema = {"type": "object", "properties": {
+                    "opaque": {"type": "string", **marker}, "label": {"type": "string"}},
+                    keyword: [sample] if keyword == "examples" else sample}
+                with self.subTest(marker=marker, keyword=keyword):
+                    with self.assertRaises(ArtifactError) as raised:
+                        convert_spec(metadata_bytes(schema))
+                    self.assertEqual(raised.exception.code, "ART_SECRET")
+                    self.assertNotIn(sentinel, str(raised.exception))
+
+    def test_nested_escaped_and_array_ancestor_paths_reject_literals(self):
+        sentinel = "test-only-nested-credential"
+        for marker in ({"x-sensitive": True}, {"writeOnly": True}, {"format": "password"}):
+            for array_keyword in ("items", "prefixItems"):
+                entry = {"type": "object", "properties": {"opaque/~token": {"type": "string", **marker}}}
+                sequence = {"type": "array", array_keyword: [entry] if array_keyword == "prefixItems" else entry}
+                for keyword in ("default", "example", "examples"):
+                    sample = {"connection/~": {"entries": [{"opaque/~token": sentinel}]}, "label": "public"}
+                    schema = {"type": "object", "properties": {
+                        "connection/~": {"type": "object", "properties": {"entries": sequence}},
+                        "label": {"type": "string"}},
+                        keyword: [sample] if keyword == "examples" else sample}
+                    with self.subTest(marker=marker, array=array_keyword, keyword=keyword):
+                        with self.assertRaises(ArtifactError) as raised:
+                            convert_spec(metadata_bytes(schema))
+                        self.assertEqual(raised.exception.code, "ART_SECRET")
+                        self.assertNotIn(sentinel, str(raised.exception))
+
+    def test_local_pointer_anchor_and_recursive_refs_keep_sensitive_paths(self):
+        sentinel = "test-only-reference-credential"
+        for reference in ("#/$defs/connection~1~0", "#connection", "config.schema.json#/$defs/connection~1~0"):
+            definition = {"$anchor": "connection", "type": "object", "properties": {
+                "opaque": {"type": "string", "x-sensitive": True},
+                "next": {"$ref": "#/$defs/connection~1~0"}}}
+            schema = {"type": "object", "$defs": {"connection/~": definition},
+                      "properties": {"connection": {"$ref": reference}},
+                      "example": {"connection": {"next": {"opaque": sentinel}}}}
+            with self.subTest(reference=reference):
+                with self.assertRaises(ArtifactError) as raised:
+                    convert_spec(metadata_bytes(schema))
+                self.assertEqual(raised.exception.code, "ART_SECRET")
+                self.assertNotIn(sentinel, str(raised.exception))
+            schema["example"] = {"connection": {"next": {"opaque": "${CONTROLLED_TOKEN}"}}}
+            validated_schemas(convert_spec(metadata_bytes(schema)))
+
+    def test_public_samples_references_and_independent_scope_are_preserved(self):
+        protected = {"type": "string", "x-sensitive": True}
+        global_schema = {"type": "object", "example": {"opaque": "ordinary-global-display"}}
+        route_schema = {"type": "object", "properties": {
+            "entries": {"type": "array", "items": {"type": "object", "properties": {
+                "opaque": protected, "label": {"type": "string"}}}}},
+            "example": {"entries": [{"opaque": "${CONTROLLED_TOKEN}", "label": "ordinary-display"}]},
+            "default": {"entries": [{"label": "ordinary-display"}]}}
+        converted = convert_spec(metadata_bytes(global_schema, route_schema))
+        self.assertEqual(parse_json(converted["schemas"]["config.schema.json"])["examples"],
+                         [{"opaque": "ordinary-global-display"}])
+        route = parse_json(converted["schemas"]["route.schema.json"])
+        self.assertEqual(route["examples"], [route_schema["example"]])
+        self.assertEqual(route["default"], route_schema["default"])
+        validated_schemas(converted)
+
+    def test_positive_composition_pattern_and_additional_property_paths(self):
+        secret = {"type": "string", "x-sensitive": True}
+        for composition in ("allOf", "anyOf", "oneOf"):
+            schema = {"type": "object", composition: [{"properties": {"opaque": secret}}],
+                      "example": {"opaque": "test-only-branch-credential"}}
+            with self.subTest(composition=composition):
+                with self.assertRaises(ArtifactError) as raised:
+                    convert_spec(metadata_bytes(schema))
+                self.assertEqual(raised.exception.code, "ART_SECRET")
+        for selector in ("patternProperties", "additionalProperties"):
+            schema = {"type": "object", "properties": {"label": {"type": "string"}},
+                      selector: {"^opaque": secret} if selector == "patternProperties" else secret,
+                      "example": {"opaque/~": "test-only-pattern-credential", "label": "public"}}
+            with self.subTest(selector=selector):
+                with self.assertRaises(ArtifactError) as raised:
+                    convert_spec(metadata_bytes(schema))
+                self.assertEqual(raised.exception.code, "ART_SECRET")
+                schema["example"] = {"label": "public"}
+                converted = convert_spec(metadata_bytes(schema))
+                self.assertEqual(parse_json(converted["schemas"]["config.schema.json"])["examples"], [{"label": "public"}])
+
+    def test_dependent_schema_only_checks_the_actual_trigger(self):
+        schema = {"type": "object", "dependentSchemas": {
+            "connection": {"properties": {"opaque": {"type": "string", "writeOnly": True}}}},
+            "example": {"connection": True, "opaque": "test-only-dependent-credential"}}
+        with self.assertRaises(ArtifactError) as raised:
+            convert_spec(metadata_bytes(schema))
+        self.assertEqual(raised.exception.code, "ART_SECRET")
+        schema["example"] = {"opaque": "ordinary-display"}
+        converted = convert_spec(metadata_bytes(schema))
+        self.assertEqual(parse_json(converted["schemas"]["config.schema.json"])["examples"], [schema["example"]])
+
+    def test_ambiguous_sensitive_positions_and_unresolved_refs_are_explicitly_unsupported(self):
+        secret = {"type": "string", "x-sensitive": True}
+        for keyword in ("not", "if", "then", "else", "contentSchema", "propertyNames",
+                        "unevaluatedProperties", "unevaluatedItems"):
+            schema = {"type": "object", keyword: secret, "example": {"label": "public"}}
+            with self.subTest(keyword=keyword):
+                with self.assertRaises(ArtifactError) as raised:
+                    convert_spec(metadata_bytes(schema))
+                self.assertEqual(raised.exception.code, "unsupported_schema_conversion")
+        for reference in ("#/$defs/missing", "#/$defs/ordinary/example", "https://not-fetched.invalid/schema"):
+            schema = {"type": "object", "$defs": {"ordinary": {"type": "object", "example": {}}, "secret": secret},
+                      "properties": {"connection": {"$ref": reference}}, "example": {"connection": {}}}
+            with self.subTest(reference=reference):
+                with self.assertRaises(ArtifactError) as raised:
+                    convert_spec(metadata_bytes(schema))
+                self.assertEqual(raised.exception.code, "unsupported_schema_conversion")
+
+    def test_explicit_cross_file_reference_checks_only_the_referenced_scope(self):
+        global_schema = {"type": "object", "$defs": {"credential": {"type": "string", "x-sensitive": True}}}
+        route_schema = {"type": "object", "properties": {"opaque": {"$ref": "config.schema.json#/$defs/credential"}},
+                        "example": {"opaque": "test-only-cross-file-credential"}}
+        with self.assertRaises(ArtifactError) as raised:
+            convert_spec(metadata_bytes(global_schema, route_schema))
+        self.assertEqual(raised.exception.code, "ART_SECRET")
+        route_schema["example"] = {"opaque": "${CONTROLLED_TOKEN}"}
+        validated_schemas(convert_spec(metadata_bytes(global_schema, route_schema)))
+
     def test_sensitive_annotations_keep_nested_schema_positions(self):
         schema = {"type": "object", "allOf": [{"properties": {"opaque": {"type": "string", "format": "password", "writeOnly": True}}}],
                   "propertyNames": {"type": "string", "x-sensitive": False}}

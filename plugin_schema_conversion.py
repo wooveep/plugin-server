@@ -3,16 +3,19 @@ from __future__ import annotations
 
 import copy
 import json
+import posixpath
+import re
 from decimal import Decimal, InvalidOperation
 from functools import lru_cache
 from importlib.resources import files as resource_files
 from typing import Any
+from urllib.parse import unquote, urldefrag
 
 import yaml
 
-from artifact_contract import (ArtifactError, DIALECT, SCHEMA_KEYWORDS, SCHEMA_MAP_KEYS, SCHEMA_SINGLE_KEYS, SCHEMA_ARRAY_KEYS, SECRET_KEYS, digest,
-                               check_shape, contract_registry, registry_for, reject_credentials, schema_nodes)
-from mf_canonical import canonicalize, parse_json, schema_numbers
+from artifact_contract import (ArtifactError, DIALECT, SCHEMA_KEYWORDS, SCHEMA_MAP_KEYS, SCHEMA_SINGLE_KEYS, SCHEMA_ARRAY_KEYS, SECRET_KEYS, COMMON, digest,
+                               check_shape, contract_registry, registry_for, reject_credentials, schema_nodes, schema_positions)
+from mf_canonical import MAX_DEPTH, MAX_INPUT_BYTES, canonicalize, parse_json, schema_numbers
 
 VERSION = "higress-conversion.v1"
 UI_KEYS = frozenset(("x-title-i18n", "x-description-i18n", "x-scope", "x-sensitive"))
@@ -149,6 +152,135 @@ def _convert_schema(schema: Any, annotations: dict[str, Any], pointer: str = "")
     return result
 
 
+def _reject_marked_value(value: Any) -> None:
+    if isinstance(value, dict):
+        for item in value.values():
+            _reject_marked_value(item)
+    elif isinstance(value, list):
+        for item in value:
+            _reject_marked_value(item)
+    else:
+        # Reuse the original literal/reference policy without guessing the
+        # credential's actual property name or exposing its value in errors.
+        reject_credentials({"password": value})
+
+
+def _check_sensitive_samples(roots: dict[str, Any], samples: list[tuple[str, Any, Any]]) -> None:
+    # Only declared schema positions are reference targets. No retrieval callback,
+    # instance-data traversal as schemas, or inferred cross-scope inheritance.
+    common_schemas, _ = contract_registry()
+    common = {COMMON: common_schemas[COMMON]}
+    documents = {**common, **roots}
+    locations = {name: dict(schema_positions(root)) for name, root in documents.items()}
+    remaining = MAX_INPUT_BYTES
+
+    def resolve(reference: Any, document: str) -> tuple[str, Any]:
+        if not isinstance(reference, str):
+            unsupported("invalid sensitive sample schema reference")
+        base, fragment = urldefrag(reference)
+        try:
+            if re.search(r"%(?![0-9a-fA-F]{2})", base + fragment):
+                unsupported("invalid sensitive sample schema reference")
+            base, fragment = unquote(base, errors="strict"), unquote(fragment, errors="strict")
+        except UnicodeError:
+            unsupported("invalid sensitive sample schema reference")
+        target = document if not base else base if base in common else posixpath.normpath(base)
+        if target not in locations or (fragment.startswith("/") and re.search(r"~(?![01])", fragment)):
+            unsupported("unresolved sensitive sample schema reference")
+        matches = ([locations[target][fragment]] if fragment in locations[target] else
+                   [node for node in locations[target].values()
+                    if fragment and not fragment.startswith("/") and isinstance(node, dict)
+                    and node.get("$anchor") == fragment])
+        if len(matches) != 1:
+            unsupported("unresolved sensitive sample schema reference")
+        return target, matches[0]
+
+    marked_cache = {}
+
+    def marked(root: Any, document: str) -> bool:
+        nonlocal remaining
+        root_token = (document, id(root))
+        if root_token in marked_cache:
+            return marked_cache[root_token]
+        pending, seen = [(document, root)], set()
+        while pending:
+            name, value = pending.pop()
+            for node in schema_nodes(value):
+                token = (name, id(node))
+                if token in seen:
+                    continue
+                seen.add(token)
+                remaining -= 1
+                if remaining < 0:
+                    unsupported("sensitive sample traversal exceeds conversion budget")
+                if (node.get("x-sensitive") is True or node.get("writeOnly") is True
+                        or node.get("format") == "password"):
+                    marked_cache[root_token] = True
+                    return True
+                if "$ref" in node:
+                    pending.append(resolve(node["$ref"], name))
+        marked_cache[root_token] = False
+        return False
+
+    def visit(schema: Any, sample: Any, document: str, seen: set, depth: int = 0) -> None:
+        nonlocal remaining
+        if not isinstance(schema, dict) or (document, id(schema), id(sample)) in seen:
+            return
+        seen.add((document, id(schema), id(sample)))
+        remaining -= 1
+        if remaining < 0 or depth > MAX_DEPTH:
+            unsupported("sensitive sample traversal exceeds conversion budget")
+        if (schema.get("x-sensitive") is True or schema.get("writeOnly") is True
+                or schema.get("format") == "password"):
+            _reject_marked_value(sample)
+        for key in ("if", "then", "else", "not", "unevaluatedProperties", "unevaluatedItems", "propertyNames", "contentSchema"):
+            if key in schema and marked(schema[key], document):
+                unsupported("sensitive sample has an ambiguous instance position")
+
+        def child(node: Any, value: Any, name: str = document) -> None:
+            visit(node, value, name, seen, depth + 1)
+
+        if "$ref" in schema:
+            target, node = resolve(schema["$ref"], document)
+            child(node, sample, target)
+        # Positive compositions conservatively retain every declared sensitive
+        # path; a public alternative cannot erase another branch's UI marker.
+        for key in ("allOf", "anyOf", "oneOf"):
+            for node in schema.get(key, []):
+                child(node, sample)
+        if isinstance(sample, dict):
+            covered = set()
+            for name, node in schema.get("properties", {}).items():
+                if name in sample:
+                    covered.add(name)
+                    child(node, sample[name])
+            for pattern, node in schema.get("patternProperties", {}).items():
+                try:
+                    names = [name for name in sample if re.search(pattern, name)]
+                except re.error:
+                    unsupported("sensitive sample has an invalid property pattern")
+                for name in names:
+                    covered.add(name)
+                    child(node, sample[name])
+            for name in sample.keys() - covered:
+                child(schema.get("additionalProperties"), sample[name])
+            for name, node in schema.get("dependentSchemas", {}).items():
+                if name in sample:
+                    child(node, sample)
+        if isinstance(sample, list):
+            prefix = schema.get("prefixItems", [])
+            for node, value in zip(prefix, sample):
+                child(node, value)
+            for value in sample[len(prefix):]:
+                child(schema.get("items"), value)
+            for value in sample:
+                child(schema.get("contains"), value)
+
+    for document, node, sample in samples:
+        if marked(node, document):
+            visit(node, sample, document, set())
+
+
 def convert_spec(raw: bytes) -> dict[str, Any]:
     if len(raw) > 1_048_576:
         unsupported("spec exceeds conversion budget")
@@ -164,6 +296,7 @@ def convert_spec(raw: bytes) -> dict[str, Any]:
     if not isinstance(spec, dict) or set(spec) - {"phase", "priority", "configSchema", "routeConfigSchema", "externalResources"}:
         unsupported("unknown spec field")
     schemas = {}
+    roots, pending_samples = {}, []
     annotations = {"global": {}, "route": {}}
     external = {"global": {}, "route": {}}
     for scope, wrapper_key, path in (("global", "configSchema", "config.schema.json"), ("route", "routeConfigSchema", "route.schema.json")):
@@ -179,6 +312,7 @@ def convert_spec(raw: bytes) -> dict[str, Any]:
         if "x-higress-external-resource" in wrapper and "x-higress-external-resources" in wrapper:
             unsupported("ambiguous external resource declarations")
         external[scope] = {key: copy.deepcopy(item) for key, item in wrapper.items() if key != "openAPIV3Schema"}
+        roots[path] = wrapper["openAPIV3Schema"]
         schema = _convert_schema(wrapper["openAPIV3Schema"], annotations[scope])
         if not isinstance(schema, dict):
             unsupported("top-level plugin schema must be an object")
@@ -190,10 +324,14 @@ def convert_spec(raw: bytes) -> dict[str, Any]:
         for node in schema_nodes(wrapper["openAPIV3Schema"]):
             has_sensitive_marker |= (node.get("x-sensitive") is True or node.get("writeOnly") is True
                                      or node.get("format") == "password")
-            samples.extend(node[key] for key in ("default", "example", "examples") if key in node)
+            for key in ("default", "example", "examples"):
+                if key in node:
+                    values = node[key] if key == "examples" and isinstance(node[key], list) else [node[key]]
+                    samples.extend((node, sample) for sample in values)
         if has_sensitive_marker:
-            for sample in samples:
+            for _, sample in samples:
                 reject_credentials(sample)
+        pending_samples.extend((path, node, sample) for node, sample in samples)
         schemas[path] = {"$schema": DIALECT, **schema}
     if "externalResources" in spec:
         external["global"]["externalResources"] = copy.deepcopy(spec["externalResources"])
@@ -205,6 +343,7 @@ def convert_spec(raw: bytes) -> dict[str, Any]:
         "external_resources": external, "annotations": annotations, "source_spec_digest": digest(raw),
     }
     validate_extension(extension)
+    _check_sensitive_samples(roots, pending_samples)
     schemas["config.schema.json"]["x-higress"] = extension
     return {"schemas": {name: encode_yaml_value(schema) for name, schema in schemas.items()},
             "metadata": extension, "source_spec_digest": digest(raw)}
