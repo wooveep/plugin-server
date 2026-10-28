@@ -111,8 +111,12 @@ func validateReplayRecordScopeAndPayload(record MaterializedReplayRecord, materi
 			if err := requireJSONObject(chunk, "stream chunk"); err != nil {
 				return err
 			}
-			if reason := thinOutputGate(record.Protocol, chunk); reason != "" {
-				return errors.New(reason)
+			output := thinOutputGate(record.Protocol, chunk)
+			if output.blockedReason != "" {
+				return errors.New(output.blockedReason)
+			}
+			if output.containsToolCalls {
+				return errors.New("materialized record contains tool calls")
 			}
 		}
 		return nil
@@ -120,8 +124,12 @@ func validateReplayRecordScopeAndPayload(record MaterializedReplayRecord, materi
 	if err := requireJSONObject(record.Response, "response"); err != nil {
 		return err
 	}
-	if reason := thinOutputGate(record.Protocol, record.Response); reason != "" {
-		return errors.New(reason)
+	output := thinOutputGate(record.Protocol, record.Response)
+	if output.blockedReason != "" {
+		return errors.New(output.blockedReason)
+	}
+	if output.containsToolCalls {
+		return errors.New("materialized record contains tool calls")
 	}
 	return nil
 }

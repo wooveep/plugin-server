@@ -32,17 +32,6 @@ func thinProtocolAdapterForKind(kind protocol.ProtocolKind) (thinProtocolAdapter
 // cannot distinguish an absent count from an explicitly reported zero.
 func thinEventUsage(kind protocol.ProtocolKind, replay protocol.ReplayPayload) json.RawMessage {
 	fields := map[string]json.RawMessage{}
-	input, output := "input_tokens", "output_tokens"
-	if kind == protocol.ProtocolChatCompletions {
-		input, output = "prompt_tokens", "completion_tokens"
-	}
-	copyFields := func(usage map[string]json.RawMessage, names ...string) {
-		for _, name := range names {
-			if value, exists := usage[name]; exists {
-				fields[name] = value
-			}
-		}
-	}
 	type frame struct {
 		Type    string                     `json:"type"`
 		Usage   map[string]json.RawMessage `json:"usage"`
@@ -58,7 +47,7 @@ func thinEventUsage(kind protocol.ProtocolKind, replay protocol.ReplayPayload) j
 		if json.Unmarshal(replay.Body, &response) != nil {
 			return nil
 		}
-		copyFields(response.Usage, input, output, "total_tokens", "input_cache_hit_tokens", "input_cache_miss_tokens")
+		fields = response.Usage
 	} else {
 		for _, chunk := range replay.StreamChunks {
 			var response frame
@@ -74,21 +63,27 @@ func thinEventUsage(kind protocol.ProtocolKind, replay protocol.ReplayPayload) j
 				if response.Usage != nil {
 					// Each Chat usage object is an actual report, not a patch
 					// to synthesize missing fields from an earlier frame.
-					clear(fields)
-					copyFields(response.Usage, input, output, "total_tokens", "input_cache_hit_tokens", "input_cache_miss_tokens")
+					fields = response.Usage
 				}
 			case protocol.ProtocolMessages:
 				switch event {
 				case "message_start":
-					copyFields(response.Message.Usage, input, "input_cache_hit_tokens", "input_cache_miss_tokens")
+					for name, value := range response.Message.Usage {
+						if name != "output_tokens" && name != "total_tokens" {
+							fields[name] = value
+						}
+					}
 				case "message_delta":
 					// The start frame's output zero is not final usage.
-					copyFields(response.Usage, output, "total_tokens")
+					for _, name := range []string{"output_tokens", "total_tokens"} {
+						if value, exists := response.Usage[name]; exists {
+							fields[name] = value
+						}
+					}
 				}
 			case protocol.ProtocolResponses:
 				if event == "response.completed" {
-					clear(fields)
-					copyFields(response.Response.Usage, input, output, "total_tokens", "input_cache_hit_tokens", "input_cache_miss_tokens")
+					fields = response.Response.Usage
 				}
 			}
 		}

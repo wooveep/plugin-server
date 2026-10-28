@@ -115,10 +115,15 @@ func memoryOutputGate(kind protocol.ProtocolKind, raw []byte) string {
 			items = append(items, *object.Item)
 		}
 		for _, item := range items {
-			if item.Type == "reasoning" {
+			switch item.Type {
+			case "reasoning":
 				continue
-			}
-			if item.Type != "message" {
+			case "function_call", "tool_call", "computer_call", "file_search_call", "web_search_call":
+				// The existing Responses adapter records these as tool metadata.
+				// Keep scanning: a later media item still bypasses memory capture.
+				continue
+			case "message":
+			default:
 				return "non-text-output"
 			}
 			var content []block
@@ -131,6 +136,10 @@ func memoryOutputGate(kind protocol.ProtocolKind, raw []byte) string {
 	for _, content := range blocks {
 		switch content.Type {
 		case "text", "output_text", "refusal", "thinking", "redacted_thinking":
+		case "tool_use":
+			if kind != protocol.ProtocolMessages {
+				return "non-text-output"
+			}
 		default:
 			return "non-text-output"
 		}

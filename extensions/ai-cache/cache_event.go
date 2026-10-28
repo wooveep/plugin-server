@@ -107,11 +107,13 @@ func handleThinResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chun
 			emitThinCacheEvent(ctx, c, kind, thinResponseFacts{parseFailed: true}, true, log)
 			return
 		}
-		if reason := thinReplayOutputGate(kind, exchange.Replay); reason != "" {
-			markCacheGate(ctx, reason)
+		output := thinReplayOutputGate(kind, exchange.Replay)
+		if output.blockedReason != "" {
+			markCacheGate(ctx, output.blockedReason)
 			return
 		}
 		facts := thinResponseFactsFromExchange(kind, exchange)
+		facts.containsToolCalls = facts.containsToolCalls || output.containsToolCalls
 		facts.parseFailed = facts.parseFailed || capture.parseFailed
 		emitThinCacheEvent(ctx, c, kind, facts, true, log)
 		return
@@ -130,11 +132,13 @@ func handleThinResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chun
 		emitThinCacheEvent(ctx, c, kind, thinResponseFacts{parseFailed: true}, false, log)
 		return
 	}
-	if reason := thinReplayOutputGate(kind, exchange.Replay); reason != "" {
-		markCacheGate(ctx, reason)
+	output := thinReplayOutputGate(kind, exchange.Replay)
+	if output.blockedReason != "" {
+		markCacheGate(ctx, output.blockedReason)
 		return
 	}
 	facts := thinResponseFactsFromExchange(kind, exchange)
+	facts.containsToolCalls = facts.containsToolCalls || output.containsToolCalls
 	emitThinCacheEvent(ctx, c, kind, facts, false, log)
 }
 

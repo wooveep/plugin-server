@@ -372,19 +372,77 @@ func nativeCacheReplayUsage(kind protocol.ProtocolKind, raw json.RawMessage) *ex
 	if !inOK || !outOK {
 		return missing()
 	}
-	if total, exists := object["total_tokens"]; exists {
-		n, ok := nativeCacheCount(total)
-		if !ok || n.Cmp(new(big.Int).Add(new(big.Int).Set(input), output)) != 0 {
-			return missing()
+	quantities := map[string]string{"input": input.String(), "output": output.String()}
+	if kind == protocol.ProtocolMessages {
+		// Anthropic input excludes the separately reported creation/read counts.
+		// Match the original managedMessagesUsage meter with exact u128 sums.
+		readRaw, hasRead := object["cache_read_input_tokens"]
+		writeRaw, hasWrite := object["cache_creation_input_tokens"]
+		if hasRead || hasWrite {
+			read, readOK := nativeCacheCount(readRaw)
+			write, writeOK := nativeCacheCount(writeRaw)
+			if !hasRead || !hasWrite || !readOK || !writeOK {
+				return missing()
+			}
+			miss := new(big.Int).Add(input, write)
+			input = new(big.Int).Add(new(big.Int).Set(miss), read)
+			if input.BitLen() > 128 {
+				return missing()
+			}
+			quantities["input"], quantities["cache_hit"], quantities["cache_miss"] = input.String(), read.String(), miss.String()
+		}
+	} else {
+		// Chat and Responses share the original managedOpenAIUsage semantics;
+		// Responses only changes the names of the actual input/detail fields.
+		if total, exists := object["total_tokens"]; exists {
+			n, ok := nativeCacheCount(total)
+			if !ok || n.Cmp(new(big.Int).Add(new(big.Int).Set(input), output)) != 0 {
+				return missing()
+			}
+		}
+		detailsName := "prompt_tokens_details"
+		if kind == protocol.ProtocolResponses {
+			detailsName = "input_tokens_details"
+		}
+		var details map[string]json.RawMessage
+		if raw, exists := object[detailsName]; exists && !bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+			if json.Unmarshal(raw, &details) != nil {
+				return missing()
+			}
+		}
+		if raw, exists := details["cached_tokens"]; exists {
+			hit, ok := nativeCacheCount(raw)
+			if !ok || hit.Cmp(input) > 0 {
+				return missing()
+			}
+			quantities["cache_hit"] = hit.String()
+			quantities["cache_miss"] = new(big.Int).Sub(new(big.Int).Set(input), hit).String()
+		}
+		if kind == protocol.ProtocolChatCompletions {
+			hitRaw, hasHit := object["prompt_cache_hit_tokens"]
+			missRaw, hasMiss := object["prompt_cache_miss_tokens"]
+			if hasHit || hasMiss {
+				hit, hOK := nativeCacheCount(hitRaw)
+				miss, mOK := nativeCacheCount(missRaw)
+				if !hasHit || !hasMiss || !hOK || !mOK || new(big.Int).Add(new(big.Int).Set(hit), miss).Cmp(input) != 0 {
+					return missing()
+				}
+				if prior, exists := quantities["cache_hit"]; exists && prior != hit.String() {
+					return missing()
+				}
+				quantities["cache_hit"], quantities["cache_miss"] = hit.String(), miss.String()
+			}
 		}
 	}
-	quantities := map[string]string{"input": input.String(), "output": output.String()}
 	hitRaw, hasHit := object["input_cache_hit_tokens"]
 	missRaw, hasMiss := object["input_cache_miss_tokens"]
 	if hasHit || hasMiss {
 		hit, hOK := nativeCacheCount(hitRaw)
 		miss, mOK := nativeCacheCount(missRaw)
 		if !hasHit || !hasMiss || !hOK || !mOK || new(big.Int).Add(new(big.Int).Set(hit), miss).Cmp(input) != 0 {
+			return missing()
+		}
+		if prior, exists := quantities["cache_hit"]; exists && prior != hit.String() {
 			return missing()
 		}
 		quantities["cache_hit"], quantities["cache_miss"] = hit.String(), miss.String()
