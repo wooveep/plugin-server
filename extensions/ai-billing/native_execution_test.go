@@ -391,6 +391,14 @@ func TestNativeBillingMissingBridgeOrRedisFailureRecordsQ41WithoutFabricatedFact
 			ctx, state := nativeBillingRequestFixture(t, cfg)
 			consumeNativeBillingBridge(ctx, cfg, state, nativeBillingBridgeFixture(t, nativeBillingDeliveryFixture(t, cfg)))
 			onNativeBillingStreamDone(ctx, cfg)
+			if dispatchError == nil {
+				if state.delivery.Status().State != "in_flight" || ctx.attributes["execution_fact_gap"] == true {
+					t.Fatal("HTTP completion fabricated an append failure before the Redis deadline")
+				}
+				// A real failed response/timeout, including one arriving after
+				// stream completion, must still record the Q41 gap.
+				redis.callbacks[0](resp.ErrorValue(errors.New("sensitive redis endpoint timeout")))
+			}
 			if state.delivery == nil || (state.delivery.Status().State != "unknown" && state.delivery.Status().State != "gap") || ctx.attributes["execution_fact_gap"] != true {
 				t.Fatal("Redis failure/ACK loss was treated as successful billing")
 			}

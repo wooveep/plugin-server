@@ -172,8 +172,14 @@ func RedisCall(cluster Cluster, respQuery []byte, callback RedisResponseCallback
 }
 
 func redisCallInternal(clusterName string, respQuery []byte, callback RedisResponseCallback, readyPtr *bool, checkReadyFunc func() error) error {
+	return redisCallWithDispatch(clusterName, respQuery, callback, readyPtr, checkReadyFunc, proxywasm.DispatchRedisCall)
+}
+
+type redisDispatchFunc func(string, []byte, func(int, int)) (uint32, error)
+
+func redisCallWithDispatch(clusterName string, respQuery []byte, callback RedisResponseCallback, readyPtr *bool, checkReadyFunc func() error, dispatch redisDispatchFunc) error {
 	requestID := uuid.New().String()
-	_, err := proxywasm.DispatchRedisCall(
+	_, err := dispatch(
 		clusterName,
 		respQuery,
 		func(status int, responseSize int) {
@@ -212,7 +218,7 @@ func redisCallInternal(clusterName string, respQuery []byte, callback RedisRespo
 					if err := checkReadyFunc(); err == nil {
 						proxywasm.LogInfof("redis re-authentication successful, retrying request, request-id: %s", requestID)
 						// Retry the Redis call
-						retryErr := redisCallInternal(clusterName, respQuery, callback, nil, nil)
+						retryErr := redisCallWithDispatch(clusterName, respQuery, callback, nil, nil, dispatch)
 						if retryErr != nil {
 							// Retry dispatch failed, fall through to invoke callback with original error
 							proxywasm.LogErrorf("redis retry dispatch failed, request-id: %s, error: %v", requestID, retryErr)

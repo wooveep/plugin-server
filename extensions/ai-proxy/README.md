@@ -38,6 +38,8 @@ description: AI 代理插件配置参考
 
 Redis/事实投递失败沿 Q41 记录 gap 或 unknown，实际响应继续；没有回调或流已关闭时不能伪造成功 delivery。源码、Go/Wasm 宿主验证、真实网关加载与支持组合验收各自记录。
 
+登记与 attempt 事件的 Redis 调用、ACK 回调由插件根上下文持有，HTTP 请求结束后继续等待原 Redis 结果或超时；正常请求结束不会被标为 `stream_ack_missing`。这不延迟业务响应，真实投递失败仍显式记录缺口，后台事件回调不恢复请求或再次发送业务。
+
 ## 兼容代理功能
 
 `AI 代理`插件实现了基于 OpenAI API 契约的 AI 代理功能。目前支持 OpenAI、Azure OpenAI、月之暗面（Moonshot）和通义千问等 AI

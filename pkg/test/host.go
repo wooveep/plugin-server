@@ -259,7 +259,7 @@ func (h *testHost) CallOnHttpCall(headers [][2]string, body []byte) {
 
 // CallOnRedisCall call the proxy_on_redis_call_response method in the wasm plugin.
 func (h *testHost) CallOnRedisCall(status int32, response []byte) {
-	attrs := h.HostEmulator.GetRedisCalloutAttributesFromContext(h.currentContextID)
+	attrs := h.GetRedisCalloutAttributes()
 	calloutID := attrs[0].CalloutID
 	h.HostEmulator.CallOnRedisCallResponse(calloutID, status, response)
 }
@@ -271,7 +271,8 @@ func (h *testHost) GetHttpCalloutAttributes() []proxytest.HttpCalloutAttribute {
 
 // GetRedisCalloutAttributes get the redis callout attributes.
 func (h *testHost) GetRedisCalloutAttributes() []proxytest.RedisCalloutAttribute {
-	return h.HostEmulator.GetRedisCalloutAttributesFromContext(h.currentContextID)
+	return append(h.HostEmulator.GetRedisCalloutAttributesFromContext(h.currentContextID),
+		h.HostEmulator.GetRedisCalloutAttributesFromContext(proxytest.PluginContextID)...)
 }
 
 // SetRouteName set the property route_name with the route name.

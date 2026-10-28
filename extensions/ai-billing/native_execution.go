@@ -341,7 +341,8 @@ func onNativeBillingStreamDone(ctx wrapper.HttpContext, cfg BillingConfig) {
 	}
 	state.closed = true
 	if state.delivery != nil {
-		state.delivery.MarkUnknown(executionDeliveryObserver(ctx))
+		// The event client owns its ACK in the plugin context. Request completion
+		// does not imply an append timeout; a later Redis failure remains visible.
 		return
 	}
 	if !state.gap {

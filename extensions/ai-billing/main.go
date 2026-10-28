@@ -432,10 +432,10 @@ func parseRedisStream(redisStream gjson.Result, config *BillingConfig) error {
 		Timeout:     timeout,
 		Stream:      stream,
 	}
-	config.redisClient = wrapper.NewRedisClusterClient(wrapper.FQDNCluster{
+	config.redisClient = wrapper.NewRedisEventClient(wrapper.FQDNCluster{
 		FQDN: serviceName,
 		Port: int64(servicePort),
-	})
+	}, proxywasm.DispatchRedisCallInBackground)
 	return config.redisClient.Init(username, password, timeout, wrapper.WithDataBase(database))
 }
 

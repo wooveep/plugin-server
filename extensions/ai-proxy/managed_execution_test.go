@@ -153,7 +153,7 @@ type managedStreamRecord struct {
 func (h *managedHost) records(t *testing.T) []managedStreamRecord {
 	t.Helper()
 	var result []managedStreamRecord
-	for _, callout := range h.host.GetRedisCalloutAttributesFromContext(h.id) {
+	for _, callout := range h.host.GetRedisCalloutAttributesFromContext(proxytest.PluginContextID) {
 		value, _, err := resp.NewReader(bytes.NewReader(callout.Query)).ReadValue()
 		if err != nil {
 			t.Fatal(err)

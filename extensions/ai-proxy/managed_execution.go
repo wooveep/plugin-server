@@ -184,7 +184,7 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 		return errors.New("managed execution provider does not support its frozen protocol profile")
 	}
 	redis := parsed.settings.Redis
-	client := wrapper.NewRedisClusterClient(wrapper.FQDNCluster{FQDN: redis.ServiceName, Port: int64(redis.ServicePort)})
+	client := wrapper.NewRedisEventClient(wrapper.FQDNCluster{FQDN: redis.ServiceName, Port: int64(redis.ServicePort)}, proxywasm.DispatchRedisCallInBackground)
 	if err := client.Init(redis.Username, redis.Password, redis.Timeout, wrapper.WithDataBase(redis.Database)); err != nil {
 		return errors.New("managed execution Redis initialization failed")
 	}
@@ -505,7 +505,6 @@ func onManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState, nu
 	if s.closed {
 		// A late provider callback can correct the attempt. It cannot fabricate
 		// a final client delivery after this HTTP stream has already closed.
-		markManagedPendingUnknown(ctx, s)
 		return
 	}
 	if outcome.HTTPStatus == nil || bodyErr != nil {
@@ -701,13 +700,9 @@ func onManagedStreamDone(ctx wrapper.HttpContext, cfg config.PluginConfig) {
 		}
 		recordManagedAttempt(ctx, s, outcome)
 	}
-	markManagedPendingUnknown(ctx, s)
-}
-
-func markManagedPendingUnknown(ctx wrapper.HttpContext, s *managedExecutionState) {
-	for _, delivery := range s.deliveries {
-		delivery.MarkUnknown(managedDeliveryObserver(ctx))
-	}
+	// Event ACKs belong to the plugin context and may arrive after this HTTP
+	// context is deleted. Only the Redis result/timeout decides delivery failure;
+	// completing the business response is not an ACK deadline.
 }
 
 func rejectManagedRequest(ctx wrapper.HttpContext, status uint32, reason string) types.Action {
