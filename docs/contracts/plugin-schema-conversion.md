@@ -9,7 +9,9 @@
 | spec.phase / priority | x-higress.phase / priority；priority 精确 int32 | 同上，SDK 编译 |
 | configSchema.openAPIV3Schema | config.schema.json | 全局配置完整验证 |
 | routeConfigSchema.openAPIV3Schema | 独立 route.schema.json，扩展记录路径；缺失显式 null | 路由配置完整验证；不假设等同全局 |
-| x-title-i18n / x-description-i18n / x-scope | x-higress.annotations.{global,route} 按原 JSON Pointer 保留 | 展示、scope；不作为 JSON Schema 校验关键字 |
+| x-title-i18n / x-description-i18n / x-scope / x-sensitive | x-higress.annotations.{global,route} 按原 JSON Pointer 保留；x-sensitive 必须是 boolean | 展示、scope、敏感字段；不作为 JSON Schema 校验关键字 |
+| format: password | 同一 annotations 位置保留 format: password，仅接受 string 字段 | 密码输入展示，不注册为 JSON Schema 校验 format；其他 format 沿原严格白名单验证 |
+| writeOnly | 保留在标准 Draft 2020-12 schema | 标准注解；不以它替代或丢弃原敏感展示标记 |
 | wrapper x-higress-external-resource(s) / spec.externalResources | x-higress.external_resources，保留 global/route 归属和原字段 | 资源闭包；消费者遇未知结构须拒绝，不能静默丢弃 |
 | example | examples 单项数组；同时存在两者拒绝 | 校验语义不变，展示数据保留 |
 | nullable | 只允许独立 type 转为含 null 的类型数组 | enum/ref/组合等含糊情况拒绝 |
@@ -19,6 +21,10 @@
 | 来源 | source_spec_digest、converter_version 和完整包 source | verified 仅凭独立可信 source/Wasm/content 三摘要回执 |
 
 未知 spec/wrapper/运行关键字返回 `unsupported_schema_conversion`；未知 JSON Schema 关键字返回 `ART_CONFIG_SCHEMA`。不忽略不认识的字段。局部转换保持 schema 位置，example/default 中的普通对象不当 schema 遍历。
+
+外部资源声明接受现有 `redis`、`http` 与 `http-callout` 类型。可选的 `protocol` 仅接受 `http`；声明该协议时，SDK 纯编译还须核对冻结 McpBridge registry 的实际协议、命名空间、域名和精确端口。未知声明字段或其他协议继续拒绝；声明本身不创建服务或证明调用成功。
+
+敏感字段不声明 default、example 或 examples。仅当该 global/route scope 显式声明 x-sensitive:true、writeOnly:true 或 format:password 时，祖先对象的这些数据也按原 ART 凭据策略拒绝字面凭据；未标记的旧 scope 保持原转换行为。defaults.json 的受控引用规则不变，bearer_token 与 auth_token 明确属于凭据字段。转换器拒绝带凭据的样例，不删除原样例后宣称原 spec 已通过。展示消费者需从原 scope/JSON Pointer 恢复两项展示标记；严格的 SDK 扩展 schema 镜像也必须同步，仅改生产者不代表旧消费者已能接收新元资料。
 
 真实测试输入为 key-auth 与 ai-billing 的 spec 原字节，固定保存在 tests/fixtures/schema-conversion/。包括不同 global/route、AUTHN/priority，以及 Redis 外部资源声明。测试验证路由 allow 空数组可用、缺字段拒绝、精确小数、nullable 和不支持反例。
 

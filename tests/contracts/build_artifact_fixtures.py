@@ -40,7 +40,11 @@ def build_archive(recipe: dict[str, Any]) -> bytes:
         tar_bytes = bytes(header) + tar_bytes[512:]
     if recipe.get('tar_trailing_base64'):
         tar_bytes += base64.b64decode(recipe['tar_trailing_base64'], validate=True)
-    result = gzip.compress(tar_bytes, compresslevel=9, mtime=recipe.get('gzip_mtime', 0))
+    # GzipFile keeps the frozen OS=255 header across supported Python versions.
+    compressed = io.BytesIO()
+    with gzip.GzipFile(filename='', mode='wb', fileobj=compressed, compresslevel=9, mtime=recipe.get('gzip_mtime', 0)) as output:
+        output.write(tar_bytes)
+    result = compressed.getvalue()
     if recipe.get('gzip_cut_bytes'):
         result = result[:-recipe['gzip_cut_bytes']]
     return result

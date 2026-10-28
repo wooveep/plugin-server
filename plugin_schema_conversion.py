@@ -10,12 +10,12 @@ from typing import Any
 
 import yaml
 
-from artifact_contract import (ArtifactError, DIALECT, SCHEMA_KEYWORDS, SCHEMA_MAP_KEYS, SCHEMA_SINGLE_KEYS, SCHEMA_ARRAY_KEYS, digest,
-                               check_shape, contract_registry, registry_for)
+from artifact_contract import (ArtifactError, DIALECT, SCHEMA_KEYWORDS, SCHEMA_MAP_KEYS, SCHEMA_SINGLE_KEYS, SCHEMA_ARRAY_KEYS, SECRET_KEYS, digest,
+                               check_shape, contract_registry, registry_for, reject_credentials, schema_nodes)
 from mf_canonical import canonicalize, parse_json, schema_numbers
 
 VERSION = "higress-conversion.v1"
-UI_KEYS = frozenset(("x-title-i18n", "x-description-i18n", "x-scope"))
+UI_KEYS = frozenset(("x-title-i18n", "x-description-i18n", "x-scope", "x-sensitive"))
 SCHEMA_MAPS = frozenset(SCHEMA_MAP_KEYS)
 SCHEMA_SINGLES = frozenset(SCHEMA_SINGLE_KEYS)
 SCHEMA_ARRAYS = frozenset(SCHEMA_ARRAY_KEYS)
@@ -97,10 +97,22 @@ def _convert_schema(schema: Any, annotations: dict[str, Any], pointer: str = "")
         unsupported("unrecognized schema keyword: " + ",".join(sorted(set(schema) - SCHEMA_KEYWORDS - UI_KEYS - {"nullable", "example"})))
     if "x-higress" in schema or "$id" in schema or "$schema" in schema:
         unsupported("nested resource/dialect declaration in OpenAPI schema")
+    property_path = pointer.rsplit("/", 2)
+    named_secret = (len(property_path) == 3 and property_path[-2] == "properties"
+                    and property_path[-1].replace("~1", "/").replace("~0", "~").lower() in SECRET_KEYS)
+    if (named_secret or schema.get("x-sensitive") is True or schema.get("writeOnly") is True
+            or schema.get("format") == "password") and any(key in schema for key in ("default", "example", "examples")):
+        raise ArtifactError("ART_SECRET", "sensitive schema fields cannot contain defaults or examples", "conversion", pointer)
     result = {}
     for key, value in schema.items():
         escaped = key.replace("~", "~0").replace("/", "~1")
         if key in UI_KEYS:
+            annotations.setdefault(pointer, {})[key] = value
+        elif key == "format" and value == "password":
+            if schema.get("type") != "string":
+                unsupported("password UI format requires string type")
+            # OpenAPI's password widget is display metadata, not a validation
+            # format. Preserve it without widening the JSON Schema format set.
             annotations.setdefault(pointer, {})[key] = value
         elif key in SCHEMA_MAPS:
             if not isinstance(value, dict):
@@ -170,6 +182,18 @@ def convert_spec(raw: bytes) -> dict[str, Any]:
         schema = _convert_schema(wrapper["openAPIV3Schema"], annotations[scope])
         if not isinstance(schema, dict):
             unsupported("top-level plugin schema must be an object")
+        # Scan ancestor samples only for scopes which explicitly declare this
+        # sensitive-field contract. Unmarked legacy scopes keep their existing
+        # conversion behavior; sensitive fields themselves are checked above.
+        has_sensitive_marker = False
+        samples = []
+        for node in schema_nodes(wrapper["openAPIV3Schema"]):
+            has_sensitive_marker |= (node.get("x-sensitive") is True or node.get("writeOnly") is True
+                                     or node.get("format") == "password")
+            samples.extend(node[key] for key in ("default", "example", "examples") if key in node)
+        if has_sensitive_marker:
+            for sample in samples:
+                reject_credentials(sample)
         schemas[path] = {"$schema": DIALECT, **schema}
     if "externalResources" in spec:
         external["global"]["externalResources"] = copy.deepcopy(spec["externalResources"])

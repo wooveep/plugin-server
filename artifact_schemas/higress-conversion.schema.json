@@ -34,11 +34,12 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "registryType", "domainPath", "portPath"],
       "properties": {
-        "kind": {"enum": ["redis", "http"]},
+        "kind": {"enum": ["redis", "http", "http-callout"]},
         "registryType": {"enum": ["dns", "static"]},
         "domainPath": {"type": "string", "minLength": 1},
         "portPath": {"type": "string", "minLength": 1},
-        "projectedNamePath": {"type": "string", "minLength": 1}
+        "projectedNamePath": {"type": "string", "minLength": 1},
+        "protocol": {"const": "http"}
       }
     },
     "ScopeExternal": {
@@ -57,7 +58,9 @@
         "properties": {
           "x-title-i18n": {"type": "object", "additionalProperties": {"type": "string"}},
           "x-description-i18n": {"type": "object", "additionalProperties": {"type": "string"}},
-          "x-scope": {"enum": ["GLOBAL", "RULE", "ALL"]}
+          "x-scope": {"enum": ["GLOBAL", "RULE", "ALL"]},
+          "x-sensitive": {"type": "boolean"},
+          "format": {"const": "password"}
         }
       }
     }

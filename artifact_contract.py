@@ -56,7 +56,7 @@ SCHEMA_KEYWORDS = frozenset("""
 """.split())
 EXECUTABLE_SUFFIXES = frozenset((".sh", ".bash", ".py", ".js", ".mjs", ".exe", ".so", ".bat"))
 SECRET_KEYS = frozenset(("password", "api_key", "apikey", "api-key", "access_token",
-                         "secret_key", "client_secret", "authorization"))
+                         "secret_key", "client_secret", "authorization", "bearer_token", "auth_token"))
 
 
 class ArtifactError(ContractError):

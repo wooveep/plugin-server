@@ -31,6 +31,27 @@ class SchemaConversionTests(unittest.TestCase):
                 with self.assertRaises(ArtifactError):
                     check_shape({}, route, registry, "test")
 
+    def test_http_callout_metadata_preserves_only_the_declared_http_transport(self):
+        import copy
+        import yaml
+        source = {
+            "apiVersion": "1.0.0", "info": {"name": "demo", "version": "1.0.0"},
+            "spec": {"phase": "default", "priority": 1, "configSchema": {
+                "x-higress-external-resource": {
+                    "kind": "http-callout", "registryType": "dns", "domainPath": "console.service_name",
+                    "portPath": "console.service_port", "projectedNamePath": "console.service_name", "protocol": "http"},
+                "openAPIV3Schema": {"type": "object"}}}}
+        encoded = lambda value: yaml.safe_dump(value, sort_keys=False).encode()
+        metadata = convert_spec(encoded(source))["metadata"]
+        self.assertEqual(metadata["external_resources"]["global"]["x-higress-external-resource"],
+                         source["spec"]["configSchema"]["x-higress-external-resource"])
+        for field, invalid in (("protocol", "https"), ("protocol", None), ("kind", "unknown"), ("invented", True)):
+            candidate = copy.deepcopy(source)
+            candidate["spec"]["configSchema"]["x-higress-external-resource"][field] = invalid
+            with self.subTest(field=field, value=invalid), self.assertRaises(ArtifactError) as error:
+                convert_spec(encoded(candidate))
+            self.assertEqual(error.exception.code, "unsupported_schema_conversion")
+
     def test_unknown_or_lossy_input_fails_closed(self):
         base = b'apiVersion: 1.0.0\ninfo: {name: demo, version: 1.0.0}\nspec:\n  phase: default\n  priority: 1\n  configSchema:\n    openAPIV3Schema: '
         for schema in (b'{type: object, x-unknown: true}', b'{type: string, nullable: true, enum: [x]}',
