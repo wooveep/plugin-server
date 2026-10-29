@@ -436,6 +436,7 @@ func rejectManagedHealth(ctx wrapper.HttpContext, state *managedExecutionState, 
 		unavailable(reason)
 		return
 	}
+	recordManagedAccessFailure(ctx, reason, false)
 	ctx.SetUserAttribute("managed_execution_rejection", reason)
 	headers := [][2]string{{"content-type", "application/json"}}
 	if retryAfter != nil {

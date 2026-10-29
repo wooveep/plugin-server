@@ -436,6 +436,7 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	if !ok || managed == nil {
 		return types.ActionContinue, false
 	}
+	beginManagedAccessLog(ctx, managed.release.Descriptor.ReleaseID)
 	if managed.settings.MediaDispatchMode == "managed_operation" {
 		ctx.SetContext(ctxSkipAIProxyLifecycle, true)
 		return rejectManagedRequest(ctx, 409, "media_operation_api_required"), true
@@ -633,6 +634,7 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 	// invoke it again. A DispatchHttpCall return is handoff, not wire proof.
 	state.dispatchStarted = true
 	markManagedTextAttempt(state)
+	recordManagedAccessAttempt(ctx, state)
 	outbound := [][2]string{{":method", "POST"}, {":path", managed.settings.UpstreamPath}, {":authority", managed.settings.Authority}, {managedCallHeader, state.callID}, {managedAttemptHeader, state.attemptID}}
 	outbound = append(outbound, request.Headers...)
 	_, err = proxywasm.DispatchHttpCall(managed.release.Descriptor.ClusterRef, outbound, body, nil, managed.settings.TimeoutMS, func(numHeaders, bodySize, numTrailers int) {
@@ -946,6 +948,7 @@ func managedDeliveryObserver(ctx wrapper.HttpContext) func(executionfacts.Delive
 }
 
 func managedFactGap(ctx wrapper.HttpContext, reason string) {
+	recordManagedAccessFailure(ctx, reason, true)
 	ctx.SetUserAttribute("execution_fact_gap", true)
 	ctx.SetUserAttribute("execution_fact_gap_reason", reason)
 	// Every reason is an internal fixed code. Never log request/response bodies,
@@ -958,6 +961,7 @@ func managedFactGap(ctx wrapper.HttpContext, reason string) {
 }
 
 func onManagedStreamDone(ctx wrapper.HttpContext, cfg config.PluginConfig) {
+	defer closeManagedAccessLog(ctx)
 	s, ok := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
 	if !ok || s == nil || s.closed {
 		return
@@ -984,6 +988,7 @@ func onManagedStreamDone(ctx wrapper.HttpContext, cfg config.PluginConfig) {
 }
 
 func rejectManagedRequest(ctx wrapper.HttpContext, status uint32, reason string) types.Action {
+	recordManagedAccessFailure(ctx, reason, false)
 	ctx.SetUserAttribute("managed_execution_rejection", reason)
 	_ = sendManagedError(status, reason)
 	return types.ActionPause
