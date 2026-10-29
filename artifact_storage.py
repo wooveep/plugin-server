@@ -22,6 +22,7 @@ from urllib.parse import quote
 from artifact_contract import (ArtifactError, ValidationPolicy, digest, json_bytes,
                                safe_path, validate_document, validate_package)
 from mf_canonical import ContractError, parse_json
+from artifact_retention import validate_decision
 
 SEGMENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,199}\Z")
 UPLOAD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\Z")
@@ -83,6 +84,13 @@ class ArtifactStore:
                     error TEXT, artifact_id TEXT);
             """)
             self._recover(db)
+
+            db.executescript("""
+                CREATE TABLE IF NOT EXISTS retention_commands (
+                    decision_id TEXT PRIMARY KEY, artifact_id TEXT NOT NULL,
+                    original BLOB NOT NULL, receipt BLOB NOT NULL, state TEXT NOT NULL,
+                    quarantine TEXT NOT NULL);
+            """)
 
     @contextmanager
     def _locked(self):
@@ -166,6 +174,8 @@ class ArtifactStore:
                     raise StorageConflict(previous["error"] or "idempotency_conflict")
                 existing = db.execute("SELECT * FROM artifacts WHERE name=? AND version=?", (name, version)).fetchone()
                 if existing is not None:
+                    if db.execute("SELECT 1 FROM retention_commands WHERE artifact_id=? AND state IN ('unknown','deleted')", (existing["artifact_id"],)).fetchone():
+                        raise StorageConflict("artifact_retention_reserved")
                     if existing["content_digest"] != validated.content_digest:
                         db.execute("INSERT INTO uploads VALUES (?,?,?,?,'rejected','version_conflict',NULL) ON CONFLICT(upload_id) DO UPDATE SET state='rejected',error='version_conflict'", (upload_id, name, version, validated.content_digest))
                         raise StorageConflict("version_conflict")
@@ -244,7 +254,7 @@ class ArtifactStore:
             return None
         with self._locked() as db:
             self._recover(db)
-            row = db.execute("SELECT manifest FROM artifacts WHERE name=? AND version=?", (name, version)).fetchone()
+            row = db.execute("SELECT manifest FROM artifacts a WHERE name=? AND version=? AND NOT EXISTS(SELECT 1 FROM retention_commands r WHERE r.artifact_id=a.artifact_id AND r.state IN ('unknown','deleted'))", (name, version)).fetchone()
             return parse_json(row["manifest"]) if row else None
 
     def read_file(self, name: str, version: str, path: str) -> bytes | None:
@@ -273,4 +283,95 @@ class ArtifactStore:
         """Read committed versions for a producer inventory; never select latest."""
         with self._locked() as db:
             self._recover(db)
-            return [parse_json(row["manifest"]) for row in db.execute("SELECT manifest FROM artifacts ORDER BY name,version")]
+            return [parse_json(row["manifest"]) for row in db.execute("SELECT manifest FROM artifacts a WHERE NOT EXISTS(SELECT 1 FROM retention_commands r WHERE r.artifact_id=a.artifact_id AND r.state IN ('unknown','deleted')) ORDER BY name,version")]
+
+    def retain_or_delete(self, decision: dict) -> dict:
+        """Consume one decision from the authenticated Console coordinator only.
+
+        The caller owns the live reference reservation. This local journal never
+        grants that authority. Replays only read the first original intent; they
+        do not retry a filesystem deletion after unknown.
+        """
+        decided, expiry = validate_decision(decision)
+        raw = json_bytes(decision)
+        with self._locked() as db:
+            previous = db.execute("SELECT * FROM retention_commands WHERE decision_id=?", (decision["decision_id"],)).fetchone()
+            if previous is not None:
+                if previous["original"] != raw:
+                    raise StorageConflict("retention_idempotency_conflict")
+                return self._retention_readback(db, previous)
+            row = db.execute("SELECT * FROM artifacts WHERE artifact_id=?", (decision["artifact_id"],)).fetchone()
+            if row is None:
+                raise StorageConflict("retention_artifact_not_found")
+            manifest = parse_json(row["manifest"])
+            receipt = {"decision_id": decision["decision_id"], "artifact_id": row["artifact_id"],
+                       "plugin_name": row["name"], "plugin_version": row["version"],
+                       "content_digest": row["content_digest"], "decision_digest": digest(raw),
+                       "state": "retained", "reason": "explicit_retain"}
+            now = datetime.now(timezone.utc)
+            other = db.execute("SELECT original,state FROM retention_commands WHERE artifact_id=?", (row["artifact_id"],)).fetchall()
+            if expiry <= now or decided > now:
+                receipt.update(state="refused", reason="stale_or_expired_decision")
+            elif any(item["state"] in ("unknown", "deleted") or int(parse_json(item["original"])["revision"]) >= int(decision["revision"]) for item in other):
+                receipt.update(state="refused", reason="stale_or_reserved_decision")
+            elif decision["references"]:
+                receipt["reason"] = "referenced_artifact"
+            elif decision["action"] == "delete_allowed":
+                receipt.update(state="unknown", reason="delete_outcome_unknown")
+            quarantine = digest(decision["decision_id"].encode()).removeprefix("sha256:")
+            db.execute("INSERT INTO retention_commands VALUES (?,?,?,?,?,?)", (decision["decision_id"], row["artifact_id"], raw, json_bytes(receipt), receipt["state"], quarantine))
+            if receipt["state"] != "unknown":
+                return receipt
+            # The immutable row remains a tombstone: neither uploads nor seeding
+            # can revive this exact artifact after the reserved public removal.
+            final = self.root / row["name"] / row["version"]
+            tombstone = self.state / ("deleted-" + quarantine)
+            try:
+                if final.is_symlink() or not final.resolve().is_relative_to(self.root) or not final.is_dir() or (final / "manifest.json").read_bytes() != row["manifest"]:
+                    receipt.update(state="refused", reason="original_manifest_differs")
+                    self._save_retention(db, receipt)
+                    return receipt
+                for entry in manifest["files"]:
+                    member = final / entry["path"]
+                    if member.is_symlink() or not member.resolve().is_relative_to(final.resolve()) or digest(member.read_bytes()) != entry["sha256"]:
+                        raise StorageUnavailable("original artifact member differs")
+                if digest((final / "archive.tgz").read_bytes()) != manifest["archive_digest"]:
+                    raise StorageUnavailable("original archive bytes differ")
+                self.fault("retention_before_rename")
+                os.rename(final, tombstone)
+                fsync_directory(final.parent)
+                fsync_directory(self.state)
+                self.fault("retention_after_rename")
+                shutil.rmtree(tombstone)
+                fsync_directory(self.state)
+                self.fault("retention_after_delete")
+            except (OSError, StorageUnavailable) as exc:
+                raise StorageUnavailable("retention outcome must be queried with its original decision_id") from exc
+            receipt.update(state="deleted", reason="original_files_absent")
+            self._save_retention(db, receipt)
+            return receipt
+
+    @staticmethod
+    def _save_retention(db, receipt):
+        db.execute("UPDATE retention_commands SET receipt=?,state=? WHERE decision_id=?", (json_bytes(receipt), receipt["state"], receipt["decision_id"]))
+
+    def _retention_readback(self, db, row) -> dict:
+        receipt = parse_json(row["receipt"])
+        if row["state"] != "unknown":
+            return receipt
+        artifact = db.execute("SELECT * FROM artifacts WHERE artifact_id=?", (row["artifact_id"],)).fetchone()
+        final = self.root / artifact["name"] / artifact["version"]
+        quarantine = self.state / ("deleted-" + row["quarantine"])
+        # A query observes the original locations under the same process lock;
+        # it never issues another rename/rmtree or changes the original intent.
+        if not final.exists() and not final.is_symlink() and not quarantine.exists() and not quarantine.is_symlink():
+            receipt.update(state="deleted", reason="original_files_absent")
+        elif final.is_dir() and not final.is_symlink() and not quarantine.exists() and (final / "manifest.json").read_bytes() == artifact["manifest"]:
+            receipt.update(state="refused", reason="original_files_still_present")
+        self._save_retention(db, receipt)
+        return receipt
+
+    def retention_query(self, decision_id: str) -> dict | None:
+        with self._locked() as db:
+            row = db.execute("SELECT * FROM retention_commands WHERE decision_id=?", (decision_id,)).fetchone()
+            return self._retention_readback(db, row) if row else None

@@ -13,7 +13,7 @@ from urllib.parse import unquote, urlsplit
 
 from artifact_contract import json_bytes, load_policy, safe_path
 from artifact_storage import ArtifactStore, SEGMENT, StorageConflict, StorageUnavailable
-from mf_canonical import ContractError
+from mf_canonical import ContractError, parse_json
 
 
 def parse_plugin_upload_path(path):
@@ -27,16 +27,18 @@ def parse_plugin_upload_path(path):
 
 class PluginRequestHandler(BaseHTTPRequestHandler):
     upload_token = None
+    retention_token = None
     created_by = "artifact-service"
 
     @classmethod
     def create(cls, plugins_dir, upload_token, *, public_base_url="http://localhost:8080",
-               state_dir=None, policy=None, created_by="artifact-service"):
+               state_dir=None, policy=None, created_by="artifact-service", retention_token=None):
         class ConfiguredPluginRequestHandler(cls):
             pass
         handler = ConfiguredPluginRequestHandler
         handler.plugins_dir = Path(plugins_dir).resolve()
         handler.upload_token, handler.created_by = upload_token, created_by
+        handler.retention_token = retention_token
         handler.store = ArtifactStore(handler.plugins_dir, state_dir=state_dir,
                                      public_base_url=public_base_url, policy=policy)
         return handler
@@ -107,9 +109,70 @@ class PluginRequestHandler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeError):
             self._error(HTTPStatus.BAD_REQUEST, "invalid_upload_path")
 
+    def _retention_authorized(self):
+        # Upload/import credentials are not Console's reference authority.
+        # This uses the existing service Bearer mechanism, with a scoped secret
+        # intentionally absent unless the Console coordinator is provisioned.
+        values = self.headers.get_all("Authorization", [])
+        expected = self.retention_token
+        if not expected:
+            self._error(HTTPStatus.FORBIDDEN, "retention_api_disabled")
+            return False
+        if len(values) != 1 or not hmac.compare_digest(values[0].encode(), ("Bearer " + expected).encode()):
+            self._error(HTTPStatus.UNAUTHORIZED, "unauthorized")
+            return False
+        return True
+
+    def do_POST(self):
+        if not self._retention_authorized():
+            return
+        try:
+            path = unquote(urlsplit(self.path).path, errors="strict")
+            if not path.startswith("/retention/") or path.count("/") != 2:
+                self._error(HTTPStatus.NOT_FOUND, "retention_command_not_found")
+                return
+            lengths = self.headers.get_all("Content-Length", [])
+            if len(lengths) != 1 or not lengths[0].isdigit() or self.headers.get("Transfer-Encoding"):
+                self._error(HTTPStatus.BAD_REQUEST, "invalid_content_length")
+                return
+            length = int(lengths[0])
+            if length > 1_048_576:
+                self._error(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "ART_LIMIT")
+                return
+            if self.headers.get_content_type() != "application/json":
+                self._error(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "retention_json_required")
+                return
+            self.connection.settimeout(30)
+            raw = self.rfile.read(length)
+            if len(raw) != length:
+                self._error(HTTPStatus.BAD_REQUEST, "short_retention_command")
+                return
+            decision = parse_json(raw)
+            if not isinstance(decision, dict) or decision.get("decision_id") != path.removeprefix("/retention/"):
+                self._error(HTTPStatus.BAD_REQUEST, "retention_identity_differs")
+                return
+            self._reply(HTTPStatus.OK, json_bytes(self.store.retain_or_delete(decision)))
+        except ContractError as exc:
+            self._error(HTTPStatus.UNPROCESSABLE_ENTITY, exc.code)
+        except StorageConflict as exc:
+            self._error(HTTPStatus.CONFLICT, exc.code)
+        except (StorageUnavailable, sqlite3.Error, OSError):
+            self._error(HTTPStatus.SERVICE_UNAVAILABLE, "retention_outcome_unknown")
+        except (ValueError, UnicodeError):
+            self._error(HTTPStatus.BAD_REQUEST, "invalid_retention_path")
+
     def do_GET(self):
         try:
             path = unquote(urlsplit(self.path).path, errors="strict")
+            if path.startswith("/retention/") and path.count("/") == 2:
+                if not self._retention_authorized():
+                    return
+                receipt = self.store.retention_query(path.removeprefix("/retention/"))
+                if receipt is None:
+                    self._error(HTTPStatus.NOT_FOUND, "retention_command_not_found")
+                else:
+                    self._reply(HTTPStatus.OK, json_bytes(receipt))
+                return
             if path.startswith("/uploads/") and path.count("/") == 2:
                 if not self._authorized():
                     return
@@ -170,10 +233,11 @@ def main():
     parser.add_argument("--state-dir", type=Path, default=os.getenv("PLUGIN_SERVER_STATE_DIR"))
     parser.add_argument("--public-base-url", default=os.getenv("PLUGIN_SERVER_PUBLIC_BASE_URL", "http://higress-plugin-server.higress-system.svc:8080"))
     parser.add_argument("--upload-token", default=os.getenv("PLUGIN_SERVER_UPLOAD_TOKEN"))
+    parser.add_argument("--retention-token", default=os.getenv("PLUGIN_SERVER_RETENTION_TOKEN"))
     parser.add_argument("--policy", type=Path, default=os.getenv("PLUGIN_SERVER_POLICY_FILE"))
     args = parser.parse_args()
     policy = load_policy(args.policy)
-    run_server(args.host, args.port, args.plugins_dir, args.upload_token, state_dir=args.state_dir,
+    run_server(args.host, args.port, args.plugins_dir, args.upload_token, retention_token=args.retention_token, state_dir=args.state_dir,
                public_base_url=args.public_base_url, policy=policy)
 
 
