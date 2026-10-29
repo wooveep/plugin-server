@@ -18,6 +18,7 @@ from artifact_contract import (ArtifactError, DIALECT, SCHEMA_KEYWORDS, SCHEMA_M
 from mf_canonical import MAX_DEPTH, MAX_INPUT_BYTES, canonicalize, parse_json, schema_numbers
 
 VERSION = "higress-conversion.v1"
+AI_ROUTING_EXTENSION = "x-modelfusion-ai-routing"
 UI_KEYS = frozenset(("x-title-i18n", "x-description-i18n", "x-scope", "x-sensitive"))
 SCHEMA_MAPS = frozenset(SCHEMA_MAP_KEYS)
 SCHEMA_SINGLES = frozenset(SCHEMA_SINGLE_KEYS)
@@ -293,7 +294,7 @@ def convert_spec(raw: bytes) -> dict[str, Any]:
     if not isinstance(value, dict) or set(value) != {"apiVersion", "info", "spec"} or value["apiVersion"] != "1.0.0":
         unsupported("unsupported metadata wrapper")
     info, spec = value["info"], value["spec"]
-    if not isinstance(spec, dict) or set(spec) - {"phase", "priority", "configSchema", "routeConfigSchema", "externalResources"}:
+    if not isinstance(spec, dict) or set(spec) - {"phase", "priority", "configSchema", "routeConfigSchema", "externalResources", AI_ROUTING_EXTENSION}:
         unsupported("unknown spec field")
     schemas = {}
     roots, pending_samples = {}, []
@@ -342,6 +343,10 @@ def convert_spec(raw: bytes) -> dict[str, Any]:
         "route_schema_path": "route.schema.json" if "route.schema.json" in schemas else None,
         "external_resources": external, "annotations": annotations, "source_spec_digest": digest(raw),
     }
+    if AI_ROUTING_EXTENSION in spec:
+        # One explicit SDK contract, not an open-ended spec extension bag. The
+        # original camelCase value remains inside the hashed schema member.
+        extension["ai_routing"] = copy.deepcopy(spec[AI_ROUTING_EXTENSION])
     validate_extension(extension)
     _check_sensitive_samples(roots, pending_samples)
     schemas["config.schema.json"]["x-higress"] = extension

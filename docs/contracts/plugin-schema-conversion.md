@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | apiVersion | 只接受 1.0.0，其他显式拒绝 | 转换器版本锁 |
 | info 全部身份及展示字段 | config.schema.json 的 x-higress.info | 原字节文件摘要，ART/SDK/Console |
+| spec.x-modelfusion-ai-routing | x-higress.ai_routing；值沿原 camelCase closed routing contract 逐项保留 | 原 config.schema.json 文件摘要进入 descriptor/content_digest 与 Manifest；SDK typed 解码，不从其他包或当前 native 能力推断 |
 | spec.phase / priority | x-higress.phase / priority；priority 精确 int32 | 同上，SDK 编译 |
 | configSchema.openAPIV3Schema | config.schema.json | 全局配置完整验证 |
 | routeConfigSchema.openAPIV3Schema | 独立 route.schema.json，扩展记录路径；缺失显式 null | 路由配置完整验证；不假设等同全局 |
@@ -33,3 +34,5 @@
 打包器固定 USTAR 成员排序/权限/时间和 gzip 头；相同输入归档逐字节一致。content_digest 使用冻结 artifact-json.v1 投影及 MF01 的 mf-json.v1；Wasm/schema/default/docs 全取原字节摘要。schema 转换改变配置解释时必须发布新插件版本。
 
 本文件是当前转换片段交接，不表示 SDK 已完成扩展消费、网关 ABI 或运行验证通过。
+
+`spec.x-modelfusion-ai-routing` 是已知的显式可选扩展，不开放任意 `x-*` 字段。其值沿原 SDK 合同保留 `minimumPluginVersion`、`protocolModes`、`pathScopes` 与完整 adapters/operations；未知字段、非法模式/范围、缺少必要成员或非法版本返回 `unsupported_schema_conversion`。没有声明时不生成 `ai_routing`，旧包不获得新能力。该扩展不是配置校验关键字，不进入独立 route.schema.json，也不新增 ArtifactManifest 顶层字段。元资料声明仍须满足 SDK 原选定版本门；不以 native 单发/媒体能力替代旧路由契约。SDK 的严格 schema 镜像与 typed 解码端口须同批同步；转换结果的任意能力变化都会改变 schema 文件摘要和内容身份，不能覆盖原已发布版本。

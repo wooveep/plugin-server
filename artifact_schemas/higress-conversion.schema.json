@@ -19,6 +19,7 @@
     "priority": {"type": "integer", "minimum": -2147483648, "maximum": 2147483647},
     "global_schema_path": {"const": "config.schema.json"},
     "route_schema_path": {"enum": [null, "route.schema.json"]},
+    "ai_routing": {"$ref": "#/$defs/AiRouting"},
     "source_spec_digest": {"$ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest"},
     "external_resources": {
       "type": "object", "additionalProperties": false, "required": ["global", "route"],
@@ -61,6 +62,134 @@
           "x-scope": {"enum": ["GLOBAL", "RULE", "ALL"]},
           "x-sensitive": {"type": "boolean"},
           "format": {"const": "password"}
+        }
+      }
+    },
+    "AiRouting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimumPluginVersion"
+      ],
+      "properties": {
+        "minimumPluginVersion": {
+          "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/PluginVersion"
+        },
+        "protocolModes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "auto",
+              "passthrough"
+            ]
+          }
+        },
+        "pathScopes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "legacy_suffixes",
+              "bound_target"
+            ]
+          }
+        },
+        "adapters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AiRoutingAdapter"
+          }
+        }
+      }
+    },
+    "AiRoutingAdapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "provider",
+        "capability",
+        "operations",
+        "usageProfile",
+        "minimumPluginVersion"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AiRoutingOperation"
+          }
+        },
+        "usageProfile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minimumPluginVersion": {
+          "$ref": "urn:modelfusion:contracts:v1:package-descriptor#/$defs/PluginVersion"
+        }
+      }
+    },
+    "AiRoutingOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "clientMethod",
+        "clientPath",
+        "upstreamMethod",
+        "upstreamPath"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "clientMethod": {
+          "type": "string",
+          "minLength": 1
+        },
+        "clientPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "upstreamMethod": {
+          "type": "string",
+          "minLength": 1
+        },
+        "upstreamPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestTransform": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "responseTransform": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "streamingBehavior": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     }
