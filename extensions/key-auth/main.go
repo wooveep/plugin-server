@@ -24,6 +24,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/serviceidentity"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -111,6 +112,7 @@ type credentialIdentity struct {
 	Consumer bool
 	Plan     extractionPlan
 	Balance  *balanceidentity.Snapshot
+	Service  *serviceidentity.Snapshot
 }
 
 type credentialCandidate struct {
@@ -311,6 +313,10 @@ func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) er
 		if err != nil {
 			return err
 		}
+		services, err := parseServiceCredentialBindings(item, credentials)
+		if err != nil {
+			return err
+		}
 		balances, err := parseBalanceCredentialBindings(item, credentials)
 		if err != nil {
 			return err
@@ -322,6 +328,10 @@ func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) er
 
 		global.consumers = append(global.consumers, consumer)
 		for _, credential := range credentials {
+			var service *serviceidentity.Snapshot
+			if snapshot, exists := services[credential]; exists {
+				service = &snapshot
+			}
 			var balance *balanceidentity.Snapshot
 			if snapshot, exists := balances[credential]; exists {
 				balance = &snapshot
@@ -332,6 +342,7 @@ func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) er
 				Consumer: true,
 				Plan:     plan,
 				Balance:  balance,
+				Service:  service,
 			}); err != nil {
 				return err
 			}
@@ -446,7 +457,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 	// - global_auth 未设置 且 没有任何一个 domain/route 配置该插件
 	if (globalAuthSetTrue && noAllow) || (globalAuthNoSet && !ruleSet) {
 		log.Infof("consumer %q authenticated", name)
-		return authenticated(name)
+		return authenticatedIdentity(identity, config.Realm)
 	}
 
 	// 全局生效，但当前 domain/route 配置了 allow 列表
@@ -456,7 +467,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 			return deniedUnauthorizedConsumer(config.Realm)
 		}
 		log.Infof("consumer %q authenticated", name)
-		return authenticated(name)
+		return authenticatedIdentity(identity, config.Realm)
 	}
 
 	// 非全局生效
@@ -467,7 +478,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 				return deniedUnauthorizedConsumer(config.Realm)
 			}
 			log.Infof("consumer %q authenticated", name)
-			return authenticated(name)
+			return authenticatedIdentity(identity, config.Realm)
 		}
 	}
 
@@ -717,6 +728,12 @@ func propagateTrustedIdentity(identity credentialIdentity) error {
 	_ = proxywasm.AddHttpRequestHeader(consumerHeaderName, identity.Name)
 	if identity.Tenant != "" {
 		_ = proxywasm.AddHttpRequestHeader(tenantHeaderName, identity.Tenant)
+	}
+	if identity.Service != nil {
+		if identity.Balance != nil {
+			return errors.New("service and customer identities cannot overlap")
+		}
+		return installServiceIdentityHeaders(identity.Service)
 	}
 	return installBalanceIdentity(identity.Balance)
 }

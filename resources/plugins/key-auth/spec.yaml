@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/key-auth/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/key-auth/README_EN.md
-  version: 1.1.0
+  version: 1.2.0
   contact:
     name: Higress Team
     url: http://higress.io/
@@ -74,6 +74,31 @@ spec:
                   en-US: Multiple credentials of the consumer. The list cannot be empty and credential values cannot be duplicated. Mutually exclusive with credential.
                 items:
                   type: string
+              internal_service_bindings:
+                type: array
+                title: 原生内部服务Key绑定
+                x-title-i18n: {en-US: Native Internal Service Key Bindings}
+                description: 仅原Console登记的内部服务Key；无客户account或销售身份，与credential_bindings互斥。认证及allow成功后写入请求级可信FilterState，header不独立授予内部调用资格。
+                minItems: 1
+                items:
+                  type: object
+                  additionalProperties: false
+                  required: [credential, service, api_key_id, credential_generation, tenant_id, principal_id]
+                  properties:
+                    credential: {type: string, minLength: 1}
+                    service: {type: string, enum: [ai-memory, ai-cache]}
+                    api_key_id:
+                      type: string
+                      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+                    credential_generation:
+                      type: string
+                      pattern: '^[1-9][0-9]{0,18}$'
+                    tenant_id:
+                      type: string
+                      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+                    principal_id:
+                      type: string
+                      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
               credential_bindings:
                 type: array
                 title: 原生Key账户绑定
@@ -138,6 +163,9 @@ spec:
                 x-description-i18n:
                   en-US: Consumer-level HTTP header source switch overriding the global config.
             required: [name]
+            allOf:
+              - not:
+                  required: [credential_bindings, internal_service_bindings]
         credentials:
           type: array
           title: 顶层访问凭证列表

@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
-	"strconv"
 	"strings"
 
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/serviceidentity"
 )
 
 const InternalRegistrationVersion = "execution-registration.v2"
@@ -106,24 +106,27 @@ type InternalCallReference struct {
 	CallID               string
 	APIKeyID             string
 	CredentialGeneration string
+	Identity             serviceidentity.Snapshot
 }
 
 func ReadInternalCallReference(headers [][2]string) (InternalCallReference, error) {
-	values := map[string]string{}
-	for _, header := range headers {
-		name := strings.ToLower(header[0])
-		if name != InternalCallReferenceHeader && name != balanceidentity.APIKeyHeader && name != balanceidentity.GenerationHeader {
+	identity, err := serviceidentity.Read(headers)
+	if err != nil {
+		return InternalCallReference{}, err
+	}
+	var call string
+	found := false
+	for _, pair := range headers {
+		if !strings.EqualFold(pair[0], InternalCallReferenceHeader) {
 			continue
 		}
-		if _, duplicate := values[name]; duplicate {
-			return InternalCallReference{}, errors.New("duplicate internal call reference or authenticated key header")
+		if found {
+			return InternalCallReference{}, errors.New("duplicate original internal call reference")
 		}
-		values[name] = header[1]
+		found, call = true, pair[1]
 	}
-	result := InternalCallReference{values[InternalCallReferenceHeader], values[balanceidentity.APIKeyHeader], values[balanceidentity.GenerationHeader]}
-	number, err := strconv.ParseInt(result.CredentialGeneration, 10, 64)
-	if !balanceidentity.ValidID(result.CallID) || !balanceidentity.ValidID(result.APIKeyID) || err != nil || number < 1 || strconv.FormatInt(number, 10) != result.CredentialGeneration {
-		return InternalCallReference{}, errors.New("original internal call and authenticated service key are required")
+	if !found || !balanceidentity.ValidID(call) {
+		return InternalCallReference{}, errors.New("original server-prepared internal call is required")
 	}
-	return result, nil
+	return InternalCallReference{CallID: call, APIKeyID: identity.APIKeyID, CredentialGeneration: identity.CredentialGeneration, Identity: identity}, nil
 }

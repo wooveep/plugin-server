@@ -8,6 +8,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/serviceidentity"
 	"github.com/tidwall/gjson"
 )
 
@@ -52,6 +53,12 @@ func parseBalanceCredentialBindings(item gjson.Result, credentials []string) (ma
 }
 
 func removeBalanceIdentityHeaders() error {
+	if err := serviceidentity.Clear(); err != nil {
+		return err
+	}
+	if err := proxywasm.RemoveHttpRequestHeader(serviceidentity.ServiceHeader); err != nil && !errors.Is(err, types.ErrorStatusNotFound) {
+		return err
+	}
 	for _, name := range balanceidentity.HeaderNames() {
 		if err := proxywasm.RemoveHttpRequestHeader(name); err != nil && !errors.Is(err, types.ErrorStatusNotFound) {
 			return err

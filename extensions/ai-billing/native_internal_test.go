@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
+	"github.com/higress-group/wasm-go/pkg/ai/serviceidentity"
 	"github.com/tidwall/gjson"
 )
 
@@ -31,10 +32,18 @@ func nativeInternalBillingFixture(t *testing.T, embedding bool) (BillingConfig, 
 	if err := configureNativeBilling(gjson.ParseBytes(raw), &cfg); err != nil {
 		t.Fatal(err)
 	}
+	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption())
+	t.Cleanup(reset)
+	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
+	authenticated := serviceidentity.Snapshot{Service: "ai-memory", APIKeyID: nativeKeyFixture, CredentialGeneration: "9007199254740993", TenantID: nativeTenantFixture, PrincipalID: nativePrincipalFixture}
+	stateRaw, _ := json.Marshal(authenticated)
+	if err := host.SetProperty([]string{serviceidentity.Property}, stateRaw); err != nil {
+		t.Fatal(err)
+	}
 	ctx := newNativeBillingTestContext()
 	state := &nativeBillingState{config: cfg.NativeExecution.(*nativeBillingConfig)}
 	ctx.SetContext(nativeBillingContextKey, state)
-	captureNativeBillingIdentity(ctx, state, [][2]string{{executionfacts.InternalCallReferenceHeader, "50000000-0000-4000-8000-000000000009"}, {balanceidentity.APIKeyHeader, nativeKeyFixture}, {balanceidentity.GenerationHeader, "9007199254740993"}})
+	captureNativeBillingIdentity(ctx, state, append(authenticated.Headers(), [2]string{executionfacts.InternalCallReferenceHeader, "50000000-0000-4000-8000-000000000009"}))
 	if !state.valid || state.identity.AccountID != "" || state.internal == nil {
 		t.Fatal("internal capture required or invented a wallet")
 	}
@@ -86,7 +95,7 @@ func TestNativeInternalBillingWritesOnlyProtectedOriginalDeliveryBytes(t *testin
 }
 
 func TestNativeInternalBillingRejectsChangedCallerOrFrozenRoute(t *testing.T) {
-	for _, field := range []string{"call", "producer", "release", "route", "public_model", "customer", "attempt"} {
+	for _, field := range []string{"call", "producer", "release", "route", "public_model", "customer", "service", "tenant", "attempt"} {
 		t.Run(field, func(t *testing.T) {
 			cfg, ctx, state, original := nativeInternalBillingFixture(t, false)
 			redis := &nativeBillingTestRedis{}
@@ -106,6 +115,10 @@ func TestNativeInternalBillingRejectsChangedCallerOrFrozenRoute(t *testing.T) {
 			case "customer":
 				fact.BillingMode, fact.PrincipalKind, fact.CostOwner = "customer", "user", nil
 				fact.AccountID, fact.SalesAssetID = nativeAccountFixture, nativeAssetFixture
+			case "service":
+				fact.PrincipalID = "service/ai-cache/" + nativePrincipalFixture
+			case "tenant":
+				fact.TenantID = "33333333-3333-3333-3333-333333333334"
 			case "attempt":
 				fact.AttemptID = "foreign-attempt"
 			}

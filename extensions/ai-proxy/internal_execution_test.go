@@ -11,6 +11,7 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
+	"github.com/higress-group/wasm-go/pkg/ai/serviceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/upstreamhealth"
 	"github.com/tidwall/resp"
 )
@@ -50,9 +51,15 @@ func startManagedInternal(t *testing.T, h *managedHost, original, mapped []byte)
 	if err != nil {
 		t.Fatal(err)
 	}
+	authenticated := serviceidentity.Snapshot{Service: "ai-memory", APIKeyID: internalOriginalKey, CredentialGeneration: "9007199254740993", TenantID: internalOriginalTenant, PrincipalID: "40000000-0000-4000-8000-000000000009"}
+	stateRaw, _ := json.Marshal(authenticated)
+	if err := h.host.SetProperty([]string{serviceidentity.Property}, stateRaw); err != nil {
+		t.Fatal(err)
+	}
 	headers := [][2]string{{":method", "POST"}, {":path", "/internal-worker-route"}, {":authority", "gateway.example"}, {"content-type", "application/json"},
 		{managedInternalCallHeader, internalOriginalCall}, {balanceidentity.APIKeyHeader, internalOriginalKey}, {balanceidentity.GenerationHeader, "9007199254740993"},
 		{managedCallHeader, "client-fake-call"}, {managedAdmissionReleaseHeader, "client-fake-release"}, {"x-modelfusion-cost-owner", "client-fake-owner"}}
+	headers = append(headers, authenticated.Headers()[0], authenticated.Headers()[3], authenticated.Headers()[4])
 	headers = append(headers, basis.Headers()...)
 	if h.host.CallOnRequestHeaders(h.id, headers, false) != types.HeaderStopIteration {
 		t.Fatal("internal route did not wait for complete body")
@@ -200,7 +207,7 @@ func TestManagedInternalCheckPrecedesHealthAndSingleOriginalProviderSend(t *test
 }
 
 func TestManagedInternalUnconfirmedOrChangedCheckNeverSends(t *testing.T) {
-	for _, mode := range []string{"unknown", "wrong_key", "wrong_generation", "wrong_call", "wrong_body", "wrong_target", "expired", "customer", "extra_owner"} {
+	for _, mode := range []string{"unknown", "wrong_key", "wrong_generation", "wrong_call", "wrong_body", "wrong_target", "wrong_service", "wrong_tenant", "expired", "customer", "extra_owner"} {
 		t.Run(mode, func(t *testing.T) {
 			h := newManagedTextHost(t, managedInternalFixture(t, false))
 			basis := startManagedInternal(t, h, []byte(managedOriginalBody), []byte(managedMappedBody))
@@ -215,6 +222,10 @@ func TestManagedInternalUnconfirmedOrChangedCheckNeverSends(t *testing.T) {
 				receipt.CallID = "50000000-0000-4000-8000-000000000008"
 			case "wrong_body":
 				receipt.OriginalBodyDigest = "sha256:" + string(bytes.Repeat([]byte("a"), 64))
+			case "wrong_service":
+				receipt.Caller.PrincipalID = "service/ai-cache/40000000-0000-4000-8000-000000000009"
+			case "wrong_tenant":
+				receipt.Caller.TenantID = "30000000-0000-4000-8000-000000000008"
 			case "wrong_target":
 				receipt.TargetIDs = []string{"foreign-target"}
 			case "expired":
@@ -266,6 +277,32 @@ func TestManagedInternalHealthDenialAndMissingCapabilityStayClosed(t *testing.T)
 			}
 			if _, err := decodeManagedPoolFixture(t, fixture); err == nil {
 				t.Fatal("incompatible native capability accepted")
+			}
+		})
+	}
+}
+
+func TestManagedInternalCannotUseHeaderSpoofOrServiceWithoutOriginalReference(t *testing.T) {
+	for _, mode := range []string{"header_only", "missing_call_ref", "customer_account"} {
+		t.Run(mode, func(t *testing.T) {
+			h := newManagedTextHost(t, managedInternalFixture(t, false))
+			identity := serviceidentity.Snapshot{Service: "ai-memory", APIKeyID: internalOriginalKey, CredentialGeneration: "9007199254740993", TenantID: internalOriginalTenant, PrincipalID: "40000000-0000-4000-8000-000000000009"}
+			if mode != "header_only" {
+				raw, _ := json.Marshal(identity)
+				if err := h.host.SetProperty([]string{serviceidentity.Property}, raw); err != nil {
+					t.Fatal(err)
+				}
+			}
+			headers := append([][2]string{{":method", "POST"}, {":path", "/internal-worker-route"}, {":authority", "gateway.example"}, {"content-type", "application/json"}}, identity.Headers()...)
+			if mode != "missing_call_ref" {
+				headers = append(headers, [2]string{managedInternalCallHeader, internalOriginalCall})
+			}
+			if mode == "customer_account" {
+				headers = append(headers, [2]string{balanceidentity.AccountHeader, "10000000-0000-4000-8000-000000000009"})
+			}
+			h.host.CallOnRequestHeaders(h.id, headers, false)
+			if h.host.GetSentLocalResponse(h.id) == nil || len(h.host.GetCalloutAttributesFromContext(h.id)) != 0 || len(h.host.GetRedisCalloutAttributesFromContext(h.id)) != 0 {
+				t.Fatal("unconfirmed internal identity escaped to send or customer path")
 			}
 		})
 	}

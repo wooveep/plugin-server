@@ -10,6 +10,7 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
+	"github.com/higress-group/wasm-go/pkg/ai/serviceidentity"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 )
 
@@ -17,6 +18,7 @@ const managedInternalCallHeader = executionfacts.InternalCallReferenceHeader
 const managedInternalCheckPath = "/internal/internal-execution/check"
 
 type managedInternalCall struct {
+	identity                     serviceidentity.Snapshot
 	ref, apiKeyID, generation    string
 	checkStarted, checkCompleted bool
 	receipt                      *managedInternalReceipt
@@ -58,7 +60,7 @@ func readManagedInternalCall(headers [][2]string) (*managedInternalCall, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &managedInternalCall{ref: original.CallID, apiKeyID: original.APIKeyID, generation: original.CredentialGeneration}, nil
+	return &managedInternalCall{ref: original.CallID, apiKeyID: original.APIKeyID, generation: original.CredentialGeneration, identity: original.Identity}, nil
 }
 
 func decodeManagedInternalReceipt(raw []byte, request managedInternalRequest, configuration *managedExecutionConfig, basis bodybasis.Snapshot, operation string, now time.Time) (managedInternalReceipt, error) {
@@ -128,6 +130,10 @@ func checkManagedInternalCall(ctx wrapper.HttpContext, state *managedExecutionSt
 		receipt, err := decodeManagedInternalReceipt(response.Body, request, state.config, basis, operation, time.Now())
 		if err != nil {
 			rejectManagedRequest(ctx, 403, "internal_execution_not_authorized")
+			return
+		}
+		if receipt.Caller.TenantID != original.identity.TenantID || receipt.Caller.PrincipalID != original.identity.QualifiedPrincipal() {
+			rejectManagedRequest(ctx, 403, "internal_execution_service_mismatch")
 			return
 		}
 		original.receipt = &receipt
