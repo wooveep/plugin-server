@@ -100,16 +100,18 @@ type managedRedisSettings struct {
 }
 
 type managedSettings struct {
-	ProducerID         string               `json:"producer_id"`
-	CallIdentitySource string               `json:"call_identity_source"`
-	PrivateStream      string               `json:"private_stream"`
-	Redis              managedRedisSettings `json:"redis"`
-	UpstreamPath       string               `json:"upstream_path"`
-	Authority          string               `json:"authority"`
-	CredentialValue    string               `json:"credential_value"`
-	TimeoutMS          uint32               `json:"timeout_ms,omitempty"`
-	InputProtocol      string               `json:"input_protocol,omitempty"`
-	UpstreamProtocol   string               `json:"upstream_protocol,omitempty"`
+	MediaDispatchMode  string                 `json:"media_dispatch_mode,omitempty"`
+	ProducerID         string                 `json:"producer_id"`
+	CallIdentitySource string                 `json:"call_identity_source"`
+	PrivateStream      string                 `json:"private_stream"`
+	Redis              managedRedisSettings   `json:"redis"`
+	UpstreamPath       string                 `json:"upstream_path"`
+	Authority          string                 `json:"authority"`
+	CredentialValue    string                 `json:"credential_value"`
+	TimeoutMS          uint32                 `json:"timeout_ms,omitempty"`
+	InputProtocol      string                 `json:"input_protocol,omitempty"`
+	UpstreamProtocol   string                 `json:"upstream_protocol,omitempty"`
+	UpstreamHealth     *managedHealthSettings `json:"upstream_health,omitempty"`
 }
 
 type managedRedisClient interface {
@@ -121,6 +123,7 @@ type managedExecutionConfig struct {
 	release  managedRelease
 	redis    managedRedisClient
 	profile  managedProtocolProfile
+	health   *managedHealthRuntime
 }
 
 // configureManagedExecution is called for every global and rule parse. Clearing
@@ -173,6 +176,13 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 	if err != nil || expected != parsed.release.Descriptor.DescriptorDigest {
 		return errors.New("managed execution target descriptor digest differs")
 	}
+	if parsed.settings.MediaDispatchMode == "managed_operation" {
+		if err := validateManagedMediaRelease(&parsed, value, cfg); err != nil {
+			return err
+		}
+		cfg.ManagedExecution = &parsed
+		return nil
+	}
 	profile, err := newManagedProtocolProfile(parsed.settings.InputProtocol, parsed.settings.UpstreamProtocol)
 	if err != nil {
 		return errors.New("unsupported managed execution protocol profile")
@@ -189,6 +199,10 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 		return errors.New("managed execution Redis initialization failed")
 	}
 	parsed.redis = client
+	parsed.health, err = configureManagedHealth(&parsed)
+	if err != nil {
+		return err
+	}
 	cfg.ManagedExecution = &parsed
 	return nil
 }
@@ -227,9 +241,14 @@ func (c *managedExecutionConfig) validate() error {
 	if len(c.settings.CredentialValue) == 0 || len(c.settings.CredentialValue) > 8192 || strings.IndexFunc(c.settings.CredentialValue, func(r rune) bool { return r <= 32 || r >= 127 }) >= 0 {
 		return errors.New("managed execution requires a safe controlled upstream credential")
 	}
-	text, ok := d.Capabilities["text_generate"]
-	if !ok || !managedID(text.ResponseClassifierRef) || text.MaxAttempts < 1 || (text.SendMode != "single_send" && text.SendMode != "observable_retry") {
-		return errors.New("managed execution descriptor has no text capability")
+	if c.settings.MediaDispatchMode != "" && c.settings.MediaDispatchMode != "disabled" && c.settings.MediaDispatchMode != "managed_operation" {
+		return errors.New("managed execution media dispatch mode is unsupported")
+	}
+	if c.settings.MediaDispatchMode != "managed_operation" {
+		text, ok := d.Capabilities["text_generate"]
+		if !ok || !managedID(text.ResponseClassifierRef) || text.MaxAttempts < 1 || (text.SendMode != "single_send" && text.SendMode != "observable_retry") {
+			return errors.New("managed execution descriptor has no text capability")
+		}
 	}
 	for operation, capability := range d.Capabilities {
 		if operation != "text_generate" && operation != "image_generate" && operation != "video_generate" && operation != "task_query" {
@@ -278,12 +297,19 @@ type managedExecutionState struct {
 	deliveries                                                 map[string]*executionfacts.Delivery
 	lastAttempt, lastDelivery                                  *executionfacts.Snapshot
 	admissionDeadline                                          time.Time
+	healthInFlight                                             bool
+	health                                                     *managedHealthAttempt
+	frozenSelection                                            json.RawMessage
 }
 
 func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (types.Action, bool) {
 	managed, ok := cfg.ManagedExecution.(*managedExecutionConfig)
 	if !ok || managed == nil {
 		return types.ActionContinue, false
+	}
+	if managed.settings.MediaDispatchMode == "managed_operation" {
+		ctx.SetContext(ctxSkipAIProxyLifecycle, true)
+		return rejectManagedRequest(ctx, 409, "media_operation_api_required"), true
 	}
 	ctx.DisableReroute()
 	ctx.SetContext(ctxSkipAIProxyLifecycle, true)
@@ -348,7 +374,7 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if !ok || state == nil || state.config != managed {
 		return rejectManagedRequest(ctx, 409, "original_execution_missing"), true
 	}
-	if state.dispatchStarted || state.closed {
+	if state.dispatchStarted || state.closed || state.healthInFlight {
 		return types.ActionPause, true
 	}
 	if !time.Now().Before(state.admissionDeadline) {
@@ -403,9 +429,30 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 		return rejectManagedRequest(ctx, 500, "execution_identity_install_failed"), true
 	}
 	ctx.SetUserAttribute("managed_attempt_id", state.attemptID)
+	if managed.health != nil {
+		authorizeManagedHealth(ctx, state, basis, request)
+	} else {
+		dispatchManagedPreparedRequest(ctx, state, basis, request)
+	}
+	return types.ActionPause, true
+}
+
+// Remains the sole provider send. Health callbacks can enter it once only after
+// an eligible current view or the first certainly committed recovery Consume.
+func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecutionState, basis bodybasis.Snapshot, request managedProtocolRequest) {
+	if state.closed || state.dispatchStarted {
+		return
+	}
+	if !time.Now().Before(state.admissionDeadline) || state.health != nil && state.health.claimID != nil && !time.Now().Before(state.health.claimDeadline) {
+		rejectManagedRequest(ctx, 503, "health_or_admission_expired")
+		return
+	}
+	managed := state.config
+	body := request.Body
 	if err := prepareManagedExecution(state, basis, body); err != nil {
 		managedFactGap(ctx, "original_selection_invalid")
-		return rejectManagedRequest(ctx, 500, "original_selection_invalid"), true
+		rejectManagedRequest(ctx, 500, "original_selection_invalid")
+		return
 	}
 	registration, err := executionfacts.FreezeRegistration(executionfacts.Registration{
 		ProducerID: managed.settings.ProducerID, CallID: state.callID, AttemptID: state.attemptID,
@@ -437,7 +484,6 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	} else if err == nil {
 		state.handedOff = true
 	}
-	return types.ActionPause, true
 }
 
 func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot, body []byte) error {
@@ -466,6 +512,9 @@ func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot,
 }
 
 func stateSelection(s *managedExecutionState, basis bodybasis.Snapshot) []byte {
+	if len(s.frozenSelection) != 0 {
+		return append([]byte(nil), s.frozenSelection...)
+	}
 	d := s.config.release.Descriptor
 	selection := map[string]string{
 		"call_id": s.callID, "release_id": d.ReleaseID, "target_id": d.TargetID, "binding_id": d.BindingID, "attempt_id": s.attemptID,
@@ -473,6 +522,9 @@ func stateSelection(s *managedExecutionState, basis bodybasis.Snapshot) []byte {
 		"credential_ref": s.config.release.CredentialRef, "credential_revision": s.config.release.CredentialRevision, "selection_generation": "1",
 		"selection_canonicalization": "selection-json.v1", "original_body_digest": basis.Digest(), "mapper_digest": d.MapperDigest, "proxy_digest": d.ProxyDigest, "descriptor_digest": d.DescriptorDigest,
 		"mechanism": "router", "send_transport": "http_call", "recording_owner": "ai_proxy",
+	}
+	if s.config.health != nil {
+		selection["gateway_boot_id"] = s.config.health.owner
 	}
 	if s.original.SelectionDigest != "" {
 		selection["selection_digest"] = s.original.SelectionDigest
@@ -574,6 +626,13 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 	} else {
 		o.TransportError = "upstream_body_not_observed"
 	}
+	if retryAfter, err := managedSingleHeader(headers, "retry-after"); err == nil {
+		deadline, evidence := managedProviderDeadline(retryAfter, o.ObservedAt)
+		o.RetryAfter = deadline
+		if s.health != nil {
+			s.health.retryAfterEvidence = evidence
+		}
+	}
 	if o.HTTPStatus == nil {
 		o.Usage = executionfacts.MissingTokenUsage("upstream_status_not_observed")
 		return o
@@ -615,6 +674,7 @@ func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, out
 	}
 	s.lastAttempt = &attempt
 	dispatchManagedSnapshot(ctx, s, attempt)
+	reportManagedHealthOutcome(s, attempt)
 }
 
 func managedDeliverySnapshot(s *managedExecutionState, outcome executionfacts.AttemptOutcome, deliveryState string) (executionfacts.Snapshot, error) {

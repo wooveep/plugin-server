@@ -106,6 +106,7 @@ func main() {}
 func init() {
 	wrapper.SetCtx(
 		pluginName,
+		wrapper.PrePluginStartOrReload[config.PluginConfig](initializeManagedHealthRuntime),
 		wrapper.ParseOverrideConfig(parseGlobalConfig, parseOverrideRuleConfig),
 		wrapper.ProcessRequestHeaders(onHttpRequestHeader),
 		wrapper.ProcessRequestBody(onHttpRequestBody),
@@ -127,6 +128,10 @@ func parseGlobalConfig(json gjson.Result, pluginConfig *config.PluginConfig) err
 	}
 	if err := pluginConfig.Complete(); err != nil {
 		log.Errorf("failed to apply global rule config: %v", err)
+		return err
+	}
+
+	if err := configureManagedMedia(json.Get("managed_media")); err != nil {
 		return err
 	}
 
@@ -216,6 +221,9 @@ func saveContextsToHeaders(ctx wrapper.HttpContext) {
 }
 
 func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
+	if action, handled := onManagedMediaRequestHeaders(ctx); handled {
+		return action
+	}
 	if action, handled := onManagedRequestHeaders(ctx, pluginConfig); handled {
 		return action
 	}
@@ -388,6 +396,9 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, body []byte) types.Action {
+	if action, handled := onManagedMediaRequestBody(ctx, body); handled {
+		return action
+	}
 	if action, handled := onManagedRequestBody(ctx, pluginConfig, body); handled {
 		return action
 	}

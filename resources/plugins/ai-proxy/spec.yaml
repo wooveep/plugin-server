@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.2
+  version: 2.0.4
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -27,6 +27,106 @@ spec:
     openAPIV3Schema:
       type: object
       properties:
+        managed_media:
+          type: object
+          additionalProperties: false
+          required:
+          - producer_id
+          - console_internal
+          - profiles
+          - queue_capacity
+          - max_response_bytes
+          properties:
+            producer_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            console_internal:
+              type: object
+              additionalProperties: false
+              required:
+              - service_name
+              - service_port
+              - host
+              - auth_token
+              - timeout_ms
+              properties:
+                service_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                service_port:
+                  type: integer
+                  minimum: 1
+                  maximum: 65535
+                host:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                auth_token:
+                  type: string
+                  minLength: 1
+                  maxLength: 8192
+                  writeOnly: true
+                timeout_ms:
+                  type: integer
+                  minimum: 1
+                  maximum: 60000
+            profiles:
+              type: array
+              minItems: 1
+              maxItems: 64
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - profile
+                - adapter_ref
+                - adapter_revision
+                - create_classifier_ref
+                - output_identity_contract
+                properties:
+                  profile:
+                    type: string
+                    enum:
+                    - qwen_image20_pro_sync
+                    - qwen_image30_native_sync
+                    - qwen_image30_compatible_sync
+                    - qwen_image30_native_async
+                    - wan30_text
+                    - wan30_first_frame
+                  adapter_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  adapter_revision:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  create_classifier_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  query_classifier_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  query_capability_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  output_identity_contract:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+            queue_capacity:
+              type: integer
+              minimum: 1
+              maximum: 256
+            max_response_bytes:
+              type: integer
+              minimum: 1024
+              maximum: 4194304
         managed_execution:
           type: object
           additionalProperties: false
@@ -39,15 +139,154 @@ spec:
           - authority
           - credential_value
           properties:
+            usage_estimation:
+              type: object
+              additionalProperties: false
+              required:
+              - mode
+              properties:
+                mode:
+                  type: string
+                  enum: [disabled, wan_total_minus_input_v1]
             call_identity_source:
               type: string
               const: admission
             input_protocol:
               type: string
-              enum: [openai_chat, openai_responses, anthropic_messages]
+              enum: [openai_chat, openai_responses, anthropic_messages, qwen_image20_pro_sync, qwen_image30_native_sync, qwen_image30_compatible_sync, qwen_image30_native_async, wan30_text, wan30_first_frame]
             upstream_protocol:
               type: string
-              enum: [openai_chat, openai_responses, anthropic_messages]
+              enum: [openai_chat, openai_responses, anthropic_messages, qwen_image20_pro_sync, qwen_image30_native_sync, qwen_image30_compatible_sync, qwen_image30_native_async, wan30_text, wan30_first_frame]
+            media_dispatch_mode:
+              type: string
+              enum:
+              - disabled
+              - managed_operation
+            upstream_health:
+              type: object
+              additionalProperties: false
+              required:
+              - runtime_config_id
+              - config_revision
+              - snapshot
+              - target
+              - console_internal
+              properties:
+                runtime_config_id:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                config_revision:
+                  type: string
+                  pattern: ^[1-9][0-9]*$
+                snapshot:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - prefix
+                  - authority_id
+                  - minimum_revision
+                  properties:
+                    prefix:
+                      type: string
+                      minLength: 1
+                      maxLength: 128
+                      pattern: ^[A-Za-z0-9_:-]+$
+                    authority_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    minimum_revision:
+                      type: string
+                      pattern: ^(0|[1-9][0-9]*)$
+                target:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - target_id
+                  - binding_id
+                  - provider_account_id
+                  - region_endpoint_ref
+                  - upstream_model
+                  - operation_kind
+                  - credential_ref
+                  - credential_generation
+                  - scope_ids
+                  properties:
+                    target_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    binding_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    provider_account_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    region_endpoint_ref:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    upstream_model:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    operation_kind:
+                      type: string
+                      enum:
+                      - text_generate
+                      - image_generate
+                      - video_generate
+                      - task_query
+                    credential_ref:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    credential_generation:
+                      type: string
+                      pattern: ^[1-9][0-9]*$
+                    scope_ids:
+                      type: array
+                      minItems: 1
+                      maxItems: 64
+                      uniqueItems: true
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                console_internal:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - service_name
+                  - service_port
+                  - host
+                  - auth_token
+                  - timeout_ms
+                  properties:
+                    service_name:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    service_port:
+                      type: integer
+                      minimum: 1
+                      maximum: 65535
+                    host:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    auth_token:
+                      type: string
+                      minLength: 1
+                      maxLength: 8192
+                      writeOnly: true
+                    timeout_ms:
+                      type: integer
+                      minimum: 1
+                      maximum: 60000
             producer_id:
               type: string
               minLength: 1
@@ -827,15 +1066,154 @@ spec:
           - authority
           - credential_value
           properties:
+            usage_estimation:
+              type: object
+              additionalProperties: false
+              required:
+              - mode
+              properties:
+                mode:
+                  type: string
+                  enum: [disabled, wan_total_minus_input_v1]
             call_identity_source:
               type: string
               const: admission
             input_protocol:
               type: string
-              enum: [openai_chat, openai_responses, anthropic_messages]
+              enum: [openai_chat, openai_responses, anthropic_messages, qwen_image20_pro_sync, qwen_image30_native_sync, qwen_image30_compatible_sync, qwen_image30_native_async, wan30_text, wan30_first_frame]
             upstream_protocol:
               type: string
-              enum: [openai_chat, openai_responses, anthropic_messages]
+              enum: [openai_chat, openai_responses, anthropic_messages, qwen_image20_pro_sync, qwen_image30_native_sync, qwen_image30_compatible_sync, qwen_image30_native_async, wan30_text, wan30_first_frame]
+            media_dispatch_mode:
+              type: string
+              enum:
+              - disabled
+              - managed_operation
+            upstream_health:
+              type: object
+              additionalProperties: false
+              required:
+              - runtime_config_id
+              - config_revision
+              - snapshot
+              - target
+              - console_internal
+              properties:
+                runtime_config_id:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                config_revision:
+                  type: string
+                  pattern: ^[1-9][0-9]*$
+                snapshot:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - prefix
+                  - authority_id
+                  - minimum_revision
+                  properties:
+                    prefix:
+                      type: string
+                      minLength: 1
+                      maxLength: 128
+                      pattern: ^[A-Za-z0-9_:-]+$
+                    authority_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    minimum_revision:
+                      type: string
+                      pattern: ^(0|[1-9][0-9]*)$
+                target:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - target_id
+                  - binding_id
+                  - provider_account_id
+                  - region_endpoint_ref
+                  - upstream_model
+                  - operation_kind
+                  - credential_ref
+                  - credential_generation
+                  - scope_ids
+                  properties:
+                    target_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    binding_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    provider_account_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    region_endpoint_ref:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    upstream_model:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    operation_kind:
+                      type: string
+                      enum:
+                      - text_generate
+                      - image_generate
+                      - video_generate
+                      - task_query
+                    credential_ref:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    credential_generation:
+                      type: string
+                      pattern: ^[1-9][0-9]*$
+                    scope_ids:
+                      type: array
+                      minItems: 1
+                      maxItems: 64
+                      uniqueItems: true
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                console_internal:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - service_name
+                  - service_port
+                  - host
+                  - auth_token
+                  - timeout_ms
+                  properties:
+                    service_name:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    service_port:
+                      type: integer
+                      minimum: 1
+                      maximum: 65535
+                    host:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    auth_token:
+                      type: string
+                      minLength: 1
+                      maxLength: 8192
+                      writeOnly: true
+                    timeout_ms:
+                      type: integer
+                      minimum: 1
+                      maximum: 60000
             producer_id:
               type: string
               minLength: 1

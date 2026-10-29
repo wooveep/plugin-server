@@ -667,6 +667,12 @@ func (ctx *CommonPluginCtx[PluginConfig]) EnableRuleLevelConfigIsolation() {
 	ctx.ruleLevelIsolation = true
 }
 
+// RuntimeInstanceID exposes this VM's existing startup identity without minting
+// another epoch or extending the public PluginContext interface.
+func (ctx *CommonPluginCtx[PluginConfig]) RuntimeInstanceID() string {
+	return ctx.vm.vmID
+}
+
 func (ctx *CommonPluginCtx[PluginConfig]) GetContext(key string) interface{} {
 	return ctx.userContext[key]
 }
