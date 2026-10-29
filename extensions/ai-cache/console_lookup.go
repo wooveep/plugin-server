@@ -17,6 +17,7 @@ import (
 )
 
 type consoleLookupRequest struct {
+	CallID                string                         `json:"call_id,omitempty"`
 	NativeIdentity        *nativeCacheProcessingIdentity `json:"native_identity,omitempty"`
 	Tenant                string                         `json:"tenant"`
 	Consumer              string                         `json:"consumer,omitempty"`
@@ -103,6 +104,7 @@ func buildConsoleLookupRequestBody(material ScopedCacheKeyMaterial, ctx wrapper.
 		semanticQuery = strings.TrimSpace(ctx.GetStringContext(CACHE_USER_CONTENT_KEY, ""))
 	}
 	return json.Marshal(consoleLookupRequest{
+		CallID:                cacheNativeParentCallID(ctx),
 		NativeIdentity:        cacheNativeIdentity(ctx),
 		Tenant:                material.Tenant,
 		Consumer:              material.Consumer,
@@ -258,7 +260,7 @@ func materializedReplayRecordFromConsoleReplay(replay consoleReplayRecord) (Mate
 		}
 	}
 
-	return MaterializedReplayRecord{
+	record := MaterializedReplayRecord{
 		SchemaVersion:      materializedRecordSchemaVersion,
 		Tenant:             replay.GatewayTenant,
 		Consumer:           replay.GatewayConsumer,
@@ -274,7 +276,21 @@ func materializedReplayRecordFromConsoleReplay(replay consoleReplayRecord) (Mate
 		Usage:              replay.UsageSnapshot,
 		FinishReason:       replay.FinishReason,
 		StreamReplayable:   replay.StreamMode == "stream",
-	}, nil
+	}
+	if replay.StreamMode == "stream" {
+		var payload struct {
+			StreamReplayable bool              `json:"stream_replayable"`
+			StreamChunks     []json.RawMessage `json:"stream_chunks"`
+		}
+		if err := json.Unmarshal(replay.ResponseObject, &payload); err != nil || !payload.StreamReplayable {
+			return MaterializedReplayRecord{}, errors.New("console stream replay requires original replayable chunks")
+		}
+		// Preserve original chunks; the existing scope/output validator handles
+		// every protocol chunk before any local delivery can occur.
+		record.Response = nil
+		record.StreamChunks = payload.StreamChunks
+	}
+	return record, nil
 }
 
 func parseConsoleReplayUnixSecond(raw string, field string) (int64, error) {

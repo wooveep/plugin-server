@@ -31,7 +31,24 @@ func cacheNativeIdentity(ctx wrapper.HttpContext) *nativeCacheProcessingIdentity
 	return identity
 }
 
+// The native delivery guard already captured this admitted call with the
+// authenticated caller before body processing. Reuse that immutable snapshot;
+// response/lookup code must never reread later headers or guess from request_id.
+func cacheNativeParentCallID(ctx wrapper.HttpContext) string {
+	identity := cacheNativeIdentity(ctx)
+	state, _ := ctx.GetContext(nativeCacheDeliveryContext).(*nativeCacheDeliveryState)
+	if identity == nil || state == nil || state.config == nil || state.rejected || state.caller != identity.Caller ||
+		state.caller.Validate() != nil || state.caller.TenantID == "" || state.caller.PrincipalID == "" ||
+		state.origin.ReleaseID != identity.ReleaseID || state.config.releaseID != identity.ReleaseID || state.config.targetID != identity.TargetID || state.config.routeID != identity.RouteID ||
+		ctx.GetStringContext(CACHE_TENANT_CONTEXT_KEY, "") != state.caller.TenantID || ctx.GetStringContext(CACHE_CONSUMER_CONTEXT_KEY, "") != state.caller.PrincipalID ||
+		ctx.GetStringContext(CACHE_ROUTE_CONTEXT_KEY, "") != identity.RouteID {
+		return ""
+	}
+	return state.origin.CallID
+}
+
 type ThinCacheEvent struct {
+	CallID string `json:"call_id,omitempty"`
 	sessionctx.EventEnvelope
 	NativeIdentity        *nativeCacheProcessingIdentity `json:"native_identity,omitempty"`
 	SemanticContextDigest string                         `json:"semantic_context_digest,omitempty"`
@@ -213,6 +230,7 @@ func buildThinCacheEvent(ctx wrapper.HttpContext, c config.PluginConfig, kind pr
 			StartedAtMS:   startedAt,
 			EndedAtMS:     endedAt,
 		}),
+		CallID:                cacheNativeParentCallID(ctx),
 		NativeIdentity:        cacheNativeIdentity(ctx),
 		SemanticContextDigest: ctx.GetStringContext(CACHE_SEMANTIC_CONTEXT_KEY, ""),
 		SessionID:             ctx.GetStringContext(CACHE_SESSION_CONTEXT_KEY, ""),

@@ -263,3 +263,63 @@ func TestSemanticContextReplayRequiresCurrentProofAndOriginalScope(t *testing.T)
 		}
 	})
 }
+
+func TestSemanticContextStreamReplayUsesOriginalChunksAndCurrentScope(t *testing.T) {
+	test.RunGoTest(t, func(t *testing.T) {
+		for _, variant := range []string{"valid", "missing stream flag", "empty chunks", "non-object chunk", "tool chunk", "wrong context", "wrong tenant"} {
+			t.Run(variant, func(t *testing.T) {
+				body := []byte(`{"model":"public-alias","messages":[{"role":"user","content":"current question"}],"stream":true}`)
+				host, lookup := startSemanticContextRequest(t, "openai_chat", body)
+				defer host.Reset()
+				adapter, _ := thinProtocolAdapterForKind(protocol.ProtocolChatCompletions)
+				source, err := adapter.BuildCacheDigest(protocol.RequestParseInput{Body: []byte(`{"model":"public-alias","messages":[{"role":"user","content":"original question"}],"stream":true}`)})
+				require.NoError(t, err)
+				require.NotEqual(t, source.Digest, lookup["request_digest"])
+				caller := nativeCacheTestCaller()
+				payload := map[string]interface{}{
+					"stream_replayable": true,
+					"stream_chunks": []interface{}{map[string]interface{}{
+						"object": "chat.completion.chunk", "model": "public-alias",
+						"choices": []interface{}{map[string]interface{}{"index": 0, "delta": map[string]interface{}{"role": "assistant", "content": "semantic-stream-answer"}, "finish_reason": "stop"}},
+					}},
+				}
+				record := nativeCacheDecodeObject(t, []byte(validThinConsoleReplayRecord(t, map[string]interface{}{
+					"gateway_tenant": caller.TenantID, "gateway_consumer": caller.PrincipalID,
+					"gateway_route": nativeCacheTestRoute, "gateway_model": "public-alias",
+					"cache_policy_version": "9007199254740993", "request_digest": source.Digest,
+					"semantic_context_digest": lookup["semantic_context_digest"],
+					"stream_mode":             "stream", "finish_reason": "stop", "response_object": payload,
+				})))
+				proof := map[string]interface{}{"lookup_request_digest": lookup["request_digest"], "semantic_context_digest": lookup["semantic_context_digest"]}
+				switch variant {
+				case "missing stream flag":
+					delete(payload, "stream_replayable")
+				case "empty chunks":
+					payload["stream_chunks"] = []interface{}{}
+				case "non-object chunk":
+					payload["stream_chunks"] = []interface{}{"invalid"}
+				case "tool chunk":
+					payload["stream_chunks"] = []interface{}{map[string]interface{}{"choices": []interface{}{map[string]interface{}{"delta": map[string]interface{}{"tool_calls": []interface{}{map[string]interface{}{"id": "call-tool", "function": map[string]interface{}{"name": "unsafe"}}}}}}}}
+				case "wrong context":
+					proof["semantic_context_digest"] = "sha256:" + strings.Repeat("a", 64)
+				case "wrong tenant":
+					record["gateway_tenant"] = "other-tenant"
+				}
+				record["response_object"] = payload
+				encoded, err := json.Marshal(map[string]interface{}{"data": map[string]interface{}{"decision": "hit", "reason": "semantic_replay", "replay_record": record, "semantic_match": proof}})
+				require.NoError(t, err)
+				host.CallOnHttpCall([][2]string{{":status", "200"}}, encoded)
+				if variant == "valid" {
+					require.NotNil(t, host.GetLocalResponse())
+					require.Equal(t, uint32(200), host.GetLocalResponse().StatusCode)
+					require.Contains(t, string(host.GetLocalResponse().Data), "semantic-stream-answer")
+					require.Contains(t, string(host.GetLocalResponse().Data), "[DONE]")
+				} else {
+					requireThinConsoleFailOpen(t, host)
+				}
+				require.Empty(t, host.GetRedisCalloutAttributes(), "semantic replay never follows a different source Redis key")
+				require.Equal(t, source.Digest, record["request_digest"])
+			})
+		}
+	})
+}

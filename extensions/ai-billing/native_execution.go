@@ -85,14 +85,16 @@ type nativeBillingCapability struct {
 }
 
 type nativeBillingConfig struct {
-	producerID string
-	release    nativeBillingRelease
+	producerID         string
+	callIdentitySource string
+	release            nativeBillingRelease
 }
 
 type nativeBillingState struct {
 	config                         *nativeBillingConfig
 	identity                       balanceidentity.Snapshot
 	origin                         executionfacts.AdmittedCall
+	internal                       *executionfacts.InternalCallReference
 	valid, bridgeSeen, gap, closed bool
 	snapshot                       executionfacts.Snapshot
 	delivery                       *executionfacts.Delivery
@@ -128,13 +130,16 @@ func configureNativeBilling(value gjson.Result, cfg *BillingConfig) error {
 	if !nativeBillingID(settings.ProducerID) || cfg.RedisStream.Stream == "" {
 		return errors.New("native billing requires a configured producer and private Stream")
 	}
-	if settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission {
+	if settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission && settings.CallIdentitySource != executionfacts.CallIdentitySourceInternal {
 		return errors.New("native billing requires the original admission call identity capability")
 	}
 	if err := validateNativeBillingRelease(releaseValue, release); err != nil {
 		return err
 	}
-	cfg.NativeExecution = &nativeBillingConfig{producerID: settings.ProducerID, release: release}
+	if nativeBillingOperation(release) == executionfacts.NativeEmbeddingOperation && settings.CallIdentitySource != executionfacts.CallIdentitySourceInternal {
+		return errors.New("embedding billing requires the original internal service call")
+	}
+	cfg.NativeExecution = &nativeBillingConfig{producerID: settings.ProducerID, callIdentitySource: settings.CallIdentitySource, release: release}
 	cfg.PathScope = PathScopeBoundTarget
 	cfg.EnableMethods = nil
 	cfg.EnablePathSuffixes = nil
@@ -174,11 +179,11 @@ func validateNativeBillingRelease(value gjson.Result, release nativeBillingRelea
 		return errors.New("native billing has an invalid released transport")
 	}
 	capabilities := descriptor.Get("capabilities")
-	if !capabilities.IsObject() || !capabilities.Get("text_generate").IsObject() {
+	if !capabilities.IsObject() || !capabilities.Get(nativeBillingOperation(release)).IsObject() {
 		return errors.New("native billing requires the released text capability")
 	}
 	for operation, capability := range capabilities.Map() {
-		if operation != "text_generate" && operation != "image_generate" && operation != "video_generate" && operation != "task_query" {
+		if operation != "text_generate" && operation != "image_generate" && operation != "video_generate" && operation != "task_query" && operation != executionfacts.NativeEmbeddingOperation {
 			return errors.New("native billing has an undeclared released operation")
 		}
 		parsed := release.Descriptor.Capabilities[operation]
@@ -189,6 +194,12 @@ func validateNativeBillingRelease(value gjson.Result, release nativeBillingRelea
 			if entry := capability.Get(optional); entry.Exists() && (entry.Type != gjson.String || !nativeBillingID(entry.String())) {
 				return errors.New("native billing has an invalid released capability reference")
 			}
+		}
+	}
+	if nativeBillingOperation(release) == executionfacts.NativeEmbeddingOperation {
+		capability := release.Descriptor.Capabilities[executionfacts.NativeEmbeddingOperation]
+		if len(release.Descriptor.Capabilities) != 1 || release.Descriptor.AdapterRef != "openai-embeddings.v1" || release.Descriptor.Transport.PathAdapterRef != "openai-embeddings.v1" || capability.ResponseClassifierRef != "ai-proxy.native-embedding.v1" || capability.SendMode != "single_send" || capability.MaxAttempts != 1 || capability.MaxFallbackHops != 0 || capability.QueryCapabilityRef != "" || capability.ProviderIdempotencyRef != "" {
+			return errors.New("native embedding billing requires its exact registered single-send capability")
 		}
 	}
 	expected, err := nativeBillingDescriptorDigest([]byte(descriptor.Raw))
@@ -258,6 +269,15 @@ func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (
 
 func captureNativeBillingIdentity(ctx executionFactContext, state *nativeBillingState, headers [][2]string) {
 	state.valid = false
+	if state.config.callIdentitySource == executionfacts.CallIdentitySourceInternal {
+		original, err := executionfacts.ReadInternalCallReference(headers)
+		if err != nil {
+			nativeBillingGap(ctx, state, "original_internal_service_call_missing")
+			return
+		}
+		state.internal, state.valid = &original, true
+		return
+	}
 	identity, err := balanceidentity.Read(headers)
 	if err != nil || identity.TenantID == "" || identity.PrincipalID == "" {
 		nativeBillingGap(ctx, state, "authenticated_identity_missing")
@@ -321,7 +341,13 @@ func consumeNativeBillingBridge(ctx executionFactContext, cfg BillingConfig, sta
 		return
 	}
 	state.bridgeSeen = true
-	snapshot, err := executionfacts.DecodeDeliveryBridge(value)
+	var snapshot executionfacts.Snapshot
+	var err error
+	if nativeBillingOperation(configured.release) == executionfacts.NativeEmbeddingOperation {
+		snapshot, err = executionfacts.DecodeEmbeddingDeliveryBridge(value)
+	} else {
+		snapshot, err = executionfacts.DecodeDeliveryBridge(value)
+	}
 	if err != nil {
 		nativeBillingGap(ctx, state, "delivery_bridge_invalid")
 		return
@@ -351,13 +377,38 @@ func consumeNativeBillingBridge(ctx executionFactContext, cfg BillingConfig, sta
 
 func validateNativeBillingDelivery(state *nativeBillingState, snapshot executionfacts.Snapshot) error {
 	identity, release, fact := state.identity, state.config.release, snapshot.Envelope()
-	if identity.Validate() != nil || identity.TenantID == "" || identity.PrincipalID == "" || snapshot.ProducerID() != state.config.producerID || fact.CallID != state.origin.CallID || fact.OccurredAt != state.origin.OccurredAt || fact.Kind != "call_delivery" || fact.PrincipalKind != "user" || fact.BillingMode != "customer" || fact.OperationKind != "text_generate" || fact.ReleaseID != release.Descriptor.ReleaseID || fact.RouteID != release.RouteID || fact.SalesAssetID != release.SalesAssetID || fact.PublicModel != release.PublicModel || fact.AccountID != identity.AccountID || fact.TenantID != identity.TenantID || fact.PrincipalID != identity.PrincipalID {
-		return errors.New("delivery differs from original caller or released ownership")
+	if state.config.callIdentitySource == executionfacts.CallIdentitySourceInternal {
+		if err := validateInternalBillingDelivery(state, snapshot); err != nil {
+			return err
+		}
+	} else {
+		if identity.Validate() != nil || identity.TenantID == "" || identity.PrincipalID == "" || snapshot.ProducerID() != state.config.producerID || fact.CallID != state.origin.CallID || fact.OccurredAt != state.origin.OccurredAt || fact.Kind != "call_delivery" || fact.PrincipalKind != "user" || fact.BillingMode != "customer" || fact.OperationKind != "text_generate" || fact.ReleaseID != release.Descriptor.ReleaseID || fact.RouteID != release.RouteID || fact.SalesAssetID != release.SalesAssetID || fact.PublicModel != release.PublicModel || fact.AccountID != identity.AccountID || fact.TenantID != identity.TenantID || fact.PrincipalID != identity.PrincipalID {
+			return errors.New("delivery differs from original caller or released ownership")
+		}
 	}
 	// E1 bridges final delivery only. Procurement facts belong to the sender's
 	// separately registered attempt and are never fabricated by billing.
-	if fact.AttemptID != "" || fact.TargetID != "" || fact.BindingID != "" || fact.ProviderID != "" || fact.ProviderAccountID != "" || fact.SelectionDigest != "" || fact.CredentialRef != "" || fact.CredentialRevision != "" || fact.SendState != "" || fact.SendTransport != "" || fact.RecordingOwner != "" || fact.Mechanism != "" {
+	if fact.AttemptID != "" || fact.ParentAttemptID != "" || fact.OperationID != "" || fact.ProviderTaskID != "" || fact.TargetID != "" || fact.BindingID != "" || fact.ProviderID != "" || fact.ProviderAccountID != "" || fact.SelectionDigest != "" || fact.CredentialRef != "" || fact.CredentialRevision != "" || fact.SendState != "" || fact.SendTransport != "" || fact.RecordingOwner != "" || fact.Mechanism != "" {
 		return errors.New("final delivery bridge contains unsupported attempt attribution")
+	}
+	return nil
+}
+
+func nativeBillingOperation(release nativeBillingRelease) string {
+	if _, exists := release.Descriptor.Capabilities[executionfacts.NativeEmbeddingOperation]; exists {
+		return executionfacts.NativeEmbeddingOperation
+	}
+	return "text_generate"
+}
+
+// Billing precedes the proxy's body-time check. The original ref/key generation
+// are captured here without a customer wallet; only the released proxy may
+// replace the response bridge after the authenticated Console job check. FACT
+// independently matches this call to its retained service/key/job history.
+func validateInternalBillingDelivery(state *nativeBillingState, snapshot executionfacts.Snapshot) error {
+	fact, release, original := snapshot.Envelope(), state.config.release, state.internal
+	if original == nil || snapshot.ProducerID() != state.config.producerID || fact.CallID != original.CallID || fact.Kind != "call_delivery" || fact.ReleaseID != release.Descriptor.ReleaseID || fact.RouteID != release.RouteID || fact.PublicModel != release.PublicModel || fact.OperationKind != nativeBillingOperation(release) || fact.BillingMode != "internal_cost" || fact.PrincipalKind != "service" || !strings.HasPrefix(fact.PrincipalID, "service/") || !nativeBillingID(fact.PrincipalID) || !balanceidentity.ValidID(fact.TenantID) || fact.AccountID != "" || fact.SalesAssetID != "" || fact.CostOwner == nil || (fact.CostOwner.Kind != "platform" && fact.CostOwner.Kind != "tenant") || !nativeBillingID(fact.CostOwner.OwnerID) || !nativeBillingID(fact.CostOwner.SourceJobID) {
+		return errors.New("internal delivery differs from the original service call and released ownership")
 	}
 	return nil
 }

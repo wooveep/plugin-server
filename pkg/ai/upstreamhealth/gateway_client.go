@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 )
 
@@ -399,7 +398,7 @@ func (c *GatewayClient) Consume(allocation RecoveryClaim, finalSelection []byte,
 	if err != nil {
 		return err
 	}
-	final, err := executionfacts.CanonicalSelection(finalSelection)
+	final, err := canonicalHealthSelection(finalSelection)
 	if err != nil {
 		return err
 	}
@@ -418,7 +417,7 @@ func (c *GatewayClient) Consume(allocation RecoveryClaim, finalSelection []byte,
 		if err := consumed.validate(allocation.Request); err != nil {
 			return nil, err
 		}
-		stored, err := executionfacts.CanonicalSelection(consumed.ConsumedSelection)
+		stored, err := canonicalHealthSelection(consumed.ConsumedSelection)
 		expires, _ := utc(consumed.ExpiresAt)
 		if err != nil || consumed.Status != "consumed" || consumed.ClaimID != allocation.ClaimID || !bytes.Equal(stored, final) ||
 			consumed.Actor != allocation.Actor || consumed.CreatedAt != allocation.CreatedAt || consumed.ExpiresAt != allocation.ExpiresAt ||

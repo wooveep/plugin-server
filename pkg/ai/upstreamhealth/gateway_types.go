@@ -53,7 +53,7 @@ func (c RecoveryCandidate) Digest() string { return bodybasis.DigestBytes(c.raw)
 // NewRecoveryCandidate preserves every strict D0 field. Existing nonempty claim
 // references cannot be recycled into another recovery command.
 func NewRecoveryCandidate(selection []byte, runtimeConfigID string, configRevision Revision, taskID *string) (RecoveryCandidate, error) {
-	digest, err := executionfacts.SelectionDigest(selection)
+	digest, err := healthSelectionDigest(selection)
 	if err != nil {
 		return RecoveryCandidate{}, err
 	}
@@ -120,7 +120,7 @@ func parseRecoveryCandidate(raw []byte) (RecoveryCandidate, error) {
 		return RecoveryCandidate{}, errors.New("health candidate is not a final selection")
 	}
 	base, _ := json.Marshal(fields)
-	if _, err := executionfacts.SelectionDigest(base); err != nil {
+	if _, err := healthSelectionDigest(base); err != nil {
 		return RecoveryCandidate{}, err
 	}
 	return RecoveryCandidate{raw: canonical}, nil
@@ -139,12 +139,35 @@ func (c RecoveryCandidate) FinalSelection(claimID string) ([]byte, error) {
 	delete(fields, "task_id")
 	fields["recovery_claim_refs"], _ = json.Marshal([]string{claimID})
 	raw, _ := json.Marshal(fields)
-	digest, err := executionfacts.SelectionDigest(raw)
+	digest, err := healthSelectionDigest(raw)
 	if err != nil {
 		return nil, err
 	}
 	fields["selection_digest"], _ = json.Marshal(digest)
 	raw, _ = json.Marshal(fields)
+	return canonicalHealthSelection(raw)
+}
+
+// Native:v2 embedding has its own registered selection schema. All other
+// operations still take the original v1 codec and its unchanged rejections.
+func embeddingHealthSelection(raw []byte) bool {
+	var operation struct {
+		OperationKind string `json:"operation_kind"`
+	}
+	return json.Unmarshal(raw, &operation) == nil && operation.OperationKind == executionfacts.NativeEmbeddingOperation
+}
+
+func healthSelectionDigest(raw []byte) (string, error) {
+	if embeddingHealthSelection(raw) {
+		return executionfacts.EmbeddingSelectionDigest(raw)
+	}
+	return executionfacts.SelectionDigest(raw)
+}
+
+func canonicalHealthSelection(raw []byte) ([]byte, error) {
+	if embeddingHealthSelection(raw) {
+		return executionfacts.CanonicalEmbeddingSelection(raw)
+	}
 	return executionfacts.CanonicalSelection(raw)
 }
 

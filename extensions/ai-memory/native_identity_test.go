@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-memory/config"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/test"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -189,4 +191,49 @@ func startNativeMemoryHeaders(t *testing.T, cfg json.RawMessage, authenticatedHe
 	headers = append(headers, authenticatedHeaders...)
 	require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(headers))
 	return host
+}
+
+// The original admitted call is captured before later filters clear the private
+// headers. A client-style id alone or contradictory metadata cannot fill it.
+func TestManagedMemoryRetainsOnlyCompleteOriginalAdmissionParent(t *testing.T) {
+	test.RunGoTest(t, func(t *testing.T) {
+		callID := "99999999-9999-4999-8999-999999999999"
+		original := [][2]string{
+			{executionfacts.AdmissionCallHeader, callID},
+			{executionfacts.AdmissionReleaseHeader, "original/release:opaque"},
+			{executionfacts.AdmissionOccurredHeader, time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)},
+			{executionfacts.AdmissionDeadlineHeader, time.Now().UTC().Add(time.Minute).Format(time.RFC3339Nano)},
+		}
+		wrongRelease := append([][2]string(nil), original...)
+		wrongRelease[1][1] = "foreign-release"
+		for _, scenario := range []struct {
+			name     string
+			headers  [][2]string
+			expected string
+		}{
+			{"original", original, callID},
+			{"single-client-id", original[:1], ""},
+			{"duplicate", append(append([][2]string(nil), original...), original[0]), ""},
+			{"foreign-release", wrongRelease, ""},
+		} {
+			t.Run(scenario.name, func(t *testing.T) {
+				headers := append(memoryNativeCallerFixture().Headers(), scenario.headers...)
+				host := startNativeMemoryHeaders(t, memoryNativeConfiguration(t, "recent-only", true), headers)
+				defer host.Reset()
+				require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody([]byte(`{"model":"public.model","messages":[{"role":"user","content":"question"}]}`)))
+				host.CallOnRedisCall(0, test.CreateRedisRespNull())
+				for _, header := range original {
+					require.NoError(t, proxywasm.RemoveHttpRequestHeader(header[0]))
+				}
+				host.CallOnHttpResponseHeaders([][2]string{{":status", "200"}, {"content-type", "application/json"}})
+				host.CallOnHttpResponseBody([]byte(`{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`))
+				event := requireMemoryResponseCaptureEvent(t, host)
+				if scenario.expected == "" {
+					require.NotContains(t, event, "call_id")
+				} else {
+					require.Equal(t, scenario.expected, event["call_id"])
+				}
+			})
+		}
+	})
 }

@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.5
+  version: 2.0.6
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -64,6 +64,13 @@ spec:
     openAPIV3Schema:
       type: object
       allOf:
+      - if:
+          required: [managed_execution, _modelfusion_execution]
+          properties:
+            managed_execution:
+              required: [text_execution]
+        then:
+          required: [_modelfusion_execution_targets]
       - if:
           required:
           - _modelfusion_execution
@@ -123,6 +130,69 @@ spec:
                     anyOf:
                     - required:
                       - target
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - descriptor
+              properties:
+                descriptor:
+                  required:
+                  - capabilities
+                  properties:
+                    capabilities:
+                      required:
+                      - text_embedding
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - call_identity_source
+              - input_protocol
+              - upstream_protocol
+              - upstream_health
+              properties:
+                call_identity_source:
+                  const: internal_execution
+                input_protocol:
+                  const: openai_embeddings
+                upstream_protocol:
+                  const: openai_embeddings
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+              not:
+                required:
+                - text_execution
+      - if:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              anyOf:
+              - required:
+                - input_protocol
+                properties:
+                  input_protocol:
+                    const: openai_embeddings
+              - required:
+                - upstream_protocol
+                properties:
+                  upstream_protocol:
+                    const: openai_embeddings
+        then:
+          properties:
+            _modelfusion_execution:
+              properties:
+                descriptor:
+                  properties:
+                    capabilities:
+                      required:
+                      - text_embedding
       properties:
         managed_media:
           type: object
@@ -224,7 +294,7 @@ spec:
               type: integer
               minimum: 1024
               maximum: 4194304
-        managed_execution:
+        managed_execution: &nativeManagedExecutionSchema
           type: object
           additionalProperties: false
           required:
@@ -235,6 +305,62 @@ spec:
           - upstream_path
           - authority
           properties:
+            text_execution:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                retry:
+                  type: object
+                  additionalProperties: false
+                  required: [max_retries, retry_timeout_ms, retry_on_status]
+                  properties:
+                    max_retries:
+                      type: integer
+                      minimum: 1
+                      maximum: 4294967294
+                    retry_timeout_ms:
+                      type: integer
+                      minimum: 1
+                      maximum: 600000
+                    retry_on_status:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 200
+                fallback:
+                  type: object
+                  additionalProperties: false
+                  required: [strategy, targets, response_codes]
+                  properties:
+                    strategy:
+                      type: string
+                      enum: [sequence, random]
+                    targets:
+                      type: array
+                      minItems: 1
+                      uniqueItems: true
+                      items:
+                        type: object
+                        additionalProperties: false
+                        required: [target_id, weight]
+                        properties:
+                          target_id:
+                            type: string
+                            minLength: 1
+                            maxLength: 200
+                          weight:
+                            type: integer
+                            const: 1
+                    response_codes:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 200
             usage_estimation:
               type: object
               additionalProperties: false
@@ -248,7 +374,9 @@ spec:
                   - wan_total_minus_input_v1
             call_identity_source:
               type: string
-              const: admission
+              enum:
+              - admission
+              - internal_execution
             input_protocol:
               type: string
               enum:
@@ -261,6 +389,7 @@ spec:
               - qwen_image30_native_async
               - wan30_text
               - wan30_first_frame
+              - openai_embeddings
             upstream_protocol:
               type: string
               enum:
@@ -273,6 +402,7 @@ spec:
               - qwen_image30_native_async
               - wan30_text
               - wan30_first_frame
+              - openai_embeddings
             media_dispatch_mode:
               type: string
               enum:
@@ -355,6 +485,7 @@ spec:
                       - image_generate
                       - video_generate
                       - task_query
+                      - text_embedding
                     credential_ref:
                       type: string
                       minLength: 1
@@ -447,6 +578,7 @@ spec:
                         - image_generate
                         - video_generate
                         - task_query
+                        - text_embedding
                       credential_ref:
                         type: string
                         minLength: 1
@@ -552,6 +684,51 @@ spec:
                     not:
                       pattern: '[^!-~]'
                     writeOnly: true
+          allOf:
+          - if:
+              required:
+              - call_identity_source
+              properties:
+                call_identity_source:
+                  const: internal_execution
+            then:
+              required:
+              - upstream_health
+              properties:
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+          - if:
+              anyOf:
+              - required:
+                - input_protocol
+                properties:
+                  input_protocol:
+                    const: openai_embeddings
+              - required:
+                - upstream_protocol
+                properties:
+                  upstream_protocol:
+                    const: openai_embeddings
+            then:
+              required:
+              - call_identity_source
+              - input_protocol
+              - upstream_protocol
+              - upstream_health
+              properties:
+                call_identity_source:
+                  const: internal_execution
+                input_protocol:
+                  const: openai_embeddings
+                upstream_protocol:
+                  const: openai_embeddings
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+              not:
+                required:
+                - text_execution
           oneOf:
           - required:
             - credential_value
@@ -582,7 +759,7 @@ spec:
                   anyOf:
                   - required:
                     - target
-        _modelfusion_execution:
+        _modelfusion_execution: &nativeExecutionIdentitySchema
           type: object
           readOnly: true
           additionalProperties: false
@@ -599,9 +776,309 @@ spec:
               - modelfusion-execution.v1
               - modelfusion-execution.v2
             descriptor:
-              type: object
-              description: Server-frozen IF01 execution descriptor, independently validated by the runtime.
-              additionalProperties: true
+              oneOf:
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    minProperties: 1
+                    properties:
+                      text_generate:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      image_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      video_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      task_query:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    const: openai-embeddings.v1
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        const: openai-embeddings.v1
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    properties:
+                      text_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-embedding.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                        description: OpenAI-compatible POST /v1/embeddings. The embedding classifier validates real data[].embedding and
+                          uses only actual provider-reported input token usage. No retries, fallback, queries or provider task lifecycle.
+                    required:
+                    - text_embedding
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
             route_id:
               type: string
               minLength: 1
@@ -1320,6 +1797,81 @@ spec:
           description: 兼容旧版单 Provider 配置。配置 provider 时会直接作为当前生效 Provider。
           x-description-i18n:
             en-US: Legacy-compatible single provider configuration. When provider is configured, it becomes the active provider directly.
+        _modelfusion_execution_targets:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          description: SDK-owned, nonrecursive frozen text-target directory. Configuration and descriptor digests are verified before sending.
+          required: [schema_version, targets]
+          properties:
+            schema_version:
+              type: string
+              const: modelfusion-execution-targets.v1
+            targets:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items:
+                type: object
+                additionalProperties: false
+                required: [execution, mapper_config, proxy_config]
+                properties:
+                  execution: *nativeExecutionIdentitySchema
+                  mapper_config:
+                    type: object
+                    additionalProperties: false
+                    required: [modelMapping]
+                    properties:
+                      modelMapping:
+                        type: object
+                        additionalProperties:
+                          type: string
+                      capture_body_basis:
+                        type: boolean
+                      consume_body_basis:
+                        type: boolean
+                  proxy_config:
+                    type: object
+                    additionalProperties: false
+                    required: [path_scope, managed_execution]
+                    properties:
+                      managed_execution: *nativeManagedExecutionSchema
+                      path_scope:
+                        type: string
+                        const: bound_target
+                      protocol_mode:
+                        type: string
+                        enum: [auto, passthrough]
+                      enable_methods:
+                        type: array
+                        maxItems: 0
+                        items:
+                          type: string
+                      enable_path_suffixes:
+                        type: array
+                        maxItems: 0
+                        items:
+                          type: string
+                      retryOnFailure:
+                        type: object
+                        additionalProperties: false
+                        required: [enabled]
+                        properties:
+                          enabled:
+                            type: boolean
+                            const: false
+                      activeProviderId:
+                        type: string
+                        minLength: 1
+                      providers:
+                        type: array
+                        minItems: 1
+                        items: *providerConfigSchema
+                      provider:
+                        type: object
+                        required: [type]
+                        additionalProperties: true
+                        properties: *providerConfigProperties
       example:
         protocol_mode: auto
         path_scope: legacy_suffixes
@@ -1346,6 +1898,13 @@ spec:
     openAPIV3Schema:
       type: object
       allOf:
+      - if:
+          required: [managed_execution, _modelfusion_execution]
+          properties:
+            managed_execution:
+              required: [text_execution]
+        then:
+          required: [_modelfusion_execution_targets]
       - if:
           required:
           - _modelfusion_execution
@@ -1405,6 +1964,69 @@ spec:
                     anyOf:
                     - required:
                       - target
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - descriptor
+              properties:
+                descriptor:
+                  required:
+                  - capabilities
+                  properties:
+                    capabilities:
+                      required:
+                      - text_embedding
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - call_identity_source
+              - input_protocol
+              - upstream_protocol
+              - upstream_health
+              properties:
+                call_identity_source:
+                  const: internal_execution
+                input_protocol:
+                  const: openai_embeddings
+                upstream_protocol:
+                  const: openai_embeddings
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+              not:
+                required:
+                - text_execution
+      - if:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              anyOf:
+              - required:
+                - input_protocol
+                properties:
+                  input_protocol:
+                    const: openai_embeddings
+              - required:
+                - upstream_protocol
+                properties:
+                  upstream_protocol:
+                    const: openai_embeddings
+        then:
+          properties:
+            _modelfusion_execution:
+              properties:
+                descriptor:
+                  properties:
+                    capabilities:
+                      required:
+                      - text_embedding
       properties:
         managed_execution:
           type: object
@@ -1417,6 +2039,62 @@ spec:
           - upstream_path
           - authority
           properties:
+            text_execution:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                retry:
+                  type: object
+                  additionalProperties: false
+                  required: [max_retries, retry_timeout_ms, retry_on_status]
+                  properties:
+                    max_retries:
+                      type: integer
+                      minimum: 1
+                      maximum: 4294967294
+                    retry_timeout_ms:
+                      type: integer
+                      minimum: 1
+                      maximum: 600000
+                    retry_on_status:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 200
+                fallback:
+                  type: object
+                  additionalProperties: false
+                  required: [strategy, targets, response_codes]
+                  properties:
+                    strategy:
+                      type: string
+                      enum: [sequence, random]
+                    targets:
+                      type: array
+                      minItems: 1
+                      uniqueItems: true
+                      items:
+                        type: object
+                        additionalProperties: false
+                        required: [target_id, weight]
+                        properties:
+                          target_id:
+                            type: string
+                            minLength: 1
+                            maxLength: 200
+                          weight:
+                            type: integer
+                            const: 1
+                    response_codes:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 200
             usage_estimation:
               type: object
               additionalProperties: false
@@ -1430,7 +2108,9 @@ spec:
                   - wan_total_minus_input_v1
             call_identity_source:
               type: string
-              const: admission
+              enum:
+              - admission
+              - internal_execution
             input_protocol:
               type: string
               enum:
@@ -1443,6 +2123,7 @@ spec:
               - qwen_image30_native_async
               - wan30_text
               - wan30_first_frame
+              - openai_embeddings
             upstream_protocol:
               type: string
               enum:
@@ -1455,6 +2136,7 @@ spec:
               - qwen_image30_native_async
               - wan30_text
               - wan30_first_frame
+              - openai_embeddings
             media_dispatch_mode:
               type: string
               enum:
@@ -1537,6 +2219,7 @@ spec:
                       - image_generate
                       - video_generate
                       - task_query
+                      - text_embedding
                     credential_ref:
                       type: string
                       minLength: 1
@@ -1629,6 +2312,7 @@ spec:
                         - image_generate
                         - video_generate
                         - task_query
+                        - text_embedding
                       credential_ref:
                         type: string
                         minLength: 1
@@ -1734,6 +2418,51 @@ spec:
                     not:
                       pattern: '[^!-~]'
                     writeOnly: true
+          allOf:
+          - if:
+              required:
+              - call_identity_source
+              properties:
+                call_identity_source:
+                  const: internal_execution
+            then:
+              required:
+              - upstream_health
+              properties:
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+          - if:
+              anyOf:
+              - required:
+                - input_protocol
+                properties:
+                  input_protocol:
+                    const: openai_embeddings
+              - required:
+                - upstream_protocol
+                properties:
+                  upstream_protocol:
+                    const: openai_embeddings
+            then:
+              required:
+              - call_identity_source
+              - input_protocol
+              - upstream_protocol
+              - upstream_health
+              properties:
+                call_identity_source:
+                  const: internal_execution
+                input_protocol:
+                  const: openai_embeddings
+                upstream_protocol:
+                  const: openai_embeddings
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+              not:
+                required:
+                - text_execution
           oneOf:
           - required:
             - credential_value
@@ -1781,9 +2510,309 @@ spec:
               - modelfusion-execution.v1
               - modelfusion-execution.v2
             descriptor:
-              type: object
-              description: Server-frozen IF01 execution descriptor, independently validated by the runtime.
-              additionalProperties: true
+              oneOf:
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    minProperties: 1
+                    properties:
+                      text_generate:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      image_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      video_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      task_query:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    const: openai-embeddings.v1
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        const: openai-embeddings.v1
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    properties:
+                      text_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-embedding.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                        description: OpenAI-compatible POST /v1/embeddings. The embedding classifier validates real data[].embedding and
+                          uses only actual provider-reported input token usage. No retries, fallback, queries or provider task lifecycle.
+                    required:
+                    - text_embedding
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
             route_id:
               type: string
               minLength: 1
@@ -1909,6 +2938,81 @@ spec:
           description: 路由级旧版单 Provider 覆盖；配置后会直接作为当前路由生效 Provider。
           x-description-i18n:
             en-US: Route-level legacy single provider override. When configured, it becomes the active provider for the route.
+        _modelfusion_execution_targets:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          description: SDK-owned, nonrecursive frozen text-target directory. Configuration and descriptor digests are verified before sending.
+          required: [schema_version, targets]
+          properties:
+            schema_version:
+              type: string
+              const: modelfusion-execution-targets.v1
+            targets:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items:
+                type: object
+                additionalProperties: false
+                required: [execution, mapper_config, proxy_config]
+                properties:
+                  execution: *nativeExecutionIdentitySchema
+                  mapper_config:
+                    type: object
+                    additionalProperties: false
+                    required: [modelMapping]
+                    properties:
+                      modelMapping:
+                        type: object
+                        additionalProperties:
+                          type: string
+                      capture_body_basis:
+                        type: boolean
+                      consume_body_basis:
+                        type: boolean
+                  proxy_config:
+                    type: object
+                    additionalProperties: false
+                    required: [path_scope, managed_execution]
+                    properties:
+                      managed_execution: *nativeManagedExecutionSchema
+                      path_scope:
+                        type: string
+                        const: bound_target
+                      protocol_mode:
+                        type: string
+                        enum: [auto, passthrough]
+                      enable_methods:
+                        type: array
+                        maxItems: 0
+                        items:
+                          type: string
+                      enable_path_suffixes:
+                        type: array
+                        maxItems: 0
+                        items:
+                          type: string
+                      retryOnFailure:
+                        type: object
+                        additionalProperties: false
+                        required: [enabled]
+                        properties:
+                          enabled:
+                            type: boolean
+                            const: false
+                      activeProviderId:
+                        type: string
+                        minLength: 1
+                      providers:
+                        type: array
+                        minItems: 1
+                        items: *providerConfigSchema
+                      provider:
+                        type: object
+                        required: [type]
+                        additionalProperties: true
+                        properties: *providerConfigProperties
       example:
         activeProviderId: generic-fallback
         path_scope: bound_target

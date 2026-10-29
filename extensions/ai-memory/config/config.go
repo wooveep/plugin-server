@@ -21,6 +21,7 @@ const (
 	MemoryModeRecentOnly = "recent-only"
 	MemoryModeDigest     = "digest"
 	MemoryModeSemantic   = "semantic"
+	MemoryModeFull       = "full"
 
 	FailPolicyOpen = "open"
 
@@ -477,7 +478,7 @@ func stringSliceValue(value gjson.Result, fallback []string) []string {
 
 func validMemoryMode(value string) bool {
 	switch value {
-	case MemoryModeOff, MemoryModeRecentOnly, MemoryModeDigest, MemoryModeSemantic:
+	case MemoryModeOff, MemoryModeRecentOnly, MemoryModeDigest, MemoryModeSemantic, MemoryModeFull:
 		return true
 	default:
 		return false

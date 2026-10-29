@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-memory/config"
+	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/sessionctx"
 	logs "github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -57,6 +58,7 @@ type MemoryEventIdentity struct {
 }
 
 type MemoryEventRequest struct {
+	CallID        string `json:"call_id,omitempty"`
 	RequestID     string `json:"request_id"`
 	RequestPath   string `json:"request_path"`
 	RequestDigest string `json:"request_digest"`
@@ -155,6 +157,9 @@ func memoryBuildEvent(ctx wrapper.HttpContext, c config.PluginConfig, capture me
 	}
 	if c.NativeIdentity != nil {
 		event.Route = &MemoryEventRoute{ID: c.NativeIdentity.RouteID, Name: ctx.GetStringContext(memoryRouteNameContextKey, "")}
+		if admitted, ok := ctx.GetContext(memoryNativeCallContextKey).(executionfacts.AdmittedCall); ok {
+			event.CallID = admitted.CallID
+		}
 	}
 	if model := ctx.GetStringContext(memoryModelContextKey, ""); model != "" {
 		event.Model = &MemoryEventModel{Name: model}

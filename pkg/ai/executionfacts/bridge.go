@@ -47,6 +47,10 @@ func DecodeDeliveryBridge(value string) (Snapshot, error) {
 }
 
 func decodeDeliveryBridgeBytes(raw []byte) (Snapshot, error) {
+	return decodeVersionedDeliveryBridge(raw, SchemaVersion, Freeze)
+}
+
+func decodeVersionedDeliveryBridge(raw []byte, version string, freeze func(Envelope) (Snapshot, error)) (Snapshot, error) {
 	if len(raw) == 0 || len(raw) > MaxDeliveryBridgeBytes {
 		return Snapshot{}, errors.New("delivery bridge observation exceeds its transport budget")
 	}
@@ -64,14 +68,39 @@ func decodeDeliveryBridgeBytes(raw []byte) (Snapshot, error) {
 	if err := decoder.Decode(new(interface{})); err != io.EOF {
 		return Snapshot{}, errors.New("delivery bridge has trailing observation bytes")
 	}
-	if envelope.Kind != "call_delivery" || envelope.SchemaVersion != SchemaVersion || envelope.PayloadCanonicalization != Canonicalization {
+	if envelope.Kind != "call_delivery" || envelope.SchemaVersion != version || envelope.PayloadCanonicalization != Canonicalization {
 		return Snapshot{}, errors.New("delivery bridge has a different frozen observation kind or version")
 	}
-	snapshot, err := Freeze(envelope)
+	snapshot, err := freeze(envelope)
 	if err != nil || !bytes.Equal(snapshot.Bytes(), raw) {
 		// Freeze may default absent source keys or normalize an empty collection.
 		// Byte equality prevents such reconstruction from being accepted as a bridge.
 		return Snapshot{}, errors.New("delivery bridge must preserve complete canonical observation bytes")
 	}
 	return snapshot, nil
+}
+
+// Embedding bridges require the separately registered native:v2 codec. The
+// original v1 decoder remains strict and cannot accept this new operation.
+func EncodeEmbeddingDeliveryBridge(snapshot Snapshot) (string, error) {
+	if snapshot.MessageType() != "observation" || snapshot.envelope.Kind != "call_delivery" {
+		return "", errors.New("embedding bridge requires a frozen call delivery")
+	}
+	raw := snapshot.Bytes()
+	checked, err := decodeVersionedDeliveryBridge(raw, NativeEmbeddingSchemaVersion, FreezeEmbedding)
+	if err != nil || !bytes.Equal(snapshot.BusinessBytes(), checked.BusinessBytes()) {
+		return "", errors.New("embedding delivery bridge snapshot is invalid or oversized")
+	}
+	return base64.RawURLEncoding.EncodeToString(raw), nil
+}
+
+func DecodeEmbeddingDeliveryBridge(value string) (Snapshot, error) {
+	if value == "" || len(value) > MaxDeliveryBridgeHeaderBytes {
+		return Snapshot{}, errors.New("embedding delivery bridge is empty or oversized")
+	}
+	raw, err := base64.RawURLEncoding.Strict().DecodeString(value)
+	if err != nil || base64.RawURLEncoding.EncodeToString(raw) != value {
+		return Snapshot{}, errors.New("embedding bridge requires canonical unpadded base64url")
+	}
+	return decodeVersionedDeliveryBridge(raw, NativeEmbeddingSchemaVersion, FreezeEmbedding)
 }

@@ -28,9 +28,10 @@ type managedProtocolProfile struct {
 }
 
 type managedProtocolRequest struct {
-	Body      []byte
-	Headers   [][2]string
-	Streaming bool
+	Body               []byte
+	Headers            [][2]string
+	Streaming          bool
+	ExpectedEmbeddings int
 }
 
 type managedProtocolObservation struct {
@@ -55,6 +56,9 @@ func newManagedProtocolProfile(input, upstream string) (managedProtocolProfile, 
 	if upstream == "" {
 		upstream = managedProtocolChat
 	}
+	if input == managedProtocolEmbeddings && upstream == managedProtocolEmbeddings {
+		return managedProtocolProfile{InputProtocol: input, UpstreamProtocol: upstream}, nil
+	}
 	valid := func(value string) bool {
 		return value == managedProtocolChat || value == managedProtocolResponses || value == managedProtocolMessages
 	}
@@ -67,6 +71,9 @@ func newManagedProtocolProfile(input, upstream string) (managedProtocolProfile, 
 // PrepareRequest accepts the mapper's output, not the original public body.
 // The caller must freeze the returned actual bytes as outbound_body_digest.
 func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credential string) (managedProtocolRequest, error) {
+	if p.InputProtocol == managedProtocolEmbeddings && p.UpstreamProtocol == managedProtocolEmbeddings {
+		return prepareManagedEmbeddingRequest(body, frozenModel, credential)
+	}
 	var object map[string]json.RawMessage
 	if err := decodeManagedJSON(body, &object, false); err != nil || object == nil {
 		return managedProtocolRequest{}, errors.New("invalid managed protocol request")
@@ -122,6 +129,9 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 // ObserveResponse only inspects the original upstream bytes. In particular it
 // never measures usage from a converter's synthetic events or default zeros.
 func (p managedProtocolProfile) ObserveResponse(status uint16, headers [][2]string, body []byte, complete bool) managedProtocolObservation {
+	if p.UpstreamProtocol == managedProtocolEmbeddings {
+		return managedEmbeddingObservation(status, headers, body, complete, 0)
+	}
 	observation := managedProtocolObservation{
 		Usage:           executionfacts.MissingTokenUsage("provider_usage_not_observed"),
 		ExecutionResult: "unknown", Acceptance: "unknown", BodyComplete: complete,

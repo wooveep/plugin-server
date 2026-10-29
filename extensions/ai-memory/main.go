@@ -10,6 +10,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/ai/sessionctx"
@@ -147,6 +148,12 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 		}
 		tenant, consumer = caller.TenantID, caller.PrincipalID
 		ctx.SetContext(memoryNativeCallerContextKey, caller)
+		// Quota precedes managed memory and replaces client admission headers.
+		// Missing/invalid original admission leaves parentage unknown; a later
+		// proxy must not supply a replacement parent after this capture point.
+		if admitted, err := executionfacts.ReadAdmittedCall(headers, c.NativeIdentity.ReleaseID, time.Now().UTC()); err == nil {
+			ctx.SetContext(memoryNativeCallContextKey, admitted)
+		}
 		ctx.SetContext(memoryRouteNameContextKey, route)
 		route = c.NativeIdentity.RouteID
 	} else {

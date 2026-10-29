@@ -141,7 +141,11 @@ func NewAttempt(original Envelope) (Attempt, error) {
 
 // Finish captures this attempt's own result without consulting a final context.
 func (a Attempt) Finish(outcome AttemptOutcome) (Snapshot, error) {
-	e, err := cloneEnvelope(a.original)
+	return finishAttempt(a.original, outcome, Freeze)
+}
+
+func finishAttempt(original Envelope, outcome AttemptOutcome, freeze func(Envelope) (Snapshot, error)) (Snapshot, error) {
+	e, err := cloneEnvelope(original)
 	if err != nil {
 		return Snapshot{}, err
 	}
@@ -164,7 +168,7 @@ func (a Attempt) Finish(outcome AttemptOutcome) (Snapshot, error) {
 	e.ResponseBodyDigest = outcome.ResponseBodyDigest
 	e.ResponseModel = outcome.ResponseModel
 	e.RetryAfter = outcome.RetryAfter
-	return Freeze(e)
+	return freeze(e)
 }
 
 // Registration is a separate original-execution proposal. Console must verify

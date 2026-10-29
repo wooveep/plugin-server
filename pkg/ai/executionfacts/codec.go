@@ -53,8 +53,14 @@ func (s Snapshot) Envelope() Envelope    { e, _ := cloneEnvelope(s.envelope); re
 // excludes only payload_digest/request_id/trace_id from the business digest.
 // It never reads a clock, request headers, current routing state or final usage.
 func Freeze(input Envelope) (Snapshot, error) {
+	return freezeObservation(input, SchemaVersion, validateUsage, validateEnvelope)
+}
+
+// Both explicit wire versions retain the original IF03 projection and byte
+// budgets. Their operation/ownership/usage validators remain separate.
+func freezeObservation(input Envelope, version string, usage func(Usage) error, validate func(Envelope) error) (Snapshot, error) {
 	if input.Usage != nil {
-		if err := validateUsage(*input.Usage); err != nil {
+		if err := usage(*input.Usage); err != nil {
 			return Snapshot{}, err
 		}
 	}
@@ -63,7 +69,7 @@ func Freeze(input Envelope) (Snapshot, error) {
 		return Snapshot{}, err
 	}
 	if e.SchemaVersion == "" {
-		e.SchemaVersion = SchemaVersion
+		e.SchemaVersion = version
 	}
 	if e.PayloadCanonicalization == "" {
 		e.PayloadCanonicalization = Canonicalization
@@ -86,7 +92,7 @@ func Freeze(input Envelope) (Snapshot, error) {
 	}
 	suppliedDigest := e.PayloadDigest
 	e.PayloadDigest = ""
-	if err := validateEnvelope(e); err != nil {
+	if err := validate(e); err != nil {
 		return Snapshot{}, err
 	}
 	raw, err := json.Marshal(e)
@@ -130,11 +136,15 @@ func Freeze(input Envelope) (Snapshot, error) {
 // The caller supplies newly observed evidence and observed_at; it cannot move
 // original ownership/selection/occurred_at or turn a retry into a new purchase.
 func Correct(previous Snapshot, replacement Envelope) (Snapshot, error) {
+	return correctObservation(previous, replacement, SchemaVersion, Freeze)
+}
+
+func correctObservation(previous Snapshot, replacement Envelope, version string, freeze func(Envelope) (Snapshot, error)) (Snapshot, error) {
 	if len(previous.wire) == 0 || previous.MessageType() != "observation" {
 		return Snapshot{}, errors.New("correction has no predecessor")
 	}
 	old := previous.envelope
-	if replacement.SchemaVersion != "" && replacement.SchemaVersion != SchemaVersion {
+	if old.SchemaVersion != version || replacement.SchemaVersion != "" && replacement.SchemaVersion != version {
 		return Snapshot{}, errorsForVersion()
 	}
 	if replacement.PayloadCanonicalization != "" && replacement.PayloadCanonicalization != Canonicalization {
@@ -148,7 +158,7 @@ func Correct(previous Snapshot, replacement Envelope) (Snapshot, error) {
 		return Snapshot{}, err
 	}
 	revision.Add(revision, big.NewInt(1))
-	replacement.SchemaVersion = SchemaVersion
+	replacement.SchemaVersion = version
 	replacement.PayloadCanonicalization = Canonicalization
 	replacement.ProducerID = old.ProducerID
 	replacement.SourceFactID = old.SourceFactID
@@ -156,7 +166,7 @@ func Correct(previous Snapshot, replacement Envelope) (Snapshot, error) {
 	replacement.SupersedesEventID = old.EventID
 	replacement.EventID = ""
 	replacement.PayloadDigest = ""
-	return Freeze(replacement)
+	return freeze(replacement)
 }
 
 // Ledger retains source keys only for a bounded call lifetime. The receiver's
@@ -430,6 +440,10 @@ func validateEnvelope(e Envelope) error {
 	if err := validateIdentity(e); err != nil {
 		return err
 	}
+	return validateObservationFields(e, validateUsage)
+}
+
+func validateObservationFields(e Envelope, usage func(Usage) error) error {
 	for _, v := range []string{e.EventID, e.SourceFactID} {
 		if !id(v) {
 			return errors.New("invalid source fact key")
@@ -505,7 +519,7 @@ func validateEnvelope(e Envelope) error {
 		return errors.New("explicit usage evidence status is required")
 	}
 	if e.Usage != nil {
-		return validateUsage(*e.Usage)
+		return usage(*e.Usage)
 	}
 	return nil
 }
@@ -715,7 +729,7 @@ func FreezeRegistration(input Registration) (Snapshot, error) {
 	return Snapshot{envelope: metadata, wire: wire, business: wire, messageType: "execution_registration"}, nil
 }
 
-func decodeSelection(raw []byte) (map[string]interface{}, error) {
+func decodeSelectionFields(raw []byte, optionalFields string) (map[string]interface{}, error) {
 	tree, err := decodeExact(raw)
 	if err != nil {
 		return nil, err
@@ -733,7 +747,7 @@ func decodeSelection(raw []byte) (map[string]interface{}, error) {
 			return nil, errors.New("original selection is incomplete")
 		}
 	}
-	for _, k := range strings.Fields("operation_id dispatch_id invocation_id gateway_boot_id parent_attempt_id context_generation recovery_claim_refs") {
+	for _, k := range strings.Fields(optionalFields) {
 		allowed[k] = true
 	}
 	for k, v := range object {
@@ -768,6 +782,14 @@ func decodeSelection(raw []byte) (map[string]interface{}, error) {
 				return nil, errors.New("invalid selection revision")
 			}
 		}
+	}
+	return object, nil
+}
+
+func decodeSelection(raw []byte) (map[string]interface{}, error) {
+	object, err := decodeSelectionFields(raw, "operation_id dispatch_id invocation_id gateway_boot_id parent_attempt_id context_generation recovery_claim_refs")
+	if err != nil {
+		return nil, err
 	}
 	if object["selection_canonicalization"] != "selection-json.v1" || object["operation_kind"] != "text_generate" {
 		return nil, errors.New("registration profile requires frozen text selection")
@@ -908,6 +930,10 @@ func decodeExact(raw []byte) (interface{}, error) {
 // ExecutionSelection except selection_digest, including descriptor/body digests.
 // It is not a candidate/prepare digest and requires every frozen selection field.
 func SelectionDigest(raw []byte) (string, error) {
+	return selectionDigest(raw, decodeSelection)
+}
+
+func selectionDigest(raw []byte, decode func([]byte) (map[string]interface{}, error)) (string, error) {
 	tree, err := decodeExact(raw)
 	if err != nil {
 		return "", err
@@ -923,7 +949,7 @@ func SelectionDigest(raw []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	checked, err := decodeSelection(intermediate)
+	checked, err := decode(intermediate)
 	if err != nil {
 		return "", err
 	}
@@ -938,11 +964,15 @@ func SelectionDigest(raw []byte) (string, error) {
 // CanonicalSelection preserves the full original strict object, after checking
 // its declared digest. A caller must keep these bytes for registration/retries.
 func CanonicalSelection(raw []byte) ([]byte, error) {
-	object, err := decodeSelection(raw)
+	return canonicalSelection(raw, decodeSelection)
+}
+
+func canonicalSelection(raw []byte, decode func([]byte) (map[string]interface{}, error)) ([]byte, error) {
+	object, err := decode(raw)
 	if err != nil {
 		return nil, err
 	}
-	expected, err := SelectionDigest(raw)
+	expected, err := selectionDigest(raw, decode)
 	if err != nil {
 		return nil, err
 	}

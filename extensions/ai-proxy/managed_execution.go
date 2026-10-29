@@ -126,6 +126,7 @@ type managedSettings struct {
 	InputProtocol      string                 `json:"input_protocol,omitempty"`
 	UpstreamProtocol   string                 `json:"upstream_protocol,omitempty"`
 	UpstreamHealth     *managedHealthSettings `json:"upstream_health,omitempty"`
+	TextExecution      *managedTextSettings   `json:"text_execution,omitempty"`
 }
 
 type managedRedisClient interface {
@@ -138,6 +139,8 @@ type managedExecutionConfig struct {
 	redis    managedRedisClient
 	profile  managedProtocolProfile
 	health   *managedHealthRuntime
+	targets  map[string]*managedExecutionConfig
+	mapper   json.RawMessage
 }
 
 // configureManagedExecution is called for every global and rule parse. Clearing
@@ -220,13 +223,16 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 	if err != nil {
 		return err
 	}
+	if err := configureManagedTextDirectory(value, &parsed); err != nil {
+		return err
+	}
 	cfg.ManagedExecution = &parsed
 	return nil
 }
 
 func (c *managedExecutionConfig) validate() error {
 	d := c.release.Descriptor
-	if c.settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission {
+	if c.settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission && c.settings.CallIdentitySource != executionfacts.CallIdentitySourceInternal {
 		return errors.New("managed execution requires the original admission call identity capability")
 	}
 	if (c.release.SchemaVersion != "modelfusion-execution.v1" && c.release.SchemaVersion != "modelfusion-execution.v2") || d.ConfigCanonicalization != "mf-json.v1" {
@@ -266,19 +272,29 @@ func (c *managedExecutionConfig) validate() error {
 	if c.settings.MediaDispatchMode != "" && c.settings.MediaDispatchMode != "disabled" && c.settings.MediaDispatchMode != "managed_operation" {
 		return errors.New("managed execution media dispatch mode is unsupported")
 	}
-	if c.settings.MediaDispatchMode != "managed_operation" {
+	if c.settings.CallIdentitySource == executionfacts.CallIdentitySourceInternal && (c.settings.UpstreamHealth == nil || c.settings.MediaDispatchMode == "managed_operation") {
+		return errors.New("internal execution requires its registered service health endpoint and text operation")
+	}
+	if managedOperation(c) == executionfacts.NativeEmbeddingOperation {
+		if err := validateManagedEmbedding(c); err != nil {
+			return err
+		}
+	} else if c.settings.MediaDispatchMode != "managed_operation" {
 		text, ok := d.Capabilities["text_generate"]
 		if !ok || !managedID(text.ResponseClassifierRef) || text.MaxAttempts < 1 || (text.SendMode != "single_send" && text.SendMode != "observable_retry") {
 			return errors.New("managed execution descriptor has no text capability")
 		}
 	}
 	for operation, capability := range d.Capabilities {
-		if operation != "text_generate" && operation != "image_generate" && operation != "video_generate" && operation != "task_query" {
+		if operation != "text_generate" && operation != "image_generate" && operation != "video_generate" && operation != "task_query" && (operation != executionfacts.NativeEmbeddingOperation || managedOperation(c) != executionfacts.NativeEmbeddingOperation) {
 			return errors.New("managed execution descriptor has an undeclared capability")
 		}
 		if !managedID(capability.ResponseClassifierRef) || capability.MaxAttempts < 1 || (capability.SendMode != "single_send" && capability.SendMode != "observable_retry") {
 			return errors.New("managed execution descriptor has an invalid capability")
 		}
+	}
+	if err := validateManagedTextSettings(c); err != nil {
+		return err
 	}
 	if c.settings.TimeoutMS == 0 {
 		c.settings.TimeoutMS = managedDefaultTimeoutMS
@@ -329,8 +345,11 @@ func validateManagedCredentialShape(settings, release gjson.Result) error {
 
 func validManagedCredential(member managedCredential) bool {
 	revision, ok := managedInteger(member.CredentialRevision)
-	return managedID(member.CredentialRef) && ok && revision.Sign() > 0 && len(member.CredentialValue) > 0 && len(member.CredentialValue) <= 8192 &&
-		strings.IndexFunc(member.CredentialValue, func(r rune) bool { return r <= 32 || r >= 127 }) < 0
+	return managedID(member.CredentialRef) && ok && revision.Sign() > 0 && validManagedCredentialValue(member.CredentialValue)
+}
+
+func validManagedCredentialValue(value string) bool {
+	return len(value) > 0 && len(value) <= 8192 && strings.IndexFunc(value, func(r rune) bool { return r <= 32 || r >= 127 }) < 0
 }
 
 // The envelope is a complete static identity directory, never a selected member.
@@ -396,6 +415,8 @@ type managedExecutionState struct {
 	prepared, dispatchStarted, handedOff, callbackSeen, closed bool
 	original                                                   executionfacts.Envelope
 	attempt                                                    executionfacts.Attempt
+	embeddingAttempt                                           executionfacts.EmbeddingAttempt
+	expectedEmbeddings                                         int
 	ledger                                                     *executionfacts.Ledger
 	deliveries                                                 map[string]*executionfacts.Delivery
 	lastAttempt, lastDelivery                                  *executionfacts.Snapshot
@@ -403,6 +424,11 @@ type managedExecutionState struct {
 	healthInFlight                                             bool
 	health                                                     *managedHealthAttempt
 	frozenSelection                                            json.RawMessage
+	text                                                       *managedTextCall
+	mechanism, parentAttemptID                                 string
+	selectionGeneration                                        uint32
+	healthUnavailable                                          func(string)
+	internal                                                   *managedInternalCall
 }
 
 func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (types.Action, bool) {
@@ -420,15 +446,29 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	if err != nil {
 		return rejectManagedRequest(ctx, 403, "authenticated_identity_missing"), true
 	}
-	origin, originErr := executionfacts.ReadAdmittedCall(headers, managed.release.Descriptor.ReleaseID, time.Now())
-	if originErr != nil {
-		return rejectManagedRequest(ctx, 403, "current_execution_admission_required"), true
+	var origin executionfacts.AdmittedCall
+	var identity balanceidentity.Snapshot
+	var internal *managedInternalCall
+	if managed.settings.CallIdentitySource == executionfacts.CallIdentitySourceInternal {
+		internal, err = readManagedInternalCall(headers)
+		if err != nil {
+			return rejectManagedRequest(ctx, 403, "registered_internal_service_call_required"), true
+		}
+	} else {
+		origin, err = executionfacts.ReadAdmittedCall(headers, managed.release.Descriptor.ReleaseID, time.Now())
+		if err != nil {
+			return rejectManagedRequest(ctx, 403, "current_execution_admission_required"), true
+		}
+		identity, err = balanceidentity.Read(headers)
+		if err != nil || identity.TenantID == "" || identity.PrincipalID == "" {
+			return rejectManagedRequest(ctx, 403, "authenticated_identity_missing"), true
+		}
 	}
 	clean := make([][2]string, 0, len(headers))
 	for _, header := range headers {
 		if strings.EqualFold(header[0], managedCallHeader) || strings.EqualFold(header[0], managedAttemptHeader) ||
 			strings.EqualFold(header[0], managedAdmissionReleaseHeader) || strings.EqualFold(header[0], managedAdmissionDeadlineHeader) ||
-			strings.EqualFold(header[0], managedAdmissionOccurredHeader) {
+			strings.EqualFold(header[0], managedAdmissionOccurredHeader) || strings.EqualFold(header[0], managedInternalCallHeader) {
 			continue
 		}
 		clean = append(clean, header)
@@ -440,10 +480,6 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	if ctx.GetContext(managedExecutionContextKey) != nil {
 		return rejectManagedRequest(ctx, 409, "execution_context_reentry"), true
 	}
-	identity, err := balanceidentity.Read(headers)
-	if err != nil || identity.TenantID == "" || identity.PrincipalID == "" {
-		return rejectManagedRequest(ctx, 403, "authenticated_identity_missing"), true
-	}
 	_, err = validateSafeOriginFormTarget(ctx.Path())
 	if err != nil || ctx.Method() != "POST" {
 		return rejectManagedRequest(ctx, 400, "unsupported_text_request"), true
@@ -453,9 +489,9 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	if err != nil || mediaErr != nil || mediaType != "application/json" || !ctx.HasRequestBody() {
 		return rejectManagedRequest(ctx, 400, "json_body_required"), true
 	}
-	state := &managedExecutionState{config: managed, sourceConfig: managed, identity: identity, callID: origin.CallID, admissionDeadline: origin.ValidUntil, businessUTC: origin.OccurredAt, ledger: executionfacts.NewLedger(128), deliveries: map[string]*executionfacts.Delivery{}}
+	state := &managedExecutionState{config: managed, sourceConfig: managed, identity: identity, internal: internal, callID: origin.CallID, admissionDeadline: origin.ValidUntil, businessUTC: origin.OccurredAt, ledger: executionfacts.NewLedger(128), deliveries: map[string]*executionfacts.Delivery{}}
 	ctx.SetContext(managedExecutionContextKey, state)
-	if proxywasm.ReplaceHttpRequestHeader(managedCallHeader, state.callID) != nil {
+	if state.internal == nil && proxywasm.ReplaceHttpRequestHeader(managedCallHeader, state.callID) != nil {
 		return rejectManagedRequest(ctx, 500, "execution_identity_install_failed"), true
 	}
 	ctx.SetUserAttribute("managed_execution_transport", "http_call")
@@ -480,7 +516,10 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if state.dispatchStarted || state.closed || state.healthInFlight {
 		return types.ActionPause, true
 	}
-	if !time.Now().Before(state.admissionDeadline) {
+	if state.internal != nil && state.internal.checkStarted {
+		return types.ActionPause, true
+	}
+	if state.internal == nil && !time.Now().Before(state.admissionDeadline) {
 		return rejectManagedRequest(ctx, 403, "execution_admission_expired"), true
 	}
 	if len(body) == 0 || uint64(len(body)) > uint64(defaultMaxBodyBytes) {
@@ -507,10 +546,23 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if err != nil || basis.PublicModel() != managed.release.PublicModel {
 		return rejectManagedRequest(ctx, 400, "original_body_basis_missing"), true
 	}
-	if managed.health != nil {
-		authorizeManagedHealth(ctx, state, basis, body)
-	} else if request, ok := prepareManagedSelectedRequest(ctx, state, body); ok {
-		dispatchManagedPreparedRequest(ctx, state, basis, request)
+	if err := retainManagedTextBody(state, basis, body); err != nil {
+		return rejectManagedRequest(ctx, 400, "text_execution_body_invalid"), true
+	}
+	// The RPC callback owns these original mapped bytes. It does not trust an
+	// internal-cost header, allocate another call or reread a mutable body.
+	body = append([]byte(nil), body...)
+	ready := func() {
+		if managed.health != nil {
+			authorizeManagedHealth(ctx, state, basis, body)
+		} else if request, ok := prepareManagedSelectedRequest(ctx, state, body); ok {
+			dispatchManagedPreparedRequest(ctx, state, basis, request)
+		}
+	}
+	if state.internal != nil {
+		checkManagedInternalCall(ctx, state, basis, managedOperation(managed), ready)
+	} else {
+		ready()
 	}
 	return types.ActionPause, true
 }
@@ -521,32 +573,32 @@ func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecut
 	managed := state.config
 	request, err := managed.profile.PrepareRequest(body, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue)
 	if err != nil {
-		rejectManagedRequest(ctx, 400, "unsupported_or_invalid_protocol_request")
+		rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")
 		return managedProtocolRequest{}, false
 	}
 	if len(request.Body) == 0 || uint64(len(request.Body)) > uint64(defaultMaxBodyBytes) {
-		rejectManagedRequest(ctx, 413, "mapped_request_body_out_of_bounds")
+		rejectManagedPreparation(ctx, state, 413, "mapped_request_body_out_of_bounds")
 		return managedProtocolRequest{}, false
 	}
 	var outboundObject map[string]json.RawMessage
 	var model string
 	if decodeManagedJSON(request.Body, &outboundObject, false) != nil || json.Unmarshal(outboundObject["model"], &model) != nil || model != managed.release.Descriptor.UpstreamModel {
-		rejectManagedRequest(ctx, 500, "protocol_conversion_changed_selection")
+		rejectManagedPreparation(ctx, state, 500, "protocol_conversion_changed_selection")
 		return managedProtocolRequest{}, false
 	}
-	state.streaming = request.Streaming
+	state.streaming, state.expectedEmbeddings = request.Streaming, request.ExpectedEmbeddings
 	if !time.Now().Before(state.admissionDeadline) {
-		rejectManagedRequest(ctx, 403, "execution_admission_expired")
+		rejectManagedPreparation(ctx, state, 403, "execution_admission_expired")
 		return managedProtocolRequest{}, false
 	}
 	attemptID, err := uuid.NewRandom()
 	if err != nil {
-		rejectManagedRequest(ctx, 500, "execution_identity_unavailable")
+		rejectManagedPreparation(ctx, state, 500, "execution_identity_unavailable")
 		return managedProtocolRequest{}, false
 	}
 	state.attemptID = attemptID.String()
 	if proxywasm.ReplaceHttpRequestHeader(managedAttemptHeader, state.attemptID) != nil {
-		rejectManagedRequest(ctx, 500, "execution_identity_install_failed")
+		rejectManagedPreparation(ctx, state, 500, "execution_identity_install_failed")
 		return managedProtocolRequest{}, false
 	}
 	ctx.SetUserAttribute("managed_attempt_id", state.attemptID)
@@ -556,26 +608,21 @@ func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecut
 // Remains the sole provider send. Health callbacks can enter it once only after
 // an eligible current view or the first certainly committed recovery Consume.
 func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecutionState, basis bodybasis.Snapshot, request managedProtocolRequest) {
-	if state.closed || state.dispatchStarted {
+	if managedTextStopped(state) || state.dispatchStarted {
 		return
 	}
 	if !time.Now().Before(state.admissionDeadline) || state.health != nil && state.health.claimID != nil && !time.Now().Before(state.health.claimDeadline) {
-		rejectManagedRequest(ctx, 503, "health_or_admission_expired")
+		rejectManagedPreparation(ctx, state, 503, "health_or_admission_expired")
 		return
 	}
 	managed := state.config
 	body := request.Body
 	if err := prepareManagedExecution(state, basis, body); err != nil {
 		managedFactGap(ctx, "original_selection_invalid")
-		rejectManagedRequest(ctx, 500, "original_selection_invalid")
+		rejectManagedPreparation(ctx, state, 500, "original_selection_invalid")
 		return
 	}
-	registration, err := executionfacts.FreezeRegistration(executionfacts.Registration{
-		ProducerID: managed.settings.ProducerID, CallID: state.callID, AttemptID: state.attemptID,
-		ReleaseID: managed.release.Descriptor.ReleaseID, RouteID: managed.release.RouteID, TargetID: managed.release.Descriptor.TargetID,
-		AccountID: state.identity.AccountID, APIKeyID: state.identity.APIKeyID, CredentialGeneration: state.identity.CredentialGeneration,
-		BusinessOccurredAt: state.businessUTC, Selection: stateSelection(state, basis),
-	})
+	registration, err := managedRegistration(state, basis)
 	if err != nil {
 		managedFactGap(ctx, "registration_invalid")
 	} else {
@@ -585,6 +632,7 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 	// This is the only business send. Redis callbacks never resume the router or
 	// invoke it again. A DispatchHttpCall return is handoff, not wire proof.
 	state.dispatchStarted = true
+	markManagedTextAttempt(state)
 	outbound := [][2]string{{":method", "POST"}, {":path", managed.settings.UpstreamPath}, {":authority", managed.settings.Authority}, {managedCallHeader, state.callID}, {managedAttemptHeader, state.attemptID}}
 	outbound = append(outbound, request.Headers...)
 	_, err = proxywasm.DispatchHttpCall(managed.release.Descriptor.ClusterRef, outbound, body, nil, managed.settings.TimeoutMS, func(numHeaders, bodySize, numTrailers int) {
@@ -604,7 +652,7 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 
 func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot, body []byte) error {
 	selection := stateSelection(s, basis)
-	digest, err := executionfacts.SelectionDigest(selection)
+	digest, err := managedSelectionDigest(s.config, selection)
 	if err != nil {
 		return err
 	}
@@ -613,13 +661,20 @@ func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot,
 		ProducerID: s.config.settings.ProducerID, CallID: s.callID, AttemptID: s.attemptID,
 		ReleaseID: d.ReleaseID, RouteID: s.config.release.RouteID, SalesAssetID: s.config.release.SalesAssetID,
 		TenantID: s.identity.TenantID, PrincipalID: s.identity.PrincipalID, AccountID: s.identity.AccountID,
-		PrincipalKind: "user", BillingMode: "customer", OperationKind: "text_generate", OccurredAt: s.businessUTC,
+		PrincipalKind: "user", BillingMode: "customer", OperationKind: managedOperation(s.config), OccurredAt: s.businessUTC,
 		TargetID: d.TargetID, BindingID: d.BindingID, ProviderID: d.ProviderID, ProviderAccountID: d.ProviderAccountID,
 		CredentialRef: s.config.release.CredentialRef, CredentialRevision: s.config.release.CredentialRevision,
 		SelectionDigest: digest, UpstreamModel: d.UpstreamModel, OutboundBodyDigest: managedBodyDigest(body),
-		SendTransport: "http_call", RecordingOwner: "ai_proxy", Mechanism: "router",
+		SendTransport: "http_call", RecordingOwner: "ai_proxy", Mechanism: managedTextMechanism(s), ParentAttemptID: s.parentAttemptID,
 	}
-	s.attempt, err = executionfacts.NewAttempt(s.original)
+	if err := setManagedOriginalCaller(s, &s.original); err != nil {
+		return err
+	}
+	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
+		s.embeddingAttempt, err = executionfacts.NewEmbeddingAttempt(s.original)
+	} else {
+		s.attempt, err = executionfacts.NewAttempt(s.original)
+	}
 	if err != nil {
 		return err
 	}
@@ -634,10 +689,16 @@ func stateSelection(s *managedExecutionState, basis bodybasis.Snapshot) []byte {
 	d := s.config.release.Descriptor
 	selection := map[string]string{
 		"call_id": s.callID, "release_id": d.ReleaseID, "target_id": d.TargetID, "binding_id": d.BindingID, "attempt_id": s.attemptID,
-		"operation_kind": "text_generate", "provider_account_id": d.ProviderAccountID, "upstream_model": d.UpstreamModel, "cluster_ref": d.ClusterRef,
+		"operation_kind": managedOperation(s.config), "provider_account_id": d.ProviderAccountID, "upstream_model": d.UpstreamModel, "cluster_ref": d.ClusterRef,
 		"credential_ref": s.config.release.CredentialRef, "credential_revision": s.config.release.CredentialRevision, "selection_generation": "1",
 		"selection_canonicalization": "selection-json.v1", "original_body_digest": basis.Digest(), "mapper_digest": d.MapperDigest, "proxy_digest": d.ProxyDigest, "descriptor_digest": d.DescriptorDigest,
-		"mechanism": "router", "send_transport": "http_call", "recording_owner": "ai_proxy",
+		"mechanism": managedTextMechanism(s), "send_transport": "http_call", "recording_owner": "ai_proxy",
+	}
+	if s.selectionGeneration != 0 {
+		selection["selection_generation"] = strconv.FormatUint(uint64(s.selectionGeneration), 10)
+	}
+	if s.parentAttemptID != "" {
+		selection["parent_attempt_id"] = s.parentAttemptID
 	}
 	if s.config.health != nil {
 		selection["gateway_boot_id"] = s.config.health.owner
@@ -670,9 +731,20 @@ func onManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState, nu
 		outcome.HeadersComplete = false
 	}
 	recordManagedAttempt(ctx, s, outcome)
-	if s.closed {
+	if managedTextStopped(s) {
 		// A late provider callback can correct the attempt. It cannot fabricate
 		// a final client delivery after this HTTP stream has already closed.
+		return
+	}
+	finish := func() { finishManagedHTTPResponse(ctx, s, outcome, headers, body, bodyErr) }
+	if continueManagedText(ctx, s, outcome, headers, body, finish) {
+		return
+	}
+	finish()
+}
+
+func finishManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome, headers [][2]string, body []byte, bodyErr error) {
+	if managedTextStopped(s) {
 		return
 	}
 	if outcome.HTTPStatus == nil || bodyErr != nil {
@@ -704,12 +776,15 @@ func onManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState, nu
 // against its own release/caller configuration, and appends those same bytes.
 // An upstream carrier is always removed, including when local encoding fails.
 func sendManagedFinal(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome, deliveryState string, status uint32, headers [][2]string, body []byte) {
+	if !beginManagedTextFinal(s) {
+		return
+	}
 	responseHeaders := managedResponseHeaders(headers)
 	snapshot, err := managedDeliverySnapshot(s, outcome, deliveryState)
 	if err != nil {
 		managedFactGap(ctx, "delivery_fact_invalid")
 	} else {
-		encoded, err := executionfacts.EncodeDeliveryBridge(snapshot)
+		encoded, err := encodeManagedDeliveryBridge(snapshot)
 		if err != nil {
 			managedFactGap(ctx, "delivery_bridge_invalid")
 		} else {
@@ -757,7 +832,12 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 		o.Usage = executionfacts.MissingTokenUsage("upstream_body_not_observed")
 		return o
 	}
-	observed := s.config.profile.ObserveResponse(*o.HTTPStatus, headers, body, o.BodyComplete)
+	var observed managedProtocolObservation
+	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
+		observed = managedEmbeddingObservation(*o.HTTPStatus, headers, body, o.BodyComplete, s.expectedEmbeddings)
+	} else {
+		observed = s.config.profile.ObserveResponse(*o.HTTPStatus, headers, body, o.BodyComplete)
+	}
 	o.Usage = observed.Usage
 	if o.Usage == nil {
 		o.Usage = executionfacts.MissingTokenUsage("provider_usage_not_observed")
@@ -780,9 +860,18 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 }
 
 func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome) {
-	attempt, err := s.attempt.Finish(outcome)
-	if err == nil && s.lastAttempt != nil {
-		attempt, err = executionfacts.Correct(*s.lastAttempt, attempt.Envelope())
+	var attempt executionfacts.Snapshot
+	var err error
+	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
+		attempt, err = s.embeddingAttempt.Finish(outcome)
+		if err == nil && s.lastAttempt != nil {
+			attempt, err = executionfacts.CorrectEmbedding(*s.lastAttempt, attempt.Envelope())
+		}
+	} else {
+		attempt, err = s.attempt.Finish(outcome)
+		if err == nil && s.lastAttempt != nil {
+			attempt, err = executionfacts.Correct(*s.lastAttempt, attempt.Envelope())
+		}
 	}
 	if err != nil {
 		managedFactGap(ctx, "attempt_fact_invalid")
@@ -801,10 +890,16 @@ func managedDeliverySnapshot(s *managedExecutionState, outcome executionfacts.At
 		ProducerID: s.config.settings.ProducerID, Kind: "call_delivery", CallID: s.callID,
 		ReleaseID: s.original.ReleaseID, RouteID: s.original.RouteID, SalesAssetID: s.original.SalesAssetID,
 		TenantID: s.identity.TenantID, PrincipalID: s.identity.PrincipalID, AccountID: s.identity.AccountID,
-		PrincipalKind: "user", BillingMode: "customer", OperationKind: "text_generate",
+		PrincipalKind: "user", BillingMode: "customer", OperationKind: managedOperation(s.config),
 		OccurredAt: s.businessUTC, ObservedAt: outcome.ObservedAt, EvidenceRefs: outcome.EvidenceRefs,
 		DeliveryState: deliveryState, ServedFrom: "upstream", PublicModel: s.config.release.PublicModel,
 		ResponseModel: outcome.ResponseModel, Usage: outcome.Usage, ErrorClass: outcome.ErrorClass,
+	}
+	if err := setManagedOriginalCaller(s, &delivery); err != nil {
+		return executionfacts.Snapshot{}, err
+	}
+	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
+		return executionfacts.FreezeEmbedding(delivery)
 	}
 	return executionfacts.Freeze(delivery)
 }
@@ -866,6 +961,13 @@ func onManagedStreamDone(ctx wrapper.HttpContext, cfg config.PluginConfig) {
 	s, ok := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
 	if !ok || s == nil || s.closed {
 		return
+	}
+	if s.text != nil {
+		s.text.closed = true
+		for _, attempt := range s.text.attempts {
+			attempt.closed = true
+		}
+		s = s.text.current
 	}
 	s.closed = true
 	if s.prepared && s.dispatchStarted && !s.callbackSeen {

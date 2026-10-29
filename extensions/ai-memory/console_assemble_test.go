@@ -40,7 +40,7 @@ func TestMemoryConsoleAssemble(t *testing.T) {
 			requireMemoryMessage(t, messages[2], "user", "current question")
 		})
 
-		for _, mode := range []string{"digest", "semantic"} {
+		for _, mode := range []string{"digest", "semantic", "full"} {
 			t.Run(mode+" mode calls Console assemble after Redis miss", func(t *testing.T) {
 				host := startMemoryConsoleAssembleRequest(t, mode)
 				host.CallOnRedisCall(0, test.CreateRedisRespNull())

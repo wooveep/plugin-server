@@ -8,6 +8,7 @@ import (
 
 const (
 	memoryNativeCallerContextKey = "memoryNativeCaller"
+	memoryNativeCallContextKey   = "memoryNativeAdmittedCall"
 	memoryRouteNameContextKey    = "memoryGatewayRouteName"
 )
 

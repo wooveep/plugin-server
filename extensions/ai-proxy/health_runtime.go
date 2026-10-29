@@ -133,7 +133,7 @@ func managedHealthMembers(config *managedExecutionConfig) ([]managedHealthMember
 			scopes[scope] = true
 		}
 		t.ScopeIDs = append([]string(nil), t.ScopeIDs...)
-		if t.OperationKind == "text_generate" {
+		if t.OperationKind == managedOperation(config) {
 			result = append(result, managedHealthMember{member, t})
 		}
 	}
@@ -290,12 +290,17 @@ func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionStat
 		rejectManagedHealth(ctx, state, "health_member_directory_invalid", nil)
 		return
 	}
+	members = managedTextUntried(state, members)
+	if len(members) == 0 {
+		rejectManagedHealth(ctx, state, "upstream_health_unavailable", nil)
+		return
+	}
 	// The asynchronous snapshot callback owns these exact mapped bytes; it does
 	// not re-read or retain a caller-mutable body buffer after qualification.
 	body = append([]byte(nil), body...)
 	lookup := func() {
 		health.reader.Lookup(func(read upstreamhealth.ReadResult) {
-			if state.closed || state.dispatchStarted || state.credentialSelected {
+			if managedTextStopped(state) || state.dispatchStarted || state.credentialSelected {
 				return
 			}
 			if read.Status == upstreamhealth.ReadReady && read.Snapshot != nil {
@@ -346,7 +351,7 @@ func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionStat
 			claimRequest := upstreamhealth.ClaimRequest{ClaimRequestID: "health:" + state.attemptID, OwnerInstance: health.owner,
 				ExpectedEpochs: decision.ScopeEpochs, Candidate: candidate, CandidateDigest: candidate.Digest()}
 			err = health.client.Claim(claimRequest, func(result upstreamhealth.GatewayResult[upstreamhealth.ClaimReceipt]) {
-				if state.closed || state.dispatchStarted {
+				if managedTextStopped(state) || state.dispatchStarted {
 					return
 				}
 				if result.State != upstreamhealth.GatewayAcknowledged || result.Value == nil || result.Value.Decision != "granted" || result.Value.Claim == nil {
@@ -360,7 +365,7 @@ func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionStat
 					return
 				}
 				err = health.client.Consume(allocated, final, func(consumed upstreamhealth.GatewayResult[upstreamhealth.RecoveryClaim]) {
-					if state.closed || state.dispatchStarted {
+					if managedTextStopped(state) || state.dispatchStarted {
 						return
 					}
 					if consumed.State != upstreamhealth.GatewayAcknowledged || consumed.Value == nil {
@@ -422,7 +427,13 @@ func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionStat
 }
 
 func rejectManagedHealth(ctx wrapper.HttpContext, state *managedExecutionState, reason string, retryAfter *uint64) {
-	if state.closed || state.dispatchStarted {
+	if managedTextStopped(state) || state.dispatchStarted {
+		return
+	}
+	if state.healthUnavailable != nil {
+		unavailable := state.healthUnavailable
+		state.healthUnavailable = nil
+		unavailable(reason)
 		return
 	}
 	ctx.SetUserAttribute("managed_execution_rejection", reason)

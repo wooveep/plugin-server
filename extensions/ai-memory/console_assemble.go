@@ -9,6 +9,7 @@ import (
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-memory/config"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/sessionctx"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -34,6 +35,7 @@ type memoryNamedFact struct {
 }
 
 type memoryAssembleRequest struct {
+	CallID            string                `json:"call_id,omitempty"`
 	NativeIdentity    *memoryNativeIdentity `json:"native_identity,omitempty"`
 	SchemaVersion     int                   `json:"schema_version"`
 	Tenant            string                `json:"tenant"`
@@ -74,12 +76,24 @@ type memoryAssembleMessage struct {
 }
 
 func buildMemoryAssembleRequestBody(ctx wrapper.HttpContext, c config.PluginConfig) ([]byte, error) {
+	native := nativeMemoryIdentity(ctx, c)
+	callID := ""
+	if native != nil {
+		// Reuse the original request-header snapshot. A later proxy callback or
+		// client-style request_id cannot supply missing admission parentage.
+		if admitted, ok := ctx.GetContext(memoryNativeCallContextKey).(executionfacts.AdmittedCall); ok &&
+			admitted.ReleaseID == native.ReleaseID && native.Caller.Validate() == nil && native.Caller.TenantID != "" && native.Caller.PrincipalID != "" &&
+			ctx.GetStringContext(memoryRouteContextKey, "") == native.RouteID {
+			callID = admitted.CallID
+		}
+	}
 	route := memoryNamedFact{Name: ctx.GetStringContext(memoryRouteContextKey, "")}
 	if c.NativeIdentity != nil {
 		route = memoryNamedFact{ID: c.NativeIdentity.RouteID, Name: ctx.GetStringContext(memoryRouteNameContextKey, "")}
 	}
 	return json.Marshal(memoryAssembleRequest{
-		NativeIdentity:    nativeMemoryIdentity(ctx, c),
+		CallID:            callID,
+		NativeIdentity:    native,
 		SchemaVersion:     memoryAssembleSchemaVersion,
 		Tenant:            ctx.GetStringContext(memoryTenantContextKey, ""),
 		Consumer:          ctx.GetStringContext(memoryConsumerContextKey, ""),
@@ -99,7 +113,7 @@ func buildMemoryAssembleRequestBody(ctx wrapper.HttpContext, c config.PluginConf
 }
 
 func shouldUseMemoryAssemble(c config.PluginConfig) bool {
-	return c.Route.MemoryMode == config.MemoryModeDigest || c.Route.MemoryMode == config.MemoryModeSemantic
+	return c.Route.MemoryMode == config.MemoryModeDigest || c.Route.MemoryMode == config.MemoryModeSemantic || c.Route.MemoryMode == config.MemoryModeFull
 }
 
 func dispatchMemoryAssemble(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) error {
