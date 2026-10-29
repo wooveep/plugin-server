@@ -14,7 +14,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-cache/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-cache/README_EN.md
-  version: 1.0.5
+  version: 1.0.6
   contact:
     name: johnlanni
   gatewayMinVersion: "2.0.0"
@@ -88,18 +88,79 @@ spec:
           type: object
           readOnly: true
           additionalProperties: false
-          required: [schema_version, descriptor, route_id, sales_asset_id, public_model, credential_ref, credential_revision]
+          required:
+          - schema_version
+          - descriptor
+          - route_id
+          - sales_asset_id
+          - public_model
           properties:
-            schema_version: {type: string, const: modelfusion-execution.v1}
+            schema_version:
+              type: string
+              enum:
+              - modelfusion-execution.v1
+              - modelfusion-execution.v2
             descriptor:
               type: object
               description: 原完整 IF01 descriptor；运行时按 mf-json.v1 排除自身摘要字段后重新核对。
               additionalProperties: true
-            route_id: {type: string, minLength: 1}
-            sales_asset_id: {type: string, minLength: 1}
-            public_model: {type: string, minLength: 1}
-            credential_ref: {type: string, minLength: 1}
-            credential_revision: {type: string, pattern: '^[1-9][0-9]*$'}
+            route_id:
+              type: string
+              minLength: 1
+            sales_asset_id:
+              type: string
+              minLength: 1
+            public_model:
+              type: string
+              minLength: 1
+            credential_ref:
+              type: string
+              minLength: 1
+            credential_revision:
+              type: string
+              pattern: ^[1-9][0-9]*$
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Complete frozen credential identity directory; no secret or selected-attempt authority.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+          oneOf:
+          - required:
+            - credential_ref
+            - credential_revision
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              schema_version:
+                const: modelfusion-execution.v1
+          - required:
+            - credentials
+            not:
+              anyOf:
+              - required:
+                - credential_ref
+              - required:
+                - credential_revision
+            properties:
+              schema_version:
+                const: modelfusion-execution.v2
         native_identity:
           type: object
           title: 原生发布缓存身份

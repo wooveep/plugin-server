@@ -18,11 +18,12 @@ import (
 )
 
 type managedHealthSettings struct {
-	RuntimeConfigID string                         `json:"runtime_config_id"`
-	ConfigRevision  upstreamhealth.Revision        `json:"config_revision"`
-	Snapshot        managedHealthSnapshot          `json:"snapshot"`
-	Target          upstreamhealth.TargetReference `json:"target"`
-	Console         managedHealthConsole           `json:"console_internal"`
+	RuntimeConfigID string                           `json:"runtime_config_id"`
+	ConfigRevision  upstreamhealth.Revision          `json:"config_revision"`
+	Snapshot        managedHealthSnapshot            `json:"snapshot"`
+	Target          upstreamhealth.TargetReference   `json:"target"`
+	Targets         []upstreamhealth.TargetReference `json:"targets,omitempty"`
+	Console         managedHealthConsole             `json:"console_internal"`
 }
 
 type managedHealthSnapshot struct {
@@ -53,6 +54,111 @@ type managedHealthAttempt struct {
 	claimID            *string
 	claimDeadline      time.Time
 	retryAfterEvidence *string
+}
+
+type managedHealthMember struct {
+	credential managedCredential
+	target     upstreamhealth.TargetReference
+}
+
+type managedHealthChoice struct {
+	member   managedHealthMember
+	decision upstreamhealth.Decision
+}
+
+func eligibleManagedHealthMembers(client *upstreamhealth.GatewayClient, read upstreamhealth.ReadResult, members []managedHealthMember, now time.Time) ([]managedHealthChoice, *uint64) {
+	var eligible []managedHealthChoice
+	var retryAfter *uint64
+	for _, member := range members {
+		decision := client.DecideNewCall(read, upstreamhealth.Candidate{Target: member.target}, now)
+		if decision.Kind == upstreamhealth.Eligible || decision.Kind == upstreamhealth.RecoveryRequired {
+			eligible = append(eligible, managedHealthChoice{member, decision})
+		} else if decision.RetryAfterSeconds != nil && (retryAfter == nil || *decision.RetryAfterSeconds < *retryAfter) {
+			value := *decision.RetryAfterSeconds
+			retryAfter = &value
+		}
+	}
+	return eligible, retryAfter
+}
+
+// A v2 directory covers every original member/declared operation exactly once.
+// This is static source binding, not a choice or a substitute for a fresh view.
+func managedHealthMembers(config *managedExecutionConfig) ([]managedHealthMember, error) {
+	settings := config.settings.UpstreamHealth
+	if settings == nil || settings.RuntimeConfigID != config.release.Descriptor.ReleaseID || settings.ConfigRevision != "1" {
+		return nil, errors.New("managed health runtime differs from the retained release registration")
+	}
+	members, err := config.credentialMembers()
+	if err != nil {
+		return nil, err
+	}
+	targets := settings.Targets
+	if config.release.SchemaVersion == "modelfusion-execution.v1" {
+		if len(targets) != 0 {
+			return nil, errors.New("managed health v1 does not accept a target pool")
+		}
+		targets = []upstreamhealth.TargetReference{settings.Target}
+	} else {
+		t := settings.Target
+		if t.TargetID != "" || t.BindingID != "" || t.ProviderAccountID != "" || t.RegionEndpointRef != "" || t.UpstreamModel != "" || t.OperationKind != "" ||
+			t.CredentialRef != "" || t.CredentialGeneration != "" || len(t.ScopeIDs) != 0 || len(targets) != len(members)*len(config.release.Descriptor.Capabilities) {
+			return nil, errors.New("managed health requires the complete unambiguous target directory")
+		}
+	}
+	byRef := make(map[string]managedCredential, len(members))
+	for _, member := range members {
+		byRef[member.CredentialRef] = member
+	}
+	d := config.release.Descriptor
+	seen := make(map[[2]string]bool, len(targets))
+	result := make([]managedHealthMember, 0, len(targets))
+	for _, t := range targets {
+		member, exists := byRef[t.CredentialRef]
+		_, declared := d.Capabilities[t.OperationKind]
+		key := [2]string{t.CredentialRef, t.OperationKind}
+		if !exists || !declared || seen[key] || t.TargetID != d.TargetID || t.BindingID != d.BindingID || t.ProviderAccountID != d.ProviderAccountID ||
+			t.RegionEndpointRef != d.RegionEndpointRef || t.UpstreamModel != d.UpstreamModel || string(t.CredentialGeneration) != member.CredentialRevision ||
+			len(t.ScopeIDs) == 0 || len(t.ScopeIDs) > 128 {
+			return nil, errors.New("managed health target differs from the original frozen member")
+		}
+		if _, err := upstreamhealth.ParseRevision(string(t.CredentialGeneration)); err != nil {
+			return nil, err
+		}
+		seen[key] = true
+		scopes := make(map[string]bool, len(t.ScopeIDs))
+		for _, scope := range t.ScopeIDs {
+			if !managedID(scope) || scopes[scope] {
+				return nil, errors.New("managed health scopes are invalid")
+			}
+			scopes[scope] = true
+		}
+		t.ScopeIDs = append([]string(nil), t.ScopeIDs...)
+		if t.OperationKind == "text_generate" {
+			result = append(result, managedHealthMember{member, t})
+		}
+	}
+	if config.settings.MediaDispatchMode != "managed_operation" && len(result) != len(members) {
+		return nil, errors.New("managed health text member directory is incomplete")
+	}
+	return result, nil
+}
+
+// Freeze one selected tuple into private request copies. The original complete
+// configuration, its arrays and proxy_digest remain unchanged for all requests.
+func freezeManagedHealthMember(state *managedExecutionState, member managedHealthMember) error {
+	if state.credentialSelected || state.config == nil || state.config.health == nil {
+		return errors.New("managed health credential was already selected or is unavailable")
+	}
+	original := state.config
+	retained := *original
+	retained.release.CredentialRef, retained.release.CredentialRevision = member.credential.CredentialRef, member.credential.CredentialRevision
+	retained.settings.CredentialValue = member.credential.CredentialValue
+	health := *original.health
+	health.settings.Target = member.target
+	health.settings.Target.ScopeIDs = append([]string(nil), member.target.ScopeIDs...)
+	retained.health = &health
+	state.config, state.credentialSelected = &retained, true
+	return nil
 }
 
 // This is one plugin VM's existing startup state, not a cross-VM context or a
@@ -135,21 +241,8 @@ func configureManagedHealth(config *managedExecutionConfig) (*managedHealthRunti
 	if _, err := projection.SnapshotKey(); err != nil {
 		return nil, err
 	}
-	d, t := config.release.Descriptor, settings.Target
-	if t.TargetID != d.TargetID || t.BindingID != d.BindingID || t.ProviderAccountID != d.ProviderAccountID || t.RegionEndpointRef != d.RegionEndpointRef ||
-		t.UpstreamModel != d.UpstreamModel || t.OperationKind != "text_generate" || t.CredentialRef != config.release.CredentialRef ||
-		string(t.CredentialGeneration) != config.release.CredentialRevision || len(t.ScopeIDs) == 0 || len(t.ScopeIDs) > 128 {
-		return nil, errors.New("managed health target differs from the original frozen selection")
-	}
-	if _, err := upstreamhealth.ParseRevision(string(t.CredentialGeneration)); err != nil {
+	if _, err := managedHealthMembers(config); err != nil {
 		return nil, err
-	}
-	seen := map[string]bool{}
-	for _, scope := range t.ScopeIDs {
-		if !managedID(scope) || seen[scope] {
-			return nil, errors.New("managed health scopes are invalid")
-		}
-		seen[scope] = true
 	}
 	endpoint := settings.Console
 	client, owner, err := managedGatewayHealthClient(settings.Snapshot.AuthorityID, healthGatewayEndpoint{
@@ -182,15 +275,27 @@ func configureManagedHealth(config *managedExecutionConfig) (*managedHealthRunti
 	// Own all slice fields independently of the config parser's temporary object.
 	retained := *settings
 	retained.Target.ScopeIDs = append([]string(nil), settings.Target.ScopeIDs...)
+	retained.Targets = append([]upstreamhealth.TargetReference(nil), settings.Targets...)
+	for index := range retained.Targets {
+		retained.Targets[index].ScopeIDs = append([]string(nil), settings.Targets[index].ScopeIDs...)
+	}
 	return &managedHealthRuntime{settings: retained, owner: owner, reader: shared.reader, client: client}, nil
 }
 
-func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionState, basis bodybasis.Snapshot, request managedProtocolRequest) {
+func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionState, basis bodybasis.Snapshot, body []byte) {
 	health := state.config.health
 	state.healthInFlight = true
+	members, err := managedHealthMembers(state.config)
+	if err != nil {
+		rejectManagedHealth(ctx, state, "health_member_directory_invalid", nil)
+		return
+	}
+	// The asynchronous snapshot callback owns these exact mapped bytes; it does
+	// not re-read or retain a caller-mutable body buffer after qualification.
+	body = append([]byte(nil), body...)
 	lookup := func() {
 		health.reader.Lookup(func(read upstreamhealth.ReadResult) {
-			if state.closed || state.dispatchStarted {
+			if state.closed || state.dispatchStarted || state.credentialSelected {
 				return
 			}
 			if read.Status == upstreamhealth.ReadReady && read.Snapshot != nil {
@@ -200,16 +305,30 @@ func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionStat
 					return
 				}
 			}
-			decision := health.client.DecideNewCall(read, upstreamhealth.Candidate{Target: health.settings.Target}, time.Now())
-			if decision.Kind != upstreamhealth.Eligible && decision.Kind != upstreamhealth.RecoveryRequired {
-				rejectManagedHealth(ctx, state, "upstream_health_unavailable", decision.RetryAfterSeconds)
+			// One original snapshot qualifies the complete pool. Pending local veto,
+			// disabled controls and old generations remain in the original decider.
+			now := time.Now()
+			eligible, retryAfter := eligibleManagedHealthMembers(health.client, read, members, now)
+			if len(eligible) == 0 {
+				rejectManagedHealth(ctx, state, "upstream_health_unavailable", retryAfter)
+				return
+			}
+			index, err := managedUniformMember(len(eligible))
+			if err != nil || freezeManagedHealthMember(state, eligible[index].member) != nil {
+				rejectManagedHealth(ctx, state, "health_member_choice_unavailable", nil)
+				return
+			}
+			selected := eligible[index]
+			decision := selected.decision
+			request, valid := prepareManagedSelectedRequest(ctx, state, body)
+			if !valid {
 				return
 			}
 			state.health = &managedHealthAttempt{scopeRevisions: map[string]upstreamhealth.Revision{}}
 			for scope, version := range decision.ScopeVersions {
 				state.health.scopeRevisions[scope] = version.Revision
 			}
-			modelScopes, _, err := read.Snapshot.ModelOperationScopes(health.settings.Target, time.Now())
+			modelScopes, _, err := read.Snapshot.ModelOperationScopes(selected.member.target, now)
 			if err != nil {
 				rejectManagedHealth(ctx, state, "health_rate_limit_scope_unknown", nil)
 				return
@@ -273,7 +392,16 @@ func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionStat
 	// Retry the exact pending packets first so a fast Redis read cannot close the
 	// HTTP context before a durable outcome ACK callback arrives. This runs only
 	// on natural traffic, never as a timer/probe or another business send.
-	pending := health.client.PendingOutcomes(health.settings.Target)
+	var pending []upstreamhealth.OutcomeRequest
+	seen := make(map[string]bool)
+	for _, member := range members {
+		for _, original := range health.client.PendingOutcomes(member.target) {
+			if !seen[original.EventID] {
+				seen[original.EventID] = true
+				pending = append(pending, original)
+			}
+		}
+	}
 	if len(pending) == 0 {
 		lookup()
 		return

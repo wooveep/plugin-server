@@ -4,7 +4,13 @@ keywords: [AI网关, AI代理]
 description: AI 代理插件配置参考
 ---
 
-> 交付版本：`2.0.1`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。
+## 完整冻结凭据目录
+
+`2.0.5` 配置契约保留 `_modelfusion_execution` v1 的单一 `credential_ref`/`credential_revision`，并支持 `modelfusion-execution.v2` 的完整非空 `credentials` 数组。每项仅含这两个字段，ref 唯一、revision 为规范正十进制字符串；拒绝秘密及 scalar/array 混用。完整目录不代表本次已选凭据，实际 D0/FACT 仍保留唯一已选 tuple，billing/cache 不取目录首项作为执行凭据。
+
+v2 的 `managed_execution.credentials` 保存逐项匹配的 ref/revision/value，与单一 `credential_value` 互斥；必须具备 HEALTH，`upstream_health.targets` 保留每个原操作/凭据成员的完整 TargetReference，与 `target` 互斥。v1 保留原单一配置及可省略的 HEALTH。既有 `legacy_suffixes`/`bound_target`、`auto`/`passthrough` 通用能力自 1.0.2 起提供，不以本次 v2 凭据池版本替代其起始版本。
+
+> 交付版本：`2.0.5`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。
 
 ## 托管原生执行
 
@@ -16,7 +22,7 @@ description: AI 代理插件配置参考
 | `upstream_path`、`authority`、`credential_value` | 本目标的实际 callout 路径、主机与受控上游凭据；authority 必须与冻结 transport 一致 |
 | `timeout_ms` | callout 超时，默认 120000，最大 600000 毫秒 |
 | `input_protocol`、`upstream_protocol` | 冻结协议 profile，缺省各为 `openai_chat`，不由最终 URL 或响应 model 推断 |
-| `_modelfusion_execution` | `modelfusion-execution.v1`，包含完整 descriptor、原 route/sales_asset/public_model、credential ref/revision；由 SDK 注入，非客户端输入 |
+| `_modelfusion_execution` | 上述 v1 单一 / v2 完整池分支，共同保留完整 descriptor 和原 route/sales_asset/public_model；由 SDK 注入，非客户端输入 |
 
 完整 descriptor 固定 release/target/binding/provider/account、发现与 cluster、credential pool/adapter 版本、mapper/proxy/descriptor 摘要、上游模型、transport 及 capabilities。解析器核对结构、精确版本和 transport，并对收到的完整 descriptor 对象仅移除 `descriptor_digest` 自身，按 `mf-json.v1` 重算 SHA-256 后比较。`mapper_digest`、`proxy_digest` 由 SDK 按 IF01 的完整目标语义配置计算；插件消费这两项已发布摘要，不在缺少完整 mapper 配置及受控 Secret 归一化输入时另算替代值。配置中的真实凭据仅由受控 Secret 注入，不写入日志或示例。
 

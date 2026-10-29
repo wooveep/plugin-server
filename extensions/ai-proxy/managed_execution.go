@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -44,13 +45,25 @@ const (
 // semantic proxy configuration. The SDK checks the semantic proxy digest before
 // installing this envelope. A body field is never a producer grant or history.
 type managedRelease struct {
-	SchemaVersion      string            `json:"schema_version"`
-	Descriptor         managedDescriptor `json:"descriptor"`
-	RouteID            string            `json:"route_id"`
-	SalesAssetID       string            `json:"sales_asset_id"`
-	PublicModel        string            `json:"public_model"`
-	CredentialRef      string            `json:"credential_ref"`
-	CredentialRevision string            `json:"credential_revision"`
+	SchemaVersion      string                      `json:"schema_version"`
+	Descriptor         managedDescriptor           `json:"descriptor"`
+	RouteID            string                      `json:"route_id"`
+	SalesAssetID       string                      `json:"sales_asset_id"`
+	PublicModel        string                      `json:"public_model"`
+	CredentialRef      string                      `json:"credential_ref,omitempty"`
+	CredentialRevision string                      `json:"credential_revision,omitempty"`
+	Credentials        []managedCredentialIdentity `json:"credentials,omitempty"`
+}
+
+type managedCredentialIdentity struct {
+	CredentialRef      string `json:"credential_ref"`
+	CredentialRevision string `json:"credential_revision"`
+}
+
+type managedCredential struct {
+	CredentialRef      string `json:"credential_ref"`
+	CredentialRevision string `json:"credential_revision"`
+	CredentialValue    string `json:"credential_value"`
 }
 
 type managedDescriptor struct {
@@ -107,7 +120,8 @@ type managedSettings struct {
 	Redis              managedRedisSettings   `json:"redis"`
 	UpstreamPath       string                 `json:"upstream_path"`
 	Authority          string                 `json:"authority"`
-	CredentialValue    string                 `json:"credential_value"`
+	CredentialValue    string                 `json:"credential_value,omitempty"`
+	Credentials        []managedCredential    `json:"credentials,omitempty"`
 	TimeoutMS          uint32                 `json:"timeout_ms,omitempty"`
 	InputProtocol      string                 `json:"input_protocol,omitempty"`
 	UpstreamProtocol   string                 `json:"upstream_protocol,omitempty"`
@@ -154,8 +168,11 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 	if providerConfig == nil || activeProvider == nil {
 		return errors.New("managed execution requires a configured text provider")
 	}
-	if !managedRequiredFields(releaseValue, "schema_version descriptor route_id sales_asset_id public_model credential_ref credential_revision") || !managedRequiredFields(releaseValue.Get("descriptor"), "release_id target_id binding_id provider_id provider_account_id region_endpoint_ref service_ref cluster_ref credential_pool_ref adapter_ref credential_pool_revision adapter_revision mapper_digest proxy_digest descriptor_digest upstream_model config_canonicalization transport_contract capabilities") || !managedRequiredFields(releaseValue.Get("descriptor.transport_contract"), "host sni path_adapter_ref") {
+	if !managedRequiredFields(releaseValue, "schema_version descriptor route_id sales_asset_id public_model") || !managedRequiredFields(releaseValue.Get("descriptor"), "release_id target_id binding_id provider_id provider_account_id region_endpoint_ref service_ref cluster_ref credential_pool_ref adapter_ref credential_pool_revision adapter_revision mapper_digest proxy_digest descriptor_digest upstream_model config_canonicalization transport_contract capabilities") || !managedRequiredFields(releaseValue.Get("descriptor.transport_contract"), "host sni path_adapter_ref") {
 		return errors.New("managed execution requires the complete released descriptor")
+	}
+	if err := validateManagedCredentialShape(settingsValue, releaseValue); err != nil {
+		return err
 	}
 	for _, capability := range releaseValue.Get("descriptor.capabilities").Map() {
 		if !managedRequiredFields(capability, "send_mode response_classifier_ref max_attempts max_fallback_hops") {
@@ -212,15 +229,15 @@ func (c *managedExecutionConfig) validate() error {
 	if c.settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission {
 		return errors.New("managed execution requires the original admission call identity capability")
 	}
-	if c.release.SchemaVersion != "modelfusion-execution.v1" || d.ConfigCanonicalization != "mf-json.v1" {
+	if (c.release.SchemaVersion != "modelfusion-execution.v1" && c.release.SchemaVersion != "modelfusion-execution.v2") || d.ConfigCanonicalization != "mf-json.v1" {
 		return errors.New("unsupported managed execution release schema")
 	}
-	for _, field := range []string{c.settings.ProducerID, c.settings.PrivateStream, c.release.RouteID, c.release.SalesAssetID, c.release.PublicModel, c.release.CredentialRef, d.ReleaseID, d.TargetID, d.BindingID, d.ProviderID, d.ProviderAccountID, d.RegionEndpointRef, d.ServiceRef, d.ClusterRef, d.CredentialPoolRef, d.AdapterRef, d.UpstreamModel, d.Transport.PathAdapterRef} {
+	for _, field := range []string{c.settings.ProducerID, c.settings.PrivateStream, c.release.RouteID, c.release.SalesAssetID, c.release.PublicModel, d.ReleaseID, d.TargetID, d.BindingID, d.ProviderID, d.ProviderAccountID, d.RegionEndpointRef, d.ServiceRef, d.ClusterRef, d.CredentialPoolRef, d.AdapterRef, d.UpstreamModel, d.Transport.PathAdapterRef} {
 		if !managedID(field) {
 			return errors.New("managed execution requires complete frozen identities")
 		}
 	}
-	for _, revision := range []string{c.release.CredentialRevision, d.CredentialPoolRevision, d.AdapterRevision} {
+	for _, revision := range []string{d.CredentialPoolRevision, d.AdapterRevision} {
 		n, ok := managedInteger(revision)
 		if !ok || n.Sign() == 0 {
 			return errors.New("managed execution requires exact positive revisions")
@@ -238,8 +255,13 @@ func (c *managedExecutionConfig) validate() error {
 	if err != nil {
 		return errors.New("managed execution requires a safe text upstream path")
 	}
-	if len(c.settings.CredentialValue) == 0 || len(c.settings.CredentialValue) > 8192 || strings.IndexFunc(c.settings.CredentialValue, func(r rune) bool { return r <= 32 || r >= 127 }) >= 0 {
-		return errors.New("managed execution requires a safe controlled upstream credential")
+	if _, err := c.credentialMembers(); err != nil {
+		return err
+	}
+	if c.release.SchemaVersion == "modelfusion-execution.v2" {
+		if _, err := managedHealthMembers(c); err != nil {
+			return err
+		}
 	}
 	if c.settings.MediaDispatchMode != "" && c.settings.MediaDispatchMode != "disabled" && c.settings.MediaDispatchMode != "managed_operation" {
 		return errors.New("managed execution media dispatch mode is unsupported")
@@ -283,10 +305,91 @@ func (c *managedExecutionConfig) validate() error {
 	return nil
 }
 
+// Property presence is checked before typed decoding: null or mixed shapes must
+// not be normalized into a scalar seed or an empty pool.
+func validateManagedCredentialShape(settings, release gjson.Result) error {
+	switch release.Get("schema_version").String() {
+	case "modelfusion-execution.v1":
+		if !managedRequiredFields(release, "credential_ref credential_revision") || !managedRequiredFields(settings, "credential_value") ||
+			release.Get("credentials").Exists() || settings.Get("credentials").Exists() || settings.Get("upstream_health.targets").Exists() {
+			return errors.New("managed execution v1 requires its original scalar credential")
+		}
+	case "modelfusion-execution.v2":
+		if !release.Get("credentials").IsArray() || len(release.Get("credentials").Array()) == 0 ||
+			!settings.Get("credentials").IsArray() || len(settings.Get("credentials").Array()) == 0 ||
+			release.Get("credential_ref").Exists() || release.Get("credential_revision").Exists() || settings.Get("credential_value").Exists() ||
+			!settings.Get("upstream_health.targets").IsArray() || len(settings.Get("upstream_health.targets").Array()) == 0 || settings.Get("upstream_health.target").Exists() {
+			return errors.New("managed execution v2 requires the complete credential and health directories")
+		}
+	default:
+		return errors.New("unsupported managed execution release schema")
+	}
+	return nil
+}
+
+func validManagedCredential(member managedCredential) bool {
+	revision, ok := managedInteger(member.CredentialRevision)
+	return managedID(member.CredentialRef) && ok && revision.Sign() > 0 && len(member.CredentialValue) > 0 && len(member.CredentialValue) <= 8192 &&
+		strings.IndexFunc(member.CredentialValue, func(r rune) bool { return r <= 32 || r >= 127 }) < 0
+}
+
+// The envelope is a complete static identity directory, never a selected member.
+// Return copies in that original directory order; secret-array position has no
+// authority and no caller can add a ref or generation to this set.
+func (c *managedExecutionConfig) credentialMembers() ([]managedCredential, error) {
+	if c.release.SchemaVersion == "modelfusion-execution.v1" {
+		member := managedCredential{c.release.CredentialRef, c.release.CredentialRevision, c.settings.CredentialValue}
+		if len(c.release.Credentials) != 0 || len(c.settings.Credentials) != 0 || !validManagedCredential(member) {
+			return nil, errors.New("managed execution v1 scalar credential is invalid")
+		}
+		return []managedCredential{member}, nil
+	}
+	if c.release.SchemaVersion != "modelfusion-execution.v2" || c.release.CredentialRef != "" || c.release.CredentialRevision != "" || c.settings.CredentialValue != "" ||
+		len(c.release.Credentials) == 0 || len(c.release.Credentials) != len(c.settings.Credentials) {
+		return nil, errors.New("managed execution credential directories differ")
+	}
+	byRef := make(map[string]managedCredential, len(c.settings.Credentials))
+	for _, member := range c.settings.Credentials {
+		if !validManagedCredential(member) {
+			return nil, errors.New("managed execution contains an invalid credential member")
+		}
+		if _, exists := byRef[member.CredentialRef]; exists {
+			return nil, errors.New("managed execution contains a duplicate credential member")
+		}
+		byRef[member.CredentialRef] = member
+	}
+	result := make([]managedCredential, 0, len(c.release.Credentials))
+	for _, identity := range c.release.Credentials {
+		member, exists := byRef[identity.CredentialRef]
+		if !exists || member.CredentialRevision != identity.CredentialRevision {
+			return nil, errors.New("managed execution credential directories differ")
+		}
+		delete(byRef, identity.CredentialRef)
+		result = append(result, member)
+	}
+	return result, nil
+}
+
+func managedUniformMember(count int) (int, error) {
+	if count < 1 {
+		return 0, errors.New("managed execution has no eligible credential")
+	}
+	if count == 1 {
+		return 0, nil
+	}
+	index, err := rand.Int(rand.Reader, big.NewInt(int64(count)))
+	if err != nil {
+		return 0, errors.New("managed execution credential choice is unavailable")
+	}
+	return int(index.Int64()), nil
+}
+
 // All request state belongs to this ai-proxy Wasm context. It does not assume
 // that a context map, Go pointer or private envelope crosses a Wasm boundary.
 type managedExecutionState struct {
 	config                                                     *managedExecutionConfig
+	sourceConfig                                               *managedExecutionConfig
+	credentialSelected                                         bool
 	identity                                                   balanceidentity.Snapshot
 	callID, attemptID, businessUTC                             string
 	streaming                                                  bool
@@ -350,7 +453,7 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	if err != nil || mediaErr != nil || mediaType != "application/json" || !ctx.HasRequestBody() {
 		return rejectManagedRequest(ctx, 400, "json_body_required"), true
 	}
-	state := &managedExecutionState{config: managed, identity: identity, callID: origin.CallID, admissionDeadline: origin.ValidUntil, businessUTC: origin.OccurredAt, ledger: executionfacts.NewLedger(128), deliveries: map[string]*executionfacts.Delivery{}}
+	state := &managedExecutionState{config: managed, sourceConfig: managed, identity: identity, callID: origin.CallID, admissionDeadline: origin.ValidUntil, businessUTC: origin.OccurredAt, ledger: executionfacts.NewLedger(128), deliveries: map[string]*executionfacts.Delivery{}}
 	ctx.SetContext(managedExecutionContextKey, state)
 	if proxywasm.ReplaceHttpRequestHeader(managedCallHeader, state.callID) != nil {
 		return rejectManagedRequest(ctx, 500, "execution_identity_install_failed"), true
@@ -371,7 +474,7 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 		return types.ActionContinue, false
 	}
 	state, ok := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
-	if !ok || state == nil || state.config != managed {
+	if !ok || state == nil || state.sourceConfig != managed {
 		return rejectManagedRequest(ctx, 409, "original_execution_missing"), true
 	}
 	if state.dispatchStarted || state.closed || state.healthInFlight {
@@ -404,37 +507,50 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if err != nil || basis.PublicModel() != managed.release.PublicModel {
 		return rejectManagedRequest(ctx, 400, "original_body_basis_missing"), true
 	}
-	request, err := managed.profile.PrepareRequest(body, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue)
-	if err != nil {
-		return rejectManagedRequest(ctx, 400, "unsupported_or_invalid_protocol_request"), true
-	}
-	if len(request.Body) == 0 || uint64(len(request.Body)) > uint64(defaultMaxBodyBytes) {
-		return rejectManagedRequest(ctx, 413, "mapped_request_body_out_of_bounds"), true
-	}
-	var outboundObject map[string]json.RawMessage
-	if decodeManagedJSON(request.Body, &outboundObject, false) != nil || json.Unmarshal(outboundObject["model"], &model) != nil || model != managed.release.Descriptor.UpstreamModel {
-		return rejectManagedRequest(ctx, 500, "protocol_conversion_changed_selection"), true
-	}
-	body = request.Body
-	state.streaming = request.Streaming
-	if !time.Now().Before(state.admissionDeadline) {
-		return rejectManagedRequest(ctx, 403, "execution_admission_expired"), true
-	}
-	attemptID, err := uuid.NewRandom()
-	if err != nil {
-		return rejectManagedRequest(ctx, 500, "execution_identity_unavailable"), true
-	}
-	state.attemptID = attemptID.String()
-	if proxywasm.ReplaceHttpRequestHeader(managedAttemptHeader, state.attemptID) != nil {
-		return rejectManagedRequest(ctx, 500, "execution_identity_install_failed"), true
-	}
-	ctx.SetUserAttribute("managed_attempt_id", state.attemptID)
 	if managed.health != nil {
-		authorizeManagedHealth(ctx, state, basis, request)
-	} else {
+		authorizeManagedHealth(ctx, state, basis, body)
+	} else if request, ok := prepareManagedSelectedRequest(ctx, state, body); ok {
 		dispatchManagedPreparedRequest(ctx, state, basis, request)
 	}
 	return types.ActionPause, true
+}
+
+// Credential choice has already frozen this request's config before protocol
+// conversion installs its Authorization. No callback can choose another member.
+func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecutionState, body []byte) (managedProtocolRequest, bool) {
+	managed := state.config
+	request, err := managed.profile.PrepareRequest(body, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue)
+	if err != nil {
+		rejectManagedRequest(ctx, 400, "unsupported_or_invalid_protocol_request")
+		return managedProtocolRequest{}, false
+	}
+	if len(request.Body) == 0 || uint64(len(request.Body)) > uint64(defaultMaxBodyBytes) {
+		rejectManagedRequest(ctx, 413, "mapped_request_body_out_of_bounds")
+		return managedProtocolRequest{}, false
+	}
+	var outboundObject map[string]json.RawMessage
+	var model string
+	if decodeManagedJSON(request.Body, &outboundObject, false) != nil || json.Unmarshal(outboundObject["model"], &model) != nil || model != managed.release.Descriptor.UpstreamModel {
+		rejectManagedRequest(ctx, 500, "protocol_conversion_changed_selection")
+		return managedProtocolRequest{}, false
+	}
+	state.streaming = request.Streaming
+	if !time.Now().Before(state.admissionDeadline) {
+		rejectManagedRequest(ctx, 403, "execution_admission_expired")
+		return managedProtocolRequest{}, false
+	}
+	attemptID, err := uuid.NewRandom()
+	if err != nil {
+		rejectManagedRequest(ctx, 500, "execution_identity_unavailable")
+		return managedProtocolRequest{}, false
+	}
+	state.attemptID = attemptID.String()
+	if proxywasm.ReplaceHttpRequestHeader(managedAttemptHeader, state.attemptID) != nil {
+		rejectManagedRequest(ctx, 500, "execution_identity_install_failed")
+		return managedProtocolRequest{}, false
+	}
+	ctx.SetUserAttribute("managed_attempt_id", state.attemptID)
+	return request, true
 }
 
 // Remains the sole provider send. Health callbacks can enter it once only after

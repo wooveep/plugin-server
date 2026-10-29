@@ -4,7 +4,11 @@ keywords: [AI网关, AI账单, ai-billing]
 description: ai-billing 托管交付事实与兼容账单事件配置参考
 ---
 
-> 交付版本：`0.1.9`，以 [资源 schema](spec.yaml) 为准。
+## 完整冻结凭据目录
+
+`0.1.11` 配置契约保留 `_modelfusion_execution` v1 的单一 `credential_ref`/`credential_revision`，并支持 `modelfusion-execution.v2` 的完整非空 `credentials` 数组。每项仅含这两个字段，ref 唯一、revision 为规范正十进制字符串；拒绝秘密及 scalar/array 混用。完整目录不代表本次已选凭据，实际 D0/FACT 仍保留唯一已选 tuple，billing/cache 不取目录首项作为执行凭据。
+
+> 交付版本：`0.1.11`，以 [资源 schema](spec.yaml) 为准。
 
 ## 功能说明
 
@@ -12,7 +16,7 @@ description: ai-billing 托管交付事实与兼容账单事件配置参考
 
 ## 托管原生交付
 
-每个托管目标规则必须成对携带 `native_execution: {producer_id: ...}` 与 SDK 保留对象 `_modelfusion_execution`。后者使用 `modelfusion-execution.v1`，包含完整冻结 descriptor 及原 route/sales_asset/public_model、credential ref/revision。producer、release、目标及钱包归属来自受控发布和认证链，不能由请求 body、最终 model 或 URL 推断。
+每个托管目标规则必须成对携带 `native_execution: {producer_id: ...}` 与 SDK 保留对象 `_modelfusion_execution`。后者按上述 v1/v2 分支保留完整冻结 descriptor、原 route/sales_asset/public_model 及单一或完整池凭据引用。producer、release、目标及钱包归属来自受控发布和认证链，不能由请求 body、最终 model 或 URL 推断。
 
 托管配置固定 `path_scope: bound_target`，`enable_methods`、`enable_path_suffixes` 省略或为空数组；不接受手工 URL 或方法筛选。规则范围随绑定路由的全部方法；实际下游请求仍受原生文本执行能力约束。不能靠过滤掉某方法绕过本路由的账务链。
 

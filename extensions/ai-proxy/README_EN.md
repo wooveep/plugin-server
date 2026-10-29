@@ -4,7 +4,13 @@ keywords: [AI Gateway, AI Proxy]
 description: Reference for configuring the AI Proxy plugin
 ---
 
-> Plugin version: `2.0.1`
+## Frozen Credential Directory
+
+The `2.0.5` configuration contract keeps `_modelfusion_execution` v1's scalar `credential_ref`/`credential_revision` and adds `modelfusion-execution.v2` with a complete, nonempty `credentials` array. Each member contains only those two fields; references are unique, revisions are canonical positive decimal strings, and secrets or mixed scalar/array shapes are rejected. The directory is not a selected attempt: actual D0/FACT attribution still contains one selected credential tuple. Billing and cache never select the first directory member.
+
+For v2, `managed_execution.credentials` contains the matching ref/revision/value triples and excludes scalar `credential_value`. HEALTH is required: `upstream_health.targets` retains every original operation/member TargetReference and excludes `target`. V1 retains its original scalar settings and optional HEALTH. The existing generic `legacy_suffixes`/`bound_target` and `auto`/`passthrough` capability starts at version 1.0.2; it is separate from the v2 pool contract.
+
+> Plugin version: `2.0.5`
 
 ## Function Description
 

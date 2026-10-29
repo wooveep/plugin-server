@@ -210,7 +210,6 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 	var native struct {
 		ProducerID       string                `json:"producer_id"`
 		Authority        string                `json:"authority"`
-		Credential       string                `json:"credential_value"`
 		Path             string                `json:"upstream_path"`
 		TimeoutMS        uint32                `json:"timeout_ms"`
 		InputProtocol    string                `json:"input_protocol"`
@@ -221,8 +220,7 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 	if decode(original.Native, &native) != nil || decode(original.History, &h) != nil ||
 		native.ProducerID != gateway.ProducerID || native.Path != profile.path || native.TimeoutMS == 0 ||
 		(native.InputProtocol != "" && native.InputProtocol != profile.name) || (native.UpstreamProtocol != "" && native.UpstreamProtocol != profile.name) ||
-		!identity(native.Authority) || native.Credential == "" || len(native.Credential) > 8192 ||
-		strings.IndexFunc(native.Credential, func(r rune) bool { return r < 0x21 || r > 0x7e }) >= 0 {
+		!identity(native.Authority) {
 		return nil, ErrUnsupported
 	}
 	original.Estimation = original.Estimation.resolved()
@@ -270,6 +268,10 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 	if !identity(field(candidate, "credential_ref")) || !decimalID(field(candidate, "credential_revision")) {
 		return nil, ErrIdentity
 	}
+	secret, err := credentialForSelection(original.Native, field(candidate, "credential_ref"), field(candidate, "credential_revision"))
+	if err != nil {
+		return nil, err
+	}
 	capabilities, err := object(d["capabilities"])
 	if err != nil {
 		return nil, ErrUnsupported
@@ -315,7 +317,7 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 		return nil, ErrUnsupported
 	}
 	e := &Executor{original: original, descriptor: d, candidate: candidate, history: h, gateway: gateway,
-		basis: basis, body: rewritten, secret: native.Credential, authority: native.Authority,
+		basis: basis, body: rewritten, secret: secret, authority: native.Authority,
 		timeoutMS: native.TimeoutMS,
 		profile:   profile, estimation: original.Estimation,
 		outputContract: supported.OutputIdentityContract, createClassifier: supported.CreateClassifierRef,
@@ -324,6 +326,94 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 		return nil, ErrIdentity
 	}
 	return e, nil
+}
+
+// retainedCredential is a private member of the original compiled target pool.
+// It is never a random-selection input or a public transport identity.
+type retainedCredential struct {
+	reference, revision, value string
+}
+
+func validCredentialValue(value string) bool {
+	return value != "" && len(value) <= 8192 && strings.IndexFunc(value, func(r rune) bool { return r < 0x21 || r > 0x7e }) < 0
+}
+
+func credentialPool(raw []byte) ([]retainedCredential, error) {
+	native, err := object(raw)
+	if err != nil {
+		return nil, ErrUnsupported
+	}
+	pool, plural := native["credentials"]
+	legacy, scalar := native["credential_value"]
+	if plural {
+		if scalar {
+			return nil, ErrUnsupported
+		}
+		var entries []json.RawMessage
+		if decode(pool, &entries) != nil || len(entries) == 0 {
+			return nil, ErrUnsupported
+		}
+		result := make([]retainedCredential, 0, len(entries))
+		seen := make(map[string]bool, len(entries))
+		for _, raw := range entries {
+			entry, err := object(raw)
+			member := retainedCredential{field(entry, "credential_ref"), field(entry, "credential_revision"), field(entry, "credential_value")}
+			if err != nil || len(entry) != 3 || !identity(member.reference) || !decimalID(member.revision) || len(member.revision) > 200 || !validCredentialValue(member.value) || seen[member.reference] {
+				return nil, ErrUnsupported
+			}
+			seen[member.reference] = true
+			result = append(result, member)
+		}
+		return result, nil
+	}
+	var value string
+	if !scalar || json.Unmarshal(legacy, &value) != nil || !validCredentialValue(value) {
+		return nil, ErrUnsupported
+	}
+	// Original singleton archives contain one already-bound secret. They never
+	// supply a seed/fallback for an explicit multiple-member target directory.
+	return []retainedCredential{{value: value}}, nil
+}
+
+func credentialForSelection(raw []byte, reference, revision string) (string, error) {
+	if !identity(reference) || !decimalID(revision) || len(revision) > 200 {
+		return "", ErrIdentity
+	}
+	pool, err := credentialPool(raw)
+	if err != nil {
+		return "", err
+	}
+	if len(pool) == 1 && pool[0].reference == "" {
+		return pool[0].value, nil
+	}
+	for _, member := range pool {
+		if member.reference == reference && member.revision == revision {
+			return member.value, nil
+		}
+	}
+	return "", ErrIdentity
+}
+
+// ValidateCredentialConfiguration binds the original pool to its provider tokens.
+// The caller supplies both from the same immutable compiled rule. This checks
+// the full multiset, never picks a member or installs credentials, and returns
+// no secret. Per-request sending resolves only the prepared ref/revision.
+func ValidateCredentialConfiguration(raw []byte, providerTokens []string) error {
+	pool, err := credentialPool(raw)
+	if err != nil || len(pool) != len(providerTokens) {
+		return ErrUnsupported
+	}
+	counts := make(map[string]int, len(pool))
+	for _, member := range pool {
+		counts[member.value]++
+	}
+	for _, value := range providerTokens {
+		if counts[value] == 0 {
+			return ErrUnsupported
+		}
+		counts[value]--
+	}
+	return nil
 }
 
 func decode(raw []byte, value any) error {

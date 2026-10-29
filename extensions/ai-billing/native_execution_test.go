@@ -429,3 +429,113 @@ func TestNativeBillingAlwaysStripsEveryBridgeHeaderBeforeValidation(t *testing.T
 		}
 	}
 }
+
+func nativeBillingPoolConfigFixture(t *testing.T) (BillingConfig, map[string]interface{}) {
+	t.Helper()
+	cfg, value := nativeBillingConfigFixture(t)
+	release := value["_modelfusion_execution"].(map[string]interface{})
+	release["schema_version"] = "modelfusion-execution.v2"
+	release["credentials"] = []interface{}{
+		map[string]interface{}{"credential_ref": "released-credential", "credential_revision": "9007199254740993"},
+		map[string]interface{}{"credential_ref": "released-credential-two", "credential_revision": "2"},
+	}
+	delete(release, "credential_ref")
+	delete(release, "credential_revision")
+	raw, err := json.Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := configureNativeBilling(gjson.ParseBytes(raw), &cfg); err != nil {
+		t.Fatal(err)
+	}
+	return cfg, value
+}
+
+func TestNativeBillingPoolRetainsOriginalCallDeliveryWithoutASelectedCredential(t *testing.T) {
+	wasmtest.RunGoTest(t, func(t *testing.T) {
+		original, _ := nativeBillingConfigFixture(t)
+		snapshot := nativeBillingDeliveryFixture(t, original)
+		cfg, _ := nativeBillingPoolConfigFixture(t)
+		release := cfg.NativeExecution.(*nativeBillingConfig).release
+		if len(release.Credentials) != 2 || release.Credentials[0].CredentialRevision != "9007199254740993" || release.CredentialRef != "" || release.CredentialRevision != "" {
+			t.Fatal("the static pool was rounded or converted into a selected seed")
+		}
+		redis := &nativeBillingTestRedis{}
+		cfg.redisClient = redis
+		ctx, state := nativeBillingRequestFixture(t, cfg)
+		if err := validateNativeBillingDelivery(state, snapshot); err != nil {
+			t.Fatal(err)
+		}
+		bridge := nativeBillingBridgeFixture(t, snapshot)
+		consumeNativeBillingBridge(ctx, cfg, state, bridge)
+		consumeNativeBillingBridge(ctx, cfg, state, bridge)
+		if len(redis.commands) != 1 || len(redis.commands[0]) != 7 || redis.commands[0][6] != string(snapshot.Bytes()) {
+			t.Fatal("the pool changed, duplicated, or replaced the original delivery FACT")
+		}
+		fact := state.snapshot.Envelope()
+		if fact.AttemptID != "" || fact.CredentialRef != "" || fact.CredentialRevision != "" {
+			t.Fatal("delivery invented procurement attribution from the static pool")
+		}
+	})
+}
+
+func TestNativeBillingPoolRejectsMixedIncompleteOrUnversionedDirectories(t *testing.T) {
+	_, original := nativeBillingPoolConfigFixture(t)
+	input, err := json.Marshal(original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes := map[string]func(map[string]interface{}){
+		"unversioned pool":  func(e map[string]interface{}) { e["schema_version"] = "modelfusion-execution.v1" },
+		"unknown version":   func(e map[string]interface{}) { e["schema_version"] = "modelfusion-execution.v3" },
+		"scalar mixed":      func(e map[string]interface{}) { e["credential_ref"] = "" },
+		"scalar null mixed": func(e map[string]interface{}) { e["credential_revision"] = nil },
+		"empty":             func(e map[string]interface{}) { e["credentials"] = []interface{}{} },
+		"null":              func(e map[string]interface{}) { e["credentials"] = nil },
+		"missing":           func(e map[string]interface{}) { delete(e, "credentials") },
+		"duplicate ref": func(e map[string]interface{}) {
+			e["credentials"].([]interface{})[1].(map[string]interface{})["credential_ref"] = "released-credential"
+		},
+		"missing ref": func(e map[string]interface{}) {
+			delete(e["credentials"].([]interface{})[0].(map[string]interface{}), "credential_ref")
+		},
+		"secret": func(e map[string]interface{}) {
+			e["credentials"].([]interface{})[0].(map[string]interface{})["secret"] = "not-an-allowed-field"
+		},
+		"number revision": func(e map[string]interface{}) {
+			e["credentials"].([]interface{})[0].(map[string]interface{})["credential_revision"] = json.Number("9007199254740993")
+		},
+	}
+	for _, revision := range []string{"0", "01", "-1", " 1", "340282366920938463463374607431768211456"} {
+		value := revision
+		changes["revision "+value] = func(e map[string]interface{}) {
+			e["credentials"].([]interface{})[0].(map[string]interface{})["credential_revision"] = value
+		}
+	}
+	for name, change := range changes {
+		t.Run(name, func(t *testing.T) {
+			cfg, _ := nativeBillingPoolConfigFixture(t)
+			var value map[string]interface{}
+			if err := json.Unmarshal(input, &value); err != nil {
+				t.Fatal(err)
+			}
+			change(value["_modelfusion_execution"].(map[string]interface{}))
+			raw, err := json.Marshal(value)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := configureNativeBilling(gjson.ParseBytes(raw), &cfg); err == nil || cfg.NativeExecution != nil {
+				t.Fatal("invalid directory retained native billing authority")
+			}
+		})
+	}
+	cfg, value := nativeBillingConfigFixture(t)
+	value["_modelfusion_execution"].(map[string]interface{})["credentials"] = nil
+	raw, err := json.Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := configureNativeBilling(gjson.ParseBytes(raw), &cfg); err == nil || cfg.NativeExecution != nil {
+		t.Fatal("v1 accepted a pool field alongside its original scalar")
+	}
+}

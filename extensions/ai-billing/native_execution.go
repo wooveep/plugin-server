@@ -31,13 +31,20 @@ type nativeBillingSettings struct {
 // The SDK supplies this complete reserved object after verifying the released
 // semantic plugin configuration. An incoming HTTP header cannot install it.
 type nativeBillingRelease struct {
-	SchemaVersion      string                  `json:"schema_version"`
-	Descriptor         nativeBillingDescriptor `json:"descriptor"`
-	RouteID            string                  `json:"route_id"`
-	SalesAssetID       string                  `json:"sales_asset_id"`
-	PublicModel        string                  `json:"public_model"`
-	CredentialRef      string                  `json:"credential_ref"`
-	CredentialRevision string                  `json:"credential_revision"`
+	SchemaVersion      string                    `json:"schema_version"`
+	Descriptor         nativeBillingDescriptor   `json:"descriptor"`
+	RouteID            string                    `json:"route_id"`
+	SalesAssetID       string                    `json:"sales_asset_id"`
+	PublicModel        string                    `json:"public_model"`
+	CredentialRef      string                    `json:"credential_ref"`
+	CredentialRevision string                    `json:"credential_revision"`
+	Credentials        []nativeBillingCredential `json:"credentials,omitempty"`
+}
+
+// Credentials declare the frozen pool, not a selected attempt or supplier secret.
+type nativeBillingCredential struct {
+	CredentialRef      string `json:"credential_ref"`
+	CredentialRevision string `json:"credential_revision"`
 }
 
 type nativeBillingDescriptor struct {
@@ -136,8 +143,11 @@ func configureNativeBilling(value gjson.Result, cfg *BillingConfig) error {
 }
 
 func validateNativeBillingRelease(value gjson.Result, release nativeBillingRelease) error {
-	if release.SchemaVersion != "modelfusion-execution.v1" || release.Descriptor.ConfigCanonicalization != "mf-json.v1" || !balanceidentity.ValidID(release.RouteID) || !balanceidentity.ValidID(release.SalesAssetID) || !nativeBillingID(release.PublicModel) || !nativeBillingID(release.CredentialRef) || !nativeBillingRevision(release.CredentialRevision) {
+	if release.Descriptor.ConfigCanonicalization != "mf-json.v1" || !balanceidentity.ValidID(release.RouteID) || !balanceidentity.ValidID(release.SalesAssetID) || !nativeBillingID(release.PublicModel) {
 		return errors.New("native billing has invalid released call ownership")
+	}
+	if err := validateNativeBillingCredentials(value, release); err != nil {
+		return err
 	}
 	descriptor := value.Get("descriptor")
 	for _, field := range strings.Fields("release_id target_id binding_id provider_id provider_account_id region_endpoint_ref service_ref cluster_ref credential_pool_ref credential_pool_revision adapter_ref adapter_revision mapper_digest proxy_digest descriptor_digest upstream_model config_canonicalization") {
@@ -184,6 +194,31 @@ func validateNativeBillingRelease(value gjson.Result, release nativeBillingRelea
 	expected, err := nativeBillingDescriptorDigest([]byte(descriptor.Raw))
 	if err != nil || expected != release.Descriptor.DescriptorDigest {
 		return errors.New("native billing target descriptor digest differs")
+	}
+	return nil
+}
+
+// Versioned static ownership never supplies a selected credential to delivery.
+// The original private D0 and actual-attempt FACT keep their single tuple.
+func validateNativeBillingCredentials(value gjson.Result, release nativeBillingRelease) error {
+	switch release.SchemaVersion {
+	case "modelfusion-execution.v1":
+		if value.Get("credentials").Exists() || !nativeBillingID(release.CredentialRef) || !nativeBillingRevision(release.CredentialRevision) {
+			return errors.New("native billing v1 requires only its original scalar credential")
+		}
+	case "modelfusion-execution.v2":
+		if value.Get("credential_ref").Exists() || value.Get("credential_revision").Exists() || !value.Get("credentials").IsArray() || len(release.Credentials) == 0 {
+			return errors.New("native billing v2 requires only its complete frozen credential pool")
+		}
+		seen := make(map[string]bool, len(release.Credentials))
+		for _, credential := range release.Credentials {
+			if !nativeBillingID(credential.CredentialRef) || !nativeBillingRevision(credential.CredentialRevision) || seen[credential.CredentialRef] {
+				return errors.New("native billing v2 has an invalid or duplicate credential reference")
+			}
+			seen[credential.CredentialRef] = true
+		}
+	default:
+		return errors.New("native billing has an unsupported static ownership version")
 	}
 	return nil
 }

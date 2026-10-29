@@ -4,7 +4,13 @@ keywords: [AI网关, AI代理]
 description: AI 代理插件配置参考
 ---
 
-> 插件版本：`2.0.1`
+## 完整冻结凭据目录
+
+`2.0.5` 配置契约保留 `_modelfusion_execution` v1 的单一 `credential_ref`/`credential_revision`，并支持 `modelfusion-execution.v2` 的完整非空 `credentials` 数组。每项仅含这两个字段，ref 唯一、revision 为规范正十进制字符串；拒绝秘密及 scalar/array 混用。完整目录不代表本次已选凭据，实际 D0/FACT 仍保留唯一已选 tuple，billing/cache 不取目录首项作为执行凭据。
+
+v2 的 `managed_execution.credentials` 保存逐项匹配的 ref/revision/value，与单一 `credential_value` 互斥；必须具备 HEALTH，`upstream_health.targets` 保留每个原操作/凭据成员的完整 TargetReference，与 `target` 互斥。v1 保留原单一配置及可省略的 HEALTH。既有 `legacy_suffixes`/`bound_target`、`auto`/`passthrough` 通用能力自 1.0.2 起提供，不以本次 v2 凭据池版本替代其起始版本。
+
+> 插件版本：`2.0.5`
 
 ## 功能说明
 

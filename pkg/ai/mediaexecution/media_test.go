@@ -337,3 +337,108 @@ func TestNativeShapeAndCanonicalOriginalBodyCannotSilentlyDowngrade(t *testing.T
 		})
 	}
 }
+
+func explicitPool(t *testing.T) fixture {
+	t.Helper()
+	f := original(t)
+	native := f.archive["native_execution"].(map[string]any)
+	delete(native, "credential_value")
+	native["credentials"] = []any{
+		map[string]any{"credential_ref": "another-credential", "credential_revision": "9", "credential_value": "another-secret"},
+		map[string]any{"credential_ref": "credential-original", "credential_revision": "3", "credential_value": "original-secret"},
+	}
+	return f
+}
+
+func TestExplicitCredentialPoolUsesOnlyPreparedMemberAndRetainsItForQuery(t *testing.T) {
+	f := explicitPool(t)
+	before := raw(t, f.archive)
+	e, err := mediaexecution.FromPrivateArchive(before, f.gateway, f.binding)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := f.selection(t, false)
+	r, err := e.PrepareCreate(raw(t, f.commit(t, s)), raw(t, s), f.live, f.now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	authorization := func(r mediaexecution.Request) string {
+		for _, header := range r.Headers() {
+			if header[0] == "Authorization" {
+				return header[1]
+			}
+		}
+		return ""
+	}
+	if authorization(r) != "Bearer original-secret" || !bytes.Equal(before, raw(t, f.archive)) {
+		t.Fatal("prepared member was replaced by pool position or config rewriting")
+	}
+	// Mutating a caller's current input cannot rotate an already retained task.
+	members := f.archive["native_execution"].(map[string]any)["credentials"].([]any)
+	members[0], members[1] = members[1], members[0]
+	members[0].(map[string]any)["credential_value"] = "rotated-current-secret"
+	query, err := e.PrepareQuery(raw(t, f.query(t, s)), f.now.Add(2*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if authorization(query) != "Bearer original-secret" {
+		t.Fatal("query selected a current pool member")
+	}
+	if _, err = e.PrepareCreate(raw(t, f.commit(t, s)), raw(t, s), f.live, f.now); !errors.Is(err, mediaexecution.ErrReplay) {
+		t.Fatal("consumed multi-member operation authorized another POST")
+	}
+}
+
+func TestExplicitPoolMissingDuplicateChangedOrForeignMemberFailsClosed(t *testing.T) {
+	for _, mode := range []string{"missing", "duplicate", "wrong-revision", "numeric-revision", "extra-member-field", "empty-secret", "ambiguous-scalar", "null-pool"} {
+		t.Run(mode, func(t *testing.T) {
+			f := explicitPool(t)
+			native := f.archive["native_execution"].(map[string]any)
+			members := native["credentials"].([]any)
+			selected := members[1].(map[string]any)
+			switch mode {
+			case "missing":
+				native["credentials"] = members[:1]
+			case "duplicate":
+				members[0] = members[1]
+			case "wrong-revision":
+				selected["credential_revision"] = "4"
+			case "numeric-revision":
+				selected["credential_revision"] = 3
+			case "extra-member-field":
+				selected["provider_account_id"] = "foreign-account"
+			case "empty-secret":
+				selected["credential_value"] = ""
+			case "ambiguous-scalar":
+				native["credential_value"] = "first-member-seed"
+			case "null-pool":
+				native["credentials"] = nil
+			}
+			if _, err := mediaexecution.FromPrivateArchive(raw(t, f.archive), f.gateway, f.binding); err == nil {
+				t.Fatal("invalid pool substituted another member")
+			}
+		})
+	}
+}
+
+func TestCredentialPoolProviderBindingAndUnknownConsumeDoNotAuthorizeReselection(t *testing.T) {
+	f := explicitPool(t)
+	native := raw(t, f.archive["native_execution"])
+	if err := mediaexecution.ValidateCredentialConfiguration(native, []string{"original-secret", "another-secret"}); err != nil {
+		t.Fatal(err)
+	}
+	for _, values := range [][]string{{"original-secret"}, {"original-secret", "foreign-secret"}, {"original-secret", "original-secret"}} {
+		if mediaexecution.ValidateCredentialConfiguration(native, values) == nil {
+			t.Fatal("partial or foreign provider pool accepted")
+		}
+	}
+	e, err := mediaexecution.FromPrivateArchive(raw(t, f.archive), f.gateway, f.binding)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.ConsumeUnknown()
+	s := f.selection(t, false)
+	if _, err = e.PrepareCreate(raw(t, f.commit(t, s)), raw(t, s), f.live, f.now); !errors.Is(err, mediaexecution.ErrReplay) {
+		t.Fatal("unknown consume retried with another credential")
+	}
+}

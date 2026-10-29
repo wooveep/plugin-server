@@ -166,8 +166,45 @@ func validateManagedMediaRelease(c *managedExecutionConfig, value gjson.Result, 
 	if provider == nil || (provider.GetProviderType() != "generic" && provider.GetProviderType() != "openai") {
 		return errors.New("managed media route requires its explicit controlled provider")
 	}
-	tokens := value.Get("provider.apiTokens").Array()
-	if len(tokens) != 1 || tokens[0].Type != gjson.String || tokens[0].String() != c.settings.CredentialValue {
+	providerValue := value.Get("provider")
+	if providers := value.Get("providers"); providers.Exists() {
+		// Config.FromJson keeps this original JSON unchanged and resolves the
+		// active Provider by ID. A legacy object would override that resolution;
+		// never use it as a fallback for a missing or ambiguous array identity.
+		active := value.Get("activeProviderId")
+		if !providers.IsArray() || providerValue.Exists() || active.Type != gjson.String || !managedID(active.String()) {
+			return errors.New("managed media route requires its exact active provider identity")
+		}
+		matches := 0
+		for _, candidate := range providers.Array() {
+			if !candidate.IsObject() || candidate.Get("id").Type != gjson.String {
+				return errors.New("managed media route contains an invalid provider identity")
+			}
+			if candidate.Get("id").String() == active.String() {
+				matches++
+				providerValue = candidate
+			}
+		}
+		selected := cfg.GetProviderConfig()
+		if matches != 1 || selected == nil || selected.GetId() != active.String() {
+			return errors.New("managed media route active provider is absent or ambiguous")
+		}
+	} else if c.release.SchemaVersion != "modelfusion-execution.v1" || value.Get("activeProviderId").Exists() || !providerValue.IsObject() {
+		// Preserve only the original sole-v1 legacy form, not an array fallback.
+		return errors.New("managed media route requires its original provider configuration")
+	}
+	tokens := providerValue.Get("apiTokens")
+	if !tokens.IsArray() {
+		return errors.New("managed media route credential differs from its frozen provider")
+	}
+	values := make([]string, 0, len(tokens.Array()))
+	for _, token := range tokens.Array() {
+		if token.Type != gjson.String {
+			return errors.New("managed media route credential differs from its frozen provider")
+		}
+		values = append(values, token.String())
+	}
+	if mediaexecution.ValidateCredentialConfiguration([]byte(value.Get("managed_execution").Raw), values) != nil {
 		return errors.New("managed media route credential differs from its frozen provider")
 	}
 	expected := map[string]bool{protocol.OperationKind: true}

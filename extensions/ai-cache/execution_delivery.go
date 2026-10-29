@@ -64,11 +64,16 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 	if nativeCacheString(parsed["call_identity_source"]) != executionfacts.CallIdentitySourceAdmission {
 		return errors.New("native cache delivery requires the original admission call identity capability")
 	}
-	envelope, err := nativeCacheObject([]byte(release.Raw), "schema_version descriptor route_id sales_asset_id public_model credential_ref credential_revision")
-	if err != nil || nativeCacheString(envelope["schema_version"]) != "modelfusion-execution.v1" ||
-		!nativeCacheText(envelope["public_model"]) || !nativeCacheText(envelope["credential_ref"]) ||
-		!nativeCachePositive(envelope["credential_revision"]) {
+	fields := "schema_version descriptor route_id sales_asset_id public_model credential_ref credential_revision"
+	if release.Get("schema_version").String() == "modelfusion-execution.v2" {
+		fields = "schema_version descriptor route_id sales_asset_id public_model credentials"
+	}
+	envelope, err := nativeCacheObject([]byte(release.Raw), fields)
+	if err != nil || !nativeCacheText(envelope["public_model"]) {
 		return errors.New("native cache delivery requires complete frozen call ownership")
+	}
+	if err := validateNativeCacheCredentials(envelope); err != nil {
+		return err
 	}
 	descriptor, err := nativeCacheObject(envelope["descriptor"], "release_id target_id binding_id provider_id provider_account_id region_endpoint_ref service_ref cluster_ref credential_pool_ref credential_pool_revision adapter_ref adapter_revision mapper_digest proxy_digest descriptor_digest upstream_model config_canonicalization transport_contract capabilities")
 	if err != nil {
@@ -159,6 +164,38 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 		return errors.New("native cache static policy differs from its frozen execution ownership")
 	}
 	cfg.NativeExecution = out
+	return nil
+}
+
+// A cache hit owns a delivery, not an upstream credential selection. Validate
+// the entire versioned directory without installing any pool entry as a seed.
+func validateNativeCacheCredentials(envelope map[string]json.RawMessage) error {
+	switch nativeCacheString(envelope["schema_version"]) {
+	case "modelfusion-execution.v1":
+		if !nativeCacheText(envelope["credential_ref"]) || !nativeCachePositive(envelope["credential_revision"]) {
+			return errors.New("native cache v1 requires its original scalar credential")
+		}
+	case "modelfusion-execution.v2":
+		var credentials []json.RawMessage
+		if json.Unmarshal(envelope["credentials"], &credentials) != nil || len(credentials) == 0 {
+			return errors.New("native cache v2 requires its complete frozen credential pool")
+		}
+		seen := make(map[string]bool, len(credentials))
+		for _, raw := range credentials {
+			credential, err := nativeCacheObject(raw, "credential_ref credential_revision")
+			if err != nil || !nativeCacheText(credential["credential_ref"]) {
+				return errors.New("native cache v2 has invalid credential reference fields")
+			}
+			ref, revision := nativeCacheString(credential["credential_ref"]), nativeCacheString(credential["credential_revision"])
+			count, ok := nativeCacheCount([]byte(revision))
+			if !ok || count.Sign() <= 0 || count.String() != revision || seen[ref] {
+				return errors.New("native cache v2 has an invalid or duplicate credential reference")
+			}
+			seen[ref] = true
+		}
+	default:
+		return errors.New("native cache has an unsupported static ownership version")
+	}
 	return nil
 }
 

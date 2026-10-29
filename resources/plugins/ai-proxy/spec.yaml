@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.4
+  version: 2.0.5
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -23,9 +23,106 @@ info:
 spec:
   phase: default
   priority: 100
+  x-modelfusion-ai-routing:
+    minimumPluginVersion: 1.0.2
+    protocolModes:
+    - auto
+    - passthrough
+    pathScopes:
+    - legacy_suffixes
+    - bound_target
+    adapters:
+    - id: qwen.responses_to_chat_completions
+      provider: qwen
+      capability: openai/v1/responses
+      operations:
+      - id: openai.responses_to_chat_completions
+        clientMethod: POST
+        clientPath: /v1/responses
+        upstreamMethod: POST
+        upstreamPath: /v1/chat/completions
+        requestTransform: responses_to_chat_completions
+        responseTransform: chat_completions_to_responses
+        streamingBehavior: compatible
+      usageProfile: openai.responses.v1
+      minimumPluginVersion: 1.0.2
+    - id: responses.to_chat_completions
+      provider: '*'
+      capability: openai/v1/responses
+      operations:
+      - id: openai.responses_to_chat_completions
+        clientMethod: POST
+        clientPath: /v1/responses
+        upstreamMethod: POST
+        upstreamPath: /v1/chat/completions
+        requestTransform: responses_to_chat_completions
+        responseTransform: chat_completions_to_responses
+        streamingBehavior: compatible
+      usageProfile: openai.responses.v1
+      minimumPluginVersion: 1.0.2
   configSchema:
     openAPIV3Schema:
       type: object
+      allOf:
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - schema_version
+              properties:
+                schema_version:
+                  const: modelfusion-execution.v1
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - credential_value
+              not:
+                anyOf:
+                - required:
+                  - credentials
+              properties:
+                upstream_health:
+                  required:
+                  - target
+                  not:
+                    anyOf:
+                    - required:
+                      - targets
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - schema_version
+              properties:
+                schema_version:
+                  const: modelfusion-execution.v2
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - credentials
+              - upstream_health
+              not:
+                anyOf:
+                - required:
+                  - credential_value
+              properties:
+                upstream_health:
+                  required:
+                  - targets
+                  not:
+                    anyOf:
+                    - required:
+                      - target
       properties:
         managed_media:
           type: object
@@ -137,7 +234,6 @@ spec:
           - redis
           - upstream_path
           - authority
-          - credential_value
           properties:
             usage_estimation:
               type: object
@@ -147,16 +243,36 @@ spec:
               properties:
                 mode:
                   type: string
-                  enum: [disabled, wan_total_minus_input_v1]
+                  enum:
+                  - disabled
+                  - wan_total_minus_input_v1
             call_identity_source:
               type: string
               const: admission
             input_protocol:
               type: string
-              enum: [openai_chat, openai_responses, anthropic_messages, qwen_image20_pro_sync, qwen_image30_native_sync, qwen_image30_compatible_sync, qwen_image30_native_async, wan30_text, wan30_first_frame]
+              enum:
+              - openai_chat
+              - openai_responses
+              - anthropic_messages
+              - qwen_image20_pro_sync
+              - qwen_image30_native_sync
+              - qwen_image30_compatible_sync
+              - qwen_image30_native_async
+              - wan30_text
+              - wan30_first_frame
             upstream_protocol:
               type: string
-              enum: [openai_chat, openai_responses, anthropic_messages, qwen_image20_pro_sync, qwen_image30_native_sync, qwen_image30_compatible_sync, qwen_image30_native_async, wan30_text, wan30_first_frame]
+              enum:
+              - openai_chat
+              - openai_responses
+              - anthropic_messages
+              - qwen_image20_pro_sync
+              - qwen_image30_native_sync
+              - qwen_image30_compatible_sync
+              - qwen_image30_native_async
+              - wan30_text
+              - wan30_first_frame
             media_dispatch_mode:
               type: string
               enum:
@@ -169,7 +285,6 @@ spec:
               - runtime_config_id
               - config_revision
               - snapshot
-              - target
               - console_internal
               properties:
                 runtime_config_id:
@@ -287,6 +402,82 @@ spec:
                       type: integer
                       minimum: 1
                       maximum: 60000
+                targets:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - target_id
+                    - binding_id
+                    - provider_account_id
+                    - region_endpoint_ref
+                    - upstream_model
+                    - operation_kind
+                    - credential_ref
+                    - credential_generation
+                    - scope_ids
+                    properties:
+                      target_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      binding_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      provider_account_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      region_endpoint_ref:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      upstream_model:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      operation_kind:
+                        type: string
+                        enum:
+                        - text_generate
+                        - image_generate
+                        - video_generate
+                        - task_query
+                      credential_ref:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      credential_generation:
+                        type: string
+                        pattern: ^[1-9][0-9]*$
+                      scope_ids:
+                        type: array
+                        minItems: 1
+                        maxItems: 128
+                        uniqueItems: true
+                        items:
+                          type: string
+                          minLength: 1
+                          maxLength: 256
+                  description: Complete original TargetReference for every declared operation and credential; native runtime verifies
+                    the exact bijection.
+              oneOf:
+              - required:
+                - target
+                not:
+                  anyOf:
+                  - required:
+                    - targets
+              - required:
+                - targets
+                not:
+                  anyOf:
+                  - required:
+                    - target
             producer_id:
               type: string
               minLength: 1
@@ -331,6 +522,66 @@ spec:
               type: integer
               minimum: 1
               maximum: 4294967295
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Exact frozen secret directory, joined by credential reference and revision; array position never selects
+                a key.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                - credential_value
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+                  credential_value:
+                    type: string
+                    minLength: 1
+                    maxLength: 8192
+                    pattern: ^[!-~]+$
+                    not:
+                      pattern: '[^!-~]'
+                    writeOnly: true
+          oneOf:
+          - required:
+            - credential_value
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              upstream_health:
+                required:
+                - target
+                not:
+                  anyOf:
+                  - required:
+                    - targets
+          - required:
+            - credentials
+            - upstream_health
+            not:
+              anyOf:
+              - required:
+                - credential_value
+            properties:
+              upstream_health:
+                required:
+                - targets
+                not:
+                  anyOf:
+                  - required:
+                    - target
         _modelfusion_execution:
           type: object
           readOnly: true
@@ -341,13 +592,12 @@ spec:
           - route_id
           - sales_asset_id
           - public_model
-          - credential_ref
-          - credential_revision
           properties:
             schema_version:
               type: string
               enum:
               - modelfusion-execution.v1
+              - modelfusion-execution.v2
             descriptor:
               type: object
               description: Server-frozen IF01 execution descriptor, independently validated by the runtime.
@@ -367,6 +617,48 @@ spec:
             credential_revision:
               type: string
               pattern: ^[1-9][0-9]*$
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Complete frozen credential identity directory; no secret or selected-attempt authority.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+          oneOf:
+          - required:
+            - credential_ref
+            - credential_revision
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              schema_version:
+                const: modelfusion-execution.v1
+          - required:
+            - credentials
+            not:
+              anyOf:
+              - required:
+                - credential_ref
+              - required:
+                - credential_revision
+            properties:
+              schema_version:
+                const: modelfusion-execution.v2
         protocol_mode:
           type: string
           title: 协议模式
@@ -1053,6 +1345,66 @@ spec:
   routeConfigSchema:
     openAPIV3Schema:
       type: object
+      allOf:
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - schema_version
+              properties:
+                schema_version:
+                  const: modelfusion-execution.v1
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - credential_value
+              not:
+                anyOf:
+                - required:
+                  - credentials
+              properties:
+                upstream_health:
+                  required:
+                  - target
+                  not:
+                    anyOf:
+                    - required:
+                      - targets
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - schema_version
+              properties:
+                schema_version:
+                  const: modelfusion-execution.v2
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - credentials
+              - upstream_health
+              not:
+                anyOf:
+                - required:
+                  - credential_value
+              properties:
+                upstream_health:
+                  required:
+                  - targets
+                  not:
+                    anyOf:
+                    - required:
+                      - target
       properties:
         managed_execution:
           type: object
@@ -1064,7 +1416,6 @@ spec:
           - redis
           - upstream_path
           - authority
-          - credential_value
           properties:
             usage_estimation:
               type: object
@@ -1074,16 +1425,36 @@ spec:
               properties:
                 mode:
                   type: string
-                  enum: [disabled, wan_total_minus_input_v1]
+                  enum:
+                  - disabled
+                  - wan_total_minus_input_v1
             call_identity_source:
               type: string
               const: admission
             input_protocol:
               type: string
-              enum: [openai_chat, openai_responses, anthropic_messages, qwen_image20_pro_sync, qwen_image30_native_sync, qwen_image30_compatible_sync, qwen_image30_native_async, wan30_text, wan30_first_frame]
+              enum:
+              - openai_chat
+              - openai_responses
+              - anthropic_messages
+              - qwen_image20_pro_sync
+              - qwen_image30_native_sync
+              - qwen_image30_compatible_sync
+              - qwen_image30_native_async
+              - wan30_text
+              - wan30_first_frame
             upstream_protocol:
               type: string
-              enum: [openai_chat, openai_responses, anthropic_messages, qwen_image20_pro_sync, qwen_image30_native_sync, qwen_image30_compatible_sync, qwen_image30_native_async, wan30_text, wan30_first_frame]
+              enum:
+              - openai_chat
+              - openai_responses
+              - anthropic_messages
+              - qwen_image20_pro_sync
+              - qwen_image30_native_sync
+              - qwen_image30_compatible_sync
+              - qwen_image30_native_async
+              - wan30_text
+              - wan30_first_frame
             media_dispatch_mode:
               type: string
               enum:
@@ -1096,7 +1467,6 @@ spec:
               - runtime_config_id
               - config_revision
               - snapshot
-              - target
               - console_internal
               properties:
                 runtime_config_id:
@@ -1214,6 +1584,82 @@ spec:
                       type: integer
                       minimum: 1
                       maximum: 60000
+                targets:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - target_id
+                    - binding_id
+                    - provider_account_id
+                    - region_endpoint_ref
+                    - upstream_model
+                    - operation_kind
+                    - credential_ref
+                    - credential_generation
+                    - scope_ids
+                    properties:
+                      target_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      binding_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      provider_account_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      region_endpoint_ref:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      upstream_model:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      operation_kind:
+                        type: string
+                        enum:
+                        - text_generate
+                        - image_generate
+                        - video_generate
+                        - task_query
+                      credential_ref:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      credential_generation:
+                        type: string
+                        pattern: ^[1-9][0-9]*$
+                      scope_ids:
+                        type: array
+                        minItems: 1
+                        maxItems: 128
+                        uniqueItems: true
+                        items:
+                          type: string
+                          minLength: 1
+                          maxLength: 256
+                  description: Complete original TargetReference for every declared operation and credential; native runtime verifies
+                    the exact bijection.
+              oneOf:
+              - required:
+                - target
+                not:
+                  anyOf:
+                  - required:
+                    - targets
+              - required:
+                - targets
+                not:
+                  anyOf:
+                  - required:
+                    - target
             producer_id:
               type: string
               minLength: 1
@@ -1258,6 +1704,66 @@ spec:
               type: integer
               minimum: 1
               maximum: 4294967295
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Exact frozen secret directory, joined by credential reference and revision; array position never selects
+                a key.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                - credential_value
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+                  credential_value:
+                    type: string
+                    minLength: 1
+                    maxLength: 8192
+                    pattern: ^[!-~]+$
+                    not:
+                      pattern: '[^!-~]'
+                    writeOnly: true
+          oneOf:
+          - required:
+            - credential_value
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              upstream_health:
+                required:
+                - target
+                not:
+                  anyOf:
+                  - required:
+                    - targets
+          - required:
+            - credentials
+            - upstream_health
+            not:
+              anyOf:
+              - required:
+                - credential_value
+            properties:
+              upstream_health:
+                required:
+                - targets
+                not:
+                  anyOf:
+                  - required:
+                    - target
         _modelfusion_execution:
           type: object
           readOnly: true
@@ -1268,13 +1774,12 @@ spec:
           - route_id
           - sales_asset_id
           - public_model
-          - credential_ref
-          - credential_revision
           properties:
             schema_version:
               type: string
               enum:
               - modelfusion-execution.v1
+              - modelfusion-execution.v2
             descriptor:
               type: object
               description: Server-frozen IF01 execution descriptor, independently validated by the runtime.
@@ -1294,6 +1799,48 @@ spec:
             credential_revision:
               type: string
               pattern: ^[1-9][0-9]*$
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Complete frozen credential identity directory; no secret or selected-attempt authority.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+          oneOf:
+          - required:
+            - credential_ref
+            - credential_revision
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              schema_version:
+                const: modelfusion-execution.v1
+          - required:
+            - credentials
+            not:
+              anyOf:
+              - required:
+                - credential_ref
+              - required:
+                - credential_revision
+            properties:
+              schema_version:
+                const: modelfusion-execution.v2
         protocol_mode:
           type: string
           title: 协议模式

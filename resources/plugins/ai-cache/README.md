@@ -4,6 +4,12 @@ keywords: [higress,ai cache]
 description: ai-cache 薄网关缓存插件配置参考
 ---
 
+> 配置契约版本：`1.0.6`
+
+## 完整冻结凭据目录
+
+`1.0.6` 配置契约保留 `_modelfusion_execution` v1 的单一 `credential_ref`/`credential_revision`，并支持 `modelfusion-execution.v2` 的完整非空 `credentials` 数组。每项仅含这两个字段，ref 唯一、revision 为规范正十进制字符串；拒绝秘密及 scalar/array 混用。完整目录不代表本次已选凭据，实际 D0/FACT 仍保留唯一已选 tuple，billing/cache 不取目录首项作为执行凭据。
+
 **Note**
 
 > 若使用 tinygo 编译，则需要数据面的 proxy wasm 版本大于等于 0.2.100，且编译时需要带上版本的 tag，例如：`tinygo build -o main.wasm -scheduler=none -target=wasi -gc=custom -tags="custommalloc nottinygc_finalizer proxy_wasm_version_0_2_100" ./`

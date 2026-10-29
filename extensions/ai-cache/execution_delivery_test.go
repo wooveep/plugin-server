@@ -239,3 +239,110 @@ func TestNativeCacheDeliveryRejectsPartialOrChangedPublicationConfiguration(t *t
 		})
 	}
 }
+
+func nativeCachePoolExecutionConfig(t *testing.T) json.RawMessage {
+	t.Helper()
+	raw := nativeCacheExecutionConfig(t, true)
+	for path, value := range map[string]interface{}{
+		"_modelfusion_execution.schema_version": "modelfusion-execution.v2",
+		"_modelfusion_execution.credentials": []map[string]interface{}{
+			{"credential_ref": "original-credential", "credential_revision": "9007199254740993"},
+			{"credential_ref": "original-credential-two", "credential_revision": "2"},
+		},
+	} {
+		var err error
+		raw, err = sjson.SetBytes(raw, path, value)
+		require.NoError(t, err)
+	}
+	for _, name := range []string{"credential_ref", "credential_revision"} {
+		var err error
+		raw, err = sjson.DeleteBytes(raw, "_modelfusion_execution."+name)
+		require.NoError(t, err)
+	}
+	return raw
+}
+
+func TestNativeCachePoolKeepsOriginalCallOwnershipAndNoUpstreamAttempt(t *testing.T) {
+	original, pool := nativeCacheExecutionConfig(t, true), nativeCachePoolExecutionConfig(t)
+	var prior, current config.PluginConfig
+	prior.FromJson(gjson.ParseBytes(original), nil)
+	current.FromJson(gjson.ParseBytes(pool), nil)
+	require.NoError(t, configureNativeCacheDelivery(gjson.ParseBytes(original), &prior))
+	require.NoError(t, configureNativeCacheDelivery(gjson.ParseBytes(pool), &current))
+	require.Equal(t, *prior.NativeExecution.(*nativeCacheDeliveryConfig), *current.NativeExecution.(*nativeCacheDeliveryConfig),
+		"a delivery has identical call/target ownership and no selected upstream seed")
+	test.RunTest(t, func(t *testing.T) {
+		host, status := test.NewTestHost(pool)
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		defer host.Reset()
+		require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(nativeCacheExecutionHeaders(true)))
+		body := []byte(nativeCacheTestBody)
+		require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody(body))
+		require.Len(t, host.GetRedisCalloutAttributes(), 1)
+		host.CallOnRedisCall(0, test.CreateRedisRespString(nativeCacheExecutionRecord(t, body, false)))
+		response := host.GetLocalResponse()
+		require.NotNil(t, response)
+		require.Equal(t, uint32(200), response.StatusCode)
+		snapshot, err := executionfacts.DecodeDeliveryBridge(thinReplayPayloadHeader(response.Headers, executionfacts.DeliveryBridgeHeader))
+		require.NoError(t, err)
+		fact := snapshot.Envelope()
+		require.Equal(t, "call_delivery", fact.Kind)
+		require.Equal(t, nativeCacheOriginalCall, fact.CallID)
+		require.Empty(t, fact.AttemptID)
+		require.Empty(t, fact.CredentialRef)
+		require.Empty(t, fact.CredentialRevision)
+		require.Empty(t, host.GetHttpCalloutAttributes())
+		require.Empty(t, host.GetRedisCalloutAttributes(), "cache must not append a second FACT")
+	})
+}
+
+func TestNativeCachePoolRejectsMixedIncompleteOrUnversionedDirectories(t *testing.T) {
+	original := nativeCachePoolExecutionConfig(t)
+	changes := map[string]func(map[string]interface{}){
+		"unversioned pool":  func(e map[string]interface{}) { e["schema_version"] = "modelfusion-execution.v1" },
+		"unknown version":   func(e map[string]interface{}) { e["schema_version"] = "modelfusion-execution.v3" },
+		"scalar mixed":      func(e map[string]interface{}) { e["credential_ref"] = "" },
+		"scalar null mixed": func(e map[string]interface{}) { e["credential_revision"] = nil },
+		"empty":             func(e map[string]interface{}) { e["credentials"] = []interface{}{} },
+		"null":              func(e map[string]interface{}) { e["credentials"] = nil },
+		"missing":           func(e map[string]interface{}) { delete(e, "credentials") },
+		"duplicate ref": func(e map[string]interface{}) {
+			e["credentials"].([]interface{})[1].(map[string]interface{})["credential_ref"] = "original-credential"
+		},
+		"missing ref": func(e map[string]interface{}) {
+			delete(e["credentials"].([]interface{})[0].(map[string]interface{}), "credential_ref")
+		},
+		"secret": func(e map[string]interface{}) {
+			e["credentials"].([]interface{})[0].(map[string]interface{})["secret"] = "not-an-allowed-field"
+		},
+		"number revision": func(e map[string]interface{}) {
+			e["credentials"].([]interface{})[0].(map[string]interface{})["credential_revision"] = json.Number("9007199254740993")
+		},
+	}
+	for _, revision := range []string{"0", "01", "-1", " 1", "340282366920938463463374607431768211456"} {
+		value := revision
+		changes["revision "+value] = func(e map[string]interface{}) {
+			e["credentials"].([]interface{})[0].(map[string]interface{})["credential_revision"] = value
+		}
+	}
+	for name, change := range changes {
+		t.Run(name, func(t *testing.T) {
+			var value map[string]interface{}
+			require.NoError(t, json.Unmarshal(original, &value))
+			change(value["_modelfusion_execution"].(map[string]interface{}))
+			raw, err := json.Marshal(value)
+			require.NoError(t, err)
+			var cfg config.PluginConfig
+			cfg.FromJson(gjson.ParseBytes(original), nil)
+			require.NoError(t, configureNativeCacheDelivery(gjson.ParseBytes(original), &cfg))
+			require.Error(t, configureNativeCacheDelivery(gjson.ParseBytes(raw), &cfg))
+			require.Nil(t, cfg.NativeExecution, "failed parse must not retain authority")
+		})
+	}
+	raw, err := sjson.SetBytes(nativeCacheExecutionConfig(t, true), "_modelfusion_execution.credentials", nil)
+	require.NoError(t, err)
+	var cfg config.PluginConfig
+	cfg.FromJson(gjson.ParseBytes(raw), nil)
+	require.Error(t, configureNativeCacheDelivery(gjson.ParseBytes(raw), &cfg))
+	require.Nil(t, cfg.NativeExecution, "v1 must reject a pool alongside its original scalar")
+}

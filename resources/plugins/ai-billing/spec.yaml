@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README_EN.md
-  version: 0.1.10
+  version: 0.1.11
   contact:
     name: 2456868764
 spec:
@@ -55,13 +55,12 @@ spec:
           - route_id
           - sales_asset_id
           - public_model
-          - credential_ref
-          - credential_revision
           properties:
             schema_version:
               type: string
               enum:
               - modelfusion-execution.v1
+              - modelfusion-execution.v2
             descriptor:
               type: object
               description: Server-frozen IF01 execution descriptor, independently validated by the runtime.
@@ -81,6 +80,48 @@ spec:
             credential_revision:
               type: string
               pattern: ^[1-9][0-9]*$
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Complete frozen credential identity directory; no secret or selected-attempt authority.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+          oneOf:
+          - required:
+            - credential_ref
+            - credential_revision
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              schema_version:
+                const: modelfusion-execution.v1
+          - required:
+            - credentials
+            not:
+              anyOf:
+              - required:
+                - credential_ref
+              - required:
+                - credential_revision
+            properties:
+              schema_version:
+                const: modelfusion-execution.v2
         redis_stream: &billing_redis_stream
           type: object
           additionalProperties: false
@@ -312,13 +353,12 @@ spec:
           - route_id
           - sales_asset_id
           - public_model
-          - credential_ref
-          - credential_revision
           properties:
             schema_version:
               type: string
               enum:
               - modelfusion-execution.v1
+              - modelfusion-execution.v2
             descriptor:
               type: object
               description: Server-frozen IF01 execution descriptor, independently validated by the runtime.
@@ -338,6 +378,48 @@ spec:
             credential_revision:
               type: string
               pattern: ^[1-9][0-9]*$
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Complete frozen credential identity directory; no secret or selected-attempt authority.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+          oneOf:
+          - required:
+            - credential_ref
+            - credential_revision
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              schema_version:
+                const: modelfusion-execution.v1
+          - required:
+            - credentials
+            not:
+              anyOf:
+              - required:
+                - credential_ref
+              - required:
+                - credential_revision
+            properties:
+              schema_version:
+                const: modelfusion-execution.v2
         redis_stream: *billing_redis_stream
         event_kind:
           type: string
