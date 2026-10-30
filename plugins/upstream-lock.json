@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "source_repository": "https://github.com/higress-group/higress",
+  "source_commit": "91a23e9f3e4736b1b145bdc33531dff3a664c2c9",
+  "source_prefix": "plugins",
+  "source_tree": "e98c0fc907b4b73959988e8892ee0ae5a5634741",
+  "tracking_commit": "d6d21280277f8ae3804dc28b84d7cde1832889b2",
+  "tracking_ref": "refs/heads/codex/upstream-higress-plugins",
+  "destination": "plugins",
+  "merge_strategy": [
+    "ort",
+    "subtree=plugins"
+  ],
+  "initial_import": "verbatim upstream plugins tree; subsequent customization is recorded separately"
+}
