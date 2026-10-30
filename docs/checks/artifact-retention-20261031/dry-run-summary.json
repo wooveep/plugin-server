@@ -1,0 +1,19 @@
+{
+  "release_before": 101,
+  "manifest_objects": 80,
+  "changed": [
+    [
+      "Deployment",
+      "higress-system",
+      "modelfusion-console-api"
+    ],
+    [
+      "Deployment",
+      "higress-system",
+      "higress-plugin-server"
+    ]
+  ],
+  "gateway_replicas": 1,
+  "api_image": "registry.lc.wooveep.com:9980/modelfusion/modelfusion-console-api:retention-directory-20261031-3b02a315-b2638537309a@sha256:3997cb12338cd46e04a4969fc1d01a6a3e73892408fd90e4c7a5631b37b03023",
+  "compiler_digest": "sha256:b2638537309aeba3a06816146668162e7cef14f7555e00e9effbac6b14cb47e9"
+}

@@ -1,0 +1,72 @@
+{
+  "checked_at": "2026-10-30T23:46:51.931202+00:00",
+  "task": "ART-05",
+  "result": "pass",
+  "helm_revision": 102,
+  "test_scope": "unit, actual PostgreSQL and actual K3S HTTP are reported separately",
+  "paid_provider_calls": 0,
+  "new_gateway_bindings_for_inert_fixtures": 0,
+  "secret_values_published": false,
+  "evidence": [
+    {
+      "path": "console-build.json",
+      "sha256": "66d78cebf5127d3d9d529e2544b579c018771700181856b70bc0045c27696c75"
+    },
+    {
+      "path": "deleted-higher-receipt.json",
+      "sha256": "dabf345383db90c8540fd1eeca656f5d55649736d1e1c214b467cc666ba1a5ce"
+    },
+    {
+      "path": "deleted-older-receipt.json",
+      "sha256": "a1e3f701603792fc1be99b852e95a48645358d239b6af2ae8ced5d549247e953"
+    },
+    {
+      "path": "directory-before-fix.json",
+      "sha256": "f2e5f426839b658e338b8cc247b8d119fb1db7f7a6c3f5fab9566edecbebbbc7"
+    },
+    {
+      "path": "dry-run-summary.json",
+      "sha256": "da238035b62ba813f9b87b23506278b057e60ac463df6ab38871c712013d8fce"
+    },
+    {
+      "path": "financial-final-summary.json",
+      "sha256": "e4d47e53eeea854ce4c4eb3362a451bcc98347bdc8d5de0defa8ea8b183259c9"
+    },
+    {
+      "path": "native-artifact-server.json",
+      "sha256": "d5997e43582475fc987074796fa967572bdb27bfd8ffed9c5c74e5dcf5d75a40"
+    },
+    {
+      "path": "native-http-verification.json",
+      "sha256": "8551b8feba8a57c6a6354b6301663226defc5d0a6824cb6fa470e0108be4c64b"
+    },
+    {
+      "path": "plugin-server-build.json",
+      "sha256": "6eddcabb99bf282708eafb2e1446f4681dc39864557a20f52798930d63346900"
+    },
+    {
+      "path": "referenced-retain.json",
+      "sha256": "2ec8cc2e16ea98a2a71f594c255b928ceee1d04c8d91d8585eaab040dae1967f"
+    },
+    {
+      "path": "runtime-after.json",
+      "sha256": "086bf90ffa5e4a1740b623cbcdd1c5acef1d8d1176b814b4a46f9b82cb179065"
+    },
+    {
+      "path": "runtime-before.json",
+      "sha256": "9054540f389e84e35c20b832ce11d4c36e203252bfbe7f2a9f2fc64528958941"
+    },
+    {
+      "path": "runtime-verification.json",
+      "sha256": "8643507f052a268e407dd5c7fadc56f6b9889a3d349f78d46fae2a99b2317d2c"
+    },
+    {
+      "path": "stale-revision-refusal.json",
+      "sha256": "9251445d034adca2e88d8e270afc8793b80a71d570a5778e144a0eef3aba1fe9"
+    },
+    {
+      "path": "test-receipt.json",
+      "sha256": "f7fcb0c5552e04b562b639e6c57a19951249420d3723ef2af8a365a7a3db5ac3"
+    }
+  ]
+}

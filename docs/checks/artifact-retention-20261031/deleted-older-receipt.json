@@ -1,0 +1,17 @@
+{
+  "command_key": "art05-unreferenced-older-delete-20261031",
+  "artifact_id": "6ef90264-f106-4ad1-be9c-15ecc8a59429",
+  "decision": {
+    "decision_id": "01a18f32-3572-7cd1-9440-d6047a19dd93",
+    "artifact_id": "6ef90264-f106-4ad1-be9c-15ecc8a59429",
+    "revision": "1",
+    "reference_snapshot_digest": "sha256:f3a36f2e155432448b3516943745aa434a69cab71937fa09d8ae65804b936493",
+    "references": [],
+    "action": "delete_allowed",
+    "decided_at": "2026-10-30T23:43:14.802061Z",
+    "expires_at": "2026-10-30T23:44:14.802061Z",
+    "decided_by": "system_admin/39098d9a-4b94-4005-93e2-3106df61b6d6"
+  },
+  "state": "deleted",
+  "reason": "original_files_absent"
+}

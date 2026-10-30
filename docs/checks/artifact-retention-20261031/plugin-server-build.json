@@ -1,0 +1,6 @@
+{
+  "source_commit": "2563aaa196e04a87ba0c7e1b18b2fab42f507da6",
+  "image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:retention-20261031-2563aaa196e0",
+  "image_digest": "sha256:46385f04cd9d8e318fb0eee9ff73fd2269569e6d4a413a0f168ae665c022740a",
+  "pinned_image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:retention-20261031-2563aaa196e0@sha256:46385f04cd9d8e318fb0eee9ff73fd2269569e6d4a413a0f168ae665c022740a"
+}

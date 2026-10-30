@@ -1,0 +1,81 @@
+{
+  "python": "3.13.5",
+  "plugin_server_commit": "2563aaa196e04a87ba0c7e1b18b2fab42f507da6",
+  "console_commit": "3b02a3153808698ad6a69594f2625c7976c765db",
+  "commands": [
+    {
+      "cwd": "plugin-server",
+      "command": ".venv/bin/python -B -m unittest discover -s tests -v",
+      "passed": 115,
+      "failed": 0
+    },
+    {
+      "cwd": "plugin-server",
+      "command": "PYTHON=.venv/bin/python bash tests/test_sync_plugin_artifacts.sh",
+      "exit_code": 0
+    },
+    {
+      "cwd": "ocloudmodelfusion",
+      "command": "cargo test --offline --locked --manifest-path console/Cargo.toml --test artifact_catalog --test wasm_plugin_exact_schema --test wasm_plugins -- --test-threads=1",
+      "passed": 22,
+      "failed": 0,
+      "ignored": 1,
+      "database": "real isolated PostgreSQL",
+      "artifact_http": "named test server; not K3S"
+    },
+    {
+      "cwd": "ocloudmodelfusion",
+      "command": "cargo test --offline --locked --manifest-path console/Cargo.toml --lib retention -- --test-threads=1 --nocapture",
+      "passed": 12,
+      "failed": 0,
+      "ignored": 0,
+      "scope": "six retention unit tests, one actual PostgreSQL two-connection reservation test, five incidental filter matches",
+      "kubernetes": "in-memory CAS in this test; actual K3S covered separately"
+    },
+    {
+      "cwd": "ocloudmodelfusion",
+      "command": "cargo clippy --offline --locked --manifest-path console/Cargo.toml -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "cwd": "ocloudmodelfusion",
+      "command": "cargo build --offline --locked --manifest-path console/Cargo.toml --bin ocloudmodelfusion-console --bin e1_release_control",
+      "exit_code": 0
+    }
+  ],
+  "private_log_digests": {
+    "python_stage": {
+      "path": "plugin-server/build/business-runtime-20261031/art05-python-stage.log",
+      "sha256": "f0bf88e891988dcb4b8a196041131e8d81f39306ab4d61ece59a542d61d3c0d4"
+    },
+    "sync_stage": {
+      "path": "plugin-server/build/business-runtime-20261031/art05-sync-stage.log",
+      "sha256": "8d497632cd6fdd43c7309c989cc609142d719971c17466cdd97b280f417cb67a"
+    },
+    "directory_stage": {
+      "path": "ocloudmodelfusion/.local/art05-native-20261031/catalog-stage-tests.log",
+      "sha256": "6916027af30c518deedc85b43c9a3c57ef42c7cb82f3cac37e7bff11d01cf1d6"
+    },
+    "retention_pg_stage": {
+      "path": "ocloudmodelfusion/.local/art05-native-20261031/retention-pg-stage.log",
+      "sha256": "a21250129f6f581ad6a61832e321b09a4e6d8914ccca1749e9796d020664467d"
+    },
+    "clippy": {
+      "path": "ocloudmodelfusion/.local/art05-native-20261031/clippy.log",
+      "sha256": "8b4da8b5d77f91d1a572d1e85526eacf6ac35061ae354a4103cc48a4f7fd5707"
+    },
+    "build": {
+      "path": "ocloudmodelfusion/.local/art05-native-20261031/build.log",
+      "sha256": "215c898406cd1a0f94c86bf8fb962156b7bd4422ca2e1f55a539575a36b60e1a"
+    },
+    "initial_directory_red": {
+      "path": "ocloudmodelfusion/.local/art05-native-20261031/directory-eligibility-red.log",
+      "sha256": "9b9b4c2e14f9645730bc1c35b627f73efe8e9de20fdace99f2fe4db0a648b5cc"
+    },
+    "initial_payload_read_red": {
+      "path": "plugin-server/build/business-runtime-20261031/retention-no-payload-read-red.log",
+      "sha256": "5c4f4320c112efff7ce3fa98ed0208ac18c24840743bd8a009701ee6203f60e0"
+    }
+  },
+  "observed_probe_correction": "Empty artifact_versions is omitted by the existing native DTO. After both deletes completed, the read-only continuation accepted omitted-or-empty and did not repeat either mutation."
+}

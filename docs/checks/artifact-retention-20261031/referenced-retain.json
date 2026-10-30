@@ -1,0 +1,28 @@
+{
+  "command_key": "art05-referenced-proxy-20261031",
+  "artifact_id": "97165091-3924-4278-afd3-761a3381b60d",
+  "decision": {
+    "decision_id": "01a18f19-7f38-7bf2-be9a-cd9ba4b4220f",
+    "artifact_id": "97165091-3924-4278-afd3-761a3381b60d",
+    "revision": "1",
+    "reference_snapshot_digest": "sha256:7ed63231a6ac19159017ca8150f65b9453099524ce228981aa1099b0bf189095",
+    "references": [
+      {
+        "kind": "active_release",
+        "ref_id": "01a18ea0-c904-7dd0-91c0-6a6d526aab60",
+        "retention_reason": "current_active_pointer"
+      },
+      {
+        "kind": "historical_fact",
+        "ref_id": "01a18ea0-c904-7dd0-91c0-6a6d526aab60",
+        "retention_reason": "immutable_release_audit"
+      }
+    ],
+    "action": "retain",
+    "decided_at": "2026-10-30T23:16:15.288030Z",
+    "expires_at": "2026-10-30T23:17:15.288030Z",
+    "decided_by": "system_admin/39098d9a-4b94-4005-93e2-3106df61b6d6"
+  },
+  "state": "retained",
+  "reason": "referenced_artifact"
+}

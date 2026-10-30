@@ -1,0 +1,12 @@
+{
+  "source_commit": "3b02a3153808698ad6a69594f2625c7976c765db",
+  "source_branch": "codex/plugin-directory-consumer-20261031",
+  "source_inputs_sha256": "3521c4a0b0c6895b381d1528edd1cb3d1f295b206035924d3fdfa824cc22b1aa",
+  "source_input_files": 688,
+  "server_binary_sha256": "b2638537309aeba3a06816146668162e7cef14f7555e00e9effbac6b14cb47e9",
+  "operator_binary_sha256": "5676d3ae6c32061fefd0c2fec4b7c2ce241d45ece03cf4e3e59e77e9b9ecbc2f",
+  "image": "registry.lc.wooveep.com:9980/modelfusion/modelfusion-console-api:retention-directory-20261031-3b02a315-b2638537309a",
+  "image_digest": "sha256:3997cb12338cd46e04a4969fc1d01a6a3e73892408fd90e4c7a5631b37b03023",
+  "image_id": "sha256:3997cb12338cd46e04a4969fc1d01a6a3e73892408fd90e4c7a5631b37b03023",
+  "pinned_image": "registry.lc.wooveep.com:9980/modelfusion/modelfusion-console-api:retention-directory-20261031-3b02a315-b2638537309a@sha256:3997cb12338cd46e04a4969fc1d01a6a3e73892408fd90e4c7a5631b37b03023"
+}

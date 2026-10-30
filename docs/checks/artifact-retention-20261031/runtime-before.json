@@ -1,0 +1,933 @@
+[
+  {
+    "kind": "Ingress",
+    "name": "e1-e50f4a3dd5-bootstrap-discovery",
+    "uid": "d4189d26-fb6c-4e70-b9bc-ded0c82d9725",
+    "generation": 1,
+    "spec_sha256": "c2eeb294308601937ced3f00d2cf65a23d527af0e383a0a2c5f3cabce6238344"
+  },
+  {
+    "kind": "Ingress",
+    "name": "modelfusion-admin",
+    "uid": "2a3a5a13-9636-4354-b0c5-4f2df95a6aee",
+    "generation": 1,
+    "spec_sha256": "3536ac9bc871dd36baac50102e44fc1ae6311a9e1ad85e53978166ae40ad6c2d"
+  },
+  {
+    "kind": "Ingress",
+    "name": "modelfusion-api-entrypoints",
+    "uid": "eb0ee773-0149-4071-bae8-479cd31bfc81",
+    "generation": 1,
+    "spec_sha256": "43393f77a6441536ab648814ed8cbb14ee42e14fde9a42f4e4b200e14e28811b"
+  },
+  {
+    "kind": "Ingress",
+    "name": "modelfusion-console-api-media-notices",
+    "uid": "d003a9be-5745-45af-a2bf-a51d20e954a2",
+    "generation": 1,
+    "spec_sha256": "284f51a1bf1fb20a19db65d1afd10ebdfeacfa5122d2a1a6c6f11fd39659b26b"
+  },
+  {
+    "kind": "Ingress",
+    "name": "modelfusion-gateway-health",
+    "uid": "039b6479-79af-4db7-ad61-9e4cb43c6f64",
+    "generation": 1,
+    "spec_sha256": "22b81d57ba8c1efccd9c153c40893c155108f5a1a1d008a5f7c810a7f196b7fb"
+  },
+  {
+    "kind": "Ingress",
+    "name": "modelfusion-model-api",
+    "uid": "06f0b0d2-0ba5-488b-a42b-6f15828741d1",
+    "generation": 1,
+    "spec_sha256": "012ccf566ba11fbe83addb4f5e72c08f9ba1e7dc1db5eebf9dd1d1d57cea5e5d"
+  },
+  {
+    "kind": "Ingress",
+    "name": "modelfusion-user",
+    "uid": "846edcbb-1606-43ee-8047-24ac5ae6fa9f",
+    "generation": 1,
+    "spec_sha256": "2f32b2b4bb01b97207d8fdf1a72bf8ddf33c61d53c9161fdddba3f3e131b5127"
+  },
+  {
+    "kind": "Ingress",
+    "name": "modelfusion-web-admin",
+    "uid": "b6797010-fd70-435e-aca3-d88fc0964cd3",
+    "generation": 1,
+    "spec_sha256": "1f56f13a7698281af07866c7d105c9304457954c16f141efe628cc1fd6e768e5"
+  },
+  {
+    "kind": "Ingress",
+    "name": "modelfusion-web-user",
+    "uid": "6ef80c0c-a7fd-40de-a936-f202cbe5377d",
+    "generation": 1,
+    "spec_sha256": "6bcd77669c73636805660f2cfc3182458d385b07f8e2de01bfbfe2a36de1b84b"
+  },
+  {
+    "kind": "Ingress",
+    "name": "rel-01a18e9e-76c3-7023-9a92-8cd3f4327f96-text",
+    "uid": "84650ddb-8533-4a14-be9d-b65ec5ffc27a",
+    "generation": 1,
+    "spec_sha256": "fdbbc000556f10bbcd328a98718fb64a1fd5ba95a9927fd49fc4dcd0b449ddd0"
+  },
+  {
+    "kind": "Ingress",
+    "name": "rel-01a18ea0-c904-7dd0-91c0-6a6d526aab60-image",
+    "uid": "034ac478-30a7-4005-8ee2-040526993efe",
+    "generation": 1,
+    "spec_sha256": "a6298c327a0bcbcbc6acd156c276390a147df13a1d08f69f8472219d9786810d"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "key-auth.internal",
+    "uid": "84e4dfff-0e69-47f7-b8be-65f16d98a4c5",
+    "generation": 302,
+    "spec_sha256": "af3547cf1b0cb42d82e4e533c7fb40bb6e465ed1a3653b437cba03ca211d47fc"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "modelfusion-console-api-media-notices",
+    "uid": "cbb0c005-6e94-4fae-ad15-eb0b490c4d7a",
+    "generation": 3,
+    "spec_sha256": "1c223967d3cd8273bbc688d5452ea0646d582f5a494c8465b0861348b53b96a7"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18000-eb6b-7450-9ac0-dfb172de537b-ai-billing",
+    "uid": "224e2652-93f0-4be2-81a5-08d9c0a19979",
+    "generation": 2,
+    "spec_sha256": "29f86b93e86c76c355c2b372689d8ac4bd1551dd11eedb77cf889776a5cf6374"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18000-eb6b-7450-9ac0-dfb172de537b-ai-proxy",
+    "uid": "4f78fa32-6c1a-4313-b149-49512eb9e86a",
+    "generation": 2,
+    "spec_sha256": "4bfaaf1f3f7d6b8b38d0a5811a3c744236d7fcb4894538af7f735a242b5e5309"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18000-eb6b-7450-9ac0-dfb172de537b-ai-quota",
+    "uid": "3ef22ce0-9c0c-4a84-bd5e-e66f8647ca1b",
+    "generation": 2,
+    "spec_sha256": "f69d07ae9a6dd35339a8927edd9b1aa57bee05c07df84a479de03ff6a467acb7"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18000-eb6b-7450-9ac0-dfb172de537b-model-mapper",
+    "uid": "c1829d38-c630-4d6c-961c-70dede07f46a",
+    "generation": 2,
+    "spec_sha256": "869e0ece609fe7623a95147c11ba42719fa1c81eeb85fd582e0a7b5a89de823e"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18021-909c-7952-9ae1-145fd7828691-ai-billing",
+    "uid": "1877bb8c-4b2f-4eb0-a684-682a42fefbca",
+    "generation": 2,
+    "spec_sha256": "29f86b93e86c76c355c2b372689d8ac4bd1551dd11eedb77cf889776a5cf6374"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18021-909c-7952-9ae1-145fd7828691-ai-proxy",
+    "uid": "7ddda96a-0e2e-48b2-acde-d1b15dc2095d",
+    "generation": 2,
+    "spec_sha256": "4bfaaf1f3f7d6b8b38d0a5811a3c744236d7fcb4894538af7f735a242b5e5309"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18021-909c-7952-9ae1-145fd7828691-ai-quota",
+    "uid": "c9f0b5ce-9f11-44f2-93f5-e24dd195d2db",
+    "generation": 2,
+    "spec_sha256": "f69d07ae9a6dd35339a8927edd9b1aa57bee05c07df84a479de03ff6a467acb7"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18021-909c-7952-9ae1-145fd7828691-model-mapper",
+    "uid": "787a2754-f248-4d5c-8a4e-6b71886bef1d",
+    "generation": 2,
+    "spec_sha256": "869e0ece609fe7623a95147c11ba42719fa1c81eeb85fd582e0a7b5a89de823e"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1808d-c1f5-7c71-a0b4-25df39b28d70-ai-billing",
+    "uid": "0d2baed2-9135-4e25-b711-7cca37e5468d",
+    "generation": 2,
+    "spec_sha256": "29f86b93e86c76c355c2b372689d8ac4bd1551dd11eedb77cf889776a5cf6374"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1808d-c1f5-7c71-a0b4-25df39b28d70-ai-proxy",
+    "uid": "b6bb5754-370b-4e68-a5b4-4add1059be2e",
+    "generation": 2,
+    "spec_sha256": "4bfaaf1f3f7d6b8b38d0a5811a3c744236d7fcb4894538af7f735a242b5e5309"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1808d-c1f5-7c71-a0b4-25df39b28d70-ai-quota",
+    "uid": "dc403cf9-2e63-4153-b443-19ce08871551",
+    "generation": 2,
+    "spec_sha256": "f69d07ae9a6dd35339a8927edd9b1aa57bee05c07df84a479de03ff6a467acb7"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1808d-c1f5-7c71-a0b4-25df39b28d70-model-mapper",
+    "uid": "99fd592a-7cd8-4e6f-8505-7fc439fbcfb9",
+    "generation": 2,
+    "spec_sha256": "869e0ece609fe7623a95147c11ba42719fa1c81eeb85fd582e0a7b5a89de823e"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a180d0-e6ee-7283-aaa5-ec3e30e9a2cd-ai-billing",
+    "uid": "1badda7c-9d0a-45d5-9696-3a5f56ca34a0",
+    "generation": 2,
+    "spec_sha256": "29f86b93e86c76c355c2b372689d8ac4bd1551dd11eedb77cf889776a5cf6374"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a180d0-e6ee-7283-aaa5-ec3e30e9a2cd-ai-proxy",
+    "uid": "eaaeae16-cc31-4dc5-93a4-5266ba840770",
+    "generation": 2,
+    "spec_sha256": "4bfaaf1f3f7d6b8b38d0a5811a3c744236d7fcb4894538af7f735a242b5e5309"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a180d0-e6ee-7283-aaa5-ec3e30e9a2cd-ai-quota",
+    "uid": "6058e583-21b3-4ffb-a305-077350612ab8",
+    "generation": 2,
+    "spec_sha256": "f69d07ae9a6dd35339a8927edd9b1aa57bee05c07df84a479de03ff6a467acb7"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a180d0-e6ee-7283-aaa5-ec3e30e9a2cd-model-mapper",
+    "uid": "1b8fc6be-778a-46d4-a196-58ccee171513",
+    "generation": 2,
+    "spec_sha256": "869e0ece609fe7623a95147c11ba42719fa1c81eeb85fd582e0a7b5a89de823e"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a180de-3978-72f3-b59f-261bc516464c-ai-billing",
+    "uid": "c8043e26-dc24-4c05-94ca-5a3b607ae9c3",
+    "generation": 2,
+    "spec_sha256": "29f86b93e86c76c355c2b372689d8ac4bd1551dd11eedb77cf889776a5cf6374"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a180de-3978-72f3-b59f-261bc516464c-ai-proxy",
+    "uid": "e487a9c5-6660-48d5-84ce-b490268caa38",
+    "generation": 2,
+    "spec_sha256": "4bfaaf1f3f7d6b8b38d0a5811a3c744236d7fcb4894538af7f735a242b5e5309"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a180de-3978-72f3-b59f-261bc516464c-ai-quota",
+    "uid": "13f25e99-9ef0-48f3-b30f-fd78cad2bd89",
+    "generation": 2,
+    "spec_sha256": "f69d07ae9a6dd35339a8927edd9b1aa57bee05c07df84a479de03ff6a467acb7"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a180de-3978-72f3-b59f-261bc516464c-model-mapper",
+    "uid": "dd971239-6637-43c4-b6d5-eff9145eadb6",
+    "generation": 2,
+    "spec_sha256": "869e0ece609fe7623a95147c11ba42719fa1c81eeb85fd582e0a7b5a89de823e"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18296-acba-7c60-a9e0-1cafc619f7cb-ai-billing",
+    "uid": "e524f3d9-3de1-411c-8b74-f39931711607",
+    "generation": 2,
+    "spec_sha256": "58e3ef154fcb3422c02962ba34c11cc09fe17bebe8d489b3688ae9db393d3c18"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18296-acba-7c60-a9e0-1cafc619f7cb-ai-cache",
+    "uid": "cd9bb24e-41ed-49f6-8dd0-b0aa242cfbf1",
+    "generation": 2,
+    "spec_sha256": "327f9b99a0ee1d6beadfb2077081deb625f93f3df7d813e3ba74a53c34082dcb"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18296-acba-7c60-a9e0-1cafc619f7cb-ai-history",
+    "uid": "8e1be17e-a74a-4e0d-a04d-afd656b7da53",
+    "generation": 2,
+    "spec_sha256": "699c1398b594f094a9a085014a962dfe34de8b525ccdbdca1d98521cddf1a5cd"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18296-acba-7c60-a9e0-1cafc619f7cb-ai-memory",
+    "uid": "6f51a0ba-013c-44f6-b8fc-f7285eefa7d7",
+    "generation": 2,
+    "spec_sha256": "ec7d86566d5fd06c4118522cea387c9bfa5c91fe7392044d209622f2a8030616"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18296-acba-7c60-a9e0-1cafc619f7cb-ai-proxy",
+    "uid": "6d0873d3-31c5-438b-a86d-848fb01563b7",
+    "generation": 2,
+    "spec_sha256": "d8170d920714129453b0a7e4bc95d8e5e0fbc9fdfe3238b51a6d52c47b2944af"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18296-acba-7c60-a9e0-1cafc619f7cb-ai-quota",
+    "uid": "5a98b3c5-a86b-4637-8e93-2a5cfea820e5",
+    "generation": 2,
+    "spec_sha256": "0fcda3dcf2877b515595498b86409567974bb3dc850ca7eb46286cd0b13fb6c8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18296-acba-7c60-a9e0-1cafc619f7cb-ai-statistics",
+    "uid": "5ea5bf60-e3e2-47bc-95df-e5332f6af259",
+    "generation": 2,
+    "spec_sha256": "2092c3e7ea0c49d1a65cab551495e2b0f7f693b426875e6d4b491b23c3439c28"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18296-acba-7c60-a9e0-1cafc619f7cb-model-mapper",
+    "uid": "ea997b5b-a455-4166-ad0c-db9d09093d46",
+    "generation": 2,
+    "spec_sha256": "bcf4c0f897b7b32bc65972b5b87e23b40c84168c158b9347887b7d9e5ae9e6d8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18306-0e35-7d21-a013-d20447d76c9d-ai-billing",
+    "uid": "13691c73-4e10-45f3-a7d9-5d96e5aaf1b3",
+    "generation": 2,
+    "spec_sha256": "29834304c12eae8752200502f27a11c0d382f0e4d3bccf59cd81ec4363b97eb0"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18306-0e35-7d21-a013-d20447d76c9d-ai-cache",
+    "uid": "c4f44ba6-4eaa-41a7-b782-d8c90fd5737d",
+    "generation": 2,
+    "spec_sha256": "327f9b99a0ee1d6beadfb2077081deb625f93f3df7d813e3ba74a53c34082dcb"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18306-0e35-7d21-a013-d20447d76c9d-ai-history",
+    "uid": "6af5fb38-ac34-4cf0-b76f-80e6724b9d50",
+    "generation": 2,
+    "spec_sha256": "699c1398b594f094a9a085014a962dfe34de8b525ccdbdca1d98521cddf1a5cd"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18306-0e35-7d21-a013-d20447d76c9d-ai-memory",
+    "uid": "56ef0e43-42ab-4fb6-9da2-53cd1d722c5e",
+    "generation": 2,
+    "spec_sha256": "ec7d86566d5fd06c4118522cea387c9bfa5c91fe7392044d209622f2a8030616"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18306-0e35-7d21-a013-d20447d76c9d-ai-proxy",
+    "uid": "bc4286cf-02fc-4fa6-a48c-bebe67c3fd79",
+    "generation": 2,
+    "spec_sha256": "c2bc7f27cc504772d835066f6d5217e7f311f74ca41adbf96dda33ef865d6dc9"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18306-0e35-7d21-a013-d20447d76c9d-ai-quota",
+    "uid": "d4328124-6a59-447e-a94d-1f4f0ddbd519",
+    "generation": 2,
+    "spec_sha256": "0fcda3dcf2877b515595498b86409567974bb3dc850ca7eb46286cd0b13fb6c8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18306-0e35-7d21-a013-d20447d76c9d-ai-statistics",
+    "uid": "ebaa745a-9695-46f6-96b3-19c6557f159e",
+    "generation": 2,
+    "spec_sha256": "2092c3e7ea0c49d1a65cab551495e2b0f7f693b426875e6d4b491b23c3439c28"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18306-0e35-7d21-a013-d20447d76c9d-model-mapper",
+    "uid": "4bc465d2-4644-4af2-b254-76c205f5be06",
+    "generation": 2,
+    "spec_sha256": "bcf4c0f897b7b32bc65972b5b87e23b40c84168c158b9347887b7d9e5ae9e6d8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18362-6b64-7ae3-9fce-b6701dcdc96e-ai-billing",
+    "uid": "cb3ea1be-7616-46a2-b8a4-f26e0f74dbf7",
+    "generation": 2,
+    "spec_sha256": "29834304c12eae8752200502f27a11c0d382f0e4d3bccf59cd81ec4363b97eb0"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18362-6b64-7ae3-9fce-b6701dcdc96e-ai-cache",
+    "uid": "afc9f48a-0e14-41a3-a49a-25c548f5464e",
+    "generation": 2,
+    "spec_sha256": "327f9b99a0ee1d6beadfb2077081deb625f93f3df7d813e3ba74a53c34082dcb"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18362-6b64-7ae3-9fce-b6701dcdc96e-ai-history",
+    "uid": "ee46e472-5278-4efa-9b6b-215bc80bbe96",
+    "generation": 2,
+    "spec_sha256": "699c1398b594f094a9a085014a962dfe34de8b525ccdbdca1d98521cddf1a5cd"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18362-6b64-7ae3-9fce-b6701dcdc96e-ai-memory",
+    "uid": "6a142c49-983b-4077-ae71-bb6393092085",
+    "generation": 2,
+    "spec_sha256": "ec7d86566d5fd06c4118522cea387c9bfa5c91fe7392044d209622f2a8030616"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18362-6b64-7ae3-9fce-b6701dcdc96e-ai-proxy",
+    "uid": "64973ff2-3214-4fa1-bd87-0714d42e66cd",
+    "generation": 2,
+    "spec_sha256": "c2bc7f27cc504772d835066f6d5217e7f311f74ca41adbf96dda33ef865d6dc9"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18362-6b64-7ae3-9fce-b6701dcdc96e-ai-quota",
+    "uid": "fb41475d-226e-4459-a0f0-beed8de0946b",
+    "generation": 2,
+    "spec_sha256": "0fcda3dcf2877b515595498b86409567974bb3dc850ca7eb46286cd0b13fb6c8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18362-6b64-7ae3-9fce-b6701dcdc96e-ai-statistics",
+    "uid": "ed6d9924-17e4-46fd-be20-37ca23eec9ad",
+    "generation": 2,
+    "spec_sha256": "2092c3e7ea0c49d1a65cab551495e2b0f7f693b426875e6d4b491b23c3439c28"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18362-6b64-7ae3-9fce-b6701dcdc96e-model-mapper",
+    "uid": "7d8f0908-534b-45f2-8850-150ac1b25728",
+    "generation": 2,
+    "spec_sha256": "bcf4c0f897b7b32bc65972b5b87e23b40c84168c158b9347887b7d9e5ae9e6d8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1838a-ade9-7fb1-ad39-9a0bb849a71a-ai-billing",
+    "uid": "42ebd25d-acc4-4c23-9a0c-ac2e88481b45",
+    "generation": 2,
+    "spec_sha256": "29834304c12eae8752200502f27a11c0d382f0e4d3bccf59cd81ec4363b97eb0"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1838a-ade9-7fb1-ad39-9a0bb849a71a-ai-cache",
+    "uid": "b702fdea-f461-48ac-a57d-bed71d118c23",
+    "generation": 2,
+    "spec_sha256": "327f9b99a0ee1d6beadfb2077081deb625f93f3df7d813e3ba74a53c34082dcb"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1838a-ade9-7fb1-ad39-9a0bb849a71a-ai-history",
+    "uid": "1bf64e73-9ba2-4a96-af5d-f6a58f39bb64",
+    "generation": 2,
+    "spec_sha256": "699c1398b594f094a9a085014a962dfe34de8b525ccdbdca1d98521cddf1a5cd"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1838a-ade9-7fb1-ad39-9a0bb849a71a-ai-memory",
+    "uid": "cfb2f7f3-c956-42a2-b887-90731e1922d5",
+    "generation": 2,
+    "spec_sha256": "ec7d86566d5fd06c4118522cea387c9bfa5c91fe7392044d209622f2a8030616"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1838a-ade9-7fb1-ad39-9a0bb849a71a-ai-proxy",
+    "uid": "1bdc8bd4-7095-4a90-a8e9-edb3a85a678e",
+    "generation": 2,
+    "spec_sha256": "c2bc7f27cc504772d835066f6d5217e7f311f74ca41adbf96dda33ef865d6dc9"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1838a-ade9-7fb1-ad39-9a0bb849a71a-ai-quota",
+    "uid": "1c35a703-7133-45d8-bf57-590989dd433f",
+    "generation": 2,
+    "spec_sha256": "0fcda3dcf2877b515595498b86409567974bb3dc850ca7eb46286cd0b13fb6c8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1838a-ade9-7fb1-ad39-9a0bb849a71a-ai-statistics",
+    "uid": "6a5a41b6-af11-49aa-99c8-f3d1c67425ca",
+    "generation": 2,
+    "spec_sha256": "2092c3e7ea0c49d1a65cab551495e2b0f7f693b426875e6d4b491b23c3439c28"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a1838a-ade9-7fb1-ad39-9a0bb849a71a-model-mapper",
+    "uid": "6b7e0b6b-95b4-4fe2-84fc-d0a05eb40c9a",
+    "generation": 2,
+    "spec_sha256": "bcf4c0f897b7b32bc65972b5b87e23b40c84168c158b9347887b7d9e5ae9e6d8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183aa-25ea-7943-8822-ad25e9d5b03b-ai-billing",
+    "uid": "2450a86d-05c1-405c-b369-d4b09f94b66b",
+    "generation": 2,
+    "spec_sha256": "29834304c12eae8752200502f27a11c0d382f0e4d3bccf59cd81ec4363b97eb0"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183aa-25ea-7943-8822-ad25e9d5b03b-ai-cache",
+    "uid": "0bb3cf13-67fc-4f37-b34c-7a2a6f7ab15d",
+    "generation": 2,
+    "spec_sha256": "327f9b99a0ee1d6beadfb2077081deb625f93f3df7d813e3ba74a53c34082dcb"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183aa-25ea-7943-8822-ad25e9d5b03b-ai-history",
+    "uid": "940b7aa9-3e9c-4041-bb61-16b92a6b976a",
+    "generation": 2,
+    "spec_sha256": "699c1398b594f094a9a085014a962dfe34de8b525ccdbdca1d98521cddf1a5cd"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183aa-25ea-7943-8822-ad25e9d5b03b-ai-memory",
+    "uid": "13f643e9-f87e-41b1-93ed-fd6b6add0515",
+    "generation": 2,
+    "spec_sha256": "ec7d86566d5fd06c4118522cea387c9bfa5c91fe7392044d209622f2a8030616"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183aa-25ea-7943-8822-ad25e9d5b03b-ai-proxy",
+    "uid": "f84b676e-d486-46f9-b773-a86d56c724ba",
+    "generation": 2,
+    "spec_sha256": "c2bc7f27cc504772d835066f6d5217e7f311f74ca41adbf96dda33ef865d6dc9"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183aa-25ea-7943-8822-ad25e9d5b03b-ai-quota",
+    "uid": "c63d141d-fae7-459c-937e-bedc80f77532",
+    "generation": 2,
+    "spec_sha256": "0fcda3dcf2877b515595498b86409567974bb3dc850ca7eb46286cd0b13fb6c8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183aa-25ea-7943-8822-ad25e9d5b03b-ai-statistics",
+    "uid": "79f6b4ce-2a24-467d-9c90-ad2925e6cf51",
+    "generation": 2,
+    "spec_sha256": "2092c3e7ea0c49d1a65cab551495e2b0f7f693b426875e6d4b491b23c3439c28"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183aa-25ea-7943-8822-ad25e9d5b03b-model-mapper",
+    "uid": "e4ceb9c6-110c-4c85-9be9-ca9abe7b4c0d",
+    "generation": 2,
+    "spec_sha256": "bcf4c0f897b7b32bc65972b5b87e23b40c84168c158b9347887b7d9e5ae9e6d8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183d9-067d-7e71-87c1-ad1bfbf64cc5-ai-billing",
+    "uid": "10373a6c-b464-45c0-b08e-177951c390ab",
+    "generation": 2,
+    "spec_sha256": "29834304c12eae8752200502f27a11c0d382f0e4d3bccf59cd81ec4363b97eb0"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183d9-067d-7e71-87c1-ad1bfbf64cc5-ai-cache",
+    "uid": "affdfdf9-59e1-433e-9b0f-dc3ba0942183",
+    "generation": 2,
+    "spec_sha256": "327f9b99a0ee1d6beadfb2077081deb625f93f3df7d813e3ba74a53c34082dcb"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183d9-067d-7e71-87c1-ad1bfbf64cc5-ai-history",
+    "uid": "ea17e5be-9466-4a54-b69d-f8dd3284b6bf",
+    "generation": 2,
+    "spec_sha256": "699c1398b594f094a9a085014a962dfe34de8b525ccdbdca1d98521cddf1a5cd"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183d9-067d-7e71-87c1-ad1bfbf64cc5-ai-memory",
+    "uid": "49101d5a-5818-40e6-89d5-0479096d5723",
+    "generation": 2,
+    "spec_sha256": "ec7d86566d5fd06c4118522cea387c9bfa5c91fe7392044d209622f2a8030616"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183d9-067d-7e71-87c1-ad1bfbf64cc5-ai-proxy",
+    "uid": "98b84b88-240e-484e-82bd-bf347f8b4114",
+    "generation": 2,
+    "spec_sha256": "c2bc7f27cc504772d835066f6d5217e7f311f74ca41adbf96dda33ef865d6dc9"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183d9-067d-7e71-87c1-ad1bfbf64cc5-ai-quota",
+    "uid": "f7f84119-f78c-4889-9341-366a26b49eb5",
+    "generation": 2,
+    "spec_sha256": "0fcda3dcf2877b515595498b86409567974bb3dc850ca7eb46286cd0b13fb6c8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183d9-067d-7e71-87c1-ad1bfbf64cc5-ai-statistics",
+    "uid": "820e06b4-a7f2-45d1-a9d1-f9cc4153f0f7",
+    "generation": 2,
+    "spec_sha256": "2092c3e7ea0c49d1a65cab551495e2b0f7f693b426875e6d4b491b23c3439c28"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183d9-067d-7e71-87c1-ad1bfbf64cc5-model-mapper",
+    "uid": "4b16169f-74b7-4771-b871-ef26a4299374",
+    "generation": 2,
+    "spec_sha256": "bcf4c0f897b7b32bc65972b5b87e23b40c84168c158b9347887b7d9e5ae9e6d8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183f7-377b-7071-9948-e9d2811ccb33-ai-billing",
+    "uid": "5d39b465-fa62-49ad-a76b-d12d22de446e",
+    "generation": 2,
+    "spec_sha256": "29834304c12eae8752200502f27a11c0d382f0e4d3bccf59cd81ec4363b97eb0"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183f7-377b-7071-9948-e9d2811ccb33-ai-cache",
+    "uid": "58b35494-c0b5-4f6f-8d79-e7c568d161e5",
+    "generation": 2,
+    "spec_sha256": "327f9b99a0ee1d6beadfb2077081deb625f93f3df7d813e3ba74a53c34082dcb"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183f7-377b-7071-9948-e9d2811ccb33-ai-history",
+    "uid": "5735b24c-38b5-4d74-9b19-125ec1d9b59d",
+    "generation": 2,
+    "spec_sha256": "699c1398b594f094a9a085014a962dfe34de8b525ccdbdca1d98521cddf1a5cd"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183f7-377b-7071-9948-e9d2811ccb33-ai-memory",
+    "uid": "56c96d50-bea4-4d23-8dbb-2fcbfd8f84c3",
+    "generation": 2,
+    "spec_sha256": "ec7d86566d5fd06c4118522cea387c9bfa5c91fe7392044d209622f2a8030616"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183f7-377b-7071-9948-e9d2811ccb33-ai-proxy",
+    "uid": "6fb91a24-df09-4920-8d78-e533bfe6d82a",
+    "generation": 2,
+    "spec_sha256": "c2bc7f27cc504772d835066f6d5217e7f311f74ca41adbf96dda33ef865d6dc9"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183f7-377b-7071-9948-e9d2811ccb33-ai-quota",
+    "uid": "fd4fb5a2-85a4-43d6-8192-af4d6509e3d3",
+    "generation": 2,
+    "spec_sha256": "0fcda3dcf2877b515595498b86409567974bb3dc850ca7eb46286cd0b13fb6c8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183f7-377b-7071-9948-e9d2811ccb33-ai-statistics",
+    "uid": "c25362a9-8c7b-4aa1-b4c5-ed1a53215e1b",
+    "generation": 2,
+    "spec_sha256": "2092c3e7ea0c49d1a65cab551495e2b0f7f693b426875e6d4b491b23c3439c28"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a183f7-377b-7071-9948-e9d2811ccb33-model-mapper",
+    "uid": "024479f2-3d1e-427f-a1cd-d9604cfdf781",
+    "generation": 2,
+    "spec_sha256": "bcf4c0f897b7b32bc65972b5b87e23b40c84168c158b9347887b7d9e5ae9e6d8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18457-51c0-7f53-b5c8-4636bd3d831d-ai-billing",
+    "uid": "9c70b0b2-fc51-422d-b109-1a38a5fbb843",
+    "generation": 2,
+    "spec_sha256": "29834304c12eae8752200502f27a11c0d382f0e4d3bccf59cd81ec4363b97eb0"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18457-51c0-7f53-b5c8-4636bd3d831d-ai-cache",
+    "uid": "e80cf98b-fd12-4a57-9f74-2f8b19290d2f",
+    "generation": 2,
+    "spec_sha256": "327f9b99a0ee1d6beadfb2077081deb625f93f3df7d813e3ba74a53c34082dcb"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18457-51c0-7f53-b5c8-4636bd3d831d-ai-history",
+    "uid": "bb676e26-e590-4afb-886c-efa2f0afc9d7",
+    "generation": 2,
+    "spec_sha256": "699c1398b594f094a9a085014a962dfe34de8b525ccdbdca1d98521cddf1a5cd"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18457-51c0-7f53-b5c8-4636bd3d831d-ai-memory",
+    "uid": "994ed3cf-ac24-487c-ba27-479c37295884",
+    "generation": 2,
+    "spec_sha256": "ec7d86566d5fd06c4118522cea387c9bfa5c91fe7392044d209622f2a8030616"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18457-51c0-7f53-b5c8-4636bd3d831d-ai-proxy",
+    "uid": "f2c28cd8-8f67-4a9e-a024-9d00effa7ca6",
+    "generation": 2,
+    "spec_sha256": "c2bc7f27cc504772d835066f6d5217e7f311f74ca41adbf96dda33ef865d6dc9"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18457-51c0-7f53-b5c8-4636bd3d831d-ai-quota",
+    "uid": "523c92ee-1472-4e2f-95aa-c506f98709e9",
+    "generation": 2,
+    "spec_sha256": "0fcda3dcf2877b515595498b86409567974bb3dc850ca7eb46286cd0b13fb6c8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18457-51c0-7f53-b5c8-4636bd3d831d-ai-statistics",
+    "uid": "04de07a6-8f05-49cd-8e45-0e98e79ef537",
+    "generation": 2,
+    "spec_sha256": "2092c3e7ea0c49d1a65cab551495e2b0f7f693b426875e6d4b491b23c3439c28"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18457-51c0-7f53-b5c8-4636bd3d831d-model-mapper",
+    "uid": "0fd08092-080d-4280-b6bd-7d7b68985678",
+    "generation": 2,
+    "spec_sha256": "bcf4c0f897b7b32bc65972b5b87e23b40c84168c158b9347887b7d9e5ae9e6d8"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18db3-a727-7cf2-8ba5-677d211595e6-ai-billing",
+    "uid": "bb2f42c3-86ef-4ac4-83a6-96b82537a007",
+    "generation": 1,
+    "spec_sha256": "6f93ac2285ceb9c73d9447c43414bbaaa8709693030ad79ff41d48f502d4ea1a"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18db3-a727-7cf2-8ba5-677d211595e6-ai-cache",
+    "uid": "793f3b6e-5ef0-43dd-b914-5c90ec6d4b4c",
+    "generation": 1,
+    "spec_sha256": "7f1a5701301bd66e4183cc2907dec823618c7364255ebde88404fc8c8b0b63ee"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18db3-a727-7cf2-8ba5-677d211595e6-ai-memory",
+    "uid": "989985e3-dbb8-4516-b7f5-cc7ab523fadd",
+    "generation": 1,
+    "spec_sha256": "83edabca16a59c0e6aeb7bbdc00d947b47f4571e0c55fb79b1ef9b7e650c4d06"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18db3-a727-7cf2-8ba5-677d211595e6-ai-proxy",
+    "uid": "91c0bfcd-2aec-42ed-ad93-df17f95727da",
+    "generation": 1,
+    "spec_sha256": "b3dcefc3945c182efb5495fede8127c3ab7ea7530276ba00dff0bb50ffb2b585"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18db3-a727-7cf2-8ba5-677d211595e6-ai-quota",
+    "uid": "5f6e1a2d-4ffb-4d21-83e0-b05e0d2401cc",
+    "generation": 1,
+    "spec_sha256": "97e7ecd5e037e492f7ab4b0514c1615be79714a15ef4dca1a3a558ed75aae631"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18db3-a727-7cf2-8ba5-677d211595e6-ai-statistics",
+    "uid": "709d630c-7914-499b-8c2b-4849af4461e3",
+    "generation": 1,
+    "spec_sha256": "e3c9b3aef348de23b75be9781ebea79ba451d0febd60c54f4d4005344ab42475"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18db3-a727-7cf2-8ba5-677d211595e6-model-mapper",
+    "uid": "c0712f3f-7cf7-4a44-ba33-d15759e1f8b4",
+    "generation": 1,
+    "spec_sha256": "01c86dc5505b0976019b1fcac29a268dda1200c1a1a268e970f353656e4658a6"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e5e-fe72-7c10-bf4d-88181944d3ca-ai-quota",
+    "uid": "4adad2ed-334c-49bf-a986-abde3bcd36eb",
+    "generation": 1,
+    "spec_sha256": "a3a4f6bbb0c299741f8fdaabb43218408b0a493c4a97af73e13fcbcbd0f5beac"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e5e-fe72-7c10-bf4d-88181944d3ca-ai-statistics",
+    "uid": "fb57f83f-7c65-4c61-a1e1-1cfdf011776e",
+    "generation": 1,
+    "spec_sha256": "2dbecda242c7d149983c8632adf8c0d801821c9e3be83df44953c21ac765060e"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e5e-fe72-7c10-bf4d-88181944d3ca-model-mapper",
+    "uid": "7e06ed63-3e93-4bcb-b9ab-bd4ad12128fe",
+    "generation": 1,
+    "spec_sha256": "7e8be6e39e95924f56f1e3a6676391f41d0cd0d7f987f999fcdc2a5512a23b26"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e7c-2312-77e2-983b-4e97300ef02d-ai-billing",
+    "uid": "04be143e-c0bb-4a63-a0a4-74cba0c58dc6",
+    "generation": 1,
+    "spec_sha256": "31be462b1fa8567b1cf2b1fa8ff772cb9f57d4383ae1bd4b13e483282a0f02b4"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e7c-2312-77e2-983b-4e97300ef02d-ai-cache",
+    "uid": "d930c6e6-ecd4-4f40-9cb3-ba29995a0a07",
+    "generation": 1,
+    "spec_sha256": "fa6e7f3799f3a4c0543b7e6c9a7d72820d4caae96057ab0624e6465a7bf19be0"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e7c-2312-77e2-983b-4e97300ef02d-ai-memory",
+    "uid": "6590d23f-3cf1-4b96-9295-6184317954e1",
+    "generation": 1,
+    "spec_sha256": "16a51a7ec48bf7eb01ef01a403e40afdadc344b379a861d957ee9761aa8bb385"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e7c-2312-77e2-983b-4e97300ef02d-ai-proxy",
+    "uid": "efc03741-d719-4955-be07-005a5ded02d3",
+    "generation": 1,
+    "spec_sha256": "a216aacc03f4c78e7c86e0ab0a08e7c855a569b3cbc1dc66a7133cdf64b77cdc"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e7c-2312-77e2-983b-4e97300ef02d-ai-quota",
+    "uid": "815c48f4-6fa1-4c6b-bbc6-bb0b95b1232b",
+    "generation": 1,
+    "spec_sha256": "75c38410d9da69660841fcff394ce363da72dc381f02e5d154728a3ec38383d5"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e7c-2312-77e2-983b-4e97300ef02d-ai-statistics",
+    "uid": "551994ab-41bb-4732-a3e5-32bec821fb38",
+    "generation": 1,
+    "spec_sha256": "fc0374e71776e20a1936384d83fa0ed08117f430fae67000f08038f95d700327"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e7c-2312-77e2-983b-4e97300ef02d-model-mapper",
+    "uid": "66e4514a-6e4a-4df6-a1a9-e349c35adb2c",
+    "generation": 1,
+    "spec_sha256": "94af61091d1c607f2db91639bedbde7477032097e7c6595e89d81bf7572f67eb"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e8d-4230-7093-a0c0-9be5e416dcb8-ai-billing",
+    "uid": "0edf5eb4-c558-4bba-bbba-1c923a0974db",
+    "generation": 1,
+    "spec_sha256": "19be924fafffd24e7d39ff362155e0be2174b04cbc28d0e29defa798ac745c10"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e8d-4230-7093-a0c0-9be5e416dcb8-ai-cache",
+    "uid": "36bcbd45-df17-4d78-a28a-647bc664b0ea",
+    "generation": 1,
+    "spec_sha256": "ba9ea4df61a63313272cef79dd0c552d51eb91f71e25f191d444e04f6948ceb1"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e8d-4230-7093-a0c0-9be5e416dcb8-ai-memory",
+    "uid": "40450e45-7559-4aad-944d-3a3020b83df7",
+    "generation": 1,
+    "spec_sha256": "9307bede583b6f05b2a8be1638194806c5e495a663c88f60e1d7f074d210d304"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e8d-4230-7093-a0c0-9be5e416dcb8-ai-proxy",
+    "uid": "6ba0355b-9458-4485-8e3e-0b6912c13a61",
+    "generation": 1,
+    "spec_sha256": "d272e17d96f569381b3e9af08a66d2d48aee990f11111825499b671a45c22d0a"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e8d-4230-7093-a0c0-9be5e416dcb8-ai-quota",
+    "uid": "fe078b4d-e223-4709-bf5d-77b24519fcf5",
+    "generation": 1,
+    "spec_sha256": "0d0ec65f163dc76c31ae94ecfd0755017be251b78627868593c52a55ebf32fa2"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e8d-4230-7093-a0c0-9be5e416dcb8-ai-statistics",
+    "uid": "54dc748d-85c0-439d-a7e4-e34cbd03e442",
+    "generation": 1,
+    "spec_sha256": "5b045bb3ab7827993b293fad42025016c5088e60235c1fc1f3d7490fa20bfc61"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e8d-4230-7093-a0c0-9be5e416dcb8-model-mapper",
+    "uid": "addebc63-d2ce-4958-b405-62f5d1454800",
+    "generation": 1,
+    "spec_sha256": "ae630885b02afa9473b90b21f96794fdadd1752c610e9ecbfa230d82ae63fa9e"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e9e-76c3-7023-9a92-8cd3f4327f96-ai-billing",
+    "uid": "63d7c4a5-cbf2-475b-96ec-8a69a4c16996",
+    "generation": 1,
+    "spec_sha256": "4b54dd8c907feab825152f9a043afa64947c9ece1716dd543c4384d627298be0"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e9e-76c3-7023-9a92-8cd3f4327f96-ai-cache",
+    "uid": "fce07a0e-b294-4325-bacf-6912d7ca21f3",
+    "generation": 1,
+    "spec_sha256": "996d86413444a1a246d3fae04699b6ba86a8651aa3d63b160b4653d0aa9f8b78"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e9e-76c3-7023-9a92-8cd3f4327f96-ai-memory",
+    "uid": "50f6e063-06c4-4813-8c38-e51415113c1c",
+    "generation": 1,
+    "spec_sha256": "b03c6c06bc83d073a0e3fa18d7c3cc088f781fcad6780aaf477e26fc122b841e"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e9e-76c3-7023-9a92-8cd3f4327f96-ai-proxy",
+    "uid": "738d1977-c1c8-47ca-beab-97a08aec82b5",
+    "generation": 1,
+    "spec_sha256": "da8e78f07aed08fe7e706d57b81e2d9ccf889f5f3e217aa414d7b723806e49e3"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e9e-76c3-7023-9a92-8cd3f4327f96-ai-quota",
+    "uid": "f5cd9fd7-6ed8-4610-98a1-04b9ab9fe83f",
+    "generation": 1,
+    "spec_sha256": "33b4bf2dc065cc573caf3a03165fbacfa366daf6f6b2b83086c946e4cc3bc1d2"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e9e-76c3-7023-9a92-8cd3f4327f96-ai-statistics",
+    "uid": "48e27ae6-5e33-4f0f-a6c7-54caa9284383",
+    "generation": 1,
+    "spec_sha256": "30f143c176eabda10e96ecf5bde9c891c4c29c6f6df3ce811aae91221d008a18"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18e9e-76c3-7023-9a92-8cd3f4327f96-model-mapper",
+    "uid": "3827dfae-c1b4-4836-bb60-cc189751cc97",
+    "generation": 1,
+    "spec_sha256": "68b89ef764e7db67cb77593bc7c09462b0bd14e05f8684345e5fc18051aa3b48"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18ea0-c904-7dd0-91c0-6a6d526aab60-ai-billing",
+    "uid": "59de7944-4b39-4880-a7fc-3e7f066d4738",
+    "generation": 1,
+    "spec_sha256": "ed1fae062a71ef41d75c5010d3ec96d9836b47c961f3882658955d27ca0dd06c"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18ea0-c904-7dd0-91c0-6a6d526aab60-ai-proxy",
+    "uid": "c597ab77-55db-491c-9763-759a32d731f4",
+    "generation": 1,
+    "spec_sha256": "cea72645b4cd0854ef66e404df78073c9d378c96653f81d52ffd2c8165edbf6b"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18ea0-c904-7dd0-91c0-6a6d526aab60-ai-quota",
+    "uid": "ccabbebc-c3cf-433f-8fb6-5ad518e6e0b7",
+    "generation": 1,
+    "spec_sha256": "e56a658afeeb728e307596991ce3bb1714cf11eb816284d4cbc80f650b36794b"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18ea0-c904-7dd0-91c0-6a6d526aab60-ai-statistics",
+    "uid": "78d2b1c3-d6bc-426f-bff8-87821c80babc",
+    "generation": 1,
+    "spec_sha256": "b23a0a13f7288a4e6c01b3b34f9c19657c6ec4ad6f90a3f2b7168c3359ee6ade"
+  },
+  {
+    "kind": "WasmPlugin",
+    "name": "rel-01a18ea0-c904-7dd0-91c0-6a6d526aab60-model-mapper",
+    "uid": "790952bf-a160-458c-9049-dfb00846d50c",
+    "generation": 1,
+    "spec_sha256": "1440e029c5051ae18ef983c728a8928155e4470812e4fd7e9b508f833f48f55b"
+  }
+]

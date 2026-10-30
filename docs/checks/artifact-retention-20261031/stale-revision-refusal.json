@@ -1,0 +1,4 @@
+{
+  "http_status": 409,
+  "error_code": "artifact_catalog_revision_conflict"
+}

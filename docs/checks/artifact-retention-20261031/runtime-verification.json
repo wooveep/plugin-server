@@ -1,0 +1,158 @@
+{
+  "checked_at": "2026-10-30T23:42:27.013713+00:00",
+  "helm_revision": 102,
+  "retained_ingress_wasm_resources": 133,
+  "all_final_uids_and_specs_unchanged": true,
+  "generation_changes": [
+    {
+      "kind": "WasmPlugin",
+      "name": "key-auth.internal",
+      "generation_before": 302,
+      "generation_after": 306,
+      "same_uid": true,
+      "same_final_spec_sha256": true
+    }
+  ],
+  "gateway": [
+    {
+      "name": "higress-gateway-596bfcbf76-6gspj",
+      "uid": "6d0aed93-733b-43d0-8383-79061a0f5979"
+    }
+  ],
+  "gateway_uid_unchanged": true,
+  "deployments": [
+    {
+      "name": "e1-controlled-media",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "e1-controlled-messages",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "e1-controlled-responses",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "e1-controlled-upstream",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "e1-internal-digest",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "e1-internal-embedding",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "e1-internal-extraction",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "higress-console-loki",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "higress-console-prometheus",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "higress-console-workload-state",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "higress-controller",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "higress-gateway",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "higress-plugin-server",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "modelfusion-console-api",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "modelfusion-web-admin",
+      "desired": 1,
+      "available": 1
+    },
+    {
+      "name": "modelfusion-web-user",
+      "desired": 1,
+      "available": 1
+    }
+  ],
+  "domains": [
+    {
+      "url": "http://admin.ai.lc.wooveep.com/",
+      "status": 200
+    },
+    {
+      "url": "http://user.ai.lc.wooveep.com/",
+      "status": 200
+    },
+    {
+      "url": "http://api.ai.lc.wooveep.com/",
+      "status": 200
+    },
+    {
+      "url": "http://model.ai.lc.wooveep.com/",
+      "status": 200
+    }
+  ],
+  "server_binary_sha256": "b2638537309aeba3a06816146668162e7cef14f7555e00e9effbac6b14cb47e9",
+  "operator_binary_sha256": "5676d3ae6c32061fefd0c2fec4b7c2ce241d45ece03cf4e3e59e77e9b9ecbc2f",
+  "compiler_digest": "sha256:b2638537309aeba3a06816146668162e7cef14f7555e00e9effbac6b14cb47e9",
+  "api_pod": {
+    "name": "modelfusion-console-api-644747b4f8-7qb5h",
+    "uid": "36ea5dbf-3064-435c-baab-6abba302b29c",
+    "image_id": "registry.lc.wooveep.com:9980/modelfusion/modelfusion-console-api@sha256:3997cb12338cd46e04a4969fc1d01a6a3e73892408fd90e4c7a5631b37b03023"
+  },
+  "original_customer_balances_unchanged": true,
+  "financial_counts": {
+    "facts": {
+      "before": 0,
+      "after": 0
+    },
+    "revisions": {
+      "before": 0,
+      "after": 0
+    },
+    "applications": {
+      "before": 0,
+      "after": 0
+    },
+    "cash_entries": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  "retention_service_env_presence": {
+    "higress-plugin-server": [
+      "PLUGIN_SERVER_RETENTION_TOKEN"
+    ],
+    "modelfusion-console-api": [
+      "CONSOLE_ARTIFACT_RETENTION_TOKEN"
+    ]
+  }
+}

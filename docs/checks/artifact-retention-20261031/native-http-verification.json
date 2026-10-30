@@ -1,0 +1,96 @@
+{
+  "started_at": "2026-10-30T23:44:00.351227+00:00",
+  "completed_at": "2026-10-30T23:44:00.849841+00:00",
+  "helm_revision": 102,
+  "original_delete_receipt_unchanged": true,
+  "deleted_higher_version_hidden": true,
+  "older_available_version_selected": "2.9.0",
+  "both_fixture_versions_deleted_and_not_selectable": true,
+  "exact_archived_metadata_preserved": true,
+  "formal_plugins": 55,
+  "all_formal_default_references_match": true,
+  "fixture_identities": [
+    {
+      "artifact_id": "44c2644e-e14d-4c00-895c-4babd8b46534",
+      "plugin_name": "uploaded-directory-fixture",
+      "plugin_version": "2.10.0",
+      "content_digest": "sha256:e2687465fb97c1ae42c5d4bce61f1c745e0afbfc0d038efe9eb6a59bb94decb7",
+      "catalog_revision": "76",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/uploaded-directory-fixture/2.10.0/plugin.wasm",
+      "wasm_bytes": 8
+    },
+    {
+      "artifact_id": "6ef90264-f106-4ad1-be9c-15ecc8a59429",
+      "plugin_name": "uploaded-directory-fixture",
+      "plugin_version": "2.9.0",
+      "content_digest": "sha256:b4ae3c94f9e35a2dbd9fb99d14c1f4a564dcb7f418e2fff5b55f2187a270f90f",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/uploaded-directory-fixture/2.9.0/plugin.wasm",
+      "catalog_revision": "77",
+      "wasm_bytes": 8
+    }
+  ],
+  "older_delete_state": "deleted",
+  "original_balance_recovery": {
+    "recovery_id": "3b43fb42-9122-47e5-bdcc-d6b700cc227a",
+    "scope_id": "01a18bf9-ac92-7241-9cdc-a6259a6088dc",
+    "state": "requested",
+    "state_revision": "1"
+  },
+  "model_calls": 0,
+  "records": [
+    {
+      "label": "102-final-original-delete-readback",
+      "status": 200,
+      "response_sha256": "e3edcfab760010d311f2089e358cce52255618df5df4ab013025295b01644c15",
+      "elapsed_ms": 16.154
+    },
+    {
+      "label": "102-final-older-delete-readback",
+      "status": 200,
+      "response_sha256": "7fa122663fd42a98284ee7f57df4d1aa392a0c102fc459689e1c827b17a7afde",
+      "elapsed_ms": 6.426
+    },
+    {
+      "label": "102-final-both-deleted-directory",
+      "status": 200,
+      "response_sha256": "b89758f65d48ba47983fc013f88cce0a3da5e2eb41b0a820883e1291a0de1fe7",
+      "elapsed_ms": 126.79
+    },
+    {
+      "label": "102-archived-detail-2.10.0",
+      "status": 200,
+      "response_sha256": "95cef07de7eb131e173dd240c800ecb3917a82637c96c063be6d633fec12019a",
+      "elapsed_ms": 81.213
+    },
+    {
+      "label": "102-archived-schema-2.10.0",
+      "status": 200,
+      "response_sha256": "e63758c7d695c29b24468fa896deddf0065c2555899e7cba7113d218ffe7e7a3",
+      "elapsed_ms": 22.934
+    },
+    {
+      "label": "102-archived-detail-2.9.0",
+      "status": 200,
+      "response_sha256": "ae57944af83f8470f95708f0e7e4c5fa6074011b8c77f9231e1eb71ac961d2e2",
+      "elapsed_ms": 79.217
+    },
+    {
+      "label": "102-archived-schema-2.9.0",
+      "status": 200,
+      "response_sha256": "f84ebf42e59ea9c2e10f4facaac5192523aea7bd2e0e6b34dee06c41b535328a",
+      "elapsed_ms": 21.305
+    },
+    {
+      "label": "102-formal-catalog",
+      "status": 200,
+      "response_sha256": "9407f3be76bfa07ea2d36f68245d4652400dc44bfc1538cd4d6558d402407f82",
+      "elapsed_ms": 127.825
+    },
+    {
+      "label": "102-original-recovery",
+      "status": 200,
+      "response_sha256": "4f5f90c5ed5bac5a0e876d4ed38727c43c053f8b4993588831eb524f208f563e",
+      "elapsed_ms": 4.982
+    }
+  ]
+}
