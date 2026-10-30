@@ -45,6 +45,9 @@ def build_one(root: Path, source, *, host: bool, images: dict, run: Path) -> dic
             print(json.dumps({"plugin_name": source.name, "plugin_version": source.version, "cached": True}), flush=True)
             return previous
     receipt_file.unlink(missing_ok=True)
+    # Bazel outputs may be read-only. A cache miss replaces this disposable
+    # build output instead of attempting to overwrite the previous file.
+    artifact.unlink(missing_ok=True)
     environment = dict(os.environ)
     commands = []
     started = datetime.now(timezone.utc).isoformat()

@@ -21,6 +21,9 @@ from plugin_catalog import select_releases, source_inputs
 
 def prepare(root: Path, plugins: list[str] | None = None) -> None:
     repository = subprocess.check_output(["git", "remote", "get-url", "origin"], cwd=root, text=True).strip()
+    registered_store = ArtifactStore(root / "dist/plugins") if (root / "dist/.plugins-artifact-state/state.sqlite3").is_file() else None
+    registered = {(item["plugin_name"], item["plugin_version"]): item
+                  for item in registered_store.list_manifests()} if registered_store else {}
     reviews = []
     selected = select_releases(root)
     if plugins:
@@ -58,16 +61,30 @@ def prepare(root: Path, plugins: list[str] | None = None) -> None:
         with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as package:
             descriptor = package.extractfile("package.json").read()
         declared = validate_document(descriptor)
+        published = registered.get((source.name, source.version))
+        if published is not None:
+            original = parse_json(registered_store.read_file(source.name, source.version, "package.json"))
+            # Rebuilding unchanged payload bytes does not republish a version or
+            # rewrite the provenance of its original registered package.
+            if {key: value for key, value in original.items() if key != "source"} != {
+                    key: value for key, value in declared["document"].items() if key != "source"}:
+                raise StorageConflict("version_conflict")
+            archive = registered_store.read_file(source.name, source.version, "archive.tgz")
+            origin = original["source"]
+            declared = {"content_digest": published["content_digest"]}
         destination = root / "build/packages" / source.name / source.version
         destination.mkdir(parents=True, exist_ok=True)
         (destination / "package.tgz").write_bytes(archive)
         review = {"plugin_name": source.name, "plugin_version": source.version,
-                  "source_commit": commit, "source_inputs_digest": origin["build_inputs_digest"],
+                  "source_commit": origin.get("commit"), "source_inputs_digest": origin.get("build_inputs_digest"),
+                  "current_build_commit": commit, "current_build_inputs_digest": digest(json_bytes(inputs)),
                   "build_receipt_digest": digest((output / "build-receipt.json").read_bytes()),
                   "toolchain": receipt["toolchain"], "source_digest": digest(json_bytes(origin)),
                   "wasm_digest": receipt["sha256"], "content_digest": declared["content_digest"],
                   "archive_digest": digest(archive), "environment_refs": environment,
                   "package": str((destination / "package.tgz").relative_to(root))}
+        if published is not None:
+            review["registered_artifact_id"] = published["artifact_id"]
         (destination / "review.json").write_bytes(json_bytes(review))
         reviews.append(review)
         print(json.dumps({"prepared": source.name, "version": source.version}), flush=True)
