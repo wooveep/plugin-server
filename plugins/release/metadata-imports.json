@@ -1452,15 +1452,15 @@
     },
     {
       "plugin": "basic-auth",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "path": "plugins/release/metadata/basic-auth/spec.yaml",
-      "sha256": "c0676147744d2dd944b3fdd86deac7cb9faee303266bbb46b0f8fa07fcf2d222"
+      "sha256": "9f1a7e839ea7f7e48e5baad6a156539c156d193d5c4ba72251c13bce1bc0bf21"
     },
     {
       "plugin": "bot-detect",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "path": "plugins/release/metadata/bot-detect/spec.yaml",
-      "sha256": "e24405d48690446636c1b919b327e39a0fd82a868483fe947feb53442d57e6b0"
+      "sha256": "2da8a039fb5f07f8c11e8e81574ce8372ddd0ab067cf2f313aa90d5105833b64"
     },
     {
       "plugin": "cache-control",
@@ -1482,9 +1482,9 @@
     },
     {
       "plugin": "custom-response",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "path": "plugins/release/metadata/custom-response/spec.yaml",
-      "sha256": "5dda32042861fe995c19f2ce127826e9f5886081e5c21847d389fe8e2bd2d61b"
+      "sha256": "344a234fff59db72fdf349360279c3b4ced950b4038c2cebf9077eec5d11f0fd"
     },
     {
       "plugin": "de-graphql",
@@ -1518,9 +1518,9 @@
     },
     {
       "plugin": "hmac-auth",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "path": "plugins/release/metadata/hmac-auth/spec.yaml",
-      "sha256": "d07d9b4e1593b68dc172743359105c5c107b85d2ee76e4d603669f02ae05c0c2"
+      "sha256": "5bab99040a75228233bbfaa3778bab3d72070c4526944eacf94e4f01a4a67c7a"
     },
     {
       "plugin": "hmac-auth-apisix",
@@ -1542,9 +1542,9 @@
     },
     {
       "plugin": "jwt-auth",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "path": "plugins/release/metadata/jwt-auth/spec.yaml",
-      "sha256": "7122aa9ee00d2a5f432aa3b473473a878ff2b7b294c7042eb8b0b861d79e7667"
+      "sha256": "a060b4b026681bc6bfd9e2c957959c746f0abdc7cd900ca1171e8ab84bf61df9"
     },
     {
       "plugin": "key-auth",
@@ -1554,9 +1554,9 @@
     },
     {
       "plugin": "key-rate-limit",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "path": "plugins/release/metadata/key-rate-limit/spec.yaml",
-      "sha256": "c55bf71a154e59922b73d244a7dc2e90e329913d544f6e3cb6f3b7d8c78f509a"
+      "sha256": "c0ab9185a319ec769aee5b61992b6e31d481b3b440f363ed25913aeb0203aefd"
     },
     {
       "plugin": "log-request-response",
@@ -1620,9 +1620,9 @@
     },
     {
       "plugin": "request-block",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "path": "plugins/release/metadata/request-block/spec.yaml",
-      "sha256": "9e4d12ee999c2d3f731fc68264e2c7462091a6e9757fb8e3bcdf078751365f08"
+      "sha256": "da7def9913d0b0a4ec3b36300e94321e4233870f879a6164439bf280b0520bd6"
     },
     {
       "plugin": "request-validation",

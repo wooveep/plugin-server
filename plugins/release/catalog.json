@@ -2760,7 +2760,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/basic-auth",
-      "declaredVersion": "1.0.1"
+      "declaredVersion": "2.0.1"
     },
     {
       "logicalId": "bot-detect",
@@ -2792,7 +2792,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/bot-detect",
-      "declaredVersion": "1.0.1"
+      "declaredVersion": "2.0.1"
     },
     {
       "logicalId": "custom-response",
@@ -2824,7 +2824,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/custom-response",
-      "declaredVersion": "1.0.1"
+      "declaredVersion": "2.0.1"
     },
     {
       "logicalId": "hmac-auth",
@@ -2856,7 +2856,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/hmac-auth",
-      "declaredVersion": "1.0.1"
+      "declaredVersion": "2.0.1"
     },
     {
       "logicalId": "jwt-auth",
@@ -2888,7 +2888,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/jwt-auth",
-      "declaredVersion": "1.0.1"
+      "declaredVersion": "2.0.1"
     },
     {
       "logicalId": "key-auth",
@@ -2950,7 +2950,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/key-rate-limit",
-      "declaredVersion": "1.0.1"
+      "declaredVersion": "2.0.1"
     },
     {
       "logicalId": "oauth",
@@ -3014,7 +3014,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/request-block",
-      "declaredVersion": "1.0.1"
+      "declaredVersion": "2.0.1"
     },
     {
       "logicalId": "sni-misdirect",

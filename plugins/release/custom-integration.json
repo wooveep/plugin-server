@@ -219,5 +219,63 @@
     "receipt": "build/source-reconciliation-20261031/native-media-regression.json",
     "status": "source frozen and pushed; final ai-billing 1.0.1 full Go/Wasm regression, both complete-package ingestions and eight HTTP downloads passed; MF registration and real Higress verification remain with owner",
     "delivery_evidence": "docs/checks/2026-10-31-native-media-plugin-delivery.json"
-  }
+  },
+  "cpp_releases_above_published_tags": [
+    {
+      "plugin": "basic-auth",
+      "original_source_version": "1.0.0",
+      "published_reference": "higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/basic-auth:2.0.0",
+      "new_local_release": "2.0.1",
+      "reason": "new local source build above the actual published SemVer; no claim of historical byte equality"
+    },
+    {
+      "plugin": "bot-detect",
+      "original_source_version": "1.0.0",
+      "published_reference": "higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/bot-detect:2.0.0",
+      "new_local_release": "2.0.1",
+      "reason": "new local source build above the actual published SemVer; no claim of historical byte equality"
+    },
+    {
+      "plugin": "custom-response",
+      "original_source_version": "1.0.0",
+      "published_reference": "higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/custom-response:2.0.0",
+      "new_local_release": "2.0.1",
+      "reason": "new local source build above the actual published SemVer; no claim of historical byte equality"
+    },
+    {
+      "plugin": "hmac-auth",
+      "original_source_version": "1.0.0",
+      "published_reference": "higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/hmac-auth:2.0.0",
+      "new_local_release": "2.0.1",
+      "reason": "new local source build above the actual published SemVer; no claim of historical byte equality"
+    },
+    {
+      "plugin": "jwt-auth",
+      "original_source_version": "1.0.0",
+      "published_reference": "higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/jwt-auth:2.0.0",
+      "new_local_release": "2.0.1",
+      "reason": "new local source build above the actual published SemVer; no claim of historical byte equality"
+    },
+    {
+      "plugin": "key-rate-limit",
+      "original_source_version": "1.0.0",
+      "published_reference": "higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/key-rate-limit:2.0.0",
+      "new_local_release": "2.0.1",
+      "reason": "new local source build above the actual published SemVer; no claim of historical byte equality"
+    },
+    {
+      "plugin": "oauth",
+      "original_source_version": null,
+      "published_reference": "higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/oauth:2.0.0",
+      "new_local_release": "2.0.1",
+      "reason": "new local source build above the actual published SemVer; no claim of historical byte equality"
+    },
+    {
+      "plugin": "request-block",
+      "original_source_version": "1.0.0",
+      "published_reference": "higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/request-block:2.0.0",
+      "new_local_release": "2.0.1",
+      "reason": "new local source build above the actual published SemVer; no claim of historical byte equality"
+    }
+  ]
 }

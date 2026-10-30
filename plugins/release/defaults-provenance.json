@@ -149,14 +149,14 @@
     },
     {
       "plugin": "basic-auth",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "basis": "declared metadata defaults/example",
       "sha256": "7ab27defdb1939fb7b5d4f07447522e349ef0f6364589e0e12d836191a35532a",
       "environment_refs": 0
     },
     {
       "plugin": "bot-detect",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "basis": "unconfigured defaults",
       "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "environment_refs": 0
@@ -184,7 +184,7 @@
     },
     {
       "plugin": "custom-response",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "basis": "unconfigured defaults",
       "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "environment_refs": 0
@@ -226,7 +226,7 @@
     },
     {
       "plugin": "hmac-auth",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "basis": "declared metadata defaults/example",
       "sha256": "5d6de811897316d4ab5072959ed95e82de1181c69273f45ab52aad0a4c86c1da",
       "environment_refs": 0
@@ -254,7 +254,7 @@
     },
     {
       "plugin": "jwt-auth",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "basis": "declared metadata defaults/example",
       "sha256": "454b0fd5645f72ddd00c57b660de3bbc53cd6eca5570c58b97aa42afb6922db6",
       "environment_refs": 0
@@ -268,7 +268,7 @@
     },
     {
       "plugin": "key-rate-limit",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "basis": "declared metadata defaults/example",
       "sha256": "4e03c1615b8011ca612c8e16d3d058b851ea98cbfeb6520c6150e862dcf40325",
       "environment_refs": 0
@@ -345,7 +345,7 @@
     },
     {
       "plugin": "request-block",
-      "version": "1.0.1",
+      "version": "2.0.1",
       "basis": "unconfigured defaults",
       "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "environment_refs": 0
