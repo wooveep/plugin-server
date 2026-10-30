@@ -4,14 +4,16 @@ keywords: [higress, AI, observability]
 description: AI Statistics plugin configuration reference
 ---
 
+> Plugin version: `2.0.4`
+
 ## Introduction
 
-Provides basic AI observability capabilities, including metric, log, and trace. The ai-proxy plug-in needs to be connected afterwards. If the ai-proxy plug-in is not connected, the user needs to configure it accordingly to take effect.
+Provides basic AI observability capabilities, including metrics, logs, and traces. Safe base facts do not depend on ai-proxy; ai-proxy schema-v2 metadata is optional trusted enrichment for bounded logical operations and path templates.
 
 ## Runtime Properties
 
-Plugin Phase: `CUSTOM`
-Plugin Priority: `200`
+Plugin Phase: `DEFAULT`
+Plugin Priority: `900`
 
 ## Configuration instructions
 
@@ -24,21 +26,80 @@ Users can also expand observable values ​​through configuration:
 
 | Name             | Type  | Required | Default | Description |
 |----------------|-------|------|-----|------------------------|
+| `use_default_attributes` | bool | optional | false | Enables the full built-in attribute set, including messages, answer, and question. Intended for debugging and auditing. |
+| `use_default_response_attributes` | bool | optional | false | Enables the lightweight built-in response set with model and token statistics. Recommended for high-throughput production use. |
 | `attributes` | []Attribute | optional  | -   | Information that the user wants to record in log/span |
 | `disable_openai_usage` | bool | optional  | false   | When using a non-OpenAI-compatible protocol, the support for model and token is non-standard. Setting the configuration to true can prevent errors. |
-| `value_length_limit` | int | optional  | 4000   | length limit for each value |
-| `max_request_body_bytes` | int | optional  | 104857600 (100 MiB)   | Maximum number of bytes to buffer for the request body. Supports route-level overrides via matchRules, preventing large non-AI uploads (e.g. multipart/form-data) from being rejected by Envoy with HTTP 413. Must be between 1 and 209715200 (200 MiB, the plugin VM memory rebuild ceiling); a value outside that range or a non-number fails config loading |
-| `enable_path_suffixes`   | []string    | optional | ["/v1/chat/completions","/v1/completions","/v1/embeddings","/v1/models","/generateContent","/streamGenerateContent"] | Only effective for requests with these specific path suffixes, can be configured as "\*" to match all paths                                         |
-| `enable_content_types` | []string    | optional | ["text/event-stream","application/json"]                                                                             | Only buffer response body for these content types                                                                                                   |
+| `value_length_limit` | int | optional  | conditional | Length limit for each value |
+| `path_scope` | string | optional | `legacy_suffixes` | `legacy_suffixes` or `bound_target` |
+| `enable_path_suffixes` | []string | optional | see legacy behavior below | Legacy-only path gating, including explicit `*`; bound_target only accepts omission or [] |
+| `enable_methods` | []string | optional | none | Optional exact-case filtering in legacy_suffixes; bound_target only accepts omission or [] |
+| `enable_content_types` | []string | optional | all when omitted | Only buffer response bodies for configured content types; an omitted list matches all content types |
 | `session_id_header` | string | optional  | -   | Specify the header name to read session ID from. If not configured, it will automatically search in the following priority: `x-openclaw-session-key`, `x-clawdbot-session-key`, `x-moltbot-session-key`, `x-agent-session`. Session ID can be used to trace multi-turn Agent conversations |
+
+The conditional runtime defaults for `value_length_limit` are `32000` (plain/custom configuration), `10485760` (full default attributes), and `4000` (lightweight default response attributes). Content parsing or buffering choices do not suppress terminal safe base facts.
+
+### Request scope
+
+- Missing or explicit `path_scope: legacy_suffixes` preserves historical behavior. When either built-in default-attribute mode is enabled and suffixes are omitted, the effective defaults are `/completions` and `/messages`; without built-in defaults, omission preserves the existing all-path behavior.
+- `path_scope: bound_target` uses the Higress binding target. Omitted or literal-empty `enable_path_suffixes: []` and `enable_methods: []` add no narrowing and synthesize no path list.
+- bound_target rejects every explicit non-empty path/method list, including ["*"], so a matched AI route cannot silently escape statistics. Switching to it clears inherited legacy filters. Explicit intersections remain available in legacy_suffixes.
+- ai-statistics matches `enable_methods` with exact case; examples use canonical uppercase methods. Omitted route-level fields inherit global configuration.
+
+```yaml
+# Legacy-compatible effective defaults
+use_default_response_attributes: true
+path_scope: legacy_suffixes
+enable_path_suffixes:
+  - /completions
+  - /messages
+```
+
+```yaml
+# Bound target with no additional filters
+path_scope: bound_target
+```
+
+```yaml
+# Explicit intersection for standalone legacy deployments
+path_scope: legacy_suffixes
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
+```
+
+With only _rules_ and no global configuration, each matching rule parses a complete statistics configuration. Set its attributes, content types, and usage options there. With a valid initialized global configuration, rules override only the original three routing fields; other complete configuration fields belong at the root and are rejected in rules. Managed publication uses path_scope: bound_target with both filter lists omitted or empty; Higress bindings determine scope.
+
+## Safe base observability contract
+
+Safe base facts stand independently; ai-proxy schema-v2 metadata is optional trusted enrichment.
+
+Every eligible completed request emits bounded `route` and `path`, a normalized and bounded `method`, `status_code`, positive `latency_ms`, and bounded `error_class`, plus exactly one `request_count` and one `request_duration_ms`. These safe base facts are independent of model, logical operation, token, or usage extraction. Opaque successes, opaque errors, and parsing failures still emit the base facts; unavailable optional dimensions are omitted rather than guessed. Trusted provider parsers may enrich model/token facts, but arbitrary paths or opaque bodies never authorize inference. Raw response bodies and unbounded provider error text never enter metric attributes.
+
+In bound_target, token extensions retain only nonnegative integers actually present in valid JSON or complete SSE frames. Input, output, and total remain independently known or missing; missing or invalid values are never filled with zero, and partial usage does not derive total. Reported zero is retained. The existing parser/counter supports decimal integers through int64; larger values stay unknown without changing response bytes. Fragmented SSE frames use the existing body limit; incomplete or oversized data only stops optional parsing, while base facts still finalize. Legacy extraction remains compatible.
+
+Base statistics cover matching requests that reached this plugin callback. A preceding authentication filter can reject before it runs; this plugin cannot invent statistics for that path, which requires verification of actual filter order and native gateway observation. These source changes require a newly built, precisely registered artifact; an existing version number does not prove they are active.
+
+Version `2.0.4` also guarantees that the per-configuration counter cache is initialized on first use, including rule-override lifecycle paths, so the first eligible base metric cannot fail on a nil cache.
+
+Response headers capture only the bounded status and error projection; they do not freeze completed-request latency. The first real terminal seam—non-streaming response-body EOS, streaming EOS, or `wrapper.ProcessStreamDone` fallback for no body callback, an empty body, an unsupported Content-Type, or a parser-skipped lifecycle—uses the same terminal timestamp for metrics and AILog. A request-scoped completion marker makes all terminal callbacks emit exactly once, while response headers and body bytes remain transparent.
+
+A status is trustworthy only when it contains exactly three ASCII digits and is within `100..599`. Every other form uses `status_code=0` and `status_unknown`. Valid `2xx..3xx` uses `none`, `4xx` uses `http_4xx`, `5xx` uses `http_5xx`, and other valid statuses use `status_unknown`.
+
+`route` comes only from trusted Higress `route_name`. It must be non-empty valid UTF-8, at most 128 bytes, and contain no control character; otherwise it is `route_unknown`. `path` accepts only the actually selected adapter's `matched:true` schema v2 `operation_template`. The template must be origin-form, have exactly one leading `/`, be at most 128 bytes, and contain only ASCII letters/digits plus `/ . _ - ~ { }`, with no authority, query, fragment, control character, or Unicode.
+
+No metadata, malformed or over-1024-byte metadata, `matched:false`, schema v1, an unknown schema, or v2 metadata missing either required operation field can provide a trusted template; those cases use `provider_native_unknown`. A present but invalid or oversized selected v2 template uses `path_unknown`, and the submitted value is never emitted. Logical `normalized_operation` must be non-empty, at most 128 bytes, must not start with `/`, may contain only ASCII letters/digits plus `/ . _ - ~`, and must contain no query, fragment, authority, or control character. It is used separately for optional AILog operation enrichment and is never a path template. Schema v1 may retain only a logical operation that passes this validation; it does not trust adapter, adapter version, provider, capability, or usage profile. Unknown, malformed, or unmatched metadata contributes no optional enrichment.
+
+Path attribution never uses a raw path, query, request headers, credentials, request body, or response body. It also never uses dynamic request segments or a hash of the raw path. `usage_missing` is an ai-billing event field, not an ai-statistics fact or metric dimension. When usage, model, logical operation, or token extraction is unavailable or disabled, ai-statistics still emits safe base count/duration and terminal AILog facts, omits only unavailable optional dimensions, and does not create a synthetic `usage_missing` metric label.
 
 Attribute Configuration instructions:
 
 | Name                    | Type   | Required | Default | Description                                                                                                                                                  |
 | ----------------------- | ------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `key`                   | string | required | -       | attribute key                                                                                                                                                |
-| `value_source`          | string | required | -       | attribute value source, optional values ​​are `fixed_value`, `request_header`, `request_body`, `response_header`, `response_body`, `response_streaming_body` |
-| `value`                 | string | required | -       | how to get attribute value                                                                                                                                   |
+| `value_source`          | string | conditional | -    | Required for custom attributes; optional for built-in attributes. Values are `fixed_value`, `request_header`, `request_body`, `response_header`, `response_body`, `response_streaming_body` |
+| `value`                 | string | conditional | -    | Required for custom attributes; optional for built-in attributes. Specifies how to obtain the attribute value                                                |
 | `default_value`         | string | optional | -       | default value for attribute                                                                                                                                  |
 | `rule`                  | string | optional | -       | Rule to extract attribute from streaming response, optional values ​​are `first`, `replace`, `append`                                                        |
 | `apply_to_log`          | bool   | optional | false   | Whether to record the extracted information in the log                                                                                                       |

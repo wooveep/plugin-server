@@ -1,0 +1,1 @@
+[{"kind":"secret","name":"MF_AI_RAG_DASHSCOPE_APIKEY","required":true},{"kind":"secret","name":"MF_AI_RAG_DASHVECTOR_APIKEY","required":true},{"kind":"setting","name":"AI_RAG_COLLECTION","required":true}]

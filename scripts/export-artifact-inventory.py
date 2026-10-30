@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export and verify a nonempty raw-byte inventory from committed image inputs."""
+"""Export registered digests without rereading complete package payloads."""
 from __future__ import annotations
 
 import argparse
@@ -11,7 +11,7 @@ from artifact_contract import digest, json_bytes
 from artifact_storage import ArtifactStore, StorageUnavailable
 
 
-def export_inventory(store: ArtifactStore) -> dict:
+def export_inventory(store: ArtifactStore, *, include_legacy: bool = False) -> dict:
     artifacts, legacy = [], []
     seen = set()
     for manifest in store.list_manifests():
@@ -19,18 +19,26 @@ def export_inventory(store: ArtifactStore) -> dict:
         seen.add((name, version))
         files = []
         for entry in manifest["files"]:
-            raw = store.read_file(name, version, entry["path"])
-            if raw is None:
-                raise StorageUnavailable("inventory missing committed payload")
-            files.append({"path": entry["path"], "size_bytes": str(len(raw)), "sha256": digest(raw)})
-        for member_name in ("package.json", "archive.tgz", "metadata.txt"):
+            # Full validation and digests belong to upload ingestion. Delivery
+            # checks presence/size and reuses the immutable registered digest.
+            try:
+                size = (store.root / name / version / entry["path"]).stat().st_size
+            except OSError as exc:
+                raise StorageUnavailable("inventory missing committed payload") from exc
+            if str(size) != entry["size_bytes"]:
+                raise StorageUnavailable("inventory committed payload size differs")
+            files.append({key: entry[key] for key in ("path", "size_bytes", "sha256")})
+        for member_name in ("package.json", "metadata.txt"):
             raw = store.read_file(name, version, member_name)
             if raw is None:
                 raise StorageUnavailable("inventory missing committed archive/descriptor")
             files.append({"path": member_name, "size_bytes": str(len(raw)), "sha256": digest(raw)})
-        raw_manifest = (store.root / name / version / "manifest.json").read_bytes()
-        if json_bytes(manifest) != raw_manifest:
-            raise StorageUnavailable("inventory persisted manifest differs")
+        try:
+            archive_size = (store.root / name / version / "archive.tgz").stat().st_size
+        except OSError as exc:
+            raise StorageUnavailable("inventory missing committed archive") from exc
+        files.append({"path": "archive.tgz", "size_bytes": str(archive_size), "sha256": manifest["archive_digest"]})
+        raw_manifest = json_bytes(manifest)
         artifacts.append({"plugin_name": name, "plugin_version": version, "artifact_id": manifest["artifact_id"],
                           "content_digest": manifest["content_digest"], "archive_digest": manifest["archive_digest"],
                           "manifest_digest": digest(raw_manifest), "files": sorted(files, key=lambda e: e["path"])})
@@ -38,6 +46,8 @@ def export_inventory(store: ArtifactStore) -> dict:
         name, version = path.parent.parent.name, path.parent.name
         if (name, version) in seen:
             continue
+        if not include_legacy:
+            raise StorageUnavailable("unregistered Wasm must be ingested before formal delivery")
         if path.is_symlink() or not path.resolve().is_relative_to(store.root) or path.with_name("manifest.json").exists() or path.with_name("package.json").exists():
             raise StorageUnavailable("unregistered/aliased managed version")
         files = [{"path": item.name, "size_bytes": str(item.stat().st_size), "sha256": digest(item.read_bytes())}
@@ -53,8 +63,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plugins-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--include-legacy", action="store_true", help="Explicit raw-byte audit of unregistered historical files")
     args = parser.parse_args()
-    value = export_inventory(ArtifactStore(args.plugins_dir))
+    value = export_inventory(ArtifactStore(args.plugins_dir), include_legacy=args.include_legacy)
     with args.output.open("xb") as stream:
         stream.write(json_bytes(value))
 

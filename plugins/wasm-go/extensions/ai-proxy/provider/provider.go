@@ -8,13 +8,13 @@ import (
 	"hash/fnv"
 	"math/rand"
 	"net/http"
+	"path"
 	"regexp"
 	"strconv"
 
 	"strings"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
-	"github.com/alibaba/higress/plugins/wasm-go/pkg/pathutil"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/log"
@@ -161,7 +161,6 @@ const (
 	providerTypeOpenRouter = "openrouter"
 	providerTypeLongcat    = "longcat"
 	providerTypeFireworks  = "fireworks"
-	providerTypeGaladriel  = "galadriel"
 	providerTypeVllm       = "vllm"
 	providerTypeGeneric    = "generic"
 	providerTypeKling      = "kling"
@@ -179,31 +178,21 @@ const (
 	finishReasonLength   = "length"
 	finishReasonToolCall = "tool_calls"
 
-	ctxKeyClaudeBudgetTokens     = "claudeBudgetTokens"
-	ctxKeyClaudeThinkingType     = "claudeThinkingType"
-	ctxKeyIncrementalStreaming   = "incrementalStreaming"
-	ctxKeyApiKey                 = "apiKey"
-	CtxKeyApiName                = "apiName"
-	ctxKeyIsStreaming            = "isStreaming"
-	ctxKeyStreamingBody          = "streamingBody"
-	ctxKeyOriginalRequestModel   = "originalRequestModel"
-	ctxKeyFinalRequestModel      = "finalRequestModel"
-	ctxKeyPushedMessage          = "pushedMessage"
-	ctxKeyContentPushed          = "contentPushed"
-	ctxKeyReasoningContentPushed = "reasoningContentPushed"
-	ctxKeyHasContentDelta        = "hasContentDelta"
-	ctxKeyBufferedReasoning      = "bufferedReasoning"
-
-	// SSE framing keys: one per call site so coexisting framers on the same
-	// request never alias each other's retained tail.
-	ctxKeyClaudeSSEFraming        = "sseFraming/claude"
-	ctxKeyGeminiSSEFraming        = "sseFraming/gemini"
-	ctxKeySparkSSEFraming         = "sseFraming/spark"
-	ctxKeyMinimaxSSEFraming       = "sseFraming/minimax"
-	ctxKeyTritonSSEFraming        = "sseFraming/triton"
-	ctxKeyDifySSEFraming          = "sseFraming/dify"
-	ctxKeyHunyuanSSEFraming       = "sseFraming/hunyuan"
-	ctxKeyClaudeConvertSSEFraming = "sseFraming/claudeConvert"
+	ctxKeyClaudeBudgetTokens              = "claudeBudgetTokens"
+	ctxKeyClaudeThinkingType              = "claudeThinkingType"
+	ctxKeyIncrementalStreaming            = "incrementalStreaming"
+	ctxKeyApiKey                          = "apiKey"
+	CtxKeyApiName                         = "apiName"
+	ctxKeyIsStreaming                     = "isStreaming"
+	ctxKeyStreamingBody                   = "streamingBody"
+	ctxKeyOriginalRequestModel            = "originalRequestModel"
+	ctxKeyFinalRequestModel               = "finalRequestModel"
+	ctxKeyPushedMessage                   = "pushedMessage"
+	ctxKeyContentPushed                   = "contentPushed"
+	ctxKeyReasoningContentPushed          = "reasoningContentPushed"
+	ctxKeyHasContentDelta                 = "hasContentDelta"
+	ctxKeyBufferedReasoning               = "bufferedReasoning"
+	CtxKeyNeedResponsesResponseConversion = "needResponsesResponseConversion"
 
 	objectChatCompletion      = "chat.completion"
 	objectChatCompletionChunk = "chat.completion.chunk"
@@ -268,7 +257,6 @@ var (
 		providerTypeOpenRouter: &openrouterProviderInitializer{},
 		providerTypeLongcat:    &longcatProviderInitializer{},
 		providerTypeFireworks:  &fireworksProviderInitializer{},
-		providerTypeGaladriel:  &galadrielProviderInitializer{},
 		providerTypeVllm:       &vllmProviderInitializer{},
 		providerTypeGeneric:    &genericProviderInitializer{},
 		providerTypeKling:      &klingProviderInitializer{},
@@ -303,6 +291,24 @@ type TransformRequestHeadersHandler interface {
 	TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header)
 }
 
+// TransparentRequestHeadersHandler applies only provider-owned transport policy.
+// Implementations must not change the request method, target, protocol headers, or body.
+type TransparentRequestHeadersHandler interface {
+	TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header)
+}
+
+// TransparentRequestBodyAuthHandler applies authentication that depends on the
+// exact opaque request body. Implementations may only mutate provider
+// authentication or signing headers; method, target, protocol headers, and body
+// are immutable transport inputs.
+type TransparentRequestBodyAuthHandler interface {
+	AuthenticateTransparentRequest(
+		ctx wrapper.HttpContext,
+		body []byte,
+		headers http.Header,
+	) (types.Action, error)
+}
+
 type TransformRequestBodyHandler interface {
 	TransformRequestBody(ctx wrapper.HttpContext, apiName ApiName, body []byte) ([]byte, error)
 }
@@ -324,211 +330,208 @@ type TransformResponseBodyHandler interface {
 type ProviderConfig struct {
 	// @Title zh-CN ID
 	// @Description zh-CN AI服务提供商标识
-	id string `required:"true" yaml:"id" json:"id"`
+	id string `required:"true" yaml:"id"`
 	// @Title zh-CN 类型
 	// @Description zh-CN AI服务提供商类型
-	typ string `required:"true" yaml:"type" json:"type"`
+	typ string `required:"true" yaml:"type"`
 	// @Title zh-CN API Tokens
 	// @Description zh-CN 在请求AI服务时用于认证的API Token列表。不同的AI服务提供商可能有不同的名称。部分供应商只支持配置一个API Token（如Azure OpenAI）。
-	apiTokens []string `required:"false" yaml:"apiTokens" json:"apiTokens"`
+	apiTokens []string `required:"false" yaml:"apiTokens"`
 	// @Title zh-CN 请求超时
 	// @Description zh-CN 请求AI服务的超时时间，单位为毫秒。默认值为120000，即2分钟。此项配置目前仅用于获取上下文信息，并不影响实际转发大模型请求。
-	timeout uint32 `required:"false" yaml:"timeout" json:"timeout"`
+	timeout uint32 `required:"false" yaml:"timeout"`
 	// @Title zh-CN apiToken 故障切换
 	// @Description zh-CN 当 apiToken 不可用时移出 apiTokens 列表，对移除的 apiToken 进行健康检查，当重新可用后加回 apiTokens 列表
-	failover *failover `required:"false" yaml:"failover" json:"failover"`
+	failover *failover `required:"false" yaml:"failover"`
 	// @Title zh-CN 失败请求重试
 	// @Description zh-CN 对失败的请求立即进行重试
-	retryOnFailure *retryOnFailure `required:"false" yaml:"retryOnFailure" json:"retryOnFailure"`
-	// @Title zh-CN 禁用流式使用统计
-	// @Description zh-CN 禁用后流式请求不会注入 stream_options.include_usage 字段。启用此选项后，流式请求的 token 使用统计将不可用，影响 ai-statistics/access-log 的 usage 字段。适用于不支持 stream_options 的旧版推理引擎（如 vLLM 0.4.3）。
-	disableStreamUsageStats bool `required:"false" yaml:"disableStreamUsageStats" json:"disableStreamUsageStats"`
+	retryOnFailure *retryOnFailure `required:"false" yaml:"retryOnFailure"`
 	// @Title zh-CN 推理内容处理方式
 	// @Description zh-CN 如何处理大模型服务返回的推理内容。目前支持以下取值：passthrough（正常输出推理内容）、ignore（不输出推理内容）、concat（将推理内容拼接在常规输出内容之前）。默认为 normal。仅支持通义千问服务。
-	reasoningContentMode string `required:"false" yaml:"reasoningContentMode" json:"reasoningContentMode"`
+	reasoningContentMode string `required:"false" yaml:"reasoningContentMode"`
 	// @Title zh-CN 基于OpenAI协议的自定义后端URL
 	// @Description zh-CN 仅适用于支持 openai 协议的服务。
-	openaiCustomUrl string `required:"false" yaml:"openaiCustomUrl" json:"openaiCustomUrl"`
+	openaiCustomUrl string `required:"false" yaml:"openaiCustomUrl"`
 	// @Title zh-CN Moonshot File ID
 	// @Description zh-CN 仅适用于Moonshot AI服务。Moonshot AI服务的文件ID，其内容用于补充AI请求上下文
-	moonshotFileId string `required:"false" yaml:"moonshotFileId" json:"moonshotFileId"`
+	moonshotFileId string `required:"false" yaml:"moonshotFileId"`
 	// @Title zh-CN Azure OpenAI Service URL
 	// @Description zh-CN 仅适用于Azure OpenAI服务。要请求的OpenAI服务的完整URL，包含api-version等参数
-	azureServiceUrl string `required:"false" yaml:"azureServiceUrl" json:"azureServiceUrl"`
+	azureServiceUrl string `required:"false" yaml:"azureServiceUrl"`
 	// @Title zh-CN 通义千问File ID
 	// @Description zh-CN 仅适用于通义千问服务。上传到Dashscope的文件ID，其内容用于补充AI请求上下文。仅支持qwen-long模型。
-	qwenFileIds []string `required:"false" yaml:"qwenFileIds" json:"qwenFileIds"`
+	qwenFileIds []string `required:"false" yaml:"qwenFileIds"`
 	// @Title zh-CN 启用通义千问搜索服务
 	// @Description zh-CN 仅适用于通义千问服务，表示是否启用通义千问的互联网搜索功能。
-	qwenEnableSearch bool `required:"false" yaml:"qwenEnableSearch" json:"qwenEnableSearch"`
+	qwenEnableSearch bool `required:"false" yaml:"qwenEnableSearch"`
 	// @Title zh-CN 通义千问服务域名
 	// @Description zh-CN 仅适用于通义千问服务，默认转发域名为 dashscope.aliyuncs.com, 当使用金融云服务时，可以设置为 dashscope-finance.aliyuncs.com
-	qwenDomain string `required:"false" yaml:"qwenDomain" json:"qwenDomain"`
+	qwenDomain string `required:"false" yaml:"qwenDomain"`
 	// @Title zh-CN 开启通义千问兼容模式
 	// @Description zh-CN 启用通义千问兼容模式后，将调用千问的兼容模式接口，同时对请求/响应不做修改。
-	qwenEnableCompatible bool `required:"false" yaml:"qwenEnableCompatible" json:"qwenEnableCompatible"`
+	qwenEnableCompatible bool `required:"false" yaml:"qwenEnableCompatible"`
 	// @Title zh-CN Ollama Server IP/Domain
 	// @Description zh-CN 仅适用于 Ollama 服务。Ollama 服务器的主机地址。
-	ollamaServerHost string `required:"false" yaml:"ollamaServerHost" json:"ollamaServerHost"`
+	ollamaServerHost string `required:"false" yaml:"ollamaServerHost"`
 	// @Title zh-CN Ollama Server Port
 	// @Description zh-CN 仅适用于 Ollama 服务。Ollama 服务器的端口号。
-	ollamaServerPort uint32 `required:"false" yaml:"ollamaServerPort" json:"ollamaServerPort"`
+	ollamaServerPort uint32 `required:"false" yaml:"ollamaServerPort"`
 	// @Title zh-CN hunyuan api key for authorization
 	// @Description zh-CN 仅适用于Hun Yuan AI服务鉴权，API key/id 参考：https://cloud.tencent.com/document/api/1729/101843#Golang
-	hunyuanAuthKey string `required:"false" yaml:"hunyuanAuthKey" json:"hunyuanAuthKey"`
+	hunyuanAuthKey string `required:"false" yaml:"hunyuanAuthKey"`
 	// @Title zh-CN hunyuan api id for authorization
 	// @Description zh-CN 仅适用于Hun Yuan AI服务鉴权
-	hunyuanAuthId string `required:"false" yaml:"hunyuanAuthId" json:"hunyuanAuthId"`
+	hunyuanAuthId string `required:"false" yaml:"hunyuanAuthId"`
 	// @Title zh-CN Amazon Bedrock AccessKey for authorization
 	// @Description zh-CN 仅适用于Amazon Bedrock服务鉴权，API key/id 参考：https://docs.aws.amazon.com/zh_cn/IAM/latest/UserGuide/reference_sigv.html
-	awsAccessKey string `required:"false" yaml:"awsAccessKey" json:"awsAccessKey"`
+	awsAccessKey string `required:"false" yaml:"awsAccessKey"`
 	// @Title zh-CN Amazon Bedrock SecretKey for authorization
 	// @Description zh-CN 仅适用于Amazon Bedrock服务鉴权
-	awsSecretKey string `required:"false" yaml:"awsSecretKey" json:"awsSecretKey"`
+	awsSecretKey string `required:"false" yaml:"awsSecretKey"`
 	// @Title zh-CN Amazon Bedrock Region
 	// @Description zh-CN 仅适用于Amazon Bedrock服务访问
-	awsRegion string `required:"false" yaml:"awsRegion" json:"awsRegion"`
+	awsRegion string `required:"false" yaml:"awsRegion"`
 	// @Title zh-CN Amazon Bedrock 额外模型请求参数
 	// @Description zh-CN 仅适用于Amazon Bedrock服务，用于设置模型特定的推理参数
-	bedrockAdditionalFields map[string]interface{} `required:"false" yaml:"bedrockAdditionalFields" json:"bedrockAdditionalFields"`
+	bedrockAdditionalFields map[string]interface{} `required:"false" yaml:"bedrockAdditionalFields"`
 	// @Title zh-CN Amazon Bedrock Prompt CachePoint 插入位置
 	// @Description zh-CN 仅适用于Amazon Bedrock服务。用于配置 cachePoint 插入位置，支持多选：systemPrompt、lastUserMessage、lastMessage。值为 true 表示启用该位置。
-	bedrockPromptCachePointPositions map[string]bool `required:"false" yaml:"bedrockPromptCachePointPositions" json:"bedrockPromptCachePointPositions"`
+	bedrockPromptCachePointPositions map[string]bool `required:"false" yaml:"bedrockPromptCachePointPositions"`
 	// @Title zh-CN Amazon Bedrock Prompt Cache 保留策略（默认值）
 	// @Description zh-CN 仅适用于Amazon Bedrock服务。作为请求中 prompt_cache_retention 缺省时的默认值，支持 in_memory 和 24h。
-	promptCacheRetention string `required:"false" yaml:"promptCacheRetention" json:"promptCacheRetention"`
+	promptCacheRetention string `required:"false" yaml:"promptCacheRetention"`
 	// @Title zh-CN minimax API type
 	// @Description zh-CN 仅适用于 minimax 服务。minimax API 类型，v2 和 pro 中选填一项，默认值为 v2
-	minimaxApiType string `required:"false" yaml:"minimaxApiType" json:"minimaxApiType"`
+	minimaxApiType string `required:"false" yaml:"minimaxApiType"`
 	// @Title zh-CN minimax group id
 	// @Description zh-CN 仅适用于 minimax 服务。minimax API 类型为 pro 时必填
-	minimaxGroupId string `required:"false" yaml:"minimaxGroupId" json:"minimaxGroupId"`
+	minimaxGroupId string `required:"false" yaml:"minimaxGroupId"`
 	// @Title zh-CN 模型名称映射表
 	// @Description zh-CN 用于将请求中的模型名称映射为目标AI服务商支持的模型名称。支持通过“*”来配置全局映射
-	modelMapping map[string]string `required:"false" yaml:"modelMapping" json:"modelMapping"`
+	modelMapping map[string]string `required:"false" yaml:"modelMapping"`
 	// @Title zh-CN 对外接口协议
 	// @Description zh-CN 通过本插件对外提供的AI服务接口协议。默认值为“openai”，即OpenAI的接口协议。如需保留原有接口协议，可配置为“original"
-	protocol string `required:"false" yaml:"protocol" json:"protocol"`
+	protocol string `required:"false" yaml:"protocol"`
 	// @Title zh-CN 模型对话上下文
 	// @Description zh-CN 配置一个外部获取对话上下文的文件来源，用于在AI请求中补充对话上下文
-	context *ContextConfig `required:"false" yaml:"context" json:"context"`
+	context *ContextConfig `required:"false" yaml:"context"`
 	// @Title zh-CN 版本
 	// @Description zh-CN 请求AI服务的版本，目前仅适用于 Gemini 和 Claude AI服务
-	apiVersion string `required:"false" yaml:"apiVersion" json:"apiVersion"`
+	apiVersion string `required:"false" yaml:"apiVersion"`
 	// @Title zh-CN Cloudflare Account ID
 	// @Description zh-CN 仅适用于 Cloudflare Workers AI 服务。参考：https://developers.cloudflare.com/workers-ai/get-started/rest-api/#2-run-a-model-via-api
-	cloudflareAccountId string `required:"false" yaml:"cloudflareAccountId" json:"cloudflareAccountId"`
+	cloudflareAccountId string `required:"false" yaml:"cloudflareAccountId"`
 	// @Title zh-CN Gemini AI内容过滤和安全级别设定
 	// @Description zh-CN 仅适用于 Gemini AI 服务。参考：https://ai.google.dev/gemini-api/docs/safety-settings
-	geminiSafetySetting map[string]string `required:"false" yaml:"geminiSafetySetting" json:"geminiSafetySetting"`
+	geminiSafetySetting map[string]string `required:"false" yaml:"geminiSafetySetting"`
 	// @Title zh-CN Gemini Thinking Budget 配置
 	// @Description zh-CN 仅适用于 Gemini AI 服务，用于控制思考预算
-	geminiThinkingBudget int64 `required:"false" yaml:"geminiThinkingBudget" json:"geminiThinkingBudget"`
+	geminiThinkingBudget int64 `required:"false" yaml:"geminiThinkingBudget"`
 	// @Title zh-CN Vertex AI访问区域
 	// @Description zh-CN 仅适用于Vertex AI服务。如需查看支持的区域的完整列表，请参阅https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations?hl=zh-cn#available-regions
-	vertexRegion string `required:"false" yaml:"vertexRegion" json:"vertexRegion"`
+	vertexRegion string `required:"false" yaml:"vertexRegion"`
 	// @Title zh-CN Vertex AI项目Id
 	// @Description zh-CN 仅适用于Vertex AI服务。创建和管理项目请参阅https://cloud.google.com/resource-manager/docs/creating-managing-projects?hl=zh-cn#identifiers
-	vertexProjectId string `required:"false" yaml:"vertexProjectId" json:"vertexProjectId"`
+	vertexProjectId string `required:"false" yaml:"vertexProjectId"`
 	// @Title zh-CN Vertex 认证秘钥
 	// @Description zh-CN 用于Google服务账号认证的完整JSON密钥文件内容，获取可参考https://cloud.google.com/iam/docs/keys-create-delete?hl=zh-cn#iam-service-account-keys-create-console
-	vertexAuthKey string `required:"false" yaml:"vertexAuthKey" json:"vertexAuthKey"`
+	vertexAuthKey string `required:"false" yaml:"vertexAuthKey"`
 	// @Title zh-CN Vertex 认证服务名
 	// @Description zh-CN 用于Google服务账号认证的服务,DNS类型的服务名
-	vertexAuthServiceName string `required:"false" yaml:"vertexAuthServiceName" json:"vertexAuthServiceName"`
+	vertexAuthServiceName string `required:"false" yaml:"vertexAuthServiceName"`
 	// @Title zh-CN Vertex token刷新提前时间
 	// @Description zh-CN 用于Google服务账号认证，access token过期时间判定提前刷新，单位为秒，默认值为60秒
-	vertexTokenRefreshAhead int64 `required:"false" yaml:"vertexTokenRefreshAhead" json:"vertexTokenRefreshAhead"`
+	vertexTokenRefreshAhead int64 `required:"false" yaml:"vertexTokenRefreshAhead"`
 	// @Title zh-CN Kling Access Key
 	// @Description zh-CN 仅适用于KlingAI官方服务鉴权，用于生成JWT Token
-	klingAccessKey string `required:"false" yaml:"klingAccessKey" json:"klingAccessKey"`
+	klingAccessKey string `required:"false" yaml:"klingAccessKey"`
 	// @Title zh-CN Kling Secret Key
 	// @Description zh-CN 仅适用于KlingAI官方服务鉴权，用于签名JWT Token
-	klingSecretKey string `required:"false" yaml:"klingSecretKey" json:"klingSecretKey"`
+	klingSecretKey string `required:"false" yaml:"klingSecretKey"`
 	// @Title zh-CN Kling token刷新提前时间
 	// @Description zh-CN Kling JWT过期前提前刷新的时间，单位为秒，默认值为60秒
-	klingTokenRefreshAhead int64 `required:"false" yaml:"klingTokenRefreshAhead" json:"klingTokenRefreshAhead"`
+	klingTokenRefreshAhead int64 `required:"false" yaml:"klingTokenRefreshAhead"`
 	// @Title zh-CN Vertex AI OpenAI兼容模式
 	// @Description zh-CN 启用后将使用Vertex AI的OpenAI兼容API，请求和响应均使用OpenAI格式，无需协议转换。与Express Mode(apiTokens)互斥。
-	vertexOpenAICompatible bool `required:"false" yaml:"vertexOpenAICompatible" json:"vertexOpenAICompatible"`
+	vertexOpenAICompatible bool `required:"false" yaml:"vertexOpenAICompatible"`
 	// @Title zh-CN 翻译服务需指定的目标语种
 	// @Description zh-CN 翻译结果的语种，目前仅适用于DeepL服务。
-	targetLang string `required:"false" yaml:"targetLang" json:"targetLang"`
+	targetLang string `required:"false" yaml:"targetLang"`
 	// @Title zh-CN  指定服务返回的响应需满足的JSON Schema
 	// @Description zh-CN 目前仅适用于OpenAI部分模型服务。参考：https://platform.openai.com/docs/guides/structured-outputs
-	responseJsonSchema map[string]interface{} `required:"false" yaml:"responseJsonSchema" json:"responseJsonSchema"`
+	responseJsonSchema map[string]interface{} `required:"false" yaml:"responseJsonSchema"`
 	// @Title zh-CN 自定义认证Header名称
 	// @Description zh-CN 用于从请求中提取认证token的自定义header名称。如不配置，则按默认优先级检查 x-api-key、x-authorization、anthropic-api-key 和 Authorization header。
-	authHeaderKey string `required:"false" yaml:"authHeaderKey" json:"authHeaderKey"`
+	authHeaderKey string `required:"false" yaml:"authHeaderKey"`
 	// @Title zh-CN 自定义大模型参数配置
 	// @Description zh-CN 用于填充或者覆盖大模型调用时的参数
 	customSettings []CustomSetting
 	// @Title zh-CN dify私有化部署的url
-	difyApiUrl string `required:"false" yaml:"difyApiUrl" json:"difyApiUrl"`
+	difyApiUrl string `required:"false" yaml:"difyApiUrl"`
 	// @Title zh-CN dify的应用类型，Chat/Completion/Agent/Workflow
-	botType string `required:"false" yaml:"botType" json:"botType"`
+	botType string `required:"false" yaml:"botType"`
 	// @Title zh-CN dify中应用类型为workflow时需要设置输入变量，当botType为workflow时一起使用
-	inputVariable string `required:"false" yaml:"inputVariable" json:"inputVariable"`
+	inputVariable string `required:"false" yaml:"inputVariable"`
 	// @Title zh-CN dify中应用类型为workflow时需要设置输出变量，当botType为workflow时一起使用
-	outputVariable string `required:"false" yaml:"outputVariable" json:"outputVariable"`
+	outputVariable string `required:"false" yaml:"outputVariable"`
 	// @Title zh-CN 额外支持的ai能力
 	// @Description zh-CN 开放的ai能力和urlpath映射，例如： {"openai/v1/chatcompletions": "/v1/chat/completions"}
 	capabilities map[string]string
 	// @Title zh-CN 如果配置了basePath，可用于在请求path中移除该前缀，或添加至请求path中，默认为进行移除
-	basePath string `required:"false" yaml:"basePath" json:"basePath"`
+	basePath string `required:"false" yaml:"basePath"`
 	// @Title zh-CN basePathHandling用于指定basePath的处理方式，可选值：removePrefix、prepend
-	basePathHandling basePathHandling `required:"false" yaml:"basePathHandling" json:"basePathHandling"`
+	basePathHandling basePathHandling `required:"false" yaml:"basePathHandling"`
 	// @Title zh-CN generic Provider 对应的Host
 	// @Description zh-CN 仅适用于generic provider，用于覆盖请求转发的目标Host
-	genericHost string `required:"false" yaml:"genericHost" json:"genericHost"`
+	genericHost string `required:"false" yaml:"genericHost"`
 	// @Title zh-CN 上下文清理命令
 	// @Description zh-CN 配置清理命令文本列表，当请求的 messages 中存在完全匹配任意一个命令的 user 消息时，将该消息及之前所有非 system 消息清理掉，实现主动清理上下文的效果
-	contextCleanupCommands []string `required:"false" yaml:"contextCleanupCommands" json:"contextCleanupCommands"`
+	contextCleanupCommands []string `required:"false" yaml:"contextCleanupCommands"`
 	// @Title zh-CN 首包超时
 	// @Description zh-CN 流式请求中收到上游服务第一个响应包的超时时间，单位为毫秒。默认值为 0，表示不开启首包超时
-	firstByteTimeout uint32 `required:"false" yaml:"firstByteTimeout" json:"firstByteTimeout"`
+	firstByteTimeout uint32 `required:"false" yaml:"firstByteTimeout"`
 	// @Title zh-CN Triton Model Version
 	// @Description 仅适用于 NVIDIA Triton Interference Server :path 中的 modelVersion 参考："https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/protocol/extension_generate.html"
-	tritonModelVersion string `required:"false" yaml:"tritonModelVersion" json:"tritonModelVersion"`
+	tritonModelVersion string `required:"false" yaml:"tritonModelVersion"`
 	// @Title zh-CN Triton Server 部署的 Domain
 	// @Description 仅适用于 NVIDIA Triton Interference Server :path 中的 modelVersion 参考："https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/protocol/extension_generate.html"
-	tritonDomain string `required:"false" yaml:"tritonDomain" json:"tritonDomain"`
+	tritonDomain string `required:"false" yaml:"tritonDomain"`
 	// @Title zh-CN vLLM自定义后端URL
 	// @Description zh-CN 仅适用于vLLM服务。vLLM服务的完整URL，包含协议、域名、端口等
-	vllmCustomUrl string `required:"false" yaml:"vllmCustomUrl" json:"vllmCustomUrl"`
+	vllmCustomUrl string `required:"false" yaml:"vllmCustomUrl"`
 	// @Title zh-CN vLLM主机地址
 	// @Description zh-CN 仅适用于vLLM服务，指定vLLM服务器的主机地址，例如：vllm-service.cluster.local
-	vllmServerHost string `required:"false" yaml:"vllmServerHost" json:"vllmServerHost"`
+	vllmServerHost string `required:"false" yaml:"vllmServerHost"`
 	// @Title zh-CN 豆包服务域名
 	// @Description zh-CN 仅适用于豆包服务，默认转发域名为 ark.cn-beijing.volces.com
-	doubaoDomain string `required:"false" yaml:"doubaoDomain" json:"doubaoDomain"`
+	doubaoDomain string `required:"false" yaml:"doubaoDomain"`
 	// @Title zh-CN Claude Code 模式
 	// @Description zh-CN 仅适用于Claude服务。启用后将伪装成Claude Code客户端发起请求，支持使用Claude Code的OAuth Token进行认证。
-	claudeCodeMode bool `required:"false" yaml:"claudeCodeMode" json:"claudeCodeMode"`
+	claudeCodeMode bool `required:"false" yaml:"claudeCodeMode"`
 	// @Title zh-CN 智谱AI服务域名
 	// @Description zh-CN 仅适用于智谱AI服务。默认为 open.bigmodel.cn（中国），可配置为 api.z.ai（国际）
-	zhipuDomain string `required:"false" yaml:"zhipuDomain" json:"zhipuDomain"`
+	zhipuDomain string `required:"false" yaml:"zhipuDomain"`
 	// @Title zh-CN 智谱AI Code Plan 模式
 	// @Description zh-CN 仅适用于智谱AI服务。启用后将使用 /api/coding/paas/v4/chat/completions 接口
-	zhipuCodePlanMode bool `required:"false" yaml:"zhipuCodePlanMode" json:"zhipuCodePlanMode"`
+	zhipuCodePlanMode bool `required:"false" yaml:"zhipuCodePlanMode"`
 	// @Title zh-CN 合并连续同角色消息
 	// @Description zh-CN 开启后，若请求的 messages 中存在连续的同角色消息（如连续两条 user 消息），将其内容合并为一条，以满足要求严格轮流交替（user→assistant→user→...）的模型服务商的要求。
-	mergeConsecutiveMessages bool `required:"false" yaml:"mergeConsecutiveMessages" json:"mergeConsecutiveMessages"`
+	mergeConsecutiveMessages bool `required:"false" yaml:"mergeConsecutiveMessages"`
 	// @Title zh-CN 通用 Provider 域名
 	// @Description zh-CN 通用的 Provider 服务域名配置，适用于所有 Provider。当配置此字段时，将优先使用此域名覆盖默认的硬编码域名。常用于代理服务器场景
-	providerDomain string `required:"false" yaml:"providerDomain" json:"providerDomain"`
+	providerDomain string `required:"false" yaml:"providerDomain"`
 	// @Title zh-CN 空内容时提升思考为正文
 	// @Description zh-CN 开启后，若模型响应只包含 reasoning_content/thinking 而没有正文内容，将 reasoning 内容提升为正文内容返回，避免客户端收到空回复。
-	promoteThinkingOnEmpty bool `required:"false" yaml:"promoteThinkingOnEmpty" json:"promoteThinkingOnEmpty"`
+	promoteThinkingOnEmpty bool `required:"false" yaml:"promoteThinkingOnEmpty"`
 	// @Title zh-CN 记录上游错误响应体
 	// @Description zh-CN 开启后，将上游 4xx/5xx 响应体以 warn 日志输出，便于排查 provider 兼容性问题。默认关闭，避免误记录敏感错误内容。
-	logUpstreamErrorResponseBody bool `required:"false" yaml:"logUpstreamErrorResponseBody" json:"logUpstreamErrorResponseBody"`
+	logUpstreamErrorResponseBody bool `required:"false" yaml:"logUpstreamErrorResponseBody"`
 	// @Title zh-CN HiClaw 模式
 	// @Description zh-CN 开启后同时启用 mergeConsecutiveMessages 和 promoteThinkingOnEmpty，适用于 HiClaw 多 Agent 协作场景。
-	hiclawMode bool `required:"false" yaml:"hiclawMode" json:"hiclawMode"`
+	hiclawMode bool `required:"false" yaml:"hiclawMode"`
 	// @Title zh-CN Provider 基础路径
 	// @Description zh-CN 当配置了此值时，各个 Provider 在改写请求路径时会将其添加到路径前面，例如配置"/api/ai"后，请求路径"/v1/chat/completions"会被改写为"/api/ai/v1/chat/completions"
-	providerBasePath string `required:"false" yaml:"providerBasePath" json:"providerBasePath"`
+	providerBasePath string `required:"false" yaml:"providerBasePath"`
 }
 
 func (c *ProviderConfig) GetId() string {
@@ -537,10 +540,6 @@ func (c *ProviderConfig) GetId() string {
 
 func (c *ProviderConfig) GetType() string {
 	return c.typ
-}
-
-func (c *ProviderConfig) IsStreamUsageStatsDisabled() bool {
-	return c.disableStreamUsageStats
 }
 
 func (c *ProviderConfig) GetProtocol() string {
@@ -599,7 +598,7 @@ func (c *ProviderConfig) FromJson(json gjson.Result) {
 	if compatible := json.Get("qwenEnableCompatible"); compatible.Exists() {
 		c.qwenEnableCompatible = compatible.Bool()
 	} else {
-		// Default use official compatible mode
+		// Default use official compatiable mode
 		c.qwenEnableCompatible = true
 	}
 	c.qwenDomain = json.Get("qwenDomain").String()
@@ -726,7 +725,6 @@ func (c *ProviderConfig) FromJson(json gjson.Result) {
 	if retryOnFailureJson.Exists() {
 		c.retryOnFailure.FromJson(retryOnFailureJson)
 	}
-	c.disableStreamUsageStats = json.Get("disableStreamUsageStats").Bool()
 	c.difyApiUrl = json.Get("difyApiUrl").String()
 	c.botType = json.Get("botType").String()
 	c.inputVariable = json.Get("inputVariable").String()
@@ -954,24 +952,6 @@ func (c *ProviderConfig) applyProviderBasePath(path string) string {
 	return path
 }
 
-// prependBasePath puts c.basePath in front of the request path. The request path
-// carries the query string, so joining it whole would let dot segments hidden in
-// a query value resolve as path segments and escape basePath; pathutil.SafeJoin
-// joins the path portion only and rejects results outside basePath.
-//
-// The already-prefixed branch is validated as well: a path that starts with
-// basePath can still climb back out of it, and returning it untouched would skip
-// every check.
-func (c *ProviderConfig) prependBasePath(currentPath string) (string, error) {
-	if strings.HasPrefix(currentPath, c.basePath) {
-		if err := pathutil.ValidateWithin(c.basePath, currentPath); err != nil {
-			return "", err
-		}
-		return currentPath, nil
-	}
-	return pathutil.SafeJoin(c.basePath, currentPath)
-}
-
 func (c *ProviderConfig) parseRequestAndMapModel(ctx wrapper.HttpContext, request interface{}, body []byte) error {
 	switch req := request.(type) {
 	case *chatCompletionRequest:
@@ -1064,7 +1044,7 @@ func doGetMappedModel(model string, modelMapping map[string]string) string {
 	}
 
 	if v, ok := modelMapping[model]; ok {
-		log.Debugf("model [%s] is mapped to [%s] explicitly", model, v)
+		log.Debugf("model [%s] is mapped to [%s] explictly", model, v)
 		return v
 	}
 
@@ -1206,7 +1186,10 @@ func ExtractStreamingEvents(ctx wrapper.HttpContext, chunk []byte) []StreamEvent
 }
 
 func (c *ProviderConfig) isSupportedAPI(apiName ApiName) bool {
-	_, exist := c.capabilities[string(apiName)]
+	capabilityPath, exist := c.capabilities[string(apiName)]
+	if exist && c.typ == providerTypeQwen && apiName == ApiNameResponses && strings.TrimSpace(capabilityPath) == "" {
+		return false
+	}
 	if exist {
 		return true
 	}
@@ -1270,12 +1253,19 @@ func (c *ProviderConfig) handleRequestBody(
 		converter := &ClaudeToOpenAIConverter{}
 		body, err = converter.ConvertClaudeRequestToOpenAIWithOptions(body, ClaudeToOpenAIConvertOptions{
 			PreserveMessageReasoningContent: c.supportsMessageReasoningContent(),
-			DisableStreamUsageStats:          c.disableStreamUsageStats,
 		})
 		if err != nil {
 			return types.ActionContinue, fmt.Errorf("failed to convert claude request to openai: %v", err)
 		}
 		log.Debugf("[Auto Protocol] converted Claude request body to OpenAI format")
+	}
+	needResponsesConversion, _ := ctx.GetContext(CtxKeyNeedResponsesResponseConversion).(bool)
+	if needResponsesConversion {
+		body, err = convertResponsesRequestToChatCompletion(body)
+		if err != nil {
+			return types.ActionContinue, fmt.Errorf("failed to convert responses request to chat completions: %v", err)
+		}
+		log.Debugf("[Auto Protocol] converted Responses request body to Chat Completions format")
 	}
 
 	// handle context cleanup command for chat completion requests
@@ -1414,15 +1404,8 @@ func (c *ProviderConfig) handleRequestHeaders(provider Provider, ctx wrapper.Htt
 		headers.Set(":path", removePrefixPath)
 	}
 
-	if c.basePath != "" && c.basePathHandling == basePathHandlingPrepend {
-		prependedPath, err := c.prependBasePath(headers.Get(":path"))
-		if err != nil {
-			log.Errorf("rejecting request path %q for basePath %q: %v", headers.Get(":path"), c.basePath, err)
-			_ = proxywasm.SendHttpResponseWithDetail(http.StatusBadRequest, "ai-proxy.path_traversal",
-				util.CreateHeaders(util.HeaderContentType, util.MimeTypeTextPlain), []byte("invalid request path"), -1)
-			return
-		}
-		headers.Set(":path", prependedPath)
+	if c.basePath != "" && c.basePathHandling == basePathHandlingPrepend && !strings.HasPrefix(headers.Get(":path"), c.basePath) {
+		headers.Set(":path", path.Join(c.basePath, headers.Get(":path")))
 	}
 
 	// Apply providerBasePath if configured

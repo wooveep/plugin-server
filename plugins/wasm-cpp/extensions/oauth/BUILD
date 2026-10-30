@@ -17,12 +17,12 @@ load("//bazel:wasm.bzl", "declare_wasm_image_targets")
 
 proxy_wasm_cc_binary(
     name = "oauth.wasm",
+    copts = ["-std=c++20"],
     srcs = [
         "plugin.cc",
         "plugin.h",
     ],
     deps = [
-        "//common:random_util",
         "@com_github_thalhammer_jwt_cpp//:lib",
         "@com_github_mariusbancila_stduuid//:lib",
         "@com_google_absl//absl/container:btree",
@@ -44,7 +44,7 @@ cc_library(
     hdrs = [
         "plugin.h",
     ],
-    copts = ["-DNULL_PLUGIN"],
+    copts = ["-DNULL_PLUGIN", "-std=c++20"],
     deps = [
         "@com_github_thalhammer_jwt_cpp//:lib",
         "@com_github_mariusbancila_stduuid//:lib",

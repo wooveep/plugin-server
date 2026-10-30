@@ -9,6 +9,7 @@ require (
 	github.com/higress-group/wasm-go v1.0.10-0.20260120033417-1c84f010156d
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/gjson v1.18.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -20,5 +21,8 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/resp v0.1.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/higress-group/proxy-wasm-go-sdk => ../../../proxy-wasm-go-sdk
+
+replace github.com/higress-group/wasm-go => ../..

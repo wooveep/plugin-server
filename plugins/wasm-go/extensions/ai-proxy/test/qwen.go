@@ -8,6 +8,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/test"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 // 测试配置：基本qwen配置
@@ -93,6 +94,46 @@ var qwenEnableCompatibleConfig = func() json.RawMessage {
 			"apiTokens": []string{"sk-qwen-compatible"},
 			"modelMapping": map[string]string{
 				"*": "qwen-turbo",
+			},
+			"qwenEnableCompatible": true,
+		},
+	})
+	return data
+}()
+
+// 测试配置：qwen 显式启用 DashScope 原生媒体能力
+var qwenMediaConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"provider": map[string]interface{}{
+			"type":      "qwen",
+			"apiTokens": []string{"sk-qwen-media"},
+			"modelMapping": map[string]string{
+				"image-alias": "qwen-image-2.0-pro",
+				"tts-alias":   "qwen3-tts-flash",
+			},
+			"capabilities": map[string]string{
+				"openai/v1/imagegeneration": "/api/v1/services/aigc/multimodal-generation/generation",
+				"openai/v1/audiospeech":     "/api/v1/services/aigc/multimodal-generation/generation",
+			},
+			"qwenEnableCompatible": false,
+		},
+	})
+	return data
+}()
+
+// 测试配置：qwen 兼容模式下显式启用媒体能力，仍应保持兼容协议透传
+var qwenCompatibleMediaConfig = func() json.RawMessage {
+	data, _ := json.Marshal(map[string]interface{}{
+		"provider": map[string]interface{}{
+			"type":      "qwen",
+			"apiTokens": []string{"sk-qwen-compatible-media"},
+			"modelMapping": map[string]string{
+				"image-alias": "qwen-image-2.0-pro",
+				"tts-alias":   "qwen3-tts-flash",
+			},
+			"capabilities": map[string]string{
+				"openai/v1/imagegeneration": "/compatible-mode/v1/images/generations",
+				"openai/v1/audiospeech":     "/compatible-mode/v1/audio/speech",
 			},
 			"qwenEnableCompatible": true,
 		},
@@ -248,6 +289,16 @@ func RunQwenParseConfigTests(t *testing.T) {
 			require.NotNil(t, config)
 		})
 
+		t.Run("qwen media capabilities config", func(t *testing.T) {
+			host, status := test.NewTestHost(qwenMediaConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			config, err := host.GetMatchConfig()
+			require.NoError(t, err)
+			require.NotNil(t, config)
+		})
+
 		// 测试qwen文件ID配置解析
 		t.Run("qwen file ids config", func(t *testing.T) {
 			host, status := test.NewTestHost(qwenFileIdsConfig)
@@ -389,6 +440,72 @@ func RunQwenOnHttpRequestHeadersTests(t *testing.T) {
 			require.Contains(t, pathValue, "/api/v1/services/rerank/text-rerank/text-rerank", "Path should be converted to qwen rerank path")
 		})
 
+		t.Run("qwen configured image generation request headers", func(t *testing.T) {
+			host, status := test.NewTestHost(qwenMediaConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			action := host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/v1/images/generations"},
+				{":method", "POST"},
+				{"Content-Type", "application/json"},
+			})
+
+			require.Equal(t, types.HeaderStopIteration, action)
+
+			requestHeaders := host.GetRequestHeaders()
+			require.NotNil(t, requestHeaders)
+
+			pathValue, hasPath := test.GetHeaderValue(requestHeaders, ":path")
+			require.True(t, hasPath)
+			require.Equal(t, "/api/v1/services/aigc/multimodal-generation/generation", pathValue)
+		})
+
+		t.Run("qwen configured audio speech request headers", func(t *testing.T) {
+			host, status := test.NewTestHost(qwenMediaConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			action := host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/v1/audio/speech"},
+				{":method", "POST"},
+				{"Content-Type", "application/json"},
+			})
+
+			require.Equal(t, types.HeaderStopIteration, action)
+
+			requestHeaders := host.GetRequestHeaders()
+			require.NotNil(t, requestHeaders)
+
+			pathValue, hasPath := test.GetHeaderValue(requestHeaders, ":path")
+			require.True(t, hasPath)
+			require.Equal(t, "/api/v1/services/aigc/multimodal-generation/generation", pathValue)
+		})
+
+		t.Run("qwen default image generation request headers do not synthesize media path", func(t *testing.T) {
+			host, status := test.NewTestHost(basicQwenConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			action := host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/v1/images/generations"},
+				{":method", "POST"},
+				{"Content-Type", "application/json"},
+			})
+
+			require.Equal(t, types.HeaderStopIteration, action)
+
+			requestHeaders := host.GetRequestHeaders()
+			require.NotNil(t, requestHeaders)
+
+			pathValue, hasPath := test.GetHeaderValue(requestHeaders, ":path")
+			require.True(t, hasPath)
+			require.Equal(t, "/v1/images/generations", pathValue)
+		})
+
 		// 测试qwen自定义域名请求头处理
 		t.Run("qwen custom domain request headers", func(t *testing.T) {
 			host, status := test.NewTestHost(qwenCustomDomainConfig)
@@ -473,6 +590,34 @@ func RunQwenOnHttpRequestHeadersTests(t *testing.T) {
 			pathValue, hasPath := test.GetHeaderValue(requestHeaders, ":path")
 			require.True(t, hasPath)
 			require.Contains(t, pathValue, "/compatible-mode/v1/responses", "Path should use compatible mode responses path")
+		})
+
+		t.Run("qwen compatible mode strips client auth headers", func(t *testing.T) {
+			host, status := test.NewTestHost(qwenEnableCompatibleConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			action := host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/v1/messages"},
+				{":method", "POST"},
+				{"Content-Type", "application/json"},
+				{"x-api-key", "client-api-key"},
+				{"anthropic-api-key", "client-anthropic-key"},
+				{"x-authorization", "Bearer client-alt-token"},
+			})
+
+			require.Equal(t, types.HeaderStopIteration, action)
+
+			requestHeaders := host.GetRequestHeaders()
+			require.NotNil(t, requestHeaders)
+
+			authValue, hasAuth := test.GetHeaderValue(requestHeaders, "Authorization")
+			require.True(t, hasAuth, "Authorization header should exist")
+			require.Equal(t, "Bearer sk-qwen-compatible", authValue)
+			require.False(t, test.HasHeader(requestHeaders, "x-api-key"), "x-api-key must not be forwarded to qwen")
+			require.False(t, test.HasHeader(requestHeaders, "anthropic-api-key"), "anthropic-api-key must not be forwarded to qwen")
+			require.False(t, test.HasHeader(requestHeaders, "x-authorization"), "x-authorization must not be forwarded to qwen")
 		})
 
 		// 测试qwen兼容模式请求头处理（reranks接口）
@@ -611,6 +756,169 @@ func RunQwenOnHttpRequestBodyTests(t *testing.T) {
 				}
 			}
 			require.True(t, hasEmbeddingLogs, "Should have embedding processing logs")
+		})
+
+		t.Run("qwen configured image generation request body converts to DashScope multimodal generation", func(t *testing.T) {
+			host, status := test.NewTestHost(qwenMediaConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/v1/images/generations"},
+				{":method", "POST"},
+				{"Content-Type", "application/json"},
+			})
+
+			requestBody := `{
+				"model":"image-alias",
+				"prompt":"a quiet lake at sunrise",
+				"n":2,
+				"seed":42,
+				"size":"1280x720",
+				"style":"vivid"
+			}`
+			action := host.CallOnHttpRequestBody([]byte(requestBody))
+
+			require.Equal(t, types.ActionContinue, action)
+
+			processedBody := host.GetRequestBody()
+			require.NotNil(t, processedBody)
+			require.Equal(t, "qwen-image-2.0-pro", gjson.GetBytes(processedBody, "model").String())
+			require.Equal(t, "user", gjson.GetBytes(processedBody, "input.messages.0.role").String())
+			require.Equal(t, "a quiet lake at sunrise", gjson.GetBytes(processedBody, "input.messages.0.content.0.text").String())
+			require.Equal(t, int64(2), gjson.GetBytes(processedBody, "parameters.n").Int())
+			require.Equal(t, int64(42), gjson.GetBytes(processedBody, "parameters.seed").Int())
+			require.Equal(t, "1280*720", gjson.GetBytes(processedBody, "parameters.size").String())
+			require.False(t, gjson.GetBytes(processedBody, "style").Exists(), "Unsupported OpenAI image fields should not be forwarded")
+		})
+
+		t.Run("qwen configured audio speech request body converts to DashScope TTS", func(t *testing.T) {
+			host, status := test.NewTestHost(qwenMediaConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/v1/audio/speech"},
+				{":method", "POST"},
+				{"Content-Type", "application/json"},
+			})
+
+			requestBody := `{
+				"model":"tts-alias",
+				"input":"Today is a wonderful day to build something people love.",
+				"voice":"Cherry",
+				"language_type":"English",
+				"instructions":"Speak warmly.",
+				"optimize_instructions":true,
+				"response_format":"mp3",
+				"speed":1.25
+			}`
+			action := host.CallOnHttpRequestBody([]byte(requestBody))
+
+			require.Equal(t, types.ActionContinue, action)
+
+			processedBody := host.GetRequestBody()
+			require.NotNil(t, processedBody)
+			require.Equal(t, "qwen3-tts-flash", gjson.GetBytes(processedBody, "model").String())
+			require.Equal(t, "Today is a wonderful day to build something people love.", gjson.GetBytes(processedBody, "input.text").String())
+			require.Equal(t, "Cherry", gjson.GetBytes(processedBody, "input.voice").String())
+			require.Equal(t, "English", gjson.GetBytes(processedBody, "input.language_type").String())
+			require.Equal(t, "Speak warmly.", gjson.GetBytes(processedBody, "input.instructions").String())
+			require.True(t, gjson.GetBytes(processedBody, "input.optimize_instructions").Bool())
+			require.False(t, gjson.GetBytes(processedBody, "response_format").Exists(), "Unsupported OpenAI audio fields should not be forwarded")
+			require.False(t, gjson.GetBytes(processedBody, "speed").Exists(), "Unsupported OpenAI audio fields should not be forwarded")
+		})
+
+		t.Run("qwen default media request bodies remain unsupported", func(t *testing.T) {
+			cases := []struct {
+				name string
+				path string
+				body string
+			}{
+				{
+					name: "image generation",
+					path: "/v1/images/generations",
+					body: `{"model":"qwen-image","prompt":"test"}`,
+				},
+				{
+					name: "audio speech",
+					path: "/v1/audio/speech",
+					body: `{"model":"qwen-tts","input":"test","voice":"Cherry"}`,
+				},
+			}
+
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					host, status := test.NewTestHost(basicQwenConfig)
+					defer host.Reset()
+					require.Equal(t, types.OnPluginStartStatusOK, status)
+
+					host.CallOnHttpRequestHeaders([][2]string{
+						{":authority", "example.com"},
+						{":path", tc.path},
+						{":method", "POST"},
+						{"Content-Type", "application/json"},
+					})
+
+					action := host.CallOnHttpRequestBody([]byte(tc.body))
+					require.Equal(t, types.ActionContinue, action)
+					require.True(t, hasUnsupportedAPINameError(host.GetErrorLogs()), "Qwen default capabilities must not synthesize media support")
+				})
+			}
+		})
+
+		t.Run("qwen compatible mode configured media request bodies stay OpenAI-shaped", func(t *testing.T) {
+			cases := []struct {
+				name         string
+				path         string
+				body         string
+				model        string
+				preserved    string
+				notConverted string
+			}{
+				{
+					name:         "image generation",
+					path:         "/v1/images/generations",
+					body:         `{"model":"image-alias","prompt":"a quiet lake at sunrise","n":2}`,
+					model:        "qwen-image-2.0-pro",
+					preserved:    "prompt",
+					notConverted: "input.messages",
+				},
+				{
+					name:         "audio speech",
+					path:         "/v1/audio/speech",
+					body:         `{"model":"tts-alias","input":"hello","voice":"Cherry"}`,
+					model:        "qwen3-tts-flash",
+					preserved:    "input",
+					notConverted: "input.text",
+				},
+			}
+
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					host, status := test.NewTestHost(qwenCompatibleMediaConfig)
+					defer host.Reset()
+					require.Equal(t, types.OnPluginStartStatusOK, status)
+
+					host.CallOnHttpRequestHeaders([][2]string{
+						{":authority", "example.com"},
+						{":path", tc.path},
+						{":method", "POST"},
+						{"Content-Type", "application/json"},
+					})
+
+					action := host.CallOnHttpRequestBody([]byte(tc.body))
+					require.Equal(t, types.ActionContinue, action)
+
+					processedBody := host.GetRequestBody()
+					require.NotNil(t, processedBody)
+					require.Equal(t, tc.model, gjson.GetBytes(processedBody, "model").String())
+					require.True(t, gjson.GetBytes(processedBody, tc.preserved).Exists(), "OpenAI-compatible media field should be preserved")
+					require.False(t, gjson.GetBytes(processedBody, tc.notConverted).Exists(), "Compatible mode should not perform DashScope-native conversion")
+				})
+			}
 		})
 
 		// 测试qwen请求体处理（qwen-long模型，带文件ID）
@@ -878,8 +1186,8 @@ func RunQwenOnHttpRequestBodyTests(t *testing.T) {
 			require.NotContains(t, string(processedBody), "\"model\":", "Conversations request should not inject model field")
 		})
 
-		// 测试qwen请求体处理（非兼容模式 responses接口应报不支持）
-		t.Run("qwen non-compatible mode responses request body unsupported", func(t *testing.T) {
+		// 测试qwen请求体处理（非兼容模式 responses接口回退到 chat completions）
+		t.Run("qwen non-compatible mode responses request body fallback", func(t *testing.T) {
 			host, status := test.NewTestHost(basicQwenConfig)
 			defer host.Reset()
 			require.Equal(t, types.OnPluginStartStatusOK, status)
@@ -897,14 +1205,19 @@ func RunQwenOnHttpRequestBodyTests(t *testing.T) {
 
 			pathValue, hasPath := test.GetHeaderValue(requestHeaders, ":path")
 			require.True(t, hasPath)
-			require.Contains(t, pathValue, "/v1/responses", "Path should remain unchanged when responses is unsupported")
+			require.Contains(t, pathValue, "/api/v1/services/aigc/text-generation/generation", "Responses should fall back through Qwen text generation")
 
 			requestBody := `{"model":"qwen-turbo","input":"test"}`
 			bodyAction := host.CallOnHttpRequestBody([]byte(requestBody))
 			require.Equal(t, types.ActionContinue, bodyAction)
 
+			processedBody := host.GetRequestBody()
+			require.NotNil(t, processedBody)
+			require.Contains(t, string(processedBody), "\"input\"", "Fallback request should be converted to Qwen text generation input")
+			require.Contains(t, string(processedBody), "\"messages\"", "Fallback request should contain converted chat messages")
+
 			hasUnsupportedErr := hasUnsupportedAPINameError(host.GetErrorLogs())
-			require.True(t, hasUnsupportedErr, "Should log unsupported API name for non-compatible responses")
+			require.False(t, hasUnsupportedErr, "Fallback responses should not log unsupported API name")
 		})
 
 		// 覆盖 qwen.GetApiName 中以下分支：
@@ -1247,6 +1560,123 @@ func RunQwenOnHttpResponseBodyTests(t *testing.T) {
 			require.True(t, hasEmbeddingLogs, "Should have embedding processing logs")
 		})
 
+		t.Run("qwen configured image generation response body converts to OpenAI image response", func(t *testing.T) {
+			host, status := test.NewTestHost(qwenMediaConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/v1/images/generations"},
+				{":method", "POST"},
+				{"Content-Type", "application/json"},
+			})
+
+			requestBody := `{"model":"image-alias","prompt":"a quiet lake at sunrise"}`
+			host.CallOnHttpRequestBody([]byte(requestBody))
+
+			require.NoError(t, host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
+
+			responseHeaders := [][2]string{
+				{":status", "200"},
+				{"Content-Type", "application/json"},
+			}
+			host.CallOnHttpResponseHeaders(responseHeaders)
+
+			responseBody := `{
+				"request_id":"req-image",
+				"output":{
+					"choices":[{
+						"message":{
+							"role":"assistant",
+							"content":[
+								{"image":"https://dashscope.example/one.png"},
+								{"image":"https://dashscope.example/two.png","type":"image"}
+							]
+						},
+						"finish_reason":"stop"
+					}]
+				},
+				"usage":{
+					"input_tokens":0,
+					"output_tokens":0,
+					"total_tokens":0
+				}
+			}`
+			action := host.CallOnHttpResponseBody([]byte(responseBody))
+
+			require.Equal(t, types.ActionContinue, action)
+
+			processedResponseBody := host.GetResponseBody()
+			require.NotNil(t, processedResponseBody)
+			require.Greater(t, gjson.GetBytes(processedResponseBody, "created").Int(), int64(0))
+			require.Equal(t, "https://dashscope.example/one.png", gjson.GetBytes(processedResponseBody, "data.0.url").String())
+			require.Equal(t, "https://dashscope.example/two.png", gjson.GetBytes(processedResponseBody, "data.1.url").String())
+			require.False(t, gjson.GetBytes(processedResponseBody, "output").Exists(), "DashScope native output should not leak into OpenAI image response")
+		})
+
+		t.Run("qwen configured audio speech response body converts to documented audio URL JSON", func(t *testing.T) {
+			host, status := test.NewTestHost(qwenMediaConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/v1/audio/speech"},
+				{":method", "POST"},
+				{"Content-Type", "application/json"},
+			})
+
+			requestBody := `{"model":"tts-alias","input":"hello","voice":"Cherry"}`
+			host.CallOnHttpRequestBody([]byte(requestBody))
+
+			require.NoError(t, host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
+
+			responseHeaders := [][2]string{
+				{":status", "200"},
+				{"Content-Type", "application/json"},
+			}
+			host.CallOnHttpResponseHeaders(responseHeaders)
+
+			responseBody := `{
+				"status_code":200,
+				"request_id":"req-audio",
+				"code":"",
+				"message":"",
+				"output":{
+					"text":null,
+					"finish_reason":"stop",
+					"choices":null,
+					"audio":{
+						"data":"",
+						"url":"https://dashscope.example/audio.wav",
+						"id":"audio_123",
+						"expires_at":1766113409
+					}
+				},
+				"usage":{
+					"input_tokens":76,
+					"output_tokens":1045,
+					"characters":0,
+					"total_tokens":1121
+				}
+			}`
+			action := host.CallOnHttpResponseBody([]byte(responseBody))
+
+			require.Equal(t, types.ActionContinue, action)
+
+			processedResponseBody := host.GetResponseBody()
+			require.NotNil(t, processedResponseBody)
+			require.Greater(t, gjson.GetBytes(processedResponseBody, "created").Int(), int64(0))
+			require.Equal(t, "https://dashscope.example/audio.wav", gjson.GetBytes(processedResponseBody, "data.url").String())
+			require.Equal(t, "audio_123", gjson.GetBytes(processedResponseBody, "data.id").String())
+			require.Equal(t, int64(1766113409), gjson.GetBytes(processedResponseBody, "data.expires_at").Int())
+			require.Equal(t, int64(76), gjson.GetBytes(processedResponseBody, "usage.input_tokens").Int())
+			require.Equal(t, int64(1045), gjson.GetBytes(processedResponseBody, "usage.output_tokens").Int())
+			require.Equal(t, int64(1121), gjson.GetBytes(processedResponseBody, "usage.total_tokens").Int())
+			require.False(t, gjson.GetBytes(processedResponseBody, "output").Exists(), "DashScope native output should not leak into gateway audio response")
+		})
+
 		// 测试qwen响应体处理（兼容模式）
 		t.Run("qwen compatible mode response body", func(t *testing.T) {
 			host, status := test.NewTestHost(qwenEnableCompatibleConfig)
@@ -1304,6 +1734,64 @@ func RunQwenOnHttpResponseBodyTests(t *testing.T) {
 			responseStr := string(processedResponseBody)
 			require.Contains(t, responseStr, "chat.completion", "Response should contain chat completion object")
 			require.Contains(t, responseStr, "qwen-turbo", "Response should contain model name")
+		})
+
+		t.Run("qwen compatible mode configured media response bodies stay passthrough", func(t *testing.T) {
+			cases := []struct {
+				name     string
+				path     string
+				request  string
+				response string
+				expected string
+			}{
+				{
+					name:     "image generation",
+					path:     "/v1/images/generations",
+					request:  `{"model":"image-alias","prompt":"test"}`,
+					response: `{"created":123,"data":[{"url":"https://compatible.example/image.png"}]}`,
+					expected: "https://compatible.example/image.png",
+				},
+				{
+					name:     "audio speech",
+					path:     "/v1/audio/speech",
+					request:  `{"model":"tts-alias","input":"hello","voice":"Cherry"}`,
+					response: `{"created":123,"data":{"url":"https://compatible.example/audio.mp3","id":"audio_compatible"}}`,
+					expected: "https://compatible.example/audio.mp3",
+				},
+			}
+
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					host, status := test.NewTestHost(qwenCompatibleMediaConfig)
+					defer host.Reset()
+					require.Equal(t, types.OnPluginStartStatusOK, status)
+
+					host.CallOnHttpRequestHeaders([][2]string{
+						{":authority", "example.com"},
+						{":path", tc.path},
+						{":method", "POST"},
+						{"Content-Type", "application/json"},
+					})
+
+					host.CallOnHttpRequestBody([]byte(tc.request))
+
+					require.NoError(t, host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
+
+					responseHeaders := [][2]string{
+						{":status", "200"},
+						{"Content-Type", "application/json"},
+					}
+					host.CallOnHttpResponseHeaders(responseHeaders)
+
+					action := host.CallOnHttpResponseBody([]byte(tc.response))
+					require.Equal(t, types.ActionContinue, action)
+
+					processedResponseBody := host.GetResponseBody()
+					require.NotNil(t, processedResponseBody)
+					require.Contains(t, string(processedResponseBody), tc.expected)
+					require.False(t, gjson.GetBytes(processedResponseBody, "output").Exists(), "Compatible media response should not be treated as DashScope native output")
+				})
+			}
 		})
 
 		// 测试qwen响应体处理（兼容模式 responses 接口透传）

@@ -1,56 +1,13 @@
----
-title: AI Quota Management
-keywords: [ AI Gateway, AI Quota ]
-description: AI quota management plugin configuration reference
----
-## Function Description
-The `ai-quota` plugin implements quota rate limiting based on fixed quotas allocated to specific consumers. It also supports quota management capabilities, including querying quotas, refreshing quotas, and increasing or decreasing quotas. The `ai-quota` plugin needs to work with authentication plugins such as `key-auth`, `jwt-auth`, etc., to obtain the consumer name associated with the authenticated identity, and it needs to work with the `ai-statistics` plugin to obtain AI Token statistical information.
+# AI Quota: versioned readonly balance admission
 
-## Runtime Properties
-Plugin execution phase: `default phase`
-Plugin execution priority: `750`
+Version `2.0.4`, wire schema `balance.v1`. Bind this plugin only to managed new model invocations. The original PostgreSQL wallet is the money authority; Console alone writes balance/authorization projections and maintenance state. Quota never prices, reserves, settles, or mutates money/readiness. Response data and late usage do not cause a second quota decision.
 
-## Configuration Description
-| Name                 | Data Type        | Required Conditions                         | Default Value | Description                                       |
-|---------------------|------------------|--------------------------------------------|---------------|---------------------------------------------------|
-| `redis_key_prefix`  | string           | Optional                                   |   chat_quota: | Quota redis key prefix                            |
-| `admin_consumer`    | string           | Required                                   |               | Consumer name for managing quota management identity |
-| `admin_path`        | string           | Optional                                   |   /quota      | Prefix for the path to manage quota requests      |
-| `enable_path_suffixes` | []string      | Optional                                   | ["/v1/chat/completions", "/v1/messages"] | Enabled path suffixes for completion quota checks only; does not affect admin API path |
-| `redis`             | object           | Yes                                        |               | Redis related configuration                        |
-Explanation of each configuration field in `redis`
-| Configuration Item | Type   | Required | Default Value                                           | Explanation                                                                                             |
-|--------------------|--------|----------|---------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| service_name       | string | Required | -                                                       | Redis service name, full FQDN name with service type, e.g., my-redis.dns, redis.my-ns.svc.cluster.local |
-| service_port       | int    | No       | Default value for static service is 80; others are 6379 | Service port for the redis service                                                                      |
-| username           | string | No       | -                                                       | Redis username                                                                                          |
-| password           | string | No       | -                                                       | Redis password                                                                                          |
-| timeout            | int    | No       | 1000                                                    | Redis connection timeout in milliseconds                                                                |
-| database           | int    | No       | 0                                                       | The database ID used, for example, configured as 1, corresponds to `SELECT 1`.                          |
+Global configuration requires `balance_scope_id`, `cache_generation`, `projection_schema: balance.v1`, and `redis`. Use the Console's observed current UUIDs. `missing_balance_policy` accepts only `deny`. Legacy alias-based balance templates and tenant/consumer/quota/provider selectors are rejected; there is no bare-integer GET fallback.
 
-## Configuration Example
-### Identify request parameter apikey and apply rate limiting accordingly
-```yaml
-redis_key_prefix: "chat_quota:"
-admin_consumer: consumer3
-admin_path: /quota
-redis:
-  service_name: redis-service.default.svc.cluster.local
-  service_port: 6379
-  timeout: 2000
-```
+The managed chain must first authenticate with native `credential_bindings` in key-auth 1.1.0. Each successful credential carries its actual original account, API key ID and credential generation after client copies of these fields are removed. Missing, ambiguous or malformed native identity is denied. Console/CUT/SDK must generate and observe the exact bindings before releasing the combination; a binary upgrade alone cannot establish them.
 
-### Refresh Quota
-If the suffix of the current request URL matches the admin_path, for example, if the plugin is effective on the route example.com/v1/chat/completions, then the quota can be updated via:
-curl https://example.com/v1/chat/completions/quota/refresh -H "Authorization: Bearer credential3" -d "consumer=consumer1&quota=10000"
-The value of the key `chat_quota:consumer1` in Redis will be refreshed to 10000.
+A single readonly Redis script checks control, account and that exact key mapping in the same hash slot. All must match generation/schema/readiness, authorization revisions and credential generation, and the key must remain enabled. Signed bigint money and revisions stay canonical strings, preserving values beyond 2^53. Only strictly positive balance permits a call. Missing, unready, stale, wrong-unit or conflicting records deny; unavailable dependencies or malformed results return 503 without resuming.
 
-### Query Quota
-To query the quota of a specific user, you can use: 
-curl https://example.com/v1/chat/completions/quota?consumer=consumer1 -H "Authorization: Bearer credential3"
-The response will return: {"quota": 10000, "consumer": "consumer1"}
+`legacy_suffixes` defaults to `/v1/chat/completions` and `/v1/messages`. `bound_target` applies to an already classified new-invocation target. Suffix and method filters form an intersection and cannot replace global namespace or Redis settings. Exclude accepted-task queries through route binding or method filters. GET/HEAD classified as new invocations still require admission; internal facts, settlement and accepted-task query routes must not bind this plugin. Explicitly constrain new invocation methods such as POST instead of treating task management routes as new sales.
 
-### Increase or Decrease Quota
-To increase or decrease the quota of a specific user, you can use:
-curl https://example.com/v1/chat/completions/quota/delta -d "consumer=consumer1&value=100" -H "Authorization: Bearer credential3"
-This will increase the value of the key `chat_quota:consumer1` in Redis by 100, and negative values can also be supported, thus subtracting the corresponding value.
+All keys share `mf:balance:{scope}:...`. Console/REL/DEP alone establish actual maintenance closure and reopening. Native Redis, simulated host, compiled Wasm and actual K3S loading have distinct evidence. See the [implementation plan](../../docs/plans/2026-10-27-versioned-balance-admission.md); local tests do not establish a deployed supported combination.

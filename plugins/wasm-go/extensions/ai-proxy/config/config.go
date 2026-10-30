@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/tidwall/gjson"
 )
@@ -12,25 +14,38 @@ import (
 // @Title zh-CN AI代理
 // @Description zh-CN 通过AI助手提供智能对话服务
 // @IconUrl https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
-// @Version 0.1.0
+// @Version 2.0.9
 //
 // @Contact.name CH3CHO
 // @Contact.url https://github.com/CH3CHO
 // @Contact.email ch3cho@qq.com
 //
 // @Example
-// { "provider": { "type": "qwen", "apiToken": "YOUR_DASHSCOPE_API_TOKEN", "modelMapping": { "*": "qwen-turbo" } } }
+// { "protocol_mode": "auto", "path_scope": "legacy_suffixes", "provider": { "type": "qwen", "apiToken": "YOUR_DASHSCOPE_API_TOKEN", "modelMapping": { "*": "qwen-turbo" } } }
 // @End
 type PluginConfig struct {
+	// ManagedExecution is installed only from one complete, verified route rule.
+	ManagedExecution any `json:"-" yaml:"-"`
+
 	// @Title zh-CN AI服务提供商配置
 	// @Description zh-CN AI服务提供商配置，包含API接口、模型和知识库文件等信息
 	providerConfigs []provider.ProviderConfig `required:"true" yaml:"providers"`
 
 	activeProviderConfig *provider.ProviderConfig `yaml:"-"`
 	activeProvider       provider.Provider        `yaml:"-"`
+
+	protocolMode           string   `yaml:"-"`
+	protocolModeConfigured bool     `yaml:"-"`
+	pathScope              string   `yaml:"-"`
+	pathScopeConfigured    bool     `yaml:"-"`
+	enablePathSuffixes     []string `yaml:"-"`
+	enableMethods          []string `yaml:"-"`
+	routingConfigError     string   `yaml:"-"`
 }
 
 func (c *PluginConfig) FromJson(json gjson.Result) {
+	c.parseRoutingConfig(json)
+
 	if providersJson := json.Get("providers"); providersJson.Exists() && providersJson.IsArray() {
 		c.providerConfigs = make([]provider.ProviderConfig, 0)
 		for _, providerJson := range providersJson.Array() {
@@ -65,6 +80,19 @@ func (c *PluginConfig) FromJson(json gjson.Result) {
 }
 
 func (c *PluginConfig) Validate() error {
+	if c.routingConfigError != "" {
+		return fmt.Errorf("%s", c.routingConfigError)
+	}
+	if c.protocolModeConfigured &&
+		c.protocolMode != ProtocolModeAuto &&
+		c.protocolMode != ProtocolModePassthrough {
+		return fmt.Errorf("protocol_mode must be auto or passthrough")
+	}
+	if c.pathScopeConfigured &&
+		c.pathScope != PathScopeLegacySuffixes &&
+		c.pathScope != PathScopeBoundTarget {
+		return fmt.Errorf("path_scope must be legacy_suffixes or bound_target")
+	}
 	if c.activeProviderConfig == nil {
 		return nil
 	}

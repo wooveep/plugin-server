@@ -1,0 +1,660 @@
+{
+  "fixture_format": "wasm-d0-draft-v1",
+  "status": "frozen",
+  "prepared_on": "2026-10-25",
+  "owner_card": "D0-WG-02",
+  "delegate": "Codex agent",
+  "natural_person": "待确认",
+  "backup": "待确认",
+  "branch": "codex/cache-auth-history-20261023",
+  "source_revision": "99a51c9e1e8a0f189f0d277628a5c1e3d41c8dd1",
+  "evidence_level": "offline_fixture",
+  "subject_layer": "contract_fixture",
+  "domain_validation": "runner_required",
+  "host_emulator_validation": "not_run",
+  "real_gateway_validation": "not_run",
+  "input_refs": [
+    {
+      "bundle_version": "mf-common-2026-10-25.3",
+      "manifest_sha256": "09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5",
+      "vendor_root": "testdata/contracts/vendor/ocloudmodelfusion/mf-common-2026-10-25.3"
+    },
+    {
+      "bundle_version": "mf-execution-2026-10-25.1",
+      "manifest_sha256": "7b2d3d58939302bb9baf736713d2e92338e341a373b2829b43b09805f6c1ce49",
+      "vendor_root": "testdata/contracts/vendor/ocloudmodelfusion/mf-execution-2026-10-25.1"
+    }
+  ],
+  "validation": {
+    "validator_id": "wg-execution-fixture.v1",
+    "registration_status": "registered_test_only",
+    "entrypoint": "go test ./internal/executionfixture",
+    "authoritative_transport": "locked MF02 defs",
+    "algorithm": "local fixture lifecycle plus actual SDK/matcher observations"
+  },
+  "digest_note": "input_sha256 绑定保存的input_json_utf8原字节；正文raw与固定mf-json.v1 canonical摘要分列；空正文仅raw-bytes.v1。",
+  "cases": [
+    {
+      "case_id": "D0-WG02-ID-001",
+      "name": "Header only may collect body; complete send DTO is forbidden",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V01",
+        "EB01-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "chunks_utf8": [],
+        "end_of_stream": false,
+        "body_read": "not_attempted",
+        "basis_sample": null
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"chunks_utf8\":[],\"end_of_stream\":false,\"body_read\":\"not_attempted\",\"basis_sample\":null}",
+      "input_sha256": "18499c2c3e81a25df9655d658bd67e0df48403e06093549ccdb9c961c5c60cc5",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "next_phase": "collect_body",
+        "complete_send_dto_allowed": false,
+        "consume_allowed": false,
+        "dispatch_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-002",
+      "name": "Complete original body in three chunks",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "original",
+        "chunks_utf8": [
+          "{\"model\":\"fi",
+          "xture-model\",\"messages\":[{\"ro",
+          "le\":\"user\",\"content\":\"hello\"}]}"
+        ],
+        "end_of_stream": true,
+        "body_read": "ok",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-A",
+        "basis_sample": "original",
+        "normalization_profile": "mf-json.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"original\",\"chunks_utf8\":[\"{\\\"model\\\":\\\"fi\",\"xture-model\\\",\\\"messages\\\":[{\\\"ro\",\"le\\\":\\\"user\\\",\\\"content\\\":\\\"hello\\\"}]}\"],\"end_of_stream\":true,\"body_read\":\"ok\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":7,\"basis_release_label\":\"release-A\",\"basis_sample\":\"original\",\"normalization_profile\":\"mf-json.v1\"}",
+      "input_sha256": "9947b9b93b4bd2322899b981b7764c387a7f69a56bc1e0e79ddba7fa9cf45079",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "next_phase": "body_basis_ready",
+        "complete_send_dto_allowed": true,
+        "raw_body_sha256": "e77b1b8d539da487cd2c234802c8070ce83677a55172c836b3589518b823d653",
+        "outbound_sample": "transformed",
+        "outbound_raw_sha256": "b17105abc0117c781a91fe42307e159df2a2cc84f285475549b4fe7bd90305e5",
+        "same_original_digest_as": "D0-WG02-ID-003",
+        "dispatch_observed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-003",
+      "name": "Same original body as one chunk",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "original",
+        "chunks_utf8": [
+          "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}]}"
+        ],
+        "end_of_stream": true,
+        "body_read": "ok",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-A",
+        "basis_sample": "original",
+        "normalization_profile": "mf-json.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"original\",\"chunks_utf8\":[\"{\\\"model\\\":\\\"fixture-model\\\",\\\"messages\\\":[{\\\"role\\\":\\\"user\\\",\\\"content\\\":\\\"hello\\\"}]}\"],\"end_of_stream\":true,\"body_read\":\"ok\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":7,\"basis_release_label\":\"release-A\",\"basis_sample\":\"original\",\"normalization_profile\":\"mf-json.v1\"}",
+      "input_sha256": "93d989b3d967309ed296c7b6e038eee87ddb0c358e0401ac9144a6057fd6ba6b",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "next_phase": "body_basis_ready",
+        "complete_send_dto_allowed": true,
+        "raw_body_sha256": "e77b1b8d539da487cd2c234802c8070ce83677a55172c836b3589518b823d653",
+        "same_original_digest_as": "D0-WG02-ID-002",
+        "dispatch_observed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-004",
+      "name": "Explicit empty body after end of stream",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "empty",
+        "chunks_utf8": [
+          ""
+        ],
+        "end_of_stream": true,
+        "body_read": "ok",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-A",
+        "basis_sample": "empty",
+        "normalization_profile": "raw-bytes.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"empty\",\"chunks_utf8\":[\"\"],\"end_of_stream\":true,\"body_read\":\"ok\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":7,\"basis_release_label\":\"release-A\",\"basis_sample\":\"empty\",\"normalization_profile\":\"raw-bytes.v1\"}",
+      "input_sha256": "2c6a29c61cc19218330d0d3453354596a104828b26a02029dfca249ea25e059b",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "next_phase": "body_basis_ready",
+        "complete_send_dto_allowed": true,
+        "raw_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "empty_body": true,
+        "dispatch_observed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-005",
+      "name": "Complete bytes without end of stream cannot become BodyBasis",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "original",
+        "chunks_utf8": [
+          "{\"model\":\"fi",
+          "xture-model\",\"messages\":[{\"ro",
+          "le\":\"user\",\"content\":\"hello\"}]}"
+        ],
+        "end_of_stream": false,
+        "body_read": "ok",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-A",
+        "basis_sample": "original",
+        "normalization_profile": "mf-json.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"original\",\"chunks_utf8\":[\"{\\\"model\\\":\\\"fi\",\"xture-model\\\",\\\"messages\\\":[{\\\"ro\",\"le\\\":\\\"user\\\",\\\"content\\\":\\\"hello\\\"}]}\"],\"end_of_stream\":false,\"body_read\":\"ok\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":7,\"basis_release_label\":\"release-A\",\"basis_sample\":\"original\",\"normalization_profile\":\"mf-json.v1\"}",
+      "input_sha256": "29cb7d579d7fc0c3d57665bbe8630b78a51ee785a2fb195148384522a4b695a3",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_BODY_INCOMPLETE",
+        "stage": "fixture_semantic",
+        "complete_send_dto_allowed": false,
+        "consume_allowed": false,
+        "dispatch_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-006",
+      "name": "BodyBasis belongs to another call",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "original",
+        "chunks_utf8": [
+          "{\"model\":\"fi",
+          "xture-model\",\"messages\":[{\"ro",
+          "le\":\"user\",\"content\":\"hello\"}]}"
+        ],
+        "end_of_stream": true,
+        "body_read": "ok",
+        "basis_call_label": "call-B",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-A",
+        "basis_sample": "original",
+        "normalization_profile": "mf-json.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"original\",\"chunks_utf8\":[\"{\\\"model\\\":\\\"fi\",\"xture-model\\\",\\\"messages\\\":[{\\\"ro\",\"le\\\":\\\"user\\\",\\\"content\\\":\\\"hello\\\"}]}\"],\"end_of_stream\":true,\"body_read\":\"ok\",\"basis_call_label\":\"call-B\",\"basis_context_generation\":7,\"basis_release_label\":\"release-A\",\"basis_sample\":\"original\",\"normalization_profile\":\"mf-json.v1\"}",
+      "input_sha256": "6673e3e5ce89ac5777837db1c492dc79b780b8d24347dc09c8ed727c82dadc7e",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_BODY_CALL_MISMATCH",
+        "stage": "fixture_semantic",
+        "complete_send_dto_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-007",
+      "name": "Reused Context number with stale generation",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V02",
+        "EB01-V05"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "original",
+        "chunks_utf8": [
+          "{\"model\":\"fi",
+          "xture-model\",\"messages\":[{\"ro",
+          "le\":\"user\",\"content\":\"hello\"}]}"
+        ],
+        "end_of_stream": true,
+        "body_read": "ok",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 6,
+        "basis_release_label": "release-A",
+        "basis_sample": "original",
+        "normalization_profile": "mf-json.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"original\",\"chunks_utf8\":[\"{\\\"model\\\":\\\"fi\",\"xture-model\\\",\\\"messages\\\":[{\\\"ro\",\"le\\\":\\\"user\\\",\\\"content\\\":\\\"hello\\\"}]}\"],\"end_of_stream\":true,\"body_read\":\"ok\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":6,\"basis_release_label\":\"release-A\",\"basis_sample\":\"original\",\"normalization_profile\":\"mf-json.v1\"}",
+      "input_sha256": "f6c239c5ea974aa0db3123117fb5a1f7d1c90322ed9234ea3537e388d46f1c56",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_BODY_GENERATION_MISMATCH",
+        "stage": "fixture_semantic",
+        "complete_send_dto_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-008",
+      "name": "Old release cannot supply current call body basis",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V06"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "original",
+        "chunks_utf8": [
+          "{\"model\":\"fi",
+          "xture-model\",\"messages\":[{\"ro",
+          "le\":\"user\",\"content\":\"hello\"}]}"
+        ],
+        "end_of_stream": true,
+        "body_read": "ok",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-old",
+        "basis_sample": "original",
+        "normalization_profile": "mf-json.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"original\",\"chunks_utf8\":[\"{\\\"model\\\":\\\"fi\",\"xture-model\\\",\\\"messages\\\":[{\\\"ro\",\"le\\\":\\\"user\\\",\\\"content\\\":\\\"hello\\\"}]}\"],\"end_of_stream\":true,\"body_read\":\"ok\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":7,\"basis_release_label\":\"release-old\",\"basis_sample\":\"original\",\"normalization_profile\":\"mf-json.v1\"}",
+      "input_sha256": "a60bd7aa736095719d9ad61caa3a40ba6f1f6c63b510a77dfd5a099925b53700",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_BODY_RELEASE_MISMATCH",
+        "stage": "fixture_semantic",
+        "complete_send_dto_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-009",
+      "name": "Transformed outbound bytes must not replace original body basis",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "original",
+        "chunks_utf8": [
+          "{\"model\":\"fi",
+          "xture-model\",\"messages\":[{\"ro",
+          "le\":\"user\",\"content\":\"hello\"}]}"
+        ],
+        "end_of_stream": true,
+        "body_read": "ok",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-A",
+        "basis_sample": "transformed",
+        "normalization_profile": "mf-json.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"original\",\"chunks_utf8\":[\"{\\\"model\\\":\\\"fi\",\"xture-model\\\",\\\"messages\\\":[{\\\"ro\",\"le\\\":\\\"user\\\",\\\"content\\\":\\\"hello\\\"}]}\"],\"end_of_stream\":true,\"body_read\":\"ok\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":7,\"basis_release_label\":\"release-A\",\"basis_sample\":\"transformed\",\"normalization_profile\":\"mf-json.v1\"}",
+      "input_sha256": "012c36f9ce1c443b45672ae660e370c41a68111cbbe436b980a39a4fe0de1659",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_TRANSFORMED_AS_ORIGINAL",
+        "stage": "fixture_semantic",
+        "complete_send_dto_allowed": false,
+        "raw_body_sha256": "e77b1b8d539da487cd2c234802c8070ce83677a55172c836b3589518b823d653",
+        "outbound_raw_sha256": "b17105abc0117c781a91fe42307e159df2a2cc84f285475549b4fe7bd90305e5"
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-010",
+      "name": "Normalization version is absent with all other inputs intact",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "original",
+        "chunks_utf8": [
+          "{\"model\":\"fi",
+          "xture-model\",\"messages\":[{\"ro",
+          "le\":\"user\",\"content\":\"hello\"}]}"
+        ],
+        "end_of_stream": true,
+        "body_read": "ok",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-A",
+        "basis_sample": "original"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"original\",\"chunks_utf8\":[\"{\\\"model\\\":\\\"fi\",\"xture-model\\\",\\\"messages\\\":[{\\\"ro\",\"le\\\":\\\"user\\\",\\\"content\\\":\\\"hello\\\"}]}\"],\"end_of_stream\":true,\"body_read\":\"ok\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":7,\"basis_release_label\":\"release-A\",\"basis_sample\":\"original\"}",
+      "input_sha256": "236954d1a2b075be1436e3c076a8b74653d18709f07fd1b1f2dba0e8d12fb92a",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_NORMALIZATION_PROFILE_MISSING",
+        "stage": "fixture_semantic",
+        "complete_send_dto_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-011",
+      "name": "Failed original-body read cannot become valid empty body",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "empty",
+        "chunks_utf8": [],
+        "end_of_stream": true,
+        "body_read": "error",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-A",
+        "basis_sample": "empty",
+        "normalization_profile": "raw-bytes.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"empty\",\"chunks_utf8\":[],\"end_of_stream\":true,\"body_read\":\"error\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":7,\"basis_release_label\":\"release-A\",\"basis_sample\":\"empty\",\"normalization_profile\":\"raw-bytes.v1\"}",
+      "input_sha256": "2a6b9e13b35de442b91a690563a736bae3bc6f6ce7bed5d8e675aac25ebb5f26",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_ORIGINAL_BODY_READ_FAILED",
+        "stage": "fixture_semantic",
+        "complete_send_dto_allowed": false,
+        "empty_body": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-012",
+      "name": "Changed payload gets a distinct original digest",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "fixture_trusted_writer",
+        "body_sample": "changed",
+        "chunks_utf8": [
+          "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"other\"}]}"
+        ],
+        "end_of_stream": true,
+        "body_read": "ok",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-A",
+        "basis_sample": "changed",
+        "normalization_profile": "mf-json.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"fixture_trusted_writer\",\"body_sample\":\"changed\",\"chunks_utf8\":[\"{\\\"model\\\":\\\"fixture-model\\\",\\\"messages\\\":[{\\\"role\\\":\\\"user\\\",\\\"content\\\":\\\"other\\\"}]}\"],\"end_of_stream\":true,\"body_read\":\"ok\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":7,\"basis_release_label\":\"release-A\",\"basis_sample\":\"changed\",\"normalization_profile\":\"mf-json.v1\"}",
+      "input_sha256": "f0a57e65ec1393a95d4936c8264413d8fc6ed648b6ada10018031080cc48732d",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "raw_body_sha256": "1b1cec7421c51f55f5b7f61ad1be1126cbbd180ea9708e50ef482b274e7dd06d",
+        "different_original_digest_from": "D0-WG02-ID-002",
+        "complete_send_dto_allowed": true,
+        "dispatch_observed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    },
+    {
+      "case_id": "D0-WG02-ID-013",
+      "name": "External header cannot stand in for a trusted CallIdentity writer",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "EB01-V01"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "call_label": "call-A",
+        "context_number": 37,
+        "context_generation": 7,
+        "release_label": "release-A",
+        "identity_source": "external_request_header",
+        "body_sample": "original",
+        "chunks_utf8": [
+          "{\"model\":\"fi",
+          "xture-model\",\"messages\":[{\"ro",
+          "le\":\"user\",\"content\":\"hello\"}]}"
+        ],
+        "end_of_stream": true,
+        "body_read": "ok",
+        "basis_call_label": "call-A",
+        "basis_context_generation": 7,
+        "basis_release_label": "release-A",
+        "basis_sample": "original",
+        "normalization_profile": "mf-json.v1"
+      },
+      "input_json_utf8": "{\"call_label\":\"call-A\",\"context_number\":37,\"context_generation\":7,\"release_label\":\"release-A\",\"identity_source\":\"external_request_header\",\"body_sample\":\"original\",\"chunks_utf8\":[\"{\\\"model\\\":\\\"fi\",\"xture-model\\\",\\\"messages\\\":[{\\\"ro\",\"le\\\":\\\"user\\\",\\\"content\\\":\\\"hello\\\"}]}\"],\"end_of_stream\":true,\"body_read\":\"ok\",\"basis_call_label\":\"call-A\",\"basis_context_generation\":7,\"basis_release_label\":\"release-A\",\"basis_sample\":\"original\",\"normalization_profile\":\"mf-json.v1\"}",
+      "input_sha256": "d839a134c7bb05bb16470981e1d8c02151f8d9c7b1e0836b18dd2fb5feaa2aec",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_UNTRUSTED_IDENTITY_SOURCE",
+        "stage": "fixture_semantic",
+        "complete_send_dto_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      }
+    }
+  ],
+  "next_step": "运行 scripts/verify-d0-contracts.sh batch A；生产可信writer/guard/retry、真实EB与IF09导出另行验收。",
+  "samples": {
+    "original": {
+      "raw_utf8": "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}]}",
+      "raw_sha256": "e77b1b8d539da487cd2c234802c8070ce83677a55172c836b3589518b823d653",
+      "canonical_utf8": "{\"messages\":[{\"content\":\"hello\",\"role\":\"user\"}],\"model\":\"fixture-model\"}",
+      "canonical_sha256": "25cb78b19e750bfcef3b4afea678863f67e45e6cb6a2b1628fb156641db3218d",
+      "canonicalization": "mf-json.v1"
+    },
+    "changed": {
+      "raw_utf8": "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"other\"}]}",
+      "raw_sha256": "1b1cec7421c51f55f5b7f61ad1be1126cbbd180ea9708e50ef482b274e7dd06d",
+      "canonical_utf8": "{\"messages\":[{\"content\":\"other\",\"role\":\"user\"}],\"model\":\"fixture-model\"}",
+      "canonical_sha256": "a01479453fda67f6dc38d1b09cabfae16cfae47da7f2751b1d39f333e81f3e7d",
+      "canonicalization": "mf-json.v1"
+    },
+    "transformed": {
+      "raw_utf8": "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"system\",\"content\":\"fixture memory\"},{\"role\":\"user\",\"content\":\"hello\"}]}",
+      "raw_sha256": "b17105abc0117c781a91fe42307e159df2a2cc84f285475549b4fe7bd90305e5",
+      "canonical_utf8": "{\"messages\":[{\"content\":\"fixture memory\",\"role\":\"system\"},{\"content\":\"hello\",\"role\":\"user\"}],\"model\":\"fixture-model\"}",
+      "canonical_sha256": "7d688769f3550913b35a43c1bdbbbd71a7f9640df2f3eedbed68a4d48a669238",
+      "canonicalization": "mf-json.v1"
+    },
+    "empty": {
+      "raw_utf8": "",
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonical_utf8": "",
+      "canonical_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonicalization": "raw-bytes.v1"
+    }
+  },
+  "preparation_check": {
+    "status": "passed",
+    "checked_on": "2026-10-25",
+    "scope": "data_integrity_only",
+    "case_count": 13,
+    "reproduce": "README.md data self-check",
+    "domain_claim": false
+  },
+  "fixed_common_input": {
+    "bundle_version": "mf-common-2026-10-25.3",
+    "manifest_sha256": "09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5"
+  }
+}

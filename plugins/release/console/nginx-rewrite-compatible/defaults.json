@@ -1,0 +1,1 @@
+{"rules":[{"mode":"last","regex":"^/old/(.*)$","replacement":"/new/$1"}]}

@@ -1,0 +1,29 @@
+{
+  "profile_version": "mf-json.v1",
+  "source_spec": "docs/contracts/2026-10-25-canonical-json-profile.md",
+  "encoding": "UTF-8",
+  "key_order": "Unicode scalar value lexicographic",
+  "unicode_normalization": "none",
+  "number_encoding": "exact expanded decimal; trim fractional zeroes; negative zero becomes 0",
+  "control_escape": "lowercase \\u00xx",
+  "array_order": "preserved",
+  "trailing_newline": false,
+  "digest": "sha256: + lowercase hex",
+  "resource_limits": {
+    "input_bytes": 1048576,
+    "output_bytes": 4194304,
+    "number_characters": 10000,
+    "nesting_depth": 128,
+    "collection_items": 10000,
+    "assertion_integer_digits": 4096,
+    "graph_nodes": 2048
+  },
+  "public_defs": {
+    "id": "common#/$defs/Id",
+    "revision": "common#/$defs/Revision",
+    "time": "common#/$defs/Time",
+    "digest": "common#/$defs/Digest",
+    "amount": "common#/$defs/IntegerAmount",
+    "money": "common#/$defs/Money"
+  }
+}

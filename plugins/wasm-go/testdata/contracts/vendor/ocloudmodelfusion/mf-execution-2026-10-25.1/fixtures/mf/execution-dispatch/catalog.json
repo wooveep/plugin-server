@@ -1,0 +1,3737 @@
+{
+  "card_id": "D0-MF-02",
+  "input_bundle": "mf-common-2026-10-25.3",
+  "input_manifest_sha256": "09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5",
+  "evidence_level": "offline_fixture",
+  "product_execution": "not_run",
+  "required_cases": [
+    {
+      "case_id": "MF02-context-customer-media",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "context-customer-media"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-schema-version",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:schema_version"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-call-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-request-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:request_id"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-billing-mode",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:billing_mode"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-principal-kind",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_kind"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-principal-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_id"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-operation-kind",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-release-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-route-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:route_id"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-auth-decision-ref",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:auth_decision_ref"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-public-model",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:public_model"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-original-body-digest",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-context-customer-media-missing-body-canonicalization",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:body_canonicalization"
+    },
+    {
+      "case_id": "MF02-context-customer-text",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "context-customer-text"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-schema-version",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:schema_version"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-call-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-request-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:request_id"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-billing-mode",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:billing_mode"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-principal-kind",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_kind"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-principal-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_id"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-operation-kind",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-release-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-route-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:route_id"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-auth-decision-ref",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:auth_decision_ref"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-public-model",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:public_model"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-original-body-digest",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-context-customer-text-missing-body-canonicalization",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:body_canonicalization"
+    },
+    {
+      "case_id": "MF02-context-internal-cost",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "context-internal-cost"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-schema-version",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:schema_version"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-call-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-request-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:request_id"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-billing-mode",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:billing_mode"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-principal-kind",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_kind"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-principal-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_id"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-operation-kind",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-release-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-route-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:route_id"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-auth-decision-ref",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:auth_decision_ref"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-public-model",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:public_model"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-original-body-digest",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-context-internal-cost-missing-body-canonicalization",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:body_canonicalization"
+    },
+    {
+      "case_id": "MF02-context-task-query",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "context-task-query"
+    },
+    {
+      "case_id": "MF02-context-customer-conditional-missing-tenant-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:customer:tenant_id"
+    },
+    {
+      "case_id": "MF02-context-customer-conditional-missing-account-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:customer:account_id"
+    },
+    {
+      "case_id": "MF02-context-customer-conditional-missing-sales-asset-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:customer:sales_asset_id"
+    },
+    {
+      "case_id": "MF02-context-customer-conditional-missing-operation-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:customer:operation_id"
+    },
+    {
+      "case_id": "MF02-context-customer-conditional-missing-original-body-ref",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:customer:original_body_ref"
+    },
+    {
+      "case_id": "MF02-context-customer-conditional-missing-accepted-at",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:customer:accepted_at"
+    },
+    {
+      "case_id": "MF02-context-customer-conditional-missing-dispatch-deadline",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:customer:dispatch_deadline"
+    },
+    {
+      "case_id": "MF02-context-internal-conditional-missing-cost-owner",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:internal:cost_owner"
+    },
+    {
+      "case_id": "MF02-context-query-conditional-missing-operation-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:query:operation_id"
+    },
+    {
+      "case_id": "MF02-context-query-conditional-missing-original-body-ref",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:query:original_body_ref"
+    },
+    {
+      "case_id": "MF02-context-query-conditional-missing-accepted-at",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:query:accepted_at"
+    },
+    {
+      "case_id": "MF02-context-query-conditional-missing-dispatch-deadline",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:query:dispatch_deadline"
+    },
+    {
+      "case_id": "MF02-identity-customer",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "identity-customer"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-schema-version",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:schema_version"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-call-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-request-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:request_id"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-billing-mode",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:billing_mode"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-principal-kind",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_kind"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-principal-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_id"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-operation-kind",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-release-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-route-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:route_id"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-auth-decision-ref",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:auth_decision_ref"
+    },
+    {
+      "case_id": "MF02-identity-customer-missing-public-model",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:public_model"
+    },
+    {
+      "case_id": "MF02-body-customer",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "body-customer"
+    },
+    {
+      "case_id": "MF02-body-customer-missing-call-id",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-body-customer-missing-release-id",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-body-customer-missing-operation-kind",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-body-customer-missing-original-body-digest",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-body-customer-missing-body-canonicalization",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:body_canonicalization"
+    },
+    {
+      "case_id": "MF02-identity-text",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "identity-text"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-schema-version",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:schema_version"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-call-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-request-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:request_id"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-billing-mode",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:billing_mode"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-principal-kind",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_kind"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-principal-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_id"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-operation-kind",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-release-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-route-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:route_id"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-auth-decision-ref",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:auth_decision_ref"
+    },
+    {
+      "case_id": "MF02-identity-text-missing-public-model",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:public_model"
+    },
+    {
+      "case_id": "MF02-body-text",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "body-text"
+    },
+    {
+      "case_id": "MF02-body-text-missing-call-id",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-body-text-missing-release-id",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-body-text-missing-operation-kind",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-body-text-missing-original-body-digest",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-body-text-missing-body-canonicalization",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:body_canonicalization"
+    },
+    {
+      "case_id": "MF02-identity-internal",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "identity-internal"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-schema-version",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:schema_version"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-call-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-request-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:request_id"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-billing-mode",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:billing_mode"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-principal-kind",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_kind"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-principal-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:principal_id"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-operation-kind",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-release-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-route-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:route_id"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-auth-decision-ref",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:auth_decision_ref"
+    },
+    {
+      "case_id": "MF02-identity-internal-missing-public-model",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:public_model"
+    },
+    {
+      "case_id": "MF02-body-internal",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "body-internal"
+    },
+    {
+      "case_id": "MF02-body-internal-missing-call-id",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-body-internal-missing-release-id",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-body-internal-missing-operation-kind",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-body-internal-missing-original-body-digest",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-body-internal-missing-body-canonicalization",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:body_canonicalization"
+    },
+    {
+      "case_id": "MF02-body-media-missing-operation-id",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:media:operation_id"
+    },
+    {
+      "case_id": "MF02-body-media-missing-original-body-ref",
+      "definition": "BodyBasis",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:media:original_body_ref"
+    },
+    {
+      "case_id": "MF02-cost-owner",
+      "definition": "CostOwner",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "cost-owner"
+    },
+    {
+      "case_id": "MF02-cost-owner-missing-kind",
+      "definition": "CostOwner",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:kind"
+    },
+    {
+      "case_id": "MF02-cost-owner-missing-owner-id",
+      "definition": "CostOwner",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:owner_id"
+    },
+    {
+      "case_id": "MF02-cost-owner-missing-source-job-id",
+      "definition": "CostOwner",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:source_job_id"
+    },
+    {
+      "case_id": "MF02-bare-task-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "bare-task-id"
+    },
+    {
+      "case_id": "MF02-request-id-substitutes-call",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "request-id-substitutes-call"
+    },
+    {
+      "case_id": "MF02-internal-forges-user",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "internal-forges-user"
+    },
+    {
+      "case_id": "MF02-internal-forges-wallet",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "internal-forges-wallet"
+    },
+    {
+      "case_id": "MF02-missing-call-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "missing-call-id"
+    },
+    {
+      "case_id": "MF02-context-null-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "context-null-id"
+    },
+    {
+      "case_id": "MF02-context-empty-id",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "context-empty-id"
+    },
+    {
+      "case_id": "MF02-context-schema-unsupported",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "context-schema-unsupported"
+    },
+    {
+      "case_id": "MF02-context-unknown-operation",
+      "definition": "ExecutionContext",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "context-unknown-operation"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "descriptor-target-1"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-release-id",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-target-id",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:target_id"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-binding-id",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:binding_id"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-provider-id",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:provider_id"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-provider-account-id",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:provider_account_id"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-region-endpoint-ref",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:region_endpoint_ref"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-service-ref",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:service_ref"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-cluster-ref",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:cluster_ref"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-credential-pool-ref",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:credential_pool_ref"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-adapter-ref",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:adapter_ref"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-credential-pool-revision",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:credential_pool_revision"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-adapter-revision",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:adapter_revision"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-mapper-digest",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:mapper_digest"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-proxy-digest",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:proxy_digest"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-descriptor-digest",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:descriptor_digest"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-upstream-model",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:upstream_model"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-config-canonicalization",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:config_canonicalization"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-transport-contract",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:transport_contract"
+    },
+    {
+      "case_id": "MF02-descriptor-target-1-missing-capabilities",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:capabilities"
+    },
+    {
+      "case_id": "MF02-descriptor-missing-transport-host",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:transport_contract.host"
+    },
+    {
+      "case_id": "MF02-descriptor-missing-transport-sni",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:transport_contract.sni"
+    },
+    {
+      "case_id": "MF02-descriptor-missing-transport-path-adapter-ref",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:transport_contract.path_adapter_ref"
+    },
+    {
+      "case_id": "MF02-descriptor-missing-capability-send-mode",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:capabilities.image_generate.send_mode"
+    },
+    {
+      "case_id": "MF02-descriptor-missing-capability-response-classifier-ref",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:capabilities.image_generate.response_classifier_ref"
+    },
+    {
+      "case_id": "MF02-descriptor-missing-capability-max-attempts",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:capabilities.image_generate.max_attempts"
+    },
+    {
+      "case_id": "MF02-descriptor-missing-capability-max-fallback-hops",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:capabilities.image_generate.max_fallback_hops"
+    },
+    {
+      "case_id": "MF02-descriptor-media-retry",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "descriptor-media-retry"
+    },
+    {
+      "case_id": "MF02-descriptor-media-fallback",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "descriptor-media-fallback"
+    },
+    {
+      "case_id": "MF02-descriptor-empty-capabilities",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "descriptor-empty-capabilities"
+    },
+    {
+      "case_id": "MF02-descriptor-same-provider-other-binding",
+      "definition": "TargetExecutionDescriptor",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "descriptor-same-provider-other-binding"
+    },
+    {
+      "case_id": "MF02-selection-media",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "selection-media"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-call-id",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-release-id",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-target-id",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:target_id"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-binding-id",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:binding_id"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-attempt-id",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:attempt_id"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-operation-kind",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-provider-account-id",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:provider_account_id"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-upstream-model",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:upstream_model"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-cluster-ref",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:cluster_ref"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-credential-ref",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:credential_ref"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-credential-revision",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:credential_revision"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-selection-generation",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:selection_generation"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-selection-digest",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:selection_digest"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-selection-canonicalization",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:selection_canonicalization"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-original-body-digest",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-mapper-digest",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:mapper_digest"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-proxy-digest",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:proxy_digest"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-descriptor-digest",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:descriptor_digest"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-mechanism",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:mechanism"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-send-transport",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:send_transport"
+    },
+    {
+      "case_id": "MF02-selection-media-missing-recording-owner",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:recording_owner"
+    },
+    {
+      "case_id": "MF02-selection-media-conditional-missing-operation-id",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:media:operation_id"
+    },
+    {
+      "case_id": "MF02-selection-media-conditional-missing-dispatch-id",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:media:dispatch_id"
+    },
+    {
+      "case_id": "MF02-selection-media-conditional-missing-invocation-id",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:media:invocation_id"
+    },
+    {
+      "case_id": "MF02-selection-media-conditional-missing-gateway-boot-id",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:media:gateway_boot_id"
+    },
+    {
+      "case_id": "MF02-selection-media-conditional-missing-context-generation",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:media:context_generation"
+    },
+    {
+      "case_id": "MF02-selection-query",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "selection-query"
+    },
+    {
+      "case_id": "MF02-selection-query-missing-operation",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:task_query:operation_id"
+    },
+    {
+      "case_id": "MF02-selection-text",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "selection-text"
+    },
+    {
+      "case_id": "MF02-selection-credential_retry",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "selection-credential_retry"
+    },
+    {
+      "case_id": "MF02-selection-credential_retry-missing-parent",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:credential_retry:parent_attempt_id"
+    },
+    {
+      "case_id": "MF02-selection-fallback",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "selection-fallback"
+    },
+    {
+      "case_id": "MF02-selection-fallback-missing-parent",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:fallback:parent_attempt_id"
+    },
+    {
+      "case_id": "MF02-selection-native_retry",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "selection-native_retry"
+    },
+    {
+      "case_id": "MF02-selection-native_retry-missing-parent",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:native_retry:parent_attempt_id"
+    },
+    {
+      "case_id": "MF02-selection-invalid-media-retry",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "selection-invalid-media-retry"
+    },
+    {
+      "case_id": "MF02-selection-invalid-query-create-dispatch",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "selection-invalid-query-create-dispatch"
+    },
+    {
+      "case_id": "MF02-selection-invalid-http-call-owner",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "selection-invalid-http-call-owner"
+    },
+    {
+      "case_id": "MF02-selection-invalid-router-owner",
+      "definition": "ExecutionSelection",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "selection-invalid-router-owner"
+    },
+    {
+      "case_id": "MF02-outcome-partial",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "outcome-partial"
+    },
+    {
+      "case_id": "MF02-outcome-partial-missing-send-state",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:send_state"
+    },
+    {
+      "case_id": "MF02-outcome-partial-missing-acceptance",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:acceptance"
+    },
+    {
+      "case_id": "MF02-outcome-partial-missing-execution-result",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:execution_result"
+    },
+    {
+      "case_id": "MF02-outcome-partial-missing-headers-complete",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:headers_complete"
+    },
+    {
+      "case_id": "MF02-outcome-partial-missing-body-complete",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:body_complete"
+    },
+    {
+      "case_id": "MF02-outcome-partial-missing-occurred-at",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:occurred_at"
+    },
+    {
+      "case_id": "MF02-outcome-partial-missing-observed-at",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:observed_at"
+    },
+    {
+      "case_id": "MF02-outcome-unknown-no-status",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "outcome-unknown-no-status"
+    },
+    {
+      "case_id": "MF02-outcome-unknown-no-status-missing-send-state",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:send_state"
+    },
+    {
+      "case_id": "MF02-outcome-unknown-no-status-missing-acceptance",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:acceptance"
+    },
+    {
+      "case_id": "MF02-outcome-unknown-no-status-missing-execution-result",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:execution_result"
+    },
+    {
+      "case_id": "MF02-outcome-unknown-no-status-missing-headers-complete",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:headers_complete"
+    },
+    {
+      "case_id": "MF02-outcome-unknown-no-status-missing-body-complete",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:body_complete"
+    },
+    {
+      "case_id": "MF02-outcome-unknown-no-status-missing-occurred-at",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:occurred_at"
+    },
+    {
+      "case_id": "MF02-outcome-unknown-no-status-missing-observed-at",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:observed_at"
+    },
+    {
+      "case_id": "MF02-outcome-not-sent",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "outcome-not-sent"
+    },
+    {
+      "case_id": "MF02-outcome-conditional-missing-http-status",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:headers:http_status"
+    },
+    {
+      "case_id": "MF02-outcome-conditional-missing-response-body-digest",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:body:response_body_digest"
+    },
+    {
+      "case_id": "MF02-outcome-not-sent-accepted",
+      "definition": "AttemptOutcome",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "outcome-not-sent-accepted"
+    },
+    {
+      "case_id": "MF02-attemptoutcomewithoutbound-positive",
+      "definition": "AttemptOutcomeWithOutbound",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "attemptoutcomewithoutbound-positive"
+    },
+    {
+      "case_id": "MF02-attemptoutcomewithoutbound-missing-digest",
+      "definition": "AttemptOutcomeWithOutbound",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:observed:outbound_body_digest"
+    },
+    {
+      "case_id": "MF02-attemptoutcomewithresponse-positive",
+      "definition": "AttemptOutcomeWithResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "attemptoutcomewithresponse-positive"
+    },
+    {
+      "case_id": "MF02-attemptoutcomewithresponse-missing-digest",
+      "definition": "AttemptOutcomeWithResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:observed:response_body_digest"
+    },
+    {
+      "case_id": "MF02-provider-task-namespace",
+      "definition": "ProviderTaskIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "provider-task-namespace"
+    },
+    {
+      "case_id": "MF02-provider-task-namespace-missing-provider-account-id",
+      "definition": "ProviderTaskIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:provider_account_id"
+    },
+    {
+      "case_id": "MF02-provider-task-namespace-missing-region-endpoint-ref",
+      "definition": "ProviderTaskIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:region_endpoint_ref"
+    },
+    {
+      "case_id": "MF02-provider-task-namespace-missing-provider-task-id",
+      "definition": "ProviderTaskIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:provider_task_id"
+    },
+    {
+      "case_id": "MF02-provider-task-namespace-missing-operation-kind",
+      "definition": "ProviderTaskIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-identity",
+      "definition": "IdentityCorpus",
+      "source": "IF01-V01/V03/V05;IF02-V03/V05",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "identity"
+    },
+    {
+      "case_id": "MF02-call-operation-duplicate",
+      "definition": "IdentityCorpus",
+      "source": "IF01-V01/V03/V05;IF02-V03/V05",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "call-operation-duplicate"
+    },
+    {
+      "case_id": "MF02-call-operation-wrong-link",
+      "definition": "IdentityCorpus",
+      "source": "IF01-V01/V03/V05;IF02-V03/V05",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "call-operation-wrong-link"
+    },
+    {
+      "case_id": "MF02-target-duplicate",
+      "definition": "IdentityCorpus",
+      "source": "IF01-V01/V03/V05;IF02-V03/V05",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "target-duplicate"
+    },
+    {
+      "case_id": "MF02-selection-other-binding",
+      "definition": "IdentityCorpus",
+      "source": "IF01-V01/V03/V05;IF02-V03/V05",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "selection-other-binding"
+    },
+    {
+      "case_id": "MF02-selection-other-account",
+      "definition": "IdentityCorpus",
+      "source": "IF01-V01/V03/V05;IF02-V03/V05",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "selection-other-account"
+    },
+    {
+      "case_id": "MF02-outcome-partial-lost",
+      "definition": "IdentityCorpus",
+      "source": "IF01-V01/V03/V05;IF02-V03/V05",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "outcome-partial-lost"
+    },
+    {
+      "case_id": "MF02-outcome-unknown-fabricated-status",
+      "definition": "IdentityCorpus",
+      "source": "IF01-V01/V03/V05;IF02-V03/V05",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "outcome-unknown-fabricated-status"
+    },
+    {
+      "case_id": "MF02-provider-task-account-collapse",
+      "definition": "IdentityCorpus",
+      "source": "IF01-V01/V03/V05;IF02-V03/V05",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "provider-task-account-collapse"
+    },
+    {
+      "case_id": "MF02-prepare-candidate",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "prepare-candidate"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-call-id",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-release-id",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-target-id",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:target_id"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-binding-id",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:binding_id"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-operation-id",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_id"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-operation-kind",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-provider-account-id",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:provider_account_id"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-upstream-model",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:upstream_model"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-cluster-ref",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:cluster_ref"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-credential-ref",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:credential_ref"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-credential-revision",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:credential_revision"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-selection-generation",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:selection_generation"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-original-body-digest",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-mapper-digest",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:mapper_digest"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-proxy-digest",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:proxy_digest"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-mechanism",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:mechanism"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-send-transport",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:send_transport"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-missing-recording-owner",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:recording_owner"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "dispatch-prepared"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-dispatch-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_id"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-operation-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_id"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-call-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-attempt-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:attempt_id"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-worker-claim-epoch",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:worker_claim_epoch"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-dispatch-revision",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_revision"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-release-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-operation-kind",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-prepared-candidate-digest",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:prepared_candidate_digest"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-original-body-digest",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-prepared-at",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:prepared_at"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-dispatch-deadline",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_deadline"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-state",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:state"
+    },
+    {
+      "case_id": "MF02-dispatch-prepared-missing-observation-state",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:observation_state"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "dispatch-consumed"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-dispatch-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_id"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-operation-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_id"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-call-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-attempt-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:attempt_id"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-worker-claim-epoch",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:worker_claim_epoch"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-dispatch-revision",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_revision"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-release-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-operation-kind",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-prepared-candidate-digest",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:prepared_candidate_digest"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-original-body-digest",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-prepared-at",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:prepared_at"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-dispatch-deadline",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_deadline"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-state",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:state"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-missing-observation-state",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:observation_state"
+    },
+    {
+      "case_id": "MF02-dispatch-closed",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "dispatch-closed"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-dispatch-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_id"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-operation-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_id"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-call-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-attempt-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:attempt_id"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-worker-claim-epoch",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:worker_claim_epoch"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-dispatch-revision",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_revision"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-release-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-operation-kind",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_kind"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-prepared-candidate-digest",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:prepared_candidate_digest"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-original-body-digest",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-prepared-at",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:prepared_at"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-dispatch-deadline",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_deadline"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-state",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:state"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-missing-observation-state",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:observation_state"
+    },
+    {
+      "case_id": "MF02-grant",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "grant"
+    },
+    {
+      "case_id": "MF02-grant-missing-schema-version",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:schema_version"
+    },
+    {
+      "case_id": "MF02-grant-missing-grant-id",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:grant_id"
+    },
+    {
+      "case_id": "MF02-grant-missing-dispatch-id",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_id"
+    },
+    {
+      "case_id": "MF02-grant-missing-attempt-id",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:attempt_id"
+    },
+    {
+      "case_id": "MF02-grant-missing-invocation-id",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:invocation_id"
+    },
+    {
+      "case_id": "MF02-grant-missing-gateway-boot-id",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:gateway_boot_id"
+    },
+    {
+      "case_id": "MF02-grant-missing-release-id",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:release_id"
+    },
+    {
+      "case_id": "MF02-grant-missing-context-generation",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:context_generation"
+    },
+    {
+      "case_id": "MF02-grant-missing-selection-digest",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:selection_digest"
+    },
+    {
+      "case_id": "MF02-grant-missing-original-body-digest",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:original_body_digest"
+    },
+    {
+      "case_id": "MF02-grant-missing-not-after",
+      "definition": "DispatchGrant",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:not_after"
+    },
+    {
+      "case_id": "MF02-prepare-input",
+      "definition": "PrepareDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "prepare-input"
+    },
+    {
+      "case_id": "MF02-prepare-input-missing-operation-id",
+      "definition": "PrepareDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_id"
+    },
+    {
+      "case_id": "MF02-prepare-input-missing-prepare-request-id",
+      "definition": "PrepareDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:prepare_request_id"
+    },
+    {
+      "case_id": "MF02-prepare-input-missing-worker-claim-epoch",
+      "definition": "PrepareDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:worker_claim_epoch"
+    },
+    {
+      "case_id": "MF02-prepare-input-missing-request-digest",
+      "definition": "PrepareDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:request_digest"
+    },
+    {
+      "case_id": "MF02-prepare-input-missing-request-canonicalization",
+      "definition": "PrepareDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:request_canonicalization"
+    },
+    {
+      "case_id": "MF02-prepare-input-missing-candidate",
+      "definition": "PrepareDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:candidate"
+    },
+    {
+      "case_id": "MF02-prepare-output",
+      "definition": "PrepareDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "prepare-output"
+    },
+    {
+      "case_id": "MF02-prepare-output-missing-dispatch",
+      "definition": "PrepareDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch"
+    },
+    {
+      "case_id": "MF02-prepare-output-missing-candidate",
+      "definition": "PrepareDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:candidate"
+    },
+    {
+      "case_id": "MF02-consume-input",
+      "definition": "ConsumeDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "consume-input"
+    },
+    {
+      "case_id": "MF02-consume-input-missing-dispatch-id",
+      "definition": "ConsumeDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_id"
+    },
+    {
+      "case_id": "MF02-consume-input-missing-expected-dispatch-revision",
+      "definition": "ConsumeDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:expected_dispatch_revision"
+    },
+    {
+      "case_id": "MF02-consume-input-missing-worker-claim-epoch",
+      "definition": "ConsumeDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:worker_claim_epoch"
+    },
+    {
+      "case_id": "MF02-consume-input-missing-selection",
+      "definition": "ConsumeDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:selection"
+    },
+    {
+      "case_id": "MF02-consume-input-missing-invocation-id",
+      "definition": "ConsumeDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:invocation_id"
+    },
+    {
+      "case_id": "MF02-consume-input-missing-gateway-boot-id",
+      "definition": "ConsumeDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:gateway_boot_id"
+    },
+    {
+      "case_id": "MF02-consume-input-missing-context-generation",
+      "definition": "ConsumeDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:context_generation"
+    },
+    {
+      "case_id": "MF02-consume-first",
+      "definition": "ConsumeDispatchResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "consume-first"
+    },
+    {
+      "case_id": "MF02-consume-first-missing-status",
+      "definition": "ConsumeDispatchResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:status"
+    },
+    {
+      "case_id": "MF02-consume-first-missing-dispatch",
+      "definition": "ConsumeDispatchResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch"
+    },
+    {
+      "case_id": "MF02-consume-replay",
+      "definition": "ConsumeDispatchResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "consume-replay"
+    },
+    {
+      "case_id": "MF02-consume-replay-missing-status",
+      "definition": "ConsumeDispatchResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:status"
+    },
+    {
+      "case_id": "MF02-consume-replay-missing-dispatch",
+      "definition": "ConsumeDispatchResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch"
+    },
+    {
+      "case_id": "MF02-close-input",
+      "definition": "ClosePreparedInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "close-input"
+    },
+    {
+      "case_id": "MF02-close-input-missing-dispatch-id",
+      "definition": "ClosePreparedInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_id"
+    },
+    {
+      "case_id": "MF02-close-input-missing-expected-dispatch-revision",
+      "definition": "ClosePreparedInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:expected_dispatch_revision"
+    },
+    {
+      "case_id": "MF02-close-input-missing-expected-worker-epoch",
+      "definition": "ClosePreparedInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:expected_worker_epoch"
+    },
+    {
+      "case_id": "MF02-close-input-missing-close-reason",
+      "definition": "ClosePreparedInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:close_reason"
+    },
+    {
+      "case_id": "MF02-close-output",
+      "definition": "ClosePreparedOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "close-output"
+    },
+    {
+      "case_id": "MF02-close-output-missing-status",
+      "definition": "ClosePreparedOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:status"
+    },
+    {
+      "case_id": "MF02-close-output-missing-dispatch-revision",
+      "definition": "ClosePreparedOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_revision"
+    },
+    {
+      "case_id": "MF02-read-input",
+      "definition": "ReadDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "read-input"
+    },
+    {
+      "case_id": "MF02-read-input-missing-dispatch-id",
+      "definition": "ReadDispatchInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_id"
+    },
+    {
+      "case_id": "MF02-query-input",
+      "definition": "TaskQueryInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "query-input"
+    },
+    {
+      "case_id": "MF02-query-input-missing-execution-context",
+      "definition": "TaskQueryInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:execution_context"
+    },
+    {
+      "case_id": "MF02-query-input-missing-execution-selection",
+      "definition": "TaskQueryInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:execution_selection"
+    },
+    {
+      "case_id": "MF02-query-input-missing-provider-task",
+      "definition": "TaskQueryInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:provider_task"
+    },
+    {
+      "case_id": "MF02-query-output",
+      "definition": "TaskQueryOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "query-output"
+    },
+    {
+      "case_id": "MF02-query-output-missing-outcome",
+      "definition": "TaskQueryOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:outcome"
+    },
+    {
+      "case_id": "MF02-observe-association",
+      "definition": "DispatchObservationAssociation",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "observe-association"
+    },
+    {
+      "case_id": "MF02-observe-association-missing-dispatch-id",
+      "definition": "DispatchObservationAssociation",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:dispatch_id"
+    },
+    {
+      "case_id": "MF02-observe-association-missing-attempt-id",
+      "definition": "DispatchObservationAssociation",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:attempt_id"
+    },
+    {
+      "case_id": "MF02-observe-association-missing-operation-id",
+      "definition": "DispatchObservationAssociation",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:operation_id"
+    },
+    {
+      "case_id": "MF02-observe-association-missing-call-id",
+      "definition": "DispatchObservationAssociation",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:call_id"
+    },
+    {
+      "case_id": "MF02-observe-association-missing-outcome",
+      "definition": "DispatchObservationAssociation",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:outcome"
+    },
+    {
+      "case_id": "MF02-observe-output",
+      "definition": "ObserveDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "observe-output"
+    },
+    {
+      "case_id": "MF02-observe-output-missing-status",
+      "definition": "ObserveDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:status"
+    },
+    {
+      "case_id": "MF02-observe-output-missing-fact-ref",
+      "definition": "ObserveDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:fact_ref"
+    },
+    {
+      "case_id": "MF02-read-prepared",
+      "definition": "ReadDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "read-prepared"
+    },
+    {
+      "case_id": "MF02-read-consumed",
+      "definition": "ReadDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "read-consumed"
+    },
+    {
+      "case_id": "MF02-read-closed",
+      "definition": "ReadDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "read-closed"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-conditional-missing-selection-digest",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:consumed:selection_digest"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-conditional-missing-consumed-at",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:consumed:consumed_at"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-conditional-missing-invocation-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:consumed:invocation_id"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-conditional-missing-gateway-boot-id",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:consumed:gateway_boot_id"
+    },
+    {
+      "case_id": "MF02-dispatch-consumed-conditional-missing-context-generation",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:consumed:context_generation"
+    },
+    {
+      "case_id": "MF02-dispatch-closed-conditional-missing-close-reason",
+      "definition": "Dispatch",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:closed:close_reason"
+    },
+    {
+      "case_id": "MF02-consume-replay-with-grant",
+      "definition": "ConsumeDispatchResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:state:grant_forbidden"
+    },
+    {
+      "case_id": "MF02-consume-first-missing-grant",
+      "definition": "ConsumeDispatchResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:granted:grant"
+    },
+    {
+      "case_id": "MF02-read-prepared-with-grant",
+      "definition": "ReadDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "read-prepared-with-grant"
+    },
+    {
+      "case_id": "MF02-read-closed-with-grant",
+      "definition": "ReadDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "read-closed-with-grant"
+    },
+    {
+      "case_id": "MF02-read-consumed-with-grant",
+      "definition": "ReadDispatchOutput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "read-consumed-with-grant"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-forbids-attempt-id",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "prepare-candidate-forbids-attempt-id"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-forbids-dispatch-id",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "prepare-candidate-forbids-dispatch-id"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-forbids-selection-digest",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "prepare-candidate-forbids-selection-digest"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-forbids-invocation-id",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "prepare-candidate-forbids-invocation-id"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-forbids-gateway-boot-id",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "prepare-candidate-forbids-gateway-boot-id"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-forbids-context-generation",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "prepare-candidate-forbids-context-generation"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-forbids-recovery-claim-refs",
+      "definition": "PrepareCandidate",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "prepare-candidate-forbids-recovery-claim-refs"
+    },
+    {
+      "case_id": "MF02-consume-required-recovery",
+      "definition": "ConsumeDispatchWithRecovery",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "consume-required-recovery"
+    },
+    {
+      "case_id": "MF02-consume-required-recovery-missing-request",
+      "definition": "ConsumeDispatchWithRecovery",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:authority_requires_recovery:request"
+    },
+    {
+      "case_id": "MF02-consume-required-recovery-missing-selection",
+      "definition": "ConsumeDispatchWithRecovery",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:authority_requires_recovery:selection"
+    },
+    {
+      "case_id": "MF02-error-execution-schema-unsupported",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-execution-schema-unsupported"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-execution-schema-unsupported",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-execution-schema-unsupported"
+    },
+    {
+      "case_id": "MF02-error-execution-schema-unsupported-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-execution-schema-unsupported-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-execution-identity-conflict",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-execution-identity-conflict"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-execution-identity-conflict",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-execution-identity-conflict"
+    },
+    {
+      "case_id": "MF02-error-execution-identity-conflict-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-execution-identity-conflict-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-execution-release-unavailable",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-execution-release-unavailable"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-execution-release-unavailable",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-execution-release-unavailable"
+    },
+    {
+      "case_id": "MF02-error-execution-release-unavailable-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-execution-release-unavailable-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-execution-selection-mismatch",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-execution-selection-mismatch"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-execution-selection-mismatch",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-execution-selection-mismatch"
+    },
+    {
+      "case_id": "MF02-error-execution-selection-mismatch-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-execution-selection-mismatch-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-execution-observation-unsupported",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-execution-observation-unsupported"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-execution-observation-unsupported",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-execution-observation-unsupported"
+    },
+    {
+      "case_id": "MF02-error-execution-observation-unsupported-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-execution-observation-unsupported-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-dispatch-idempotency-conflict",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-dispatch-idempotency-conflict"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-dispatch-idempotency-conflict",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-dispatch-idempotency-conflict"
+    },
+    {
+      "case_id": "MF02-error-dispatch-idempotency-conflict-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-dispatch-idempotency-conflict-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-dispatch-stale-epoch",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-dispatch-stale-epoch"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-dispatch-stale-epoch",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-dispatch-stale-epoch"
+    },
+    {
+      "case_id": "MF02-error-dispatch-stale-epoch-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-dispatch-stale-epoch-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-dispatch-already-consumed",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-dispatch-already-consumed"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-dispatch-already-consumed",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-dispatch-already-consumed"
+    },
+    {
+      "case_id": "MF02-error-dispatch-already-consumed-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-dispatch-already-consumed-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-dispatch-closed",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-dispatch-closed"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-dispatch-closed",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-dispatch-closed"
+    },
+    {
+      "case_id": "MF02-error-dispatch-closed-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-dispatch-closed-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-dispatch-deadline-expired",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-dispatch-deadline-expired"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-dispatch-deadline-expired",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-dispatch-deadline-expired"
+    },
+    {
+      "case_id": "MF02-error-dispatch-deadline-expired-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-dispatch-deadline-expired-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-dispatch-admission-denied",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-dispatch-admission-denied"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-dispatch-admission-denied",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-dispatch-admission-denied"
+    },
+    {
+      "case_id": "MF02-error-dispatch-admission-denied-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-dispatch-admission-denied-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-dispatch-candidate-unavailable",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-dispatch-candidate-unavailable"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-dispatch-candidate-unavailable",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-dispatch-candidate-unavailable"
+    },
+    {
+      "case_id": "MF02-error-dispatch-candidate-unavailable-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-dispatch-candidate-unavailable-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-dispatch-commit-unknown",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-dispatch-commit-unknown"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-dispatch-commit-unknown",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-dispatch-commit-unknown"
+    },
+    {
+      "case_id": "MF02-error-dispatch-commit-unknown-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-dispatch-commit-unknown-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-dispatch-observation-conflict",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-dispatch-observation-conflict"
+    },
+    {
+      "case_id": "MF02-error-wrong-retryability-dispatch-observation-conflict",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-wrong-retryability-dispatch-observation-conflict"
+    },
+    {
+      "case_id": "MF02-error-dispatch-observation-conflict-missing-code",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:code"
+    },
+    {
+      "case_id": "MF02-error-dispatch-observation-conflict-missing-retryability",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "required:error:retryability"
+    },
+    {
+      "case_id": "MF02-error-commit-unknown",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "error-commit-unknown"
+    },
+    {
+      "case_id": "MF02-commit-unknown-forbids-grant",
+      "definition": "DispatchErrorResponse",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "commit-unknown-forbids-grant"
+    },
+    {
+      "case_id": "MF02-query-forbids-create-grant",
+      "definition": "TaskQueryInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "query-forbids-create-grant"
+    },
+    {
+      "case_id": "MF02-query-forbids-create-selection",
+      "definition": "TaskQueryInput",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "query-forbids-create-selection"
+    },
+    {
+      "case_id": "MF02-dispatch-bindings",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "dispatch-bindings"
+    },
+    {
+      "case_id": "MF02-prepare-candidate-drift",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "prepare-candidate-drift"
+    },
+    {
+      "case_id": "MF02-consume-swaps-key",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "consume-swaps-key"
+    },
+    {
+      "case_id": "MF02-consume-old-context",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "consume-old-context"
+    },
+    {
+      "case_id": "MF02-grant-old-boot",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "grant-old-boot"
+    },
+    {
+      "case_id": "MF02-grant-extends-deadline",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "grant-extends-deadline"
+    },
+    {
+      "case_id": "MF02-read-rewrites-selection",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "read-rewrites-selection"
+    },
+    {
+      "case_id": "MF02-replay-rebinds-invocation",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "replay-rebinds-invocation"
+    },
+    {
+      "case_id": "MF02-recovery-claim-set-drift",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "recovery-claim-set-drift"
+    },
+    {
+      "case_id": "MF02-query-switches-account",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "query-switches-account"
+    },
+    {
+      "case_id": "MF02-query-replaces-call",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "query-replaces-call"
+    },
+    {
+      "case_id": "MF02-unknown-erases-risk",
+      "definition": "DispatchCorpus",
+      "source": "IF02-3.1/3.2;IF02-V02/V03/V05/V06",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "unknown-erases-risk"
+    },
+    {
+      "case_id": "MF02-identity-customer-conditional-missing-tenant-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:identity:customer:tenant_id"
+    },
+    {
+      "case_id": "MF02-identity-customer-conditional-missing-account-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:identity:customer:account_id"
+    },
+    {
+      "case_id": "MF02-identity-customer-conditional-missing-sales-asset-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:identity:customer:sales_asset_id"
+    },
+    {
+      "case_id": "MF02-identity-customer-conditional-missing-operation-id",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:identity:customer:operation_id"
+    },
+    {
+      "case_id": "MF02-identity-customer-conditional-missing-accepted-at",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:identity:customer:accepted_at"
+    },
+    {
+      "case_id": "MF02-identity-customer-conditional-missing-dispatch-deadline",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:identity:customer:dispatch_deadline"
+    },
+    {
+      "case_id": "MF02-identity-internal-conditional-missing-cost-owner",
+      "definition": "CallIdentity",
+      "source": "IF01-2.1/IF02-3.1",
+      "layer": "shape",
+      "must_execute": true,
+      "obligation": "conditional:identity:internal:cost_owner"
+    },
+    {
+      "case_id": "MF02-boundary-parent-scope-body",
+      "definition": "BoundaryCorpus",
+      "source": "IF01-2.1;IF02-3.1;D0-card-addenda",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "boundary-parent-scope-body"
+    },
+    {
+      "case_id": "MF02-internal-wrong-parent",
+      "definition": "BoundaryCorpus",
+      "source": "IF01-2.1;IF02-3.1;D0-card-addenda",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "internal-wrong-parent"
+    },
+    {
+      "case_id": "MF02-recovery-wrong-scope",
+      "definition": "BoundaryCorpus",
+      "source": "IF01-2.1;IF02-3.1;D0-card-addenda",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "recovery-wrong-scope"
+    },
+    {
+      "case_id": "MF02-outbound-reuses-original",
+      "definition": "BoundaryCorpus",
+      "source": "IF01-2.1;IF02-3.1;D0-card-addenda",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "outbound-reuses-original"
+    },
+    {
+      "case_id": "MF02-response-reuses-outbound",
+      "definition": "BoundaryCorpus",
+      "source": "IF01-2.1;IF02-3.1;D0-card-addenda",
+      "layer": "semantic",
+      "must_execute": true,
+      "obligation": "response-reuses-outbound"
+    }
+  ]
+}

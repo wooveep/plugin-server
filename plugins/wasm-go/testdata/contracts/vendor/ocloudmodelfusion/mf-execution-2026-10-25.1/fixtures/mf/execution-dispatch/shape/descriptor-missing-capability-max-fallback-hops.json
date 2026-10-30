@@ -1,0 +1,38 @@
+{
+  "release_id": "release-1",
+  "target_id": "target-1",
+  "binding_id": "binding-1",
+  "provider_id": "provider-shared",
+  "provider_account_id": "purchase-1",
+  "upstream_model": "upstream-image-1",
+  "region_endpoint_ref": "region-1",
+  "service_ref": "service-1",
+  "cluster_ref": "cluster-1",
+  "credential_pool_ref": "pool-1",
+  "credential_pool_revision": "9007199254740993",
+  "mapper_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "proxy_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "adapter_ref": "adapter-1",
+  "adapter_revision": "1",
+  "config_canonicalization": "target-config-json.v1",
+  "descriptor_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "transport_contract": {
+    "host": "upstream.example.invalid",
+    "sni": "upstream.example.invalid",
+    "path_adapter_ref": "path-1"
+  },
+  "capabilities": {
+    "image_generate": {
+      "send_mode": "single_send",
+      "response_classifier_ref": "classify-v1",
+      "max_attempts": 1
+    },
+    "task_query": {
+      "send_mode": "single_send",
+      "response_classifier_ref": "classify-v1",
+      "max_attempts": 1,
+      "max_fallback_hops": 0,
+      "query_capability_ref": "query-1"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "provider_account_id": "purchase-1",
+  "region_endpoint_ref": "region-1",
+  "operation_kind": "image_generate"
+}

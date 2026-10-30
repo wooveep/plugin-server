@@ -1,0 +1,1 @@
+{"baseDeployment":{"version":"base"},"grayDeployments":[{"enabled":true,"name":"beta-user","version":"gray"}],"grayKey":"userid","rules":[{"grayKeyValue":["00000001","00000005"],"name":"inner-user"},{"grayKeyValue":["00000002","00000003"],"grayTagKey":"level","grayTagValue":["level3","level5"],"name":"beta-user"}]}

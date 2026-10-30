@@ -6,13 +6,7 @@ go 1.24.1
 
 toolchain go1.24.4
 
-replace github.com/alibaba/higress/plugins/wasm-go/pkg/pathutil => ../../pkg/pathutil
-
-replace github.com/alibaba/higress/plugins/wasm-go/pkg/jsonbody => ../../pkg/jsonbody
-
 require (
-	github.com/alibaba/higress/plugins/wasm-go/pkg/jsonbody v0.0.0
-	github.com/alibaba/higress/plugins/wasm-go/pkg/pathutil v0.0.0
 	github.com/higress-group/proxy-wasm-go-sdk v0.0.0-20251103120604-77e9cce339d2
 	github.com/higress-group/wasm-go v1.0.10-0.20260120033417-1c84f010156d
 	github.com/stretchr/testify v1.9.0
@@ -27,7 +21,11 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
-	github.com/tidwall/resp v0.1.1 // indirect
+	github.com/tidwall/resp v0.1.1
 	github.com/tidwall/sjson v1.2.5
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/higress-group/proxy-wasm-go-sdk => ../../../proxy-wasm-go-sdk
+
+replace github.com/higress-group/wasm-go => ../..

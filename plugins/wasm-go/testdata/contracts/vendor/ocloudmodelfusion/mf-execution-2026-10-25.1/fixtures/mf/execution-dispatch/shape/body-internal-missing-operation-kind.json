@@ -1,0 +1,6 @@
+{
+  "call_id": "call-internal-1",
+  "release_id": "release-1",
+  "original_body_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "body_canonicalization": "operation-json.v1"
+}

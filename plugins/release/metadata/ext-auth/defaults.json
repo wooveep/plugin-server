@@ -1,0 +1,1 @@
+{"http_service":{"endpoint":{"path_prefix":"/auth","service_name":"ext-auth.backend.svc.cluster.local","service_port":8090},"endpoint_mode":"envoy","timeout":1000}}

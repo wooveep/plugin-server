@@ -1,0 +1,14 @@
+<!-- Generated package documentation from extensions/ai-quota/README_EN.md. -->
+# AI Quota: versioned readonly balance admission
+
+Version `2.0.4`, wire schema `balance.v1`. Bind this plugin only to managed new model invocations. The original PostgreSQL wallet is the money authority; Console alone writes balance/authorization projections and maintenance state. Quota never prices, reserves, settles, or mutates money/readiness. Response data and late usage do not cause a second quota decision.
+
+Global configuration requires `balance_scope_id`, `cache_generation`, `projection_schema: balance.v1`, and `redis`. Use the Console's observed current UUIDs. `missing_balance_policy` accepts only `deny`. Legacy alias-based balance templates and tenant/consumer/quota/provider selectors are rejected; there is no bare-integer GET fallback.
+
+The managed chain must first authenticate with native `credential_bindings` in key-auth 1.1.0. Each successful credential carries its actual original account, API key ID and credential generation after client copies of these fields are removed. Missing, ambiguous or malformed native identity is denied. Console/CUT/SDK must generate and observe the exact bindings before releasing the combination; a binary upgrade alone cannot establish them.
+
+A single readonly Redis script checks control, account and that exact key mapping in the same hash slot. All must match generation/schema/readiness, authorization revisions and credential generation, and the key must remain enabled. Signed bigint money and revisions stay canonical strings, preserving values beyond 2^53. Only strictly positive balance permits a call. Missing, unready, stale, wrong-unit or conflicting records deny; unavailable dependencies or malformed results return 503 without resuming.
+
+`legacy_suffixes` defaults to `/v1/chat/completions` and `/v1/messages`. `bound_target` applies to an already classified new-invocation target. Suffix and method filters form an intersection and cannot replace global namespace or Redis settings. Exclude accepted-task queries through route binding or method filters. GET/HEAD classified as new invocations still require admission; internal facts, settlement and accepted-task query routes must not bind this plugin. Explicitly constrain new invocation methods such as POST instead of treating task management routes as new sales.
+
+All keys share `mf:balance:{scope}:...`. Console/REL/DEP alone establish actual maintenance closure and reopening. Native Redis, simulated host, compiled Wasm and actual K3S loading have distinct evidence. See the [implementation plan](../../../docs/plans/2026-10-27-versioned-balance-admission.md); local tests do not establish a deployed supported combination.

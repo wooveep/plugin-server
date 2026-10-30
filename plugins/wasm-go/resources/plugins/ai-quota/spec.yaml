@@ -1,0 +1,342 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: ai
+  image: platform_wasm/ai-quota
+  name: ai-quota
+  title: AI Monetary Quota
+  x-title-i18n:
+    zh-CN: AI 金额配额
+  description: Perform read-only Redis balance admission for AI requests.
+  x-description-i18n:
+    zh-CN: 基于只读 Redis 热余额对 AI 请求进行准入检查。
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README_EN.md
+  version: 2.0.4
+  contact:
+    name: 2456868764
+spec:
+  phase: default
+  priority: 280
+  configSchema:
+    x-higress-external-resource:
+      kind: redis
+      registryType: dns
+      domainPath: redis.service_name
+      portPath: redis.service_port
+      projectedNamePath: redis.service_name
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      allOf: &id001
+      - if:
+          required:
+          - execution_admission
+        then:
+          required:
+          - redis
+          - balance_scope_id
+          - cache_generation
+          - projection_schema
+          - path_scope
+          properties:
+            path_scope:
+              const: bound_target
+            enable_methods:
+              maxItems: 0
+            enable_path_suffixes:
+              maxItems: 0
+      required:
+      - redis
+      - balance_scope_id
+      - cache_generation
+      - projection_schema
+      properties:
+        execution_admission: &id002
+          type: object
+          readOnly: true
+          additionalProperties: false
+          title: 受管逐调用准入
+          description: 仅由 Console 受控发布注入完整对象，不继承其他发布的准入身份，不接受请求覆盖或手工方法/路径过滤。字符串字节边界及
+            HTTP authority 仍由插件原解析器严格校验。
+          required:
+          - schema_version
+          - call_identity_source
+          - release_id
+          - route_id
+          - purpose
+          - combination_key
+          - profile_id
+          - console_internal
+          properties:
+            schema_version:
+              type: string
+              const: managed-execution-admission.v1
+            call_identity_source:
+              type: string
+              const: admission
+              description: 仅使用本次成功准入事务保存的原 Call 身份与时间，不从插件发送时钟重建。
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+              pattern: ^[^\s\x00-\x1f\x7f](?:[^\x00-\x1f\x7f]*[^\s\x00-\x1f\x7f])?$
+              description: 原受控发布标识，UTF-8 编码最多 256 字节，无控制字符或首尾空白。
+            route_id:
+              type: string
+              pattern: ^(?!00000000-0000-0000-0000-000000000000$)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+            purpose:
+              type: string
+              enum:
+              - validation
+              - production
+            combination_key:
+              type: string
+              pattern: ^sha256:[0-9a-f]{64}$
+            profile_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+              pattern: ^[^\s\x00-\x1f\x7f](?:[^\x00-\x1f\x7f]*[^\s\x00-\x1f\x7f])?$
+              description: 冻结的支持 profile，UTF-8 编码最多 256 字节，无控制字符或首尾空白。
+            access_id:
+              type:
+              - string
+              - 'null'
+              minLength: 1
+              maxLength: 256
+              pattern: ^[^\s\x00-\x1f\x7f](?:[^\x00-\x1f\x7f]*[^\s\x00-\x1f\x7f])?$
+              description: validation 的原服务端许可标识；production 只能缺省或 null。
+            revision:
+              type:
+              - string
+              - 'null'
+              minLength: 1
+              maxLength: 39
+              pattern: ^(?:[1-9][0-9]{0,37}|[1-2][0-9]{38}|3[0-3][0-9]{37}|340[0-1][0-9]{35}|3402[0-7][0-9]{34}|34028[0-1][0-9]{33}|340282[0-2][0-9]{32}|3402823[0-5][0-9]{31}|34028236[0-5][0-9]{30}|340282366[0-8][0-9]{29}|3402823669[0-1][0-9]{28}|340282366920[0-8][0-9]{26}|3402823669209[0-2][0-9]{25}|34028236692093[0-7][0-9]{24}|340282366920938[0-3][0-9]{23}|3402823669209384[0-5][0-9]{22}|34028236692093846[0-2][0-9]{21}|340282366920938463[0-3][0-9]{20}|3402823669209384634[0-5][0-9]{19}|34028236692093846346[0-2][0-9]{18}|340282366920938463463[0-2][0-9]{17}|3402823669209384634633[0-6][0-9]{16}|34028236692093846346337[0-3][0-9]{15}|340282366920938463463374[0-5][0-9]{14}|34028236692093846346337460[0-6][0-9]{12}|340282366920938463463374607[0-3][0-9]{11}|3402823669209384634633746074[0-2][0-9]{10}|340282366920938463463374607430[0-9]{9}|340282366920938463463374607431[0-6][0-9]{8}|3402823669209384634633746074317[0-5][0-9]{7}|34028236692093846346337460743176[0-7][0-9]{6}|340282366920938463463374607431768[0-1][0-9]{5}|34028236692093846346337460743176820[0-9]{4}|340282366920938463463374607431768210[0-9]{3}|340282366920938463463374607431768211[0-3][0-9]{2}|3402823669209384634633746074317682114[0-4][0-9]|34028236692093846346337460743176821145[0-4]|340282366920938463463374607431768211455)$
+              description: validation 的规范正十进制 uint128 字符串，最大 340282366920938463463374607431768211455；production
+                只能缺省或 null。
+            console_internal:
+              type: object
+              additionalProperties: false
+              required:
+              - service_name
+              - service_port
+              - host
+              - auth_token
+              - timeout_ms
+              properties:
+                service_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 253
+                  pattern: ^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$
+                service_port:
+                  type: integer
+                  minimum: 1
+                  maximum: 65535
+                host:
+                  type: string
+                  minLength: 1
+                  maxLength: 512
+                  pattern: ^[^ /\\?#@%\x00-\x1f\x7f]+$
+                  description: 原 Console HTTP authority，不含 userinfo、路径、查询或 fragment；可选端口须为规范十进制
+                    1–65535，UTF-8 编码最多 512 字节，由插件核验。
+                auth_token:
+                  type: string
+                  writeOnly: true
+                  minLength: 1
+                  maxLength: 8192
+                  pattern: ^[!-~]+$
+                  description: 部署受控的 Console 服务认证令牌，秘密引用由发布源单独登记，禁止写入公开默认值。
+                timeout_ms:
+                  type: integer
+                  minimum: 1
+                  maximum: 60000
+          allOf:
+          - if:
+              properties:
+                purpose:
+                  const: validation
+              required:
+              - purpose
+            then:
+              required:
+              - access_id
+              - revision
+              properties:
+                access_id:
+                  type: string
+                revision:
+                  type: string
+            else:
+              properties:
+                access_id:
+                  type: 'null'
+                revision:
+                  type: 'null'
+        redis: &id003
+          type: object
+          additionalProperties: false
+          title: Redis配置
+          x-title-i18n:
+            en-US: Redis Configuration
+          description: 只读余额热数据的 Redis 连接配置
+          x-description-i18n:
+            en-US: Redis connection for read-only balance hot data
+          required:
+          - service_name
+          properties:
+            service_name:
+              type: string
+              title: Redis服务名称
+              x-title-i18n:
+                en-US: Redis Service Name
+              description: Redis 服务名称，例如 my-redis.dns 或 redis.my-ns.svc.cluster.local
+              x-description-i18n:
+                en-US: Redis service name, such as my-redis.dns or redis.my-ns.svc.cluster.local
+            service_port:
+              type: integer
+              title: Redis服务端口
+              x-title-i18n:
+                en-US: Redis Service Port
+              description: Redis 服务端口；static 服务默认为 80，其他默认为 6379
+              x-description-i18n:
+                en-US: Redis service port; defaults to 80 for static services and
+                  6379 otherwise
+              default: 6379
+            username:
+              type: string
+              title: Redis用户名
+              x-title-i18n:
+                en-US: Redis Username
+              description: Redis 用户名
+              x-description-i18n:
+                en-US: Redis username
+            password:
+              type: string
+              title: Redis密码
+              x-title-i18n:
+                en-US: Redis Password
+              description: Redis 密码
+              x-description-i18n:
+                en-US: Redis password
+            timeout:
+              type: integer
+              title: Redis连接超时
+              x-title-i18n:
+                en-US: Redis Connection Timeout
+              description: Redis 连接超时时间，单位毫秒
+              x-description-i18n:
+                en-US: Redis connection timeout in milliseconds
+              default: 1000
+            database:
+              type: integer
+              title: Redis数据库
+              x-title-i18n:
+                en-US: Redis Database
+              description: Redis database 编号
+              x-description-i18n:
+                en-US: Redis database index
+              default: 0
+        balance_scope_id: &id004
+          type: string
+          title: 余额作用域
+          x-title-i18n:
+            en-US: Balance Scope
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+          description: Console当前受控发布中的非空UUID，禁止由请求覆盖
+        cache_generation: &id005
+          type: string
+          title: 缓存代际
+          x-title-i18n:
+            en-US: Cache Generation
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+          description: Console当前受控发布中的非空UUID，禁止由请求覆盖
+        projection_schema: &id006
+          type: string
+          title: 余额协议
+          enum:
+          - balance.v1
+        missing_balance_policy: &id007
+          type: string
+          title: 缺失余额处理
+          enum:
+          - deny
+          default: deny
+        path_scope:
+          type: string
+          default: legacy_suffixes
+          title: 受管新调用路径
+          enum:
+          - legacy_suffixes
+          - bound_target
+          description: legacy_suffixes使用默认模型后缀；bound_target使用已绑定的新调用入口。已受理任务查询由路由或方法过滤排除，GET/HEAD新调用仍执行准入。
+        enable_path_suffixes:
+          type: array
+          title: 路径后缀交集
+          items:
+            type: string
+            pattern: .*\S.*
+        enable_methods:
+          type: array
+          title: 方法交集
+          items:
+            type: string
+            pattern: .*\S.*
+      example:
+        balance_scope_id: 00000000-0000-0000-0000-000000000005
+        cache_generation: 00000000-0000-0000-0000-000000000006
+        projection_schema: balance.v1
+        missing_balance_policy: deny
+        redis:
+          service_name: redis-service.higress-system.svc.cluster.local
+          service_port: 6379
+          timeout: 1000
+          database: 0
+        path_scope: legacy_suffixes
+        enable_path_suffixes:
+        - /v1/chat/completions
+        - /v1/messages
+  routeConfigSchema:
+    x-higress-external-resource:
+      kind: redis
+      registryType: dns
+      domainPath: redis.service_name
+      portPath: redis.service_port
+      projectedNamePath: redis.service_name
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      allOf: *id001
+      properties:
+        execution_admission: *id002
+        redis: *id003
+        balance_scope_id: *id004
+        cache_generation: *id005
+        projection_schema: *id006
+        missing_balance_policy: *id007
+        path_scope:
+          type: string
+          title: 受管新调用路径
+          enum:
+          - legacy_suffixes
+          - bound_target
+          description: legacy_suffixes使用默认模型后缀；bound_target使用已绑定的新调用入口。已受理任务查询由路由或方法过滤排除，GET/HEAD新调用仍执行准入。
+        enable_path_suffixes:
+          type: array
+          title: 路径后缀交集
+          items:
+            type: string
+            pattern: .*\S.*
+        enable_methods:
+          type: array
+          title: 方法交集
+          items:
+            type: string
+            pattern: .*\S.*
+      example:
+        path_scope: bound_target

@@ -5,8 +5,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,7 +12,6 @@ import (
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/config"
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
-	"github.com/alibaba/higress/plugins/wasm-go/pkg/jsonbody"
 
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -36,9 +33,8 @@ const (
 	ctxOriginalHost                = "original_host"
 	ctxOriginalAuth                = "original_auth"
 	ctxUpstreamErrorResponseStatus = "upstream_error_response_status"
+	ctxSkipAIProxyLifecycle        = "skip_ai_proxy_lifecycle"
 )
-
-const headerContentLength = "Content-Length"
 
 type pair[K, V any] struct {
 	key   K
@@ -110,18 +106,20 @@ func main() {}
 func init() {
 	wrapper.SetCtx(
 		pluginName,
+		wrapper.PrePluginStartOrReload[config.PluginConfig](initializeManagedHealthRuntime),
 		wrapper.ParseOverrideConfig(parseGlobalConfig, parseOverrideRuleConfig),
 		wrapper.ProcessRequestHeaders(onHttpRequestHeader),
 		wrapper.ProcessRequestBody(onHttpRequestBody),
 		wrapper.ProcessResponseHeaders(onHttpResponseHeaders),
 		wrapper.ProcessStreamingResponseBody(onStreamingResponseBody),
 		wrapper.ProcessResponseBody(onHttpResponseBody),
+		wrapper.ProcessStreamDone(onManagedStreamDone),
 		wrapper.WithRebuildMaxMemBytes[config.PluginConfig](200*1024*1024),
 	)
 }
 
 func parseGlobalConfig(json gjson.Result, pluginConfig *config.PluginConfig) error {
-	log.Debugf("loading global config: %s", json.String())
+	log.Debugf("loading global config")
 
 	pluginConfig.FromJson(json)
 	if err := pluginConfig.Validate(); err != nil {
@@ -133,25 +131,29 @@ func parseGlobalConfig(json gjson.Result, pluginConfig *config.PluginConfig) err
 		return err
 	}
 
-	return nil
+	if err := configureManagedMedia(json.Get("managed_media")); err != nil {
+		return err
+	}
+
+	return configureManagedExecution(json, pluginConfig)
 }
 
 func parseOverrideRuleConfig(json gjson.Result, global config.PluginConfig, pluginConfig *config.PluginConfig) error {
-	log.Debugf("loading override rule config: %s", json.String())
+	log.Debugf("loading override rule config")
 
 	*pluginConfig = global
 
 	pluginConfig.FromJson(json)
 	if err := pluginConfig.Validate(); err != nil {
-		log.Errorf("overridden rule config is invalid: %v", err)
+		log.Errorf("overriden rule config is invalid: %v", err)
 		return err
 	}
 	if err := pluginConfig.Complete(); err != nil {
-		log.Errorf("failed to apply overridden rule config: %v", err)
+		log.Errorf("failed to apply overriden rule config: %v", err)
 		return err
 	}
 
-	return nil
+	return configureManagedExecution(json, pluginConfig)
 }
 
 func initContext(ctx wrapper.HttpContext) {
@@ -219,7 +221,15 @@ func saveContextsToHeaders(ctx wrapper.HttpContext) {
 }
 
 func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
+	if action, handled := onManagedMediaRequestHeaders(ctx); handled {
+		return action
+	}
+	if action, handled := onManagedRequestHeaders(ctx, pluginConfig); handled {
+		return action
+	}
 	activeProvider := pluginConfig.GetProvider()
+	protocolMode := pluginConfig.GetProtocolMode()
+	initializeProtocolLifecycle(ctx, protocolMode)
 
 	if activeProvider == nil {
 		log.Debugf("[onHttpRequestHeader] no active provider, skip processing")
@@ -227,74 +237,91 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 		return types.ActionContinue
 	}
 
+	classificationPath, err := validateSafeOriginFormTarget(ctx.Path())
+	if err != nil {
+		ctx.SetContext(ctxSkipAIProxyLifecycle, true)
+		return rejectUnsafeRequestTarget()
+	}
+
 	log.Debugf("[onHttpRequestHeader] provider=%s", activeProvider.GetProviderType())
+
+	if !pluginConfig.MatchesBoundTargetFilters(ctx.Method(), classificationPath) {
+		ctx.SetContext(ctxSkipAIProxyLifecycle, true)
+		return types.ActionContinue
+	}
 
 	// Disable the route re-calculation since the plugin may modify some headers related to the chosen route.
 	ctx.DisableReroute()
 
 	initContext(ctx)
 
-	rawPath := ctx.Path()
-
 	defer func() {
 		saveContextsToHeaders(ctx)
 	}()
 
-	path, _ := url.Parse(rawPath)
-	apiName := getApiName(path.Path)
+	apiName := getApiName(classificationPath)
 	providerConfig := pluginConfig.GetProviderConfig()
-	if providerConfig.IsOriginal() {
+	forcedTransparent := protocolMode == config.ProtocolModePassthrough
+	if !forcedTransparent && providerConfig.IsOriginal() {
 		if handler, ok := activeProvider.(provider.ApiNameHandler); ok {
-			apiName = handler.GetApiName(path.Path)
+			apiName = handler.GetApiName(classificationPath)
 		}
-	} else {
+	}
+
+	transparent := forcedTransparent || apiName == ""
+	if transparent {
+		apiName = ""
+		markTransparentLifecycle(ctx)
+		log.Debugf("[onHttpRequestHeader] unsupported path category, using transparent lifecycle")
+	} else if !providerConfig.IsOriginal() {
 		// Only perform protocol conversion for non-original protocols.
 		// Auto-detect protocol based on request path and handle conversion if needed
 		// If request is Claude format (/v1/messages) but provider doesn't support it natively,
 		// convert to OpenAI format (/v1/chat/completions)
 		if apiName == provider.ApiNameAnthropicMessages && !providerConfig.IsSupportedAPI(provider.ApiNameAnthropicMessages) {
 			// Provider doesn't support Claude protocol natively, convert to OpenAI format
-			newPath := strings.Replace(path.Path, provider.PathAnthropicMessages, provider.PathOpenAIChatCompletions, 1)
+			newPath := strings.Replace(classificationPath, provider.PathAnthropicMessages, provider.PathOpenAIChatCompletions, 1)
 			_ = proxywasm.ReplaceHttpRequestHeader(":path", newPath)
 			// Update apiName to match the new path
 			apiName = provider.ApiNameChatCompletion
 			// Mark that we need to convert response back to Claude format
 			ctx.SetContext("needClaudeResponseConversion", true)
-			log.Debugf("[Auto Protocol] Claude request detected, provider doesn't support natively, converted path from %s to %s, apiName: %s", path.Path, newPath, apiName)
+			log.Debugf("[Auto Protocol] Claude request detected, provider doesn't support natively, selected Chat Completions conversion")
 		} else if apiName == provider.ApiNameAnthropicMessages {
 			// Provider supports Claude protocol natively, no conversion needed
-			log.Debugf("[Auto Protocol] Claude request detected, provider supports natively, keeping original path: %s, apiName: %s", path.Path, apiName)
+			log.Debugf("[Auto Protocol] Claude request detected, provider supports natively")
+		} else if adapter := resolveProtocolAdapter(
+			activeProvider,
+			providerConfig,
+			ctx.Method(),
+			apiName,
+		); adapter != nil {
+			apiName = applyResponsesFallbackAdapter(
+				ctx,
+				classificationPath,
+				protocolMode,
+				adapter,
+			)
+		} else if apiName == provider.ApiNameResponses && !providerConfig.IsSupportedAPI(provider.ApiNameResponses) && !providerConfig.IsSupportedAPI(provider.ApiNameChatCompletion) {
+			log.Warnf("[Auto Protocol] Responses request detected, provider supports neither Responses nor Chat Completions")
+		} else if apiName == provider.ApiNameResponses {
+			log.Debugf("[Auto Protocol] Responses request detected, provider supports natively or lacks chat fallback")
 		}
 	}
 
-	if contentType, _ := proxywasm.GetHttpRequestHeader(util.HeaderContentType); contentType != "" && !isSupportedRequestContentType(apiName, contentType) {
-		ctx.DontReadRequestBody()
-		log.Debugf("[onHttpRequestHeader] unsupported content type for api %s: %s, will not process the request body", apiName, contentType)
-	}
-
-	if apiName == "" {
-		ctx.DontReadRequestBody()
-		ctx.DontReadResponseBody()
-		log.Warnf("[onHttpRequestHeader] unsupported path: %s, will not process http path and body", path.Path)
+	if !transparent {
+		if contentType, _ := proxywasm.GetHttpRequestHeader(util.HeaderContentType); contentType != "" && !isSupportedRequestContentType(apiName, contentType) {
+			ctx.DontReadRequestBody()
+			log.Debugf("[onHttpRequestHeader] unsupported content type for api %s, will not process the request body", apiName)
+		}
 	}
 
 	ctx.SetContext(provider.CtxKeyApiName, apiName)
 
 	// Always remove the Accept-Encoding header to prevent the LLM from sending compressed responses,
 	// allowing plugins to inspect or modify the response correctly
-	_ = proxywasm.RemoveHttpRequestHeader("Accept-Encoding")
-
-	_, hasRequestBodyHandler := activeProvider.(provider.RequestBodyHandler)
-	hasRequestBody := ctx.HasRequestBody()
-	if hasRequestBody && hasRequestBodyHandler && requestContentLengthExceedsLimit(defaultMaxBodyBytes) {
-		_ = proxywasm.SendHttpResponseWithDetail(
-			http.StatusRequestEntityTooLarge,
-			"request_payload_too_large",
-			util.CreateHeaders(util.HeaderContentType, util.MimeTypeTextPlain),
-			[]byte("request payload too large"),
-			-1,
-		)
-		return types.ActionPause
+	if !transparent {
+		_ = proxywasm.RemoveHttpRequestHeader("Accept-Encoding")
 	}
 
 	if handler, ok := activeProvider.(provider.RequestHeadersHandler); ok {
@@ -306,6 +333,46 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 		// save the original request host and path in case they are needed for apiToken health check and retry
 		ctx.SetContext(provider.CtxRequestHost, ctx.Host())
 		ctx.SetContext(provider.CtxRequestPath, ctx.Path())
+		ctx.SetContext(provider.CtxRequestMethod, ctx.Method())
+
+		if transparent {
+			if err := providerConfig.ApplyTransparentTransportPolicy(activeProvider, ctx); err != nil {
+				_ = util.ErrorHandler(
+					"ai-proxy.transparent_transport_policy_failed",
+					fmt.Errorf("failed to apply provider transport policy"),
+				)
+				return types.ActionContinue
+			}
+			ctx.SetContext(
+				provider.CtxRequestHeaders,
+				util.HeaderToSlice(util.GetRequestHeaders()),
+			)
+			if bodyReader, ok := ctx.(interface{ EnableRequestBody() }); ok {
+				bodyReader.EnableRequestBody()
+			}
+			if !ctx.HasRequestBody() {
+				headers, action, err := providerConfig.BuildTransparentRequestBodyAuthHeaders(
+					activeProvider,
+					ctx,
+					util.GetRequestHeaders(),
+					nil,
+				)
+				if err != nil {
+					return failTransparentRequestAuthentication()
+				}
+				util.ReplaceRequestHeaders(headers)
+				return action
+			}
+			if !forcedTransparent && (providerConfig.IsOriginal() || providerConfig.IsGeneric()) {
+				_, hasRequestBodyHandler := activeProvider.(provider.RequestBodyHandler)
+				if ctx.HasRequestBody() && hasRequestBodyHandler {
+					_ = proxywasm.RemoveHttpRequestHeader("Content-Length")
+					ctx.SetRequestBodyBufferLimit(defaultMaxBodyBytes)
+					return types.HeaderStopIteration
+				}
+			}
+			return types.ActionContinue
+		}
 
 		err := handler.OnRequestHeaders(ctx, apiName)
 		if err != nil {
@@ -313,8 +380,10 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 			return types.ActionContinue
 		}
 
+		_, hasRequestBodyHandler := activeProvider.(provider.RequestBodyHandler)
+		hasRequestBody := ctx.HasRequestBody()
 		if hasRequestBody && hasRequestBodyHandler {
-			_ = proxywasm.RemoveHttpRequestHeader(headerContentLength)
+			_ = proxywasm.RemoveHttpRequestHeader("Content-Length")
 			ctx.SetRequestBodyBufferLimit(defaultMaxBodyBytes)
 			// Delay the header processing to allow changing in OnRequestBody
 			return types.HeaderStopIteration
@@ -326,41 +395,36 @@ func onHttpRequestHeader(ctx wrapper.HttpContext, pluginConfig config.PluginConf
 	return types.ActionContinue
 }
 
-func requestContentLengthExceedsLimit(limit uint32) bool {
-	contentLength, _ := proxywasm.GetHttpRequestHeader(headerContentLength)
-	if contentLengthExceedsLimit(contentLength, limit) {
-		return true
-	}
-
-	headers, err := proxywasm.GetHttpRequestHeaders()
-	if err != nil {
-		return false
-	}
-	for _, header := range headers {
-		if strings.EqualFold(header[0], headerContentLength) {
-			return contentLengthExceedsLimit(header[1], limit)
-		}
-	}
-	return false
-}
-
-func contentLengthExceedsLimit(contentLength string, limit uint32) bool {
-	contentLength = strings.TrimSpace(contentLength)
-	if contentLength == "" {
-		return false
-	}
-
-	length, err := strconv.ParseUint(contentLength, 10, 64)
-	if err != nil {
-		if numErr, ok := err.(*strconv.NumError); ok && numErr.Err == strconv.ErrRange {
-			return true
-		}
-		return false
-	}
-	return length > uint64(limit)
-}
-
 func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, body []byte) types.Action {
+	if action, handled := onManagedMediaRequestBody(ctx, body); handled {
+		return action
+	}
+	if action, handled := onManagedRequestBody(ctx, pluginConfig, body); handled {
+		return action
+	}
+	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
+		return types.ActionContinue
+	}
+	if isTransparentLifecycle(ctx) {
+		log.Debugf("[onHttpRequestBody] preserving transparent request body bytes=%d", len(body))
+		ctx.SetContext(provider.CtxRequestBody, append([]byte(nil), body...))
+		activeProvider := pluginConfig.GetProvider()
+		if activeProvider == nil {
+			return types.ActionContinue
+		}
+		headers, action, err := pluginConfig.GetProviderConfig().BuildTransparentRequestBodyAuthHeaders(
+			activeProvider,
+			ctx,
+			util.GetRequestHeaders(),
+			body,
+		)
+		if err != nil {
+			return failTransparentRequestAuthentication()
+		}
+		util.ReplaceRequestHeaders(headers)
+		return action
+	}
+
 	activeProvider := pluginConfig.GetProvider()
 
 	if activeProvider == nil {
@@ -368,28 +432,6 @@ func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig
 		return types.ActionContinue
 	}
 	log.Debugf("[onHttpRequestBody] provider=%s", activeProvider.GetProviderType())
-
-	// Reject a body declaring "model" more than once before any provider logic
-	// runs. gjson reads the first occurrence while the sjson rewrite below and
-	// upstream parsers settle on the last one, so model mapping, routing and
-	// credential selection would otherwise act on a different model than the
-	// upstream does. Once this passes, first and last occurrence are the same
-	// member, which makes the sjson rewrite in defaultTransformRequestBody
-	// unambiguous.
-	if duplicate, err := jsonbody.DuplicateTopLevelMember(body, "model"); err != nil {
-		log.Debugf("[onHttpRequestBody] skip duplicate model member check: %v", err)
-	} else if duplicate {
-		message := jsonbody.DuplicateMemberMessage("model")
-		log.Warnf("[onHttpRequestBody] %s", message)
-		_ = proxywasm.SendHttpResponseWithDetail(
-			http.StatusBadRequest,
-			"duplicate_model_member",
-			util.CreateHeaders(util.HeaderContentType, util.MimeTypeTextPlain),
-			[]byte(message),
-			-1,
-		)
-		return types.ActionPause
-	}
 
 	defer func() {
 		saveContextsToHeaders(ctx)
@@ -409,9 +451,9 @@ func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig
 		// 仅 /v1/chat/completions 和 /v1/completions 接口支持 stream_options 参数
 		// generic provider 不做能力映射，不添加 stream_options
 		if providerConfig.IsOpenAIProtocol() && !providerConfig.IsGeneric() && (apiName == provider.ApiNameChatCompletion || apiName == provider.ApiNameCompletion) {
-			newBody = normalizeOpenAiRequestBody(newBody, providerConfig.IsStreamUsageStatsDisabled())
+			newBody = normalizeOpenAiRequestBody(newBody)
 		}
-		log.Debugf("[onHttpRequestBody] newBody=%s", newBody)
+		log.Debugf("[onHttpRequestBody] transformed request body bytes=%d", len(newBody))
 		body = newBody
 		action, err := handler.OnRequestBody(ctx, apiName, body)
 		if err == nil {
@@ -423,7 +465,20 @@ func onHttpRequestBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig
 	return types.ActionContinue
 }
 
+func failTransparentRequestAuthentication() types.Action {
+	log.Errorf("transparent request authentication failed")
+	_ = util.ErrorHandler(
+		"ai-proxy.transparent_request_authentication_failed",
+		fmt.Errorf("failed to apply transparent request authentication"),
+	)
+	return types.ActionPause
+}
+
 func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
+	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
+		return types.ActionContinue
+	}
+
 	if !wrapper.IsResponseFromUpstream() {
 		// Response is not coming from the upstream. Let it pass through.
 		ctx.DontReadResponseBody()
@@ -450,6 +505,10 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginCo
 			log.Errorf("unable to load :status header from response: %v", err)
 		}
 		action := providerConfig.OnRequestFailed(activeProvider, ctx, apiTokenInUse, apiTokens, status)
+		if isTransparentLifecycle(ctx) {
+			ctx.DontReadResponseBody()
+			return action
+		}
 		if action == types.ActionContinue &&
 			providerConfig.GetLogUpstreamErrorResponseBody() &&
 			shouldLogUpstreamErrorResponse(status) {
@@ -465,6 +524,10 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginCo
 	// Reset ctxApiTokenRequestFailureCount if the request is successful,
 	// the apiToken is removed only when the number of consecutive request failures exceeds the threshold.
 	providerConfig.ResetApiTokenRequestFailureCount(apiTokenInUse)
+	if isTransparentLifecycle(ctx) {
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
 
 	headers := util.GetResponseHeaders()
 	if handler, ok := activeProvider.(provider.TransformResponseHeadersHandler); ok {
@@ -484,8 +547,9 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginCo
 
 	// Check if we need to read body for Claude response conversion
 	needClaudeConversion, _ := ctx.GetContext("needClaudeResponseConversion").(bool)
+	needResponsesConversion := needsResponsesResponseConversion(ctx)
 
-	if !needHandleBody && !needHandleStreamingBody && !needClaudeConversion {
+	if !needHandleBody && !needHandleStreamingBody && !needClaudeConversion && !needResponsesConversion {
 		ctx.DontReadResponseBody()
 	} else {
 		checkStream(ctx)
@@ -495,6 +559,13 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginCo
 }
 
 func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, chunk []byte, isLastChunk bool) []byte {
+	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
+		return chunk
+	}
+	if isTransparentLifecycle(ctx) {
+		return chunk
+	}
+
 	activeProvider := pluginConfig.GetProvider()
 
 	if activeProvider == nil {
@@ -505,7 +576,7 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 	promoteThinking := pluginConfig.GetProviderConfig().GetPromoteThinkingOnEmpty()
 
 	log.Debugf("[onStreamingResponseBody] provider=%s", activeProvider.GetProviderType())
-	log.Debugf("[onStreamingResponseBody] isLastChunk=%v chunk: %s", isLastChunk, string(chunk))
+	log.Debugf("[onStreamingResponseBody] isLastChunk=%v chunk_bytes=%d", isLastChunk, len(chunk))
 
 	if handler, ok := activeProvider.(provider.StreamingResponseBodyHandler); ok {
 		apiName, _ := ctx.GetContext(provider.CtxKeyApiName).(provider.ApiName)
@@ -514,12 +585,11 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 			if promoteThinking {
 				modifiedChunk = promoteThinkingInStreamingChunk(ctx, modifiedChunk, isLastChunk)
 			}
-			// Convert to Claude format if needed
-			claudeChunk, convertErr := convertStreamingResponseToClaude(ctx, modifiedChunk, isLastChunk)
+			convertedChunk, convertErr := convertStreamingResponse(ctx, modifiedChunk, isLastChunk)
 			if convertErr != nil {
 				return modifiedChunk
 			}
-			return claudeChunk
+			return convertedChunk
 		}
 		return chunk
 	}
@@ -533,7 +603,7 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 		}
 		var responseBuilder strings.Builder
 		for _, event := range events {
-			log.Debugf("processing event: %v", event)
+			log.Debugf("processing streaming event")
 
 			if event.IsEndData() {
 				responseBuilder.WriteString(event.ToHttpString())
@@ -542,7 +612,7 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 
 			outputEvents, err := handler.OnStreamingEvent(ctx, apiName, event)
 			if err != nil {
-				log.Errorf("[onStreamingResponseBody] failed to process streaming event: %v\n%s", err, chunk)
+				log.Errorf("[onStreamingResponseBody] failed to process streaming event")
 				return chunk
 			}
 			if len(outputEvents) == 0 {
@@ -561,15 +631,14 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 			result = promoteThinkingInStreamingChunk(ctx, result, isLastChunk)
 		}
 
-		// Convert to Claude format if needed
-		claudeChunk, convertErr := convertStreamingResponseToClaude(ctx, result, isLastChunk)
+		convertedChunk, convertErr := convertStreamingResponse(ctx, result, isLastChunk)
 		if convertErr != nil {
 			return result
 		}
-		return claudeChunk
+		return convertedChunk
 	}
 
-	if !needsClaudeResponseConversion(ctx) && !promoteThinking {
+	if !needsClaudeResponseConversion(ctx) && !needsResponsesResponseConversion(ctx) && !promoteThinking {
 		return chunk
 	}
 
@@ -595,15 +664,21 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 		result = promoteThinkingInStreamingChunk(ctx, result, isLastChunk)
 	}
 
-	// Convert to Claude format if needed
-	claudeChunk, convertErr := convertStreamingResponseToClaude(ctx, result, isLastChunk)
+	convertedChunk, convertErr := convertStreamingResponse(ctx, result, isLastChunk)
 	if convertErr != nil {
 		return result
 	}
-	return claudeChunk
+	return convertedChunk
 }
 
 func onHttpResponseBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, body []byte) types.Action {
+	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
+		return types.ActionContinue
+	}
+	if isTransparentLifecycle(ctx) {
+		return types.ActionContinue
+	}
+
 	activeProvider := pluginConfig.GetProvider()
 
 	if activeProvider == nil {
@@ -646,6 +721,12 @@ func onHttpResponseBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfi
 	convertedBody, err := convertResponseBodyToClaude(ctx, finalBody)
 	if err != nil {
 		_ = util.ErrorHandler("ai-proxy.convert_resp_to_claude_failed", err)
+		return types.ActionContinue
+	}
+
+	convertedBody, err = convertResponseBodyToResponses(ctx, convertedBody)
+	if err != nil {
+		_ = util.ErrorHandler("ai-proxy.convert_resp_to_responses_failed", err)
 		return types.ActionContinue
 	}
 
@@ -707,8 +788,25 @@ func needsClaudeResponseConversion(ctx wrapper.HttpContext) bool {
 	return needClaudeConversion
 }
 
+func needsResponsesResponseConversion(ctx wrapper.HttpContext) bool {
+	needResponsesConversion, _ := ctx.GetContext(provider.CtxKeyNeedResponsesResponseConversion).(bool)
+	return needResponsesConversion
+}
+
+func convertStreamingResponse(ctx wrapper.HttpContext, data []byte, isLastChunk bool) ([]byte, error) {
+	convertedChunk, err := convertStreamingResponseToClaude(ctx, data)
+	if err != nil {
+		return data, err
+	}
+	convertedChunk, err = convertStreamingResponseToResponses(ctx, convertedChunk, isLastChunk)
+	if err != nil {
+		return convertedChunk, err
+	}
+	return convertedChunk, nil
+}
+
 // Helper function to convert OpenAI streaming response to Claude format
-func convertStreamingResponseToClaude(ctx wrapper.HttpContext, data []byte, isLastChunk bool) ([]byte, error) {
+func convertStreamingResponseToClaude(ctx wrapper.HttpContext, data []byte) ([]byte, error) {
 	if !needsClaudeResponseConversion(ctx) {
 		return data, nil
 	}
@@ -728,12 +826,38 @@ func convertStreamingResponseToClaude(ctx wrapper.HttpContext, data []byte, isLa
 		ctx.SetContext(claudeConverterKey, converter)
 	}
 
-	claudeChunk, err := converter.ConvertOpenAIStreamResponseToClaude(ctx, data, isLastChunk)
+	claudeChunk, err := converter.ConvertOpenAIStreamResponseToClaude(ctx, data)
 	if err != nil {
 		log.Errorf("failed to convert streaming response to claude format: %v", err)
 		return data, err
 	}
 	return claudeChunk, nil
+}
+
+func convertStreamingResponseToResponses(ctx wrapper.HttpContext, data []byte, isLastChunk bool) ([]byte, error) {
+	if !needsResponsesResponseConversion(ctx) {
+		return data, nil
+	}
+
+	const responsesConverterKey = "responsesConverter"
+	var converter *provider.ChatCompletionToResponsesStreamConverter
+	if converterData := ctx.GetContext(responsesConverterKey); converterData != nil {
+		if c, ok := converterData.(*provider.ChatCompletionToResponsesStreamConverter); ok {
+			converter = c
+		}
+	}
+
+	if converter == nil {
+		converter = provider.NewChatCompletionToResponsesStreamConverter()
+		ctx.SetContext(responsesConverterKey, converter)
+	}
+
+	responsesChunk, err := converter.Convert(data, isLastChunk)
+	if err != nil {
+		log.Errorf("failed to convert streaming response to Responses format: %v", err)
+		return data, err
+	}
+	return responsesChunk, nil
 }
 
 // promoteThinkingInStreamingChunk processes SSE-formatted streaming data, buffering
@@ -793,10 +917,19 @@ func convertResponseBodyToClaude(ctx wrapper.HttpContext, body []byte) ([]byte, 
 	return convertedBody, nil
 }
 
-func normalizeOpenAiRequestBody(body []byte, disableStreamUsageStats bool) []byte {
-	if disableStreamUsageStats {
-		return body
+func convertResponseBodyToResponses(ctx wrapper.HttpContext, body []byte) ([]byte, error) {
+	if !needsResponsesResponseConversion(ctx) {
+		return body, nil
 	}
+
+	convertedBody, err := provider.ConvertChatCompletionResponseToResponses(body)
+	if err != nil {
+		return body, fmt.Errorf("failed to convert response to Responses format: %v", err)
+	}
+	return convertedBody, nil
+}
+
+func normalizeOpenAiRequestBody(body []byte) []byte {
 	var err error
 	// Default setting include_usage.
 	if gjson.GetBytes(body, "stream").Bool() && (!gjson.GetBytes(body, "stream_options").Exists() || !gjson.GetBytes(body, "stream_options.include_usage").Exists()) {

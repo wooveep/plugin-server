@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "change_name": "fix-ai-billing-scoped-config-startup",
+  "source_commit": "ed2cb4951c4f82cbda32410911e1c3fffe3605b6",
+  "artifact": {
+    "plugin": "ai-billing",
+    "version": "0.1.7",
+    "path": "build/plugins/ai-billing/0.1.7/plugin.wasm",
+    "size_bytes": 18431596,
+    "sha256": "d86f908eb33b4317362625fe1607170837566134fdbbdca2d69af37977288971",
+    "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.7/plugin.wasm",
+    "upload_http_status": 201,
+    "retrieval_byte_identical": true
+  },
+  "verification": {
+    "regression_red": "TestScopedOnlyEmptyResponseDeliversOnStreamDone reproduced a missing non-stream event before the terminal callback fix.",
+    "focused_test": "go test . -run '^TestScopedOnlyEmptyResponseDeliversOnStreamDone$' -count=1",
+    "extension_test": "go test ./... in extensions/ai-billing",
+    "root_test": "go test ./...",
+    "wasm_test": "The scoped lifecycle Go-Wasm contract passed against the exact 0.1.7 artifact.",
+    "openspec": "openspec validate fix-ai-billing-scoped-config-startup --strict",
+    "graphify": "graphify update .",
+    "gitnexus": "detect_changes reviewed the intended ai-billing startup, terminal delivery, resource, and specification surfaces.",
+    "diff_check": "git diff --check"
+  },
+  "live_runtime": {
+    "kubernetes_context": "kind-higress",
+    "wasm_plugin_resource": "ai-billing-0.1.7",
+    "default_config_disabled": true,
+    "unmatched_admin_http_status": 200,
+    "unmatched_admin_stream_delta": 0,
+    "matched_route_http_status": 404,
+    "matched_route_stream_delta": 1,
+    "matched_route": "ai-route-qwen-chat.internal",
+    "matched_request_path": "/v1/qwen-e2e",
+    "matched_quota_scope": "route:qwen-chat",
+    "usage_missing": false,
+    "usage_source": "estimated",
+    "statistics_request_count": 1,
+    "statistics_crash_total": 0,
+    "temporary_route_cleanup_converged": true,
+    "result": "PASS"
+  },
+  "security": {
+    "credentials_recorded": false,
+    "personal_data_recorded": false
+  }
+}

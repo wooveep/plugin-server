@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
-	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
 )
 
 // grokProvider is the provider for Grok service.
@@ -19,7 +19,7 @@ const (
 type grokProviderInitializer struct{}
 
 func (g *grokProviderInitializer) ValidateConfig(config *ProviderConfig) error {
-	if config.apiTokens == nil || len(config.apiTokens) == 0 {
+	if len(config.apiTokens) == 0 {
 		return errors.New("no apiToken found in provider config")
 	}
 	return nil

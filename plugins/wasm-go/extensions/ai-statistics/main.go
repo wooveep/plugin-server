@@ -7,12 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/tokenusage"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -34,24 +34,19 @@ func main() {}
 func init() {
 	wrapper.SetCtx(
 		"ai-statistics",
-		wrapper.ParseConfig(parseConfig),
+		wrapper.ParseOverrideConfig(parseConfig, parseRuleConfig),
 		wrapper.ProcessRequestHeaders(onHttpRequestHeaders),
 		wrapper.ProcessRequestBody(onHttpRequestBody),
 		wrapper.ProcessResponseHeaders(onHttpResponseHeaders),
 		wrapper.ProcessStreamingResponseBody(onHttpStreamingBody),
 		wrapper.ProcessResponseBody(onHttpResponseBody),
-		wrapper.WithRebuildMaxMemBytes[AIStatisticsConfig](vmRebuildMaxMemBytes),
+		wrapper.ProcessStreamDone(onHttpStreamDone),
+		wrapper.WithRebuildAfterRequests[AIStatisticsConfig](1000),
+		wrapper.WithRebuildMaxMemBytes[AIStatisticsConfig](200*1024*1024),
 	)
 }
 
 const (
-	// vmRebuildMaxMemBytes is the wasm VM memory ceiling that triggers a VM
-	// rebuild. The buffered request body is copied into the VM, so a buffer
-	// limit above this value cannot be served without forcing a rebuild.
-	vmRebuildMaxMemBytes = 200 * 1024 * 1024
-	// maxRequestBodyBytesCeiling is the largest accepted max_request_body_bytes.
-	maxRequestBodyBytesCeiling = vmRebuildMaxMemBytes
-
 	defaultMaxBodyBytes uint32 = 100 * 1024 * 1024
 	// Context consts
 	StatisticsRequestStartTime = "ai-statistics-request-start-time"
@@ -65,10 +60,6 @@ const (
 	ConsumerKey                = "x-mse-consumer"
 	RequestPath                = "request_path"
 	SkipProcessing             = "skip_processing"
-
-	// ctxKeySseFramer stores the request-scoped SSE event framer (see
-	// sse_framer.go) in HttpContext for the lifetime of a streaming response.
-	ctxKeySseFramer = "sseFramer"
 
 	// Session ID related
 	SessionID = "session_id"
@@ -94,7 +85,6 @@ const (
 	LLMServiceDuration     = "llm_service_duration"
 	LLMDurationCount       = "llm_duration_count"
 	LLMStreamDurationCount = "llm_stream_duration_count"
-	LLMFailureCount        = "llm_failure_count"
 	ResponseType           = "response_type"
 	ChatID                 = "chat_id"
 	ChatRound              = "chat_round"
@@ -454,6 +444,8 @@ type Attribute struct {
 }
 
 type AIStatisticsConfig struct {
+	initialized bool
+	invalidBase bool
 	// Metrics
 	// TODO: add more metrics in Gauge and Histogram format
 	counterMetrics map[string]proxywasm.MetricCounter
@@ -468,14 +460,14 @@ type AIStatisticsConfig struct {
 	valueLengthLimit   int
 	// Path suffixes to enable the plugin on
 	enablePathSuffixes []string
+	// Route-effective path scope and optional exact-case HTTP method filters
+	pathScope          string
+	enableMethods      []string
+	legacyPathSuffixes []string
 	// Content types to enable response body buffering
 	enableContentTypes []string
 	// Session ID header name (if configured, takes priority over default headers)
 	sessionIdHeader string
-	// Maximum request body buffer size in bytes. Configurable via
-	// `max_request_body_bytes`; supports matchRules route-level overrides.
-	// Defaults to defaultMaxBodyBytes when unset.
-	maxRequestBodyBytes uint32
 }
 
 func generateMetricName(route, cluster, model, consumer, metricName string) string {
@@ -514,6 +506,9 @@ func getClusterName() (string, error) {
 func (config *AIStatisticsConfig) incrementCounter(metricName string, inc uint64) {
 	if inc == 0 {
 		return
+	}
+	if config.counterMetrics == nil {
+		config.counterMetrics = make(map[string]proxywasm.MetricCounter)
 	}
 	counter, ok := config.counterMetrics[metricName]
 	if !ok {
@@ -559,6 +554,19 @@ func isContentTypeEnabled(contentType string, enabledContentTypes []string) bool
 }
 
 func parseConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
+	if err := parseCompleteStatisticsConfig(configJson, config); err != nil {
+		// The wrapper otherwise supplies a zero global config to valid rules.
+		if configJson.Get("_rules_").Exists() {
+			*config = AIStatisticsConfig{invalidBase: true}
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func parseCompleteStatisticsConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
+	*config = AIStatisticsConfig{}
 	// Check if use_default_attributes is enabled
 	useDefaultAttributes := configJson.Get("use_default_attributes").Bool()
 	// Check if use_default_response_attributes is enabled (lightweight mode)
@@ -573,24 +581,6 @@ func parseConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
 	} else {
 		config.valueLengthLimit = 32000
 	}
-
-	// Set max_request_body_bytes (request body buffer limit). Supports
-	// matchRules route-level overrides. Defaults to defaultMaxBodyBytes.
-	// The value is validated as a number in (0, maxRequestBodyBytesCeiling]
-	// before narrowing to uint32, so out-of-range input is rejected instead
-	// of silently wrapping.
-	config.maxRequestBodyBytes = defaultMaxBodyBytes
-	if limitJson := configJson.Get("max_request_body_bytes"); limitJson.Exists() {
-		if limitJson.Type != gjson.Number {
-			return fmt.Errorf("max_request_body_bytes must be a number, got %s", limitJson.Raw)
-		}
-		limit := limitJson.Int()
-		if limit <= 0 || limit > maxRequestBodyBytesCeiling {
-			return fmt.Errorf("max_request_body_bytes must be in the range (0, %d], got %s", maxRequestBodyBytesCeiling, limitJson.Raw)
-		}
-		config.maxRequestBodyBytes = uint32(limit)
-	}
-	log.Infof("request body buffer limit: %d bytes", config.maxRequestBodyBytes)
 
 	// Parse attributes or use defaults
 	if useDefaultAttributes {
@@ -654,25 +644,17 @@ func parseConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
 	// Parse openai usage config setting.
 	config.disableOpenaiUsage = configJson.Get("disable_openai_usage").Bool()
 
-	// Parse path suffix configuration
-	pathSuffixes := configJson.Get("enable_path_suffixes").Array()
-	config.enablePathSuffixes = make([]string, 0, len(pathSuffixes))
-
-	// If use_default_attributes or use_default_response_attributes is enabled and enable_path_suffixes is not configured, use default path suffixes
-	if (useDefaultAttributes || useDefaultResponseAttributes) && !configJson.Get("enable_path_suffixes").Exists() {
-		config.enablePathSuffixes = []string{"/completions", "/messages"}
+	if err := parseStatisticsRouting(
+		configJson,
+		config,
+		useDefaultAttributes || useDefaultResponseAttributes,
+	); err != nil {
+		return err
+	}
+	if len(config.enablePathSuffixes) > 0 &&
+		(useDefaultAttributes || useDefaultResponseAttributes) &&
+		!configJson.Get("enable_path_suffixes").Exists() {
 		log.Infof("Using default path suffixes: /completions, /messages")
-	} else {
-		// Process manually configured path suffixes
-		for _, suffix := range pathSuffixes {
-			suffixStr := suffix.String()
-			if suffixStr == "*" {
-				// Clear the suffixes list since * means all paths are enabled
-				config.enablePathSuffixes = make([]string, 0)
-				break
-			}
-			config.enablePathSuffixes = append(config.enablePathSuffixes, suffixStr)
-		}
 	}
 
 	// Parse content type configuration
@@ -694,14 +676,17 @@ func parseConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
 		config.sessionIdHeader = sessionIdHeader.String()
 	}
 
+	config.initialized = true
 	return nil
 }
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) types.Action {
-	// Check if request path matches enabled suffixes
+	// This filter runs before authentication; incoming consumer fields are untrusted.
+	ctx.SetContext(ConsumerKey, "none")
 	requestPath, _ := proxywasm.GetHttpRequestHeader(":path")
-	if !isPathEnabled(requestPath, config.enablePathSuffixes) {
-		log.Debugf("ai-statistics: skipping request for path %s (not in enabled suffixes)", requestPath)
+	requestMethod, _ := proxywasm.GetHttpRequestHeader(":method")
+	if !isStatisticsRequestEnabled(requestPath, requestMethod, config) {
+		log.Debug("ai-statistics: skipping request outside configured routing scope")
 		// Set skip processing flag and avoid reading request/response body
 		ctx.SetContext(SkipProcessing, true)
 		ctx.DontReadRequestBody()
@@ -710,28 +695,24 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) ty
 	}
 
 	ctx.DisableReroute()
-	route, _ := getRouteName()
+	setStatisticsRequestBaseFacts(ctx)
+	route := ctx.GetStringContext(statisticsRouteContext, routeUnknown)
 	cluster, _ := getClusterName()
 	api, apiError := getAPIName()
-	if apiError == nil {
+	if apiError == nil && route != routeUnknown {
 		route = api
+		ctx.SetUserAttribute(APIName, api)
 	}
 	ctx.SetContext(RouteName, route)
 	ctx.SetContext(ClusterName, cluster)
-	ctx.SetUserAttribute(APIName, api)
 	ctx.SetContext(StatisticsRequestStartTime, time.Now().UnixMilli())
 	if requestPath, _ := proxywasm.GetHttpRequestHeader(":path"); requestPath != "" {
 		ctx.SetContext(RequestPath, requestPath)
 	}
-	if consumer, _ := proxywasm.GetHttpRequestHeader(ConsumerKey); consumer != "" {
-		ctx.SetContext(ConsumerKey, consumer)
-	}
 
 	// Always buffer request body to extract model field
-	// This is essential for metrics and logging.
-	// The limit is configurable via `max_request_body_bytes` (with matchRules
-	// route-level overrides) so large non-AI uploads are not rejected with 413.
-	ctx.SetRequestBodyBufferLimit(config.maxRequestBodyBytes)
+	// This is essential for metrics and logging
+	ctx.SetRequestBodyBufferLimit(defaultMaxBodyBytes)
 
 	// Extract session ID from headers
 	sessionId := extractSessionId(config.sessionIdHeader)
@@ -750,9 +731,18 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) ty
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body []byte) types.Action {
+	ctx.SetContext(ConsumerKey, "none")
 	// Check if processing should be skipped
 	if ctx.GetBoolContext(SkipProcessing, false) {
 		return types.ActionContinue
+	}
+
+	// Later authentication filters have completed before this body callback.
+	// Local authentication replies never reach it; an unsubscribed body stays anonymous.
+	if headers, err := proxywasm.GetHttpRequestHeaders(); config.pathScope == pathScopeBoundTarget && err == nil {
+		if identity, err := balanceidentity.Read(headers); err == nil && identity.PrincipalID != "" {
+			ctx.SetContext(ConsumerKey, identity.PrincipalID)
+		}
 	}
 
 	// Only process request body if we need to extract attributes from it
@@ -771,16 +761,9 @@ func onHttpRequestBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body 
 	// If model not found in body, try to extract from path (Gemini style)
 	if requestModel == "UNKNOWN" {
 		requestPath := ctx.GetStringContext(RequestPath, "")
-		// Strip the query string before matching. Gemini streaming uses
-		// streamGenerateContent?alt=sse, and the trailing-$ anchor would
-		// otherwise fail to match, leaving the reported model as UNKNOWN.
-		pathOnly := requestPath
-		if i := strings.Index(pathOnly, "?"); i >= 0 {
-			pathOnly = pathOnly[:i]
-		}
-		if strings.Contains(pathOnly, "generateContent") || strings.Contains(pathOnly, "streamGenerateContent") { // Google Gemini GenerateContent
+		if strings.Contains(requestPath, "generateContent") || strings.Contains(requestPath, "streamGenerateContent") { // Google Gemini GenerateContent
 			reg := regexp.MustCompile(`^.*/(?P<api_version>[^/]+)/models/(?P<model>[^:]+):\w+Content$`)
-			matches := reg.FindStringSubmatch(pathOnly)
+			matches := reg.FindStringSubmatch(requestPath)
 			if len(matches) == 3 {
 				requestModel = matches[2]
 			}
@@ -817,10 +800,19 @@ func onHttpRequestBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body 
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) types.Action {
+	if ctx.GetBoolContext(SkipProcessing, false) {
+		return types.ActionContinue
+	}
+
+	// Adapter metadata can be established after this plugin's request callback,
+	// so refresh the bounded attribution at the response boundary.
+	setStatisticsRequestBaseFacts(ctx)
+	setStatisticsResponseStatusFact(ctx)
+
 	contentType, _ := proxywasm.GetHttpResponseHeader("content-type")
 
 	if !isContentTypeEnabled(contentType, config.enableContentTypes) {
-		log.Debugf("ai-statistics: skipping response for content type %s (not in enabled content types)", contentType)
+		log.Debug("ai-statistics: skipping response outside configured content types")
 		// Set skip processing flag and avoid reading response body
 		ctx.SetContext(SkipProcessing, true)
 		ctx.DontReadResponseBody()
@@ -837,24 +829,10 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, config AIStatisticsConfig) t
 	return types.ActionContinue
 }
 
-func onHttpStreamingBody(ctx wrapper.HttpContext, config AIStatisticsConfig, data []byte, endOfStream bool) (ret []byte) {
-	// Fail-open boundary (Design #4249): the named return is pre-set to the
-	// original data and all observability logic below runs under a local
-	// recovery boundary, so a panic in the framer or any consumer produces one
-	// error log line and the upstream response bytes still pass through
-	// unchanged. The wrapper-level recover cannot be relied on for this
-	// contract: it recovers at OnHttpResponseBody scope and would skip
-	// proxywasm.ReplaceHttpResponseBody entirely.
-	ret = data
-	defer func() {
-		if r := recover(); r != nil {
-			log.Errorf("ai-statistics: onHttpStreamingBody recovered from observability panic, passing response chunk through unchanged: %v", r)
-		}
-	}()
-
+func onHttpStreamingBody(ctx wrapper.HttpContext, config AIStatisticsConfig, data []byte, endOfStream bool) []byte {
 	// Check if processing should be skipped
 	if ctx.GetBoolContext(SkipProcessing, false) {
-		return ret
+		return data
 	}
 
 	// Buffer stream body for record log & span attributes
@@ -882,7 +860,7 @@ func onHttpStreamingBody(ctx wrapper.HttpContext, config AIStatisticsConfig, dat
 	requestStartTime, ok := ctx.GetContext(StatisticsRequestStartTime).(int64)
 	if !ok {
 		log.Error("failed to get requestStartTime from http context")
-		return ret
+		return data
 	}
 
 	// If this is the first chunk, record first token duration metric and span attribute
@@ -892,43 +870,32 @@ func onHttpStreamingBody(ctx wrapper.HttpContext, config AIStatisticsConfig, dat
 		ctx.SetUserAttribute(LLMFirstTokenDuration, firstTokenTime-requestStartTime)
 	}
 
-	// Frame the raw callback bytes into complete SSE events: one callback is an
-	// arbitrary byte chunk, not a complete event. Token usage and stream-error
-	// detection consume the reassembled complete events, so values split across
-	// host callbacks are recovered exactly as if delivered intact. ChatID
-	// extraction stays on raw data, and tool-call extraction / full-body
-	// JSONPath stay on the end-of-stream accumulated-body path below.
-	framer, ok := ctx.GetContext(ctxKeySseFramer).(*sseFramer)
-	if !ok || framer == nil {
-		framer = &sseFramer{}
-		ctx.SetContext(ctxKeySseFramer, framer)
-	}
-	for _, event := range framer.frameCallback(data) {
-		// Set information about this request
-		if !config.disableOpenaiUsage {
-			processTokenUsageEvent(ctx, event)
-		}
-		// Track streaming errors across events — SSE failures often appear as
-		// data: {"error":{...}} before data: [DONE], so the last chunk alone is
-		// insufficient for error detection. writeMetric consumes this flag once
-		// at end of stream, so one request yields exactly one failure increment
-		// regardless of how many error events matched.
-		if !ctx.GetBoolContext("hasStreamError", false) && isErrorResponse(event) {
-			ctx.SetContext("hasStreamError", true)
-		}
-	}
+	// Set information about this request
+	if !config.disableOpenaiUsage {
+		if usage := observeStatisticsUsage(ctx, config, data, true); usage.TotalToken > 0 {
+			// Set span attributes for ARMS.
+			setSpanAttribute(ArmsTotalToken, usage.TotalToken)
+			setSpanAttribute(ArmsModelName, usage.Model)
+			setSpanAttribute(ArmsInputToken, usage.InputToken)
+			setSpanAttribute(ArmsOutputToken, usage.OutputToken)
 
+			// Set token details to context for later use in attributes
+			if len(usage.InputTokenDetails) > 0 {
+				ctx.SetContext(tokenusage.CtxKeyInputTokenDetails, usage.InputTokenDetails)
+			}
+			if len(usage.OutputTokenDetails) > 0 {
+				ctx.SetContext(tokenusage.CtxKeyOutputTokenDetails, usage.OutputTokenDetails)
+			}
+
+			// Write once
+			_ = ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
+		}
+	}
 	// If the end of the stream is reached, record metrics/logs/spans.
 	if endOfStream {
-		// An unterminated tail is not recoverable and is discarded here. If the
-		// incomplete suffix ever overflowed the cap, the framer entered RESYNC
-		// and counted it; summarize the diagnostic once per request.
-		if overflowCount := framer.drain(); overflowCount > 0 {
-			log.Debugf("ai-statistics: sse framer discarded %d oversized incomplete event(s) during this request", overflowCount)
-		}
-
 		responseEndTime := time.Now().UnixMilli()
 		ctx.SetUserAttribute(LLMServiceDuration, responseEndTime-requestStartTime)
+		finalizeStatisticsBaseFacts(ctx, config, responseEndTime)
 
 		// Set user defined log & span attributes from streaming body.
 		// Always call setAttributeBySource even if shouldBufferStreamingBody is false,
@@ -943,105 +910,10 @@ func onHttpStreamingBody(ctx wrapper.HttpContext, config AIStatisticsConfig, dat
 		debugLogAiLog(ctx)
 		_ = ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
 
-		// Write metrics — prefer the accumulated buffer for error detection
-		// so that errors split across multiple SSE chunks are not missed.
-		bodyForMetric := data
-		if config.shouldBufferStreamingBody && len(streamingBodyBuffer) > 0 {
-			bodyForMetric = streamingBodyBuffer
-		}
-		writeMetric(ctx, config, bodyForMetric)
+		// Write metrics
+		writeMetric(ctx, config)
 	}
-	return ret
-}
-
-// getTokenUsage is an indirection over tokenusage.GetTokenUsage so integration
-// tests can inject an observability-side panic and pin the fail-open contract
-// (Design #4249 T-19). It is never reassigned in production.
-var getTokenUsage = tokenusage.GetTokenUsage
-
-// inputTokenDetailsProbePaths and outputTokenDetailsProbePaths mirror exactly
-// the paths tokenusage.ExtractInputTokenDetails / ExtractOutputTokenDetails
-// read (github.com/higress-group/wasm-go/pkg/tokenusage). They are used to
-// detect field PRESENCE in a framed event so the token-details policy can
-// distinguish "absent" (retain the previously recorded map) from "present"
-// (replace the whole map with the event's value). Keep in sync with
-// tokenusage: a details-path addition there must be mirrored here, which fails
-// loudly in review (Design #4249).
-var inputTokenDetailsProbePaths = []string{
-	tokenusage.UsageInputTokensDetailsPathOpenAIChatCompletions,
-	tokenusage.UsageInputTokensDetailsPathOpenAIResponses,
-	tokenusage.UsageInputTokensDetailsPathDoubao,
-	tokenusage.UsageInputTokensDetailsPathGemini,
-	tokenusage.UsageMetadataCachedContentTokenCountPathGemini,
-	tokenusage.UsageMetadataToolUsePromptTokenCountPathGemini,
-	tokenusage.UsageCacheCreationInputTokensPathAnthropicMessages,
-	tokenusage.UsageCacheReadInputTokensPathAnthropicMessages,
-}
-
-var outputTokenDetailsProbePaths = []string{
-	tokenusage.UsageOutputTokensDetailsPathOpenAIChatCompletions,
-	tokenusage.UsageOutputTokensDetailsPathOpenAIResponses,
-	tokenusage.UsageOutputTokensDetailsPathDoubao,
-	tokenusage.UsageOutputTokensDetailsPathGemini,
-	tokenusage.UsageMetadataThoughtsTokenCountPathGemini,
-	tokenusage.UsageGeneratedImagesPathDoubao,
-}
-
-// processTokenUsageEvent records token usage from one complete framed SSE
-// event. Scalar merge semantics stay entirely inside tokenusage.GetTokenUsage
-// (an event's explicit value wins; otherwise the stored attribute is reused;
-// values are never summed across events). The token-details policy of Design
-// #4249 is applied around the call: replace the details map when the event
-// carries the corresponding details field, retain the previously recorded map
-// when it does not, never sum, and keep the context layer and the
-// user-attribute layer synchronized. tokenusage creates fresh details maps per
-// call and writes them to the user-attribute layer unconditionally, so without
-// this policy a usage-bearing event that omits details would wipe previously
-// recorded details with an empty map.
-func processTokenUsageEvent(ctx wrapper.HttpContext, event []byte) {
-	// Snapshot the previously recorded details maps BEFORE the call. The
-	// context layer is the source of truth: ai-statistics only ever writes it
-	// with effective (non-nil) maps.
-	prevInputDetails, _ := ctx.GetContext(tokenusage.CtxKeyInputTokenDetails).(map[string]int64)
-	prevOutputDetails, _ := ctx.GetContext(tokenusage.CtxKeyOutputTokenDetails).(map[string]int64)
-
-	usage := getTokenUsage(ctx, event)
-
-	inputDetails := prevInputDetails
-	if wrapper.GetValueFromBody(event, inputTokenDetailsProbePaths) != nil {
-		inputDetails = usage.InputTokenDetails
-	}
-	outputDetails := prevOutputDetails
-	if wrapper.GetValueFromBody(event, outputTokenDetailsProbePaths) != nil {
-		outputDetails = usage.OutputTokenDetails
-	}
-	// Write the effective maps to BOTH layers, undoing tokenusage's
-	// unconditional empty-map user-attribute write when the event omitted the
-	// details. A nil effective map (no details ever seen) skips both writes so
-	// intact-event behavior stays byte-equivalent to before: tokenusage's empty
-	// map remains in the user-attribute layer and the context layer stays
-	// unset.
-	if inputDetails != nil {
-		ctx.SetContext(tokenusage.CtxKeyInputTokenDetails, inputDetails)
-		ctx.SetUserAttribute(tokenusage.CtxKeyInputTokenDetails, inputDetails)
-	}
-	if outputDetails != nil {
-		ctx.SetContext(tokenusage.CtxKeyOutputTokenDetails, outputDetails)
-		ctx.SetUserAttribute(tokenusage.CtxKeyOutputTokenDetails, outputDetails)
-	}
-
-	if usage.TotalToken > 0 {
-		// Set span attributes for ARMS. Repeated writes across multiple usage
-		// events are per-key last-write-wins, so the final complete usage event
-		// determines the span (Design #4249 output consistency).
-		setSpanAttribute(ArmsTotalToken, usage.TotalToken)
-		setSpanAttribute(ArmsModelName, usage.Model)
-		setSpanAttribute(ArmsInputToken, usage.InputToken)
-		setSpanAttribute(ArmsOutputToken, usage.OutputToken)
-
-		// Write once
-		_ = ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
-	}
+	return data
 }
 
 func onHttpResponseBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body []byte) types.Action {
@@ -1055,6 +927,7 @@ func onHttpResponseBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body
 
 	responseEndTime := time.Now().UnixMilli()
 	ctx.SetUserAttribute(LLMServiceDuration, responseEndTime-requestStartTime)
+	finalizeStatisticsBaseFacts(ctx, config, responseEndTime)
 
 	ctx.SetUserAttribute(ResponseType, "normal")
 	if chatID := wrapper.GetValueFromBody(body, []string{
@@ -1068,7 +941,7 @@ func onHttpResponseBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body
 
 	// Set information about this request
 	if !config.disableOpenaiUsage {
-		if usage := tokenusage.GetTokenUsage(ctx, body); usage.TotalToken > 0 {
+		if usage := observeStatisticsUsage(ctx, config, body, false); usage.TotalToken > 0 {
 			// Set span attributes for ARMS.
 			setSpanAttribute(ArmsModelName, usage.Model)
 			setSpanAttribute(ArmsInputToken, usage.InputToken)
@@ -1093,9 +966,18 @@ func onHttpResponseBody(ctx wrapper.HttpContext, config AIStatisticsConfig, body
 	_ = ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
 
 	// Write metrics
-	writeMetric(ctx, config, body)
+	writeMetric(ctx, config)
 
 	return types.ActionContinue
+}
+
+func onHttpStreamDone(ctx wrapper.HttpContext, config AIStatisticsConfig) {
+	if ctx.GetContext(StatisticsRequestStartTime) == nil ||
+		!finalizeStatisticsBaseFacts(ctx, config, time.Now().UnixMilli()) {
+		return
+	}
+	debugLogAiLog(ctx)
+	_ = ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
 }
 
 // fetches the tracing span value from the specified source.
@@ -1506,59 +1388,9 @@ func setSpanAttribute(key string, value interface{}) {
 	}
 }
 
-// isErrorResponse checks whether the LLM response indicates an error.
-// Detects errors by:
-// 1. Response body contains non-null "error" field at root level (OpenAI/Anthropic format).
-//    Handles both raw JSON and SSE "data: " prefixed chunks, including multi-event
-//    streaming buffers.
-// 2. HTTP status code >= 400 as fallback when body is empty.
-//
-// Note: some providers (e.g. Anthropic streaming responses) emit {"error":""}
-// even on success; an empty-string error is treated as not-an-error to avoid
-// false positives.
-func isErrorResponse(body []byte) bool {
-	if len(body) > 0 {
-		// SSE chunks are prefixed with "data: "; accumulated buffers contain
-		// multiple SSE events separated by \n\n. Split and check each event.
-		trimmed := bytes.TrimSpace(body)
-		if bytes.HasPrefix(trimmed, []byte("data: ")) {
-			for _, event := range bytes.Split(trimmed, []byte("\n\n")) {
-				jsonBody := bytes.TrimSpace(event)
-				if bytes.HasPrefix(jsonBody, []byte("data: ")) {
-					jsonBody = jsonBody[len("data: "):]
-				}
-				if hasErrorField(jsonBody) {
-					return true
-				}
-			}
-			return false
-		}
-		return hasErrorField(body)
-	}
-	// Fallback: check HTTP status code for errors with empty body (connection reset, timeout, etc.)
-	if len(body) == 0 {
-		if statusCode, err := proxywasm.GetHttpResponseHeader(":status"); err == nil {
-			if code, err := strconv.Atoi(statusCode); err == nil && code >= 400 {
-				return true
-			}
-		}
-	}
-	return false
-}
+func writeMetric(ctx wrapper.HttpContext, config AIStatisticsConfig) {
+	writeBaseMetrics(ctx, config)
 
-// hasErrorField checks whether a JSON body contains a non-null, non-empty-string "error" field.
-func hasErrorField(jsonBody []byte) bool {
-	errorVal := gjson.GetBytes(jsonBody, "error")
-	if errorVal.Exists() && errorVal.Value() != nil {
-		if errorVal.Type == gjson.String && errorVal.String() == "" {
-			return false
-		}
-		return true
-	}
-	return false
-}
-
-func writeMetric(ctx wrapper.HttpContext, config AIStatisticsConfig, body []byte) {
 	// Generate usage metrics
 	var ok bool
 	var route, cluster, model string
@@ -1574,39 +1406,16 @@ func writeMetric(ctx wrapper.HttpContext, config AIStatisticsConfig, body []byte
 		return
 	}
 
-	// Get model for metric label (may be empty for error responses)
-	modelStr := "-"
-	if m := ctx.GetUserAttribute(tokenusage.CtxKeyModel); m != nil {
-		if ms, ok := m.(string); ok {
-			modelStr = ms
-		}
-	}
-	// Fallback to request model for error responses where usage info is unavailable
-	if modelStr == "-" {
-		if rm, ok := ctx.GetContext(tokenusage.CtxKeyRequestModel).(string); ok && rm != "" {
-			modelStr = rm
-		}
-	}
-
-	// Count failure before usage check, so error responses without usage info are still counted.
-	// For streaming, also check the hasStreamError flag set during onHttpStreamingBody.
-	// llm_failure_count is intentionally incremented regardless of disableOpenaiUsage,
-	// because error responses carry no usage info and operators still need the failure
-	// signal even when usage tracking is off.
-	if isErrorResponse(body) || ctx.GetBoolContext("hasStreamError", false) {
-		config.incrementCounter(generateMetricName(route, cluster, modelStr, consumer, LLMFailureCount), 1)
-	}
-
 	if config.disableOpenaiUsage {
 		return
 	}
 
-	if ctx.GetUserAttribute(tokenusage.CtxKeyModel) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyInputToken) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyOutputToken) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyTotalToken) == nil {
+	if config.pathScope != pathScopeBoundTarget && (ctx.GetUserAttribute(tokenusage.CtxKeyModel) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyInputToken) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyOutputToken) == nil || ctx.GetUserAttribute(tokenusage.CtxKeyTotalToken) == nil) {
 		log.Info("get usage information failed, skip metric record")
 		return
 	}
 	model, ok = ctx.GetUserAttribute(tokenusage.CtxKeyModel).(string)
-	if !ok {
+	if !ok || config.pathScope == pathScopeBoundTarget && (model == "" || model == tokenusage.ModelUnknown) {
 		log.Info("Model type assert failed, skip metric record")
 		return
 	}

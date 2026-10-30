@@ -35,7 +35,7 @@ func main() {}
 func init() {
 	wrapper.SetCtx(
 		"ai-history",
-		wrapper.ParseConfigBy(parseConfig),
+		wrapper.ParseOverrideConfigBy(parseConfig, parseHistoryRuleConfig),
 		wrapper.ProcessRequestHeadersBy(onHttpRequestHeaders),
 		wrapper.ProcessRequestBodyBy(onHttpRequestBody),
 		wrapper.ProcessResponseHeadersBy(onHttpResponseHeaders),
@@ -45,12 +45,12 @@ func init() {
 
 // @Name ai-history
 // @Category protocol
-// @Phase AUTHN
-// @Priority 10
+// @Phase UNSPECIFIED_PHASE
+// @Priority 650
 // @Title zh-CN AI History
 // @Description zh-CN 大模型对话历史缓存
 // @IconUrl
-// @Version 0.1.0
+// @Version 0.1.3
 //
 // @Contact.name sakura
 // @Contact.url
@@ -115,8 +115,10 @@ type PluginConfig struct {
 	FillHistoryCnt int `required:"false" yaml:"fillHistoryCnt" json:"fillHistoryCnt"`
 	// @Title zh-CN 缓存的过期时间
 	// @Description zh-CN 单位是秒，默认值为0，即永不过期
-	CacheTTL    int                 `required:"false" yaml:"cacheTTL" json:"cacheTTL"`
-	redisClient wrapper.RedisClient `yaml:"-" json:"-"`
+	CacheTTL       int                 `required:"false" yaml:"cacheTTL" json:"cacheTTL"`
+	redisClient    wrapper.RedisClient `yaml:"-" json:"-"`
+	historyEnabled bool
+	historyBinding *historyBinding
 }
 
 type ChatHistory struct {
@@ -125,6 +127,9 @@ type ChatHistory struct {
 }
 
 func parseConfig(json gjson.Result, c *PluginConfig, log log.Log) error {
+	if err := parseHistoryBinding(json, c); err != nil {
+		return err
+	}
 	c.RedisInfo.ServiceName = json.Get("redis.serviceName").String()
 	if c.RedisInfo.ServiceName == "" {
 		return errors.New("redis service name must not be empty")
@@ -162,6 +167,9 @@ func parseConfig(json gjson.Result, c *PluginConfig, log log.Log) error {
 		c.FillHistoryCnt = 3
 	}
 	c.CacheTTL = int(json.Get("cacheTTL").Int())
+	if c.FillHistoryCnt < 0 || c.CacheTTL < 0 {
+		return errors.New("history count and cacheTTL must not be negative")
+	}
 	c.redisClient = wrapper.NewRedisClusterClient(wrapper.FQDNCluster{
 		FQDN: c.RedisInfo.ServiceName,
 		Port: int64(c.RedisInfo.ServicePort),
@@ -169,8 +177,24 @@ func parseConfig(json gjson.Result, c *PluginConfig, log log.Log) error {
 	return c.redisClient.Init(c.RedisInfo.Username, c.RedisInfo.Password, int64(c.RedisInfo.Timeout), wrapper.WithDataBase(c.RedisInfo.Database))
 }
 
+func parseHistoryRuleConfig(json gjson.Result, _ PluginConfig, c *PluginConfig, log log.Log) error {
+	// Route rules are complete configurations; do not inherit another binding.
+	return parseConfig(json, c, log)
+}
+
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config PluginConfig, log log.Log) types.Action {
 	ctx.DisableReroute()
+	if config.historyBinding != nil && config.historyBinding.CaptureBodyBasis {
+		if action := prepareHistoryBodyBasis(ctx); action != types.ActionContinue {
+			return action
+		}
+	}
+	if !config.historyEnabled {
+		return bypassHistory(ctx, "history-off")
+	}
+	if config.historyBinding != nil {
+		return nativeHistoryHeaders(ctx, config)
+	}
 	contentType, _ := proxywasm.GetHttpRequestHeader("content-type")
 	if !strings.Contains(contentType, "application/json") {
 		log.Warnf("content is not json, can't process:%s", contentType)
@@ -180,7 +204,8 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config PluginConfig, log log.
 	// get identity key
 	identityKey, _ := proxywasm.GetHttpRequestHeader(config.IdentityHeader)
 	if identityKey == "" {
-		log.Warnf("identity key is empty")
+		ctx.DontReadRequestBody()
+		ctx.DontReadResponseBody()
 		return types.ActionContinue
 	}
 	identityKey = strings.ReplaceAll(identityKey, " ", "")
@@ -197,12 +222,31 @@ func TrimQuote(source string) string {
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, config PluginConfig, body []byte, log log.Log) types.Action {
+	if action := captureHistoryBodyBasis(ctx, body); action != types.ActionContinue {
+		return action
+	}
+	if ctx.GetStringContext(historyGateContextKey, "") != "" {
+		return types.ActionContinue
+	}
+	if config.historyBinding != nil {
+		return nativeHistoryRequestBody(ctx, config, body, log)
+	}
 	bodyJson := gjson.ParseBytes(body)
 	if bodyJson.Get("stream").Bool() {
 		ctx.SetContext(StreamContextKey, struct{}{})
 	}
 	identityKey := ctx.GetStringContext(IdentityKey, "")
-	question := TrimQuote(bodyJson.Get(config.QuestionFrom.RequestBody).String())
+	questionValue := bodyJson.Get(config.QuestionFrom.RequestBody)
+	question := TrimQuote(questionValue.String())
+	if questionValue.IsArray() {
+		var text strings.Builder
+		for _, part := range questionValue.Array() {
+			if part.Get("type").String() == "text" {
+				text.WriteString(part.Get("text").String())
+			}
+		}
+		question = text.String()
+	}
 	if question == "" {
 		log.Debug("parse question from request body failed")
 		return types.ActionContinue
@@ -245,15 +289,12 @@ func onHttpRequestBody(ctx wrapper.HttpContext, config PluginConfig, body []byte
 			return
 		}
 		fillHistoryCnt := getIntQueryParameter("fill_history_cnt", path, config.FillHistoryCnt) * 2
-		currJson := bodyJson.Get("messages").String()
-		var currMessage []ChatHistory
-		err = json.Unmarshal([]byte(currJson), &currMessage)
+		finalChat, err := fillHistoryPreservingContent(chat, []byte(bodyJson.Get("messages").Raw), fillHistoryCnt)
 		if err != nil {
-			log.Errorf("unmarshal currMessage:%s failed, err:%v", currJson, err)
+			log.Errorf("cannot parse history request messages: %v", err)
 			_ = proxywasm.ResumeHttpRequest()
 			return
 		}
-		finalChat := fillHistory(chat, currMessage, fillHistoryCnt)
 		var parameter map[string]any
 		err = json.Unmarshal(body, &parameter)
 		if err != nil {
@@ -268,7 +309,7 @@ func onHttpRequestBody(ctx wrapper.HttpContext, config PluginConfig, body []byte
 			_ = proxywasm.ResumeHttpRequest()
 			return
 		}
-		log.Infof("start to replace request body, parameter:%s", string(parameterJson))
+		log.Debugf("applied history context, messages:%d", len(finalChat))
 		_ = proxywasm.ReplaceHttpRequestBody(parameterJson)
 		_ = proxywasm.ResumeHttpRequest()
 	})
@@ -277,6 +318,38 @@ func onHttpRequestBody(ctx wrapper.HttpContext, config PluginConfig, body []byte
 		return types.ActionContinue
 	}
 	return types.ActionPause
+}
+
+func fillHistoryPreservingContent(chat []ChatHistory, raw []byte, count int) ([]json.RawMessage, error) {
+	var current []json.RawMessage
+	if err := json.Unmarshal(raw, &current); err != nil {
+		return nil, err
+	}
+	users, leading := 0, 0
+	for index, message := range current {
+		role := gjson.GetBytes(message, "role").String()
+		if role == "user" {
+			users++
+		}
+		if index == leading && (role == "system" || role == "developer") {
+			leading++
+		}
+	}
+	if users > 1 || count <= 0 {
+		return current, nil
+	}
+	if count > len(chat) {
+		count = len(chat)
+	}
+	result := append([]json.RawMessage{}, current[:leading]...)
+	for _, message := range chat[len(chat)-count:] {
+		encoded, err := json.Marshal(message)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, encoded)
+	}
+	return append(result, current[leading:]...), nil
 }
 
 func fillHistory(chat []ChatHistory, currMessage []ChatHistory, fillHistoryCnt int) []ChatHistory {
@@ -347,11 +420,7 @@ func processSSEMessage(ctx wrapper.HttpContext, config PluginConfig, sseMessage 
 				ctx.SetContext(AnswerContentContextKey, content)
 			} else {
 				append := TrimQuote(gjson.Get(bodyJson, config.AnswerStreamValueFrom.ResponseBody).Raw)
-				prevContent, ok := tempContentI.(string)
-				if !ok {
-					log.Errorf("answer content in context has unexpected type %T, reset answer content", tempContentI)
-				}
-				content = prevContent + append
+				content = tempContentI.(string) + append
 				ctx.SetContext(AnswerContentContextKey, content)
 			}
 		} else if gjson.Get(bodyJson, "choices.0.delta.content.tool_calls").Exists() {
@@ -364,6 +433,13 @@ func processSSEMessage(ctx wrapper.HttpContext, config PluginConfig, sseMessage 
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, config PluginConfig, log log.Log) types.Action {
+	if ctx.GetStringContext(historyGateContextKey, "") != "" {
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
+	if config.historyBinding != nil {
+		return nativeHistoryResponseHeaders(ctx)
+	}
 	contentType, _ := proxywasm.GetHttpResponseHeader("content-type")
 	if strings.Contains(contentType, "text/event-stream") {
 		ctx.SetContext(StreamContextKey, struct{}{})
@@ -371,6 +447,12 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, config PluginConfig, log log
 	return types.ActionContinue
 }
 func onHttpStreamResponseBody(ctx wrapper.HttpContext, config PluginConfig, chunk []byte, isLastChunk bool, log log.Log) []byte {
+	if ctx.GetStringContext(historyGateContextKey, "") != "" {
+		return chunk
+	}
+	if config.historyBinding != nil {
+		return nativeHistoryResponseBody(ctx, config, chunk, isLastChunk, log)
+	}
 	if ctx.GetContext(ToolCallsContextKey) != nil {
 		// we should not cache tool call result
 		return chunk
@@ -390,23 +472,14 @@ func onHttpStreamResponseBody(ctx wrapper.HttpContext, config PluginConfig, chun
 				ctx.SetContext(AnswerContentContextKey, chunk)
 				return chunk
 			}
-			if tempContent, ok := tempContentI.([]byte); ok {
-				tempContent = append(tempContent, chunk...)
-				ctx.SetContext(AnswerContentContextKey, tempContent)
-			} else {
-				log.Errorf("answer content in context has unexpected type %T, reset answer content", tempContentI)
-				ctx.SetContext(AnswerContentContextKey, chunk)
-			}
+			tempContent := tempContentI.([]byte)
+			tempContent = append(tempContent, chunk...)
+			ctx.SetContext(AnswerContentContextKey, tempContent)
 		} else {
 			var partialMessage []byte
 			partialMessageI := ctx.GetContext(PartialMessageContextKey)
 			if partialMessageI != nil {
-				if pm, ok := partialMessageI.([]byte); ok {
-					partialMessage = append(pm, chunk...)
-				} else {
-					log.Errorf("partial message in context has unexpected type %T, reset partial message", partialMessageI)
-					partialMessage = chunk
-				}
+				partialMessage = append(partialMessageI.([]byte), chunk...)
 			} else {
 				partialMessage = chunk
 			}
@@ -432,12 +505,7 @@ func onHttpStreamResponseBody(ctx wrapper.HttpContext, config PluginConfig, chun
 		var body []byte
 		tempContentI := ctx.GetContext(AnswerContentContextKey)
 		if tempContentI != nil {
-			tempContent, ok := tempContentI.([]byte)
-			if !ok {
-				log.Errorf("answer content in context has unexpected type %T, skip parsing answer value", tempContentI)
-				return chunk
-			}
-			body = append(tempContent, chunk...)
+			body = append(tempContentI.([]byte), chunk...)
 		} else {
 			body = chunk
 		}
@@ -445,7 +513,7 @@ func onHttpStreamResponseBody(ctx wrapper.HttpContext, config PluginConfig, chun
 
 		value = TrimQuote(bodyJson.Get(config.AnswerValueFrom.ResponseBody).Raw)
 		if value == "" {
-			log.Warnf("parse value from response body failed, body:%s", body)
+			log.Warnf("parse value from response body failded, body:%s", body)
 			return chunk
 		}
 	} else {
@@ -453,12 +521,7 @@ func onHttpStreamResponseBody(ctx wrapper.HttpContext, config PluginConfig, chun
 			var lastMessage []byte
 			partialMessageI := ctx.GetContext(PartialMessageContextKey)
 			if partialMessageI != nil {
-				pm, ok := partialMessageI.([]byte)
-				if !ok {
-					log.Errorf("partial message in context has unexpected type %T, skip parsing last message", partialMessageI)
-					return chunk
-				}
-				lastMessage = append(pm, chunk...)
+				lastMessage = append(partialMessageI.([]byte), chunk...)
 			} else {
 				lastMessage = chunk
 			}
@@ -474,12 +537,7 @@ func onHttpStreamResponseBody(ctx wrapper.HttpContext, config PluginConfig, chun
 			if tempContentI == nil {
 				return chunk
 			}
-			if v, ok := tempContentI.(string); ok {
-				value = v
-			} else {
-				log.Errorf("answer content in context has unexpected type %T, skip saving chat history", tempContentI)
-				return chunk
-			}
+			value = tempContentI.(string)
 		}
 	}
 	saveChatHistory(ctx, config, questionI, value, log)
@@ -487,11 +545,7 @@ func onHttpStreamResponseBody(ctx wrapper.HttpContext, config PluginConfig, chun
 }
 
 func saveChatHistory(ctx wrapper.HttpContext, config PluginConfig, questionI any, value string, log log.Log) {
-	question, ok := questionI.(string)
-	if !ok {
-		log.Errorf("question in context has unexpected type %T, skip saving chat history", questionI)
-		return
-	}
+	question := questionI.(string)
 	identityKey := ctx.GetStringContext(IdentityKey, "")
 	var chat []ChatHistory
 	chatHistories := ctx.GetStringContext(ChatHistories, "")
@@ -512,7 +566,7 @@ func saveChatHistory(ctx wrapper.HttpContext, config PluginConfig, questionI any
 		log.Errorf("marshal chat:%v failed, err:%v", chat, err)
 		return
 	}
-	log.Infof("start to Set history, identityKey:%s, chat:%s", identityKey, string(str))
+	log.Debugf("saving history, messages:%d", len(chat))
 	_ = config.redisClient.Set(config.CacheKeyPrefix+identityKey, string(str), nil)
 	if config.CacheTTL != 0 {
 		_ = config.redisClient.Expire(config.CacheKeyPrefix+identityKey, config.CacheTTL, nil)

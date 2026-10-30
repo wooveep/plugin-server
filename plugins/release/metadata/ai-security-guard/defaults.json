@@ -1,0 +1,1 @@
+{"accessKey":"${MF_AI_SECURITY_GUARD_ACCESSKEY}","checkRequest":true,"checkResponse":false,"secretKey":"${MF_AI_SECURITY_GUARD_SECRETKEY}","serviceHost":"green-cip.cn-hangzhou.aliyuncs.com","serviceName":"safecheck.dns","servicePort":443}

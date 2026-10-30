@@ -1,0 +1,1 @@
+{"rules":[{"match":{"responsebody":"no healthy upstream","statuscode":"503"},"replace":{"responsebody":"{\"code\":503,\"message\":\"service unavailable\"}","statuscode":"200"}}],"set_header":[{"content-type":"application/json"}]}

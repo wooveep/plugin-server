@@ -1,0 +1,113 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: transform
+  name: de-graphql
+  image: platform_wasm/de-graphql
+  title: DeGraphQL
+  x-title-i18n:
+    zh-CN: DeGraphQL
+  description: Convert a RESTful API to a GraphQL request.
+  x-description-i18n:
+    zh-CN: 将 Restful API 转换为 GraphQL 请求。
+  iconUrl: https://img.alicdn.com/imgextra/i3/O1CN01bAFa9k1t1gdQcVTH0_!!6000000005842-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/de-graphql/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/de-graphql/README_EN.md
+  version: 2.0.3
+  contact:
+    name: Higress Team
+    url: http://higress.io/
+    email: admin@higress.io
+spec:
+  phase: AUTHN
+  priority: 430
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        gql:
+          type: string
+          title: GraphQL 查询
+          x-title-i18n:
+            en-US: GraphQL Query
+          description: graphql 查询
+          x-description-i18n:
+            en-US: graphql query
+        endpoint:
+          type: string
+          title: GraphQL 查询端点
+          x-title-i18n:
+            en-US: GraphQL Endpoint
+          description: graphql 查询端点
+          x-description-i18n:
+            en-US: graphql query endpoint
+          default: /graphql
+        timeout:
+          type: integer
+          title: 查询连接超时
+          x-title-i18n:
+            en-US: Query Connection Timeout
+          description: 查询连接超时，单位毫秒
+          x-description-i18n:
+            en-US: query connection timeout in milliseconds
+          default: 5000
+        domain:
+          type: string
+          title: 服务域名
+          x-title-i18n:
+            en-US: Service Domain
+          description: 服务域名，当服务来源是dns配置
+          x-description-i18n:
+            en-US: service domain, when service source is dns configuration
+      example:
+        timeout: 5000
+        endpoint: /graphql
+        domain: api.github.com
+        gql: "query ($owner:String! $name:String!){\n   repository(owner:$owner, name:$name)\
+          \ {\n     name\n     forkCount\n     description\n  }\n}\n"
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        gql:
+          type: string
+          title: GraphQL 查询
+          x-title-i18n:
+            en-US: GraphQL Query
+          description: graphql 查询
+          x-description-i18n:
+            en-US: graphql query
+        endpoint:
+          type: string
+          title: GraphQL 查询端点
+          x-title-i18n:
+            en-US: GraphQL Endpoint
+          description: graphql 查询端点
+          x-description-i18n:
+            en-US: graphql query endpoint
+          default: /graphql
+        timeout:
+          type: integer
+          title: 查询连接超时
+          x-title-i18n:
+            en-US: Query Connection Timeout
+          description: 查询连接超时，单位毫秒
+          x-description-i18n:
+            en-US: query connection timeout in milliseconds
+          default: 5000
+        domain:
+          type: string
+          title: 服务域名
+          x-title-i18n:
+            en-US: Service Domain
+          description: 服务域名，当服务来源是dns配置
+          x-description-i18n:
+            en-US: service domain, when service source is dns configuration
+      example:
+        timeout: 5000
+        endpoint: /graphql
+        domain: api.github.com
+        gql: "query ($owner:String! $name:String!){\n   repository(owner:$owner, name:$name)\
+          \ {\n     name\n     forkCount\n     description\n  }\n}\n"

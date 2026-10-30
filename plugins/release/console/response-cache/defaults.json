@@ -1,0 +1,1 @@
+{"cache":{"cacheTTL":300,"serviceName":"my-redis.dns","servicePort":6379,"timeout":2000,"type":"redis"},"cacheKeyFromHeader":"x-cache-key","cacheResponseCode":[200]}

@@ -1,0 +1,1 @@
+[{"kind":"secret","name":"MF_AI_SECURITY_GUARD_ACCESSKEY","required":true},{"kind":"secret","name":"MF_AI_SECURITY_GUARD_SECRETKEY","required":true}]

@@ -232,7 +232,7 @@ func RunCooldownOnHttpResponseHeadersTests(t *testing.T) {
 			warnLogs := host.GetWarnLogs()
 			hasFailoverLog := false
 			for _, log := range warnLogs {
-				if strings.Contains(log, "need failover") && strings.Contains(log, "429") {
+				if strings.Contains(log, "credential needs failover") && strings.Contains(log, "429") {
 					hasFailoverLog = true
 					break
 				}
@@ -263,7 +263,7 @@ func RunCooldownOnHttpResponseHeadersTests(t *testing.T) {
 
 			warnLogs := host.GetWarnLogs()
 			for _, log := range warnLogs {
-				require.False(t, strings.Contains(log, "need failover"), "Should not have failover log on 200")
+				require.False(t, strings.Contains(log, "credential needs failover"), "Should not have failover log on 200")
 			}
 		})
 
@@ -290,7 +290,7 @@ func RunCooldownOnHttpResponseHeadersTests(t *testing.T) {
 
 			warnLogs := host.GetWarnLogs()
 			for _, log := range warnLogs {
-				require.False(t, strings.Contains(log, "need failover"), "Should not have failover log on 500 when only 429 configured")
+				require.False(t, strings.Contains(log, "credential needs failover"), "Should not have failover log on 500 when only 429 configured")
 			}
 		})
 
@@ -318,7 +318,7 @@ func RunCooldownOnHttpResponseHeadersTests(t *testing.T) {
 			warnLogs := host.GetWarnLogs()
 			hasFailoverLog := false
 			for _, log := range warnLogs {
-				if strings.Contains(log, "need failover") {
+				if strings.Contains(log, "credential needs failover") {
 					hasFailoverLog = true
 					break
 				}

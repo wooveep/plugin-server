@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
@@ -20,21 +19,21 @@ import (
 
 type failover struct {
 	// @Title zh-CN 是否启用 apiToken 的 failover 机制
-	enabled bool `required:"false" yaml:"enabled" json:"enabled"`
+	enabled bool `required:"false" yaml:"enabled"`
 	// @Title zh-CN 触发 failover 连续请求失败的阈值
-	failureThreshold int64 `required:"false" yaml:"failureThreshold" json:"failureThreshold"`
+	failureThreshold int64 `required:"false" yaml:"failureThreshold"`
 	// @Title zh-CN 健康检测的成功阈值
-	successThreshold int64 `required:"false" yaml:"successThreshold" json:"successThreshold"`
+	successThreshold int64 `required:"false" yaml:"successThreshold"`
 	// @Title zh-CN 健康检测的间隔时间，单位毫秒
-	healthCheckInterval int64 `required:"false" yaml:"healthCheckInterval" json:"healthCheckInterval"`
+	healthCheckInterval int64 `required:"false" yaml:"healthCheckInterval"`
 	// @Title zh-CN 健康检测的超时时间，单位毫秒
-	healthCheckTimeout int64 `required:"false" yaml:"healthCheckTimeout" json:"healthCheckTimeout"`
+	healthCheckTimeout int64 `required:"false" yaml:"healthCheckTimeout"`
 	// @Title zh-CN 健康检测使用的模型
-	healthCheckModel string `required:"false" yaml:"healthCheckModel" json:"healthCheckModel"`
+	healthCheckModel string `required:"false" yaml:"healthCheckModel"`
 	// @Title zh-CN apiToken 不可用后的冷却恢复时间，单位毫秒，配置后无需健康检测即可自动恢复
-	cooldownDuration int64 `required:"false" yaml:"cooldownDuration" json:"cooldownDuration"`
+	cooldownDuration int64 `required:"false" yaml:"cooldownDuration"`
 	// @Title zh-CN 需要进行 failover 的原始请求的状态码，支持正则表达式匹配
-	failoverOnStatus []string `required:"false" yaml:"failoverOnStatus" json:"failoverOnStatus"`
+	failoverOnStatus []string `required:"false" yaml:"failoverOnStatus"`
 	// @Title zh-CN 本次请求使用的 apiToken
 	ctxApiTokenInUse string
 	// @Title zh-CN 记录本次请求时所有可用的 apiToken
@@ -75,6 +74,9 @@ const (
 	CtxRequestHost                     = "requestHost"
 	CtxRequestPath                     = "requestPath"
 	CtxRequestBody                     = "requestBody"
+	CtxRequestMethod                   = "requestMethod"
+	CtxRequestHeaders                  = "requestHeaders"
+	CtxTransparentLifecycle            = "ai_proxy_transparent_lifecycle"
 )
 
 var (
@@ -173,7 +175,7 @@ func (c *ProviderConfig) SetApiTokensFailover(activeProvider Provider) error {
 							var recoveredTokens []string
 							for _, apiToken := range unavailableTokens {
 								if since, ok := timestamps[apiToken]; ok && now-since >= c.failover.cooldownDuration {
-									log.Infof("cooldown recovery: apiToken %s has cooled down for %dms, restoring to available list", apiToken, now-since)
+									log.Infof("cooldown recovery: credential has cooled down for %dms, restoring to available list", now-since)
 									removeApiToken(c.failover.ctxUnavailableApiTokens, apiToken)
 									addApiToken(c.failover.ctxApiTokens, apiToken)
 									removeApiTokenUnavailableSince(c.failover.ctxApiTokenUnavailableSince, apiToken)
@@ -191,7 +193,7 @@ func (c *ProviderConfig) SetApiTokensFailover(activeProvider Provider) error {
 					// Health check: probe remaining unavailable tokens with a real request
 					if c.failover.healthCheckModel != "" && len(unavailableTokens) > 0 {
 						for _, apiToken := range unavailableTokens {
-							log.Debugf("Perform health check for unavailable apiTokens: %s", strings.Join(unavailableTokens, ", "))
+							log.Debugf("Perform health check for unavailable credential count: %d", len(unavailableTokens))
 							healthCheckEndpoint, headers, body := c.generateRequestHeadersAndBody()
 							healthCheckClient = wrapper.NewClusterClient(wrapper.TargetCluster{
 								Cluster: healthCheckEndpoint.Cluster,
@@ -355,12 +357,12 @@ func (c *ProviderConfig) handleAvailableApiToken(apiToken string) {
 
 	successCount := successApiTokenRequestCount[apiToken] + 1
 	if successCount >= c.failover.successThreshold {
-		log.Infof("healthcheck after failover: apiToken %s is available now, add it back to the apiTokens list", apiToken)
+		log.Infof("healthcheck after failover: credential is available now, add it back to the available list")
 		removeApiToken(c.failover.ctxUnavailableApiTokens, apiToken)
 		addApiToken(c.failover.ctxApiTokens, apiToken)
 		resetApiTokenRequestCount(c.failover.ctxApiTokenRequestSuccessCount, apiToken)
 	} else {
-		log.Debugf("apiToken %s is still unavailable, the number of health check passed: %d, continue to health check...", apiToken, successCount)
+		log.Debugf("credential is still unavailable, the number of health checks passed: %d, continue to health check...", successCount)
 		addApiTokenRequestCount(c.failover.ctxApiTokenRequestSuccessCount, apiToken)
 	}
 }
@@ -386,7 +388,7 @@ func (c *ProviderConfig) handleUnavailableApiToken(ctx wrapper.HttpContext, apiT
 
 	failureCount := failureApiTokenRequestCount[apiToken] + 1
 	if failureCount >= c.failover.failureThreshold {
-		log.Infof("failover: apiToken %s is unavailable now, remove it from apiTokens list", apiToken)
+		log.Infof("failover: credential is unavailable now, remove it from the available list")
 		removeApiToken(c.failover.ctxApiTokens, apiToken)
 		addApiToken(c.failover.ctxUnavailableApiTokens, apiToken)
 		resetApiTokenRequestCount(c.failover.ctxApiTokenRequestFailureCount, apiToken)
@@ -397,7 +399,7 @@ func (c *ProviderConfig) handleUnavailableApiToken(ctx wrapper.HttpContext, apiT
 		// Set the request host and path to shared data in case they are needed in apiToken health check
 		c.setHealthCheckEndpoint(ctx)
 	} else {
-		log.Debugf("apiToken %s is still available as it has not reached the failure threshold, the number of failed request: %d", apiToken, failureCount)
+		log.Debugf("credential is still available as it has not reached the failure threshold, the number of failed requests: %d", failureCount)
 		addApiTokenRequestCount(c.failover.ctxApiTokenRequestFailureCount, apiToken)
 	}
 }
@@ -420,10 +422,10 @@ func modifyApiToken(key, apiToken, op string) {
 
 		exists := containsElement(apiTokens, apiToken)
 		if op == addApiTokenOperation && exists {
-			log.Debugf("%s already exists in %s", apiToken, key)
+			log.Debugf("credential already exists in %s", key)
 			return
 		} else if op == removeApiTokenOperation && !exists {
-			log.Debugf("%s does not exist in %s", apiToken, key)
+			log.Debugf("credential does not exist in %s", key)
 			return
 		}
 
@@ -434,7 +436,7 @@ func modifyApiToken(key, apiToken, op string) {
 		}
 
 		if err := setApiTokens(key, apiTokens, cas); err == nil {
-			log.Debugf("Successfully updated %s in %s", apiToken, key)
+			log.Debugf("Successfully updated credential set in %s", key)
 			return
 		} else if !errors.Is(err, types.ErrorStatusCasMismatch) {
 			log.Errorf("Failed to set %s after %d attempts: %v", key, attempt, err)
@@ -528,7 +530,7 @@ func (c *ProviderConfig) ResetApiTokenRequestFailureCount(apiTokenInUse string) 
 			log.Errorf("failed to get failureApiTokenRequestCount: %v", err)
 		}
 		if _, ok := failureApiTokenRequestCount[apiTokenInUse]; ok {
-			log.Infof("Reset apiToken %s request failure count", apiTokenInUse)
+			log.Infof("Reset credential request failure count")
 			resetApiTokenRequestCount(c.failover.ctxApiTokenRequestFailureCount, apiTokenInUse)
 		}
 	}
@@ -554,7 +556,7 @@ func modifyApiTokenRequestCount(key, apiToken string, op string) {
 		}
 
 		if err := proxywasm.SetSharedData(key, apiTokenRequestCountByte, cas); err == nil {
-			log.Debugf("Successfully updated the count of %s in %s", apiToken, key)
+			log.Debugf("Successfully updated credential count in %s", key)
 			return
 		} else if !errors.Is(err, types.ErrorStatusCasMismatch) {
 			log.Errorf("Failed to set %s after %d attempts: %v", key, attempt, err)
@@ -639,20 +641,19 @@ func removeApiTokenUnavailableSince(key, apiToken string) {
 }
 
 func (c *ProviderConfig) GetGlobalRandomToken() string {
-	apiTokens, _, err1 := getApiTokens(c.failover.ctxApiTokens)
-	unavailableApiTokens, _, err2 := getApiTokens(c.failover.ctxUnavailableApiTokens)
-	log.Debugf("apiTokens: %v, unavailableApiTokens: %v", apiTokens, unavailableApiTokens)
-
-	if err1 != nil || err2 != nil {
+	apiTokens, _, err := getApiTokens(c.failover.ctxApiTokens)
+	if err != nil {
 		return ""
 	}
+	unavailableApiTokens, _, err := getApiTokens(c.failover.ctxUnavailableApiTokens)
+	if err != nil {
+		return ""
+	}
+	log.Debugf("available credential count: %d, unavailable credential count: %d", len(apiTokens), len(unavailableApiTokens))
+
 	count := len(apiTokens)
 	switch count {
 	case 0:
-		if len(unavailableApiTokens) == 0 {
-			log.Warn("all tokens are unavailable and no unavailable tokens recorded")
-			return ""
-		}
 		log.Warn("all tokens are unavailable, will use random one of the unavailable tokens")
 		return unavailableApiTokens[rand.Intn(len(unavailableApiTokens))]
 	case 1:
@@ -697,7 +698,7 @@ func (c *ProviderConfig) resetSharedData() {
 
 func (c *ProviderConfig) OnRequestFailed(activeProvider Provider, ctx wrapper.HttpContext, apiTokenInUse string, apiTokens []string, status string) types.Action {
 	if c.isFailoverEnabled() && util.MatchStatus(status, c.failover.failoverOnStatus) {
-		log.Warnf("apiToken:%s need failover, error status:%s", apiTokenInUse, status)
+		log.Warnf("credential needs failover, error status:%s", status)
 		c.handleUnavailableApiToken(ctx, apiTokenInUse)
 	}
 	if c.IsRetryOnFailureEnabled() && util.MatchStatus(status, c.retryOnFailure.retryOnStatus) {
@@ -710,10 +711,6 @@ func (c *ProviderConfig) OnRequestFailed(activeProvider Provider, ctx wrapper.Ht
 		return types.HeaderStopAllIterationAndWatermark
 	}
 	return types.ActionContinue
-}
-
-func isNotStreamingResponse(ctx wrapper.HttpContext) bool {
-	return ctx.GetContext(ctxKeyIsStreaming) != nil && !ctx.GetContext(ctxKeyIsStreaming).(bool)
 }
 
 func (c *ProviderConfig) GetApiTokenInUse(ctx wrapper.HttpContext) string {
@@ -729,7 +726,7 @@ func (c *ProviderConfig) SetApiTokenInUse(ctx wrapper.HttpContext) {
 	} else {
 		apiToken = c.GetOrSetTokenWithContext(ctx)
 	}
-	log.Debugf("Use apiToken %s to send request", apiToken)
+	log.Debugf("Selected provider credential for request")
 	ctx.SetContext(c.failover.ctxApiTokenInUse, apiToken)
 }
 

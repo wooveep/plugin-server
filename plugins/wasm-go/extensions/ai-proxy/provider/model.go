@@ -17,10 +17,6 @@ const (
 	streamDataItemKey           = "data:"
 	streamEndDataValue          = "[DONE]"
 
-	eventResult = "result"
-
-	httpStatus200 = "200"
-
 	contentTypeText       = "text"
 	contentTypeImageUrl   = "image_url"
 	contentTypeInputAudio = "input_audio"
@@ -230,14 +226,11 @@ func (m *chatMessage) handleNonStreamingReasoningContent(reasoningContentMode st
 	switch reasoningContentMode {
 	case reasoningBehaviorIgnore:
 		m.ReasoningContent = ""
-		break
 	case reasoningBehaviorConcat:
 		m.Content = fmt.Sprintf("%s%v%s\n%v", reasoningStartTag, m.ReasoningContent, reasoningEndTag, m.Content)
 		m.ReasoningContent = ""
-		break
 	case reasoningBehaviorPassThrough:
 	default:
-		break
 	}
 }
 
@@ -245,7 +238,6 @@ func (m *chatMessage) handleStreamingReasoningContent(ctx wrapper.HttpContext, r
 	switch reasoningContentMode {
 	case reasoningBehaviorIgnore:
 		m.ReasoningContent = ""
-		break
 	case reasoningBehaviorConcat:
 		contentPushed, _ := ctx.GetContext(ctxKeyContentPushed).(bool)
 		reasoningContentPushed, _ := ctx.GetContext(ctxKeyReasoningContentPushed).(bool)
@@ -274,28 +266,8 @@ func (m *chatMessage) handleStreamingReasoningContent(ctx wrapper.HttpContext, r
 
 		ctx.SetContext(ctxKeyContentPushed, contentPushed)
 		ctx.SetContext(ctxKeyReasoningContentPushed, reasoningContentPushed)
-		break
 	case reasoningBehaviorPassThrough:
 	default:
-		break
-	}
-}
-
-// promoteThinkingOnEmpty promotes reasoning_content to content when content is empty.
-// This handles models that put user-facing replies into thinking blocks instead of text blocks.
-func (r *chatCompletionResponse) promoteThinkingOnEmpty() {
-	for i := range r.Choices {
-		msg := r.Choices[i].Message
-		if msg == nil {
-			continue
-		}
-		if !isContentEmpty(msg.Content) {
-			continue
-		}
-		if msg.ReasoningContent != "" {
-			msg.Content = msg.ReasoningContent
-			msg.ReasoningContent = ""
-		}
 	}
 }
 
@@ -729,13 +701,6 @@ type imageGenerationResponse struct {
 	Created int64                 `json:"created"`
 	Data    []imageGenerationData `json:"data"`
 	Usage   *imageGenerationUsage `json:"usage,omitempty"`
-}
-
-// https://platform.openai.com/docs/guides/speech-to-text
-type audioSpeechRequest struct {
-	Model string `json:"model"`
-	Input string `json:"input"`
-	Voice string `json:"voice"`
 }
 
 type embeddingsRequest struct {

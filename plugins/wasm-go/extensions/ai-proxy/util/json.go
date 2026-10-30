@@ -12,7 +12,6 @@ func EscapeStringForJson(s string) string {
 		case '"':
 			builder.WriteRune('\\')
 			builder.WriteRune(c)
-			break
 		default:
 			quoted := strconv.QuoteRune(c)
 			builder.WriteString(quoted[1 : len(quoted)-1])

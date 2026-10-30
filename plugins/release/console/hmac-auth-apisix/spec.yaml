@@ -1,6 +1,6 @@
 apiVersion: 1.0.0
 info:
-  gatewayMinVersion: "2.0.0"
+  gatewayMinVersion: 2.0.0
   type: oss
   category: auth
   name: hmac-auth-apisix
@@ -8,13 +8,14 @@ info:
   title: HMAC Authentication (APISIX Compatible)
   x-title-i18n:
     zh-CN: HMAC 认证（APISIX 兼容）
-  description: Authenticate requests with the APISIX HMAC signature format and optionally authorize consumers per route.
+  description: Authenticate requests with the APISIX HMAC signature format and optionally
+    authorize consumers per route.
   x-description-i18n:
     zh-CN: 使用 APISIX HMAC 签名格式认证请求，并可按路由授权消费者。
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/hmac-auth-apisix/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/hmac-auth-apisix/README_EN.md
-  version: 2.0.1
+  version: 2.0.3
   contact:
     name: Higress Team
     url: https://higress.io/
@@ -40,8 +41,8 @@ spec:
                 type: string
                 format: password
             required:
-              - access_key
-              - secret_key
+            - access_key
+            - secret_key
         global_auth:
           type: boolean
           default: false
@@ -49,7 +50,10 @@ spec:
           type: array
           items:
             type: string
-            enum: [hmac-sha1, hmac-sha256, hmac-sha512]
+            enum:
+            - hmac-sha1
+            - hmac-sha256
+            - hmac-sha512
         clock_skew:
           type: integer
           minimum: 0
@@ -67,13 +71,14 @@ spec:
         anonymous_consumer:
           type: string
       required:
-        - consumers
+      - consumers
       example:
         consumers:
-          - name: consumer1
-            access_key: consumer1-key
-            secret_key: change-me
-        allowed_algorithms: [hmac-sha256]
+        - name: consumer1
+          access_key: consumer1-key
+          secret_key: ${HMAC_AUTH_SECRET}
+        allowed_algorithms:
+        - hmac-sha256
         clock_skew: 300
   routeConfigSchema:
     openAPIV3Schema:
@@ -84,4 +89,5 @@ spec:
           items:
             type: string
       example:
-        allow: [consumer1]
+        allow:
+        - consumer1

@@ -1,0 +1,1 @@
+{"allowed_algorithms":["hmac-sha256"],"clock_skew":300,"consumers":[{"access_key":"consumer1-key","name":"consumer1","secret_key":"${HMAC_AUTH_SECRET}"}]}

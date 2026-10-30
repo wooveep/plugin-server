@@ -164,6 +164,9 @@ class PluginRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             path = unquote(urlsplit(self.path).path, errors="strict")
+            if path == "/artifacts":
+                self._reply(HTTPStatus.OK, json_bytes({"artifacts": self.store.list_metadata()}))
+                return
             if path.startswith("/retention/") and path.count("/") == 2:
                 if not self._retention_authorized():
                     return

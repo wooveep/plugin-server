@@ -1,0 +1,469 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:modelfusion:contracts:v1:assertions",
+  "$defs": {
+    "operand": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "literal": {}
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "input": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pointer": {
+              "type": "string",
+              "pattern": "^(|/.*)$"
+            }
+          },
+          "required": [
+            "input",
+            "pointer"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "d0-assertions-v1"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "input_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_./-]+$"
+          },
+          "asset_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "schema_ref": {
+            "type": "string",
+            "pattern": "^urn:[^\\s#]+(?:#.*)?$"
+          }
+        },
+        "required": [
+          "input_id",
+          "path",
+          "asset_id",
+          "sha256"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 10000
+    },
+    "assertions": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "eq"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "left": {
+                "$ref": "#/$defs/operand"
+              },
+              "right": {
+                "$ref": "#/$defs/operand"
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "left",
+              "right"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "ne"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "left": {
+                "$ref": "#/$defs/operand"
+              },
+              "right": {
+                "$ref": "#/$defs/operand"
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "left",
+              "right"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "unique"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "collection": {
+                "$ref": "#/$defs/operand"
+              },
+              "keys": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^(|/.*)$"
+                },
+                "minItems": 1,
+                "maxItems": 10000
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "collection",
+              "keys"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "contains"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "collection": {
+                "$ref": "#/$defs/operand"
+              },
+              "value": {
+                "$ref": "#/$defs/operand"
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "collection",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "cardinality"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "collection": {
+                "$ref": "#/$defs/operand"
+              },
+              "min": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "collection",
+              "min",
+              "max"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "int_add"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "left": {
+                "$ref": "#/$defs/operand"
+              },
+              "right": {
+                "$ref": "#/$defs/operand"
+              },
+              "result": {
+                "$ref": "#/$defs/operand"
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "left",
+              "right",
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "int_sub"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "left": {
+                "$ref": "#/$defs/operand"
+              },
+              "right": {
+                "$ref": "#/$defs/operand"
+              },
+              "result": {
+                "$ref": "#/$defs/operand"
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "left",
+              "right",
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "int_compare"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "left": {
+                "$ref": "#/$defs/operand"
+              },
+              "right": {
+                "$ref": "#/$defs/operand"
+              },
+              "comparison": {
+                "enum": [
+                  "eq",
+                  "ne",
+                  "lt",
+                  "le",
+                  "gt",
+                  "ge"
+                ]
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "left",
+              "right",
+              "comparison"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "join"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "left": {
+                "$ref": "#/$defs/operand"
+              },
+              "right": {
+                "$ref": "#/$defs/operand"
+              },
+              "left_keys": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^(|/.*)$"
+                },
+                "minItems": 1,
+                "maxItems": 10000
+              },
+              "right_keys": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^(|/.*)$"
+                },
+                "minItems": 1,
+                "maxItems": 10000
+              },
+              "min": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "left",
+              "right",
+              "left_keys",
+              "right_keys",
+              "min",
+              "max"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "key_intersection"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "left": {
+                "$ref": "#/$defs/operand"
+              },
+              "right": {
+                "$ref": "#/$defs/operand"
+              },
+              "left_keys": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^(|/.*)$"
+                },
+                "minItems": 1,
+                "maxItems": 10000
+              },
+              "right_keys": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^(|/.*)$"
+                },
+                "minItems": 1,
+                "maxItems": 10000
+              },
+              "result": {
+                "$ref": "#/$defs/operand"
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "left",
+              "right",
+              "left_keys",
+              "right_keys",
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "partial_order"
+              },
+              "error_code": {
+                "type": "string",
+                "pattern": "^(?!E_)[A-Z][A-Z0-9_]+$"
+              },
+              "nodes": {
+                "$ref": "#/$defs/operand"
+              },
+              "edges": {
+                "$ref": "#/$defs/operand"
+              },
+              "required": {
+                "$ref": "#/$defs/operand"
+              },
+              "before": {
+                "$ref": "#/$defs/operand"
+              }
+            },
+            "required": [
+              "op",
+              "error_code",
+              "nodes",
+              "edges",
+              "required",
+              "before"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 10000
+    }
+  },
+  "required": [
+    "schema_version",
+    "inputs",
+    "assertions"
+  ],
+  "additionalProperties": false
+}

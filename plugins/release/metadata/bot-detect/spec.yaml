@@ -1,0 +1,117 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: security
+  name: bot-detect
+  image: platform_wasm/bot-detect
+  title: Bot Detect
+  x-title-i18n:
+    zh-CN: 机器人拦截
+  description: Identify and block resource crawling from bots on the Internet.
+  x-description-i18n:
+    zh-CN: 用于识别并阻止互联网爬虫对站点资源的爬取。
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN01jKT9vC1O059vNaq5u_!!6000000001642-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/bot-detect/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/bot-detect/README_EN.md
+  version: 1.0.1
+  contact:
+    name: Higress Team
+    url: http://higress.io/
+    email: admin@higress.io
+spec:
+  phase: AUTHZ
+  priority: 310
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        allow:
+          type: array
+          title: Allow List
+          x-title-i18n:
+            zh-CN: 放行列表
+          description: Regular expressions to match the User-Agent request header;
+            requests matching will be allowed to access
+          x-description-i18n:
+            zh-CN: 配置匹配 User-Agent 请求头的正则表达式，匹配命中时将允许其访问
+          items:
+            type: string
+        deny:
+          type: array
+          title: Deny List
+          x-title-i18n:
+            zh-CN: 拦截列表
+          description: Regular expressions to match the User-Agent request header;
+            requests matching will be blocked
+          x-description-i18n:
+            zh-CN: 配置匹配 User-Agent 请求头的正则表达式，匹配命中时将屏蔽请求
+          items:
+            type: string
+        blocked_code:
+          type: number
+          title: Blocked Status Code
+          x-title-i18n:
+            zh-CN: 拦截状态码
+          description: HTTP status code returned when a request is blocked
+          x-description-i18n:
+            zh-CN: 配置请求被屏蔽时返回的 HTTP 状态码
+          default: 403
+        blocked_message:
+          type: string
+          title: Blocked Message
+          x-title-i18n:
+            zh-CN: 拦截提示信息
+          description: HTTP response body returned when a request is blocked
+          x-description-i18n:
+            zh-CN: 配置请求被屏蔽时返回的 HTTP 应答 Body
+      example:
+        blocked_code: 404
+        blocked_message: resource not found
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        allow:
+          type: array
+          title: Allow List
+          x-title-i18n:
+            zh-CN: 放行列表
+          description: Regular expressions to match the User-Agent request header;
+            requests matching will be allowed to access
+          x-description-i18n:
+            zh-CN: 配置匹配 User-Agent 请求头的正则表达式，匹配命中时将允许其访问
+          items:
+            type: string
+        deny:
+          type: array
+          title: Deny List
+          x-title-i18n:
+            zh-CN: 拦截列表
+          description: Regular expressions to match the User-Agent request header;
+            requests matching will be blocked
+          x-description-i18n:
+            zh-CN: 配置匹配 User-Agent 请求头的正则表达式，匹配命中时将屏蔽请求
+          items:
+            type: string
+        blocked_code:
+          type: number
+          title: Blocked Status Code
+          x-title-i18n:
+            zh-CN: 拦截状态码
+          description: HTTP status code returned when a request is blocked
+          x-description-i18n:
+            zh-CN: 配置请求被屏蔽时返回的 HTTP 状态码
+          default: 403
+        blocked_message:
+          type: string
+          title: Blocked Message
+          x-title-i18n:
+            zh-CN: 拦截提示信息
+          description: HTTP response body returned when a request is blocked
+          x-description-i18n:
+            zh-CN: 配置请求被屏蔽时返回的 HTTP 应答 Body
+      example:
+        blocked_code: 404
+        blocked_message: resource not found

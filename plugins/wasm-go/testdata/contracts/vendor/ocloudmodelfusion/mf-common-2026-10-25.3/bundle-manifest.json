@@ -1,0 +1,2019 @@
+{
+  "bundle_format_version": "d0-bundle-v1",
+  "bundle_version": "mf-common-2026-10-25.3",
+  "producer_project": "wooveep/ocloudmodelfusion",
+  "source_revision": "worktree:2bd6c53339e5c08c42b5168a9f07a3dc36b71210:D0-MF-01",
+  "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+  "entries": [
+    {
+      "path": "v1/common.schema.json",
+      "sha256": "d79294f7a3c9beaa9674a0534f804a999d9a3c30b388828db5f250239b2eccfd",
+      "schema_id": "urn:modelfusion:contracts:v1:common"
+    },
+    {
+      "path": "v1/fixture-validation.schema.json",
+      "sha256": "84680cc76c8aadeda3545645ecf0a238da5b01de24a21dbe1baa3a61b5abb156",
+      "schema_id": "urn:modelfusion:contracts:v1:fixture-validation"
+    },
+    {
+      "path": "v1/bundle.schema.json",
+      "sha256": "40720ff8d9b8a992d02e0d7976b3f808570f840ecd9ef6abe16eb3aa7e6a0d49",
+      "schema_id": "urn:modelfusion:contracts:v1:bundle"
+    },
+    {
+      "path": "v1/lock.schema.json",
+      "sha256": "cea9237eab483632b6a9ce1671fee595af4ac164fa93bcd576d0926db6d8f5ee",
+      "schema_id": "urn:modelfusion:contracts:v1:lock"
+    }
+  ],
+  "fixtures": [
+    {
+      "path": "fixtures/mf/common/types/id.json",
+      "sha256": "b2dc0b011e543ccd490e10a2a252efbe76e98f9f1ddcbb4ec7fea5b807132417",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Id",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "id"
+    },
+    {
+      "path": "fixtures/mf/common/types/large-revision.json",
+      "sha256": "1a87373d5c93558be47d02f725bc909157124bde8797ed2e9a3e76c2a9d98cd5",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "large-revision"
+    },
+    {
+      "path": "fixtures/mf/common/types/zero-revision.json",
+      "sha256": "94664180e5190a6c6dc2ba6e2d7944081d2dd0e0151a9ff07f62c8865eeb9389",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "zero-revision"
+    },
+    {
+      "path": "fixtures/mf/common/types/utc.json",
+      "sha256": "cce43a62f034424d46e3a348e46c41f6edb98235bdfe29230b32d187fc1ff768",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Time",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "utc"
+    },
+    {
+      "path": "fixtures/mf/common/types/utc-offset.json",
+      "sha256": "402e5eb787485eaa0495c271a9a6137fcac38abce33138f569c9c96c6221122a",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Time",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "utc-offset"
+    },
+    {
+      "path": "fixtures/mf/common/types/digest.json",
+      "sha256": "f1ae276ed6b6147350b93c81715c186251971cf7d493fa332d932e23da2df564",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "digest"
+    },
+    {
+      "path": "fixtures/mf/common/types/large-money.json",
+      "sha256": "30fc4b844d00d221af05bba4adce86d33ee7e7f9325f8459849d323d8de34d2e",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Money",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "large-money"
+    },
+    {
+      "path": "fixtures/mf/common/types/negative-money.json",
+      "sha256": "b62c9b6643251c773f36be63a66cf6261868176633548598acfa0bd2fe231204",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Money",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "negative-money"
+    },
+    {
+      "path": "fixtures/mf/common/types/zero-money.json",
+      "sha256": "a8c01c34f56ddd9070a7317ace789825011c215cd8771ef61516493207ebe441",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Money",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "zero-money"
+    },
+    {
+      "path": "fixtures/mf/common/types/empty-id.json",
+      "sha256": "bd85bcdb8d4e613a79cb62d0903946ad10c83e63dc75f67614c159c0dbf4d184",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Id",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "empty-id"
+    },
+    {
+      "path": "fixtures/mf/common/types/number-id.json",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Id",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "number-id"
+    },
+    {
+      "path": "fixtures/mf/common/types/number-revision.json",
+      "sha256": "8262bb9547876bca86bbeb88f04ad9c4b3cbcac056cfdfbd30ede24496ef47b4",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "number-revision"
+    },
+    {
+      "path": "fixtures/mf/common/types/negative-revision.json",
+      "sha256": "17c2be3127932e683234d2772534ad299865baf04bf247911e4aa112dc30bb95",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "negative-revision"
+    },
+    {
+      "path": "fixtures/mf/common/types/leading-zero-revision.json",
+      "sha256": "5e8a558f20c44458ea4754f0e3c817940579577de3c86bbbb919ef068028fc81",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "leading-zero-revision"
+    },
+    {
+      "path": "fixtures/mf/common/types/missing-utc.json",
+      "sha256": "63372221270640a5d297172d3b8779d05078e1af87cb3f3a404a8041f1cbabdb",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Time",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "missing-utc"
+    },
+    {
+      "path": "fixtures/mf/common/types/offset-time.json",
+      "sha256": "2acda5a3e05e3eaea9450047adb24f48da90743b5c5ebf36c6f8faacd26bf33b",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Time",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "offset-time"
+    },
+    {
+      "path": "fixtures/mf/common/types/invalid-day.json",
+      "sha256": "ce92f2c85548e021f450cab3aa4644d3bba7e71a826393b483ce64f267a3fc95",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Time",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "invalid-day"
+    },
+    {
+      "path": "fixtures/mf/common/types/invalid-hour.json",
+      "sha256": "53a385af7162300918ad57cf6eb6d3dee98040fa1c4574401e05bfb8920e713d",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Time",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "invalid-hour"
+    },
+    {
+      "path": "fixtures/mf/common/types/short-digest.json",
+      "sha256": "da2d1d456a54c087093766ea78e775face9ccce9f7a3884787aa2e5a729abdcc",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "short-digest"
+    },
+    {
+      "path": "fixtures/mf/common/types/uppercase-digest.json",
+      "sha256": "1a6365886abc6e00fa726339f9626754e3e557134ee28815ab8bb558c41aa79b",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "uppercase-digest"
+    },
+    {
+      "path": "fixtures/mf/common/types/number-money.json",
+      "sha256": "836a375788abc7e5c33b30f54132dbbf15d61a4b59026e5163588f68683549f7",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Money",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "number-money"
+    },
+    {
+      "path": "fixtures/mf/common/types/wrong-scale.json",
+      "sha256": "c1631c34bdf21524c50f0aff296466a85fb2f06c62242b5fcce6a24f50729bce",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Money",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "wrong-scale"
+    },
+    {
+      "path": "fixtures/mf/common/types/missing-currency.json",
+      "sha256": "d22b0eb99f4f0e169f588e806e78f34b2e45071a63174245527221e925eed6d5",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Money",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "missing-currency"
+    },
+    {
+      "path": "fixtures/mf/common/types/newline-revision.json",
+      "sha256": "3817f654712b9b1ac6dc4a06b0af20eb554aa730774244fab7c7fcdcf688cbb4",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "newline-revision"
+    },
+    {
+      "path": "fixtures/mf/common/types/newline-amount.json",
+      "sha256": "a7160c9412faabbce190737f52b531e10d423d8e26a8a35302a3af73977d5a53",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/IntegerAmount",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "newline-amount"
+    },
+    {
+      "path": "fixtures/mf/common/types/newline-currency.json",
+      "sha256": "b7f852ad7e828992753aaf95cec2d56f1f1222405fa597e2523e3f0b1627216f",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Money",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "newline-currency"
+    },
+    {
+      "path": "fixtures/mf/common/types/newline-digest.json",
+      "sha256": "199fa1b7d10c46c0fadca2c18da08a55642cdbd49996e5ffffa79aba845ea1c2",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Digest",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "newline-digest"
+    },
+    {
+      "path": "fixtures/mf/common/types/pointer-money.json",
+      "sha256": "3497736ddad2900b4c27633f7f4da21b3332114e89527beb21012303b8c7dfbd",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Money",
+        "selection": {
+          "mode": "json_pointer",
+          "pointer": "/value"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "pointer-money"
+    },
+    {
+      "path": "fixtures/mf/common/types/anchor-revision.json",
+      "sha256": "2f85ac65b7522c2123bbd4bf003f8daf9c9dc0978d3f116ef83d7a5d9c22cab2",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#revision",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "anchor-revision"
+    },
+    {
+      "path": "fixtures/mf/common/types/revisions.ndjson",
+      "sha256": "198238f678306805f679bbe35dec8fb9ffe9bcddb3c65ce9605dc440a19cad38",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision",
+        "selection": {
+          "mode": "ndjson_records"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "ndjson-revisions"
+    },
+    {
+      "path": "fixtures/mf/common/types/bad-ndjson.ndjson",
+      "sha256": "4455a84036e6fbff5faa36d4546f1b83c642c421cae9e5ca13759f81534bb1c5",
+      "validation": {
+        "kind": "json_schema",
+        "schema_ref": "urn:modelfusion:contracts:v1:common#/$defs/Revision",
+        "selection": {
+          "mode": "ndjson_records"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SCHEMA_SHAPE"
+      },
+      "case_id": "bad-ndjson"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/object-order.json",
+      "sha256": "922c22e8067387483a80f4bb613a806c89621679d5db8a9cb58229188e60510e",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "canonical"
+      },
+      "asset_refs": [
+        "object-order-input.bin",
+        "object-order-expected.bin"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "canonical-object-order"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/decimals.json",
+      "sha256": "04e5b8b5167752431c98b6d3799b8c30bb2f1fb70e128dd53f725f53a776fdf7",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "canonical"
+      },
+      "asset_refs": [
+        "decimals-input.bin",
+        "decimals-expected.bin"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "canonical-decimals"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/string-numbers.json",
+      "sha256": "3549e37db6907021595ed555c5cc756d4fcc41fffc92648ba4b9d108f1b301de",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "canonical"
+      },
+      "asset_refs": [
+        "string-numbers-input.bin",
+        "string-numbers-expected.bin"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "canonical-string-numbers"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/controls.json",
+      "sha256": "31c24d3577f5c553ffaf464be042eab2813bc557613b410652326644d8624560",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "canonical"
+      },
+      "asset_refs": [
+        "controls-input.bin",
+        "controls-expected.bin"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "canonical-controls"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/scalar-order.json",
+      "sha256": "948d129c00f7be52a0c97095e2d1068c895d4d505e5e14ff5bcf8b727aa72674",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "canonical"
+      },
+      "asset_refs": [
+        "scalar-order-input.bin",
+        "scalar-order-expected.bin"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "canonical-scalar-order"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/unicode-not-normalized.json",
+      "sha256": "d0effc0eb99d7765e9a117dcdba700fcd12161b872e2c0bee948290a2126ba93",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "canonical"
+      },
+      "asset_refs": [
+        "unicode-not-normalized-input.bin",
+        "unicode-not-normalized-expected.bin"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "canonical-unicode-not-normalized"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/absence-null.json",
+      "sha256": "1617da49cd23e30f341e929a60d61205ce1ce3b18bb969266f0f6ae89a18a031",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "canonical"
+      },
+      "asset_refs": [
+        "absence-null-input.bin",
+        "absence-null-expected.bin"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "canonical-absence-null"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/array-order.json",
+      "sha256": "81fda0b91173705cc6f16f13964362e2578c18c55fa3ec8580b43bf4f962a742",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "canonical"
+      },
+      "asset_refs": [
+        "array-order-input.bin",
+        "array-order-expected.bin"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "canonical-array-order"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/container-limit.json",
+      "sha256": "998b669fbeec6f6e21c3321addd2ca4808860e82a084cc3a674c8472f60e7b86",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [
+        "container-limit-input.bin",
+        "container-limit-expected.bin"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_LIMIT"
+      },
+      "case_id": "canonical-container-limit"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/output-limit.json",
+      "sha256": "b6276de6a1b9a670b131adfe487462f5b90f3be648c23d7b1f3301cfbc2932c9",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [
+        "output-limit-input.bin",
+        "output-limit-expected.bin"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_LIMIT"
+      },
+      "case_id": "canonical-output-limit"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/duplicate-key.json",
+      "sha256": "dfd83e3f7063d3df1b208f64fd50c05d7e419245397648d91245248333792595",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [
+        "duplicate-key-input.bin",
+        "duplicate-key-expected.bin"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_DUPLICATE_KEY"
+      },
+      "case_id": "canonical-duplicate-key"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/bad-utf8.json",
+      "sha256": "51af67d787818a2b0d4c4bf2f8de31bffe21555589791061edf8357a8f959dae",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [
+        "bad-utf8-input.bin",
+        "bad-utf8-expected.bin"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UTF8"
+      },
+      "case_id": "canonical-bad-utf8"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/surrogate.json",
+      "sha256": "5382a59e739cbc9c62e2c4fc6fd827ea1c41856332f49139b039d681874981b6",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [
+        "surrogate-input.bin",
+        "surrogate-expected.bin"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SURROGATE"
+      },
+      "case_id": "canonical-surrogate"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/nan.json",
+      "sha256": "841257706947ca746b6f77ee1c7fd6a9f114856238658a6d046341a0360e55e3",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [
+        "nan-input.bin",
+        "nan-expected.bin"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_JSON"
+      },
+      "case_id": "canonical-nan"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/infinity.json",
+      "sha256": "48d4846933090b0e39d81ce4e8353cf1171e33e1e9af19e9600ffe17e8e62ab9",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [
+        "infinity-input.bin",
+        "infinity-expected.bin"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_JSON"
+      },
+      "case_id": "canonical-infinity"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/expansion.json",
+      "sha256": "c704809f1ce87ddb5737d9b78fe2f8c363b4f9f1dfb311eeb579a32e3acc2621",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "mf-json.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [
+        "expansion-input.bin",
+        "expansion-expected.bin"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_LIMIT"
+      },
+      "case_id": "canonical-expansion"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/unknown_urn.json",
+      "sha256": "3b3a933c1a1c496b8a20c115a6c0606ddaa36c3ddac2a50ad7021899751e4955",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UNKNOWN_REF"
+      },
+      "case_id": "resolver-unknown_urn"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/duplicate_urn.json",
+      "sha256": "46bdaba1ca64aaea2ea2c808631791a6ea774312fde659a7bbdedf9ca7562a1e",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_DUPLICATE_URN"
+      },
+      "case_id": "resolver-duplicate_urn"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/missing_file.json",
+      "sha256": "d53c873076536bb0f8ed6c40ee1239c9161aaaad0a37462961e729c8d6157ba2",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_FILE"
+      },
+      "case_id": "resolver-missing_file"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/digest_mismatch.json",
+      "sha256": "fa2d11e546c8a41e3d959448f4df0f1aa305ff18de465a559ae5e212787a51c4",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_DIGEST"
+      },
+      "case_id": "resolver-digest_mismatch"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/path_escape.json",
+      "sha256": "03ce5f9c3c742f213470452e84fd5c664bc6f303d09a0e5d72953de13c19ca93",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_PATH"
+      },
+      "case_id": "resolver-path_escape"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/absolute_path.json",
+      "sha256": "ed7bc57dc8848dbc619f1bc144a01237e9473ab7106a7bb182013860e407dda9",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_PATH"
+      },
+      "case_id": "resolver-absolute_path"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/symlink_escape.json",
+      "sha256": "4323ff89ad2134b36c6d54c704693553001352f7b5f9f012e63519589ee5da25",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_PATH"
+      },
+      "case_id": "resolver-symlink_escape"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/network_ref.json",
+      "sha256": "1aac72a4751dd8d2730686829c9a380aeaab07d8baf893cf4221d74ba4063b6d",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_NETWORK_REF"
+      },
+      "case_id": "resolver-network_ref"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/unknown_fragment.json",
+      "sha256": "ddb1b25a36093248c7336b210aab4e490667904c587d55fd08a42401684a55a4",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_FRAGMENT"
+      },
+      "case_id": "resolver-unknown_fragment"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/dynamic_ref.json",
+      "sha256": "74c57c7a34b60d31f1867919bab67242e5d3ca4259288ea3527b1e7b7c1da8e6",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_DYNAMIC_REF"
+      },
+      "case_id": "resolver-dynamic_ref"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/duplicate_path.json",
+      "sha256": "f4475ed16ef510361d818bff06d3c0446465cec82b7fc359ee28669f5ec66804",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_DUPLICATE_PATH"
+      },
+      "case_id": "resolver-duplicate_path"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/wrong_dialect.json",
+      "sha256": "b68d31a33dd46336572e898be29e23fee68b802388922b1fe43b952ddbdebb35",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "shape"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_MANIFEST"
+      },
+      "case_id": "resolver-wrong_dialect"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/missing_asset.json",
+      "sha256": "6ff29dfcdb1247587fe7d8219bdf0d0fef49a043e13171c8c7f14c6640446f86",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_ASSET_REF"
+      },
+      "case_id": "resolver-missing_asset"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/unknown_validator.json",
+      "sha256": "bf52e54825d365d231b14cfd62f6ce9c5b0a89edae328efe905a7dc3fadc9860",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_VALIDATOR"
+      },
+      "case_id": "resolver-unknown_validator"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/unused_bad_ref.json",
+      "sha256": "95ed8b401bcd0c27700b5e5d94ef13cf3bad347bd5a70c85554ec26689c80397",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UNKNOWN_REF"
+      },
+      "case_id": "resolver-unused_bad_ref"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/duplicate_anchor.json",
+      "sha256": "dee68810cde2103a102bcc687c2b5c6bedbee8ffb7f7f2c04562448afbbb36ed",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_FRAGMENT"
+      },
+      "case_id": "resolver-duplicate_anchor"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/legacy_definition_ref.json",
+      "sha256": "66f181fc4d6a762919c9544fd83c5fd0e54e354fa6395916d49d954bc463aac5",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_NETWORK_REF"
+      },
+      "case_id": "resolver-legacy_definition_ref"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/legacy_dependency_ref.json",
+      "sha256": "18ec42e0cb729571fcc3e439c0dd9635afc3de149b48edc64b99b3a9f66ae5e7",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UNKNOWN_REF"
+      },
+      "case_id": "resolver-legacy_dependency_ref"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/fragment_target_ref.json",
+      "sha256": "82fc5caf7837d28f2aff55ad72db1013bff0b422f2c1065bf393e5573d220620",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UNKNOWN_REF"
+      },
+      "case_id": "resolver-fragment_target_ref"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/annotation_data.json",
+      "sha256": "186ea0af7a210c866917849eae4aaceaf68784aedd966587ca2cfd2423eb2ff4",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "resolver-annotation_data"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/empty_selection.json",
+      "sha256": "dece8586be8c7744d75c24b601f8eb68d8dddf8eb54256c4b354366650cdf0b3",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_NO_CHECKS"
+      },
+      "case_id": "resolver-empty_selection"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/missing_pointer.json",
+      "sha256": "cb381ccda03a47eb5a9c1aa3507e6534f1712e7c9a87188cbf819161c52bc06c",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_SELECTION"
+      },
+      "case_id": "resolver-missing_pointer"
+    },
+    {
+      "path": "fixtures/mf/common/resolver/semantic_input_ref.json",
+      "sha256": "da263ee15dc285f77af64d6b473abfcb60444e7cad21a9bbdf34ff72d996b2cb",
+      "validation": {
+        "kind": "raw_case",
+        "validator_id": "d0-resolver.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "parse"
+      },
+      "asset_refs": [],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "E_UNKNOWN_REF"
+      },
+      "case_id": "resolver-semantic_input_ref"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-eq.json",
+      "sha256": "77fe0ef0b7a5559e8eb3b2de6ae92a5b51bca8357d2450866b8fa3ad697c3b34",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-eq"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-ne.json",
+      "sha256": "c7d1db712a3ec0dcf456b8c69327156ce154ced7fe2cc03c7600a4e02909f57d",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-ne"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-unique.json",
+      "sha256": "d917f2041ba9efc8ef9dc46ab811e0cb605fc164af269796c15f3a745a5feb87",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-unique"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-contains.json",
+      "sha256": "6fc563081698612cb57eedc236603c4b35202191412c4b55479748436756f897",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-contains"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-cardinality.json",
+      "sha256": "515797b9b9564a9c8a1907f687dff845b1996758f3d9d62d180c5c16e3bf8257",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-cardinality"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-int_compare.json",
+      "sha256": "67e7b8e6c6a59d30813b9d864dae2a313d8c7467f3e56940fcca73fab55d334f",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-int_compare"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-int_add.json",
+      "sha256": "736886195751769edc1fba91d837604c93f1067006a2cbad1185d9407611e03f",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-int_add"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-int_sub.json",
+      "sha256": "a9bea7bd66a066040782881035353904c3102b2009b3e7b5b2336ef0e6db7c89",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-int_sub"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-join.json",
+      "sha256": "bd93ad54ea89089486319148d9fe4ca009dd3036ad0b4c552a19525e05a02d6a",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-join"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-key_intersection.json",
+      "sha256": "0368193600a312109398fb20e595f804c0bc6d37e483ec12f78c94bdf9a421fb",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-key_intersection"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/positive-partial_order.json",
+      "sha256": "2f8bbe457929babf5f66d8ae489765d091b19bb630f7961b2ca1cf320412326c",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-positive-partial_order"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-eq.json",
+      "sha256": "8224cb5607e4890d05c1cc0e195610b577f6a3b172d617fbb6b5d88745cd500b",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_EQ"
+      },
+      "case_id": "assertions-negative-eq"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-ne.json",
+      "sha256": "608ac7652b38464c8c9163160b378d3f46b3b7e30f63f4cb4a8aeda3246eabf1",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_NE"
+      },
+      "case_id": "assertions-negative-ne"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-unique.json",
+      "sha256": "b660f4e5281bf05cc896bf186c0bbba23686955eb343cfab6cac68691d112e2d",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_UNIQUE"
+      },
+      "case_id": "assertions-negative-unique"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-contains.json",
+      "sha256": "8107d7c50c4195668ebf833e4df8a7d4532b197cd14349d3044e3f32a209adf2",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_CONTAINS"
+      },
+      "case_id": "assertions-negative-contains"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-cardinality.json",
+      "sha256": "6869fa4d6f2e7ea1f2f0492612fd5f8b1d9c8f7645eeb3f4faf429ebf332bedf",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_CARDINALITY"
+      },
+      "case_id": "assertions-negative-cardinality"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-int_compare.json",
+      "sha256": "2816aba81b120e5b5b6decb493fb92b36076d9826717fd0aadb30a2faeb8de6f",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_INT_COMPARE"
+      },
+      "case_id": "assertions-negative-int_compare"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-int_add.json",
+      "sha256": "fffd2a02960824ba5818711f99bde0b96136c8441dbffed10dac36b169f02bda",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_INT_ADD"
+      },
+      "case_id": "assertions-negative-int_add"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-int_sub.json",
+      "sha256": "88f27927878d15ed216432871dfe032c8f95b0c6f7a319ae11071d809c86190a",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_INT_SUB"
+      },
+      "case_id": "assertions-negative-int_sub"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-join.json",
+      "sha256": "c9c59168cb2980bd2850a774067c071bda0351e5a3daf4d6a465ed91256ef87b",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_JOIN"
+      },
+      "case_id": "assertions-negative-join"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-key_intersection.json",
+      "sha256": "dd1da043008f48b40a4bc0499d7acc70d07a47ee6c2081312bc4737e78efb867",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_KEY_INTERSECTION"
+      },
+      "case_id": "assertions-negative-key_intersection"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/negative-partial_order.json",
+      "sha256": "f574b3953e7f489d723c136ed645bd5ccae1ceec3a6b659a9514388384d76ab1",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema"
+      ],
+      "expected": {
+        "verdict": "reject",
+        "error_code": "A_PARTIAL_ORDER"
+      },
+      "case_id": "assertions-negative-partial_order"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/pointer-input.json",
+      "sha256": "a527e57f9a509e8cf16917bcb2b7a24a3ec689d0e58ef48f54af1f72158fad11",
+      "validation": {
+        "kind": "semantic",
+        "validator_id": "d0-assertions.v1",
+        "selection": {
+          "mode": "document"
+        },
+        "expected_stage": "semantic"
+      },
+      "asset_refs": [
+        "assertions-schema",
+        "frozen-input"
+      ],
+      "expected": {
+        "verdict": "accept",
+        "error_code": null
+      },
+      "case_id": "assertions-pointer-input"
+    }
+  ],
+  "assets": [
+    {
+      "path": "verification/assertions.schema.json",
+      "sha256": "d96eae80a1183d04a45016d2a07e574d3c7887205171d02cc8c2813e264d3546",
+      "media_type": "application/schema+json",
+      "asset_id": "assertions-schema"
+    },
+    {
+      "path": "verification/canonicalization-profile.json",
+      "sha256": "f6d1d60b647bf6cc6de556b26a040ed309112ed690021258b52a591ec16a4b11",
+      "media_type": "application/json",
+      "asset_id": "canonicalization-profile"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/object-order.input.bin",
+      "sha256": "3fb75453225c732a76b7899ea2096dda1455189c89817239732182f73fe5a09f",
+      "media_type": "application/octet-stream",
+      "asset_id": "object-order-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/object-order.expected.bin",
+      "sha256": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+      "media_type": "application/octet-stream",
+      "asset_id": "object-order-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/decimals.input.bin",
+      "sha256": "6fa1391908a0cbeacd93cc207d1f54b123d1e5bb61093b4907db79e5a8988a9d",
+      "media_type": "application/octet-stream",
+      "asset_id": "decimals-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/decimals.expected.bin",
+      "sha256": "e4269890c1d66677706f250127896a7034c305ea738ef96787243cdc62468bf9",
+      "media_type": "application/octet-stream",
+      "asset_id": "decimals-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/string-numbers.input.bin",
+      "sha256": "ae7f41ba1bfcd6bb16b0e488d9252b3613fab26cd98bbccb397a0db52d8b53c0",
+      "media_type": "application/octet-stream",
+      "asset_id": "string-numbers-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/string-numbers.expected.bin",
+      "sha256": "ae7f41ba1bfcd6bb16b0e488d9252b3613fab26cd98bbccb397a0db52d8b53c0",
+      "media_type": "application/octet-stream",
+      "asset_id": "string-numbers-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/controls.input.bin",
+      "sha256": "7f055b8b989d8f694131a1dc4f86e0e2cad000ccdafb55bdc4289a87da3f552c",
+      "media_type": "application/octet-stream",
+      "asset_id": "controls-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/controls.expected.bin",
+      "sha256": "f902b4673dc19f16cf587a40e83f6a183438f3cc639937b83a69819a35de9fc5",
+      "media_type": "application/octet-stream",
+      "asset_id": "controls-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/scalar-order.input.bin",
+      "sha256": "4045c21a23c8ae8f8d9add81f54bd506bee65885099876fb4afb378b1f2c3516",
+      "media_type": "application/octet-stream",
+      "asset_id": "scalar-order-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/scalar-order.expected.bin",
+      "sha256": "daec79d8b6582badd3b46bd783a72379bc0b5ae29f5d59f6133025aad69bc8d4",
+      "media_type": "application/octet-stream",
+      "asset_id": "scalar-order-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/unicode-not-normalized.input.bin",
+      "sha256": "4f9aefe2a56dde33aa0522021cb5e8692f35b700043dbee664b3611e2b92f724",
+      "media_type": "application/octet-stream",
+      "asset_id": "unicode-not-normalized-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/unicode-not-normalized.expected.bin",
+      "sha256": "4f9aefe2a56dde33aa0522021cb5e8692f35b700043dbee664b3611e2b92f724",
+      "media_type": "application/octet-stream",
+      "asset_id": "unicode-not-normalized-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/absence-null.input.bin",
+      "sha256": "af8ee4aeeda18e78cdd4f9d13793860638807cabb9f9ef368ed653f821539a05",
+      "media_type": "application/octet-stream",
+      "asset_id": "absence-null-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/absence-null.expected.bin",
+      "sha256": "af8ee4aeeda18e78cdd4f9d13793860638807cabb9f9ef368ed653f821539a05",
+      "media_type": "application/octet-stream",
+      "asset_id": "absence-null-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/array-order.input.bin",
+      "sha256": "af1a1fc110b6094c48582b0ef83553cb7908d7a4365424eef28e76ef6c88d630",
+      "media_type": "application/octet-stream",
+      "asset_id": "array-order-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/array-order.expected.bin",
+      "sha256": "af1a1fc110b6094c48582b0ef83553cb7908d7a4365424eef28e76ef6c88d630",
+      "media_type": "application/octet-stream",
+      "asset_id": "array-order-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/container-limit.input.bin",
+      "sha256": "513a82bfb2d59e7ed4d08e09ecee028947990edf432ec0752b4b136850959969",
+      "media_type": "application/octet-stream",
+      "asset_id": "container-limit-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/container-limit.expected.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "media_type": "application/octet-stream",
+      "asset_id": "container-limit-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/output-limit.input.bin",
+      "sha256": "d3f436459983494e7c7d06312567a1645283f03232f4fd53047d18a452b4cca0",
+      "media_type": "application/octet-stream",
+      "asset_id": "output-limit-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/output-limit.expected.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "media_type": "application/octet-stream",
+      "asset_id": "output-limit-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/duplicate-key.input.bin",
+      "sha256": "1c53ee0df7b12fd4d65b976120c7fa6b847dc41dffd7f0331c3237a1ceab1756",
+      "media_type": "application/octet-stream",
+      "asset_id": "duplicate-key-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/duplicate-key.expected.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "media_type": "application/octet-stream",
+      "asset_id": "duplicate-key-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/bad-utf8.input.bin",
+      "sha256": "2c1ba6ac713bfc21e74f3429be952fca3e7a796734394fd18a48eb6713880d89",
+      "media_type": "application/octet-stream",
+      "asset_id": "bad-utf8-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/bad-utf8.expected.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "media_type": "application/octet-stream",
+      "asset_id": "bad-utf8-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/surrogate.input.bin",
+      "sha256": "8c0c59dd0d275aadcd462a5fe12eb352cbdfeaf961eae4f85a4660521df7d2f5",
+      "media_type": "application/octet-stream",
+      "asset_id": "surrogate-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/surrogate.expected.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "media_type": "application/octet-stream",
+      "asset_id": "surrogate-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/nan.input.bin",
+      "sha256": "d5b592c05dc25b5032553f1b27f4139be95e881f73db33b02b05ab20c3f9981e",
+      "media_type": "application/octet-stream",
+      "asset_id": "nan-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/nan.expected.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "media_type": "application/octet-stream",
+      "asset_id": "nan-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/infinity.input.bin",
+      "sha256": "d0067cad9a63e0813759a2bb841051ca73570c0da2e08e840a8eb45db6a7a010",
+      "media_type": "application/octet-stream",
+      "asset_id": "infinity-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/infinity.expected.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "media_type": "application/octet-stream",
+      "asset_id": "infinity-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/expansion.input.bin",
+      "sha256": "f28bd1fdd4d09eddc560165bb18f4e0ba0ebc21d72f60d736790b4457a7975ba",
+      "media_type": "application/octet-stream",
+      "asset_id": "expansion-input.bin"
+    },
+    {
+      "path": "fixtures/mf/common/canonical/expansion.expected.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "media_type": "application/octet-stream",
+      "asset_id": "expansion-expected.bin"
+    },
+    {
+      "path": "fixtures/mf/common/assertions/frozen-input.json",
+      "sha256": "955cff403884ba2aca575c4fa511d01b63a8413c4717042e9f54cce459d09502",
+      "media_type": "application/json",
+      "asset_id": "frozen-input"
+    },
+    {
+      "path": "fixtures/mf/common/catalog.json",
+      "sha256": "225977c36a6859b28f37b89722537e0b2b1690f729966ef78eb477ed55733a56",
+      "media_type": "application/json",
+      "asset_id": "common-catalog"
+    }
+  ]
+}

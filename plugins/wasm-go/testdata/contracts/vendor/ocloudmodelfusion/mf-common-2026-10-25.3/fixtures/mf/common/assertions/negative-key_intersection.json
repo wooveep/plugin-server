@@ -1,0 +1,42 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [],
+  "assertions": [
+    {
+      "op": "key_intersection",
+      "error_code": "A_KEY_INTERSECTION",
+      "left": {
+        "literal": [
+          {
+            "a": 1,
+            "b": 2
+          }
+        ]
+      },
+      "right": {
+        "literal": [
+          {
+            "a": 1,
+            "b": 3
+          }
+        ]
+      },
+      "left_keys": [
+        "/a",
+        "/b"
+      ],
+      "right_keys": [
+        "/a",
+        "/b"
+      ],
+      "result": {
+        "literal": [
+          [
+            1,
+            2
+          ]
+        ]
+      }
+    }
+  ]
+}

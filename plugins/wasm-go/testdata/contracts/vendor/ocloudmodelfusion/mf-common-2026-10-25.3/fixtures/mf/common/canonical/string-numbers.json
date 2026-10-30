@@ -1,0 +1,5 @@
+{
+  "input_asset": "string-numbers-input.bin",
+  "expected_asset": "string-numbers-expected.bin",
+  "expected_digest": "sha256:ae7f41ba1bfcd6bb16b0e488d9252b3613fab26cd98bbccb397a0db52d8b53c0"
+}

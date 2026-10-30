@@ -7,8 +7,10 @@ set -e
 BPE_DIR="bpe"
 BPE_FILE="${BPE_DIR}/o200k_base.tiktoken"
 BPE_URL="https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken"
+BPE_SHA256="446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d"
 
 if [ -f "$BPE_FILE" ]; then
+  echo "${BPE_SHA256}  ${BPE_FILE}" | sha256sum --check --status
   exit 0
 fi
 
@@ -24,4 +26,5 @@ else
   exit 1
 fi
 
+echo "${BPE_SHA256}  ${BPE_FILE}" | sha256sum --check --status
 echo "Downloaded ${BPE_FILE} ($(wc -c < "$BPE_FILE" | tr -d ' ') bytes)"

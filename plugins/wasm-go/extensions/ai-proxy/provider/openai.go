@@ -120,6 +120,38 @@ type openaiProvider struct {
 	contextCache       *contextCache
 }
 
+func (m *openaiProvider) TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header) {
+	if m.customDomain != "" {
+		util.OverwriteRequestHostHeader(headers, m.customDomain)
+	} else {
+		util.OverwriteRequestHostHeader(headers, defaultOpenaiDomain)
+	}
+
+	token := ""
+	if len(m.config.apiTokens) > 0 {
+		token = m.config.GetApiTokenInUse(ctx)
+	} else if m.config.authHeaderKey != "" {
+		token = headers.Get(m.config.authHeaderKey)
+	}
+	if token == "" {
+		for _, name := range []string{util.HeaderXApiKey, util.HeaderXAuthorization} {
+			if value := headers.Get(name); value != "" {
+				token = value
+				break
+			}
+		}
+	}
+	if token == "" {
+		token = headers.Get(util.HeaderAuthorization)
+	}
+	token = strings.TrimPrefix(token, "Bearer ")
+
+	clearTransparentCredentials(headers)
+	if token != "" {
+		headers.Set(util.HeaderAuthorization, "Bearer "+token)
+	}
+}
+
 func (m *openaiProvider) GetProviderType() string {
 	return providerTypeOpenAI
 }

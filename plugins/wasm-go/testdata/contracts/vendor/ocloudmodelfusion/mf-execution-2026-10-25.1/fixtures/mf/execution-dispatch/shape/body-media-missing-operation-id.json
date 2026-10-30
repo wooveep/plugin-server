@@ -1,0 +1,8 @@
+{
+  "call_id": "call-image-1",
+  "operation_kind": "image_generate",
+  "release_id": "release-1",
+  "original_body_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "original_body_ref": "protected-body-1",
+  "body_canonicalization": "operation-json.v1"
+}

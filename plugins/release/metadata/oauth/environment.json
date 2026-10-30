@@ -1,0 +1,1 @@
+[{"kind":"secret","name":"MF_OAUTH_CONSUMERS_0_CLIENT_SECRET","required":true},{"kind":"secret","name":"MF_OAUTH_CONSUMERS_1_CLIENT_SECRET","required":true}]

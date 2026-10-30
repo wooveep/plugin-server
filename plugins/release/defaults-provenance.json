@@ -1,0 +1,391 @@
+{
+  "templates": [
+    {
+      "plugin": "ai-agent",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-billing",
+      "version": "0.1.14",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-cache",
+      "version": "2.0.4",
+      "basis": "declared metadata defaults/example",
+      "sha256": "eba42947ff40bc5fae25cbe6f283b4e1cd7b6fda717736fd0232fc4e79f698e3",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-context-limit",
+      "version": "1.0.0",
+      "basis": "declared metadata defaults/example",
+      "sha256": "dfedba3299a76ef875fad7bbc120711f4bbdb2b825d343f4246ca6205766dcbc",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-data-masking",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-endpoint-picker",
+      "version": "2.0.2",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-history",
+      "version": "2.0.4",
+      "basis": "declared metadata defaults/example",
+      "sha256": "5ef51dd159482c1c8454213916930db436ece756693605b571012bb5a7c1c910",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-intent",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-json-resp",
+      "version": "2.0.3",
+      "basis": "parser-aligned metadata example",
+      "sha256": "224193b97f64d6f291329820a6731de491e32231830b323c6d9477ba4d5ab13c",
+      "environment_refs": 1
+    },
+    {
+      "plugin": "ai-load-balancer",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-memory",
+      "version": "0.1.7",
+      "basis": "declared metadata defaults/example",
+      "sha256": "24dfcfffa812e591d9194f2dfdf7d2665906d9437aab9f9ef73ab127291ff9ed",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-prompt-decorator",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-prompt-template",
+      "version": "2.0.3",
+      "basis": "declared metadata defaults/example",
+      "sha256": "af6a27beae08c2b79b159cd332b6e14e5328edb431d3a1076204dbe6c7770016",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-proxy",
+      "version": "2.0.9",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-quota",
+      "version": "2.0.4",
+      "basis": "declared metadata defaults/example",
+      "sha256": "898a8d1974190c8d4f4b66af479b2ff49d4d03485a8d2e151e9f09c45b3a4889",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-rag",
+      "version": "2.0.3",
+      "basis": "parser-aligned metadata example",
+      "sha256": "796bab01f6bcc99b3540a035c360d1844a8a47173e1d8e37dcb6774e39fd8ffd",
+      "environment_refs": 3
+    },
+    {
+      "plugin": "ai-search",
+      "version": "2.0.3",
+      "basis": "parser-aligned metadata example; ai-search uses the public arxiv engine",
+      "sha256": "0f293e3d4461d533da58a859e015c7bd7620d3ff97379fe500141dbefb773622",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-security-guard",
+      "version": "2.0.3",
+      "basis": "parser-aligned metadata example",
+      "sha256": "378f084760254f9265ceb39809bcbcc8349c6b29d8fbd40b06d9d1a2c3643c16",
+      "environment_refs": 2
+    },
+    {
+      "plugin": "ai-statistics",
+      "version": "2.0.4",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ai-token-ratelimit",
+      "version": "2.0.3",
+      "basis": "declared metadata defaults/example",
+      "sha256": "1b086493be39da00b155fa7d369d29f1cdaf422aa83bfefae069ba6de2f3cd6f",
+      "environment_refs": 1
+    },
+    {
+      "plugin": "ai-transformer",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "basic-auth",
+      "version": "1.0.1",
+      "basis": "declared metadata defaults/example",
+      "sha256": "7ab27defdb1939fb7b5d4f07447522e349ef0f6364589e0e12d836191a35532a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "bot-detect",
+      "version": "1.0.1",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "cache-control",
+      "version": "2.0.3",
+      "basis": "declared metadata defaults/example",
+      "sha256": "3be5aec793ffcad87837b422eb6d47142ec8562732ecd786747dc08c97a4b262",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "cluster-key-rate-limit",
+      "version": "2.0.3",
+      "basis": "declared metadata defaults/example",
+      "sha256": "f62b604e09703c3f8da7b22b326d55eec79a7fef416dea9f8ca8ecaa7e7a6e14",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "cors",
+      "version": "2.0.4",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "custom-response",
+      "version": "1.0.1",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "de-graphql",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "ext-auth",
+      "version": "2.0.3",
+      "basis": "declared metadata defaults/example",
+      "sha256": "c3ffb31457c3687c0fb025e37f9e2ab834d93b13b9b4086e0f0dbabb20aec510",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "frontend-gray",
+      "version": "2.0.3",
+      "basis": "declared metadata defaults/example",
+      "sha256": "484a17da4618786a6e49603db8de8aa7472d9b371399fccf7b351a65d684d920",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "geo-ip",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "gw-error-format",
+      "version": "1.0.2",
+      "basis": "declared metadata defaults/example",
+      "sha256": "95d36beddb37b394edebf7edd654d67bb71154d494d056b8c768c7ee92eaf331",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "hmac-auth",
+      "version": "1.0.1",
+      "basis": "declared metadata defaults/example",
+      "sha256": "5d6de811897316d4ab5072959ed95e82de1181c69273f45ab52aad0a4c86c1da",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "hmac-auth-apisix",
+      "version": "2.0.3",
+      "basis": "declared metadata defaults/example",
+      "sha256": "ec3f2939a1b02a9c6da3ac2d0e819fd4fc7725756f84c68205dad2e960a0eaf8",
+      "environment_refs": 1
+    },
+    {
+      "plugin": "ip-restriction",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "json-converter",
+      "version": "2.0.3",
+      "basis": "declared metadata defaults/example",
+      "sha256": "78d090993a707a90f0812227fda9b961a4e553ab0b5faac259f91a90bba798c5",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "jwt-auth",
+      "version": "1.0.1",
+      "basis": "declared metadata defaults/example",
+      "sha256": "454b0fd5645f72ddd00c57b660de3bbc53cd6eca5570c58b97aa42afb6922db6",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "key-auth",
+      "version": "1.2.1",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "key-rate-limit",
+      "version": "1.0.1",
+      "basis": "declared metadata defaults/example",
+      "sha256": "4e03c1615b8011ca612c8e16d3d058b851ea98cbfeb6520c6150e862dcf40325",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "log-request-response",
+      "version": "1.0.0",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "mcp-router",
+      "version": "2.0.3",
+      "basis": "declared metadata defaults/example",
+      "sha256": "c5241ab5b487f56b56679b059c79ec5726af670b0ca685805f87c0bbc19a5132",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "mcp-server",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "model-mapper",
+      "version": "2.0.4",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "model-router",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "nginx-rewrite-compatible",
+      "version": "1.0.0",
+      "basis": "declared metadata defaults/example",
+      "sha256": "2ad7002318766e903dae6c433794edd22324b38aa6195190d3e14f5cc7c9c2c0",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "oauth",
+      "version": "2.0.1",
+      "basis": "declared metadata defaults/example",
+      "sha256": "3bf27a6260275ec7e678205b58530d95487a31664759aa7207be3eaa79a143ee",
+      "environment_refs": 2
+    },
+    {
+      "plugin": "oidc",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "opa",
+      "version": "2.0.3",
+      "basis": "parser-aligned metadata example",
+      "sha256": "9cf7ce33acee9567b9ba130191738ba821925e85b6f3ae1e5f2b510980ef9db8",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "replay-protection",
+      "version": "1.0.0-alpha",
+      "basis": "explicit Redis endpoint reference",
+      "sha256": "9f544135324754b7ed62a06f1d5dc94aa644c191c3a009a91a2deb1e241a1a11",
+      "environment_refs": 1
+    },
+    {
+      "plugin": "request-block",
+      "version": "1.0.1",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "request-validation",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "response-cache",
+      "version": "1.0.3",
+      "basis": "declared metadata defaults/example",
+      "sha256": "5f30ee17276c3ed370e09aaed2f589d0272bde4a614cce62cb59a5aeba3d5d0b",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "traffic-tag",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "transformer",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    },
+    {
+      "plugin": "waf",
+      "version": "2.0.3",
+      "basis": "unconfigured defaults",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_refs": 0
+    }
+  ],
+  "failures": [],
+  "meaning": "Defaults are unconfigured templates or declared examples, not enabled route configuration or evidence of runtime readiness."
+}

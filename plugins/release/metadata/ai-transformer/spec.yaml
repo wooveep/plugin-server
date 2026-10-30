@@ -1,0 +1,240 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: 2.0.0
+  type: oss
+  category: ai
+  name: ai-transformer
+  image: platform_wasm/ai-transformer
+  title: AI Transformer
+  x-title-i18n:
+    zh-CN: AI 请求/响应转换
+  description: Modify the requests/responses of the gateway in a natural language
+    way without writing code.
+  x-description-i18n:
+    zh-CN: 无须编写代码，使用自然语言的方式对网关的请求/响应进行修改。
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-transformer/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-transformer/README_EN.md
+  version: 2.0.3
+  contact:
+    name: rinfx
+spec:
+  phase: default
+  priority: 550
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        request:
+          type: object
+          title: Request Configuration
+          x-title-i18n:
+            zh-CN: 请求配置
+          description: Configuration for request transformation
+          x-description-i18n:
+            zh-CN: 请求转换配置
+          properties:
+            enable:
+              type: boolean
+              title: Enable Request Transformation
+              x-title-i18n:
+                zh-CN: 开启请求转换
+              description: Whether to enable transformation in the request phase
+              x-description-i18n:
+                zh-CN: 是否在请求阶段开启转换
+            prompt:
+              type: string
+              title: Request Prompt
+              x-title-i18n:
+                zh-CN: 请求提示词
+              description: Prompt used for transformation in the request phase
+              x-description-i18n:
+                zh-CN: 请求阶段转换使用的提示词
+          required:
+          - enable
+          - prompt
+        response:
+          type: object
+          title: Response Configuration
+          x-title-i18n:
+            zh-CN: 响应配置
+          description: Configuration for response transformation
+          x-description-i18n:
+            zh-CN: 响应转换配置
+          properties:
+            enable:
+              type: boolean
+              title: Enable Response Transformation
+              x-title-i18n:
+                zh-CN: 开启响应转换
+              description: Whether to enable transformation in the response phase
+              x-description-i18n:
+                zh-CN: 是否在响应阶段开启转换
+            prompt:
+              type: string
+              title: Response Prompt
+              x-title-i18n:
+                zh-CN: 响应提示词
+              description: Prompt used for transformation in the response phase
+              x-description-i18n:
+                zh-CN: 响应阶段转换使用的提示词
+          required:
+          - enable
+          - prompt
+        provider:
+          type: object
+          title: Provider Configuration
+          x-title-i18n:
+            zh-CN: 服务提供商配置
+          description: Configuration for LLM service provider
+          x-description-i18n:
+            zh-CN: LLM 服务提供商配置
+          properties:
+            serviceName:
+              type: string
+              title: Service Name
+              x-title-i18n:
+                zh-CN: 服务名称
+              description: DNS type service name, currently only supports Qwen
+              x-description-i18n:
+                zh-CN: DNS类型的服务名，目前仅支持通义千问
+            domain:
+              type: string
+              title: Service Domain
+              x-title-i18n:
+                zh-CN: 服务域名
+              description: LLM service domain
+              x-description-i18n:
+                zh-CN: LLM服务域名
+            apiKey:
+              type: string
+              title: API Key
+              x-title-i18n:
+                zh-CN: API密钥
+              description: Alibaba Cloud Dashscope service API Key
+              x-description-i18n:
+                zh-CN: 阿里云dashscope服务的API Key
+          required:
+          - serviceName
+          - domain
+          - apiKey
+      example:
+        request:
+          enable: false
+          prompt: 如果请求path是以/httpbin开头的，帮我去掉/httpbin前缀，其他的不要改。
+        response:
+          enable: true
+          prompt: 帮我修改以下HTTP应答信息，要求：1. content-type修改为application/json；2. body由xml转化为json；3.移除content-length。
+        provider:
+          serviceName: qwen
+          domain: dashscope.aliyuncs.com
+          sk: sk-xxxxxxxxxxxxxxxxxxx
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        request:
+          type: object
+          title: Request Configuration
+          x-title-i18n:
+            zh-CN: 请求配置
+          description: Configuration for request transformation
+          x-description-i18n:
+            zh-CN: 请求转换配置
+          properties:
+            enable:
+              type: boolean
+              title: Enable Request Transformation
+              x-title-i18n:
+                zh-CN: 开启请求转换
+              description: Whether to enable transformation in the request phase
+              x-description-i18n:
+                zh-CN: 是否在请求阶段开启转换
+            prompt:
+              type: string
+              title: Request Prompt
+              x-title-i18n:
+                zh-CN: 请求提示词
+              description: Prompt used for transformation in the request phase
+              x-description-i18n:
+                zh-CN: 请求阶段转换使用的提示词
+          required:
+          - enable
+          - prompt
+        response:
+          type: object
+          title: Response Configuration
+          x-title-i18n:
+            zh-CN: 响应配置
+          description: Configuration for response transformation
+          x-description-i18n:
+            zh-CN: 响应转换配置
+          properties:
+            enable:
+              type: boolean
+              title: Enable Response Transformation
+              x-title-i18n:
+                zh-CN: 开启响应转换
+              description: Whether to enable transformation in the response phase
+              x-description-i18n:
+                zh-CN: 是否在响应阶段开启转换
+            prompt:
+              type: string
+              title: Response Prompt
+              x-title-i18n:
+                zh-CN: 响应提示词
+              description: Prompt used for transformation in the response phase
+              x-description-i18n:
+                zh-CN: 响应阶段转换使用的提示词
+          required:
+          - enable
+          - prompt
+        provider:
+          type: object
+          title: Provider Configuration
+          x-title-i18n:
+            zh-CN: 服务提供商配置
+          description: Configuration for LLM service provider
+          x-description-i18n:
+            zh-CN: LLM 服务提供商配置
+          properties:
+            serviceName:
+              type: string
+              title: Service Name
+              x-title-i18n:
+                zh-CN: 服务名称
+              description: DNS type service name, currently only supports Qwen
+              x-description-i18n:
+                zh-CN: DNS类型的服务名，目前仅支持通义千问
+            domain:
+              type: string
+              title: Service Domain
+              x-title-i18n:
+                zh-CN: 服务域名
+              description: LLM service domain
+              x-description-i18n:
+                zh-CN: LLM服务域名
+            apiKey:
+              type: string
+              title: API Key
+              x-title-i18n:
+                zh-CN: API密钥
+              description: Alibaba Cloud Dashscope service API Key
+              x-description-i18n:
+                zh-CN: 阿里云dashscope服务的API Key
+          required:
+          - serviceName
+          - domain
+          - apiKey
+      example:
+        request:
+          enable: false
+          prompt: 如果请求path是以/httpbin开头的，帮我去掉/httpbin前缀，其他的不要改。
+        response:
+          enable: true
+          prompt: 帮我修改以下HTTP应答信息，要求：1. content-type修改为application/json；2. body由xml转化为json；3.移除content-length。
+        provider:
+          serviceName: qwen
+          domain: dashscope.aliyuncs.com
+          sk: sk-xxxxxxxxxxxxxxxxxxx

@@ -1,0 +1,126 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: 2.0.0
+  type: oss
+  category: ai
+  name: model-mapper
+  image: platform_wasm/model-mapper
+  title: Model Mapper
+  version: 2.0.4
+  description: Maps standalone model names and preserves exact original-body correlation
+    for native publication.
+spec:
+  phase: default
+  priority: 200
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      not:
+        required:
+        - capture_body_basis
+        - consume_body_basis
+        properties:
+          capture_body_basis:
+            const: true
+          consume_body_basis:
+            const: true
+      required: []
+      properties:
+        modelMapping:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
+        consume_body_basis:
+          type: boolean
+          default: false
+          description: Preserve and validate the original basis from the explicitly
+            configured first preprocessor. Mutually exclusive with capture_body_basis.
+        capture_body_basis:
+          type: boolean
+          default: false
+        modelKey:
+          type: string
+          title: Model Key
+          x-title-i18n:
+            zh-CN: Model 字段路径
+          description: The location of the model parameter in the request body.
+          x-description-i18n:
+            zh-CN: 请求body中model参数的位置
+        enableOnPathSuffix:
+          type: array
+          title: Enable On Path Suffixes
+          x-title-i18n:
+            zh-CN: 生效的请求路径
+          description: Only applies to requests with these specific path suffixes.
+          x-description-i18n:
+            zh-CN: 只对这些特定路径后缀的请求生效
+          items:
+            type: string
+      allOf:
+      - if:
+          anyOf:
+          - required:
+            - capture_body_basis
+            properties:
+              capture_body_basis:
+                const: true
+          - required:
+            - consume_body_basis
+            properties:
+              consume_body_basis:
+                const: true
+        then:
+          required:
+          - modelMapping
+          properties:
+            modelMapping:
+              minProperties: 1
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      not:
+        required:
+        - capture_body_basis
+        - consume_body_basis
+        properties:
+          capture_body_basis:
+            const: true
+          consume_body_basis:
+            const: true
+      required: []
+      properties:
+        modelMapping:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
+        consume_body_basis:
+          type: boolean
+          default: false
+          description: Preserve and validate the original basis from the explicitly
+            configured first preprocessor. Mutually exclusive with capture_body_basis.
+        capture_body_basis:
+          type: boolean
+          default: false
+      allOf:
+      - if:
+          anyOf:
+          - required:
+            - capture_body_basis
+            properties:
+              capture_body_basis:
+                const: true
+          - required:
+            - consume_body_basis
+            properties:
+              consume_body_basis:
+                const: true
+        then:
+          required:
+          - modelMapping
+          properties:
+            modelMapping:
+              minProperties: 1

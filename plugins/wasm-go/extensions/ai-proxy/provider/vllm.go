@@ -17,9 +17,7 @@ const (
 // isVllmDirectPath checks if the path is a known standard vLLM interface path,
 // i.e. the configured vllmCustomUrl already points at a concrete endpoint rather
 // than a base path. Such paths are forwarded as-is; base paths get the per-API
-// suffix appended. Must cover every endpoint in DefaultCapabilities that a user
-// might configure directly, otherwise the path is mistakenly treated as a base
-// and double-appended (e.g. /v1/responses -> /v1/responses/responses).
+// suffix appended.
 func isVllmDirectPath(path string) bool {
 	return strings.HasSuffix(path, "/completions") ||
 		strings.HasSuffix(path, "/rerank") ||
@@ -41,13 +39,11 @@ func (m *vllmProviderInitializer) ValidateConfig(config *ProviderConfig) error {
 
 func (m *vllmProviderInitializer) DefaultCapabilities() map[string]string {
 	return map[string]string{
-		string(ApiNameChatCompletion): PathOpenAIChatCompletions,
-		string(ApiNameCompletion):     PathOpenAICompletions,
-		string(ApiNameModels):         PathOpenAIModels,
-		string(ApiNameEmbeddings):     PathOpenAIEmbeddings,
-		string(ApiNameCohereV1Rerank): PathCohereV1Rerank,
-		// vLLM also natively serves the Anthropic Messages API and newer OpenAI
-		// endpoints; expose them as passthrough (no protocol translation).
+		string(ApiNameChatCompletion):       PathOpenAIChatCompletions,
+		string(ApiNameCompletion):           PathOpenAICompletions,
+		string(ApiNameModels):               PathOpenAIModels,
+		string(ApiNameEmbeddings):           PathOpenAIEmbeddings,
+		string(ApiNameCohereV1Rerank):       PathCohereV1Rerank,
 		string(ApiNameAnthropicMessages):    PathAnthropicMessages,
 		string(ApiNameAnthropicCountTokens): PathAnthropicMessagesCountTokens,
 		string(ApiNameResponses):            PathOpenAIResponses,
@@ -171,7 +167,6 @@ func (m *vllmProvider) GetApiName(path string) ApiName {
 	if strings.Contains(path, PathCohereV1Rerank) {
 		return ApiNameCohereV1Rerank
 	}
-	// count_tokens must be matched before /v1/messages: the former contains the latter.
 	if strings.Contains(path, PathAnthropicMessagesCountTokens) {
 		return ApiNameAnthropicCountTokens
 	}

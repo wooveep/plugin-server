@@ -1,0 +1,77 @@
+apiVersion: 1.0.0
+info:
+  name: replay-protection
+  version: 1.0.0-alpha
+  type: oss
+  category: security
+  title: Replay Protection
+  description: Checks nonce uniqueness through Redis; this source is an upstream prerelease.
+spec:
+  phase: AUTHN
+  priority: 800
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      required:
+      - redis
+      properties:
+        redis:
+          type: object
+          required:
+          - service_name
+          properties:
+            service_name:
+              type: string
+              minLength: 1
+              description: Redis service FQDN; configure for the target environment.
+            service_port:
+              type: integer
+              minimum: 1
+              maximum: 65535
+              default: 6379
+            username:
+              type: string
+            password:
+              type: string
+              x-sensitive: true
+              writeOnly: true
+            timeout:
+              type: integer
+              minimum: 1
+              default: 1000
+            database:
+              type: integer
+              minimum: 0
+              default: 0
+            key_prefix:
+              type: string
+              default: replay-protection
+        force_nonce:
+          type: boolean
+          default: false
+        nonce_header:
+          type: string
+          default: X-Higress-Nonce
+        nonce_ttl:
+          type: integer
+          minimum: 1
+          default: 900
+        nonce_min_length:
+          type: integer
+          minimum: 1
+          default: 8
+        nonce_max_length:
+          type: integer
+          minimum: 1
+          default: 128
+        validate_base64:
+          type: boolean
+          default: false
+        reject_code:
+          type: integer
+          minimum: 100
+          maximum: 599
+          default: 429
+        reject_msg:
+          type: string
+          default: Replay Attack Detected

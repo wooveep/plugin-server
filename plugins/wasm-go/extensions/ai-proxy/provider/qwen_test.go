@@ -10,6 +10,21 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+func newQwenMediaTestProvider() *qwenProvider {
+	return &qwenProvider{
+		config: ProviderConfig{
+			modelMapping: map[string]string{
+				"image-alias": "qwen-image-2.0-pro",
+				"tts-alias":   "qwen3-tts-flash",
+			},
+			capabilities: map[string]string{
+				string(ApiNameImageGeneration): qwenMultimodalGenerationPath,
+				string(ApiNameAudioSpeech):     qwenMultimodalGenerationPath,
+			},
+		},
+	}
+}
+
 func TestChatMessage2QwenMessagePreservesReasoningContent(t *testing.T) {
 	t.Run("string content", func(t *testing.T) {
 		msg := chatMessage{
@@ -169,6 +184,175 @@ func TestTransformRequestBodyHeadersCompatibleModeOmitsPreserveThinkingForUnsupp
 	modifiedBody, err := provider.TransformRequestBodyHeaders(nil, ApiNameChatCompletion, body, http.Header{})
 	require.NoError(t, err)
 	assert.False(t, gjson.GetBytes(modifiedBody, "preserve_thinking").Exists())
+}
+
+func TestQwenProviderTransformImageGenerationRequestBodyHeaders(t *testing.T) {
+	provider := newQwenMediaTestProvider()
+	ctx := newMockMultipartHttpContext()
+	headers := http.Header{}
+	body := []byte(`{
+		"model": "image-alias",
+		"prompt": "a quiet lake at sunrise",
+		"n": 2,
+		"seed": 42,
+		"size": "1280x720",
+		"style": "vivid"
+	}`)
+
+	var modifiedBody []byte
+	var err error
+	require.NotPanics(t, func() {
+		modifiedBody, err = provider.TransformRequestBodyHeaders(ctx, ApiNameImageGeneration, body, headers)
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "qwen-image-2.0-pro", gjson.GetBytes(modifiedBody, "model").String())
+	assert.Equal(t, "user", gjson.GetBytes(modifiedBody, "input.messages.0.role").String())
+	assert.Equal(t, "a quiet lake at sunrise", gjson.GetBytes(modifiedBody, "input.messages.0.content.0.text").String())
+	assert.Equal(t, int64(2), gjson.GetBytes(modifiedBody, "parameters.n").Int())
+	assert.Equal(t, int64(42), gjson.GetBytes(modifiedBody, "parameters.seed").Int())
+	assert.Equal(t, "1280*720", gjson.GetBytes(modifiedBody, "parameters.size").String())
+	assert.False(t, gjson.GetBytes(modifiedBody, "style").Exists(), "unsupported OpenAI image fields must not be forwarded")
+}
+
+func TestQwenProviderTransformImageGenerationResponseBody(t *testing.T) {
+	provider := newQwenMediaTestProvider()
+	body := []byte(`{
+		"request_id": "req-image",
+		"output": {
+			"choices": [
+				{
+					"finish_reason": "stop",
+					"message": {
+						"role": "assistant",
+						"content": [
+							{"image": "https://dashscope.example/one.png"},
+							{"image": "https://dashscope.example/two.png", "type": "image"}
+						]
+					}
+				}
+			]
+		},
+		"usage": {
+			"input_tokens": 0,
+			"output_tokens": 0,
+			"total_tokens": 0
+		}
+	}`)
+
+	modifiedBody, err := provider.TransformResponseBody(newMockMultipartHttpContext(), ApiNameImageGeneration, body)
+	require.NoError(t, err)
+
+	assert.Greater(t, gjson.GetBytes(modifiedBody, "created").Int(), int64(0))
+	assert.Equal(t, "https://dashscope.example/one.png", gjson.GetBytes(modifiedBody, "data.0.url").String())
+	assert.Equal(t, "https://dashscope.example/two.png", gjson.GetBytes(modifiedBody, "data.1.url").String())
+	assert.False(t, gjson.GetBytes(modifiedBody, "output").Exists(), "DashScope native output must not leak into OpenAI image response")
+}
+
+func TestQwenProviderTransformImageGenerationResponseBodyPreservesProviderError(t *testing.T) {
+	provider := newQwenMediaTestProvider()
+	body := []byte(`{
+		"request_id": "req-image-error",
+		"code": "InvalidParameter",
+		"message": "image prompt is invalid"
+	}`)
+
+	modifiedBody, err := provider.TransformResponseBody(newMockMultipartHttpContext(), ApiNameImageGeneration, body)
+	require.NoError(t, err)
+
+	assert.Equal(t, body, modifiedBody)
+	assert.Equal(t, "InvalidParameter", gjson.GetBytes(modifiedBody, "code").String())
+	assert.Equal(t, "image prompt is invalid", gjson.GetBytes(modifiedBody, "message").String())
+	assert.False(t, gjson.GetBytes(modifiedBody, "data").Exists(), "provider errors must not be converted into OpenAI success responses")
+}
+
+func TestQwenProviderTransformAudioSpeechRequestBodyHeaders(t *testing.T) {
+	provider := newQwenMediaTestProvider()
+	ctx := newMockMultipartHttpContext()
+	headers := http.Header{}
+	body := []byte(`{
+		"model": "tts-alias",
+		"input": "Today is a wonderful day to build something people love.",
+		"voice": "Cherry",
+		"language_type": "English",
+		"instructions": "Speak warmly.",
+		"optimize_instructions": true,
+		"response_format": "mp3",
+		"speed": 1.25
+	}`)
+
+	var modifiedBody []byte
+	var err error
+	require.NotPanics(t, func() {
+		modifiedBody, err = provider.TransformRequestBodyHeaders(ctx, ApiNameAudioSpeech, body, headers)
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "qwen3-tts-flash", gjson.GetBytes(modifiedBody, "model").String())
+	assert.Equal(t, "Today is a wonderful day to build something people love.", gjson.GetBytes(modifiedBody, "input.text").String())
+	assert.Equal(t, "Cherry", gjson.GetBytes(modifiedBody, "input.voice").String())
+	assert.Equal(t, "English", gjson.GetBytes(modifiedBody, "input.language_type").String())
+	assert.Equal(t, "Speak warmly.", gjson.GetBytes(modifiedBody, "input.instructions").String())
+	assert.True(t, gjson.GetBytes(modifiedBody, "input.optimize_instructions").Bool())
+	assert.False(t, gjson.GetBytes(modifiedBody, "response_format").Exists(), "unsupported OpenAI audio fields must not be forwarded")
+	assert.False(t, gjson.GetBytes(modifiedBody, "speed").Exists(), "unsupported OpenAI audio fields must not be forwarded")
+}
+
+func TestQwenProviderTransformAudioSpeechResponseBody(t *testing.T) {
+	provider := newQwenMediaTestProvider()
+	body := []byte(`{
+		"status_code": 200,
+		"request_id": "req-audio",
+		"code": "",
+		"message": "",
+		"output": {
+			"text": null,
+			"finish_reason": "stop",
+			"choices": null,
+			"audio": {
+				"data": "",
+				"url": "https://dashscope.example/audio.wav",
+				"id": "audio_123",
+				"expires_at": 1766113409
+			}
+		},
+		"usage": {
+			"input_tokens": 76,
+			"output_tokens": 1045,
+			"characters": 0,
+			"total_tokens": 1121
+		}
+	}`)
+
+	modifiedBody, err := provider.TransformResponseBody(newMockMultipartHttpContext(), ApiNameAudioSpeech, body)
+	require.NoError(t, err)
+
+	assert.Greater(t, gjson.GetBytes(modifiedBody, "created").Int(), int64(0))
+	assert.Equal(t, "https://dashscope.example/audio.wav", gjson.GetBytes(modifiedBody, "data.url").String())
+	assert.Equal(t, "audio_123", gjson.GetBytes(modifiedBody, "data.id").String())
+	assert.Equal(t, int64(1766113409), gjson.GetBytes(modifiedBody, "data.expires_at").Int())
+	assert.Equal(t, int64(76), gjson.GetBytes(modifiedBody, "usage.input_tokens").Int())
+	assert.Equal(t, int64(1045), gjson.GetBytes(modifiedBody, "usage.output_tokens").Int())
+	assert.Equal(t, int64(1121), gjson.GetBytes(modifiedBody, "usage.total_tokens").Int())
+	assert.False(t, gjson.GetBytes(modifiedBody, "output").Exists(), "DashScope native output must not leak into gateway audio response")
+}
+
+func TestQwenProviderTransformAudioSpeechResponseBodyPreservesProviderError(t *testing.T) {
+	provider := newQwenMediaTestProvider()
+	body := []byte(`{
+		"status_code": 200,
+		"request_id": "req-audio-error",
+		"code": "InvalidParameter",
+		"message": "audio voice is invalid"
+	}`)
+
+	modifiedBody, err := provider.TransformResponseBody(newMockMultipartHttpContext(), ApiNameAudioSpeech, body)
+	require.NoError(t, err)
+
+	assert.Equal(t, body, modifiedBody)
+	assert.Equal(t, "InvalidParameter", gjson.GetBytes(modifiedBody, "code").String())
+	assert.Equal(t, "audio voice is invalid", gjson.GetBytes(modifiedBody, "message").String())
+	assert.False(t, gjson.GetBytes(modifiedBody, "data").Exists(), "provider errors must not be converted into audio URL success responses")
 }
 
 func TestTransformRequestBodyHeadersCompatibleModeEnablesPreserveThinkingAfterModelMapping(t *testing.T) {

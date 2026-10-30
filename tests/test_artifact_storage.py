@@ -4,6 +4,7 @@ import os
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -162,6 +163,50 @@ class ArtifactStorageTests(unittest.TestCase):
         (self.root / "test-plugin/1.0.0/plugin.wasm").write_bytes(b"tampered")
         with self.assertRaises(StorageUnavailable):
             self.store.read_file("test-plugin", "1.0.0", "plugin.wasm")
+
+    def test_registered_seed_reuses_validation_and_preserves_published_identity(self):
+        raw = example_archive()
+        first = self.store.commit("uploaded", raw)
+        destination = ArtifactStore(Path(self.temp.name) / "runtime/plugins")
+        with patch("artifact_storage.validate_package", side_effect=AssertionError("must only validate on upload")):
+            self.assertEqual(destination.seed_registered(self.root, self.store.list_manifests()),
+                             {"copied": [first["artifact_id"]], "retained": []})
+            self.assertEqual(destination.list_metadata()[0]["manifest"], first["manifest"])
+            self.assertEqual(destination.seed_registered(self.root, self.store.list_manifests()),
+                             {"copied": [], "retained": [first["artifact_id"]]})
+        self.assertEqual(destination.read_file("test-plugin", "1.0.0", "archive.tgz"), raw)
+
+    def test_registered_seed_keeps_destination_id_and_rejects_version_changes(self):
+        self.store.commit("image-upload", example_archive())
+        destination = ArtifactStore(Path(self.temp.name) / "runtime/plugins")
+        published = destination.commit("published", example_archive())
+        with patch("artifact_storage.validate_package", side_effect=AssertionError("unexpected package revalidation")):
+            destination.seed_registered(self.root, self.store.list_manifests())
+        self.assertEqual(destination.manifest("test-plugin", "1.0.0"), published["manifest"])
+        other = ArtifactStore(Path(self.temp.name) / "other/plugins")
+        payload = example_payload()
+        payload["docs/README.md"] = b"changed version content"
+        other.commit("other", example_archive(payload))
+        with self.assertRaises(StorageConflict) as failure:
+            destination.seed_registered(other.root, other.list_manifests())
+        self.assertEqual(failure.exception.code, "version_conflict")
+        self.assertEqual(destination.manifest("test-plugin", "1.0.0"), published["manifest"])
+
+    def test_registered_seed_recovers_copy_faults_without_revalidating_package(self):
+        uploaded = self.store.commit("image-upload", example_archive())
+        for phase in ["before_rename", "after_rename"]:
+            with self.subTest(phase=phase):
+                def fault(current):
+                    if current == phase:
+                        raise OSError("copy interrupted")
+                root = Path(self.temp.name) / phase / "plugins"
+                destination = ArtifactStore(root, fault=fault)
+                with patch("artifact_storage.validate_package", side_effect=AssertionError("unexpected package revalidation")):
+                    with self.assertRaises(StorageUnavailable):
+                        destination.seed_registered(self.root, self.store.list_manifests())
+                    resumed = ArtifactStore(root)
+                    resumed.seed_registered(self.root, self.store.list_manifests())
+                self.assertEqual(resumed.manifest("test-plugin", "1.0.0"), uploaded["manifest"])
 
 
 if __name__ == "__main__":

@@ -25,3 +25,7 @@ require (
 )
 
 replace github.com/alibaba/higress/plugins/wasm-go/pkg/jsonbody => ../../pkg/jsonbody
+
+replace github.com/higress-group/wasm-go => ../..
+
+replace github.com/higress-group/proxy-wasm-go-sdk => ../../../proxy-wasm-go-sdk

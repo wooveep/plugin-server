@@ -1,0 +1,7 @@
+{
+  "operation_id": "operation-1",
+  "worker_claim_epoch": "9007199254740993",
+  "prepare_request_id": "prepare-idempotency-1",
+  "request_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "request_canonicalization": "prepare-json.v1"
+}

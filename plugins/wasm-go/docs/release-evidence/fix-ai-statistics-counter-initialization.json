@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "change_name": "fix-ai-statistics-counter-initialization",
+  "source_commit": "e6e47215ddd1f1b304b69ff7bdf295e191086b1a",
+  "artifact": {
+    "plugin": "ai-statistics",
+    "version": "1.0.2",
+    "path": "build/plugins/ai-statistics/1.0.2/plugin.wasm",
+    "size_bytes": 6915319,
+    "sha256": "4bd6fb6c52ad68eb1957a688c9e02b8c6791c9db16d6bc143e83db3a54e7aa44",
+    "wasm_magic_and_version": "0061736d01000000",
+    "service_url": "http://higress-plugin-server.higress-system.svc/plugins/ai-statistics/1.0.2/plugin.wasm",
+    "upload_http_status": 201,
+    "retrieval_byte_identical": true
+  },
+  "verification": {
+    "regression_red": "TestIncrementCounterInitializesNilCache reproduced assignment to entry in nil map before the fix.",
+    "focused_test": "go test . -run '^TestIncrementCounterInitializesNilCache$' -count=1",
+    "full_test": "go test . -count=1",
+    "wasm_test": "TestStatisticsTerminalLifecycleGoWasmContract/wasm passed against the exact 1.0.2 artifact.",
+    "openspec": "openspec validate fix-ai-statistics-counter-initialization --strict --no-interactive",
+    "graphify": "graphify update .",
+    "gitnexus": "detect_changes reported only the intended ai-statistics release and specification surfaces.",
+    "diff_check": "git diff --check"
+  },
+  "live_runtime": {
+    "kubernetes_context": "kind-higress",
+    "wasm_plugin_resource": "ai-statistics-1.0.2",
+    "old_resource_absent": "ai-statistics-1.0.1",
+    "eligible_terminal_statuses_observed": [
+      200,
+      400,
+      404,
+      429
+    ],
+    "envoy_counter_examples": [
+      "route.ai-route-internal-gemini-embedding.internal.path.provider_native_unknown.method.POST.status.200.error.none",
+      "route.ai-route-deepseek-v4-flash.internal.path.provider_native_unknown.method.POST.status.400.error.http_4xx",
+      "route.ai-route-qwen-chat.internal.path.provider_native_unknown.method.POST.status.404.error.http_4xx",
+      "route.ai-route-deepseek-v4-flash.internal.path.provider_native_unknown.method.POST.status.429.error.http_4xx"
+    ],
+    "nil_map_panic_observed_after_rollout": false,
+    "result": "PASS"
+  }
+}

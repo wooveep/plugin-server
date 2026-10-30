@@ -1,0 +1,62 @@
+# Claude API Docs Export
+
+- Source root: https://platform.claude.com/docs/en/api/overview
+- Fetched on: 2026-04-23
+- Format: official Anthropic `.md` pages grouped into local Markdown files by major category.
+
+## Files
+
+- `overview.md`
+  - https://platform.claude.com/docs/en/api/overview
+- `client-sdks.md`
+  - https://platform.claude.com/docs/en/api/client-sdks
+  - https://platform.claude.com/docs/en/api/sdks/cli
+  - https://platform.claude.com/docs/en/api/sdks/python
+  - https://platform.claude.com/docs/en/api/sdks/typescript
+  - https://platform.claude.com/docs/en/api/sdks/java
+  - https://platform.claude.com/docs/en/api/sdks/go
+  - https://platform.claude.com/docs/en/api/sdks/ruby
+  - https://platform.claude.com/docs/en/api/sdks/csharp
+  - https://platform.claude.com/docs/en/api/sdks/php
+  - https://platform.claude.com/docs/en/api/openai-sdk
+- `beta-headers.md`
+  - https://platform.claude.com/docs/en/api/beta-headers
+- `versioning.md`
+  - https://platform.claude.com/docs/en/api/versioning
+- `errors.md`
+  - https://platform.claude.com/docs/en/api/errors
+- `rate-limits.md`
+  - https://platform.claude.com/docs/en/api/rate-limits
+  - https://platform.claude.com/docs/en/api/service-tiers
+  - https://platform.claude.com/docs/en/api/ip-addresses
+  - https://platform.claude.com/docs/en/api/supported-regions
+- `claude-code.md`
+  - https://platform.claude.com/docs/en/api/claude-code/routines-fire
+- `completions.md`
+  - https://platform.claude.com/docs/en/api/completions
+- `messages.md`
+  - https://platform.claude.com/docs/en/api/messages
+- `token-counting.md`
+  - https://platform.claude.com/docs/en/api/messages/count_tokens
+- `message-batches.md`
+  - https://platform.claude.com/docs/en/api/messages/batches
+- `models.md`
+  - https://platform.claude.com/docs/en/api/models
+- `beta.md`
+  - https://platform.claude.com/docs/en/api/beta
+- `files.md`
+  - https://platform.claude.com/docs/en/api/beta/files
+- `skills.md`
+  - https://platform.claude.com/docs/en/api/beta/skills
+- `agents.md`
+  - https://platform.claude.com/docs/en/api/beta/agents
+- `environments.md`
+  - https://platform.claude.com/docs/en/api/beta/environments
+- `sessions.md`
+  - https://platform.claude.com/docs/en/api/beta/sessions
+- `vaults.md`
+  - https://platform.claude.com/docs/en/api/beta/vaults
+- `user-profiles.md`
+  - https://platform.claude.com/docs/en/api/beta/user_profiles
+- `admin.md`
+  - https://platform.claude.com/docs/en/api/admin

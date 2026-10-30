@@ -1,0 +1,254 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: security
+  name: cors
+  image: platform_wasm/cors
+  title: CORS
+  x-title-i18n:
+    zh-CN: 跨域资源共享
+  description: Enables CORS (Cross-Origin Resource Sharing) HTTP response headers
+    for the server.
+  x-description-i18n:
+    zh-CN: 为服务端启用 CORS（Cross-Origin Resource Sharing，跨域资源共享）的返回 HTTP 响应头。
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN01jKT9vC1O059vNaq5u_!!6000000001642-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/cors/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/cors/README_EN.md
+  version: 2.0.4
+  contact:
+    name: Higress Team
+    url: http://higress.io/
+    email: admin@higress.io
+spec:
+  phase: AUTHZ
+  priority: 340
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        allow_origins:
+          type: array
+          title: 允许的来源
+          x-title-i18n:
+            en-US: Allowed Origins
+          description: 允许跨域访问的来源列表。可以使用 * 来表示允许任意来源。
+          x-description-i18n:
+            en-US: List of origins allowed for cross-origin access. * can be used
+              to indicate any origin is allowed.
+          items:
+            type: string
+          default:
+          - '*'
+        allow_origin_patterns:
+          type: array
+          title: 允许的来源模式
+          x-title-i18n:
+            en-US: Allowed Origin Patterns
+          description: 允许跨域访问的来源模式列表。可以使用 * 来表示允许任意来源。
+          x-description-i18n:
+            en-US: List of origin patterns allowed for cross-origin access. * can
+              be used to indicate any origin is allowed.
+          items:
+            type: string
+        allow_methods:
+          type: array
+          title: 允许的方法
+          x-title-i18n:
+            en-US: Allowed Methods
+          description: 允许跨域访问的 HTTP 方法列表。可以使用 * 来表示允许任意方法。
+          x-description-i18n:
+            en-US: List of HTTP methods allowed for cross-origin access. * can be
+              used to indicate any method is allowed.
+          items:
+            type: string
+          default:
+          - GET
+          - PUT
+          - POST
+          - DELETE
+          - PATCH
+          - OPTIONS
+        allow_headers:
+          type: array
+          title: 允许的请求头
+          x-title-i18n:
+            en-US: Allowed Request Headers
+          description: 允许跨域访问时请求方携带哪些非 CORS 规范以外的 Header。可以使用 * 来表示允许任意 Header。
+          x-description-i18n:
+            en-US: Allowed Headers for the requester to carry that are not part of
+              CORS specifications during cross-origin access. * can be used to indicate
+              any Header is allowed.
+          items:
+            type: string
+        expose_headers:
+          type: array
+          title: 允许的响应头
+          x-title-i18n:
+            en-US: Allowed Response Headers
+          description: 允许跨域访问时响应方携带哪些非 CORS 规范以外的 Header。可以使用 * 来表示允许任意 Header。
+          x-description-i18n:
+            en-US: Allowed Headers for the responder to carry that are not part of
+              CORS specifications during cross-origin access. * can be used to indicate
+              any Header is allowed.
+          items:
+            type: string
+          default:
+          - DNT
+          - X-CustomHeader
+          - Keep-Alive
+          - User-Agent
+          - X-Requested-With
+          - If-Modified-Since
+          - Cache-Control
+          - Content-Type
+          - Authorization
+        allow_credentials:
+          type: boolean
+          title: 允许携带凭据
+          x-title-i18n:
+            en-US: Allow Credentials
+          description: 是否允许跨域访问的请求方携带凭据（如 Cookie 等）。根据 CORS 规范，如果设置该选项为 true，在 allow_origins
+            不能使用 *， 替换成使用 allow_origin_patterns *
+          x-description-i18n:
+            en-US: Whether to allow the requester to carry credentials (e.g. Cookies)
+              during cross-origin access. According to CORS specifications, if this
+              option is set to true, * cannot be used for allow_origins, replace it
+              with allow_origin_patterns.
+          default: false
+        max_age:
+          type: number
+          title: 缓存时间
+          x-title-i18n:
+            en-US: Cache Duration
+          description: 浏览器缓存 CORS 结果的最大时间，单位为秒。在这个时间范围内，浏览器会复用上一次的检查结果
+          x-description-i18n:
+            en-US: Maximum time for browsers to cache CORS results, in seconds. Within
+              this time frame, browsers will reuse the previous inspection results.
+          default: 86400
+      example:
+        allow_origins:
+        - '*'
+        allow_methods:
+        - '*'
+        allow_headers:
+        - '*'
+        expose_headers:
+        - '*'
+        allow_credentials: false
+        max_age: 7200
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        allow_origins:
+          type: array
+          title: 允许的来源
+          x-title-i18n:
+            en-US: Allowed Origins
+          description: 允许跨域访问的来源列表。可以使用 * 来表示允许任意来源。
+          x-description-i18n:
+            en-US: List of origins allowed for cross-origin access. * can be used
+              to indicate any origin is allowed.
+          items:
+            type: string
+          default:
+          - '*'
+        allow_origin_patterns:
+          type: array
+          title: 允许的来源模式
+          x-title-i18n:
+            en-US: Allowed Origin Patterns
+          description: 允许跨域访问的来源模式列表。可以使用 * 来表示允许任意来源。
+          x-description-i18n:
+            en-US: List of origin patterns allowed for cross-origin access. * can
+              be used to indicate any origin is allowed.
+          items:
+            type: string
+        allow_methods:
+          type: array
+          title: 允许的方法
+          x-title-i18n:
+            en-US: Allowed Methods
+          description: 允许跨域访问的 HTTP 方法列表。可以使用 * 来表示允许任意方法。
+          x-description-i18n:
+            en-US: List of HTTP methods allowed for cross-origin access. * can be
+              used to indicate any method is allowed.
+          items:
+            type: string
+          default:
+          - GET
+          - PUT
+          - POST
+          - DELETE
+          - PATCH
+          - OPTIONS
+        allow_headers:
+          type: array
+          title: 允许的请求头
+          x-title-i18n:
+            en-US: Allowed Request Headers
+          description: 允许跨域访问时请求方携带哪些非 CORS 规范以外的 Header。可以使用 * 来表示允许任意 Header。
+          x-description-i18n:
+            en-US: Allowed Headers for the requester to carry that are not part of
+              CORS specifications during cross-origin access. * can be used to indicate
+              any Header is allowed.
+          items:
+            type: string
+          default:
+          - DNT
+          - X-CustomHeader
+          - Keep-Alive
+          - User-Agent
+          - X-Requested-With
+          - If-Modified-Since
+          - Cache-Control
+          - Content-Type
+          - Authorization
+        expose_headers:
+          type: array
+          title: 允许的响应头
+          x-title-i18n:
+            en-US: Allowed Response Headers
+          description: 允许跨域访问时响应方携带哪些非 CORS 规范以外的 Header。可以使用 * 来表示允许任意 Header。
+          x-description-i18n:
+            en-US: Allowed Headers for the responder to carry that are not part of
+              CORS specifications during cross-origin access. * can be used to indicate
+              any Header is allowed.
+          items:
+            type: string
+        allow_credentials:
+          type: boolean
+          title: 允许携带凭据
+          x-title-i18n:
+            en-US: Allow Credentials
+          description: 是否允许跨域访问的请求方携带凭据（如 Cookie 等）。根据 CORS 规范，如果设置该选项为 true，在 allow_origins
+            不能使用 *， 替换成使用 allow_origin_patterns *
+          x-description-i18n:
+            en-US: Whether to allow the requester to carry credentials (e.g. Cookies)
+              during cross-origin access. According to CORS specifications, if this
+              option is set to true, * cannot be used for allow_origins, replace it
+              with allow_origin_patterns.
+          default: false
+        max_age:
+          type: number
+          title: 缓存时间
+          x-title-i18n:
+            en-US: Cache Duration
+          description: 浏览器缓存 CORS 结果的最大时间，单位为秒。在这个时间范围内，浏览器会复用上一次的检查结果
+          x-description-i18n:
+            en-US: Maximum time for browsers to cache CORS results, in seconds. Within
+              this time frame, browsers will reuse the previous inspection results.
+          default: 86400
+      example:
+        allow_origins:
+        - '*'
+        allow_methods:
+        - '*'
+        allow_headers:
+        - '*'
+        expose_headers:
+        - '*'
+        allow_credentials: false
+        max_age: 7200

@@ -510,7 +510,6 @@ func RunAzureOnHttpRequestHeadersTests(t *testing.T) {
 			require.True(t, hasApiKey, "api-key header should exist")
 			require.Equal(t, "sk-azure-test123456789", apiKeyValue, "api-key should contain Azure API token")
 
-			// 验证Authorization是否被删除
 			_, hasAuthLower := test.GetHeaderValue(requestHeaders, "authorization")
 			require.False(t, hasAuthLower, "Authorization header should be deleted")
 			_, hasAuthUpper := test.GetHeaderValue(requestHeaders, "Authorization")

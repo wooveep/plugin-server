@@ -2,6 +2,16 @@ workspace(name = "istio_ecosystem_wasm_extensions")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# The legacy plugin libraries use the declared Protobuf 3.18 baseline. Declare
+# it before the SDK's optional full-Protobuf dependency can select a newer ABI.
+http_archive(
+    name = "com_google_protobuf",
+    type = "tar.gz",
+    urls = ["https://codeload.github.com/protocolbuffers/protobuf/tar.gz/refs/tags/v3.18.0"],
+    sha256 = "14e8042b5da37652c92ef6a2759e7d2979d295f60afd7767825e3de68c856c54",
+    strip_prefix = "protobuf-3.18.0",
+)
+
 http_archive(
     name = "platforms",
     url = "https://github.com/bazelbuild/platforms/releases/download/0.0.9/platforms-0.0.9.tar.gz",

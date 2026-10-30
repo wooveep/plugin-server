@@ -51,3 +51,15 @@ index e2a8715..4031804 100644
  
  #else
  
+diff --git a/BUILD b/BUILD
+--- a/BUILD
++++ b/BUILD
+@@ -15,7 +15,7 @@ config_setting(
+ 
+ config_setting(
+     name = "wasm",
+-    values = {"cpu": "wasm32"},
++    values = {"cpu": "wasm"},
+ )
+ 
+ config_setting(

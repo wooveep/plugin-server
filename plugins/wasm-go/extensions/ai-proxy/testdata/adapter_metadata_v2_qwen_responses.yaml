@@ -1,0 +1,1 @@
+{"schema_version":2,"matched":true,"mode":"auto","adapter_id":"qwen.responses_to_chat_completions","version":"1","normalized_operation":"openai/v1/responses","operation_template":"/v1/responses","provider_match":"qwen","capability_match":"openai/v1/chat/completions","usage_profile":"openai.responses.v1"}

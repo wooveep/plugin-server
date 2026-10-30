@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "platform": "linux/amd64",
+  "images": {
+    "go": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+    "rust": "rust:1.95.0-bookworm@sha256:4c2fd73ef19c5ef9d54bee03b06b2839a392604fbfcd578ed948b71b37c1d7fb",
+    "node": "node:24.22.1-bookworm@sha256:0925478b811e8890f5508ad2a75135933310effd45492696ecf7c111c8339d02",
+    "cpp": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8"
+  }
+}

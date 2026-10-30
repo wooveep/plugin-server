@@ -1,0 +1,77 @@
+# GLM API Docs Export
+
+- Source root: https://docs.bigmodel.cn/cn/api/introduction
+- Source sitemap: https://docs.bigmodel.cn/sitemap.xml
+- Fetched on: 2026-04-23
+- Format: official `docs.bigmodel.cn` `.md` pages grouped into local Markdown files by major category.
+
+## Files
+
+- `overview.md`
+  - https://docs.bigmodel.cn/cn/api/introduction
+- `agent-api.md`
+  - https://docs.bigmodel.cn/api-reference/agent-api/对话历史
+  - https://docs.bigmodel.cn/api-reference/agent-api/异步结果
+  - https://docs.bigmodel.cn/api-reference/agent-api/智能体对话
+- `assistant-api.md`
+  - https://docs.bigmodel.cn/api-reference/助理-api/助手会话列表
+  - https://docs.bigmodel.cn/api-reference/助理-api/助手列表
+  - https://docs.bigmodel.cn/api-reference/助理-api/助手对话
+- `batch-api.md`
+  - https://docs.bigmodel.cn/api-reference/批处理-api/列出批处理任务
+  - https://docs.bigmodel.cn/api-reference/批处理-api/创建批处理任务
+  - https://docs.bigmodel.cn/api-reference/批处理-api/取消批处理任务
+  - https://docs.bigmodel.cn/api-reference/批处理-api/检索批处理任务
+- `files-api.md`
+  - https://docs.bigmodel.cn/api-reference/文件-api/上传文件
+  - https://docs.bigmodel.cn/api-reference/文件-api/删除文件
+  - https://docs.bigmodel.cn/api-reference/文件-api/文件内容
+  - https://docs.bigmodel.cn/api-reference/文件-api/文件列表
+- `knowledge-base-api.md`
+  - https://docs.bigmodel.cn/api-reference/知识库-api/上传url文档
+  - https://docs.bigmodel.cn/api-reference/知识库-api/上传文件文档
+  - https://docs.bigmodel.cn/api-reference/知识库-api/全模态知识库检索
+  - https://docs.bigmodel.cn/api-reference/知识库-api/创建知识库
+  - https://docs.bigmodel.cn/api-reference/知识库-api/删除文档
+  - https://docs.bigmodel.cn/api-reference/知识库-api/删除知识库
+  - https://docs.bigmodel.cn/api-reference/知识库-api/文档列表
+  - https://docs.bigmodel.cn/api-reference/知识库-api/文档详情
+  - https://docs.bigmodel.cn/api-reference/知识库-api/知识库使用量
+  - https://docs.bigmodel.cn/api-reference/知识库-api/知识库列表
+  - https://docs.bigmodel.cn/api-reference/知识库-api/知识库检索
+  - https://docs.bigmodel.cn/api-reference/知识库-api/知识库详情
+  - https://docs.bigmodel.cn/api-reference/知识库-api/编辑知识库
+  - https://docs.bigmodel.cn/api-reference/知识库-api/解析文档图片
+  - https://docs.bigmodel.cn/api-reference/知识库-api/重新向量化
+- `legacy-agent-api.md`
+  - https://docs.bigmodel.cn/api-reference/智能体-api（旧）/创建新会话
+  - https://docs.bigmodel.cn/api-reference/智能体-api（旧）/推理接口
+  - https://docs.bigmodel.cn/api-reference/智能体-api（旧）/推荐问题接口
+  - https://docs.bigmodel.cn/api-reference/智能体-api（旧）/文件上传
+  - https://docs.bigmodel.cn/api-reference/智能体-api（旧）/知识库切片引用位置信息
+  - https://docs.bigmodel.cn/api-reference/智能体-api（旧）/获取文件解析状态
+  - https://docs.bigmodel.cn/api-reference/智能体-api（旧）/获取智能体输入参数
+- `models-api.md`
+  - https://docs.bigmodel.cn/api-reference/模型-api/删除音色
+  - https://docs.bigmodel.cn/api-reference/模型-api/图像生成
+  - https://docs.bigmodel.cn/api-reference/模型-api/图像生成异步
+  - https://docs.bigmodel.cn/api-reference/模型-api/对话补全
+  - https://docs.bigmodel.cn/api-reference/模型-api/对话补全异步
+  - https://docs.bigmodel.cn/api-reference/模型-api/文本分词器
+  - https://docs.bigmodel.cn/api-reference/模型-api/文本嵌入
+  - https://docs.bigmodel.cn/api-reference/模型-api/文本转语音
+  - https://docs.bigmodel.cn/api-reference/模型-api/文本重排序
+  - https://docs.bigmodel.cn/api-reference/模型-api/文档解析
+  - https://docs.bigmodel.cn/api-reference/模型-api/查询异步结果
+  - https://docs.bigmodel.cn/api-reference/模型-api/视频生成异步
+  - https://docs.bigmodel.cn/api-reference/模型-api/语音转文本
+  - https://docs.bigmodel.cn/api-reference/模型-api/音色列表
+  - https://docs.bigmodel.cn/api-reference/模型-api/音色复刻
+- `tools-api.md`
+  - https://docs.bigmodel.cn/api-reference/工具-api/ocr-服务
+  - https://docs.bigmodel.cn/api-reference/工具-api/内容安全
+  - https://docs.bigmodel.cn/api-reference/工具-api/文件解析
+  - https://docs.bigmodel.cn/api-reference/工具-api/文件解析同步
+  - https://docs.bigmodel.cn/api-reference/工具-api/网络搜索
+  - https://docs.bigmodel.cn/api-reference/工具-api/网页阅读
+  - https://docs.bigmodel.cn/api-reference/工具-api/解析结果

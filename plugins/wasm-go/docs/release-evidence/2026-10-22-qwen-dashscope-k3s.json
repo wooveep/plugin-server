@@ -1,0 +1,699 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at_utc": "2026-10-22T06:38:06.482903+00:00",
+  "result": "media-acceptance-pass-with-provider-limitations; additional-credential-and-route-defects-open",
+  "acceptance": {
+    "historical_task_6_2": "passed: both native media calls returned 200 and real media inspected; no plugin_conversion_gap",
+    "historical_task_6_3": "passed: provider InvalidParameter error retained in sanitized evidence",
+    "normal_media_successes": 2,
+    "plugin_conversion_gaps": 0,
+    "general_environment_security_acceptance": "not passed; credential revocation defect remains open"
+  },
+  "sources": {
+    "wasm_go_commit": "71bd516d25e92a9f24a46244be9d00a1fd67961b",
+    "source_clean_before_build": true,
+    "proxy_wasm_go_sdk_commit": "662ed045bf0b58eb0ab67ba9954ae2fa65343072",
+    "proxy_wasm_go_sdk_clean": true,
+    "higress_main_commit": "703d35256ffbd5d06d9469610ce334be14bf9101",
+    "higress_source_commit": "ed868d2d19a3deff556a1cdd01c41e164715f03b",
+    "higress_plugin_files_changed_from_first_parent": 515,
+    "higress_extension_directories_changed": 56,
+    "upstream_commits_reviewed": [
+      {
+        "sha": "50f6ef6822eebf2bfa0160124bc5084608e8e5ee",
+        "authored_at": "2026-10-17T21:25:31+08:00",
+        "title": "fix(ai): reject request bodies with a duplicated top-level model member (#5124)",
+        "url": "https://github.com/wooveep/higress/commit/50f6ef6822eebf2bfa0160124bc5084608e8e5ee"
+      },
+      {
+        "sha": "964419155c4fee45b2e7d42ee1b7e1aeec57ce06",
+        "authored_at": "2026-09-29T14:29:53+08:00",
+        "title": "fix: query-safe path joining for ext-auth envoy mode and ai-proxy basePath (#4833)",
+        "url": "https://github.com/wooveep/higress/commit/964419155c4fee45b2e7d42ee1b7e1aeec57ce06"
+      },
+      {
+        "sha": "dc0999326b1a8df4269c13d0cf6ee2b725259f6e",
+        "authored_at": "2026-09-08T15:38:52+08:00",
+        "title": "fix(ai-proxy): frame SSE events before provider streaming-body conversion (#4620)",
+        "url": "https://github.com/wooveep/higress/commit/dc0999326b1a8df4269c13d0cf6ee2b725259f6e"
+      },
+      {
+        "sha": "d215a7bcceecf574ebe07aa991015815b97e0699",
+        "authored_at": "2026-08-09T16:01:58+08:00",
+        "title": "bugfix: fix unsafe type assertion in ai-proxy buildEmbeddingsResponse for qwen, gemini, vertex (#4374)",
+        "url": "https://github.com/wooveep/higress/commit/d215a7bcceecf574ebe07aa991015815b97e0699"
+      }
+    ],
+    "upstream_commits_ported_in_this_change": []
+  },
+  "environment": {
+    "checked_at_utc": "2026-10-22T06:31:05.104851+00:00",
+    "environment": "modelfusion-dev VM K3S + Helm",
+    "namespace": "higress-system",
+    "gateway": {
+      "replicas": 1,
+      "ready_replicas": 1,
+      "available_replicas": 1,
+      "containers": [
+        {
+          "name": "higress-gateway",
+          "image": "registry.lc.wooveep.com:9980/modelfusion/gateway:2.2.1"
+        },
+        {
+          "name": "promtail",
+          "image": "registry.lc.wooveep.com:9980/modelfusion/promtail:2.9.4"
+        }
+      ]
+    },
+    "pods": [
+      {
+        "name": "higress-console-loki-84544dcb4f-7vs9j",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "loki",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      },
+      {
+        "name": "higress-console-prometheus-58b7f89446-8kwl5",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "prometheus",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      },
+      {
+        "name": "higress-controller-8649d98ff8-jnf9q",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "discovery",
+            "ready": true,
+            "restarts": 0
+          },
+          {
+            "name": "higress-core",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      },
+      {
+        "name": "higress-gateway-7b6dc68bbd-44dc2",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "higress-gateway",
+            "ready": true,
+            "restarts": 0
+          },
+          {
+            "name": "promtail",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      },
+      {
+        "name": "higress-plugin-server-5cdbccf7f5-jlhgt",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "higress-core",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      },
+      {
+        "name": "modelfusion-console-api-54d6d6ffd7-5gvr2",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "console-api",
+            "ready": true,
+            "restarts": 0
+          },
+          {
+            "name": "console-api-promtail",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      },
+      {
+        "name": "modelfusion-web-admin-78fbf8547b-d5k2k",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "consoleweb",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      },
+      {
+        "name": "modelfusion-web-user-54c956b97d-gtq2d",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "consoleweb",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      },
+      {
+        "name": "postgresql-0",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "postgresql",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      },
+      {
+        "name": "qdrant-0",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "qdrant",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      },
+      {
+        "name": "redis-stack-server-0",
+        "phase": "Running",
+        "containers": [
+          {
+            "name": "redis",
+            "ready": true,
+            "restarts": 0
+          }
+        ]
+      }
+    ],
+    "test_routes": [
+      {
+        "name": "ai-route-qwen-media-image-k3s-20261022.internal",
+        "hosts": [
+          "api.ai.lc.wooveep.com"
+        ],
+        "paths": [
+          "/v1/images/generations"
+        ]
+      },
+      {
+        "name": "ai-route-qwen-media-speech-k3s-20261022.internal",
+        "hosts": [
+          "api.ai.lc.wooveep.com"
+        ],
+        "paths": [
+          "/v1/audio/speech"
+        ]
+      }
+    ],
+    "media_providers": [
+      {
+        "id": "qwen-media-k3s-20261022-01a16241",
+        "type": "qwen",
+        "qwenEnableCompatible": false,
+        "capabilities": {
+          "openai/v1/audiospeech": "/api/v1/services/aigc/multimodal-generation/generation",
+          "openai/v1/imagegeneration": "/api/v1/services/aigc/multimodal-generation/generation"
+        },
+        "credential_count": 1
+      }
+    ],
+    "k3s_version": {
+      "exit_code": 0,
+      "stdout": "k3s version v1.35.5+k3s1 (6a4781ad)\ngo version go1.25.9\n",
+      "stderr": ""
+    },
+    "helm_version": {
+      "exit_code": 0,
+      "stdout": "v4.2.2+gb05881c\n",
+      "stderr": ""
+    },
+    "helm_releases": {
+      "exit_code": 0,
+      "stdout": "[{\"name\":\"higress\",\"namespace\":\"higress-system\",\"revision\":\"2\",\"updated\":\"2026-10-22 06:08:00.861917912 +0000 UTC\",\"status\":\"deployed\",\"chart\":\"higress-2.2.1\",\"app_version\":\"2.2.1\"}]\n",
+      "stderr": ""
+    },
+    "vm": "modelfusion-dev",
+    "snapshot_scope": "Acceptance snapshot before the temporary routes were disabled; see cleanup for final fixture state"
+  },
+  "business_fixture_creation": {
+    "transport": "AdminWeb and UserWeb product UI",
+    "operations": [
+      "create native Qwen media provider and credentials",
+      "create two model assets and provider bindings",
+      "create dedicated tenant and user",
+      "reset password in AdminWeb; login and change password in UserWeb",
+      "create gateway API Key in UserWeb",
+      "create two public routes with Key Auth and tenant grants"
+    ],
+    "sql_seeding": false,
+    "backend_only_business_seeding": false
+  },
+  "build": {
+    "go_version": "go1.26.3 linux/amd64",
+    "target": "wasip1/wasm",
+    "flags": [
+      "-buildmode=c-shared",
+      "-trimpath"
+    ],
+    "workspace_overrides": "Only absolute local module replacements for wasm-go and proxy-wasm-go-sdk; no source modification",
+    "plugins": [
+      {
+        "upload_http_status": 201,
+        "download_http_status": 200,
+        "download_sha256": "c7c448592236c1f6b14449145d68a12987ffcce22c3cdd9e072ba861d506f0fd",
+        "plugin": "ai-proxy",
+        "version": "1.0.2",
+        "source_sha": "71bd516d25e92a9f24a46244be9d00a1fd67961b",
+        "local_sha256": "c7c448592236c1f6b14449145d68a12987ffcce22c3cdd9e072ba861d506f0fd",
+        "size": 9891150,
+        "hash_match": true,
+        "envoy_loaded_sha256": "c7c448592236c1f6b14449145d68a12987ffcce22c3cdd9e072ba861d506f0fd",
+        "local_http_envoy_hash_match": true
+      },
+      {
+        "plugin": "ai-statistics",
+        "version": "1.0.2",
+        "source_sha": "71bd516d25e92a9f24a46244be9d00a1fd67961b",
+        "upload_http_status": 201,
+        "sha256": "dfc39edb1d10c4b1f5274431a2be8d30c2f021adc799590d44296428d21782a2",
+        "download_sha256": "dfc39edb1d10c4b1f5274431a2be8d30c2f021adc799590d44296428d21782a2",
+        "hash_match": true,
+        "size": 6915244,
+        "envoy_loaded_sha256": "dfc39edb1d10c4b1f5274431a2be8d30c2f021adc799590d44296428d21782a2",
+        "local_http_envoy_hash_match": true
+      }
+    ]
+  },
+  "runtime_plugin_artifacts": [
+    {
+      "resource": "ai-proxy.internal",
+      "artifact_path": "/plugins/ai-proxy/1.0.2/plugin.wasm",
+      "http_status": 200,
+      "bytes": 9891150,
+      "sha256": "c7c448592236c1f6b14449145d68a12987ffcce22c3cdd9e072ba861d506f0fd"
+    },
+    {
+      "resource": "ai-statistics-1.0.2",
+      "artifact_path": "/plugins/ai-statistics/1.0.2/plugin.wasm",
+      "http_status": 200,
+      "bytes": 6915244,
+      "sha256": "dfc39edb1d10c4b1f5274431a2be8d30c2f021adc799590d44296428d21782a2"
+    },
+    {
+      "resource": "key-auth.internal",
+      "artifact_path": "/plugins/key-auth/1.0.1/plugin.wasm",
+      "http_status": 200,
+      "bytes": 6255105,
+      "sha256": "3e97430482bab2b2494c58ab5ca6d44e779555c6561edde8bb2765d5550033d4"
+    },
+    {
+      "resource": "model-mapper.internal",
+      "artifact_path": "/plugins/model-mapper/1.0.0/plugin.wasm",
+      "http_status": 200,
+      "bytes": 5599611,
+      "sha256": "2e7c30ed48eeee9fa493f0c1071d7bda59991bce7ff60780b9e91fd404442bf6"
+    },
+    {
+      "resource": "model-router.internal",
+      "artifact_path": "/plugins/model-router/1.0.0/plugin.wasm",
+      "http_status": 200,
+      "bytes": 6212729,
+      "sha256": "3ced352638f9777565e6cb3a321a9bdcca63695ffa0cafcd0e4e545c3e4399b9"
+    }
+  ],
+  "envoy_loaded_plugins": [
+    {
+      "name": "higress-system.key-auth.internal",
+      "vm_id": null,
+      "runtime": "envoy.wasm.runtime.v8",
+      "code": {
+        "local": {
+          "filename": "/var/lib/istio/data/8bcbd497d0cf1f504411c3e81f53f5e3f008b5a5ed4f95252e50dd81d30615a0/3e97430482bab2b2494c58ab5ca6d44e779555c6561edde8bb2765d5550033d4.wasm"
+        }
+      },
+      "sha256": "3e97430482bab2b2494c58ab5ca6d44e779555c6561edde8bb2765d5550033d4"
+    },
+    {
+      "name": "higress-system.model-router.internal",
+      "vm_id": null,
+      "runtime": "envoy.wasm.runtime.v8",
+      "code": {
+        "local": {
+          "filename": "/var/lib/istio/data/141b534f9cfb90426bb89fb4189689785518a5276b895f81f96a73c41ada8aad/3ced352638f9777565e6cb3a321a9bdcca63695ffa0cafcd0e4e545c3e4399b9.wasm"
+        }
+      },
+      "sha256": "3ced352638f9777565e6cb3a321a9bdcca63695ffa0cafcd0e4e545c3e4399b9"
+    },
+    {
+      "name": "higress-system.model-mapper.internal",
+      "vm_id": null,
+      "runtime": "envoy.wasm.runtime.v8",
+      "code": {
+        "local": {
+          "filename": "/var/lib/istio/data/aea336f1c12f96d77b88824174192a6762c889bd86b26fe31545ca0b1aafad21/2e7c30ed48eeee9fa493f0c1071d7bda59991bce7ff60780b9e91fd404442bf6.wasm"
+        }
+      },
+      "sha256": "2e7c30ed48eeee9fa493f0c1071d7bda59991bce7ff60780b9e91fd404442bf6"
+    },
+    {
+      "name": "higress-system.ai-proxy.internal",
+      "vm_id": null,
+      "runtime": "envoy.wasm.runtime.v8",
+      "code": {
+        "local": {
+          "filename": "/var/lib/istio/data/12dace5ff198da30b55753a211173e6518799282f848161e8255d3e0637c8733/c7c448592236c1f6b14449145d68a12987ffcce22c3cdd9e072ba861d506f0fd.wasm"
+        }
+      },
+      "sha256": "c7c448592236c1f6b14449145d68a12987ffcce22c3cdd9e072ba861d506f0fd"
+    },
+    {
+      "name": "higress-system.ai-statistics-1.0.2",
+      "vm_id": null,
+      "runtime": "envoy.wasm.runtime.v8",
+      "code": {
+        "local": {
+          "filename": "/var/lib/istio/data/4c8d39959b00110720c1d5bf3c15254333ddaa86022822a1980fa581f64ab469/dfc39edb1d10c4b1f5274431a2be8d30c2f021adc799590d44296428d21782a2.wasm"
+        }
+      },
+      "sha256": "dfc39edb1d10c4b1f5274431a2be8d30c2f021adc799590d44296428d21782a2"
+    }
+  ],
+  "setup_recovery": {
+    "initial_problem": "ai-statistics 1.0.2 artifact returned 404; gateway was not Ready",
+    "actions": [
+      "built and uploaded current main ai-statistics 1.0.2",
+      "restarted existing higress-gateway deployment",
+      "confirmed all pod containers Ready and gateway Available",
+      "re-submitted the speech route through AdminWeb after gateway recovery"
+    ],
+    "final_gateway_ready_replicas": 1,
+    "initial_connection_failures_counted_as_media_pass": false
+  },
+  "requests": [
+    {
+      "case": "image",
+      "started_at_utc": "2026-10-22T06:27:01.909707+00:00",
+      "gateway": "http://api.ai.lc.wooveep.com",
+      "path": "/v1/images/generations",
+      "request": {
+        "model": "qwen-image-2.0-pro",
+        "prompt": "A quiet lake at sunrise with mountains, watercolor landscape, no text.",
+        "n": 1,
+        "seed": 42,
+        "size": "1280x720"
+      },
+      "authorized": true,
+      "http_status": 200,
+      "content_type": "application/json",
+      "duration_seconds": 11.795,
+      "response_request_id": "2d73a2cc-861e-9526-8c63-f832372b6388",
+      "response": {
+        "created": 1792650433,
+        "data": [
+          {
+            "url": "[REDACTED_TEMPORARY_MEDIA_URL]"
+          }
+        ],
+        "usage": {
+          "total_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "input_tokens_details": {
+            "text_tokens": 0,
+            "image_tokens": 0
+          }
+        }
+      },
+      "media": {
+        "http_status": 200,
+        "content_type": "image/png",
+        "bytes": 1182596,
+        "sha256": "3a2be137406d1684fc84c9e9a7afbb77e81e364c526309271888a87c8aa86cda",
+        "format": "PNG",
+        "width": 1280,
+        "height": 720,
+        "png_crc_valid": true,
+        "valid": true
+      },
+      "classification": "success"
+    },
+    {
+      "case": "speech",
+      "started_at_utc": "2026-10-22T06:27:58.866903+00:00",
+      "gateway": "http://api.ai.lc.wooveep.com",
+      "path": "/v1/audio/speech",
+      "request": {
+        "model": "qwen3-tts-flash",
+        "input": "This is a local K3S media verification.",
+        "voice": "Cherry",
+        "language_type": "English"
+      },
+      "authorized": true,
+      "http_status": 200,
+      "content_type": "application/json",
+      "duration_seconds": 1.125,
+      "response_request_id": "01b75ec6-5730-91f6-8e09-56a3e86c8f79",
+      "response": {
+        "created": 1792650479,
+        "data": {
+          "url": "[REDACTED_TEMPORARY_MEDIA_URL]",
+          "id": "audio_01b75ec6-5730-91f6-8e09-56a3e86c8f79",
+          "expires_at": 1792736878
+        },
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "characters": 45,
+          "total_tokens": 0
+        }
+      },
+      "media": {
+        "http_status": 200,
+        "content_type": "audio/x-wav",
+        "bytes": 180524,
+        "sha256": "b083914dde1cc739ae411d8bd55892978eedc5c2071543611625cf447a79b8d0",
+        "format": "WAV",
+        "channels": 1,
+        "sample_rate": 24000,
+        "sample_width": 2,
+        "duration_seconds": 3.76,
+        "valid": true,
+        "source_url_scheme": "http",
+        "download_url_scheme": "https",
+        "transport_note": "Provider returned an HTTP OSS URL; the same signed resource was inspected over HTTPS.",
+        "pcm_bytes": 180480,
+        "pcm_nonzero": true,
+        "declared_frames": 1073741773,
+        "frames": 90240,
+        "pcm_frame_alignment_valid": true,
+        "declared_length_matches_file": false,
+        "wav_header": {
+          "riff_declared_bytes": 2147483591,
+          "file_bytes": 180524,
+          "data_declared_bytes": 2147483547,
+          "data_actual_bytes": 180480
+        },
+        "pcm_peak": 14207,
+        "pcm_rms": 2472.831,
+        "validation_basis": "HTTP 200, WAV PCM16 header, complete actual PCM frames, nonzero waveform; declared container lengths exceed the actual file."
+      },
+      "classification": "success"
+    },
+    {
+      "case": "unauthenticated",
+      "started_at_utc": "2026-10-22T06:27:58.867377+00:00",
+      "gateway": "http://api.ai.lc.wooveep.com",
+      "path": "/v1/audio/speech",
+      "request": {
+        "model": "qwen3-tts-flash",
+        "input": "Authentication check.",
+        "voice": "Cherry"
+      },
+      "authorized": false,
+      "http_status": 401,
+      "content_type": "text/plain",
+      "duration_seconds": 0.01,
+      "response_request_id": null,
+      "response": {
+        "text": "Request denied by Key Auth check. No Key Authentication information found."
+      },
+      "classification": "authentication_rejected"
+    },
+    {
+      "case": "speech-invalid-voice",
+      "started_at_utc": "2026-10-22T06:27:58.867621+00:00",
+      "gateway": "http://api.ai.lc.wooveep.com",
+      "path": "/v1/audio/speech",
+      "request": {
+        "model": "qwen3-tts-flash",
+        "input": "Provider validation check.",
+        "voice": "invalid-voice-k3s-verification"
+      },
+      "authorized": true,
+      "http_status": 400,
+      "content_type": "application/json",
+      "duration_seconds": 0.366,
+      "response_request_id": "ae353e38-d107-96a9-8efc-61d64faaf8b7",
+      "response": {
+        "request_id": "ae353e38-d107-96a9-8efc-61d64faaf8b7",
+        "code": "InvalidParameter",
+        "message": "Invalid voice specified, the requested voice does not exist or is not licensed for use—please select a supported voice."
+      },
+      "classification": "expected_upstream_provider_error"
+    }
+  ],
+  "provider_limitations": [
+    "Speech API returns JSON with an audio URL, not a binary OpenAI audio response.",
+    "Provider returned an HTTP signed OSS URL; the same signed resource was fetched over HTTPS. The plugin did not rewrite its scheme.",
+    "Provider WAV declared RIFF/data lengths exceed actual file lengths. Actual complete nonzero PCM frames establish 3.760 seconds; strict WAV length conformance is not claimed.",
+    "Zero token counters do not establish cost or validate billing."
+  ],
+  "unit_validation": {
+    "command": "go test ./provider -run 'TestQwenProvider.*(ImageGeneration|AudioSpeech)' -count=1 -v",
+    "cwd": "extensions/ai-proxy",
+    "passed": [
+      "TestQwenProviderTransformImageGenerationRequestBodyHeaders",
+      "TestQwenProviderTransformImageGenerationResponseBody",
+      "TestQwenProviderTransformImageGenerationResponseBodyPreservesProviderError",
+      "TestQwenProviderTransformAudioSpeechRequestBodyHeaders",
+      "TestQwenProviderTransformAudioSpeechResponseBody",
+      "TestQwenProviderTransformAudioSpeechResponseBodyPreservesProviderError"
+    ],
+    "failed": 0,
+    "skipped": 0,
+    "result": "PASS"
+  },
+  "redaction": {
+    "media_urls": "Whole values replaced by [REDACTED_TEMPORARY_MEDIA_URL]",
+    "credentials": "No provider API Keys, gateway secret, passwords, JWTs, kubeconfig, upload token, cookies or encrypted credential blobs included",
+    "raw_artifacts": "Private ignored run files only; not included in Git"
+  },
+  "additional_findings": [
+    {
+      "id": "K3S-20261022-credential-revocation",
+      "priority": "P1",
+      "category": "authentication/credential lifecycle",
+      "affected_surface": "UserWeb token management -> Console/Consumer projection -> gateway Key Auth",
+      "status": "open; root cause not established",
+      "reproduction": [
+        "Create a dedicated API Key through UserWeb and establish an authorized route",
+        "Revoke this newly created key through UserWeb; mutation returned 200 and UI showed inactive",
+        "POST /v1/audio/speech with the old key and an invalid voice; recheck after propagation time"
+      ],
+      "expected": "401 or 403 at the gateway before reaching DashScope",
+      "actual": "Both checks reached DashScope and returned InvalidParameter 400",
+      "impact": "UI inactive state does not establish runtime credential rejection",
+      "blocking_status": "Blocks credential revocation and general environment security acceptance, not the two historical media conversion tasks",
+      "evidence": [
+        {
+          "case": "revoked-key",
+          "started_at_utc": "2026-10-22T06:31:19.177509+00:00",
+          "gateway": "http://api.ai.lc.wooveep.com",
+          "path": "/v1/audio/speech",
+          "request": {
+            "model": "qwen3-tts-flash",
+            "input": "Revoked token check.",
+            "voice": "invalid-voice-k3s-verification"
+          },
+          "authorized": true,
+          "http_status": 400,
+          "content_type": "application/json",
+          "duration_seconds": 120.211,
+          "response_request_id": "bbcd6000-8484-99eb-8410-30ea180dffb8",
+          "response": {
+            "request_id": "bbcd6000-8484-99eb-8410-30ea180dffb8",
+            "code": "InvalidParameter",
+            "message": "Invalid voice specified, the requested voice does not exist or is not licensed for use—please select a supported voice."
+          },
+          "classification": "revoked_key_reached_upstream"
+        },
+        {
+          "http_status": 400,
+          "duration_seconds": 0.576,
+          "response": {
+            "request_id": "6eb3b399-390e-9119-a611-75fbbbe2089b",
+            "code": "InvalidParameter",
+            "message": "Invalid voice specified, the requested voice does not exist or is not licensed for use—please select a supported voice."
+          },
+          "checked_at_utc": "2026-10-22T06:35:40.378989+00:00",
+          "classification": "revoked_key_reached_upstream"
+        }
+      ],
+      "mitigation": "Both test routes disabled via AdminWeb; no remaining test Ingress; public test path returns 404",
+      "follow_up": "Investigate Console, Consumer/credential projection and Key Auth; add a revoke-and-reject runtime regression in the platform repository"
+    },
+    {
+      "id": "K3S-20261022-route-disable-result",
+      "priority": "P2",
+      "category": "route management/result consistency",
+      "affected_surface": "AdminWeb AI Route disable operation",
+      "status": "open",
+      "reproduction": [
+        "Edit each dedicated test route in AdminWeb",
+        "Turn enabled off and submit",
+        "Compare API response with Kubernetes Ingress and public route state"
+      ],
+      "expected": "A successful response after disabling a route",
+      "actual": "400 validation_error / AI Route not found, while test Ingresses were removed",
+      "impact": "UI response cannot be used alone to determine whether the operation took effect",
+      "blocking_status": "Blocks UI operation acceptance; final route isolation independently verified",
+      "evidence": {
+        "checked_at_utc": "2026-10-22T06:37:25.471957+00:00",
+        "temporary_key_ui_mutation_http_status": 200,
+        "temporary_key_ui_active": false,
+        "revocation_runtime_defect_open": true,
+        "test_routes_disabled": true,
+        "remaining_test_ingress_names": [],
+        "gateway_test_path_after_disabling_http_status": 404,
+        "route_disable_ui_response": {
+          "http_status": 400,
+          "message": "AI Route not found",
+          "observed_runtime_effect": "Test Ingresses removed despite UI response"
+        },
+        "resources_retained": [
+          "provider",
+          "model assets and bindings",
+          "dedicated tenant and user"
+        ]
+      },
+      "follow_up": "Review post-disable lookup and response generation in the platform repository"
+    }
+  ],
+  "cleanup": {
+    "checked_at_utc": "2026-10-22T06:37:25.471957+00:00",
+    "temporary_key_ui_mutation_http_status": 200,
+    "temporary_key_ui_active": false,
+    "revocation_runtime_defect_open": true,
+    "test_routes_disabled": true,
+    "remaining_test_ingress_names": [],
+    "gateway_test_path_after_disabling_http_status": 404,
+    "route_disable_ui_response": {
+      "http_status": 400,
+      "message": "AI Route not found",
+      "observed_runtime_effect": "Test Ingresses removed despite UI response"
+    },
+    "resources_retained": [
+      "provider",
+      "model assets and bindings",
+      "dedicated tenant and user"
+    ]
+  }
+}

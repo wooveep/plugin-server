@@ -1,77 +1,118 @@
-PLUGIN_NAME ?= hello-world
-PLUGIN_ROOT ?= extensions
-BUILDER_REGISTRY ?= higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/
-REGISTRY ?= higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/
-GO_VERSION ?= 1.24.4
-TINYGO_VERSION ?= 0.29.0
-ORAS_VERSION ?= 1.0.0
-HIGRESS_VERSION ?= 1.0.0-rc
-USE_HIGRESS_TINYGO ?= false
-BUILDER ?= ${BUILDER_REGISTRY}wasm-go-builder:go${GO_VERSION}-oras${ORAS_VERSION}
-BUILD_TIME := $(shell date "+%Y%m%d-%H%M%S")
-COMMIT_ID := $(shell git rev-parse --short HEAD 2>/dev/null)
-IMAGE_TAG = $(if $(strip $(PLUGIN_VERSION)),${PLUGIN_VERSION},${BUILD_TIME}-${COMMIT_ID})
-IMG ?= ${REGISTRY}${PLUGIN_NAME}:${IMAGE_TAG}
-GOPROXY := $(shell go env GOPROXY)
+EXTENSIONS_DIR ?= extensions
+BUILD_DIR ?= build/plugins
+PLUGIN_VERSION ?=
+PLUGIN ?=
 
-.DEFAULT:
-build:
-	DOCKER_BUILDKIT=1 docker build --build-arg PLUGIN_NAME=${PLUGIN_NAME} \
-	                            --build-arg PLUGIN_ROOT=${PLUGIN_ROOT} \
-	                            --build-arg BUILDER=${BUILDER}  \
-	                            --build-arg GOPROXY=$(GOPROXY) \
-	                            -t ${IMG} \
-	                            --output ${PLUGIN_ROOT}/${PLUGIN_NAME} \
-	                            .
-	@echo ""
-	@echo "output wasm file: ${PLUGIN_ROOT}/${PLUGIN_NAME}/plugin.wasm"
+WASM_BUILDER ?= go
+GO ?= go
+TINYGO ?= tinygo
+GO_BUILD_FLAGS ?= -buildmode=c-shared -trimpath
+TINYGO_FLAGS ?= -scheduler=none -target=wasi -gc=custom
+TINYGO_BASE_TAGS ?= custommalloc nottinygc_finalizer
+EXTRA_TAGS ?=
+TINYGO_TAGS := $(strip $(TINYGO_BASE_TAGS) $(EXTRA_TAGS))
 
-build-image:
-	DOCKER_BUILDKIT=1 docker build --build-arg PLUGIN_NAME=${PLUGIN_NAME} \
-	                            --build-arg PLUGIN_ROOT=${PLUGIN_ROOT} \
-	                            --build-arg BUILDER=${BUILDER}  \
-	                            --build-arg GOPROXY=$(GOPROXY) \
-	                            -t ${IMG} \
-	                            .
-	@echo ""
-	@echo "image:            ${IMG}"
+PLUGIN_DIRS := $(foreach mod,$(wildcard $(EXTENSIONS_DIR)/*/go.mod),$(if $(wildcard $(dir $(mod))main.go),$(patsubst %/,%,$(dir $(mod)))))
+PLUGINS := $(sort $(notdir $(PLUGIN_DIRS)))
 
-build-push: build-image
-	docker push ${IMG}
+.DEFAULT_GOAL := build
 
-# builder:
-# To build a wasm-go-builder image.
-# e.g.
-#   REGISTRY=<your_docker_registry> make builder
-# If you want to use Go/TinyGo/Oras with another version, please modify GO_VERSION/TINYGO_VERSION/ORAS_VERSION.
-# After your wasm-go-builder image is built, you can use it to build plugin image.
-# e.g.
-#   PLUGIN_ROOT=examples PLUGIN_NAME=request-block BUILDER=<your-wasm-go-builder> make
-builder:
-	docker buildx build --no-cache \
-			--platform linux/amd64,linux/arm64 \
-			--build-arg BASE_IMAGE=docker.io/ubuntu \
-			--build-arg GO_VERSION=$(GO_VERSION) \
-			--build-arg ORAS_VERSION=$(ORAS_VERSION) \
-			--build-arg HIGRESS_VERSION=$(HIGRESS_VERSION) \
-			--build-arg USE_HIGRESS_TINYGO=$(USE_HIGRESS_TINYGO) \
-			-f DockerfileBuilder \
-			-t ${BUILDER} \
-			--push \
-			.
-	@echo ""
-	@echo "image: ${BUILDER}"
+.PHONY: build all build-all build-plugin metadata list-plugins clean
 
-local-build:
-	cd ${PLUGIN_ROOT}/${PLUGIN_NAME}; \
-	if [ -f prepare.sh ]; then sh ./prepare.sh; fi; \
-	GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -o ./main.wasm .
+build: build-all
 
-	@echo ""
-	@echo "wasm: ${PLUGIN_ROOT}/${PLUGIN_NAME}/main.wasm"
+all: build-all
 
-local-run:
-	python3 .devcontainer/gen_config.py ${PLUGIN_NAME} ${PLUGIN_ROOT}
-	envoy -c ${PLUGIN_ROOT}/${PLUGIN_NAME}/config.yaml --concurrency 0 --log-level info --component-log-level wasm:debug
+list-plugins:
+	@printf '%s\n' $(PLUGINS)
 
-local-all: local-build local-run
+build-all:
+	@if [ -z "$(PLUGINS)" ]; then \
+		echo "No plugins found under $(EXTENSIONS_DIR)" >&2; \
+		exit 2; \
+	fi
+	@set -e; \
+	for plugin in $(PLUGINS); do \
+		$(MAKE) --no-print-directory build-plugin PLUGIN=$$plugin; \
+	done
+
+build-plugin:
+	@if [ -z "$(PLUGIN)" ]; then \
+		echo "PLUGIN is required. Usage: make build-plugin PLUGIN=<name>" >&2; \
+		exit 2; \
+	fi
+	@found=0; \
+	for plugin in $(PLUGINS); do \
+		if [ "$$plugin" = "$(PLUGIN)" ]; then found=1; fi; \
+	done; \
+	if [ "$$found" -ne 1 ]; then \
+		echo "Unknown plugin '$(PLUGIN)'. Discovered plugins: $(PLUGINS)" >&2; \
+		exit 2; \
+	fi
+	@plugin_version="$(PLUGIN_VERSION)"; \
+	if [ -z "$$plugin_version" ]; then \
+		version_file="$(EXTENSIONS_DIR)/$(PLUGIN)/VERSION"; \
+		if [ ! -f "$$version_file" ]; then \
+			echo "Missing version file: $$version_file" >&2; \
+			exit 2; \
+		fi; \
+		plugin_version=$$(tr -d '[:space:]' < "$$version_file"); \
+		if [ -z "$$plugin_version" ]; then \
+			echo "Empty version file: $$version_file" >&2; \
+			exit 2; \
+		fi; \
+	fi; \
+	out_dir="$(abspath $(BUILD_DIR))/$(PLUGIN)/$$plugin_version"; \
+	wasm="$$out_dir/plugin.wasm"; \
+	mkdir -p "$$out_dir"; \
+	echo "Building $(PLUGIN) -> $$wasm"; \
+	case "$(WASM_BUILDER)" in \
+		go) \
+			(cd "$(EXTENSIONS_DIR)/$(PLUGIN)" && GOOS=wasip1 GOARCH=wasm $(GO) build $(GO_BUILD_FLAGS) -o "$$wasm" ./) ;; \
+		tinygo) \
+			(cd "$(EXTENSIONS_DIR)/$(PLUGIN)" && $(TINYGO) build $(TINYGO_FLAGS) -tags='$(TINYGO_TAGS)' -o "$$wasm" main.go) ;; \
+		*) \
+			echo "Unsupported WASM_BUILDER '$(WASM_BUILDER)'. Use 'go' or 'tinygo'." >&2; \
+			exit 2 ;; \
+	esac
+	@$(MAKE) --no-print-directory metadata PLUGIN=$(PLUGIN)
+
+metadata:
+	@if [ -z "$(PLUGIN)" ]; then \
+		echo "PLUGIN is required. Usage: make metadata PLUGIN=<name>" >&2; \
+		exit 2; \
+	fi
+	@plugin_version="$(PLUGIN_VERSION)"; \
+	if [ -z "$$plugin_version" ]; then \
+		version_file="$(EXTENSIONS_DIR)/$(PLUGIN)/VERSION"; \
+		if [ ! -f "$$version_file" ]; then \
+			echo "Missing version file: $$version_file" >&2; \
+			exit 2; \
+		fi; \
+		plugin_version=$$(tr -d '[:space:]' < "$$version_file"); \
+		if [ -z "$$plugin_version" ]; then \
+			echo "Empty version file: $$version_file" >&2; \
+			exit 2; \
+		fi; \
+	fi; \
+	wasm="$(abspath $(BUILD_DIR))/$(PLUGIN)/$$plugin_version/plugin.wasm"; \
+	out_dir=$$(dirname "$$wasm"); \
+	if [ ! -f "$$wasm" ]; then \
+		echo "Missing wasm artifact: $$wasm" >&2; \
+		exit 2; \
+	fi; \
+	size=$$(wc -c < "$$wasm" | tr -d ' '); \
+	last_modified=$$(date -r "$$wasm" "+%Y-%m-%dT%H:%M:%S"); \
+	created=$$(date "+%Y-%m-%dT%H:%M:%S.%6N"); \
+	md5=$$(md5sum "$$wasm" | awk '{print $$1}'); \
+	{ \
+		printf 'Plugin Name: %s\n' "$(PLUGIN)"; \
+		printf 'Size: %s bytes\n' "$$size"; \
+		printf 'Last Modified: %s\n' "$$last_modified"; \
+		printf 'Created: %s\n' "$$created"; \
+		printf 'MD5: %s\n' "$$md5"; \
+	} > "$$out_dir/metadata.txt"; \
+	echo "metadata: $$out_dir/metadata.txt"
+
+clean:
+	rm -rf "$(BUILD_DIR)"

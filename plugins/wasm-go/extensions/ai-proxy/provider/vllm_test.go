@@ -33,20 +33,16 @@ func TestVllmProvider_GetApiName(t *testing.T) {
 		path     string
 		expected ApiName
 	}{
-		// existing (regression guard)
 		{PathOpenAIChatCompletions, ApiNameChatCompletion},
 		{PathOpenAICompletions, ApiNameCompletion},
 		{PathOpenAIModels, ApiNameModels},
 		{PathOpenAIEmbeddings, ApiNameEmbeddings},
 		{PathCohereV1Rerank, ApiNameCohereV1Rerank},
-		// new passthrough endpoints
-		// count_tokens must be checked before /v1/messages (substring) — guards the ordering
 		{PathAnthropicMessagesCountTokens, ApiNameAnthropicCountTokens},
 		{PathAnthropicMessages, ApiNameAnthropicMessages},
 		{PathOpenAIResponses, ApiNameResponses},
 		{PathOpenAIAudioTranscriptions, ApiNameAudioTranscription},
 		{PathOpenAIAudioTranslations, ApiNameAudioTranslation},
-		// unknown path
 		{"/v1/unknown", ApiName("")},
 	}
 
@@ -62,17 +58,14 @@ func TestVllm_isVllmDirectPath(t *testing.T) {
 		path string
 		want bool
 	}{
-		// existing direct endpoints
 		{"/v1/chat/completions", true},
 		{"/v1/completions", true},
 		{"/v1/rerank", true},
-		// newly added passthrough endpoints
 		{"/v1/responses", true},
 		{"/v1/messages", true},
 		{"/v1/messages/count_tokens", true},
 		{"/v1/audio/transcriptions", true},
 		{"/v1/audio/translations", true},
-		// base paths must NOT be treated as direct endpoints
 		{"/v1", false},
 		{"/", false},
 		{"/custom", false},
@@ -85,9 +78,6 @@ func TestVllm_isVllmDirectPath(t *testing.T) {
 	}
 }
 
-// TestVllmProviderInitializer_CreateProvider_customUrl verifies vllmCustomUrl
-// handling: a base path gets the per-API suffix appended, while a direct endpoint
-// URL is forwarded as-is (no double-append such as /v1/responses/responses).
 func TestVllmProviderInitializer_CreateProvider_customUrl(t *testing.T) {
 	initializer := &vllmProviderInitializer{}
 
@@ -95,9 +85,9 @@ func TestVllmProviderInitializer_CreateProvider_customUrl(t *testing.T) {
 		name       string
 		customUrl  string
 		wantDirect bool
-		wantPath   string // expected customPath when direct
+		wantPath   string
 		wantDomain string
-		capability ApiName // sample capability to check for base paths
+		capability ApiName
 		wantCap    string
 	}{
 		{
@@ -164,27 +154,18 @@ func TestVllmProviderInitializer_CreateProvider_customUrl(t *testing.T) {
 	}
 }
 
-// TestVllm_passthroughBodyAndSupport guards the body-handling and capability
-// behaviour of the passthrough endpoints.
 func TestVllm_passthroughBodyAndSupport(t *testing.T) {
 	cfg := &ProviderConfig{}
-	// Audio endpoints carry multipart/form-data bodies and must be passed through
-	// untouched (no JSON processing).
 	assert.False(t, cfg.needToProcessRequestBody(ApiNameAudioTranscription))
 	assert.False(t, cfg.needToProcessRequestBody(ApiNameAudioTranslation))
-	// Anthropic messages / count_tokens / responses carry JSON bodies (model
-	// mapping etc.), so they are processed.
 	assert.True(t, cfg.needToProcessRequestBody(ApiNameAnthropicMessages))
 	assert.True(t, cfg.needToProcessRequestBody(ApiNameAnthropicCountTokens))
 	assert.True(t, cfg.needToProcessRequestBody(ApiNameResponses))
 
-	// A vLLM provider declares the count_tokens capability and supports it.
 	vllmCfg := &ProviderConfig{}
 	vllmCfg.setDefaultCapabilities((&vllmProviderInitializer{}).DefaultCapabilities())
 	assert.True(t, vllmCfg.isSupportedAPI(ApiNameAnthropicCountTokens))
 
-	// A provider that does not declare it (the path is now globally recognized)
-	// rejects the request via isSupportedAPI instead of mishandling it.
 	otherCfg := &ProviderConfig{}
 	otherCfg.setDefaultCapabilities(map[string]string{
 		string(ApiNameChatCompletion): PathOpenAIChatCompletions,

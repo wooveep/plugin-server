@@ -6,3 +6,7 @@ require (
 	github.com/magefile/mage v1.14.0
 	github.com/tetratelabs/wabin v0.0.0-20220927005300-3b0fbf39a46a
 )
+
+replace github.com/higress-group/wasm-go => ../../..
+
+replace github.com/higress-group/proxy-wasm-go-sdk => ../../../../proxy-wasm-go-sdk

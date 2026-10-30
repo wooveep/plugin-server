@@ -82,9 +82,42 @@ func TestGenerateSignatureIgnoresQueryStringInCanonicalURI(t *testing.T) {
 	pathWithoutQuery := "/model/global.amazon.nova-2-lite-v1%3A0/converse-stream"
 	pathWithQuery := pathWithoutQuery + "?trace=1&foo=bar"
 
+	assert.Equal(t, encodeSigV4Path(pathWithoutQuery), encodeSigV4Path(pathWithQuery))
 	sigWithoutQuery := p.generateSignature(pathWithoutQuery, "20260312T142942Z", "20260312", body)
 	sigWithQuery := p.generateSignature(pathWithQuery, "20260312T142942Z", "20260312", body)
-	assert.Equal(t, sigWithoutQuery, sigWithQuery)
+	assert.NotEqual(t, sigWithoutQuery, sigWithQuery)
+}
+
+func TestGenerateSignatureUsesExactMethodQueryAndBody(t *testing.T) {
+	p := &bedrockProvider{
+		config: ProviderConfig{
+			awsRegion:    "us-east-1",
+			awsSecretKey: "test-secret",
+		},
+	}
+	const (
+		target    = "/model/example/converse?sig=a%2Bb&dup=1&dup=2"
+		authority = "bedrock-runtime.us-east-1.amazonaws.com"
+		amzDate   = "20260312T142942Z"
+		dateStamp = "20260312"
+	)
+	body := []byte{0x00, 0xff, 'o', 'p', 'a', 'q', 'u', 'e', 0x80}
+	sign := func(method, requestTarget string, requestBody []byte) string {
+		return p.generateSignatureWithService(
+			method,
+			requestTarget,
+			authority,
+			amzDate,
+			dateStamp,
+			requestBody,
+			awsServiceBedrock,
+		)
+	}
+
+	signature := sign(http.MethodPatch, target, body)
+	assert.NotEqual(t, signature, sign(http.MethodPost, target, body))
+	assert.NotEqual(t, signature, sign(http.MethodPatch, "/model/example/converse?dup=1&dup=2", body))
+	assert.NotEqual(t, signature, sign(http.MethodPatch, target, append(body, 0x7f)))
 }
 
 func TestGenerateSignatureDiffersForRawAndPreEncodedModelPath(t *testing.T) {

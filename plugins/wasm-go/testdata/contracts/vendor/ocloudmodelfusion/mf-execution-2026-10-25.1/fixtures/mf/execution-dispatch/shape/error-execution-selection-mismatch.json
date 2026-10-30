@@ -1,0 +1,6 @@
+{
+  "code": "execution_selection_mismatch",
+  "retryability": "never",
+  "resource_ref": "dispatch-1",
+  "current_revision": "2"
+}

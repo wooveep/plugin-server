@@ -1,0 +1,1 @@
+{"cacheKeyPrefix":"higress-ai-history:","cacheTTL":0,"fillHistoryCnt":3,"identityHeader":"Authorization","redis":{"database":0,"serviceName":"my-redis.dns","servicePort":6379,"timeout":2000}}

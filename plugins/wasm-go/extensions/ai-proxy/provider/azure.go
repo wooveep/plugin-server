@@ -108,7 +108,7 @@ func (m *azureProviderInitializer) ValidateConfig(config *ProviderConfig) error 
 	} else if err := validateAzureServiceURLAPIVersion(azureServiceUrl, config.azureServiceUrl); err != nil {
 		return err
 	}
-	if config.apiTokens == nil || len(config.apiTokens) == 0 {
+	if len(config.apiTokens) == 0 {
 		return errors.New("no apiToken found in provider config")
 	}
 	return nil
@@ -237,6 +237,12 @@ type azureProvider struct {
 	serviceUrlType     azureServiceUrlType
 	apiVersion         string
 	defaultModel       string
+}
+
+func (m *azureProvider) TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header) {
+	util.OverwriteRequestHostHeader(headers, m.serviceUrl.Host)
+	clearTransparentCredentials(headers)
+	headers.Set("api-key", m.config.GetApiTokenInUse(ctx))
 }
 
 func (m *azureProvider) GetProviderType() string {

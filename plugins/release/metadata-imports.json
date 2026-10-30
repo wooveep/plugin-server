@@ -1,0 +1,1658 @@
+{
+  "imports": [
+    {
+      "plugin": "ai-agent",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-agent/spec.yaml",
+      "sha256": "b96a2745008b26cb61f3a005ac2993c583989cb2a9583639a8a88940040cc318",
+      "destination": "plugins/release/metadata/ai-agent/spec.yaml"
+    },
+    {
+      "plugin": "ai-agent",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-agent/README.md",
+      "sha256": "1b56ef86278521423f9c1a92940596b431677a6ce63653edbeb228759c423f58",
+      "destination": "plugins/release/metadata/ai-agent/README.md"
+    },
+    {
+      "plugin": "ai-agent",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-agent/README_EN.md",
+      "sha256": "b214ae4e47ad49cbc55cbcab162f74238795eb988b2dc18e2dad49208a6612a9",
+      "destination": "plugins/release/metadata/ai-agent/README_EN.md"
+    },
+    {
+      "plugin": "ai-agent",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "b96a2745008b26cb61f3a005ac2993c583989cb2a9583639a8a88940040cc318",
+      "new_spec_sha256": "a1daf1668fff2b8def6eb03de05a65e9f0d95edd33f3fc0290b8985392b98d9a",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-billing",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "9195d315bb67f22548800b5c42e52fa6f75fb6d00f98a84c756578f61df0cd85",
+      "new_spec_sha256": "ccfd461e4bf9d31dbb70a4567168fd0394d79d01d47cd46f47f5cf941811e124",
+      "version": "0.1.14"
+    },
+    {
+      "plugin": "ai-cache",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "ba9e35284d4c7438e9b44c836a2107e1537df321241fb893255b81ad8fe397b8",
+      "new_spec_sha256": "1d446082f58e4d5cb7885be1880881668b253499ad31dc1b3b4e017de56934f8",
+      "version": "2.0.4"
+    },
+    {
+      "plugin": "ai-context-limit",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "4507454263642ba71290f11a59905850054c868a22228f812a33c4fdb3f3e82e",
+      "new_spec_sha256": "2a95efe1ad5dc4ccd660614b5755fed57f22e0cfee3b3bdf1dfc6186ae9d30e5",
+      "version": "1.0.0"
+    },
+    {
+      "plugin": "ai-data-masking",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-data-masking/spec.yaml",
+      "sha256": "c406d06724b1bc131e3e474dc028249e4c347b9374122c360757ca45f5f77c89",
+      "destination": "plugins/release/metadata/ai-data-masking/spec.yaml"
+    },
+    {
+      "plugin": "ai-data-masking",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-data-masking/README.md",
+      "sha256": "64e7a4feee5adc6afaef665526728d346914c5aca38862f896e5cc9d775a365f",
+      "destination": "plugins/release/metadata/ai-data-masking/README.md"
+    },
+    {
+      "plugin": "ai-data-masking",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-data-masking/README_EN.md",
+      "sha256": "2521550ffde81a65a15854d5fd7c55cd0b0242d489b4084c247165b93eba7da3",
+      "destination": "plugins/release/metadata/ai-data-masking/README_EN.md"
+    },
+    {
+      "plugin": "ai-data-masking",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "c406d06724b1bc131e3e474dc028249e4c347b9374122c360757ca45f5f77c89",
+      "new_spec_sha256": "3eb44fdecc8f55bb74e0c3933e3a14f41f5819d81b148dfd4b3b2a2ef9163c1c",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-endpoint-picker",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "3ddf79d664a702c18b5eb9c6bd297d19c1834f4467387cf72ee4599f9f9dac77",
+      "new_spec_sha256": "f79a7cc9b04c04258a0e285bb4e24e3ebb0b3c7bc805cec02716dafa9138e5c7",
+      "version": "2.0.2"
+    },
+    {
+      "plugin": "ai-history",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "8c48590607ce53579ebe34cf029d7a09808dc21dad02cd57c74305fb2af1fb62",
+      "new_spec_sha256": "919c00cd37c8c7ad4abc01986a11e15c2f28f6182337c9018c7addccb2122d05",
+      "version": "2.0.4"
+    },
+    {
+      "plugin": "ai-intent",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-intent/spec.yaml",
+      "sha256": "da3346e1229789ee5cedb3f3be1ee1d359420201666e0572e6b19fa3e74e509e",
+      "destination": "plugins/release/metadata/ai-intent/spec.yaml"
+    },
+    {
+      "plugin": "ai-intent",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-intent/README.md",
+      "sha256": "c0d169bbd3a6ef52e647feb38ef9ae964fe673125d0c5d13c7dd917196bbe8a2",
+      "destination": "plugins/release/metadata/ai-intent/README.md"
+    },
+    {
+      "plugin": "ai-intent",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-intent/README_EN.md",
+      "sha256": "6971931479ed4161b84f9b3a62d1dcd40e2ffae99f8baaf2c9ff8ba7444d666d",
+      "destination": "plugins/release/metadata/ai-intent/README_EN.md"
+    },
+    {
+      "plugin": "ai-intent",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "da3346e1229789ee5cedb3f3be1ee1d359420201666e0572e6b19fa3e74e509e",
+      "new_spec_sha256": "a12b391a168e5a5ab451308a74fe2835a1f0ffbc7558fcbd8427b30c1f79a645",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-json-resp",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-json-resp/spec.yaml",
+      "sha256": "8ab238393471044d596e1d49a197ee2b40893809573b1833281dc52a537d75bc",
+      "destination": "plugins/release/metadata/ai-json-resp/spec.yaml"
+    },
+    {
+      "plugin": "ai-json-resp",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-json-resp/README.md",
+      "sha256": "6d83a2e480d21d97cd7bb6fb5b90816ac3e11337c27e8e1908e707a8f48be813",
+      "destination": "plugins/release/metadata/ai-json-resp/README.md"
+    },
+    {
+      "plugin": "ai-json-resp",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-json-resp/README_EN.md",
+      "sha256": "4c1c0d44d2fde61642e0832af8fcf620d5b411f681528e905588cefd32f2b2c7",
+      "destination": "plugins/release/metadata/ai-json-resp/README_EN.md"
+    },
+    {
+      "plugin": "ai-json-resp",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "8ab238393471044d596e1d49a197ee2b40893809573b1833281dc52a537d75bc",
+      "new_spec_sha256": "a9128d26d592d4ad5736ac4e3795d47bd2db8ba640ed7fb5372b21e08f7cff3c",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-load-balancer",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-load-balancer/spec.yaml",
+      "sha256": "cf6d3fdd84e41acf58795df63dd216b24e139ffd67da71331d35cecd7035cf86",
+      "destination": "plugins/release/metadata/ai-load-balancer/spec.yaml"
+    },
+    {
+      "plugin": "ai-load-balancer",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-load-balancer/README.md",
+      "sha256": "adc1f0126ff69d2c341c6ef96ced1aa53c288192c20ab9f430f13971d360cdcc",
+      "destination": "plugins/release/metadata/ai-load-balancer/README.md"
+    },
+    {
+      "plugin": "ai-load-balancer",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-load-balancer/README_EN.md",
+      "sha256": "dd0e41f3f13ae14353c682d53e93b048b10138b57148211305052a00e0ba89a1",
+      "destination": "plugins/release/metadata/ai-load-balancer/README_EN.md"
+    },
+    {
+      "plugin": "ai-load-balancer",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "cf6d3fdd84e41acf58795df63dd216b24e139ffd67da71331d35cecd7035cf86",
+      "new_spec_sha256": "9550150e4d0f6446f029bbfff15ae36df9a10ec3895aed91f6008e35c53b70bb",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-memory",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "ba6bc8e064d1fee8e26d99148b6bce5e1459fb9062f0b5998238f75475f56bf8",
+      "new_spec_sha256": "032d332c05619584113f638670934b98c4188ae9f89e0ae9749cdcee89bc4f1a",
+      "version": "0.1.7"
+    },
+    {
+      "plugin": "ai-prompt-decorator",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-prompt-decorator/spec.yaml",
+      "sha256": "0f9f7c5237258f1436ffea549093fa54da59117c92cd22d47cdd02b7608c78ea",
+      "destination": "plugins/release/metadata/ai-prompt-decorator/spec.yaml"
+    },
+    {
+      "plugin": "ai-prompt-decorator",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-prompt-decorator/README.md",
+      "sha256": "fe778e138bf1ca9e5c531d8d3778946877c17b0b1f4ea235aea6ec7bc64dfce1",
+      "destination": "plugins/release/metadata/ai-prompt-decorator/README.md"
+    },
+    {
+      "plugin": "ai-prompt-decorator",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-prompt-decorator/README_EN.md",
+      "sha256": "f62464b0873dfce84859f76be5374ed7d8d2cf8384740f124ca0a4772a1bbeac",
+      "destination": "plugins/release/metadata/ai-prompt-decorator/README_EN.md"
+    },
+    {
+      "plugin": "ai-prompt-decorator",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "0f9f7c5237258f1436ffea549093fa54da59117c92cd22d47cdd02b7608c78ea",
+      "new_spec_sha256": "25e14f3ec4d984fc2a876bb56de3a7f2187bb6ac5158f36a7bea44251457c719",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-prompt-template",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-prompt-template/spec.yaml",
+      "sha256": "5e5204ea072ed6215327c6fe040f393c2e1b9dc339cf698f5fe60dd00d5c8c97",
+      "destination": "plugins/release/metadata/ai-prompt-template/spec.yaml"
+    },
+    {
+      "plugin": "ai-prompt-template",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-prompt-template/README.md",
+      "sha256": "049169cc67e17f694f9d6c601e9c0f7e882d3c688df6f8f6b593c4480adcfaf6",
+      "destination": "plugins/release/metadata/ai-prompt-template/README.md"
+    },
+    {
+      "plugin": "ai-prompt-template",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-prompt-template/README_EN.md",
+      "sha256": "462f06d891e49f87111765bb3c6b090b55477370daff04783ed1b54c56f4de58",
+      "destination": "plugins/release/metadata/ai-prompt-template/README_EN.md"
+    },
+    {
+      "plugin": "ai-prompt-template",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "5e5204ea072ed6215327c6fe040f393c2e1b9dc339cf698f5fe60dd00d5c8c97",
+      "new_spec_sha256": "e51dbf003e782326a914288a93250f26894810d747fe0dcf7ee537a5336ccd19",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-proxy",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "a78dbfbc9d39ea16a5c26f9ff6480ee38d119b01c7033bb110ae07d4eec3d523",
+      "new_spec_sha256": "4743df4dfcc7fce5266a447a80990f942f055f5bc78ad8d0f1cf39294f326563",
+      "version": "2.0.9"
+    },
+    {
+      "plugin": "ai-quota",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "b7c12841298d1ba3aa8423385ab214508eca4a9c5dad75508d8dd092c95c1b30",
+      "new_spec_sha256": "227eb28a0fe90fc5ead063ebfbaeaa4727d77c5311016020d631e632e710b0f5",
+      "version": "2.0.4"
+    },
+    {
+      "plugin": "ai-rag",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-rag/spec.yaml",
+      "sha256": "e26e43743e13e84734a25eed20a3a7dfe26813875d4b32b4959f6e43c2e7b587",
+      "destination": "plugins/release/metadata/ai-rag/spec.yaml"
+    },
+    {
+      "plugin": "ai-rag",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-rag/README.md",
+      "sha256": "45ea4f071f43e1350b095d4b88e97fcbcccfd6e1a14e9d3e008d2c9615281e0e",
+      "destination": "plugins/release/metadata/ai-rag/README.md"
+    },
+    {
+      "plugin": "ai-rag",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-rag/README_EN.md",
+      "sha256": "815979192ba10cf018fc42ef1710203f42aa120560c98925822eedc2e4b19b2d",
+      "destination": "plugins/release/metadata/ai-rag/README_EN.md"
+    },
+    {
+      "plugin": "ai-rag",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "e26e43743e13e84734a25eed20a3a7dfe26813875d4b32b4959f6e43c2e7b587",
+      "new_spec_sha256": "60c6251e8279542803dfe33faf0e866bfba469cd1e2740693b46ef7679063084",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-search",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-search/spec.yaml",
+      "sha256": "e3d1e2d30d0e1dae6eaa60497e7b221652b72c5ddde2131c45476c56f658fbb1",
+      "destination": "plugins/release/metadata/ai-search/spec.yaml"
+    },
+    {
+      "plugin": "ai-search",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-search/README.md",
+      "sha256": "8650d2dfc5d6658686129920129d82f1ae2a564e84edd4aa8275aaa4b57eaba5",
+      "destination": "plugins/release/metadata/ai-search/README.md"
+    },
+    {
+      "plugin": "ai-search",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-search/README_EN.md",
+      "sha256": "bf689a21084161a59feadb4929ebfd7e9fd9a0efdee973c7b7a308ca6b220c33",
+      "destination": "plugins/release/metadata/ai-search/README_EN.md"
+    },
+    {
+      "plugin": "ai-search",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "e3d1e2d30d0e1dae6eaa60497e7b221652b72c5ddde2131c45476c56f658fbb1",
+      "new_spec_sha256": "ddfeaa755487019375b78af6b9bff651158d8bdf1db553fba71dda5a8ed2f528",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-security-guard",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-security-guard/spec.yaml",
+      "sha256": "7ce1414b0f54ccbbeaa81d2aee6be9fe7df185b9d09278f826aeb2ef829fbfd3",
+      "destination": "plugins/release/metadata/ai-security-guard/spec.yaml"
+    },
+    {
+      "plugin": "ai-security-guard",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-security-guard/README.md",
+      "sha256": "0e87815c2b589308e40e049ecf3e682c5131e6339598f3dd717cc15d6f2b7bec",
+      "destination": "plugins/release/metadata/ai-security-guard/README.md"
+    },
+    {
+      "plugin": "ai-security-guard",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-security-guard/README_EN.md",
+      "sha256": "ed496ff87a10d17b5246cbbc9779cc8366674b1549eed90a63039c3dd82e2663",
+      "destination": "plugins/release/metadata/ai-security-guard/README_EN.md"
+    },
+    {
+      "plugin": "ai-security-guard",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "7ce1414b0f54ccbbeaa81d2aee6be9fe7df185b9d09278f826aeb2ef829fbfd3",
+      "new_spec_sha256": "950484fa4e2bb564e5f681a6015a4116638465fb16b92f981f998051fbc71095",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-statistics",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "535c6c023283d3c88cf39557ead08277178a387055506795c482bc0dc3c42504",
+      "new_spec_sha256": "b7507f9ff9dc2a0f3ae4d3e43108e9872885a069853afdf310d01398b9156c18",
+      "version": "2.0.4"
+    },
+    {
+      "plugin": "ai-token-ratelimit",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "c81390888e91f6036feacd2ccbe43c6da752e57aa2de6c9bdfa5e1a860e4e1c9",
+      "new_spec_sha256": "961734176d47e7713a16f4add8ed55fded7b67d5857c1dbc1b3c234b676bf61f",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ai-transformer",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-transformer/spec.yaml",
+      "sha256": "9366b4928fd157c8e0c25fac876ee3c595025ad2e4abd8f3ba15fa74a645ceea",
+      "destination": "plugins/release/metadata/ai-transformer/spec.yaml"
+    },
+    {
+      "plugin": "ai-transformer",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-transformer/README.md",
+      "sha256": "34d1523201be16aecc73665af4257f5ce29d0b8e85f68277a748c41af915c08a",
+      "destination": "plugins/release/metadata/ai-transformer/README.md"
+    },
+    {
+      "plugin": "ai-transformer",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ai-transformer/README_EN.md",
+      "sha256": "2ff073e9dc69815cc9254a656f81902404447761184c1dca78edf87b422ed906",
+      "destination": "plugins/release/metadata/ai-transformer/README_EN.md"
+    },
+    {
+      "plugin": "ai-transformer",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "9366b4928fd157c8e0c25fac876ee3c595025ad2e4abd8f3ba15fa74a645ceea",
+      "new_spec_sha256": "7c21008d04e9070319f07e496e9343707f0449d681e442ef622fceb035e57b8f",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "basic-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/basic-auth/spec.yaml",
+      "sha256": "2ec08da76e985044113581bd3257905aa8a5619a5dab5e00249ed20b9294e664",
+      "destination": "plugins/release/metadata/basic-auth/spec.yaml"
+    },
+    {
+      "plugin": "basic-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/basic-auth/README.md",
+      "sha256": "df9fdab50aaa1f3bfb41fadcab6e04223b33b4a5c69b2e9066854fa996634e17",
+      "destination": "plugins/release/metadata/basic-auth/README.md"
+    },
+    {
+      "plugin": "basic-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/basic-auth/README_EN.md",
+      "sha256": "041edc1c5b80b6e6b25f91e1756a235c45bd3a00ab7ba7ec2b19cf05a13247b6",
+      "destination": "plugins/release/metadata/basic-auth/README_EN.md"
+    },
+    {
+      "plugin": "basic-auth",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "2ec08da76e985044113581bd3257905aa8a5619a5dab5e00249ed20b9294e664",
+      "new_spec_sha256": "c0676147744d2dd944b3fdd86deac7cb9faee303266bbb46b0f8fa07fcf2d222",
+      "version": "1.0.1"
+    },
+    {
+      "plugin": "bot-detect",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/bot-detect/spec.yaml",
+      "sha256": "dee0cd79fee4a373e3cdf5216b4cd584cf54c04c4474c74e6b0f80d16606447f",
+      "destination": "plugins/release/metadata/bot-detect/spec.yaml"
+    },
+    {
+      "plugin": "bot-detect",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/bot-detect/README.md",
+      "sha256": "4fd2b8909bd05e0f415d9f9ce942fc8c8f1e247149ccaf303952e4ee649b77ed",
+      "destination": "plugins/release/metadata/bot-detect/README.md"
+    },
+    {
+      "plugin": "bot-detect",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/bot-detect/README_EN.md",
+      "sha256": "704e3b8ce1b528b3fd4174d4e6728e60dcfd31c05f49de92132d9b11c4bd4dcf",
+      "destination": "plugins/release/metadata/bot-detect/README_EN.md"
+    },
+    {
+      "plugin": "bot-detect",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "dee0cd79fee4a373e3cdf5216b4cd584cf54c04c4474c74e6b0f80d16606447f",
+      "new_spec_sha256": "e24405d48690446636c1b919b327e39a0fd82a868483fe947feb53442d57e6b0",
+      "version": "1.0.1"
+    },
+    {
+      "plugin": "cache-control",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/cache-control/spec.yaml",
+      "sha256": "344c19e3f4a6d3cb2311ad346e2bfdf0ca3a09399537cb9530a49164d78009e0",
+      "destination": "plugins/release/metadata/cache-control/spec.yaml"
+    },
+    {
+      "plugin": "cache-control",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/cache-control/README.md",
+      "sha256": "9b1faf5542c02b70ef59e10541c63456ec2e7caa985b90ce654e91cef77c8650",
+      "destination": "plugins/release/metadata/cache-control/README.md"
+    },
+    {
+      "plugin": "cache-control",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/cache-control/README_EN.md",
+      "sha256": "fc1c2e98361dab3cce98ddc1d52712a484a8b5f723285bb5e87552a2b88e7555",
+      "destination": "plugins/release/metadata/cache-control/README_EN.md"
+    },
+    {
+      "plugin": "cache-control",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "344c19e3f4a6d3cb2311ad346e2bfdf0ca3a09399537cb9530a49164d78009e0",
+      "new_spec_sha256": "acf427957ec3156810377d1f386cac92fec93ca1f08bc6ca42035a2289a636d6",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "cluster-key-rate-limit",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "a2e98eb25a8dd809022a1cc19c10001afe19fe73fd998bcfd5df776637d466b8",
+      "new_spec_sha256": "0edb9f355fce5fdd66d369ca50c1a6bb15f6650c887bdfe629a0574daddd4ad7",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "cors",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/cors/spec.yaml",
+      "sha256": "bc5317892338e1ac756be8dcd95d9d4b538276d4bbdc5bc4d49a4b385d485def",
+      "destination": "plugins/release/metadata/cors/spec.yaml"
+    },
+    {
+      "plugin": "cors",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/cors/README.md",
+      "sha256": "9a22711f04604fba2ebb520c47a619ee3e990c837de8562c96cc6b9741c8a5f8",
+      "destination": "plugins/release/metadata/cors/README.md"
+    },
+    {
+      "plugin": "cors",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/cors/README_EN.md",
+      "sha256": "d5f74764c286e3827e4b62ab02fcd6bf5fad74fc22115161354da85d7f6a62e2",
+      "destination": "plugins/release/metadata/cors/README_EN.md"
+    },
+    {
+      "plugin": "cors",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "bc5317892338e1ac756be8dcd95d9d4b538276d4bbdc5bc4d49a4b385d485def",
+      "new_spec_sha256": "18ceed3336e89a69127d4b80fcfe10e3e1f88bec8354a63c85d96a9d7a7ef27a",
+      "version": "2.0.4"
+    },
+    {
+      "plugin": "custom-response",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/custom-response/spec.yaml",
+      "sha256": "53aa3e4cccb20a5c1c334490c2629e6becc2a5cdd0d0568bbf4c73f581ab32b7",
+      "destination": "plugins/release/metadata/custom-response/spec.yaml"
+    },
+    {
+      "plugin": "custom-response",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/custom-response/README.md",
+      "sha256": "cf301524b62c3f7ea82a3e87716870409c43ea2ba07600858bf6d46328a990d2",
+      "destination": "plugins/release/metadata/custom-response/README.md"
+    },
+    {
+      "plugin": "custom-response",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/custom-response/README_EN.md",
+      "sha256": "c55afe70a90ffc0349fdd9569089308d157cd238eb2312ac48d2a9811b61d347",
+      "destination": "plugins/release/metadata/custom-response/README_EN.md"
+    },
+    {
+      "plugin": "custom-response",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "53aa3e4cccb20a5c1c334490c2629e6becc2a5cdd0d0568bbf4c73f581ab32b7",
+      "new_spec_sha256": "5dda32042861fe995c19f2ce127826e9f5886081e5c21847d389fe8e2bd2d61b",
+      "version": "1.0.1"
+    },
+    {
+      "plugin": "de-graphql",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/de-graphql/spec.yaml",
+      "sha256": "0f2b45f743297ed923b711cb53781d206c0be2ed82b894c82b3f1e051121070c",
+      "destination": "plugins/release/metadata/de-graphql/spec.yaml"
+    },
+    {
+      "plugin": "de-graphql",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/de-graphql/README.md",
+      "sha256": "c0adccbcd642586f9e04d1dd62e24877bee81f16f55a3c96cbc5589bdec7963f",
+      "destination": "plugins/release/metadata/de-graphql/README.md"
+    },
+    {
+      "plugin": "de-graphql",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/de-graphql/README_EN.md",
+      "sha256": "695c5abbe4f34de4b52af0ed9e22533009456589d65ee112ad541d6779877c52",
+      "destination": "plugins/release/metadata/de-graphql/README_EN.md"
+    },
+    {
+      "plugin": "de-graphql",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "0f2b45f743297ed923b711cb53781d206c0be2ed82b894c82b3f1e051121070c",
+      "new_spec_sha256": "1eaaaf96a0d928ebed980d4ebb57d49b37ff232bd9388dcee62039c2c65ae019",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ext-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ext-auth/spec.yaml",
+      "sha256": "6208bf6d750f03acde615d225b8a70c47481a763075e393b3b5c48598de2542c",
+      "destination": "plugins/release/metadata/ext-auth/spec.yaml"
+    },
+    {
+      "plugin": "ext-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ext-auth/README.md",
+      "sha256": "12b972cc3e9efbfdae096ec0e8d959ae226531ad390d9abae69f6602062091e1",
+      "destination": "plugins/release/metadata/ext-auth/README.md"
+    },
+    {
+      "plugin": "ext-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ext-auth/README_EN.md",
+      "sha256": "3026082686454067aa06b8bf4b286b8dded881863092ba26cc58cc66cc7d2c87",
+      "destination": "plugins/release/metadata/ext-auth/README_EN.md"
+    },
+    {
+      "plugin": "ext-auth",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "6208bf6d750f03acde615d225b8a70c47481a763075e393b3b5c48598de2542c",
+      "new_spec_sha256": "20c89fdf1fd1d6d7f1c33e76f31c1d0c3d797020eb465fefad0638a90d0175cd",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "frontend-gray",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/frontend-gray/spec.yaml",
+      "sha256": "d3ec4bfc85f3ae49d58345ed713cb5f995965d915b492a12195cb507ab1604ca",
+      "destination": "plugins/release/metadata/frontend-gray/spec.yaml"
+    },
+    {
+      "plugin": "frontend-gray",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/frontend-gray/README.md",
+      "sha256": "33e9348e29b37789d36a01aca0925e9e07b2134e948e285dccfd825bd02770a1",
+      "destination": "plugins/release/metadata/frontend-gray/README.md"
+    },
+    {
+      "plugin": "frontend-gray",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/frontend-gray/README_EN.md",
+      "sha256": "dbc19cfb4ad5b52a075d26f6e99d5a3b44db5095589075863d9318df19c4fab4",
+      "destination": "plugins/release/metadata/frontend-gray/README_EN.md"
+    },
+    {
+      "plugin": "frontend-gray",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "d3ec4bfc85f3ae49d58345ed713cb5f995965d915b492a12195cb507ab1604ca",
+      "new_spec_sha256": "3e2591f0cde0decd2c17ed24c9ee5fa583e97e58b90d8b3a5b6f88b0ca5b469c",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "geo-ip",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/geo-ip/spec.yaml",
+      "sha256": "b4b5ec8aa3c48d93d809bf580e02578b5d012883025d7299a846d81169e2a51a",
+      "destination": "plugins/release/metadata/geo-ip/spec.yaml"
+    },
+    {
+      "plugin": "geo-ip",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/geo-ip/README.md",
+      "sha256": "67408e4c774ec7c0123b33cb706da8636d7aed89564bcd51e03e7604697ec46c",
+      "destination": "plugins/release/metadata/geo-ip/README.md"
+    },
+    {
+      "plugin": "geo-ip",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/geo-ip/README_EN.md",
+      "sha256": "5992b0ac4ffe63d8e7997e8c7af54ea7ef230b014569ea6a2c5301694d887f99",
+      "destination": "plugins/release/metadata/geo-ip/README_EN.md"
+    },
+    {
+      "plugin": "geo-ip",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "b4b5ec8aa3c48d93d809bf580e02578b5d012883025d7299a846d81169e2a51a",
+      "new_spec_sha256": "6a359a3b5a69a87e649c55d209c06e7f68ab6f79f5fe99356eae5bb2277c6cdd",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "gw-error-format",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "26ec5ed1220efb0b5bbcec6342a48fcfc01ad68321b56c1e28a99301fd34a7b1",
+      "new_spec_sha256": "807d30641e9683d9c83c1505f7111ad4fe86e7141d987787fc815a4a8b838b44",
+      "version": "1.0.2"
+    },
+    {
+      "plugin": "hmac-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/hmac-auth/spec.yaml",
+      "sha256": "7827055235e273688cf8376f29fbadc8fe842b66a5e3a19411f1a3a6c30afdb0",
+      "destination": "plugins/release/metadata/hmac-auth/spec.yaml"
+    },
+    {
+      "plugin": "hmac-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/hmac-auth/README.md",
+      "sha256": "dd4d5016cc7a7c5be44a9453a6abaff13244087ab551f4218255506486a80169",
+      "destination": "plugins/release/metadata/hmac-auth/README.md"
+    },
+    {
+      "plugin": "hmac-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/hmac-auth/README_EN.md",
+      "sha256": "fdacfca22a05da85d0a857d1e9c6d2e32a67866b92b9644ea25e7f69f469e41a",
+      "destination": "plugins/release/metadata/hmac-auth/README_EN.md"
+    },
+    {
+      "plugin": "hmac-auth",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "7827055235e273688cf8376f29fbadc8fe842b66a5e3a19411f1a3a6c30afdb0",
+      "new_spec_sha256": "d07d9b4e1593b68dc172743359105c5c107b85d2ee76e4d603669f02ae05c0c2",
+      "version": "1.0.1"
+    },
+    {
+      "plugin": "hmac-auth-apisix",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "d8ea901848ebe354471297840a4ba8da3f50fff55998e85bd656396b5608815b",
+      "new_spec_sha256": "7e31229fa002d58b88654af8794cfe0b871968824917f1cb00493864d0730c67",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "ip-restriction",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ip-restriction/spec.yaml",
+      "sha256": "a3dd47a0f22b54bf560470de6e68ec163844b3de8c4cfe5f203864d11eef0f3a",
+      "destination": "plugins/release/metadata/ip-restriction/spec.yaml"
+    },
+    {
+      "plugin": "ip-restriction",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ip-restriction/README.md",
+      "sha256": "db580cad8eb73240bb0296d6e20eed3613fd20716462096163ff6bd5b3df50e7",
+      "destination": "plugins/release/metadata/ip-restriction/README.md"
+    },
+    {
+      "plugin": "ip-restriction",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/ip-restriction/README_EN.md",
+      "sha256": "b9ac3ac76d68bd82cb660e71f8be104b669af961b7ab95d5945fbe72d1278d99",
+      "destination": "plugins/release/metadata/ip-restriction/README_EN.md"
+    },
+    {
+      "plugin": "ip-restriction",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "a3dd47a0f22b54bf560470de6e68ec163844b3de8c4cfe5f203864d11eef0f3a",
+      "new_spec_sha256": "5b5691857592f6172e4654d607d78728dee41c0350b297c7ecfaab2fb5d9c401",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "json-converter",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "3fbdeddef013793e6e7537bc528002a3b6a70b81eca0daf497da4b8b8b6f7bb5",
+      "new_spec_sha256": "3cdcb023a414e00406feef36e7d97b0b6af56cb7612ff4a74ea7018cfdff4e5c",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "jwt-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/jwt-auth/spec.yaml",
+      "sha256": "4ef503d4432b5edafda646c3b4d8638f793718f6a8629e06fcf4f77a655a4d7e",
+      "destination": "plugins/release/metadata/jwt-auth/spec.yaml"
+    },
+    {
+      "plugin": "jwt-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/jwt-auth/README.md",
+      "sha256": "b512f940bdff916427f52efa624e91c27f7fb688b14d8bc08ccfd27b0d0942ca",
+      "destination": "plugins/release/metadata/jwt-auth/README.md"
+    },
+    {
+      "plugin": "jwt-auth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/jwt-auth/README_EN.md",
+      "sha256": "46e1cf8aaf6fd8f35255b6fabc3916bb0d91e9d26895710705d81a2b91dcf1f7",
+      "destination": "plugins/release/metadata/jwt-auth/README_EN.md"
+    },
+    {
+      "plugin": "jwt-auth",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "4ef503d4432b5edafda646c3b4d8638f793718f6a8629e06fcf4f77a655a4d7e",
+      "new_spec_sha256": "7122aa9ee00d2a5f432aa3b473473a878ff2b7b294c7042eb8b0b861d79e7667",
+      "version": "1.0.1"
+    },
+    {
+      "plugin": "key-auth",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "b93a5faa8e1fbb397868c62ecfa7610c1affbcc74ecdf1f1ec67cc432c280768",
+      "new_spec_sha256": "d2b10f8989022dfe28fad1bbccca8621a7b25013925f5586444aaa25638ef5cd",
+      "version": "1.2.1"
+    },
+    {
+      "plugin": "key-rate-limit",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/key-rate-limit/spec.yaml",
+      "sha256": "14225d1f13d6553f7584f6e69d9a78c27d0bac5be3aadd1000213a4027d838cc",
+      "destination": "plugins/release/metadata/key-rate-limit/spec.yaml"
+    },
+    {
+      "plugin": "key-rate-limit",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/key-rate-limit/README.md",
+      "sha256": "3bf4dc0357da8064a93ce16f0f0b30f5fd2d7e1ba616a4caf6e5cb5988622e09",
+      "destination": "plugins/release/metadata/key-rate-limit/README.md"
+    },
+    {
+      "plugin": "key-rate-limit",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/key-rate-limit/README_EN.md",
+      "sha256": "7e7809a0cbfa63520ff002ccd86e5a0a038e89a4ccb675ba54cb8c4d49ddd69b",
+      "destination": "plugins/release/metadata/key-rate-limit/README_EN.md"
+    },
+    {
+      "plugin": "key-rate-limit",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "14225d1f13d6553f7584f6e69d9a78c27d0bac5be3aadd1000213a4027d838cc",
+      "new_spec_sha256": "c55bf71a154e59922b73d244a7dc2e90e329913d544f6e3cb6f3b7d8c78f509a",
+      "version": "1.0.1"
+    },
+    {
+      "plugin": "log-request-response",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "abde6165cccf91e78d66b9e19ae8284a4226f9464e7424037f58557a21bdaf50",
+      "new_spec_sha256": "ede6809cc354aec7929c415a6a04ecbb69a92d40b913b04c15b3826d4a56acbc",
+      "version": "1.0.0"
+    },
+    {
+      "plugin": "mcp-router",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "b00360eba38939b01dd96b943e994b0d92c55a18248eaa0fd732c548fb477d05",
+      "new_spec_sha256": "5f6a97f57949c006b91e4979c174b9af6d73b710b4158f741f3c1954fde809de",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "mcp-server",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/mcp-server/spec.yaml",
+      "sha256": "7a4bc50af6572203626bee097850aae770e71098fbac3c90f79f30067b887cfe",
+      "destination": "plugins/release/metadata/mcp-server/spec.yaml"
+    },
+    {
+      "plugin": "mcp-server",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/mcp-server/README.md",
+      "sha256": "9b5226a877d174ec3e735050e189d6ff669f16f95ca6d490f945095ac6d440c7",
+      "destination": "plugins/release/metadata/mcp-server/README.md"
+    },
+    {
+      "plugin": "mcp-server",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/mcp-server/README_EN.md",
+      "sha256": "33c89610906161e2f525aa824ca3c0212bdb225519efb4eb9c1d3fc55599062b",
+      "destination": "plugins/release/metadata/mcp-server/README_EN.md"
+    },
+    {
+      "plugin": "mcp-server",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "7a4bc50af6572203626bee097850aae770e71098fbac3c90f79f30067b887cfe",
+      "new_spec_sha256": "8528b9846ee6614da470b99cd1fb2de292af266aa0a3b13f57b0006c7cd655d9",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "model-mapper",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "d2856d343be61c120dd4d5f42c43f289c29bd68a9aeab6ccb14d9200e4e85e87",
+      "new_spec_sha256": "e00a21d3d0a1dc6022171525ee645310fc0429fb4d10ef3ba33217cffca5f228",
+      "version": "2.0.4"
+    },
+    {
+      "plugin": "model-router",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/model-router/spec.yaml",
+      "sha256": "7be7a23db581b4a5c5dac72b3c0484dd7a75428f58d5f97f8a22f20dd934e806",
+      "destination": "plugins/release/metadata/model-router/spec.yaml"
+    },
+    {
+      "plugin": "model-router",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/model-router/README.md",
+      "sha256": "8244393021824e31d234e4b8e62f65143a83cbad9ce4cfcbdf2c45c515826e68",
+      "destination": "plugins/release/metadata/model-router/README.md"
+    },
+    {
+      "plugin": "model-router",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/model-router/README_EN.md",
+      "sha256": "d1354c915f2be8f9115c27cb59b4a8b0c500bee438c3956e8a86b26af6966ad5",
+      "destination": "plugins/release/metadata/model-router/README_EN.md"
+    },
+    {
+      "plugin": "model-router",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "7be7a23db581b4a5c5dac72b3c0484dd7a75428f58d5f97f8a22f20dd934e806",
+      "new_spec_sha256": "67820f0ff68c4cf5410a10bbf9cb89550b949cacfb46c3931dbed40ba951ca44",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "nginx-rewrite-compatible",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "1071a2c29f25f1513117e2ee6891857618aab3f30194f885ea660412458c7605",
+      "new_spec_sha256": "50246a0bffc98ade5b8b93a7c08dc6539136ccc7ad51092e242169d1ba5e7626",
+      "version": "1.0.0"
+    },
+    {
+      "plugin": "oauth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/oauth/spec.yaml",
+      "sha256": "d2105be7801182b991820979a3970dc4785593a3c16e03abae1f319e0ddd34f4",
+      "destination": "plugins/release/metadata/oauth/spec.yaml"
+    },
+    {
+      "plugin": "oauth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/oauth/README.md",
+      "sha256": "a80f7b94ed24af24b3249d0bb683b3ad74394c2fe4f4bde8ebff058e643450e2",
+      "destination": "plugins/release/metadata/oauth/README.md"
+    },
+    {
+      "plugin": "oauth",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/oauth/README_EN.md",
+      "sha256": "01c14a34ff0644fd68be896e9eefb6a7759c2fc09ad0671a92b4e7da05f6d621",
+      "destination": "plugins/release/metadata/oauth/README_EN.md"
+    },
+    {
+      "plugin": "oauth",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "d2105be7801182b991820979a3970dc4785593a3c16e03abae1f319e0ddd34f4",
+      "new_spec_sha256": "02c9a117aff80403c6b59ba4623af7de0ba10e18ac97e6b1b5d85a12e49b2934",
+      "version": "2.0.1"
+    },
+    {
+      "plugin": "oidc",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/oidc/spec.yaml",
+      "sha256": "0b14902953625996a2ea6e5fd6f8f6190bd2b966569da47521023383576eaa07",
+      "destination": "plugins/release/metadata/oidc/spec.yaml"
+    },
+    {
+      "plugin": "oidc",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/oidc/README.md",
+      "sha256": "fa5e298187b14cbffcbed4ae3016b759985064ef61e6e9286f08b0a114e3fd55",
+      "destination": "plugins/release/metadata/oidc/README.md"
+    },
+    {
+      "plugin": "oidc",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/oidc/README_EN.md",
+      "sha256": "df85a5c0211d9457b9d0b33db0c38bf60d84656c13b37cc824c8f839a10d5c5e",
+      "destination": "plugins/release/metadata/oidc/README_EN.md"
+    },
+    {
+      "plugin": "oidc",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "0b14902953625996a2ea6e5fd6f8f6190bd2b966569da47521023383576eaa07",
+      "new_spec_sha256": "ea5b5e42988adb8f3118ffcf31eef96239c9cc6a6cdd610325955ea48398e6f6",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "opa",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/opa/spec.yaml",
+      "sha256": "7b4e9547acef763c3616e4e9b5810b9f4af31c02c94e070fd03c976cb70bc0e4",
+      "destination": "plugins/release/metadata/opa/spec.yaml"
+    },
+    {
+      "plugin": "opa",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/opa/README.md",
+      "sha256": "c701c8b38a7911030b3f83079b6ee3181caea5ff96725d3ea8a48d37d403a86e",
+      "destination": "plugins/release/metadata/opa/README.md"
+    },
+    {
+      "plugin": "opa",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/opa/README_EN.md",
+      "sha256": "7e4fbc8b81ea42cb31de0760f1051b401c2319e39e28a18e87991e548b4bdc47",
+      "destination": "plugins/release/metadata/opa/README_EN.md"
+    },
+    {
+      "plugin": "opa",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "7b4e9547acef763c3616e4e9b5810b9f4af31c02c94e070fd03c976cb70bc0e4",
+      "new_spec_sha256": "536b6ba1b4e663bc74e74d1f16fdd991919d987be1a5ca79ffa46da95781a48b",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "request-block",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/request-block/spec.yaml",
+      "sha256": "3c0eeb72ffef8c1199fbbd2c8fb3bbe0499602d236a5f88dccb2709d00c1462c",
+      "destination": "plugins/release/metadata/request-block/spec.yaml"
+    },
+    {
+      "plugin": "request-block",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/request-block/README.md",
+      "sha256": "5a3df4f1a9b6c539f5502e9996704a7345b649fd8df5bc4a7a7f21336480062c",
+      "destination": "plugins/release/metadata/request-block/README.md"
+    },
+    {
+      "plugin": "request-block",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/request-block/README_EN.md",
+      "sha256": "feb5c73ee66691f2461733182552d7a7eeedff7ed40bac95566c21ec104e07e1",
+      "destination": "plugins/release/metadata/request-block/README_EN.md"
+    },
+    {
+      "plugin": "request-block",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "3c0eeb72ffef8c1199fbbd2c8fb3bbe0499602d236a5f88dccb2709d00c1462c",
+      "new_spec_sha256": "9e4d12ee999c2d3f731fc68264e2c7462091a6e9757fb8e3bcdf078751365f08",
+      "version": "1.0.1"
+    },
+    {
+      "plugin": "request-validation",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/request-validation/spec.yaml",
+      "sha256": "e08f8d935ef7da131c7d3042654e9626c40d8d698eaf59768724b44c68066570",
+      "destination": "plugins/release/metadata/request-validation/spec.yaml"
+    },
+    {
+      "plugin": "request-validation",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/request-validation/README.md",
+      "sha256": "af13d0f9249f125df463578566a3a1e4890b56586aa8ff0715ac1f2ad0128188",
+      "destination": "plugins/release/metadata/request-validation/README.md"
+    },
+    {
+      "plugin": "request-validation",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/request-validation/README_EN.md",
+      "sha256": "97b63c0554d5bd57b9a17d29ab48223bf97b080f646547e3e8195b27431f3868",
+      "destination": "plugins/release/metadata/request-validation/README_EN.md"
+    },
+    {
+      "plugin": "request-validation",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "e08f8d935ef7da131c7d3042654e9626c40d8d698eaf59768724b44c68066570",
+      "new_spec_sha256": "ad70d17bb7b9b389c7802f206d1cf85a947d63836d91c6dfba4eacdea4de4606",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "response-cache",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "d16817a650a724cac0e39b01522f759c9ef158240d4f91f4b60339152c2d6700",
+      "new_spec_sha256": "510b43e36341db25e9f8a458ba5e685dd66a1374302864270eef47b90b510719",
+      "version": "1.0.3"
+    },
+    {
+      "plugin": "traffic-tag",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/traffic-tag/spec.yaml",
+      "sha256": "8a1512116848e04f740f3a7e0e831e2c64396f1cf714b371a3987a3d38b084ac",
+      "destination": "plugins/release/metadata/traffic-tag/spec.yaml"
+    },
+    {
+      "plugin": "traffic-tag",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/traffic-tag/README.md",
+      "sha256": "af7918c6d3b0c41ddd40be5cb2e402aec1637dae2187adda0652cf414ceb62d9",
+      "destination": "plugins/release/metadata/traffic-tag/README.md"
+    },
+    {
+      "plugin": "traffic-tag",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/traffic-tag/README_EN.md",
+      "sha256": "082e211700bcf3014b81c42c4b01934fdfa6e62bb73ae2d80d1cd56d9047b9c3",
+      "destination": "plugins/release/metadata/traffic-tag/README_EN.md"
+    },
+    {
+      "plugin": "traffic-tag",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "8a1512116848e04f740f3a7e0e831e2c64396f1cf714b371a3987a3d38b084ac",
+      "new_spec_sha256": "a8ffce7c56637f2922f664badeb3d1cc6b6a6cd3bf8f6580990734ea84aaa75a",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "transformer",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/transformer/spec.yaml",
+      "sha256": "872b8d7282790d4a445d0a10ca5107aaa190c423bb54bd29c4a6b94ae3f08a4c",
+      "destination": "plugins/release/metadata/transformer/spec.yaml"
+    },
+    {
+      "plugin": "transformer",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/transformer/README.md",
+      "sha256": "fd3710eea3a8a3d0de0b4a66df7dc217933d6ed1955e11b94fa79388d4e57d13",
+      "destination": "plugins/release/metadata/transformer/README.md"
+    },
+    {
+      "plugin": "transformer",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/transformer/README_EN.md",
+      "sha256": "9700f3a7b639963252bae1e55dcaeddf6794c60f44f35011c3984bac9d79a39d",
+      "destination": "plugins/release/metadata/transformer/README_EN.md"
+    },
+    {
+      "plugin": "transformer",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "872b8d7282790d4a445d0a10ca5107aaa190c423bb54bd29c4a6b94ae3f08a4c",
+      "new_spec_sha256": "39547e2da69eb0a92b13a6f2d0f3d7cf43c1c33e7ee691bfe123b202d1c0deee",
+      "version": "2.0.3"
+    },
+    {
+      "plugin": "waf",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/waf/spec.yaml",
+      "sha256": "1919b9d9b13f7b33977987b43be291c025d731221c8893599f90456145c01924",
+      "destination": "plugins/release/metadata/waf/spec.yaml"
+    },
+    {
+      "plugin": "waf",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/waf/README.md",
+      "sha256": "0a002d09f4d2238a034341b3ce754fec3b7ec93df3e5cf70b3383ac178774974",
+      "destination": "plugins/release/metadata/waf/README.md"
+    },
+    {
+      "plugin": "waf",
+      "source_repository": "higress-group/higress-console",
+      "source_commit": "36aa9c67fb0057164dab9b1fe687b38fe5b8a022",
+      "source_path": "backend/sdk/src/main/resources/plugins/waf/README_EN.md",
+      "sha256": "e6da07d6474a22540222e1fea42c692629a8516b8e1270aa0b749a6cdbd0f27d",
+      "destination": "plugins/release/metadata/waf/README_EN.md"
+    },
+    {
+      "plugin": "waf",
+      "operation": "align selected release metadata",
+      "original_spec_sha256": "1919b9d9b13f7b33977987b43be291c025d731221c8893599f90456145c01924",
+      "new_spec_sha256": "0dc9e44795469124fee579f20a2c9016e888cd3f98e2fa8566d2ee8e99c85842",
+      "version": "2.0.3"
+    }
+  ],
+  "missing_metadata": [],
+  "status": "source import and version alignment; schema/default validation pending",
+  "excluded_deprecated_sources": [
+    "sni-misdirect"
+  ],
+  "locally_authored_metadata": {
+    "replay-protection": "matches source ParseConfig, including force_nonce=false when omitted",
+    "model-mapper": "combines standalone fields with native exact-body schema"
+  },
+  "metadata_repairs": [
+    {
+      "plugin": "hmac-auth-apisix",
+      "reason": "Replace the upstream literal example credential with an explicit reference; preserve the sensitive-field contract.",
+      "before_sha256": "7e31229fa002d58b88654af8794cfe0b871968824917f1cb00493864d0730c67",
+      "after_sha256": "96b1b97d3e21fdab42d3c473d25de1a146b9a966ac6628246f4e7aebf6f6baf3"
+    },
+    {
+      "plugin": "traffic-tag",
+      "reason": "Normalize the metadata wrapper version to the supported artifact metadata format; plugin release version remains unchanged.",
+      "before_sha256": "a8ffce7c56637f2922f664badeb3d1cc6b6a6cd3bf8f6580990734ea84aaa75a",
+      "after_sha256": "9d31f46354171d773bbdd9b62e2be1656a8a3e0f6afe5d35333743d1526675dc"
+    },
+    {
+      "plugin": "transformer",
+      "reason": "Translate local OpenAPI components.schemas to JSON Schema $defs and update only schema-position references, preserving each definition.",
+      "before_sha256": "39547e2da69eb0a92b13a6f2d0f3d7cf43c1c33e7ee691bfe123b202d1c0deee",
+      "after_sha256": "d99523c1da3df47d31b72e79dd17e754db72fc5e7375c9de65e2ff642e318988"
+    },
+    {
+      "plugin": "ai-intent",
+      "before_sha256": "a12b391a168e5a5ab451308a74fe2835a1f0ffbc7558fcbd8427b30c1f79a645",
+      "after_sha256": "a12b391a168e5a5ab451308a74fe2835a1f0ffbc7558fcbd8427b30c1f79a645",
+      "reason": "align metadata samples and defaults with declared/runtime types; mapper requires exact mappings in native roles while retaining standalone identity mapping"
+    },
+    {
+      "plugin": "ai-security-guard",
+      "before_sha256": "950484fa4e2bb564e5f681a6015a4116638465fb16b92f981f998051fbc71095",
+      "after_sha256": "950484fa4e2bb564e5f681a6015a4116638465fb16b92f981f998051fbc71095",
+      "reason": "align metadata samples and defaults with declared/runtime types; mapper requires exact mappings in native roles while retaining standalone identity mapping"
+    },
+    {
+      "plugin": "opa",
+      "before_sha256": "536b6ba1b4e663bc74e74d1f16fdd991919d987be1a5ca79ffa46da95781a48b",
+      "after_sha256": "536b6ba1b4e663bc74e74d1f16fdd991919d987be1a5ca79ffa46da95781a48b",
+      "reason": "align metadata samples and defaults with declared/runtime types; mapper requires exact mappings in native roles while retaining standalone identity mapping"
+    },
+    {
+      "plugin": "ai-json-resp",
+      "before_sha256": "a9128d26d592d4ad5736ac4e3795d47bd2db8ba640ed7fb5372b21e08f7cff3c",
+      "after_sha256": "a9128d26d592d4ad5736ac4e3795d47bd2db8ba640ed7fb5372b21e08f7cff3c",
+      "reason": "align metadata samples and defaults with declared/runtime types; mapper requires exact mappings in native roles while retaining standalone identity mapping"
+    },
+    {
+      "plugin": "cors",
+      "before_sha256": "18ceed3336e89a69127d4b80fcfe10e3e1f88bec8354a63c85d96a9d7a7ef27a",
+      "after_sha256": "764a680a08880bb127d0295670d8322a0b3415c2e48c567e1b8ad8f02f747dda",
+      "reason": "align metadata samples and defaults with declared/runtime types; mapper requires exact mappings in native roles while retaining standalone identity mapping"
+    },
+    {
+      "plugin": "cache-control",
+      "before_sha256": "acf427957ec3156810377d1f386cac92fec93ca1f08bc6ca42035a2289a636d6",
+      "after_sha256": "1e0ee86edeef1aeef375f60aa0582baefd73daea073d2de0af8c570b811773e5",
+      "reason": "align metadata samples and defaults with declared/runtime types; mapper requires exact mappings in native roles while retaining standalone identity mapping"
+    },
+    {
+      "plugin": "model-mapper",
+      "before_sha256": "ddd8238173de8e11fa27e40a2d4a741afbe77d203906985b9712b967f7d9f3eb",
+      "after_sha256": "3ee2309c4c60a54f9680eb80c83869c038cbb24000073f3d741311c1eb33bd2b",
+      "reason": "align metadata samples and defaults with declared/runtime types; mapper requires exact mappings in native roles while retaining standalone identity mapping"
+    }
+  ],
+  "final_spec_sha256": {
+    "ai-agent": "a1daf1668fff2b8def6eb03de05a65e9f0d95edd33f3fc0290b8985392b98d9a",
+    "ai-billing": "ccfd461e4bf9d31dbb70a4567168fd0394d79d01d47cd46f47f5cf941811e124",
+    "ai-cache": "1d446082f58e4d5cb7885be1880881668b253499ad31dc1b3b4e017de56934f8",
+    "ai-context-limit": "2a95efe1ad5dc4ccd660614b5755fed57f22e0cfee3b3bdf1dfc6186ae9d30e5",
+    "ai-data-masking": "3eb44fdecc8f55bb74e0c3933e3a14f41f5819d81b148dfd4b3b2a2ef9163c1c",
+    "ai-endpoint-picker": "f79a7cc9b04c04258a0e285bb4e24e3ebb0b3c7bc805cec02716dafa9138e5c7",
+    "ai-history": "919c00cd37c8c7ad4abc01986a11e15c2f28f6182337c9018c7addccb2122d05",
+    "ai-intent": "a12b391a168e5a5ab451308a74fe2835a1f0ffbc7558fcbd8427b30c1f79a645",
+    "ai-json-resp": "a9128d26d592d4ad5736ac4e3795d47bd2db8ba640ed7fb5372b21e08f7cff3c",
+    "ai-load-balancer": "9550150e4d0f6446f029bbfff15ae36df9a10ec3895aed91f6008e35c53b70bb",
+    "ai-memory": "032d332c05619584113f638670934b98c4188ae9f89e0ae9749cdcee89bc4f1a",
+    "ai-prompt-decorator": "25e14f3ec4d984fc2a876bb56de3a7f2187bb6ac5158f36a7bea44251457c719",
+    "ai-prompt-template": "e51dbf003e782326a914288a93250f26894810d747fe0dcf7ee537a5336ccd19",
+    "ai-proxy": "4743df4dfcc7fce5266a447a80990f942f055f5bc78ad8d0f1cf39294f326563",
+    "ai-quota": "227eb28a0fe90fc5ead063ebfbaeaa4727d77c5311016020d631e632e710b0f5",
+    "ai-rag": "60c6251e8279542803dfe33faf0e866bfba469cd1e2740693b46ef7679063084",
+    "ai-search": "ddfeaa755487019375b78af6b9bff651158d8bdf1db553fba71dda5a8ed2f528",
+    "ai-security-guard": "950484fa4e2bb564e5f681a6015a4116638465fb16b92f981f998051fbc71095",
+    "ai-statistics": "b7507f9ff9dc2a0f3ae4d3e43108e9872885a069853afdf310d01398b9156c18",
+    "ai-token-ratelimit": "961734176d47e7713a16f4add8ed55fded7b67d5857c1dbc1b3c234b676bf61f",
+    "ai-transformer": "7c21008d04e9070319f07e496e9343707f0449d681e442ef622fceb035e57b8f",
+    "basic-auth": "c0676147744d2dd944b3fdd86deac7cb9faee303266bbb46b0f8fa07fcf2d222",
+    "bot-detect": "e24405d48690446636c1b919b327e39a0fd82a868483fe947feb53442d57e6b0",
+    "cache-control": "1e0ee86edeef1aeef375f60aa0582baefd73daea073d2de0af8c570b811773e5",
+    "cluster-key-rate-limit": "0edb9f355fce5fdd66d369ca50c1a6bb15f6650c887bdfe629a0574daddd4ad7",
+    "cors": "764a680a08880bb127d0295670d8322a0b3415c2e48c567e1b8ad8f02f747dda",
+    "custom-response": "5dda32042861fe995c19f2ce127826e9f5886081e5c21847d389fe8e2bd2d61b",
+    "de-graphql": "1eaaaf96a0d928ebed980d4ebb57d49b37ff232bd9388dcee62039c2c65ae019",
+    "ext-auth": "20c89fdf1fd1d6d7f1c33e76f31c1d0c3d797020eb465fefad0638a90d0175cd",
+    "frontend-gray": "3e2591f0cde0decd2c17ed24c9ee5fa583e97e58b90d8b3a5b6f88b0ca5b469c",
+    "geo-ip": "6a359a3b5a69a87e649c55d209c06e7f68ab6f79f5fe99356eae5bb2277c6cdd",
+    "gw-error-format": "807d30641e9683d9c83c1505f7111ad4fe86e7141d987787fc815a4a8b838b44",
+    "hmac-auth": "d07d9b4e1593b68dc172743359105c5c107b85d2ee76e4d603669f02ae05c0c2",
+    "hmac-auth-apisix": "96b1b97d3e21fdab42d3c473d25de1a146b9a966ac6628246f4e7aebf6f6baf3",
+    "ip-restriction": "5b5691857592f6172e4654d607d78728dee41c0350b297c7ecfaab2fb5d9c401",
+    "json-converter": "3cdcb023a414e00406feef36e7d97b0b6af56cb7612ff4a74ea7018cfdff4e5c",
+    "jwt-auth": "7122aa9ee00d2a5f432aa3b473473a878ff2b7b294c7042eb8b0b861d79e7667",
+    "key-auth": "d2b10f8989022dfe28fad1bbccca8621a7b25013925f5586444aaa25638ef5cd",
+    "key-rate-limit": "c55bf71a154e59922b73d244a7dc2e90e329913d544f6e3cb6f3b7d8c78f509a",
+    "log-request-response": "ede6809cc354aec7929c415a6a04ecbb69a92d40b913b04c15b3826d4a56acbc",
+    "mcp-router": "5f6a97f57949c006b91e4979c174b9af6d73b710b4158f741f3c1954fde809de",
+    "mcp-server": "8528b9846ee6614da470b99cd1fb2de292af266aa0a3b13f57b0006c7cd655d9",
+    "model-mapper": "3ee2309c4c60a54f9680eb80c83869c038cbb24000073f3d741311c1eb33bd2b",
+    "model-router": "67820f0ff68c4cf5410a10bbf9cb89550b949cacfb46c3931dbed40ba951ca44",
+    "nginx-rewrite-compatible": "50246a0bffc98ade5b8b93a7c08dc6539136ccc7ad51092e242169d1ba5e7626",
+    "oauth": "02c9a117aff80403c6b59ba4623af7de0ba10e18ac97e6b1b5d85a12e49b2934",
+    "oidc": "ea5b5e42988adb8f3118ffcf31eef96239c9cc6a6cdd610325955ea48398e6f6",
+    "opa": "536b6ba1b4e663bc74e74d1f16fdd991919d987be1a5ca79ffa46da95781a48b",
+    "replay-protection": "f08853b3c397bca122fd7e45b3d29b6caabb50a383986350add253c5ecc566c6",
+    "request-block": "9e4d12ee999c2d3f731fc68264e2c7462091a6e9757fb8e3bcdf078751365f08",
+    "request-validation": "ad70d17bb7b9b389c7802f206d1cf85a947d63836d91c6dfba4eacdea4de4606",
+    "response-cache": "510b43e36341db25e9f8a458ba5e685dd66a1374302864270eef47b90b510719",
+    "traffic-tag": "9d31f46354171d773bbdd9b62e2be1656a8a3e0f6afe5d35333743d1526675dc",
+    "transformer": "d99523c1da3df47d31b72e79dd17e754db72fc5e7375c9de65e2ff642e318988",
+    "waf": "0dc9e44795469124fee579f20a2c9016e888cd3f98e2fa8566d2ee8e99c85842"
+  },
+  "final_metadata": [
+    {
+      "plugin": "ai-agent",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-agent/spec.yaml",
+      "sha256": "a1daf1668fff2b8def6eb03de05a65e9f0d95edd33f3fc0290b8985392b98d9a"
+    },
+    {
+      "plugin": "ai-billing",
+      "version": "0.1.14",
+      "path": "plugins/wasm-go/resources/plugins/ai-billing/spec.yaml",
+      "sha256": "ccfd461e4bf9d31dbb70a4567168fd0394d79d01d47cd46f47f5cf941811e124"
+    },
+    {
+      "plugin": "ai-cache",
+      "version": "2.0.4",
+      "path": "plugins/wasm-go/resources/plugins/ai-cache/spec.yaml",
+      "sha256": "1d446082f58e4d5cb7885be1880881668b253499ad31dc1b3b4e017de56934f8"
+    },
+    {
+      "plugin": "ai-context-limit",
+      "version": "1.0.0",
+      "path": "plugins/release/console/ai-context-limit/spec.yaml",
+      "sha256": "2a95efe1ad5dc4ccd660614b5755fed57f22e0cfee3b3bdf1dfc6186ae9d30e5"
+    },
+    {
+      "plugin": "ai-data-masking",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-data-masking/spec.yaml",
+      "sha256": "3eb44fdecc8f55bb74e0c3933e3a14f41f5819d81b148dfd4b3b2a2ef9163c1c"
+    },
+    {
+      "plugin": "ai-endpoint-picker",
+      "version": "2.0.2",
+      "path": "plugins/release/console/ai-endpoint-picker/spec.yaml",
+      "sha256": "f79a7cc9b04c04258a0e285bb4e24e3ebb0b3c7bc805cec02716dafa9138e5c7"
+    },
+    {
+      "plugin": "ai-history",
+      "version": "2.0.4",
+      "path": "plugins/wasm-go/resources/plugins/ai-history/spec.yaml",
+      "sha256": "919c00cd37c8c7ad4abc01986a11e15c2f28f6182337c9018c7addccb2122d05"
+    },
+    {
+      "plugin": "ai-intent",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-intent/spec.yaml",
+      "sha256": "a12b391a168e5a5ab451308a74fe2835a1f0ffbc7558fcbd8427b30c1f79a645"
+    },
+    {
+      "plugin": "ai-json-resp",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-json-resp/spec.yaml",
+      "sha256": "3000ca478e5dc0bdee2cde5d9a8c3067383c13709adef357b019f9f6d276e7c8"
+    },
+    {
+      "plugin": "ai-load-balancer",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-load-balancer/spec.yaml",
+      "sha256": "9550150e4d0f6446f029bbfff15ae36df9a10ec3895aed91f6008e35c53b70bb"
+    },
+    {
+      "plugin": "ai-memory",
+      "version": "0.1.7",
+      "path": "plugins/wasm-go/resources/plugins/ai-memory/spec.yaml",
+      "sha256": "032d332c05619584113f638670934b98c4188ae9f89e0ae9749cdcee89bc4f1a"
+    },
+    {
+      "plugin": "ai-prompt-decorator",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-prompt-decorator/spec.yaml",
+      "sha256": "25e14f3ec4d984fc2a876bb56de3a7f2187bb6ac5158f36a7bea44251457c719"
+    },
+    {
+      "plugin": "ai-prompt-template",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-prompt-template/spec.yaml",
+      "sha256": "e51dbf003e782326a914288a93250f26894810d747fe0dcf7ee537a5336ccd19"
+    },
+    {
+      "plugin": "ai-proxy",
+      "version": "2.0.9",
+      "path": "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml",
+      "sha256": "4743df4dfcc7fce5266a447a80990f942f055f5bc78ad8d0f1cf39294f326563"
+    },
+    {
+      "plugin": "ai-quota",
+      "version": "2.0.4",
+      "path": "plugins/wasm-go/resources/plugins/ai-quota/spec.yaml",
+      "sha256": "227eb28a0fe90fc5ead063ebfbaeaa4727d77c5311016020d631e632e710b0f5"
+    },
+    {
+      "plugin": "ai-rag",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-rag/spec.yaml",
+      "sha256": "4cfc3e803aa324a7c1712d339ed10b7b71f77a8c767dd15e7fbb6fc111398012"
+    },
+    {
+      "plugin": "ai-search",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-search/spec.yaml",
+      "sha256": "3799e8b30a26eba7808fb51720b1d4e0ff5cfb0feeb25a1f2f79c2d960826a41"
+    },
+    {
+      "plugin": "ai-security-guard",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-security-guard/spec.yaml",
+      "sha256": "51f140cec9a41881246f4ea37cd7f73d85a58691487cd54c930d127a4ca6c322"
+    },
+    {
+      "plugin": "ai-statistics",
+      "version": "2.0.4",
+      "path": "plugins/wasm-go/resources/plugins/ai-statistics/spec.yaml",
+      "sha256": "b7507f9ff9dc2a0f3ae4d3e43108e9872885a069853afdf310d01398b9156c18"
+    },
+    {
+      "plugin": "ai-token-ratelimit",
+      "version": "2.0.3",
+      "path": "plugins/wasm-go/resources/plugins/ai-token-ratelimit/spec.yaml",
+      "sha256": "961734176d47e7713a16f4add8ed55fded7b67d5857c1dbc1b3c234b676bf61f"
+    },
+    {
+      "plugin": "ai-transformer",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ai-transformer/spec.yaml",
+      "sha256": "7c21008d04e9070319f07e496e9343707f0449d681e442ef622fceb035e57b8f"
+    },
+    {
+      "plugin": "basic-auth",
+      "version": "1.0.1",
+      "path": "plugins/release/metadata/basic-auth/spec.yaml",
+      "sha256": "c0676147744d2dd944b3fdd86deac7cb9faee303266bbb46b0f8fa07fcf2d222"
+    },
+    {
+      "plugin": "bot-detect",
+      "version": "1.0.1",
+      "path": "plugins/release/metadata/bot-detect/spec.yaml",
+      "sha256": "e24405d48690446636c1b919b327e39a0fd82a868483fe947feb53442d57e6b0"
+    },
+    {
+      "plugin": "cache-control",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/cache-control/spec.yaml",
+      "sha256": "1e0ee86edeef1aeef375f60aa0582baefd73daea073d2de0af8c570b811773e5"
+    },
+    {
+      "plugin": "cluster-key-rate-limit",
+      "version": "2.0.3",
+      "path": "plugins/wasm-go/resources/plugins/cluster-key-rate-limit/spec.yaml",
+      "sha256": "0edb9f355fce5fdd66d369ca50c1a6bb15f6650c887bdfe629a0574daddd4ad7"
+    },
+    {
+      "plugin": "cors",
+      "version": "2.0.4",
+      "path": "plugins/release/metadata/cors/spec.yaml",
+      "sha256": "764a680a08880bb127d0295670d8322a0b3415c2e48c567e1b8ad8f02f747dda"
+    },
+    {
+      "plugin": "custom-response",
+      "version": "1.0.1",
+      "path": "plugins/release/metadata/custom-response/spec.yaml",
+      "sha256": "5dda32042861fe995c19f2ce127826e9f5886081e5c21847d389fe8e2bd2d61b"
+    },
+    {
+      "plugin": "de-graphql",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/de-graphql/spec.yaml",
+      "sha256": "1eaaaf96a0d928ebed980d4ebb57d49b37ff232bd9388dcee62039c2c65ae019"
+    },
+    {
+      "plugin": "ext-auth",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ext-auth/spec.yaml",
+      "sha256": "20c89fdf1fd1d6d7f1c33e76f31c1d0c3d797020eb465fefad0638a90d0175cd"
+    },
+    {
+      "plugin": "frontend-gray",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/frontend-gray/spec.yaml",
+      "sha256": "3e2591f0cde0decd2c17ed24c9ee5fa583e97e58b90d8b3a5b6f88b0ca5b469c"
+    },
+    {
+      "plugin": "geo-ip",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/geo-ip/spec.yaml",
+      "sha256": "6a359a3b5a69a87e649c55d209c06e7f68ab6f79f5fe99356eae5bb2277c6cdd"
+    },
+    {
+      "plugin": "gw-error-format",
+      "version": "1.0.2",
+      "path": "plugins/release/console/gw-error-format/spec.yaml",
+      "sha256": "807d30641e9683d9c83c1505f7111ad4fe86e7141d987787fc815a4a8b838b44"
+    },
+    {
+      "plugin": "hmac-auth",
+      "version": "1.0.1",
+      "path": "plugins/release/metadata/hmac-auth/spec.yaml",
+      "sha256": "d07d9b4e1593b68dc172743359105c5c107b85d2ee76e4d603669f02ae05c0c2"
+    },
+    {
+      "plugin": "hmac-auth-apisix",
+      "version": "2.0.3",
+      "path": "plugins/release/console/hmac-auth-apisix/spec.yaml",
+      "sha256": "96b1b97d3e21fdab42d3c473d25de1a146b9a966ac6628246f4e7aebf6f6baf3"
+    },
+    {
+      "plugin": "ip-restriction",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/ip-restriction/spec.yaml",
+      "sha256": "5b5691857592f6172e4654d607d78728dee41c0350b297c7ecfaab2fb5d9c401"
+    },
+    {
+      "plugin": "json-converter",
+      "version": "2.0.3",
+      "path": "plugins/release/console/json-converter/spec.yaml",
+      "sha256": "3cdcb023a414e00406feef36e7d97b0b6af56cb7612ff4a74ea7018cfdff4e5c"
+    },
+    {
+      "plugin": "jwt-auth",
+      "version": "1.0.1",
+      "path": "plugins/release/metadata/jwt-auth/spec.yaml",
+      "sha256": "7122aa9ee00d2a5f432aa3b473473a878ff2b7b294c7042eb8b0b861d79e7667"
+    },
+    {
+      "plugin": "key-auth",
+      "version": "1.2.1",
+      "path": "plugins/wasm-go/resources/plugins/key-auth/spec.yaml",
+      "sha256": "d2b10f8989022dfe28fad1bbccca8621a7b25013925f5586444aaa25638ef5cd"
+    },
+    {
+      "plugin": "key-rate-limit",
+      "version": "1.0.1",
+      "path": "plugins/release/metadata/key-rate-limit/spec.yaml",
+      "sha256": "c55bf71a154e59922b73d244a7dc2e90e329913d544f6e3cb6f3b7d8c78f509a"
+    },
+    {
+      "plugin": "log-request-response",
+      "version": "1.0.0",
+      "path": "plugins/release/console/log-request-response/spec.yaml",
+      "sha256": "ede6809cc354aec7929c415a6a04ecbb69a92d40b913b04c15b3826d4a56acbc"
+    },
+    {
+      "plugin": "mcp-router",
+      "version": "2.0.3",
+      "path": "plugins/release/console/mcp-router/spec.yaml",
+      "sha256": "5f6a97f57949c006b91e4979c174b9af6d73b710b4158f741f3c1954fde809de"
+    },
+    {
+      "plugin": "mcp-server",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/mcp-server/spec.yaml",
+      "sha256": "8528b9846ee6614da470b99cd1fb2de292af266aa0a3b13f57b0006c7cd655d9"
+    },
+    {
+      "plugin": "model-mapper",
+      "version": "2.0.4",
+      "path": "plugins/wasm-go/resources/plugins/model-mapper/spec.yaml",
+      "sha256": "3ee2309c4c60a54f9680eb80c83869c038cbb24000073f3d741311c1eb33bd2b"
+    },
+    {
+      "plugin": "model-router",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/model-router/spec.yaml",
+      "sha256": "67820f0ff68c4cf5410a10bbf9cb89550b949cacfb46c3931dbed40ba951ca44"
+    },
+    {
+      "plugin": "nginx-rewrite-compatible",
+      "version": "1.0.0",
+      "path": "plugins/release/console/nginx-rewrite-compatible/spec.yaml",
+      "sha256": "50246a0bffc98ade5b8b93a7c08dc6539136ccc7ad51092e242169d1ba5e7626"
+    },
+    {
+      "plugin": "oauth",
+      "version": "2.0.1",
+      "path": "plugins/release/metadata/oauth/spec.yaml",
+      "sha256": "02c9a117aff80403c6b59ba4623af7de0ba10e18ac97e6b1b5d85a12e49b2934"
+    },
+    {
+      "plugin": "oidc",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/oidc/spec.yaml",
+      "sha256": "ea5b5e42988adb8f3118ffcf31eef96239c9cc6a6cdd610325955ea48398e6f6"
+    },
+    {
+      "plugin": "opa",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/opa/spec.yaml",
+      "sha256": "5d269e0776dce7dfcf6195bf3c9396c1e07792b5d8f869c14cf857005f78847a"
+    },
+    {
+      "plugin": "replay-protection",
+      "version": "1.0.0-alpha",
+      "path": "plugins/release/metadata/replay-protection/spec.yaml",
+      "sha256": "f08853b3c397bca122fd7e45b3d29b6caabb50a383986350add253c5ecc566c6"
+    },
+    {
+      "plugin": "request-block",
+      "version": "1.0.1",
+      "path": "plugins/release/metadata/request-block/spec.yaml",
+      "sha256": "9e4d12ee999c2d3f731fc68264e2c7462091a6e9757fb8e3bcdf078751365f08"
+    },
+    {
+      "plugin": "request-validation",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/request-validation/spec.yaml",
+      "sha256": "ad70d17bb7b9b389c7802f206d1cf85a947d63836d91c6dfba4eacdea4de4606"
+    },
+    {
+      "plugin": "response-cache",
+      "version": "1.0.3",
+      "path": "plugins/release/console/response-cache/spec.yaml",
+      "sha256": "510b43e36341db25e9f8a458ba5e685dd66a1374302864270eef47b90b510719"
+    },
+    {
+      "plugin": "traffic-tag",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/traffic-tag/spec.yaml",
+      "sha256": "9d31f46354171d773bbdd9b62e2be1656a8a3e0f6afe5d35333743d1526675dc"
+    },
+    {
+      "plugin": "transformer",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/transformer/spec.yaml",
+      "sha256": "d99523c1da3df47d31b72e79dd17e754db72fc5e7375c9de65e2ff642e318988"
+    },
+    {
+      "plugin": "waf",
+      "version": "2.0.3",
+      "path": "plugins/release/metadata/waf/spec.yaml",
+      "sha256": "0dc9e44795469124fee579f20a2c9016e888cd3f98e2fa8566d2ee8e99c85842"
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+# OpenAI API Reference Export
+
+- Source index: https://developers.openai.com/api/reference/llms.txt
+- Fetched on: 2026-04-23
+- Scope: official `developers.openai.com/api/reference` pages exported as local Markdown.
+- Rule: one major category per file; top-level resource pages are kept as single files, and beta subpages are aggregated into `beta.md`.
+
+## Files
+
+- `administration.md`
+  - https://developers.openai.com/api/reference/administration/overview
+- `audio.md`
+  - https://developers.openai.com/api/reference/resources/audio
+- `batches.md`
+  - https://developers.openai.com/api/reference/resources/batches
+- `beta.md`
+  - https://developers.openai.com/api/reference/resources/beta/subresources/assistants
+  - https://developers.openai.com/api/reference/resources/beta/subresources/chatkit
+  - https://developers.openai.com/api/reference/resources/beta/subresources/chatkit/subresources/sessions
+  - https://developers.openai.com/api/reference/resources/beta/subresources/chatkit/subresources/threads
+  - https://developers.openai.com/api/reference/resources/beta/subresources/threads
+  - https://developers.openai.com/api/reference/resources/beta/subresources/threads/subresources/messages
+  - https://developers.openai.com/api/reference/resources/beta/subresources/threads/subresources/runs
+  - https://developers.openai.com/api/reference/resources/beta/subresources/threads/subresources/runs/subresources/steps
+- `chat.md`
+  - https://developers.openai.com/api/reference/resources/chat
+- `chat-completions.md`
+  - https://developers.openai.com/api/reference/chat-completions/overview
+- `completions.md`
+  - https://developers.openai.com/api/reference/resources/completions
+- `containers.md`
+  - https://developers.openai.com/api/reference/resources/containers
+- `conversations.md`
+  - https://developers.openai.com/api/reference/resources/conversations
+- `embeddings.md`
+  - https://developers.openai.com/api/reference/resources/embeddings
+- `evals.md`
+  - https://developers.openai.com/api/reference/resources/evals
+- `files.md`
+  - https://developers.openai.com/api/reference/resources/files
+- `fine-tuning.md`
+  - https://developers.openai.com/api/reference/resources/fine_tuning
+- `graders.md`
+  - https://developers.openai.com/api/reference/resources/graders
+- `images.md`
+  - https://developers.openai.com/api/reference/resources/images
+- `models.md`
+  - https://developers.openai.com/api/reference/resources/models
+- `moderations.md`
+  - https://developers.openai.com/api/reference/resources/moderations
+- `organization.md`
+  - https://developers.openai.com/api/reference/resources/organization
+- `overview.md`
+  - https://developers.openai.com/api/reference/overview
+- `projects.md`
+  - https://developers.openai.com/api/reference/resources/projects
+- `realtime.md`
+  - https://developers.openai.com/api/reference/resources/realtime
+- `realtime-beta.md`
+  - https://developers.openai.com/api/reference/realtime-beta/overview
+- `responses.md`
+  - https://developers.openai.com/api/reference/responses/overview
+  - https://developers.openai.com/api/reference/resources/responses
+- `uploads.md`
+  - https://developers.openai.com/api/reference/resources/uploads
+- `vector-stores.md`
+  - https://developers.openai.com/api/reference/resources/vector_stores
+- `videos.md`
+  - https://developers.openai.com/api/reference/resources/videos
+- `webhooks.md`
+  - https://developers.openai.com/api/reference/resources/webhooks

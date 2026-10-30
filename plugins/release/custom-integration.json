@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "upstream_commit": "91a23e9f3e4736b1b145bdc33531dff3a664c2c9",
+  "custom_commit": "5d993bebc2824b791bf68d07b62d50085d71afd0",
+  "custom_sdk_commit": "19fcbaf467d0c0b3863970c6eea1aa0158ffef14",
+  "release_decisions": [
+    {
+      "plugin": "ai-proxy",
+      "upstream_version": "2.0.3",
+      "prior_custom_version": "2.0.8",
+      "new_version": "2.0.9",
+      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+    },
+    {
+      "plugin": "ai-quota",
+      "upstream_version": "2.0.3",
+      "prior_custom_version": "2.0.1",
+      "new_version": "2.0.4",
+      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+    },
+    {
+      "plugin": "ai-cache",
+      "upstream_version": "2.0.3",
+      "prior_custom_version": "1.0.7",
+      "new_version": "2.0.4",
+      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+    },
+    {
+      "plugin": "ai-history",
+      "upstream_version": "2.0.3",
+      "prior_custom_version": "0.1.3",
+      "new_version": "2.0.4",
+      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+    },
+    {
+      "plugin": "ai-statistics",
+      "upstream_version": "2.0.3",
+      "prior_custom_version": "1.0.3",
+      "new_version": "2.0.4",
+      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+    },
+    {
+      "plugin": "model-mapper",
+      "upstream_version": "2.0.3",
+      "prior_custom_version": "1.0.1",
+      "new_version": "2.0.4",
+      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+    },
+    {
+      "plugin": "ai-memory",
+      "upstream_version": null,
+      "prior_custom_version": "0.1.6",
+      "new_version": "0.1.7",
+      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+    },
+    {
+      "plugin": "ai-billing",
+      "upstream_version": null,
+      "prior_custom_version": "0.1.13",
+      "new_version": "0.1.14",
+      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+    },
+    {
+      "plugin": "key-auth",
+      "upstream_version": null,
+      "prior_custom_version": "1.2.0",
+      "new_version": "1.2.1",
+      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+    }
+  ],
+  "semantic_reconciliation": {
+    "ai-quota": "Keep versioned read-only balance admission. Upstream quota mutation endpoints and per-response deductions are intentionally superseded by the Console single-writer contract.",
+    "ai-cache": "Retain the native thin cache integration, controlled internal embedding and trusted call correlation; gateway vector-store adapters remain upstream references.",
+    "ai-history": "Retain upstream history filling with custom rule inheritance and structured content preservation.",
+    "ai-statistics": "Retain the per-native-call stream-done metrics lifecycle instead of restoring duplicate upstream per-response usage events.",
+    "model-mapper": "Port upstream standalone exact/prefix/default/nested-model mapping and retain exact native body-basis mapping as the publication-selected role.",
+    "ai-proxy": "Select the higher customized release and preserve media, native execution, credential pool and trusted internal service behavior.",
+    "ai-token-ratelimit": "Select the complete newer upstream 2.0.3 source module, including combined global/per-rule matching and ordinary/streaming token accounting. The old custom directory adds no custom-only source files.",
+    "cluster-key-rate-limit": "Select the complete newer upstream 2.0.3 source module, including multiple matched limits and the tightest response quota. The old custom directory adds no custom-only source files."
+  },
+  "untracked_custom_load_balancer": "byte-identical to pinned upstream; selected upstream source is preserved",
+  "custom_history_version": "0.1.3 was present locally and ignored in the old repository; the unified new VERSION is explicitly tracked",
+  "validation": "pending batch build and tests; this record does not claim acceptance",
+  "removed_unselected_source_files": [
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/provider/basepath_traversal_test.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/provider/galadriel.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/provider/gemini_test.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/provider/hunyuan_test.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/provider/sse_framing.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/provider/sse_framing_test.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/test/duplicate_model.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/test/galadriel.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/main_test.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/cache/provider.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/cache/redis.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/embedding/azure.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/embedding/cohere.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/embedding/dashscope.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/embedding/huggingface.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/embedding/ollama.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/embedding/openai.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/embedding/provider.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/embedding/textin.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/embedding/xfyun.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/vector/chroma.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/vector/dashvector.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/vector/milvus.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/vector/pinecone.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/vector/provider.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/vector/qdrant.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/vector/weaviate.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/vector/elasticsearch.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-cache/vector/elasticsearch_test.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-statistics/main_extra_test.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-statistics/sse_framer.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-statistics/sse_framer_test.go",
+      "reason": "not part of the selected customized implementation; retained in the exact upstream Git merge baseline and the Higress reference checkout"
+    }
+  ],
+  "runtime_layering": "Keep upstream standalone plugins and preserve the selected platform-native overrides. Do not combine obsolete gateway vector-store/usage producers with the native Console-backed lifecycle.",
+  "native_media_contract_fix": {
+    "ai_proxy": "2.0.9 keeps exact runtime settings; usage_estimation is owned by Console frozen media policy and is not a VM field",
+    "ai_billing": "0.1.14 validates real image/video capabilities and stays dormant for the ai-proxy-owned media fact path; original text and internal embedding delivery remain active",
+    "receipt": "build/source-reconciliation-20261031/native-media-regression.json",
+    "status": "Go and compiled Wasm regression passed; source freeze and upload pending"
+  }
+}

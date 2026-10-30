@@ -1,0 +1,524 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: ai
+  image: platform_wasm/ai-memory
+  name: ai-memory
+  title: AI Memory
+  x-title-i18n:
+    zh-CN: AI 记忆
+  description: Thin gateway memory plugin for request memory injection, response capture,
+    and Redis Stream MemoryEvent emission.
+  x-description-i18n:
+    zh-CN: 薄网关记忆插件，用于请求记忆注入、响应捕获和 Redis Stream MemoryEvent 投递。
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-memory/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-memory/README_EN.md
+  version: 0.1.7
+spec:
+  phase: default
+  priority: 260
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        redis_stream:
+          type: object
+          title: Redis Stream配置
+          x-title-i18n:
+            en-US: Redis Stream Configuration
+          description: MemoryEvent Redis Stream XADD target
+          required:
+          - service_name
+          properties:
+            service_name:
+              type: string
+              title: 服务名称
+              x-title-i18n:
+                en-US: Service Name
+              default: redis-stack-server.dns
+            service_port:
+              type: integer
+              title: 服务端口
+              x-title-i18n:
+                en-US: Service Port
+              default: 6379
+            username:
+              type: string
+              title: Redis用户名
+              x-title-i18n:
+                en-US: Redis Username
+            password:
+              type: string
+              format: password
+              writeOnly: true
+              x-sensitive: true
+              title: Redis密码
+              x-title-i18n:
+                en-US: Redis Password
+            database:
+              type: integer
+              title: Redis数据库
+              x-title-i18n:
+                en-US: Redis Database
+              default: 0
+            timeout:
+              type: integer
+              title: 超时时间
+              x-title-i18n:
+                en-US: Timeout
+              description: Redis call timeout in milliseconds
+              default: 500
+            stream:
+              type: string
+              title: Stream名称
+              x-title-i18n:
+                en-US: Stream Name
+              default: memory:events
+        recent_cache:
+          type: object
+          title: Redis最近记忆配置
+          x-title-i18n:
+            en-US: Redis Recent Memory Configuration
+          description: Console-materialized recent memory Redis source
+          properties:
+            service_name:
+              type: string
+              default: redis-stack-server.dns
+            service_port:
+              type: integer
+              default: 6379
+            username:
+              type: string
+            password:
+              type: string
+              format: password
+              writeOnly: true
+              x-sensitive: true
+            database:
+              type: integer
+              default: 0
+            timeout:
+              type: integer
+              default: 50
+            key_prefix:
+              type: string
+              default: memory:recent
+        console_internal:
+          type: object
+          title: Console内部服务配置
+          x-title-i18n:
+            en-US: Console Internal Service Configuration
+          description: Optional Console assemble callout target
+          properties:
+            service_name:
+              type: string
+              default: modelfusion-console-api.dns
+            service_port:
+              type: integer
+              default: 80
+            assemble_path:
+              type: string
+              default: /internal/memory/assemble
+            timeout_ms:
+              type: integer
+              default: 100
+            auth_token:
+              type: string
+              format: password
+              writeOnly: true
+              x-sensitive: true
+              description: Internal bearer token for Console assemble authorization
+        tenant_header:
+          type: string
+          default: x-mse-tenant
+        consumer_header:
+          type: string
+          default: x-mse-consumer
+        session_header:
+          type: string
+          default: x-mse-session
+        request_id_header:
+          type: string
+          default: x-request-id
+        enable_path_suffixes:
+          type: array
+          description: Legacy-only path filters. A bound_target route does not inherit
+            these filters.
+          items:
+            type: string
+          default:
+          - /v1/chat/completions
+          - /v1/messages
+          - /v1/responses
+        native_identity:
+          type: object
+          additionalProperties: false
+          required:
+          - release_id
+          - target_id
+          - route_id
+          - policy_id
+          - policy_version
+          description: Original publication and policy frozen by the control plane.
+            The authenticated caller is captured per request and cannot be configured.
+          properties:
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            target_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            route_id:
+              type: string
+              format: uuid
+            policy_id:
+              type: string
+              format: uuid
+            policy_version:
+              type: integer
+              minimum: 1
+              maximum: 9223372036854775807
+        path_scope:
+          type: string
+          enum:
+          - legacy
+          - bound_target
+          default: legacy
+          description: The control plane sets bound_target on managed route bindings;
+            published protocol fields are then required.
+        capture_body_basis:
+          type: boolean
+          default: false
+          description: Trusted release configuration designates memory as the first
+            original JSON body capture boundary. Requires a supported published text
+            protocol on bound_target. Captures before any rewrite, including memory-off
+            and identity bypasses; invalid bodies are rejected.
+        client_protocol:
+          type: string
+          minLength: 1
+          description: Trusted published client protocol. Text adapters support openai_chat,
+            openai_responses, and anthropic_messages.
+        operation_kind:
+          type: string
+          minLength: 1
+          description: Trusted published operation. Only text_generate uses memory
+            adapters; unsupported operations pass through.
+        enable_methods:
+          type: array
+          maxItems: 0
+          items:
+            type: string
+          description: Managed bindings permit no additional method filter.
+        fail_policy:
+          type: string
+          enum:
+          - open
+          default: open
+      required:
+      - redis_stream
+      example:
+        redis_stream:
+          service_name: redis-stack-server.dns
+          service_port: 6379
+          username: ''
+          database: 0
+          timeout: 500
+          stream: memory:events
+        recent_cache:
+          service_name: redis-stack-server.dns
+          service_port: 6379
+          username: ''
+          database: 0
+          timeout: 50
+          key_prefix: memory:recent
+        console_internal:
+          service_name: modelfusion-console-api.dns
+          service_port: 80
+          assemble_path: /internal/memory/assemble
+          timeout_ms: 100
+        tenant_header: x-mse-tenant
+        consumer_header: x-mse-consumer
+        session_header: x-mse-session
+        request_id_header: x-request-id
+        enable_path_suffixes:
+        - /v1/chat/completions
+        - /v1/messages
+        - /v1/responses
+        fail_policy: open
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      properties:
+        redis_stream:
+          type: object
+          title: Redis Stream配置
+          x-title-i18n:
+            en-US: Redis Stream Configuration
+          description: MemoryEvent Redis Stream XADD target
+          required:
+          - service_name
+          properties:
+            service_name:
+              type: string
+              title: 服务名称
+              x-title-i18n:
+                en-US: Service Name
+              default: redis-stack-server.dns
+            service_port:
+              type: integer
+              title: 服务端口
+              x-title-i18n:
+                en-US: Service Port
+              default: 6379
+            username:
+              type: string
+              title: Redis用户名
+              x-title-i18n:
+                en-US: Redis Username
+            password:
+              type: string
+              format: password
+              writeOnly: true
+              x-sensitive: true
+              title: Redis密码
+              x-title-i18n:
+                en-US: Redis Password
+            database:
+              type: integer
+              title: Redis数据库
+              x-title-i18n:
+                en-US: Redis Database
+              default: 0
+            timeout:
+              type: integer
+              title: 超时时间
+              x-title-i18n:
+                en-US: Timeout
+              description: Redis call timeout in milliseconds
+              default: 500
+            stream:
+              type: string
+              title: Stream名称
+              x-title-i18n:
+                en-US: Stream Name
+              default: memory:events
+        recent_cache:
+          type: object
+          title: Redis最近记忆配置
+          x-title-i18n:
+            en-US: Redis Recent Memory Configuration
+          description: Console-materialized recent memory Redis source
+          properties:
+            service_name:
+              type: string
+              default: redis-stack-server.dns
+            service_port:
+              type: integer
+              default: 6379
+            username:
+              type: string
+            password:
+              type: string
+              format: password
+              writeOnly: true
+              x-sensitive: true
+            database:
+              type: integer
+              default: 0
+            timeout:
+              type: integer
+              default: 50
+            key_prefix:
+              type: string
+              default: memory:recent
+        console_internal:
+          type: object
+          title: Console内部服务配置
+          x-title-i18n:
+            en-US: Console Internal Service Configuration
+          description: Optional Console assemble callout target
+          properties:
+            service_name:
+              type: string
+              default: modelfusion-console-api.dns
+            service_port:
+              type: integer
+              default: 80
+            assemble_path:
+              type: string
+              default: /internal/memory/assemble
+            timeout_ms:
+              type: integer
+              default: 100
+            auth_token:
+              type: string
+              format: password
+              writeOnly: true
+              x-sensitive: true
+              description: Internal bearer token for Console assemble authorization
+        tenant_header:
+          type: string
+          default: x-mse-tenant
+        consumer_header:
+          type: string
+          default: x-mse-consumer
+        session_header:
+          type: string
+          default: x-mse-session
+        request_id_header:
+          type: string
+          default: x-request-id
+        fail_policy:
+          type: string
+          enum:
+          - open
+          default: open
+        native_identity:
+          type: object
+          additionalProperties: false
+          required:
+          - release_id
+          - target_id
+          - route_id
+          - policy_id
+          - policy_version
+          description: Original publication and policy frozen by the control plane.
+            The authenticated caller is captured per request and cannot be configured.
+          properties:
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            target_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            route_id:
+              type: string
+              format: uuid
+            policy_id:
+              type: string
+              format: uuid
+            policy_version:
+              type: integer
+              minimum: 1
+              maximum: 9223372036854775807
+        path_scope:
+          type: string
+          enum:
+          - legacy
+          - bound_target
+          description: bound_target uses the actual matched route and discards inherited
+            legacy path filters.
+        capture_body_basis:
+          type: boolean
+          default: false
+          description: Trusted release configuration designates memory as the first
+            original JSON body capture boundary before memory rewrite, including memory-off
+            and identity bypasses.
+        client_protocol:
+          type: string
+          minLength: 1
+          description: Original published client protocol; client headers and rewritten
+            upstream paths cannot override it.
+        operation_kind:
+          type: string
+          minLength: 1
+          description: Original published operation; memory supports text_generate
+            only.
+        enable_path_suffixes:
+          type: array
+          maxItems: 0
+          items:
+            type: string
+          description: Only an empty filter is accepted for a bound_target route.
+        enable_methods:
+          type: array
+          maxItems: 0
+          items:
+            type: string
+          description: Only an empty filter is accepted for a bound_target route.
+        memory_mode:
+          type: string
+          enum:
+          - 'off'
+          - recent-only
+          - digest
+          - semantic
+          - full
+          default: 'off'
+        recent_window_turns:
+          type: integer
+          default: 0
+        memory_token_budget:
+          type: integer
+          default: 0
+        assemble_timeout_ms:
+          type: integer
+          default: 0
+        inject_role:
+          type: string
+          enum:
+          - system
+          - developer
+          default: system
+        developer_compatible:
+          type: boolean
+          default: false
+        semantic_top_k:
+          type: integer
+          default: 0
+        capture_response:
+          type: boolean
+          default: true
+        no_store_header:
+          type: string
+          default: x-higress-ai-memory-no-store
+        question_from:
+          type: string
+          default: messages.@reverse.#(role=="user").content
+        response_value_from:
+          type: string
+          default: choices.0.message.content
+        stream_value_from:
+          type: string
+          default: choices.0.delta.content
+        tool_calls_from:
+          type: array
+          items:
+            type: string
+          default:
+          - choices.0.message.tool_calls
+          - choices.0.message.function_call
+          - choices.0.delta.tool_calls
+          - choices.0.delta.function_call
+        policy_version:
+          type: string
+      example:
+        path_scope: bound_target
+        client_protocol: openai_chat
+        operation_kind: text_generate
+        memory_mode: semantic
+        recent_window_turns: 6
+        memory_token_budget: 1500
+        assemble_timeout_ms: 100
+        inject_role: system
+        developer_compatible: false
+        semantic_top_k: 3
+        capture_response: true
+        no_store_header: x-higress-ai-memory-no-store
+        question_from: messages.@reverse.#(role=="user").content
+        response_value_from: choices.0.message.content
+        stream_value_from: choices.0.delta.content
+        tool_calls_from:
+        - choices.0.message.tool_calls
+        - choices.0.message.function_call
+        - choices.0.delta.tool_calls
+        - choices.0.delta.function_call
+        policy_version: memory-policy-v1

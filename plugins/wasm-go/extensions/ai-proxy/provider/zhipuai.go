@@ -24,7 +24,7 @@ const (
 type zhipuAiProviderInitializer struct{}
 
 func (m *zhipuAiProviderInitializer) ValidateConfig(config *ProviderConfig) error {
-	if config.apiTokens == nil || len(config.apiTokens) == 0 {
+	if len(config.apiTokens) == 0 {
 		return errors.New("no apiToken found in provider config")
 	}
 	return nil

@@ -4,7 +4,49 @@ keywords: [AI网关, AI代理]
 description: AI 代理插件配置参考
 ---
 
-## 功能说明
+## 完整冻结凭据目录
+
+`2.0.5` 配置契约保留 `_modelfusion_execution` v1 的单一 `credential_ref`/`credential_revision`，并支持 `modelfusion-execution.v2` 的完整非空 `credentials` 数组。每项仅含这两个字段，ref 唯一、revision 为规范正十进制字符串；拒绝秘密及 scalar/array 混用。完整目录不代表本次已选凭据，实际 D0/FACT 仍保留唯一已选 tuple，billing/cache 不取目录首项作为执行凭据。
+
+v2 的 `managed_execution.credentials` 保存逐项匹配的 ref/revision/value，与单一 `credential_value` 互斥；必须具备 HEALTH，`upstream_health.targets` 保留每个原操作/凭据成员的完整 TargetReference，与 `target` 互斥。v1 保留原单一配置及可省略的 HEALTH。既有 `legacy_suffixes`/`bound_target`、`auto`/`passthrough` 通用能力自 1.0.2 起提供，不以本次 v2 凭据池版本替代其起始版本。
+
+> 交付版本：`2.0.9`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。
+
+## 托管原生执行
+
+托管执行通过同一条有效配置中的 `managed_execution` 与 SDK 保留对象 `_modelfusion_execution` 启用。两者必须成对、完整，不能继承另一个目标的运行身份。`path_scope` 固定为 `bound_target`；`enable_methods`、`enable_path_suffixes` 只能省略或为空数组，范围随绑定路由覆盖全部方法，无需手填 URL 白名单。下游当前仍只接受受支持的 POST JSON 文本生成请求，绑定全部方法不等于支持全部操作。
+
+| 配置 | 实际含义 |
+| --- | --- |
+| `managed_execution.producer_id`、`private_stream`、`redis` | 受控事实生产者与私有 Redis Stream 连接；生产者权限由接收端配置的 transport grant 确定 |
+| `upstream_path`、`authority`、`credential_value` | 本目标的实际 callout 路径、主机与受控上游凭据；authority 必须与冻结 transport 一致 |
+| `timeout_ms` | callout 超时，默认 120000，最大 600000 毫秒 |
+| `input_protocol`、`upstream_protocol` | 冻结协议 profile，缺省各为 `openai_chat`，不由最终 URL 或响应 model 推断 |
+| `_modelfusion_execution` | 上述 v1 单一 / v2 完整池分支，共同保留完整 descriptor 和原 route/sales_asset/public_model；由 SDK 注入，非客户端输入 |
+
+完整 descriptor 固定 release/target/binding/provider/account、发现与 cluster、credential pool/adapter 版本、mapper/proxy/descriptor 摘要、上游模型、transport 及 capabilities。解析器核对结构、精确版本和 transport，并对收到的完整 descriptor 对象仅移除 `descriptor_digest` 自身，按 `mf-json.v1` 重算 SHA-256 后比较。`mapper_digest`、`proxy_digest` 由 SDK 按 IF01 的完整目标语义配置计算；插件消费这两项已发布摘要，不在缺少完整 mapper 配置及受控 Secret 归一化输入时另算替代值。配置中的真实凭据仅由受控 Secret 注入，不写入日志或示例。
+
+同一有效配置仍须有合法 `provider`。当前托管分支接受 `openai`、`generic`，以及上游协议为 `anthropic_messages` 时的 `claude`；下文其他兼容 provider 不会自动获得托管执行能力。
+
+请求先经过 key-auth 和 ai-quota。proxy 要求存在与本 release 相同、尚有效的本调用准入回执，清除客户端残留的执行字段，并保留原可信 caller 身份。mapper 必须在其之前以 `capture_body_basis: true` 固定原始正文依据和公开模型：原正文 raw bytes 保持不变，`original_body_digest` 使用映射前原 JSON 的 `mf-json.v1` 规范摘要。proxy 核对该公开模型及映射后的上游模型，随后冻结完整 selection；实际出站及观察到的响应正文摘要使用 `raw-bytes.v1`，与原正文规范摘要分别记录。不能从最终 model 或 URL 猜测钱包、销售归属、采购目标或原请求。
+
+当前协议组合如下；不支持的组合会在配置阶段拒绝：
+
+| 输入 | 上游 |
+| --- | --- |
+| `openai_chat` | `openai_chat` |
+| `openai_responses` | `openai_responses` 或 `openai_chat` |
+| `anthropic_messages` | `anthropic_messages` 或 `openai_chat` |
+
+托管分支使用实际 `DispatchHttpCall` 执行一次业务发送，不再进入兼容 router 的第二次转发；每次发送建立独立 attempt。当前单次 callout 聚合响应，SSE 在完整收齐后处理，并非逐 chunk 透传。dispatch 成功只说明已交接，不能自行证明上游已接收；用量来自原始上游响应，协议转换产生的默认值或合成事件不作为用量证据。缺失/不完整用量明确保持 missing，不能据此免费或估算结算。
+
+发送方向私有 Stream 分别投递 `execution_registration` 登记和 `observation` attempt 事实。最终 `call_delivery` 冻结成规范 Snapshot，通过内部 `x-modelfusion-delivery-observation` 响应桥交给 ai-billing；proxy 先清除上游所有同名值，再安装本次桥。billing 核对原身份及发布归属后投递同一字节、同 event/source/revision 的 delivery，避免兼容 BillingEvent 与原生事实并发生成。响应桥不向客户端提供事实写入权限。
+
+Redis/事实投递失败沿 Q41 记录 gap 或 unknown，实际响应继续；没有回调或流已关闭时不能伪造成功 delivery。源码、Go/Wasm 宿主验证、真实网关加载与支持组合验收各自记录。
+
+登记与 attempt 事件的 Redis 调用、ACK 回调由插件根上下文持有，HTTP 请求结束后继续等待原 Redis 结果或超时；正常请求结束不会被标为 `stream_ack_missing`。这不延迟业务响应，真实投递失败仍显式记录缺口，后台事件回调不恢复请求或再次发送业务。
+
+## 兼容代理功能
 
 `AI 代理`插件实现了基于 OpenAI API 契约的 AI 代理功能。目前支持 OpenAI、Azure OpenAI、月之暗面（Moonshot）和通义千问等 AI
 服务提供商。
@@ -15,6 +57,7 @@ description: AI 代理插件配置参考
 
 - **OpenAI 协议**: 请求路径 `/v1/chat/completions`，使用标准的 OpenAI Messages API 格式
 - **Claude 协议**: 请求路径 `/v1/messages`，使用 Anthropic Claude Messages API 格式  
+- **Responses 协议**: 请求路径 `/v1/responses`，优先使用供应商原生 Responses 能力，缺失时可回退到 Chat Completions
 - **智能转换**: 自动检测请求协议，如果目标供应商不原生支持该协议，则自动进行协议转换
 - **零配置**: 用户无需设置 `protocol` 字段，插件自动处理
 
@@ -24,9 +67,40 @@ description: AI 代理插件配置参考
 
 > 请求路径后缀匹配 `/v1/messages` 时，对应 Claude 文生文场景，会自动检测供应商能力：如果支持原生 Claude 协议则直接转发，否则先转换为 OpenAI 协议再转发给供应商
 
+> 请求路径后缀匹配 `/v1/responses` 时，对应 OpenAI Responses API 场景，会自动检测供应商能力：如果 `capabilities` 中支持 `openai/v1/responses` 则直接转发，否则在供应商支持 `openai/v1/chatcompletions` 时转换为 Chat Completions 请求，并将非流式响应和流式 SSE 转回 Responses 格式
+
 > 请求路径后缀匹配 `/v1/embeddings` 时，对应文本向量场景，会用 OpenAI 的文本向量协议解析请求 Body，再转换为对应 LLM 厂商的文本向量协议
 
 > 请求路径后缀匹配 `/v1/images/generations` 时，对应文生图场景，会用 OpenAI 的图片生成协议解析请求 Body，再转换为对应 LLM 厂商的图片生成协议
+
+## 路由模式与作用域
+
+本节与下文 provider 功能说明适用于兼容代理分支；托管分支使用上节的完整冻结配置与更严格的过滤约束，不继承这里的自动路径分类或手工交集配置。
+
+- `protocol_mode: auto` 是兼容默认值，使用已注册适配器并在无匹配时保留透明转发；`passthrough` 强制跳过协议转换。
+- 缺省或显式 `path_scope: legacy_suffixes` 保留 ai-proxy 历史操作分类；`path_scope: bound_target` 处理 Higress 绑定目标已经选中的请求。
+- 在 `bound_target` 下，缺省或字面空数组 `enable_path_suffixes: []`、`enable_methods: []` 都不增加收窄条件；显式非空过滤器与绑定目标求交集，不能创建或扩大绑定。
+- ai-proxy 会裁剪并将 `enable_methods` 规范化为大写；示例统一使用大写 HTTP 方法。路由级字段缺省时继承全局配置。
+
+```yaml
+# 兼容旧配置
+protocol_mode: auto
+path_scope: legacy_suffixes
+```
+
+```yaml
+# 绑定目标，无额外过滤
+path_scope: bound_target
+```
+
+```yaml
+# 可选的显式交集
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
+```
 
 ## 运行属性
 
@@ -55,7 +129,7 @@ description: AI 代理插件配置参考
 | `failover`             | object                 | 非必填   | -      | 配置 apiToken 的 failover 策略，当 apiToken 不可用时，将其移出 apiToken 列表，待健康检测通过或冷却时间到期后重新添加回 apiToken 列表                                                                                                                                                                                                                                                                                                       |
 | `retryOnFailure`       | object                 | 非必填   | -      | 当请求失败时立即进行重试                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `reasoningContentMode` | string                 | 非必填   | -      | 如何处理大模型服务返回的推理内容。目前支持以下取值：passthrough（正常输出推理内容）、ignore（不输出推理内容）、concat（将推理内容拼接在常规输出内容之前）。默认为 passthrough。仅支持通义千问服务。                                                                                                                                                                                                                                        |
-| `capabilities`         | map of string          | 非必填   | -      | 部分 provider 的部分 ai 能力原生兼容 openai/v1 格式，不需要重写，可以直接转发，通过此配置项指定来开启转发, key 表示的是采用的厂商协议能力，values 表示的真实的厂商该能力的 api path, 厂商协议能力当前支持: openai/v1/chatcompletions, openai/v1/embeddings, openai/v1/imagegeneration, openai/v1/audiospeech, cohere/v1/rerank                                                                                                             |
+| `capabilities`         | map of string          | 非必填   | -      | 部分 provider 的部分 ai 能力原生兼容 openai/v1 格式，不需要重写，可以直接转发，通过此配置项指定来开启转发。key 表示厂商协议能力，value 表示真实的厂商 API path。对于 Qwen，显式将 `openai/v1/responses` 配置为空或仅空白会关闭其默认原生 Responses 能力并触发 Chat Completions 兼容回退；其他 Provider 的空路径仍保留既有“保持原路径”语义。当前支持: openai/v1/chatcompletions, openai/v1/responses, openai/v1/embeddings, openai/v1/imagegeneration, openai/v1/audiospeech, cohere/v1/rerank                                                                                                             |
 | `basePath`             | string                 | 非必填   | -      | 如果配置了 basePath，可用于在请求 path 中移除该前缀，或添加至请求 path 中，默认为进行移除                                                                                                                                                                                                                                                                                                                                                 |
 | `basePathHandling`     | string                 | 非必填   | removePrefix | basePathHandling 用于指定 basePath 的处理方式。可选值：removePrefix（移除路径前缀，将请求转发给上游时去除 basePath 前缀后再拼接）、prepend（添加路径前缀，将请求转发给上游时在路径前面添加 basePath 前缀）                                                                                                                                                                                                                                                                                                                         |
 | `contextCleanupCommands` | array of string      | 非必填   | -      | 上下文清理命令列表。当请求的 messages 中存在完全匹配任意一个命令的 user 消息时，将该消息及之前所有非 system 消息清理掉，只保留 system 消息和该命令之后的消息。可用于主动清理对话上下文。                                                                                                                                                                                                                                                    |
@@ -197,10 +271,6 @@ OpenRouter 所对应的 `type` 为 `openrouter`。它并无特有的配置字段
 #### Fireworks AI
 
 Fireworks AI 所对应的 `type` 为 `fireworks`。它并无特有的配置字段。
-
-#### Galadriel
-
-Galadriel 所对应的 `type` 为 `galadriel`。它并无特有的配置字段。
 
 #### 文心一言（Baidu）
 
@@ -621,6 +691,70 @@ URL: <http://your-domain/v1/chat/completions>
   }
 }
 ```
+
+**图片生成与语音合成媒体能力配置**
+
+Qwen 默认能力不会自动启用 `/v1/images/generations` 或 `/v1/audio/speech`。如需通过 OpenAI 风格路径调用 DashScope 同步媒体接口，需要显式配置 `capabilities`，并保持 `qwenEnableCompatible: false`。图片生成会转换为 DashScope `multimodal-generation/generation` 请求，支持 `prompt`、`n`、`seed`、`size`，其中 `size` 会从 OpenAI 的 `WIDTHxHEIGHT` 转换为 DashScope 的 `WIDTH*HEIGHT`。模型可映射到 `qwen-image-2.0-pro`、`wan2.6-t2i` 等同步文生图模型。语音合成会转换为 Qwen-TTS 非流式请求，支持 `input`、`voice` 以及扩展字段 `language_type`、`instructions`、`optimize_instructions`。
+
+```yaml
+provider:
+  type: qwen
+  apiTokens:
+    - 'YOUR_QWEN_API_TOKEN'
+  qwenEnableCompatible: false
+  modelMapping:
+    'gpt-image-1': 'qwen-image-2.0-pro' # 或 wan2.6-t2i
+    'tts-1': 'qwen3-tts-flash'
+  capabilities:
+    'openai/v1/imagegeneration': '/api/v1/services/aigc/multimodal-generation/generation'
+    'openai/v1/audiospeech': '/api/v1/services/aigc/multimodal-generation/generation'
+```
+
+图片生成请求示例：
+
+```json
+{
+  "model": "gpt-image-1",
+  "prompt": "a quiet lake at sunrise",
+  "n": 1,
+  "seed": 42,
+  "size": "1280x720"
+}
+```
+
+语音合成请求示例：
+
+```json
+{
+  "model": "tts-1",
+  "input": "Today is a wonderful day to build something people love.",
+  "voice": "Cherry",
+  "language_type": "English",
+  "instructions": "Speak warmly.",
+  "optimize_instructions": true
+}
+```
+
+当前语音合成响应返回可下载音频 URL 的 JSON，而不是 OpenAI 二进制音频直出：
+
+```json
+{
+  "created": 1766113409,
+  "data": {
+    "url": "https://dashscope-result.example/audio.wav",
+    "id": "audio_123",
+    "expires_at": 1766113409
+  },
+  "usage": {
+    "input_tokens": 76,
+    "output_tokens": 1045,
+    "characters": 0,
+    "total_tokens": 1121
+  }
+}
+```
+
+启用 `qwenEnableCompatible: true` 时，显式配置的媒体能力仍按 Qwen 兼容模式透传，不执行上述 DashScope-native 请求/响应转换。`response_format`、`speed` 等 OpenAI 音频字段暂不参与 Qwen-TTS native 转换。
 
 **文本向量请求示例**
 
@@ -1156,65 +1290,9 @@ provider:
 }
 ```
 
-### 使用 OpenAI 协议代理 Galadriel 服务
-
-**配置信息**
-
-```yaml
-provider:
-  type: galadriel
-  apiTokens:
-    - "YOUR_GALADRIEL_API_TOKEN"
-  modelMapping:
-    "gpt-4": "llama3.1"
-    "gpt-3.5-turbo": "llama3.1"
-    "*": "llama3.1"
-```
-
-**请求示例**
-
-```json
-{
-  "model": "llama3.1",
-  "messages": [
-    {
-      "role": "user",
-      "content": "你好，你是谁？"
-    }
-  ]
-}
-```
-
-**响应示例**
-
-```json
-{
-  "id": "id",
-  "choices": [
-    {
-      "finish_reason": "stop",
-      "index": 0,
-      "logprobs": null,
-      "message": {
-        "content": "你好！我是一个AI助手，基于Llama 3.1模型构建。我通过Galadriel网络运行，这是一个去中心化的AI推理平台。我可以帮助回答问题、进行对话、协助完成各种任务。有什么我可以帮助你的吗？",
-        "refusal": null,
-        "role": "assistant",
-        "function_call": null,
-        "tool_calls": null
-      }
-    }
-  ],
-  "created": 1728558433,
-  "model": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
-  "object": "chat.completion",
-  "service_tier": null,
-  "system_fingerprint": null
-}
-```
-
 ### 使用自动协议兼容功能
 
-插件现在支持自动协议检测，可以同时处理 OpenAI 和 Claude 两种协议格式的请求。
+插件现在支持自动协议检测，可以同时处理 OpenAI、Claude 和 Responses 协议格式的请求。
 
 **配置信息**
 
@@ -1260,9 +1338,47 @@ URL: `http://your-domain/v1/messages`
 }
 ```
 
+**Responses 协议请求示例**
+
+URL: `http://your-domain/v1/responses`
+
+```json
+{
+  "model": "gpt-4o-mini",
+  "instructions": "回答尽量简洁。",
+  "input": "你好，你是谁？",
+  "max_output_tokens": 128,
+  "stream": false
+}
+```
+
+如果供应商原生支持 Responses API，可以在 `capabilities` 中声明原生路径，插件会优先直接转发：
+
+```yaml
+provider:
+  type: openai
+  apiTokens:
+    - 'YOUR_OPENAI_API_TOKEN'
+  capabilities:
+    openai/v1/responses: /v1/responses
+    openai/v1/chatcompletions: /v1/chat/completions
+```
+
+如果未声明 `openai/v1/responses`，且供应商支持 `openai/v1/chatcompletions`，插件会将支持的 Responses 请求回退转换为 Chat Completions，并把非流式响应和流式 SSE 转回 Responses 格式。对于 Qwen，也可以将其 Responses 路径显式配置为 `''`（仅空白值等价），覆盖 Qwen 默认的原生 Responses 能力，让兼容模式中不支持原生 Responses 的模型使用 Chat Completions：
+
+```yaml
+provider:
+  type: qwen
+  qwenEnableCompatible: true
+  capabilities:
+    openai/v1/responses: ''
+```
+
+回退模式支持文本 `input`、由 `input_text`/`output_text` 组成的消息数组、`instructions`、常见生成参数、函数工具和兼容的 `tool_choice`。回退模式不支持 `previous_response_id`、`conversation`、托管工具、文件输入和图片等多模态输入。
+
 **响应示例**
 
-两种协议格式的请求都会返回相应格式的响应：
+不同协议格式的请求都会返回相应格式的响应：
 
 ```json
 {
@@ -2615,7 +2731,8 @@ spec:
             - 'YOUR_API_TOKEN'
       ingress:
         - groq
-  url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.0
+  # Standalone example pinned to upstream ai-proxy 1.0.2; not a native Modelfusion release artifact pin.
+  url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.2
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

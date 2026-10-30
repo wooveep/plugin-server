@@ -1,0 +1,19 @@
+{
+  "schema_version": "d0-assertions-v1",
+  "inputs": [],
+  "assertions": [
+    {
+      "op": "int_add",
+      "error_code": "A_INT_ADD",
+      "left": {
+        "literal": "9007199254740993"
+      },
+      "right": {
+        "literal": "7"
+      },
+      "result": {
+        "literal": "9007199254741000"
+      }
+    }
+  ]
+}

@@ -1,0 +1,312 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: ai
+  image: platform_wasm/ai-history
+  name: ai-history
+  title: AI 历史对话
+  x-title-i18n:
+    en-US: AI History Dialogue
+  description: 基于请求身份缓存 AI 历史对话，并在后续请求中自动填充上下文。
+  x-description-i18n:
+    en-US: Cache AI chat history by request identity and automatically fill historical
+      context in subsequent requests.
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-history/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-history/README_EN.md
+  version: 2.0.4
+  contact:
+    name: sakura
+spec:
+  phase: default
+  priority: 650
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      required:
+      - redis
+      properties:
+        capture_body_basis:
+          type: boolean
+          default: false
+          description: Trusted publication assigns true only to the first body rewriter
+            according to exact artifact phase and priority. Other preprocessors consume
+            the original basis.
+        enabled:
+          type: boolean
+          default: true
+          description: Enable this explicitly bound history policy.
+        path_scope:
+          type: string
+          enum:
+          - bound_target
+          description: Use the matched published route binding without a second URL
+            list.
+        client_protocol:
+          type: string
+          minLength: 1
+          description: 'Trusted published protocol: openai_chat, openai_responses,
+            anthropic_messages. Other protocols bypass history.'
+        operation_kind:
+          type: string
+          minLength: 1
+          description: Only text_generate supports history, including multimodal input
+            with text output. Other operations bypass history.
+        public_model:
+          type: string
+          minLength: 1
+          description: Original published public model checked against the trusted
+            pre-rewrite body basis.
+        native_identity:
+          type: object
+          additionalProperties: false
+          required:
+          - release_id
+          - target_id
+          - route_id
+          - policy_id
+          - policy_version
+          properties:
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            target_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            route_id:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              not:
+                const: 00000000-0000-0000-0000-000000000000
+            policy_id:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              not:
+                const: 00000000-0000-0000-0000-000000000000
+            policy_version:
+              type: integer
+              minimum: 1
+              maximum: 9223372036854775807
+          description: Five frozen binding fields only. Caller is read once from the
+            preceding authenticated native identity; never supplied in this rule.
+        redis:
+          type: object
+          title: Redis配置
+          x-title-i18n:
+            en-US: Redis Configuration
+          description: 用于存储历史对话的 Redis 服务。
+          x-description-i18n:
+            en-US: Redis service used to store chat history.
+          required:
+          - serviceName
+          properties:
+            serviceName:
+              type: string
+              title: Redis服务名称
+              x-title-i18n:
+                en-US: Redis Service Name
+              description: Redis 服务名称，带服务类型的完整 FQDN 名称，例如 my-redis.dns、redis.my-ns.svc.cluster.local。
+              x-description-i18n:
+                en-US: Redis service name, full FQDN name with service type, for example
+                  my-redis.dns or redis.my-ns.svc.cluster.local.
+            servicePort:
+              type: integer
+              title: Redis服务端口
+              x-title-i18n:
+                en-US: Redis Service Port
+              default: 6379
+            username:
+              type: string
+              title: Redis用户名
+              x-title-i18n:
+                en-US: Redis Username
+            password:
+              type: string
+              format: password
+              x-sensitive: true
+              writeOnly: true
+              title: Redis密码
+              x-title-i18n:
+                en-US: Redis Password
+            timeout:
+              type: integer
+              title: Redis超时时间
+              x-title-i18n:
+                en-US: Redis Timeout
+              description: 请求 Redis 的超时时间，单位毫秒。
+              x-description-i18n:
+                en-US: Redis request timeout in milliseconds.
+              default: 1000
+            database:
+              type: integer
+              title: Redis数据库
+              x-title-i18n:
+                en-US: Redis Database
+              default: 0
+        identityHeader:
+          type: string
+          title: 身份请求头
+          x-title-i18n:
+            en-US: Identity Header
+          description: 用于区分历史对话归属的请求头。
+          x-description-i18n:
+            en-US: Request header used to identify the owner of chat history.
+          default: Authorization
+        fillHistoryCnt:
+          type: integer
+          title: 默认填充轮数
+          x-title-i18n:
+            en-US: Default Filled History Turns
+          description: 默认填充的历史对话轮数。
+          x-description-i18n:
+            en-US: Default number of historical dialogue turns to fill.
+          default: 3
+        cacheKeyPrefix:
+          type: string
+          title: Redis Key前缀
+          x-title-i18n:
+            en-US: Redis Key Prefix
+          default: 'higress-ai-history:'
+        cacheTTL:
+          type: integer
+          title: 缓存过期时间
+          x-title-i18n:
+            en-US: Cache TTL
+          description: 缓存过期时间，单位秒。0 表示永不过期。
+          x-description-i18n:
+            en-US: Cache expiration in seconds. 0 means never expire.
+          default: 0
+      example:
+        redis:
+          serviceName: my-redis.dns
+          servicePort: 6379
+          timeout: 2000
+          database: 0
+        identityHeader: Authorization
+        fillHistoryCnt: 3
+        cacheKeyPrefix: 'higress-ai-history:'
+        cacheTTL: 0
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      required:
+      - redis
+      properties:
+        capture_body_basis:
+          type: boolean
+          default: false
+          description: Trusted publication assigns true only to the first body rewriter
+            according to exact artifact phase and priority. Other preprocessors consume
+            the original basis.
+        enabled:
+          type: boolean
+          default: true
+          description: Enable this explicitly bound history policy.
+        path_scope:
+          type: string
+          enum:
+          - bound_target
+          description: Use the matched published route binding without a second URL
+            list.
+        client_protocol:
+          type: string
+          minLength: 1
+          description: 'Trusted published protocol: openai_chat, openai_responses,
+            anthropic_messages. Other protocols bypass history.'
+        operation_kind:
+          type: string
+          minLength: 1
+          description: Only text_generate supports history, including multimodal input
+            with text output. Other operations bypass history.
+        public_model:
+          type: string
+          minLength: 1
+          description: Original published public model checked against the trusted
+            pre-rewrite body basis.
+        native_identity:
+          type: object
+          additionalProperties: false
+          required:
+          - release_id
+          - target_id
+          - route_id
+          - policy_id
+          - policy_version
+          properties:
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            target_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            route_id:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              not:
+                const: 00000000-0000-0000-0000-000000000000
+            policy_id:
+              type: string
+              format: uuid
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              not:
+                const: 00000000-0000-0000-0000-000000000000
+            policy_version:
+              type: integer
+              minimum: 1
+              maximum: 9223372036854775807
+          description: Five frozen binding fields only. Caller is read once from the
+            preceding authenticated native identity; never supplied in this rule.
+        redis:
+          type: object
+          title: Redis配置
+          x-title-i18n:
+            en-US: Redis Configuration
+          required:
+          - serviceName
+          properties:
+            serviceName:
+              type: string
+            servicePort:
+              type: integer
+              default: 6379
+            username:
+              type: string
+            password:
+              type: string
+              format: password
+              x-sensitive: true
+              writeOnly: true
+            timeout:
+              type: integer
+              default: 1000
+            database:
+              type: integer
+              default: 0
+        identityHeader:
+          type: string
+          default: Authorization
+        fillHistoryCnt:
+          type: integer
+          default: 3
+        cacheKeyPrefix:
+          type: string
+          default: 'higress-ai-history:'
+        cacheTTL:
+          type: integer
+          default: 0
+      example:
+        redis:
+          serviceName: my-redis.dns
+          servicePort: 6379
+          timeout: 2000
+        identityHeader: Authorization
+        fillHistoryCnt: 3

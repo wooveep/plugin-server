@@ -1,0 +1,167 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: auth
+  name: opa
+  image: platform_wasm/opa
+  title: OPA
+  x-title-i18n:
+    zh-CN: OPA
+  description: Implemented OPA policy control.
+  x-description-i18n:
+    zh-CN: 实现了 OPA 策略控制
+  iconUrl: https://img.alicdn.com/imgextra/i3/O1CN01bAFa9k1t1gdQcVTH0_!!6000000005842-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/opa/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/opa/README_EN.md
+  version: 2.0.3
+  contact:
+    name: Higress Team
+    url: http://higress.io/
+    email: admin@higress.io
+spec:
+  phase: AUTHN
+  priority: 225
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        policy:
+          type: string
+          title: OPA 策略
+          x-title-i18n:
+            en-US: OPA Policy
+          description: opa 策略
+          x-description-i18n:
+            en-US: OPA Policy
+        timeout:
+          type: string
+          title: 访问超时时间
+          x-title-i18n:
+            en-US: Timeout Setting
+          description: 访问超时时间设置
+          x-description-i18n:
+            en-US: Timeout setting for access
+        serviceSource:
+          type: string
+          title: 服务来源
+          x-title-i18n:
+            en-US: Service Source
+          description: 服务来源类型，可选值：k8s, nacos, ip, route
+          x-description-i18n:
+            en-US: 'Service source type, options: k8s, nacos, ip, route'
+        host:
+          type: string
+          title: 服务主机
+          x-title-i18n:
+            en-US: Service Host
+          description: 服务主机（serviceSource为`ip`必填）
+          x-description-i18n:
+            en-US: Service host (required if serviceSource is `ip`)
+        serviceName:
+          type: string
+          title: 服务名称
+          x-title-i18n:
+            en-US: Service Name
+          description: 服务名称（serviceSource为`k8s,nacos,ip`必填）
+          x-description-i18n:
+            en-US: Service name (required if serviceSource is `k8s,nacos,ip`)
+        servicePort:
+          type: integer
+          title: 服务端口
+          x-title-i18n:
+            en-US: Service Port
+          description: 服务端口（serviceSource为`k8s,nacos,ip`必填）
+          x-description-i18n:
+            en-US: Service port (required if serviceSource is `k8s,nacos,ip`)
+        namespace:
+          type: string
+          title: 命名空间
+          x-title-i18n:
+            en-US: Namespace
+          description: 命名空间（serviceSource为`k8s,nacos`必填）
+          x-description-i18n:
+            en-US: Namespace (required if serviceSource is `k8s,nacos`)
+      required:
+      - policy
+      - timeout
+      - serviceSource
+      example:
+        serviceSource: k8s
+        serviceName: opa
+        servicePort: 8181
+        namespace: higress-backend
+        policy: example1
+        timeout: 5s
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        policy:
+          type: string
+          title: OPA 策略
+          x-title-i18n:
+            en-US: OPA Policy
+          description: opa 策略
+          x-description-i18n:
+            en-US: OPA Policy
+        timeout:
+          type: string
+          title: 访问超时时间
+          x-title-i18n:
+            en-US: Timeout Setting
+          description: 访问超时时间设置
+          x-description-i18n:
+            en-US: Timeout setting for access
+        serviceSource:
+          type: string
+          title: 服务来源
+          x-title-i18n:
+            en-US: Service Source
+          description: 服务来源类型，可选值：k8s, nacos, ip, route
+          x-description-i18n:
+            en-US: 'Service source type, options: k8s, nacos, ip, route'
+        host:
+          type: string
+          title: 服务主机
+          x-title-i18n:
+            en-US: Service Host
+          description: 服务主机（serviceSource为`ip`必填）
+          x-description-i18n:
+            en-US: Service host (required if serviceSource is `ip`)
+        serviceName:
+          type: string
+          title: 服务名称
+          x-title-i18n:
+            en-US: Service Name
+          description: 服务名称（serviceSource为`k8s,nacos,ip`必填）
+          x-description-i18n:
+            en-US: Service name (required if serviceSource is `k8s,nacos,ip`)
+        servicePort:
+          type: integer
+          title: 服务端口
+          x-title-i18n:
+            en-US: Service Port
+          description: 服务端口（serviceSource为`k8s,nacos,ip`必填）
+          x-description-i18n:
+            en-US: Service port (required if serviceSource is `k8s,nacos,ip`)
+        namespace:
+          type: string
+          title: 命名空间
+          x-title-i18n:
+            en-US: Namespace
+          description: 命名空间（serviceSource为`k8s,nacos`必填）
+          x-description-i18n:
+            en-US: Namespace (required if serviceSource is `k8s,nacos`)
+      required:
+      - policy
+      - timeout
+      - serviceSource
+      example:
+        serviceSource: k8s
+        serviceName: opa
+        servicePort: 8181
+        namespace: higress-backend
+        policy: example1
+        timeout: 5s

@@ -14,3 +14,7 @@ require (
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 )
+
+replace github.com/higress-group/wasm-go => ../../../../..
+
+replace github.com/higress-group/proxy-wasm-go-sdk => ../../../../../../proxy-wasm-go-sdk

@@ -3,23 +3,39 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"net/http"
-	"sort"
+	"fmt"
+	"mime"
 	"strings"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
-	"github.com/higress-group/wasm-go/pkg/log"
+	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-
-	"github.com/alibaba/higress/plugins/wasm-go/pkg/jsonbody"
 )
+
+// @Title model-mapper
+// @Name model-mapper
+// @Category ai
+// @Phase UNSPECIFIED_PHASE
+// @Priority 200
 
 const (
-	DefaultMaxBodyBytes = 100 * 1024 * 1024 // 100MB
+	maxRequestBodyBytes = 1 << 20
+	maxRuntimeBodyBytes = 100 * 1024 * 1024
+	rejectedContextKey  = "model-mapper.rejected"
+	mappedContextKey    = "model-mapper.mapped"
+	basisContextKey     = "model-mapper.original-basis"
 )
+
+type Config struct {
+	modelMapping     map[string]string
+	captureBodyBasis bool
+	consumeBodyBasis bool
+	standalone       *standaloneConfig
+}
 
 func main() {}
 
@@ -29,203 +45,234 @@ func init() {
 		wrapper.ParseConfig(parseConfig),
 		wrapper.ProcessRequestHeaders(onHttpRequestHeaders),
 		wrapper.ProcessRequestBody(onHttpRequestBody),
-		wrapper.WithRebuildMaxMemBytes[Config](200*1024*1024),
+		wrapper.WithRebuildMaxMemBytes[Config](2*maxRuntimeBodyBytes),
 	)
 }
 
-type ModelMapping struct {
-	Prefix string
-	Target string
-}
-
-type Config struct {
-	modelKey           string
-	exactModelMapping  map[string]string
-	prefixModelMapping []ModelMapping
-	defaultModel       string
-	enableOnPathSuffix []string
-	modelToHeader      string
-}
-
-func parseConfig(json gjson.Result, config *Config) error {
-	config.modelKey = json.Get("modelKey").String()
-	if config.modelKey == "" {
-		config.modelKey = "model"
+func parseConfig(input gjson.Result, config *Config) error {
+	if !input.IsObject() {
+		return errors.New("model-mapper configuration must be an object")
 	}
-
-	config.modelToHeader = json.Get("modelToHeader").String()
-	if config.modelToHeader == "" {
-		config.modelToHeader = "x-higress-llm-model-final"
-	}
-
-	modelMapping := json.Get("modelMapping")
-	if modelMapping.Exists() && !modelMapping.IsObject() {
-		return errors.New("modelMapping must be an object")
-	}
-
-	config.exactModelMapping = make(map[string]string)
-	config.prefixModelMapping = make([]ModelMapping, 0)
-
-	// To replicate C++ behavior (nlohmann::json iterates keys alphabetically),
-	// we collect entries and sort them by key.
-	type mappingEntry struct {
-		key   string
-		value string
-	}
-	var entries []mappingEntry
-	modelMapping.ForEach(func(key, value gjson.Result) bool {
-		entries = append(entries, mappingEntry{
-			key:   key.String(),
-			value: value.String(),
-		})
-		return true
-	})
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].key < entries[j].key
-	})
-
-	for _, entry := range entries {
-		key := entry.key
-		value := entry.value
-		if key == "*" {
-			config.defaultModel = value
-		} else if strings.HasSuffix(key, "*") {
-			prefix := strings.TrimSuffix(key, "*")
-			config.prefixModelMapping = append(config.prefixModelMapping, ModelMapping{
-				Prefix: prefix,
-				Target: value,
+	parsed := Config{modelMapping: make(map[string]string)}
+	seen := make(map[string]bool)
+	var parseErr error
+	input.ForEach(func(key, value gjson.Result) bool {
+		name := key.String()
+		if name != "modelMapping" && name != "capture_body_basis" && name != "consume_body_basis" {
+			return true
+		}
+		if seen[name] {
+			parseErr = fmt.Errorf("duplicate configuration field %q", name)
+			return false
+		}
+		seen[name] = true
+		switch name {
+		case "capture_body_basis":
+			if value.Type != gjson.True && value.Type != gjson.False {
+				parseErr = errors.New("capture_body_basis must be a boolean")
+				return false
+			}
+			parsed.captureBodyBasis = value.Bool()
+		case "consume_body_basis":
+			if value.Type != gjson.True && value.Type != gjson.False {
+				parseErr = errors.New("consume_body_basis must be a boolean")
+				return false
+			}
+			parsed.consumeBodyBasis = value.Bool()
+		case "modelMapping":
+			if !value.IsObject() {
+				parseErr = errors.New("modelMapping must be an object")
+				return false
+			}
+			value.ForEach(func(source, target gjson.Result) bool {
+				model := source.String()
+				if _, duplicate := parsed.modelMapping[model]; duplicate {
+					parseErr = fmt.Errorf("duplicate modelMapping key %q", model)
+					return false
+				}
+				if bodybasis.ValidateModel(model) != nil || target.Type != gjson.String ||
+					bodybasis.ValidateModel(target.Str) != nil {
+					parseErr = errors.New("modelMapping keys and targets must be nonblank header-safe strings")
+					return false
+				}
+				parsed.modelMapping[model] = target.Str
+				return true
 			})
-		} else {
-			config.exactModelMapping[key] = value
 		}
+		return parseErr == nil
+	})
+	if parseErr != nil {
+		return parseErr
 	}
-
-	enableOnPathSuffix := json.Get("enableOnPathSuffix")
-	if enableOnPathSuffix.Exists() {
-		if !enableOnPathSuffix.IsArray() {
-			return errors.New("enableOnPathSuffix must be an array")
-		}
-		for _, item := range enableOnPathSuffix.Array() {
-			config.enableOnPathSuffix = append(config.enableOnPathSuffix, item.String())
-		}
-	} else {
-		config.enableOnPathSuffix = []string{
-			"/completions",
-			"/embeddings",
-			"/images/generations",
-			"/audio/speech",
-			"/fine_tuning/jobs",
-			"/moderations",
-			"/image-synthesis",
-			"/video-synthesis",
-			"/rerank",
-			"/messages",
-			"/responses",
-		}
+	if parsed.captureBodyBasis && parsed.consumeBodyBasis {
+		return errors.New("capture_body_basis and consume_body_basis are mutually exclusive")
 	}
-
+	if !parsed.captureBodyBasis && !parsed.consumeBodyBasis {
+		var standalone standaloneConfig
+		if err := parseStandaloneConfig(input, &standalone); err != nil {
+			return err
+		}
+		parsed.standalone = &standalone
+	}
+	*config = parsed
 	return nil
 }
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config Config) types.Action {
-	// Check path suffix
-	path, err := proxywasm.GetHttpRequestHeader(":path")
+	if config.standalone != nil {
+		headers, err := proxywasm.GetHttpRequestHeaders()
+		if err != nil {
+			return reject(ctx, 500, "header_read_failed")
+		}
+		if err := proxywasm.ReplaceHttpRequestHeaders(withoutBasis(headers, false)); err != nil {
+			return reject(ctx, 500, "basis_clear_failed")
+		}
+		return onStandaloneRequestHeaders(ctx, *config.standalone)
+	}
+	ctx.DisableReroute()
+	ctx.DontReadResponseBody()
+	headers, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil {
-		return types.ActionContinue
+		return reject(ctx, 500, "header_read_failed")
 	}
-
-	// Strip query parameters
-	if idx := strings.Index(path, "?"); idx != -1 {
-		path = path[:idx]
-	}
-
-	matched := false
-	for _, suffix := range config.enableOnPathSuffix {
-		if strings.HasSuffix(path, suffix) {
-			matched = true
-			break
+	if config.consumeBodyBasis {
+		// Only trusted publication configuration selects consume mode. The first
+		// rewriter has already removed client values and captured the original.
+		basis, err := bodybasis.Read(headers)
+		if err != nil {
+			return reject(ctx, 400, "original_body_basis_missing")
+		}
+		ctx.SetContext(basisContextKey, basis)
+	} else {
+		// Standalone mapping keeps the original explicit capture behavior.
+		if err := proxywasm.ReplaceHttpRequestHeaders(withoutBasis(headers, false)); err != nil {
+			return reject(ctx, 500, "basis_clear_failed")
 		}
 	}
-
-	if !matched || !ctx.HasRequestBody() {
-		ctx.DontReadRequestBody()
-		return types.ActionContinue
+	if ctx.Method() != "POST" {
+		return reject(ctx, 405, "post_required")
 	}
-
-	// Disable re-route since the plugin may modify some headers related to the chosen route.
-	ctx.DisableReroute()
-	// Prepare for body processing
-	proxywasm.RemoveHttpRequestHeader("content-length")
-	// 100MB buffer limit
-	ctx.SetRequestBodyBufferLimit(DefaultMaxBodyBytes)
-
+	contentType, ok := singleHeader(headers, "content-type")
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if !ok || err != nil || !strings.EqualFold(mediaType, "application/json") {
+		return reject(ctx, 415, "json_required")
+	}
+	if encoding, ok := singleHeader(headers, "content-encoding"); !ok || encoding != "" && !strings.EqualFold(encoding, "identity") {
+		return reject(ctx, 415, "content_encoding_unsupported")
+	}
+	if !ctx.HasRequestBody() {
+		return reject(ctx, 400, "body_required")
+	}
+	limit := maxRequestBodyBytes
+	if config.consumeBodyBasis {
+		limit = maxRuntimeBodyBytes
+	}
+	ctx.SetRequestBodyBufferLimit(uint32(limit))
+	if !wrapper.RequireRequestBody(ctx) {
+		return reject(ctx, 500, "body_context_unavailable")
+	}
+	// Do not let downstream header callbacks run before the original basis exists.
 	return types.HeaderStopIteration
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, config Config, body []byte) types.Action {
-	if len(body) == 0 {
-		return types.ActionContinue
+	if config.standalone != nil {
+		return onStandaloneRequestBody(ctx, *config.standalone, body)
 	}
-
-	if !json.Valid(body) {
-		log.Error("invalid json body")
-		return types.ActionContinue
-	}
-
-	// Runs before the model is read for mapping and before the sjson rewrite
-	// below: gjson keeps the first occurrence of a duplicated member while sjson
-	// and the upstream parser keep the last, so the mapping would otherwise be
-	// resolved for one model and rewritten onto another. Once this passes, the
-	// member is unique and the rewrite is unambiguous. A modelKey holding a
-	// nested gjson path is never a top-level member name, so the count - which
-	// is scoped to the top level - reports nothing for it.
-	if duplicate, err := jsonbody.DuplicateTopLevelMember(body, config.modelKey); err != nil {
-		log.Debugf("skip duplicate %s member check: %v", config.modelKey, err)
-	} else if duplicate {
-		message := jsonbody.DuplicateMemberMessage(config.modelKey)
-		log.Warnf("rejecting request: %s", message)
-		_ = proxywasm.SendHttpResponseWithDetail(
-			http.StatusBadRequest,
-			"duplicate_model_member",
-			[][2]string{{"content-type", "text/plain"}},
-			[]byte(message),
-			-1,
-		)
+	if ctx.GetBoolContext(rejectedContextKey, false) {
 		return types.ActionPause
 	}
-
-	oldModel := gjson.GetBytes(body, config.modelKey).String()
-
-	newModel := config.defaultModel
-	if newModel == "" {
-		newModel = oldModel
+	if ctx.GetBoolContext(mappedContextKey, false) {
+		return types.ActionContinue
 	}
-
-	// Exact match
-	if target, ok := config.exactModelMapping[oldModel]; ok {
-		newModel = target
+	limit := maxRequestBodyBytes
+	if config.consumeBodyBasis {
+		limit = maxRuntimeBodyBytes
+	}
+	if len(body) > limit {
+		return reject(ctx, 413, "body_too_large")
+	}
+	var basis bodybasis.Snapshot
+	if config.consumeBodyBasis {
+		var ok bool
+		basis, ok = ctx.GetContext(basisContextKey).(bodybasis.Snapshot)
+		if !ok {
+			return reject(ctx, 400, "original_body_basis_missing")
+		}
+		// Validate rewritten JSON without capturing it as the original body.
+		if err := mfjson.ValidateRuntimeBody(body, maxRuntimeBodyBytes); err != nil {
+			return reject(ctx, 400, "invalid_model_body")
+		}
+		var object map[string]json.RawMessage
+		var model string
+		if json.Unmarshal(body, &object) != nil || json.Unmarshal(object["model"], &model) != nil || model != basis.PublicModel() {
+			return reject(ctx, 400, "body_basis_model_differs")
+		}
 	} else {
-		// Prefix match
-		for _, mapping := range config.prefixModelMapping {
-			if strings.HasPrefix(oldModel, mapping.Prefix) {
-				newModel = mapping.Target
-				break
-			}
-		}
-	}
-
-	// update x-higress-llm-model-final header
-	proxywasm.ReplaceHttpRequestHeader(config.modelToHeader, newModel)
-	log.Debugf("set header %s: %s", config.modelToHeader, newModel)
-	if newModel != "" && newModel != oldModel {
-		newBody, err := sjson.SetBytes(body, config.modelKey, newModel)
+		var err error
+		basis, err = bodybasis.Capture(body)
 		if err != nil {
-			log.Errorf("failed to update model: %v", err)
-			return types.ActionContinue
+			return reject(ctx, 400, "invalid_model_body")
 		}
-		proxywasm.ReplaceHttpRequestBody(newBody)
-		log.Debugf("model mapped, before: %s, after: %s", oldModel, newModel)
 	}
-
+	target, found := config.modelMapping[basis.PublicModel()]
+	if !found {
+		return reject(ctx, 422, "model_mapping_missing")
+	}
+	rewritten, err := sjson.SetBytes(body, "model", target)
+	if err != nil {
+		return reject(ctx, 500, "model_rewrite_failed")
+	}
+	headers, err := proxywasm.GetHttpRequestHeaders()
+	if err != nil {
+		return reject(ctx, 500, "header_read_failed")
+	}
+	headers = withoutBasis(headers, true)
+	if config.captureBodyBasis || config.consumeBodyBasis {
+		headers = append(headers, basis.Headers()...)
+	}
+	if err := proxywasm.ReplaceHttpRequestBody(rewritten); err != nil {
+		return reject(ctx, 500, "body_replace_failed")
+	}
+	if err := proxywasm.ReplaceHttpRequestHeaders(headers); err != nil {
+		return reject(ctx, 500, "basis_write_failed")
+	}
+	ctx.SetContext(mappedContextKey, true)
 	return types.ActionContinue
+}
+
+func withoutBasis(headers [][2]string, removeLength bool) [][2]string {
+	filtered := make([][2]string, 0, len(headers))
+	for _, header := range headers {
+		isBasis := strings.EqualFold(header[0], bodybasis.DigestHeader) ||
+			strings.EqualFold(header[0], bodybasis.PublicModelHeader)
+		if isBasis || removeLength && strings.EqualFold(header[0], "content-length") {
+			continue
+		}
+		filtered = append(filtered, header)
+	}
+	return filtered
+}
+
+// Missing optional headers return an empty value. Duplicates are ambiguous.
+func singleHeader(headers [][2]string, name string) (string, bool) {
+	var value string
+	var count int
+	for _, header := range headers {
+		if strings.EqualFold(header[0], name) {
+			value = header[1]
+			count++
+		}
+	}
+	return value, count <= 1
+}
+
+func reject(ctx wrapper.HttpContext, status uint32, code string) types.Action {
+	ctx.SetContext(rejectedContextKey, true)
+	ctx.DontReadRequestBody()
+	response := []byte(`{"error":{"code":"` + code + `","type":"model_mapper_error"}}`)
+	if err := proxywasm.SendHttpResponse(status, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
+		proxywasm.LogCritical("model-mapper could not send local rejection")
+	}
+	return types.ActionPause
 }

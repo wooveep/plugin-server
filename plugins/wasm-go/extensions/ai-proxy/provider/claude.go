@@ -16,10 +16,9 @@ import (
 
 // claudeProvider is the provider for Claude service.
 const (
-	claudeDomain                  = "api.anthropic.com"
-	claudeDefaultVersion          = "2023-06-01"
-	claudeDefaultMaxTokens        = 4096
-	claudeMinThinkingBudgetTokens = 1024
+	claudeDomain           = "api.anthropic.com"
+	claudeDefaultVersion   = "2023-06-01"
+	claudeDefaultMaxTokens = 4096
 
 	// Claude Code mode constants
 	claudeCodeUserAgent    = "claude-cli/2.1.2 (external, cli)"
@@ -80,6 +79,16 @@ type claudeChatMessageContent struct {
 	IsError   bool                        `json:"is_error,omitempty"`    // For tool_result
 	Signature string                      `json:"signature,omitempty"`   // For thinking
 	Thinking  string                      `json:"thinking,omitempty"`    // For thinking
+}
+
+func (c *claudeProvider) TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header) {
+	util.OverwriteRequestHostHeader(headers, claudeDomain)
+	clearTransparentCredentials(headers)
+	if c.config.claudeCodeMode {
+		headers.Set(util.HeaderAuthorization, "Bearer "+c.config.GetApiTokenInUse(ctx))
+		return
+	}
+	headers.Set(util.HeaderXApiKey, c.config.GetApiTokenInUse(ctx))
 }
 
 // UnmarshalJSON implements custom JSON unmarshaling for claudeChatMessageContentWr
@@ -353,8 +362,7 @@ func (c *claudeProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiNam
 	if c.config.claudeCodeMode {
 		// Claude Code mode: use OAuth token with Bearer authorization
 		token := c.config.GetApiTokenInUse(ctx)
-		headers.Set("authorization", "Bearer "+token)
-		headers.Del("x-api-key")
+		util.OverwriteRequestAuthorizationHeader(headers, "Bearer "+token)
 
 		// Set Claude Code specific headers
 		headers.Set("user-agent", claudeCodeUserAgent)
@@ -412,36 +420,34 @@ func (c *claudeProvider) TransformResponseBody(ctx wrapper.HttpContext, apiName 
 }
 
 func (c *claudeProvider) OnStreamingResponseBody(ctx wrapper.HttpContext, name ApiName, chunk []byte, isLastChunk bool) ([]byte, error) {
+	if isLastChunk || len(chunk) == 0 {
+		return nil, nil
+	}
 	// only process the response from chat completion, skip other responses
 	if name != ApiNameChatCompletion {
 		return chunk, nil
 	}
 
 	responseBuilder := &strings.Builder{}
-	// A callback is an arbitrary byte chunk, not a complete SSE event; reassemble
-	// events across callbacks so a split event (e.g. message_start carrying
-	// usage.input_tokens) is never dropped. The final callback flushes any
-	// retained tail so the terminal event is converted instead of discarded.
-	for _, event := range frameSSEEvents(ctx, ctxKeyClaudeSSEFraming, chunk, isLastChunk) {
-		for _, data := range strings.Split(event, "\n") {
-			// only process the line starting with "data:"
-			if strings.HasPrefix(data, "data:") {
-				// extract json data from the line
-				jsonData := strings.TrimPrefix(data, "data:")
-				var claudeResponse claudeTextGenStreamResponse
-				if err := json.Unmarshal([]byte(jsonData), &claudeResponse); err != nil {
-					log.Errorf("unable to unmarshal claude response: %v", err)
-					continue
+	lines := strings.Split(string(chunk), "\n")
+	for _, data := range lines {
+		// only process the line starting with "data:"
+		if strings.HasPrefix(data, "data:") {
+			// extract json data from the line
+			jsonData := strings.TrimPrefix(data, "data:")
+			var claudeResponse claudeTextGenStreamResponse
+			if err := json.Unmarshal([]byte(jsonData), &claudeResponse); err != nil {
+				log.Errorf("unable to unmarshal claude response: %v", err)
+				continue
+			}
+			response := c.streamResponseClaude2OpenAI(ctx, &claudeResponse)
+			if response != nil {
+				responseBody, err := json.Marshal(response)
+				if err != nil {
+					log.Errorf("unable to marshal response: %v", err)
+					return nil, err
 				}
-				response := c.streamResponseClaude2OpenAI(ctx, &claudeResponse)
-				if response != nil {
-					responseBody, err := json.Marshal(response)
-					if err != nil {
-						log.Errorf("unable to marshal response: %v", err)
-						return nil, err
-					}
-					c.appendResponse(responseBuilder, string(responseBody))
-				}
+				c.appendResponse(responseBuilder, string(responseBody))
 			}
 		}
 	}
@@ -489,17 +495,13 @@ func (c *claudeProvider) buildClaudeTextGenRequest(origRequest *chatCompletionRe
 				budgetTokens = 8192 // Default to medium
 			}
 		}
-		if budgetTokens < claudeMinThinkingBudgetTokens {
-			budgetTokens = claudeMinThinkingBudgetTokens
+		// Ensure minimum budget_tokens requirement
+		if budgetTokens < 1024 {
+			budgetTokens = 1024
 		}
-		if budgetTokens >= claudeRequest.MaxTokens {
-			budgetTokens = claudeRequest.MaxTokens - 1
-		}
-		if budgetTokens >= claudeMinThinkingBudgetTokens {
-			claudeRequest.Thinking = &claudeThinkingConfig{
-				Type:         "enabled",
-				BudgetTokens: budgetTokens,
-			}
+		claudeRequest.Thinking = &claudeThinkingConfig{
+			Type:         "enabled",
+			BudgetTokens: budgetTokens,
 		}
 	}
 

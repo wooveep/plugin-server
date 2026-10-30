@@ -712,6 +712,60 @@ func TestProviderConfig_IsSupportedAPI(t *testing.T) {
 	})
 }
 
+func TestQwenProvider_ExplicitEmptyResponsesCapabilityDisablesProviderDefault(t *testing.T) {
+	tests := []struct {
+		name          string
+		capabilities  string
+		wantSupported bool
+		wantPath      string
+		wantPresent   bool
+	}{
+		{
+			name:          "omitted capability keeps qwen default",
+			wantSupported: true,
+			wantPath:      qwenCompatibleResponsesPath,
+			wantPresent:   true,
+		},
+		{
+			name:          "non-empty capability overrides qwen default",
+			capabilities:  `,"capabilities":{"openai/v1/responses":"/custom/v1/responses"}`,
+			wantSupported: true,
+			wantPath:      "/custom/v1/responses",
+			wantPresent:   true,
+		},
+		{
+			name:          "empty capability disables qwen default",
+			capabilities:  `,"capabilities":{"openai/v1/responses":""}`,
+			wantSupported: false,
+			wantPath:      "",
+			wantPresent:   true,
+		},
+		{
+			name:          "whitespace capability disables qwen default",
+			capabilities:  `,"capabilities":{"openai/v1/responses":"  \t "}`,
+			wantSupported: false,
+			wantPath:      "  \t ",
+			wantPresent:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config ProviderConfig
+			config.FromJson(gjson.Parse(`{"type":"qwen","apiTokens":["sk-test"],"qwenEnableCompatible":true` + tt.capabilities + `}`))
+
+			created, err := CreateProvider(config)
+			assert.NoError(t, err)
+			qwen, ok := created.(*qwenProvider)
+			assert.True(t, ok)
+			assert.Equal(t, tt.wantSupported, qwen.config.IsSupportedAPI(ApiNameResponses))
+			path, present := qwen.config.capabilities[string(ApiNameResponses)]
+			assert.Equal(t, tt.wantPresent, present)
+			assert.Equal(t, tt.wantPath, path)
+		})
+	}
+}
+
 func TestProviderConfig_SetDefaultCapabilities(t *testing.T) {
 	t.Run("set_when_nil", func(t *testing.T) {
 		config := &ProviderConfig{

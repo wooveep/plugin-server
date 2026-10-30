@@ -1,6 +1,6 @@
 apiVersion: 1.0.0
 info:
-  gatewayMinVersion: "2.2.4"
+  gatewayMinVersion: 2.2.4
   type: oss
   category: ai
   name: ai-endpoint-picker
@@ -8,13 +8,14 @@ info:
   title: AI Endpoint Picker
   x-title-i18n:
     zh-CN: AI 推理端点选择器
-  description: Select a healthy inference endpoint for a GIE inference route using load and prefix-locality signals.
+  description: Select a healthy inference endpoint for a GIE inference route using
+    load and prefix-locality signals.
   x-description-i18n:
     zh-CN: 基于负载和前缀局部性信号，为 GIE 推理路由选择健康的推理端点。
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-endpoint-picker/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-endpoint-picker/README_EN.md
-  version: 2.0.1
+  version: 2.0.2
   contact:
     name: Higress Team
     url: https://higress.io/
@@ -28,12 +29,15 @@ spec:
       properties:
         profile:
           type: string
-          enum: [default, balanced]
+          enum:
+          - default
+          - balanced
           default: default
           title: Scheduling Profile
           x-title-i18n:
             zh-CN: 调度配置档
-          description: Scheduling profile. Omitted settings use the built-in defaults documented in the README.
+          description: Scheduling profile. Omitted settings use the built-in defaults
+            documented in the README.
           x-description-i18n:
             zh-CN: 调度配置档；省略的设置使用 README 中说明的内置默认值。
       example:
@@ -44,5 +48,7 @@ spec:
       properties:
         profile:
           type: string
-          enum: [default, balanced]
+          enum:
+          - default
+          - balanced
           default: default

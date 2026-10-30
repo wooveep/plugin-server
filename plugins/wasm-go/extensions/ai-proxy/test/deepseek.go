@@ -88,5 +88,32 @@ func RunDeepSeekOnHttpRequestHeadersTests(t *testing.T) {
 			}
 			require.True(t, found, "expected ai-proxy or deepseek debug logs")
 		})
+
+		t.Run("deepseek strips client auth headers", func(t *testing.T) {
+			host, status := test.NewTestHost(basicDeepSeekConfig)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+
+			action := host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/v1/messages"},
+				{":method", "POST"},
+				{"Content-Type", "application/json"},
+				{"x-api-key", "client-api-key"},
+				{"anthropic-api-key", "client-anthropic-key"},
+				{"x-authorization", "Bearer client-alt-token"},
+			})
+			require.Equal(t, types.HeaderStopIteration, action)
+
+			requestHeaders := host.GetRequestHeaders()
+			require.NotNil(t, requestHeaders)
+
+			authValue, hasAuth := test.GetHeaderValue(requestHeaders, "Authorization")
+			require.True(t, hasAuth, "Authorization header should exist")
+			require.Equal(t, "Bearer sk-deepseek-test", authValue)
+			require.False(t, test.HasHeader(requestHeaders, "x-api-key"), "x-api-key must not be forwarded to deepseek")
+			require.False(t, test.HasHeader(requestHeaders, "anthropic-api-key"), "anthropic-api-key must not be forwarded to deepseek")
+			require.False(t, test.HasHeader(requestHeaders, "x-authorization"), "x-authorization must not be forwarded to deepseek")
+		})
 	})
 }

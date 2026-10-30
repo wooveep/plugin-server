@@ -7,7 +7,7 @@ import zipapp
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULES = ("upload_plugin.py", "artifact_import.py", "artifact_contract.py", "artifact_storage.py",
+MODULES = ("upload_plugin.py", "artifact_import.py", "artifact_contract.py", "artifact_storage.py", "artifact_retention.py",
            "artifact_packaging.py", "plugin_schema_conversion.py", "mf_canonical.py")
 
 

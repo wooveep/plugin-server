@@ -108,7 +108,7 @@ func (b *bedrockProvider) OnStreamingResponseBody(ctx wrapper.HttpContext, name 
 		if isLastChunk {
 			return []byte(ssePrefix + "[DONE]\n\n"), nil
 		}
-		return chunk, fmt.Errorf("No events are extracted ")
+		return chunk, fmt.Errorf("no events are extracted")
 	}
 	var responseBuilder strings.Builder
 	for _, event := range events {
@@ -751,6 +751,32 @@ func (b *bedrockProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiNa
 	}
 }
 
+func (b *bedrockProvider) TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header) {
+	util.OverwriteRequestHostHeader(headers, fmt.Sprintf(
+		bedrockDefaultDomain,
+		strings.TrimSpace(b.config.awsRegion),
+	))
+	clearTransparentCredentials(headers)
+	if len(b.config.apiTokens) > 0 {
+		util.OverwriteRequestAuthorizationHeader(
+			headers,
+			"Bearer "+b.config.GetApiTokenInUse(ctx),
+		)
+	}
+}
+
+func (b *bedrockProvider) AuthenticateTransparentRequest(
+	ctx wrapper.HttpContext,
+	body []byte,
+	headers http.Header,
+) (types.Action, error) {
+	if len(b.config.apiTokens) > 0 {
+		return types.ActionContinue, nil
+	}
+	b.setAuthHeaders("", body, headers)
+	return types.ActionContinue, nil
+}
+
 func (b *bedrockProvider) OnRequestBody(ctx wrapper.HttpContext, apiName ApiName, body []byte) (types.Action, error) {
 	// In original protocol mode (e.g. /model/{modelId}/converse-stream), keep the body/path untouched
 	// and only apply auth headers.
@@ -963,12 +989,10 @@ func (b *bedrockProvider) buildBedrockTextGenerationRequest(origRequest *chatCom
 
 	thinking := bedrockThinkingFromClaudeConfig(origRequest.ClaudeThinking)
 	if thinking != nil {
-		request.AdditionalModelRequestFields["thinking"] = thinking
 		if origRequest.ClaudeThinking.Type == "adaptive" && origRequest.ClaudeOutputConfig != nil && bedrockSupportsAdaptiveEffort(origRequest.ClaudeOutputConfig.Effort) {
-			request.AdditionalModelRequestFields["output_config"] = map[string]interface{}{
-				"effort": origRequest.ClaudeOutputConfig.Effort,
-			}
+			thinking["effort"] = origRequest.ClaudeOutputConfig.Effort
 		}
+		request.AdditionalModelRequestFields["thinking"] = thinking
 	} else if origRequest.ReasoningEffort != "" {
 		thinkingBudget := 1024 // default
 		switch origRequest.ReasoningEffort {
@@ -1651,27 +1675,59 @@ func (b *bedrockProvider) setAuthHeaders(apiName ApiName, body []byte, headers h
 	t := time.Now().UTC()
 	amzDate := t.Format("20060102T150405Z")
 	dateStamp := t.Format("20060102")
-	path := headers.Get(":path")
+	requestTarget := headers.Get(":path")
+	method := headers.Get(":method")
+	if method == "" {
+		method = http.MethodPost
+	}
 	service := bedrockAWSService(apiName)
-	signature := b.generateSignatureWithService(path, amzDate, dateStamp, body, service)
+	authority := headers.Get(":authority")
+	if authority == "" {
+		authority = bedrockAWSEndpoint(service, region)
+	}
+	signature := b.generateSignatureWithService(
+		method,
+		requestTarget,
+		authority,
+		amzDate,
+		dateStamp,
+		body,
+		service,
+	)
 	headers.Set("X-Amz-Date", amzDate)
 	util.OverwriteRequestAuthorizationHeader(headers, fmt.Sprintf("AWS4-HMAC-SHA256 Credential=%s/%s/%s/%s/aws4_request, SignedHeaders=%s, Signature=%s", accessKey, dateStamp, region, service, bedrockSignedHeaders, signature))
 }
 
 func (b *bedrockProvider) generateSignature(path, amzDate, dateStamp string, body []byte) string {
-	return b.generateSignatureWithService(path, amzDate, dateStamp, body, awsServiceBedrock)
+	return b.generateSignatureWithService(
+		http.MethodPost,
+		path,
+		bedrockAWSEndpoint(awsServiceBedrock, strings.TrimSpace(b.config.awsRegion)),
+		amzDate,
+		dateStamp,
+		body,
+		awsServiceBedrock,
+	)
 }
 
-func (b *bedrockProvider) generateSignatureWithService(path, amzDate, dateStamp string, body []byte, service string) string {
-	canonicalURI := encodeSigV4Path(path)
+func (b *bedrockProvider) generateSignatureWithService(
+	method,
+	requestTarget,
+	authority,
+	amzDate,
+	dateStamp string,
+	body []byte,
+	service string,
+) string {
+	canonicalURI := encodeSigV4Path(requestTarget)
+	canonicalQuery := canonicalSigV4Query(requestTarget)
 	hashedPayload := sha256Hex(body)
 	region := strings.TrimSpace(b.config.awsRegion)
 	secretKey := strings.TrimSpace(b.config.awsSecretKey)
 
-	endpoint := bedrockAWSEndpoint(service, region)
-	canonicalHeaders := fmt.Sprintf("host:%s\nx-amz-date:%s\n", endpoint, amzDate)
-	canonicalRequest := fmt.Sprintf("%s\n%s\n\n%s\n%s\n%s",
-		httpPostMethod, canonicalURI, canonicalHeaders, bedrockSignedHeaders, hashedPayload)
+	canonicalHeaders := fmt.Sprintf("host:%s\nx-amz-date:%s\n", authority, amzDate)
+	canonicalRequest := fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s",
+		method, canonicalURI, canonicalQuery, canonicalHeaders, bedrockSignedHeaders, hashedPayload)
 
 	credentialScope := fmt.Sprintf("%s/%s/%s/aws4_request", dateStamp, region, service)
 	hashedCanonReq := sha256Hex([]byte(canonicalRequest))
@@ -1681,6 +1737,18 @@ func (b *bedrockProvider) generateSignatureWithService(path, amzDate, dateStamp 
 	signingKey := getSignatureKey(secretKey, dateStamp, region, service)
 	signature := hmacHex(signingKey, stringToSign)
 	return signature
+}
+
+func canonicalSigV4Query(requestTarget string) string {
+	queryIndex := strings.IndexByte(requestTarget, '?')
+	if queryIndex < 0 || queryIndex == len(requestTarget)-1 {
+		return ""
+	}
+	values, err := url.ParseQuery(requestTarget[queryIndex+1:])
+	if err != nil {
+		return strings.ReplaceAll(requestTarget[queryIndex+1:], "+", "%20")
+	}
+	return strings.ReplaceAll(values.Encode(), "+", "%20")
 }
 
 func bedrockAWSService(apiName ApiName) string {
@@ -1698,8 +1766,8 @@ func bedrockAWSEndpoint(service, region string) string {
 }
 
 func encodeSigV4Path(path string) string {
-	// Keep only the URI path for canonical URI. Query string is handled separately in SigV4,
-	// and this implementation uses an empty canonical query string.
+	// Keep only the URI path for canonical URI. The signing caller handles the
+	// request target's query separately through canonicalSigV4Query.
 	if queryIndex := strings.Index(path, "?"); queryIndex >= 0 {
 		path = path[:queryIndex]
 	}

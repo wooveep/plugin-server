@@ -44,6 +44,10 @@ func (s *streamEventStub) OnStreamingEvent(ctx wrapper.HttpContext, name provide
 	return s.eventsOut, s.err
 }
 
+type providerOnlyStub struct{}
+
+func (s *providerOnlyStub) GetProviderType() string { return "provider-only-stub" }
+
 func pluginConfigWithStubProvider(t *testing.T, p provider.Provider) config.PluginConfig {
 	t.Helper()
 	var c config.PluginConfig
@@ -131,5 +135,25 @@ func TestOnStreamingResponseBody_matrix(t *testing.T) {
 			out := OnStreamingResponseBodyForTest(ctx, c, in, false)
 			require.Equal(t, in, out)
 		})
+	})
+}
+
+func TestOnStreamingResponseBodyResponsesFallbackConvertsSSE(t *testing.T) {
+	wasmtest.RunGoTest(t, func(t *testing.T) {
+		bootstrap, st := wasmtest.NewTestHost(json.RawMessage(`{"provider":{"type":"generic","genericHost":"http://127.0.0.1:1","apiTokens":["bootstrap"]}}`))
+		require.Equal(t, types.OnPluginStartStatusOK, st)
+		defer bootstrap.Reset()
+
+		pc := pluginConfigWithStubProvider(t, &providerOnlyStub{})
+		ctx := test.NewMockHttpContext()
+		ctx.SetContext(provider.CtxKeyApiName, provider.ApiNameChatCompletion)
+		ctx.SetContext(provider.CtxKeyNeedResponsesResponseConversion, true)
+
+		chunk := []byte("data: {\"id\":\"chatcmpl_1\",\"object\":\"chat.completion.chunk\",\"created\":123,\"model\":\"gpt-4o-mini\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hel\"}}]}\n\n")
+		out := OnStreamingResponseBodyForTest(ctx, pc, chunk, false)
+
+		require.Contains(t, string(out), "event: response.output_text.delta")
+		require.Contains(t, string(out), `"delta":"Hel"`)
+		require.NotContains(t, string(out), "chat.completion.chunk")
 	})
 }

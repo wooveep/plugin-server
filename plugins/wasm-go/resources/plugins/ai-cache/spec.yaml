@@ -1,0 +1,895 @@
+apiVersion: 1.0.0
+info:
+  type: oss
+  category: ai
+  image: platform_wasm/ai-cache
+  name: ai-cache
+  title: AI 缓存
+  x-title-i18n:
+    en-US: AI Cache
+  description: 薄网关缓存插件，读取 Console 物化的结构化回放记录，执行安全回放并投递 CacheEvent。
+  x-description-i18n:
+    en-US: Thin gateway cache plugin that reads Console-materialized structured replay
+      records, performs safe replay, and emits CacheEvent.
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-cache/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-cache/README_EN.md
+  version: 2.0.4
+  contact:
+    name: johnlanni
+  gatewayMinVersion: 2.0.0
+spec:
+  phase: default
+  priority: 250
+  configSchema:
+    x-higress-external-resources:
+    - kind: redis
+      registryType: dns
+      domainPath: redis_stream.service_name
+      portPath: redis_stream.service_port
+      projectedNamePath: redis_stream.service_name
+    - kind: redis
+      registryType: dns
+      domainPath: materialized_lookup.redis.service_name
+      portPath: materialized_lookup.redis.service_port
+      projectedNamePath: materialized_lookup.redis.service_name
+    - kind: http-callout
+      registryType: dns
+      domainPath: console_lookup.service_name
+      portPath: console_lookup.service_port
+      projectedNamePath: console_lookup.service_name
+      protocol: http
+    openAPIV3Schema:
+      title: ai-cache
+      type: object
+      additionalProperties: false
+      dependentRequired:
+        client_protocol:
+        - operation_kind
+        operation_kind:
+        - client_protocol
+        native_execution:
+        - native_identity
+        - client_protocol
+        - operation_kind
+        - capture_body_basis
+        - consume_body_basis
+        _modelfusion_execution:
+        - native_execution
+        capture_body_basis:
+        - native_execution
+        consume_body_basis:
+        - native_execution
+      allOf:
+      - if:
+          required:
+          - native_execution
+        then:
+          required:
+          - _modelfusion_execution
+          properties:
+            operation_kind:
+              const: text_generate
+            route_policy:
+              properties:
+                enable_replay:
+                  const: true
+                enable_bypass:
+                  const: false
+                enabled_path_suffixes:
+                  maxItems: 0
+          oneOf:
+          - properties:
+              capture_body_basis:
+                const: true
+              consume_body_basis:
+                const: false
+          - properties:
+              capture_body_basis:
+                const: false
+              consume_body_basis:
+                const: true
+      properties:
+        native_execution:
+          type: object
+          additionalProperties: false
+          required:
+          - producer_id
+          - call_identity_source
+          description: 由可信发布冻结，与同目标 proxy 和 billing 使用同一私有事实 producer；缓存只构建交付桥，不投递另一份采购或账务事件。
+          properties:
+            producer_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            call_identity_source:
+              type: string
+              const: admission
+        capture_body_basis:
+          type: boolean
+          description: 由 SDK 按真实发布顺序选定，清除客户端基线头并在任何改写前固定原正文；与 consume_body_basis 互斥，无默认值。
+        consume_body_basis:
+          type: boolean
+          description: 仅消费前置可信模块保存的原基线，不对已注入正文重新计算 original_body_digest；与 capture_body_basis
+            互斥，无默认值。
+        _modelfusion_execution:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          required:
+          - schema_version
+          - descriptor
+          - route_id
+          - sales_asset_id
+          - public_model
+          properties:
+            schema_version:
+              type: string
+              enum:
+              - modelfusion-execution.v1
+              - modelfusion-execution.v2
+            descriptor:
+              oneOf:
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    minProperties: 1
+                    properties:
+                      text_generate:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      image_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      video_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      task_query:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    const: openai-embeddings.v1
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        const: openai-embeddings.v1
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    properties:
+                      text_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-embedding.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                        description: OpenAI-compatible POST /v1/embeddings. The embedding
+                          classifier validates real data[].embedding and uses only
+                          actual provider-reported input token usage. No retries,
+                          fallback, queries or provider task lifecycle.
+                    required:
+                    - text_embedding
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+            route_id:
+              type: string
+              minLength: 1
+            sales_asset_id:
+              type: string
+              minLength: 1
+            public_model:
+              type: string
+              minLength: 1
+            credential_ref:
+              type: string
+              minLength: 1
+            credential_revision:
+              type: string
+              pattern: ^[1-9][0-9]*$
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Complete frozen credential identity directory; no secret
+                or selected-attempt authority.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+          oneOf:
+          - required:
+            - credential_ref
+            - credential_revision
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              schema_version:
+                const: modelfusion-execution.v1
+          - required:
+            - credentials
+            not:
+              anyOf:
+              - required:
+                - credential_ref
+              - required:
+                - credential_revision
+            properties:
+              schema_version:
+                const: modelfusion-execution.v2
+        native_identity:
+          type: object
+          title: 原生发布缓存身份
+          description: 由可信路由发布冻结的原 release、target、route 与缓存 policy。仅声明五个静态字段；实际 caller
+            从前置原生认证取得，不接受配置或客户端自授。
+          additionalProperties: false
+          required:
+          - release_id
+          - target_id
+          - route_id
+          - policy_id
+          - policy_version
+          properties:
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            target_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            route_id:
+              type: string
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              not:
+                const: 00000000-0000-0000-0000-000000000000
+            policy_id:
+              type: string
+              pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+              not:
+                const: 00000000-0000-0000-0000-000000000000
+            policy_version:
+              type: integer
+              minimum: 1
+              maximum: 9223372036854775807
+        client_protocol:
+          type: string
+          minLength: 1
+          title: 路由发布的客户端协议
+          x-title-i18n:
+            en-US: Published Client Protocol
+          description: 与 operation_kind 成对，由可信路由发布配置提供；支持 openai_chat、openai_responses、anthropic_messages。声明后按协议选择适配器，不根据
+            URL 或客户端头推断。其他协议明确旁路。
+          x-description-i18n:
+            en-US: Paired with operation_kind and supplied by trusted route publication.
+              Supports openai_chat, openai_responses, and anthropic_messages regardless
+              of URL aliases. Other protocols bypass cache.
+        operation_kind:
+          type: string
+          minLength: 1
+          title: 路由发布的业务操作
+          x-title-i18n:
+            en-US: Published Operation Kind
+          description: 与 client_protocol 成对。text_generate 支持纯文本或多模态输入返回文本；非文本输出、异步、查询及其他操作明确旁路。该字段不会自动开启缓存。
+          x-description-i18n:
+            en-US: Paired with client_protocol. text_generate supports text or multimodal
+              input with text output; non-text output, asynchronous, query, and other
+              operations bypass cache. This field does not enable caching.
+        materialized_lookup:
+          type: object
+          title: 物化回放查询
+          x-title-i18n:
+            en-US: Materialized Replay Lookup
+          description: 薄缓存模式下从 Redis 读取 Console 预生成的结构化回放记录。
+          x-description-i18n:
+            en-US: Reads Console-materialized structured replay records from Redis
+              in thin cache mode.
+          additionalProperties: false
+          properties:
+            redis:
+              type: object
+              title: Redis 物化回放配置
+              x-title-i18n:
+                en-US: Redis Materialized Replay Configuration
+              additionalProperties: false
+              properties:
+                enabled:
+                  type: boolean
+                  title: 启用 Redis 回放查询
+                  x-title-i18n:
+                    en-US: Enable Redis Replay Lookup
+                  default: false
+                service_name:
+                  type: string
+                  title: Redis 服务名称
+                  x-title-i18n:
+                    en-US: Redis Service Name
+                  description: 存储 Console 物化回放记录的 Redis 服务。
+                  x-description-i18n:
+                    en-US: Redis service that stores Console-materialized replay records.
+                  default: redis-stack-server.dns
+                service_port:
+                  type: integer
+                  title: Redis 服务端口
+                  x-title-i18n:
+                    en-US: Redis Service Port
+                  default: 6379
+                username:
+                  type: string
+                  title: Redis Username
+                password:
+                  type: string
+                  title: Redis Password
+                  format: password
+                  x-sensitive: true
+                  writeOnly: true
+                database:
+                  type: integer
+                  title: Redis Database
+                  default: 0
+                  minimum: 0
+                key_prefix:
+                  type: string
+                  title: 回放 Key 前缀
+                  x-title-i18n:
+                    en-US: Replay Key Prefix
+                  default: 'cache:materialized:'
+                timeout:
+                  type: integer
+                  title: Redis 超时时间
+                  x-title-i18n:
+                    en-US: Redis Timeout
+                  description: Redis 查询超时时间，单位毫秒。
+                  x-description-i18n:
+                    en-US: Redis lookup timeout in milliseconds.
+                  default: 80
+        console_lookup:
+          type: object
+          title: Console 回源查询
+          x-title-i18n:
+            en-US: Console Lookup
+          description: Redis miss 后可选调用 Console 内部查询接口。
+          x-description-i18n:
+            en-US: Optional Console internal lookup after Redis miss.
+          additionalProperties: false
+          properties:
+            enabled:
+              type: boolean
+              title: 启用 Console 查询
+              x-title-i18n:
+                en-US: Enable Console Lookup
+              default: false
+            service_name:
+              type: string
+              title: Console 服务名称
+              x-title-i18n:
+                en-US: Console Service Name
+              default: modelfusion-console-api.dns
+            service_port:
+              type: integer
+              title: Console 服务端口
+              x-title-i18n:
+                en-US: Console Service Port
+              default: 80
+            path:
+              type: string
+              title: 查询路径
+              x-title-i18n:
+                en-US: Lookup Path
+              default: /internal/cache/lookup
+            bearer_token:
+              type: string
+              title: Console Bearer Token
+              format: password
+              x-sensitive: true
+              writeOnly: true
+              description: Console 内部查询已有的 Bearer 凭据，由可信 secret source 注入，不作为客户端输入或公开配置展示。
+              x-description-i18n:
+                en-US: Existing Console lookup Bearer credential, injected from a
+                  trusted secret source and excluded from public configuration display.
+            timeout:
+              type: integer
+              title: Console 超时时间
+              x-title-i18n:
+                en-US: Console Timeout
+              description: Console callout 超时时间，单位毫秒。
+              x-description-i18n:
+                en-US: Console callout timeout in milliseconds.
+              default: 120
+        redis_stream:
+          type: object
+          title: CacheEvent Redis Stream
+          x-title-i18n:
+            en-US: CacheEvent Redis Stream
+          description: 上游响应结束后投递 CacheEvent 的 Redis Stream 目标。
+          x-description-i18n:
+            en-US: Redis Stream target used to emit CacheEvent after upstream response
+              completion.
+          additionalProperties: false
+          properties:
+            enabled:
+              type: boolean
+              title: 启用事件投递
+              x-title-i18n:
+                en-US: Enable Event Emission
+              default: false
+            service_name:
+              type: string
+              title: Redis 服务名称
+              x-title-i18n:
+                en-US: Redis Service Name
+              default: redis-stack-server.dns
+            service_port:
+              type: integer
+              title: Redis 服务端口
+              x-title-i18n:
+                en-US: Redis Service Port
+              default: 6379
+            username:
+              type: string
+              title: Redis Username
+            password:
+              type: string
+              title: Redis Password
+              format: password
+              x-sensitive: true
+              writeOnly: true
+            database:
+              type: integer
+              title: Redis Database
+              default: 0
+              minimum: 0
+            stream:
+              type: string
+              title: Stream 名称
+              x-title-i18n:
+                en-US: Stream Name
+              default: cache:events
+            field:
+              type: string
+              title: Stream 字段
+              x-title-i18n:
+                en-US: Stream Field
+              default: event
+            timeout:
+              type: integer
+              title: Redis 超时时间
+              x-title-i18n:
+                en-US: Redis Timeout
+              description: Redis Stream XADD 超时时间，单位毫秒。
+              x-description-i18n:
+                en-US: Redis Stream XADD timeout in milliseconds.
+              default: 120
+        route_policy:
+          type: object
+          title: 路由缓存策略
+          x-title-i18n:
+            en-US: Route Cache Policy
+          description: 控制薄缓存查询、回放、旁路和 memory-aware 缓存行为。
+          x-description-i18n:
+            en-US: Controls thin cache lookup, replay, bypass, and memory-aware cache
+              behavior.
+          additionalProperties: false
+          properties:
+            enable_redis_lookup:
+              type: boolean
+              title: 启用 Redis 查询
+              x-title-i18n:
+                en-US: Enable Redis Lookup
+              default: true
+            enable_console_lookup:
+              type: boolean
+              title: 启用 Console 查询
+              x-title-i18n:
+                en-US: Enable Console Lookup
+              default: false
+            enable_replay:
+              type: boolean
+              title: 启用本地回放
+              x-title-i18n:
+                en-US: Enable Local Replay
+              default: true
+            enable_bypass:
+              type: boolean
+              title: 启用缓存旁路
+              x-title-i18n:
+                en-US: Enable Cache Bypass
+              default: false
+            enabled_path_suffixes:
+              type: array
+              title: 生效路径后缀
+              x-title-i18n:
+                en-US: Enabled Path Suffixes
+              description: 允许薄缓存处理的请求路径后缀。为空时不限制路径。
+              x-description-i18n:
+                en-US: Request path suffixes eligible for thin cache handling. Empty
+                  means all paths.
+              items:
+                type: string
+            memory:
+              type: object
+              title: Memory-aware 缓存策略
+              x-title-i18n:
+                en-US: Memory-aware Cache Policy
+              additionalProperties: false
+              properties:
+                enabled:
+                  type: boolean
+                  title: 启用记忆感知缓存
+                  x-title-i18n:
+                    en-US: Enable Memory-aware Cache
+                  default: false
+                cache_mode:
+                  type: string
+                  title: 记忆缓存模式
+                  x-title-i18n:
+                    en-US: Memory Cache Mode
+                  enum:
+                  - policy_digest
+                  - bypass
+                  default: policy_digest
+                policy_version:
+                  type: string
+                  title: 记忆策略版本
+                  x-title-i18n:
+                    en-US: Memory Policy Version
+        tenant_header:
+          type: string
+          title: 租户 Header
+          x-title-i18n:
+            en-US: Tenant Header
+          default: x-mse-tenant
+        consumer_header:
+          type: string
+          title: Consumer Header
+          x-title-i18n:
+            en-US: Consumer Header
+          default: x-mse-consumer
+        session_header:
+          type: string
+          title: Session Header
+          x-title-i18n:
+            en-US: Session Header
+          default: x-openclaw-session-key
+        cache_scope:
+          type: string
+          title: 缓存作用域
+          x-title-i18n:
+            en-US: Cache Scope
+          enum:
+          - tenant
+          - consumer
+          default: tenant
+        cache_policy_version:
+          type: string
+          title: 缓存策略版本
+          x-title-i18n:
+            en-US: Cache Policy Version
+          description: 启用薄缓存查询、回放或事件投递时用于区分 Console 物化策略版本。
+          x-description-i18n:
+            en-US: Distinguishes Console materialization policy versions when thin
+              cache lookup, replay, or event emission is enabled.
+        fail_policy:
+          type: string
+          title: 失败策略
+          x-title-i18n:
+            en-US: Failure Policy
+          enum:
+          - open
+          default: open
+      required:
+      - cache_policy_version
+      example:
+        materialized_lookup:
+          redis:
+            enabled: true
+            service_name: redis-stack-server.dns
+            service_port: 6379
+            key_prefix: 'cache:materialized:'
+            timeout: 80
+        console_lookup:
+          enabled: true
+          service_name: modelfusion-console-api.dns
+          service_port: 80
+          path: /internal/cache/lookup
+          timeout: 120
+        redis_stream:
+          enabled: true
+          service_name: redis-stack-server.dns
+          service_port: 6379
+          stream: cache:events
+          field: event
+          timeout: 120
+        route_policy:
+          enable_redis_lookup: true
+          enable_console_lookup: true
+          enable_replay: true
+          enable_bypass: false
+          enabled_path_suffixes:
+          - /v1/chat/completions
+          memory:
+            enabled: true
+            cache_mode: policy_digest
+            policy_version: memory-policy-v1
+        tenant_header: x-mse-tenant
+        consumer_header: x-mse-consumer
+        session_header: x-openclaw-session-key
+        cache_scope: consumer
+        cache_policy_version: cache-policy-v1
+        fail_policy: open

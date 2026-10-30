@@ -1,0 +1,3161 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: 2.0.0
+  type: oss
+  category: ai
+  image: platform_wasm/ai-proxy
+  name: ai-proxy
+  title: AI Proxy
+  x-title-i18n:
+    zh-CN: AI 代理
+  description: Provide a unified OpenAI-compatible AI gateway that can proxy OpenAI,
+    Claude, Responses API, embeddings, image generation, and provider-native traffic
+    to multiple AI service providers.
+  x-description-i18n:
+    zh-CN: 提供统一的 OpenAI 兼容 AI 网关能力，可代理 OpenAI、Claude、Responses API、Embedding、图片生成以及厂商原生请求到多个
+      AI 服务提供商。
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
+  version: 2.0.9
+  contact:
+    name: CH3CHO
+    url: https://github.com/CH3CHO
+    email: ch3cho@qq.com
+spec:
+  phase: default
+  priority: 100
+  x-modelfusion-ai-routing:
+    minimumPluginVersion: 1.0.2
+    protocolModes:
+    - auto
+    - passthrough
+    pathScopes:
+    - legacy_suffixes
+    - bound_target
+    adapters:
+    - id: qwen.responses_to_chat_completions
+      provider: qwen
+      capability: openai/v1/responses
+      operations:
+      - id: openai.responses_to_chat_completions
+        clientMethod: POST
+        clientPath: /v1/responses
+        upstreamMethod: POST
+        upstreamPath: /v1/chat/completions
+        requestTransform: responses_to_chat_completions
+        responseTransform: chat_completions_to_responses
+        streamingBehavior: compatible
+      usageProfile: openai.responses.v1
+      minimumPluginVersion: 1.0.2
+    - id: responses.to_chat_completions
+      provider: '*'
+      capability: openai/v1/responses
+      operations:
+      - id: openai.responses_to_chat_completions
+        clientMethod: POST
+        clientPath: /v1/responses
+        upstreamMethod: POST
+        upstreamPath: /v1/chat/completions
+        requestTransform: responses_to_chat_completions
+        responseTransform: chat_completions_to_responses
+        streamingBehavior: compatible
+      usageProfile: openai.responses.v1
+      minimumPluginVersion: 1.0.2
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      allOf:
+      - if:
+          required:
+          - managed_execution
+          - _modelfusion_execution
+          properties:
+            managed_execution:
+              required:
+              - text_execution
+        then:
+          required:
+          - _modelfusion_execution_targets
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - schema_version
+              properties:
+                schema_version:
+                  const: modelfusion-execution.v1
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - credential_value
+              not:
+                anyOf:
+                - required:
+                  - credentials
+              properties:
+                upstream_health:
+                  required:
+                  - target
+                  not:
+                    anyOf:
+                    - required:
+                      - targets
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - schema_version
+              properties:
+                schema_version:
+                  const: modelfusion-execution.v2
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - credentials
+              - upstream_health
+              not:
+                anyOf:
+                - required:
+                  - credential_value
+              properties:
+                upstream_health:
+                  required:
+                  - targets
+                  not:
+                    anyOf:
+                    - required:
+                      - target
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - descriptor
+              properties:
+                descriptor:
+                  required:
+                  - capabilities
+                  properties:
+                    capabilities:
+                      required:
+                      - text_embedding
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - call_identity_source
+              - input_protocol
+              - upstream_protocol
+              - upstream_health
+              properties:
+                call_identity_source:
+                  const: internal_execution
+                input_protocol:
+                  const: openai_embeddings
+                upstream_protocol:
+                  const: openai_embeddings
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+              not:
+                required:
+                - text_execution
+      - if:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              anyOf:
+              - required:
+                - input_protocol
+                properties:
+                  input_protocol:
+                    const: openai_embeddings
+              - required:
+                - upstream_protocol
+                properties:
+                  upstream_protocol:
+                    const: openai_embeddings
+        then:
+          properties:
+            _modelfusion_execution:
+              properties:
+                descriptor:
+                  properties:
+                    capabilities:
+                      required:
+                      - text_embedding
+      properties:
+        managed_media:
+          type: object
+          additionalProperties: false
+          required:
+          - producer_id
+          - console_internal
+          - profiles
+          - queue_capacity
+          - max_response_bytes
+          properties:
+            producer_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            console_internal:
+              type: object
+              additionalProperties: false
+              required:
+              - service_name
+              - service_port
+              - host
+              - auth_token
+              - timeout_ms
+              properties:
+                service_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                service_port:
+                  type: integer
+                  minimum: 1
+                  maximum: 65535
+                host:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                auth_token:
+                  type: string
+                  minLength: 1
+                  maxLength: 8192
+                  writeOnly: true
+                timeout_ms:
+                  type: integer
+                  minimum: 1
+                  maximum: 60000
+            profiles:
+              type: array
+              minItems: 1
+              maxItems: 64
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - profile
+                - adapter_ref
+                - adapter_revision
+                - create_classifier_ref
+                - output_identity_contract
+                properties:
+                  profile:
+                    type: string
+                    enum:
+                    - qwen_image20_pro_sync
+                    - qwen_image30_native_sync
+                    - qwen_image30_compatible_sync
+                    - qwen_image30_native_async
+                    - wan30_text
+                    - wan30_first_frame
+                  adapter_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  adapter_revision:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  create_classifier_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  query_classifier_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  query_capability_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  output_identity_contract:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+            queue_capacity:
+              type: integer
+              minimum: 1
+              maximum: 256
+            max_response_bytes:
+              type: integer
+              minimum: 1024
+              maximum: 4194304
+        managed_execution: &id003
+          type: object
+          additionalProperties: false
+          required:
+          - producer_id
+          - call_identity_source
+          - private_stream
+          - redis
+          - upstream_path
+          - authority
+          properties:
+            text_execution:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                retry:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - max_retries
+                  - retry_timeout_ms
+                  - retry_on_status
+                  properties:
+                    max_retries:
+                      type: integer
+                      minimum: 1
+                      maximum: 4294967294
+                    retry_timeout_ms:
+                      type: integer
+                      minimum: 1
+                      maximum: 600000
+                    retry_on_status:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 200
+                fallback:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - strategy
+                  - targets
+                  - response_codes
+                  properties:
+                    strategy:
+                      type: string
+                      enum:
+                      - sequence
+                      - random
+                    targets:
+                      type: array
+                      minItems: 1
+                      uniqueItems: true
+                      items:
+                        type: object
+                        additionalProperties: false
+                        required:
+                        - target_id
+                        - weight
+                        properties:
+                          target_id:
+                            type: string
+                            minLength: 1
+                            maxLength: 200
+                          weight:
+                            type: integer
+                            const: 1
+                    response_codes:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 200
+            usage_estimation:
+              type: object
+              additionalProperties: false
+              required:
+              - mode
+              properties:
+                mode:
+                  type: string
+                  enum:
+                  - disabled
+                  - wan_total_minus_input_v1
+            call_identity_source:
+              type: string
+              enum:
+              - admission
+              - internal_execution
+            input_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_responses
+              - anthropic_messages
+              - qwen_image20_pro_sync
+              - qwen_image30_native_sync
+              - qwen_image30_compatible_sync
+              - qwen_image30_native_async
+              - wan30_text
+              - wan30_first_frame
+              - openai_embeddings
+            upstream_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_responses
+              - anthropic_messages
+              - qwen_image20_pro_sync
+              - qwen_image30_native_sync
+              - qwen_image30_compatible_sync
+              - qwen_image30_native_async
+              - wan30_text
+              - wan30_first_frame
+              - openai_embeddings
+            media_dispatch_mode:
+              type: string
+              enum:
+              - disabled
+              - managed_operation
+            upstream_health:
+              type: object
+              additionalProperties: false
+              required:
+              - runtime_config_id
+              - config_revision
+              - snapshot
+              - console_internal
+              properties:
+                runtime_config_id:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                config_revision:
+                  type: string
+                  pattern: ^[1-9][0-9]*$
+                snapshot:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - prefix
+                  - authority_id
+                  - minimum_revision
+                  properties:
+                    prefix:
+                      type: string
+                      minLength: 1
+                      maxLength: 128
+                      pattern: ^[A-Za-z0-9_:-]+$
+                    authority_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    minimum_revision:
+                      type: string
+                      pattern: ^(0|[1-9][0-9]*)$
+                target:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - target_id
+                  - binding_id
+                  - provider_account_id
+                  - region_endpoint_ref
+                  - upstream_model
+                  - operation_kind
+                  - credential_ref
+                  - credential_generation
+                  - scope_ids
+                  properties:
+                    target_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    binding_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    provider_account_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    region_endpoint_ref:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    upstream_model:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    operation_kind:
+                      type: string
+                      enum:
+                      - text_generate
+                      - image_generate
+                      - video_generate
+                      - task_query
+                      - text_embedding
+                    credential_ref:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    credential_generation:
+                      type: string
+                      pattern: ^[1-9][0-9]*$
+                    scope_ids:
+                      type: array
+                      minItems: 1
+                      maxItems: 64
+                      uniqueItems: true
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                console_internal:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - service_name
+                  - service_port
+                  - host
+                  - auth_token
+                  - timeout_ms
+                  properties:
+                    service_name:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    service_port:
+                      type: integer
+                      minimum: 1
+                      maximum: 65535
+                    host:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    auth_token:
+                      type: string
+                      minLength: 1
+                      maxLength: 8192
+                      writeOnly: true
+                    timeout_ms:
+                      type: integer
+                      minimum: 1
+                      maximum: 60000
+                targets:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - target_id
+                    - binding_id
+                    - provider_account_id
+                    - region_endpoint_ref
+                    - upstream_model
+                    - operation_kind
+                    - credential_ref
+                    - credential_generation
+                    - scope_ids
+                    properties:
+                      target_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      binding_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      provider_account_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      region_endpoint_ref:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      upstream_model:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      operation_kind:
+                        type: string
+                        enum:
+                        - text_generate
+                        - image_generate
+                        - video_generate
+                        - task_query
+                        - text_embedding
+                      credential_ref:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      credential_generation:
+                        type: string
+                        pattern: ^[1-9][0-9]*$
+                      scope_ids:
+                        type: array
+                        minItems: 1
+                        maxItems: 128
+                        uniqueItems: true
+                        items:
+                          type: string
+                          minLength: 1
+                          maxLength: 256
+                  description: Complete original TargetReference for every declared
+                    operation and credential; native runtime verifies the exact bijection.
+              oneOf:
+              - required:
+                - target
+                not:
+                  anyOf:
+                  - required:
+                    - targets
+              - required:
+                - targets
+                not:
+                  anyOf:
+                  - required:
+                    - target
+            producer_id:
+              type: string
+              minLength: 1
+            private_stream:
+              type: string
+              minLength: 1
+            redis:
+              type: object
+              additionalProperties: false
+              required:
+              - service_name
+              properties:
+                service_name:
+                  type: string
+                  minLength: 1
+                service_port:
+                  type: integer
+                  minimum: 1
+                  maximum: 65535
+                username:
+                  type: string
+                password:
+                  type: string
+                  writeOnly: true
+                database:
+                  type: integer
+                  minimum: 0
+                timeout:
+                  type: integer
+                  minimum: 1
+            upstream_path:
+              type: string
+              minLength: 1
+            authority:
+              type: string
+              minLength: 1
+            credential_value:
+              type: string
+              minLength: 1
+              writeOnly: true
+            timeout_ms:
+              type: integer
+              minimum: 1
+              maximum: 4294967295
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Exact frozen secret directory, joined by credential reference
+                and revision; array position never selects a key.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                - credential_value
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+                  credential_value:
+                    type: string
+                    minLength: 1
+                    maxLength: 8192
+                    pattern: ^[!-~]+$
+                    not:
+                      pattern: '[^!-~]'
+                    writeOnly: true
+          allOf:
+          - if:
+              required:
+              - call_identity_source
+              properties:
+                call_identity_source:
+                  const: internal_execution
+            then:
+              required:
+              - upstream_health
+              properties:
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+          - if:
+              anyOf:
+              - required:
+                - input_protocol
+                properties:
+                  input_protocol:
+                    const: openai_embeddings
+              - required:
+                - upstream_protocol
+                properties:
+                  upstream_protocol:
+                    const: openai_embeddings
+            then:
+              required:
+              - call_identity_source
+              - input_protocol
+              - upstream_protocol
+              - upstream_health
+              properties:
+                call_identity_source:
+                  const: internal_execution
+                input_protocol:
+                  const: openai_embeddings
+                upstream_protocol:
+                  const: openai_embeddings
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+              not:
+                required:
+                - text_execution
+          oneOf:
+          - required:
+            - credential_value
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              upstream_health:
+                required:
+                - target
+                not:
+                  anyOf:
+                  - required:
+                    - targets
+          - required:
+            - credentials
+            - upstream_health
+            not:
+              anyOf:
+              - required:
+                - credential_value
+            properties:
+              upstream_health:
+                required:
+                - targets
+                not:
+                  anyOf:
+                  - required:
+                    - target
+        _modelfusion_execution: &id002
+          type: object
+          readOnly: true
+          additionalProperties: false
+          required:
+          - schema_version
+          - descriptor
+          - route_id
+          - sales_asset_id
+          - public_model
+          properties:
+            schema_version:
+              type: string
+              enum:
+              - modelfusion-execution.v1
+              - modelfusion-execution.v2
+            descriptor:
+              oneOf:
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    minProperties: 1
+                    properties:
+                      text_generate:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      image_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      video_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      task_query:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    const: openai-embeddings.v1
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        const: openai-embeddings.v1
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    properties:
+                      text_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-embedding.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                        description: OpenAI-compatible POST /v1/embeddings. The embedding
+                          classifier validates real data[].embedding and uses only
+                          actual provider-reported input token usage. No retries,
+                          fallback, queries or provider task lifecycle.
+                    required:
+                    - text_embedding
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+            route_id:
+              type: string
+              minLength: 1
+            sales_asset_id:
+              type: string
+              minLength: 1
+            public_model:
+              type: string
+              minLength: 1
+            credential_ref:
+              type: string
+              minLength: 1
+            credential_revision:
+              type: string
+              pattern: ^[1-9][0-9]*$
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Complete frozen credential identity directory; no secret
+                or selected-attempt authority.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+          oneOf:
+          - required:
+            - credential_ref
+            - credential_revision
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              schema_version:
+                const: modelfusion-execution.v1
+          - required:
+            - credentials
+            not:
+              anyOf:
+              - required:
+                - credential_ref
+              - required:
+                - credential_revision
+            properties:
+              schema_version:
+                const: modelfusion-execution.v2
+        protocol_mode:
+          type: string
+          title: 协议模式
+          x-title-i18n:
+            en-US: Protocol Mode
+          description: auto 保留自动适配与透明回退；passthrough 强制跳过协议转换
+          x-description-i18n:
+            en-US: auto preserves automatic adapter selection and transparent fallback;
+              passthrough forces protocol conversion to be skipped
+          enum:
+          - auto
+          - passthrough
+          default: auto
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: legacy_suffixes 保留历史操作分类；bound_target 使用 Higress 绑定目标，缺省或空过滤器不额外收窄
+          x-description-i18n:
+            en-US: legacy_suffixes preserves historical operation classification;
+              bound_target uses the Higress binding target, with absent or empty filters
+              adding no narrowing
+          enum:
+          - legacy_suffixes
+          - bound_target
+          default: legacy_suffixes
+        enable_path_suffixes:
+          type: array
+          title: 生效路径后缀
+          x-title-i18n:
+            en-US: Enabled Path Suffixes
+          description: bound_target 的可选路径后缀交集过滤器；缺省或空数组不额外收窄
+          x-description-i18n:
+            en-US: Optional path-suffix intersection filter for bound_target; omission
+              or an empty array adds no narrowing
+          items:
+            type: string
+            pattern: .*\S.*
+        enable_methods:
+          type: array
+          title: 生效 HTTP 方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: bound_target 的可选 HTTP 方法交集过滤器；配置值会规范化为大写
+          x-description-i18n:
+            en-US: Optional HTTP-method intersection filter for bound_target; configured
+              values are normalized to uppercase
+          items:
+            type: string
+            pattern: .*\S.*
+        activeProviderId:
+          type: string
+          title: 当前 Provider ID
+          x-title-i18n:
+            en-US: Active Provider ID
+          description: 从 providers 列表中选择当前生效的 Provider；未配置时仅保存 Provider 列表，不主动代理。
+          x-description-i18n:
+            en-US: Selects the active provider from the providers list. When omitted,
+              the provider list is stored but no provider is activated.
+        providers:
+          type: array
+          title: Provider列表
+          x-title-i18n:
+            en-US: Provider List
+          description: 多 Provider 配置列表，可通过全局或路由级 activeProviderId 选择生效 Provider。
+          x-description-i18n:
+            en-US: Multi-provider configuration list. Global or route-level activeProviderId
+              selects the active provider.
+          items: &id004
+            type: object
+            required:
+            - type
+            additionalProperties: true
+            properties: &id001
+              id:
+                type: string
+                title: Provider ID
+                description: 多 Provider 配置中用于 activeProviderId 选择的唯一标识。
+                x-description-i18n:
+                  en-US: Unique identifier used by activeProviderId in multi-provider
+                    configuration.
+              type:
+                type: string
+                title: AI服务提供商
+                x-title-i18n:
+                  en-US: AI Provider
+                description: AI 服务提供商类型。
+                x-description-i18n:
+                  en-US: AI service provider type.
+                enum:
+                - moonshot
+                - azure
+                - ai360
+                - github
+                - qwen
+                - openai
+                - groq
+                - grok
+                - baichuan
+                - yi
+                - deepseek
+                - zhipuai
+                - ollama
+                - claude
+                - baidu
+                - hunyuan
+                - stepfun
+                - minimax
+                - cloudflare
+                - spark
+                - gemini
+                - deepl
+                - mistral
+                - cohere
+                - doubao
+                - coze
+                - together-ai
+                - dify
+                - bedrock
+                - vertex
+                - triton
+                - openrouter
+                - longcat
+                - fireworks
+                - vllm
+                - generic
+                - kling
+              apiTokens:
+                type: array
+                title: API Tokens
+                description: 访问 AI 服务时用于认证的 API Token 列表。配置多个 Token 时，插件会按请求选择可用 Token。
+                x-description-i18n:
+                  en-US: API tokens used to authenticate to the AI service. When multiple
+                    tokens are configured, the plugin selects an available token per
+                    request.
+                items:
+                  type: string
+              timeout:
+                type: integer
+                title: 请求超时
+                x-title-i18n:
+                  en-US: Request Timeout
+                description: 获取上下文文件的超时时间，单位毫秒；默认 120000。该字段不控制实际转发到大模型的请求超时。
+                x-description-i18n:
+                  en-US: Timeout in milliseconds for retrieving context files. Defaults
+                    to 120000 and does not control the timeout of requests forwarded
+                    to LLM upstreams.
+                default: 120000
+              firstByteTimeout:
+                type: integer
+                title: 首包超时
+                x-title-i18n:
+                  en-US: First Byte Timeout
+                description: 流式请求中收到上游服务第一个响应包的超时时间，单位毫秒；默认 0 表示不开启。
+                x-description-i18n:
+                  en-US: Timeout in milliseconds for receiving the first upstream
+                    response byte on streaming requests. Defaults to 0, which disables
+                    it.
+                default: 0
+              protocol:
+                type: string
+                title: 对外接口协议
+                x-title-i18n:
+                  en-US: External Protocol
+                description: 对外提供的 API 契约。openai 为默认值；original 表示使用目标服务提供商原始接口契约。
+                x-description-i18n:
+                  en-US: API contract exposed by the plugin. openai is the default.
+                    original keeps the target provider's native API contract.
+                enum:
+                - openai
+                - original
+                default: openai
+              modelMapping:
+                type: object
+                title: 模型名称映射表
+                x-title-i18n:
+                  en-US: Model Mapping
+                description: 将请求中的模型名称映射为目标服务商支持的模型名称。支持前缀、通配符和以 ~ 开头的正则匹配。
+                x-description-i18n:
+                  en-US: Maps request model names to provider model names. Supports
+                    prefix matching, wildcard fallback, and regular expressions prefixed
+                    with ~.
+                additionalProperties:
+                  type: string
+              capabilities:
+                type: object
+                title: 原生能力映射
+                x-title-i18n:
+                  en-US: Native Capability Mapping
+                description: 厂商原生兼容能力到上游 API path 的映射，例如 openai/v1/chatcompletions、openai/v1/responses、openai/v1/embeddings、openai/v1/imagegeneration、openai/v1/audiospeech、cohere/v1/rerank。
+                x-description-i18n:
+                  en-US: Mapping from provider-native compatible capabilities to upstream
+                    API paths, such as openai/v1/chatcompletions, openai/v1/responses,
+                    openai/v1/embeddings, openai/v1/imagegeneration, openai/v1/audiospeech,
+                    and cohere/v1/rerank.
+                additionalProperties:
+                  type: string
+              basePath:
+                type: string
+                title: 请求基础路径
+                x-title-i18n:
+                  en-US: Request Base Path
+                description: 请求 path 中需要移除或添加的基础路径。
+                x-description-i18n:
+                  en-US: Base path to remove from or prepend to request paths.
+              basePathHandling:
+                type: string
+                title: 基础路径处理方式
+                x-title-i18n:
+                  en-US: Base Path Handling
+                description: basePath 的处理方式。removePrefix 表示转发前移除前缀，prepend 表示转发前添加前缀。
+                x-description-i18n:
+                  en-US: How basePath is handled. removePrefix removes the prefix
+                    before forwarding, while prepend adds the prefix before forwarding.
+                enum:
+                - removePrefix
+                - prepend
+                default: removePrefix
+              providerBasePath:
+                type: string
+                title: Provider基础路径
+                x-title-i18n:
+                  en-US: Provider Base Path
+                description: Provider 改写请求路径时额外添加的路径前缀，例如 /api/ai。
+                x-description-i18n:
+                  en-US: Path prefix added when the provider rewrites the upstream
+                    request path, for example /api/ai.
+              providerDomain:
+                type: string
+                title: Provider域名
+                x-title-i18n:
+                  en-US: Provider Domain
+                description: 通用 Provider 服务域名覆盖值，常用于代理服务器场景。
+                x-description-i18n:
+                  en-US: Generic provider service domain override, commonly used for
+                    proxy server scenarios.
+              context:
+                type: object
+                title: 模型对话上下文
+                x-title-i18n:
+                  en-US: Conversation Context
+                description: 外部上下文文件来源，用于在 AI 请求中补充对话上下文。
+                x-description-i18n:
+                  en-US: External context file source used to add conversation context
+                    to AI requests.
+                required:
+                - fileUrl
+                - serviceName
+                - servicePort
+                properties:
+                  fileUrl:
+                    type: string
+                    title: 文件URL
+                    x-title-i18n:
+                      en-US: File URL
+                    description: 用于获取对话上下文的纯文本文件 URL。
+                    x-description-i18n:
+                      en-US: Plain text file URL used to retrieve conversation context.
+                  serviceName:
+                    type: string
+                    title: 上游服务名称
+                    x-title-i18n:
+                      en-US: Upstream Service Name
+                    description: 文件服务对应的网关内上游服务名称。
+                    x-description-i18n:
+                      en-US: In-gateway upstream service name for the file service.
+                  servicePort:
+                    type: integer
+                    title: 上游服务端口
+                    x-title-i18n:
+                      en-US: Upstream Service Port
+                    description: 文件服务对应的网关内上游服务端口。
+                    x-description-i18n:
+                      en-US: In-gateway upstream service port for the file service.
+              contextCleanupCommands:
+                type: array
+                title: 上下文清理命令
+                x-title-i18n:
+                  en-US: Context Cleanup Commands
+                description: 当请求 messages 中存在完全匹配任一命令的 user 消息时，清理该消息及之前的非 system
+                  消息。
+                x-description-i18n:
+                  en-US: When a user message exactly matches any command, that message
+                    and previous non-system messages are removed.
+                items:
+                  type: string
+              customSettings:
+                type: array
+                title: 自定义模型参数
+                x-title-i18n:
+                  en-US: Custom Model Settings
+                description: 为 AI 请求填充或覆盖模型参数。
+                x-description-i18n:
+                  en-US: Fill or override model parameters in AI requests.
+                items:
+                  type: object
+                  required:
+                  - name
+                  - value
+                  properties:
+                    name:
+                      type: string
+                      title: 参数名称
+                      x-title-i18n:
+                        en-US: Setting Name
+                    value:
+                      title: 参数值
+                      x-title-i18n:
+                        en-US: Setting Value
+                      anyOf:
+                      - type: string
+                      - type: integer
+                      - type: number
+                      - type: boolean
+                    mode:
+                      type: string
+                      title: 设置模式
+                      x-title-i18n:
+                        en-US: Setting Mode
+                      enum:
+                      - auto
+                      - raw
+                      default: auto
+                    overwrite:
+                      type: boolean
+                      title: 是否覆盖
+                      x-title-i18n:
+                        en-US: Overwrite
+                      default: true
+              failover:
+                type: object
+                title: API Token故障切换
+                x-title-i18n:
+                  en-US: API Token Failover
+                description: API Token 不可用时将其临时移出可用列表，并通过健康检查或冷却时间恢复。
+                x-description-i18n:
+                  en-US: Temporarily removes unavailable API tokens and restores them
+                    by health check or cooldown.
+                properties:
+                  enabled:
+                    type: boolean
+                    title: 是否启用
+                    x-title-i18n:
+                      en-US: Enabled
+                    default: false
+                  failureThreshold:
+                    type: integer
+                    title: 失败阈值
+                    x-title-i18n:
+                      en-US: Failure Threshold
+                    default: 3
+                  successThreshold:
+                    type: integer
+                    title: 成功阈值
+                    x-title-i18n:
+                      en-US: Success Threshold
+                    default: 1
+                  healthCheckInterval:
+                    type: integer
+                    title: 健康检查间隔
+                    x-title-i18n:
+                      en-US: Health Check Interval
+                    description: 健康检查间隔，单位毫秒。
+                    x-description-i18n:
+                      en-US: Health check interval in milliseconds.
+                    default: 5000
+                  healthCheckTimeout:
+                    type: integer
+                    title: 健康检查超时
+                    x-title-i18n:
+                      en-US: Health Check Timeout
+                    description: 健康检查超时时间，单位毫秒。
+                    x-description-i18n:
+                      en-US: Health check timeout in milliseconds.
+                    default: 5000
+                  healthCheckModel:
+                    type: string
+                    title: 健康检查模型
+                    x-title-i18n:
+                      en-US: Health Check Model
+                  cooldownDuration:
+                    type: integer
+                    title: 冷却恢复时间
+                    x-title-i18n:
+                      en-US: Cooldown Duration
+                    description: API Token 不可用后的冷却恢复时间，单位毫秒。
+                    x-description-i18n:
+                      en-US: Cooldown duration in milliseconds after an API token
+                        becomes unavailable.
+                    default: 0
+                  failoverOnStatus:
+                    type: array
+                    title: 故障切换状态码
+                    x-title-i18n:
+                      en-US: Failover Status Patterns
+                    description: 触发 failover 的原始请求状态码，支持正则表达式。
+                    x-description-i18n:
+                      en-US: Original request status code patterns that trigger failover.
+                        Regular expressions are supported.
+                    items:
+                      type: string
+                    default:
+                    - 4.*
+                    - 5.*
+              retryOnFailure:
+                type: object
+                title: 失败请求重试
+                x-title-i18n:
+                  en-US: Retry On Failure
+                description: 非流式请求失败时立即使用其他 API Token 重试。
+                x-description-i18n:
+                  en-US: Immediately retries failed non-streaming requests with another
+                    API token.
+                properties:
+                  enabled:
+                    type: boolean
+                    title: 是否启用
+                    x-title-i18n:
+                      en-US: Enabled
+                    default: false
+                  maxRetries:
+                    type: integer
+                    title: 最大重试次数
+                    x-title-i18n:
+                      en-US: Max Retries
+                    default: 1
+                  retryTimeout:
+                    type: integer
+                    title: 重试超时
+                    x-title-i18n:
+                      en-US: Retry Timeout
+                    description: 重试请求超时时间，单位毫秒。
+                    x-description-i18n:
+                      en-US: Retry request timeout in milliseconds.
+                    default: 60000
+                  retryOnStatus:
+                    type: array
+                    title: 重试状态码
+                    x-title-i18n:
+                      en-US: Retry Status Patterns
+                    description: 触发重试的原始请求状态码，支持正则表达式。
+                    x-description-i18n:
+                      en-US: Original request status code patterns that trigger retry.
+                        Regular expressions are supported.
+                    items:
+                      type: string
+                    default:
+                    - 4.*
+                    - 5.*
+              reasoningContentMode:
+                type: string
+                title: 推理内容处理方式
+                x-title-i18n:
+                  en-US: Reasoning Content Mode
+                description: 如何处理大模型返回的 reasoning_content/thinking。passthrough 正常输出，ignore
+                  不输出，concat 拼接到常规内容前。
+                x-description-i18n:
+                  en-US: How to handle reasoning_content/thinking returned by models.
+                    passthrough outputs normally, ignore suppresses it, concat prepends
+                    it to regular content.
+                enum:
+                - passthrough
+                - ignore
+                - concat
+                default: passthrough
+              mergeConsecutiveMessages:
+                type: boolean
+                title: 合并连续同角色消息
+                x-title-i18n:
+                  en-US: Merge Consecutive Messages
+                default: false
+              promoteThinkingOnEmpty:
+                type: boolean
+                title: 空内容时提升思考为正文
+                x-title-i18n:
+                  en-US: Promote Thinking On Empty
+                default: false
+              logUpstreamErrorResponseBody:
+                type: boolean
+                title: 记录上游错误响应体
+                x-title-i18n:
+                  en-US: Log Upstream Error Response Body
+                default: false
+              hiclawMode:
+                type: boolean
+                title: HiClaw模式
+                x-title-i18n:
+                  en-US: HiClaw Mode
+                description: 同时启用 mergeConsecutiveMessages 和 promoteThinkingOnEmpty。
+                x-description-i18n:
+                  en-US: Enables mergeConsecutiveMessages and promoteThinkingOnEmpty
+                    together.
+                default: false
+              openaiCustomUrl:
+                type: string
+                title: OpenAI自定义URL
+                x-title-i18n:
+                  en-US: OpenAI Custom URL
+              responseJsonSchema:
+                type: object
+                title: OpenAI响应JSON Schema
+                x-title-i18n:
+                  en-US: OpenAI Response JSON Schema
+                additionalProperties: true
+              azureServiceUrl:
+                type: string
+                title: Azure OpenAI Service URL
+              moonshotFileId:
+                type: string
+                title: Moonshot File ID
+              qwenFileIds:
+                type: array
+                title: 通义千问File ID列表
+                x-title-i18n:
+                  en-US: Qwen File IDs
+                items:
+                  type: string
+              qwenEnableSearch:
+                type: boolean
+                title: 启用通义千问搜索
+                x-title-i18n:
+                  en-US: Enable Qwen Search
+                default: false
+              qwenDomain:
+                type: string
+                title: 通义千问服务域名
+                x-title-i18n:
+                  en-US: Qwen Domain
+              qwenEnableCompatible:
+                type: boolean
+                title: 开启通义千问兼容模式
+                x-title-i18n:
+                  en-US: Enable Qwen Compatible Mode
+                default: true
+              ollamaServerHost:
+                type: string
+                title: Ollama Server Host
+              ollamaServerPort:
+                type: integer
+                title: Ollama Server Port
+                default: 11434
+              hunyuanAuthId:
+                type: string
+                title: Hunyuan Auth ID
+              hunyuanAuthKey:
+                type: string
+                title: Hunyuan Auth Key
+              awsAccessKey:
+                type: string
+                title: AWS Access Key
+              awsSecretKey:
+                type: string
+                title: AWS Secret Key
+              awsRegion:
+                type: string
+                title: AWS Region
+              bedrockAdditionalFields:
+                type: object
+                title: Bedrock额外模型请求参数
+                x-title-i18n:
+                  en-US: Bedrock Additional Model Fields
+                additionalProperties: true
+              bedrockPromptCachePointPositions:
+                type: object
+                title: Bedrock Prompt CachePoint位置
+                x-title-i18n:
+                  en-US: Bedrock Prompt CachePoint Positions
+                additionalProperties:
+                  type: boolean
+              promptCacheRetention:
+                type: string
+                title: Prompt Cache保留策略
+                x-title-i18n:
+                  en-US: Prompt Cache Retention
+                enum:
+                - in_memory
+                - 24h
+              minimaxApiType:
+                type: string
+                title: MiniMax API类型
+                x-title-i18n:
+                  en-US: MiniMax API Type
+                enum:
+                - v2
+                - pro
+                default: v2
+              minimaxGroupId:
+                type: string
+                title: MiniMax Group ID
+              apiVersion:
+                type: string
+                title: API版本
+                x-title-i18n:
+                  en-US: API Version
+                description: Gemini、Claude 等服务使用的 API 版本字段。
+                x-description-i18n:
+                  en-US: API version field used by services such as Gemini and Claude.
+              claudeVersion:
+                type: string
+                title: Claude API版本
+                x-title-i18n:
+                  en-US: Claude API Version
+                description: Claude 服务 API 版本；配置后优先于 apiVersion。
+                x-description-i18n:
+                  en-US: Claude service API version. When configured, it takes precedence
+                    over apiVersion.
+              claudeCodeMode:
+                type: boolean
+                title: Claude Code模式
+                x-title-i18n:
+                  en-US: Claude Code Mode
+                default: false
+              cloudflareAccountId:
+                type: string
+                title: Cloudflare Account ID
+              geminiSafetySetting:
+                type: object
+                title: Gemini安全设置
+                x-title-i18n:
+                  en-US: Gemini Safety Settings
+                additionalProperties:
+                  type: string
+              geminiThinkingBudget:
+                type: integer
+                title: Gemini Thinking Budget
+              vertexRegion:
+                type: string
+                title: Vertex Region
+              vertexProjectId:
+                type: string
+                title: Vertex Project ID
+              vertexAuthKey:
+                type: string
+                title: Vertex Auth Key
+              vertexAuthServiceName:
+                type: string
+                title: Vertex Auth Service Name
+              vertexTokenRefreshAhead:
+                type: integer
+                title: Vertex Token Refresh Ahead
+                default: 60
+              vertexOpenAICompatible:
+                type: boolean
+                title: Vertex OpenAI兼容模式
+                x-title-i18n:
+                  en-US: Vertex OpenAI Compatible Mode
+                default: false
+              klingAccessKey:
+                type: string
+                title: Kling Access Key
+              klingSecretKey:
+                type: string
+                title: Kling Secret Key
+              klingTokenRefreshAhead:
+                type: integer
+                title: Kling Token Refresh Ahead
+                default: 60
+              targetLang:
+                type: string
+                title: DeepL目标语种
+                x-title-i18n:
+                  en-US: DeepL Target Language
+              difyApiUrl:
+                type: string
+                title: Dify API URL
+              botType:
+                type: string
+                title: Dify应用类型
+                x-title-i18n:
+                  en-US: Dify Bot Type
+                enum:
+                - Chat
+                - Completion
+                - Agent
+                - Workflow
+              inputVariable:
+                type: string
+                title: Dify输入变量
+                x-title-i18n:
+                  en-US: Dify Input Variable
+              outputVariable:
+                type: string
+                title: Dify输出变量
+                x-title-i18n:
+                  en-US: Dify Output Variable
+              genericHost:
+                type: string
+                title: Generic Host
+              tritonModelVersion:
+                type: string
+                title: Triton Model Version
+              tritonDomain:
+                type: string
+                title: Triton Domain
+              vllmCustomUrl:
+                type: string
+                title: vLLM Custom URL
+              vllmServerHost:
+                type: string
+                title: vLLM Server Host
+              doubaoDomain:
+                type: string
+                title: 豆包服务域名
+                x-title-i18n:
+                  en-US: Doubao Domain
+              zhipuDomain:
+                type: string
+                title: 智谱AI服务域名
+                x-title-i18n:
+                  en-US: Zhipu AI Domain
+              zhipuCodePlanMode:
+                type: boolean
+                title: 智谱AI Code Plan模式
+                x-title-i18n:
+                  en-US: Zhipu AI Code Plan Mode
+                default: false
+        provider:
+          type: object
+          required:
+          - type
+          additionalProperties: true
+          properties: *id001
+          title: 单 Provider配置
+          x-title-i18n:
+            en-US: Single Provider Configuration
+          description: 兼容旧版单 Provider 配置。配置 provider 时会直接作为当前生效 Provider。
+          x-description-i18n:
+            en-US: Legacy-compatible single provider configuration. When provider
+              is configured, it becomes the active provider directly.
+        _modelfusion_execution_targets:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          description: SDK-owned, nonrecursive frozen text-target directory. Configuration
+            and descriptor digests are verified before sending.
+          required:
+          - schema_version
+          - targets
+          properties:
+            schema_version:
+              type: string
+              const: modelfusion-execution-targets.v1
+            targets:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - execution
+                - mapper_config
+                - proxy_config
+                properties:
+                  execution: *id002
+                  mapper_config:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - modelMapping
+                    properties:
+                      modelMapping:
+                        type: object
+                        additionalProperties:
+                          type: string
+                      capture_body_basis:
+                        type: boolean
+                      consume_body_basis:
+                        type: boolean
+                  proxy_config:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - path_scope
+                    - managed_execution
+                    properties:
+                      managed_execution: *id003
+                      path_scope:
+                        type: string
+                        const: bound_target
+                      protocol_mode:
+                        type: string
+                        enum:
+                        - auto
+                        - passthrough
+                      enable_methods:
+                        type: array
+                        maxItems: 0
+                        items:
+                          type: string
+                      enable_path_suffixes:
+                        type: array
+                        maxItems: 0
+                        items:
+                          type: string
+                      retryOnFailure:
+                        type: object
+                        additionalProperties: false
+                        required:
+                        - enabled
+                        properties:
+                          enabled:
+                            type: boolean
+                            const: false
+                      activeProviderId:
+                        type: string
+                        minLength: 1
+                      providers:
+                        type: array
+                        minItems: 1
+                        items: *id004
+                      provider:
+                        type: object
+                        required:
+                        - type
+                        additionalProperties: true
+                        properties: *id001
+      example:
+        protocol_mode: auto
+        path_scope: legacy_suffixes
+        activeProviderId: qwen-main
+        providers:
+        - id: qwen-main
+          type: qwen
+          apiTokens:
+          - YOUR_DASHSCOPE_API_TOKEN
+          qwenEnableCompatible: true
+          modelMapping:
+            '*': qwen-plus
+          capabilities:
+            openai/v1/chatcompletions: /compatible-mode/v1/chat/completions
+            openai/v1/responses: /compatible-mode/v1/responses
+        - id: generic-fallback
+          type: generic
+          apiTokens:
+          - YOUR_FALLBACK_TOKEN
+          genericHost: api.example.com
+          basePathHandling: prepend
+          basePath: /v1
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      allOf:
+      - if:
+          required:
+          - managed_execution
+          - _modelfusion_execution
+          properties:
+            managed_execution:
+              required:
+              - text_execution
+        then:
+          required:
+          - _modelfusion_execution_targets
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - schema_version
+              properties:
+                schema_version:
+                  const: modelfusion-execution.v1
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - credential_value
+              not:
+                anyOf:
+                - required:
+                  - credentials
+              properties:
+                upstream_health:
+                  required:
+                  - target
+                  not:
+                    anyOf:
+                    - required:
+                      - targets
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - schema_version
+              properties:
+                schema_version:
+                  const: modelfusion-execution.v2
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - credentials
+              - upstream_health
+              not:
+                anyOf:
+                - required:
+                  - credential_value
+              properties:
+                upstream_health:
+                  required:
+                  - targets
+                  not:
+                    anyOf:
+                    - required:
+                      - target
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - descriptor
+              properties:
+                descriptor:
+                  required:
+                  - capabilities
+                  properties:
+                    capabilities:
+                      required:
+                      - text_embedding
+        then:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              required:
+              - call_identity_source
+              - input_protocol
+              - upstream_protocol
+              - upstream_health
+              properties:
+                call_identity_source:
+                  const: internal_execution
+                input_protocol:
+                  const: openai_embeddings
+                upstream_protocol:
+                  const: openai_embeddings
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+              not:
+                required:
+                - text_execution
+      - if:
+          required:
+          - managed_execution
+          properties:
+            managed_execution:
+              anyOf:
+              - required:
+                - input_protocol
+                properties:
+                  input_protocol:
+                    const: openai_embeddings
+              - required:
+                - upstream_protocol
+                properties:
+                  upstream_protocol:
+                    const: openai_embeddings
+        then:
+          properties:
+            _modelfusion_execution:
+              properties:
+                descriptor:
+                  properties:
+                    capabilities:
+                      required:
+                      - text_embedding
+      properties:
+        managed_execution:
+          type: object
+          additionalProperties: false
+          required:
+          - producer_id
+          - call_identity_source
+          - private_stream
+          - redis
+          - upstream_path
+          - authority
+          properties:
+            text_execution:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                retry:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - max_retries
+                  - retry_timeout_ms
+                  - retry_on_status
+                  properties:
+                    max_retries:
+                      type: integer
+                      minimum: 1
+                      maximum: 4294967294
+                    retry_timeout_ms:
+                      type: integer
+                      minimum: 1
+                      maximum: 600000
+                    retry_on_status:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 200
+                fallback:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - strategy
+                  - targets
+                  - response_codes
+                  properties:
+                    strategy:
+                      type: string
+                      enum:
+                      - sequence
+                      - random
+                    targets:
+                      type: array
+                      minItems: 1
+                      uniqueItems: true
+                      items:
+                        type: object
+                        additionalProperties: false
+                        required:
+                        - target_id
+                        - weight
+                        properties:
+                          target_id:
+                            type: string
+                            minLength: 1
+                            maxLength: 200
+                          weight:
+                            type: integer
+                            const: 1
+                    response_codes:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 200
+            usage_estimation:
+              type: object
+              additionalProperties: false
+              required:
+              - mode
+              properties:
+                mode:
+                  type: string
+                  enum:
+                  - disabled
+                  - wan_total_minus_input_v1
+            call_identity_source:
+              type: string
+              enum:
+              - admission
+              - internal_execution
+            input_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_responses
+              - anthropic_messages
+              - qwen_image20_pro_sync
+              - qwen_image30_native_sync
+              - qwen_image30_compatible_sync
+              - qwen_image30_native_async
+              - wan30_text
+              - wan30_first_frame
+              - openai_embeddings
+            upstream_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_responses
+              - anthropic_messages
+              - qwen_image20_pro_sync
+              - qwen_image30_native_sync
+              - qwen_image30_compatible_sync
+              - qwen_image30_native_async
+              - wan30_text
+              - wan30_first_frame
+              - openai_embeddings
+            media_dispatch_mode:
+              type: string
+              enum:
+              - disabled
+              - managed_operation
+            upstream_health:
+              type: object
+              additionalProperties: false
+              required:
+              - runtime_config_id
+              - config_revision
+              - snapshot
+              - console_internal
+              properties:
+                runtime_config_id:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                config_revision:
+                  type: string
+                  pattern: ^[1-9][0-9]*$
+                snapshot:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - prefix
+                  - authority_id
+                  - minimum_revision
+                  properties:
+                    prefix:
+                      type: string
+                      minLength: 1
+                      maxLength: 128
+                      pattern: ^[A-Za-z0-9_:-]+$
+                    authority_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    minimum_revision:
+                      type: string
+                      pattern: ^(0|[1-9][0-9]*)$
+                target:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - target_id
+                  - binding_id
+                  - provider_account_id
+                  - region_endpoint_ref
+                  - upstream_model
+                  - operation_kind
+                  - credential_ref
+                  - credential_generation
+                  - scope_ids
+                  properties:
+                    target_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    binding_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    provider_account_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    region_endpoint_ref:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    upstream_model:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    operation_kind:
+                      type: string
+                      enum:
+                      - text_generate
+                      - image_generate
+                      - video_generate
+                      - task_query
+                      - text_embedding
+                    credential_ref:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    credential_generation:
+                      type: string
+                      pattern: ^[1-9][0-9]*$
+                    scope_ids:
+                      type: array
+                      minItems: 1
+                      maxItems: 64
+                      uniqueItems: true
+                      items:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                console_internal:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - service_name
+                  - service_port
+                  - host
+                  - auth_token
+                  - timeout_ms
+                  properties:
+                    service_name:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    service_port:
+                      type: integer
+                      minimum: 1
+                      maximum: 65535
+                    host:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                    auth_token:
+                      type: string
+                      minLength: 1
+                      maxLength: 8192
+                      writeOnly: true
+                    timeout_ms:
+                      type: integer
+                      minimum: 1
+                      maximum: 60000
+                targets:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - target_id
+                    - binding_id
+                    - provider_account_id
+                    - region_endpoint_ref
+                    - upstream_model
+                    - operation_kind
+                    - credential_ref
+                    - credential_generation
+                    - scope_ids
+                    properties:
+                      target_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      binding_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      provider_account_id:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      region_endpoint_ref:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      upstream_model:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      operation_kind:
+                        type: string
+                        enum:
+                        - text_generate
+                        - image_generate
+                        - video_generate
+                        - task_query
+                        - text_embedding
+                      credential_ref:
+                        type: string
+                        minLength: 1
+                        maxLength: 256
+                      credential_generation:
+                        type: string
+                        pattern: ^[1-9][0-9]*$
+                      scope_ids:
+                        type: array
+                        minItems: 1
+                        maxItems: 128
+                        uniqueItems: true
+                        items:
+                          type: string
+                          minLength: 1
+                          maxLength: 256
+                  description: Complete original TargetReference for every declared
+                    operation and credential; native runtime verifies the exact bijection.
+              oneOf:
+              - required:
+                - target
+                not:
+                  anyOf:
+                  - required:
+                    - targets
+              - required:
+                - targets
+                not:
+                  anyOf:
+                  - required:
+                    - target
+            producer_id:
+              type: string
+              minLength: 1
+            private_stream:
+              type: string
+              minLength: 1
+            redis:
+              type: object
+              additionalProperties: false
+              required:
+              - service_name
+              properties:
+                service_name:
+                  type: string
+                  minLength: 1
+                service_port:
+                  type: integer
+                  minimum: 1
+                  maximum: 65535
+                username:
+                  type: string
+                password:
+                  type: string
+                  writeOnly: true
+                database:
+                  type: integer
+                  minimum: 0
+                timeout:
+                  type: integer
+                  minimum: 1
+            upstream_path:
+              type: string
+              minLength: 1
+            authority:
+              type: string
+              minLength: 1
+            credential_value:
+              type: string
+              minLength: 1
+              writeOnly: true
+            timeout_ms:
+              type: integer
+              minimum: 1
+              maximum: 4294967295
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Exact frozen secret directory, joined by credential reference
+                and revision; array position never selects a key.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                - credential_value
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+                  credential_value:
+                    type: string
+                    minLength: 1
+                    maxLength: 8192
+                    pattern: ^[!-~]+$
+                    not:
+                      pattern: '[^!-~]'
+                    writeOnly: true
+          allOf:
+          - if:
+              required:
+              - call_identity_source
+              properties:
+                call_identity_source:
+                  const: internal_execution
+            then:
+              required:
+              - upstream_health
+              properties:
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+          - if:
+              anyOf:
+              - required:
+                - input_protocol
+                properties:
+                  input_protocol:
+                    const: openai_embeddings
+              - required:
+                - upstream_protocol
+                properties:
+                  upstream_protocol:
+                    const: openai_embeddings
+            then:
+              required:
+              - call_identity_source
+              - input_protocol
+              - upstream_protocol
+              - upstream_health
+              properties:
+                call_identity_source:
+                  const: internal_execution
+                input_protocol:
+                  const: openai_embeddings
+                upstream_protocol:
+                  const: openai_embeddings
+                media_dispatch_mode:
+                  not:
+                    const: managed_operation
+              not:
+                required:
+                - text_execution
+          oneOf:
+          - required:
+            - credential_value
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              upstream_health:
+                required:
+                - target
+                not:
+                  anyOf:
+                  - required:
+                    - targets
+          - required:
+            - credentials
+            - upstream_health
+            not:
+              anyOf:
+              - required:
+                - credential_value
+            properties:
+              upstream_health:
+                required:
+                - targets
+                not:
+                  anyOf:
+                  - required:
+                    - target
+        _modelfusion_execution:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          required:
+          - schema_version
+          - descriptor
+          - route_id
+          - sales_asset_id
+          - public_model
+          properties:
+            schema_version:
+              type: string
+              enum:
+              - modelfusion-execution.v1
+              - modelfusion-execution.v2
+            descriptor:
+              oneOf:
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    minProperties: 1
+                    properties:
+                      text_generate:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      image_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      video_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      task_query:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    const: openai-embeddings.v1
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        const: openai-embeddings.v1
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    properties:
+                      text_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-embedding.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                        description: OpenAI-compatible POST /v1/embeddings. The embedding
+                          classifier validates real data[].embedding and uses only
+                          actual provider-reported input token usage. No retries,
+                          fallback, queries or provider task lifecycle.
+                    required:
+                    - text_embedding
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+            route_id:
+              type: string
+              minLength: 1
+            sales_asset_id:
+              type: string
+              minLength: 1
+            public_model:
+              type: string
+              minLength: 1
+            credential_ref:
+              type: string
+              minLength: 1
+            credential_revision:
+              type: string
+              pattern: ^[1-9][0-9]*$
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Complete frozen credential identity directory; no secret
+                or selected-attempt authority.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+          oneOf:
+          - required:
+            - credential_ref
+            - credential_revision
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              schema_version:
+                const: modelfusion-execution.v1
+          - required:
+            - credentials
+            not:
+              anyOf:
+              - required:
+                - credential_ref
+              - required:
+                - credential_revision
+            properties:
+              schema_version:
+                const: modelfusion-execution.v2
+        protocol_mode:
+          type: string
+          title: 协议模式
+          x-title-i18n:
+            en-US: Protocol Mode
+          description: 路由级协议模式覆盖；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Route-level protocol mode override; inherits global configuration
+              when omitted
+          enum:
+          - auto
+          - passthrough
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: 路由级路径作用域覆盖；bound_target 下缺省或空过滤器不额外收窄
+          x-description-i18n:
+            en-US: Route-level path scope override; absent or empty filters add no
+              narrowing in bound_target
+          enum:
+          - legacy_suffixes
+          - bound_target
+        enable_path_suffixes:
+          type: array
+          title: 生效路径后缀
+          x-title-i18n:
+            en-US: Enabled Path Suffixes
+          description: 路由级可选路径后缀交集过滤器
+          x-description-i18n:
+            en-US: Optional route-level path-suffix intersection filter
+          items:
+            type: string
+            pattern: .*\S.*
+        enable_methods:
+          type: array
+          title: 生效 HTTP 方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: 路由级可选 HTTP 方法交集过滤器；配置值会规范化为大写
+          x-description-i18n:
+            en-US: Optional route-level HTTP-method intersection filter; configured
+              values are normalized to uppercase
+          items:
+            type: string
+            pattern: .*\S.*
+        activeProviderId:
+          type: string
+          title: 当前 Provider ID
+          x-title-i18n:
+            en-US: Active Provider ID
+          description: 路由级 Provider 选择。用于从全局 providers 列表中切换当前路由生效的 Provider。
+          x-description-i18n:
+            en-US: Route-level provider selector. Switches the active provider for
+              the current route from the global providers list.
+        providers:
+          type: array
+          title: Provider列表
+          x-title-i18n:
+            en-US: Provider List
+          description: 路由级 Provider 列表覆盖；未配置时继承全局配置。
+          x-description-i18n:
+            en-US: Route-level provider list override. Inherits global configuration
+              when omitted.
+          items: *id004
+        provider:
+          type: object
+          required:
+          - type
+          additionalProperties: true
+          properties: *id001
+          title: 单 Provider配置
+          x-title-i18n:
+            en-US: Single Provider Configuration
+          description: 路由级旧版单 Provider 覆盖；配置后会直接作为当前路由生效 Provider。
+          x-description-i18n:
+            en-US: Route-level legacy single provider override. When configured, it
+              becomes the active provider for the route.
+        _modelfusion_execution_targets:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          description: SDK-owned, nonrecursive frozen text-target directory. Configuration
+            and descriptor digests are verified before sending.
+          required:
+          - schema_version
+          - targets
+          properties:
+            schema_version:
+              type: string
+              const: modelfusion-execution-targets.v1
+            targets:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - execution
+                - mapper_config
+                - proxy_config
+                properties:
+                  execution: *id002
+                  mapper_config:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - modelMapping
+                    properties:
+                      modelMapping:
+                        type: object
+                        additionalProperties:
+                          type: string
+                      capture_body_basis:
+                        type: boolean
+                      consume_body_basis:
+                        type: boolean
+                  proxy_config:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - path_scope
+                    - managed_execution
+                    properties:
+                      managed_execution: *id003
+                      path_scope:
+                        type: string
+                        const: bound_target
+                      protocol_mode:
+                        type: string
+                        enum:
+                        - auto
+                        - passthrough
+                      enable_methods:
+                        type: array
+                        maxItems: 0
+                        items:
+                          type: string
+                      enable_path_suffixes:
+                        type: array
+                        maxItems: 0
+                        items:
+                          type: string
+                      retryOnFailure:
+                        type: object
+                        additionalProperties: false
+                        required:
+                        - enabled
+                        properties:
+                          enabled:
+                            type: boolean
+                            const: false
+                      activeProviderId:
+                        type: string
+                        minLength: 1
+                      providers:
+                        type: array
+                        minItems: 1
+                        items: *id004
+                      provider:
+                        type: object
+                        required:
+                        - type
+                        additionalProperties: true
+                        properties: *id001
+      example:
+        activeProviderId: generic-fallback
+        path_scope: bound_target

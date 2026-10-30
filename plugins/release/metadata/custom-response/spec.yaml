@@ -1,0 +1,120 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: transform
+  name: custom-response
+  image: platform_wasm/custom-response
+  title: Custom Response
+  x-title-i18n:
+    zh-CN: 自定义应答
+  description: Support configuring custom responses, including HTTP response status
+    code, header and body.
+  x-description-i18n:
+    zh-CN: 支持配置自定义的响应，包括自定义 HTTP 应答状态码、HTTP 应答头，以及 HTTP 应答 Body。
+  iconUrl: https://img.alicdn.com/imgextra/i3/O1CN01bAFa9k1t1gdQcVTH0_!!6000000005842-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/custom-response/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/custom-response/README_EN.md
+  version: 1.0.1
+  contact:
+    name: Higress Team
+    url: http://higress.io/
+    email: admin@higress.io
+spec:
+  phase: AUTHN
+  priority: 910
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        status_code:
+          type: number
+          title: 自定义 HTTP 应答状态码
+          x-title-i18n:
+            en-US: Custom HTTP response status code
+          description: 自定义 HTTP 应答状态码
+          x-description-i18n:
+            en-US: Custom HTTP response status code
+          default: 200
+        headers:
+          type: array
+          title: 自定义 HTTP 应答头
+          x-title-i18n:
+            en-US: Custom HTTP response headers
+          description: 自定义 HTTP 应答头，key 和 value 用`=`分隔
+          x-description-i18n:
+            en-US: Custom HTTP response headers, keys and values separated by `=`
+          items:
+            type: string
+        body:
+          type: string
+          title: 自定义 HTTP 应答 Body
+          x-title-i18n:
+            en-US: Custom HTTP response body
+          description: 自定义 HTTP 应答 Body
+          x-description-i18n:
+            en-US: Custom HTTP response body
+        enable_on_status:
+          type: array
+          title: 匹配原始状态码
+          x-title-i18n:
+            en-US: Match original status codes
+          description: 匹配原始状态码，生成自定义响应，不填写时，不判断原始状态码
+          x-description-i18n:
+            en-US: Match original status codes to generate custom responses; if not
+              specified, the original status code is not checked
+          items:
+            type: number
+      example:
+        status_code: 200
+        headers:
+        - Content-Type=application/json
+        body: '{"hello":"world"}'
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        status_code:
+          type: number
+          title: 自定义 HTTP 应答状态码
+          x-title-i18n:
+            en-US: Custom HTTP response status code
+          description: 自定义 HTTP 应答状态码
+          x-description-i18n:
+            en-US: Custom HTTP response status code
+          default: 200
+        headers:
+          type: array
+          title: 自定义 HTTP 应答头
+          x-title-i18n:
+            en-US: Custom HTTP response headers
+          description: 自定义 HTTP 应答头，key 和 value 用`=`分隔
+          x-description-i18n:
+            en-US: Custom HTTP response headers, keys and values separated by `=`
+          items:
+            type: string
+        body:
+          type: string
+          title: 自定义 HTTP 应答 Body
+          x-title-i18n:
+            en-US: Custom HTTP response body
+          description: 自定义 HTTP 应答 Body
+          x-description-i18n:
+            en-US: Custom HTTP response body
+        enable_on_status:
+          type: array
+          title: 匹配原始状态码
+          x-title-i18n:
+            en-US: Match original status codes
+          description: 匹配原始状态码，生成自定义响应，不填写时，不判断原始状态码
+          x-description-i18n:
+            en-US: Match original status codes to generate custom responses; if not
+              specified, the original status code is not checked
+          items:
+            type: number
+      example:
+        status_code: 200
+        headers:
+        - Content-Type=application/json
+        body: '{"hello":"world"}'

@@ -113,15 +113,13 @@ class ArtifactStore:
                 db.execute("UPDATE uploads SET state='failed',error='storage_unavailable' WHERE upload_id=?", (row["upload_id"],))
                 continue
             try:
-                raw = (final / "archive.tgz").read_bytes()
-                validated = validate_package(raw, self.policy)
                 manifest_raw = (final / "manifest.json").read_bytes()
                 manifest = validate_document(manifest_raw, "manifest")["document"]
-                if (manifest["plugin_name"], manifest["plugin_version"], manifest["content_digest"], manifest["archive_digest"]) != (row["name"], row["version"], row["content_digest"], validated.archive_digest):
+                if (manifest["plugin_name"], manifest["plugin_version"], manifest["content_digest"]) != (row["name"], row["version"], row["content_digest"]):
                     raise StorageUnavailable("recovery identity mismatch")
-                for path, content in validated.payload.items():
-                    if (final / path).read_bytes() != content:
-                        raise StorageUnavailable("recovery payload mismatch")
+                # The upload was validated before its durable intent and atomic
+                # rename. Recovery completes that intent from registered metadata;
+                # ordinary reads still check the requested member's digest.
                 self._record_committed(db, row["upload_id"], manifest_raw)
             except (OSError, ContractError) as exc:
                 raise StorageUnavailable("persisted artifact could not be recovered") from exc
@@ -263,10 +261,13 @@ class ArtifactStore:
         manifest = self.manifest(name, version)
         if manifest is None:
             return None
+        return self._read_member(manifest, path)
+
+    def _read_member(self, manifest: dict, path: str) -> bytes | None:
         allowed = {entry["path"]: entry for entry in manifest["files"]}
         if path not in allowed and path not in ("package.json", "metadata.txt", "archive.tgz"):
             return None
-        target = self.root / name / version / path
+        target = self.root / manifest["plugin_name"] / manifest["plugin_version"] / path
         if target.is_symlink() or not target.resolve().is_relative_to(self.root):
             raise StorageUnavailable("unexpected file alias")
         try:
@@ -284,6 +285,75 @@ class ArtifactStore:
         with self._locked() as db:
             self._recover(db)
             return [parse_json(row["manifest"]) for row in db.execute("SELECT manifest FROM artifacts a WHERE NOT EXISTS(SELECT 1 FROM retention_commands r WHERE r.artifact_id=a.artifact_id AND r.state IN ('unknown','deleted')) ORDER BY name,version")]
+
+    def list_metadata(self) -> list[dict]:
+        """Batch registered metadata without reading Wasm or package archives."""
+        result = []
+        for manifest in self.list_manifests():
+            schema = parse_json(self._read_member(manifest, manifest["config_schema_path"]))
+            result.append({"manifest": manifest, "metadata": schema.get("x-higress")})
+        return result
+
+    def seed_registered(self, source_root: Path, manifests: list[dict]) -> dict:
+        """Copy an already validated local store, preserving published identities.
+
+        This operator-only port consumes a trusted image/store snapshot. New HTTP
+        uploads must always use commit(), which performs full package validation.
+        """
+        copied, retained = [], []
+        source_root = Path(source_root).resolve()
+        for manifest in manifests:
+            name, version = manifest["plugin_name"], manifest["plugin_version"]
+            manifest_raw = json_bytes(manifest)
+            stage = None
+            renamed = False
+            try:
+                with self._locked() as db:
+                    self._recover(db)
+                    existing = db.execute("SELECT * FROM artifacts WHERE name=? AND version=?", (name, version)).fetchone()
+                    if existing is not None:
+                        if existing["content_digest"] != manifest["content_digest"]:
+                            raise StorageConflict("version_conflict")
+                        if db.execute("SELECT 1 FROM retention_commands WHERE artifact_id=? AND state IN ('unknown','deleted')", (existing["artifact_id"],)).fetchone():
+                            raise StorageConflict("artifact_retention_reserved")
+                        retained.append(existing["artifact_id"])
+                        continue
+                    final = self.root / name / version
+                    if final.exists():
+                        raise StorageConflict("version_conflict")
+                    upload_id = "seed-" + manifest["artifact_id"]
+                    previous = db.execute("SELECT content_digest FROM uploads WHERE upload_id=?", (upload_id,)).fetchone()
+                    if previous is not None and previous["content_digest"] != manifest["content_digest"]:
+                        raise StorageConflict("idempotency_conflict")
+                    db.execute("INSERT INTO uploads VALUES (?,?,?,?,'validating',NULL,NULL) "
+                               "ON CONFLICT(upload_id) DO UPDATE SET state='validating',error=NULL",
+                               (upload_id, name, version, manifest["content_digest"]))
+                    stage = self.staging / str(uuid.uuid4())
+                    stage.mkdir(mode=0o700)
+                    for path in [*(entry["path"] for entry in manifest["files"]),
+                                 "package.json", "archive.tgz", "metadata.txt"]:
+                        target = stage / path
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        write_durable(target, (source_root / name / version / path).read_bytes())
+                    write_durable(stage / "manifest.json", manifest_raw)
+                    for directory, _, _ in os.walk(stage, topdown=False):
+                        fsync_directory(Path(directory))
+                    self.fault("before_rename")
+                    final.parent.mkdir(parents=True, exist_ok=True)
+                    fsync_directory(self.root)
+                    os.rename(stage, final)
+                    renamed = True
+                    fsync_directory(final.parent)
+                    fsync_directory(self.staging)
+                    self.fault("after_rename")
+                    self._record_committed(db, upload_id, manifest_raw)
+                    copied.append(manifest["artifact_id"])
+            except (OSError, sqlite3.Error) as exc:
+                raise StorageUnavailable("registered store seed must be resumed from its persisted metadata") from exc
+            finally:
+                if stage is not None and not renamed:
+                    shutil.rmtree(stage, ignore_errors=True)
+        return {"copied": copied, "retained": retained}
 
     def retain_or_delete(self, decision: dict) -> dict:
         """Consume one decision from the authenticated Console coordinator only.

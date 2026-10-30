@@ -1,0 +1,349 @@
+apiVersion: 1.0.0
+info:
+  type: oss
+  category: ai
+  image: platform_wasm/ai-data-masking
+  name: ai-data-masking
+  title: AI data masking
+  x-title-i18n:
+    zh-CN: AI 数据脱敏
+  description: Intercept, replace, and restore sensitive information in requests/responses.
+  x-description-i18n:
+    zh-CN: 对请求/响应中的敏感信息进行拦截、替换、还原
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-rust/extensions/ai-data-masking/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-rust/extensions/ai-data-masking/README_EN.md
+  version: 2.0.3
+  contact:
+    name: johnlanni
+  gatewayMinVersion: 2.0.0
+spec:
+  phase: AUTHN
+  priority: 991
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        deny_openai:
+          type: boolean
+          title: OpenAI协议拦截
+          x-title-i18n:
+            en-US: OpenAI Protocol Interception
+          description: 对openai协议进行拦截
+          x-description-i18n:
+            en-US: Intercept OpenAI protocol
+          default: true
+        deny_jsonpath:
+          type: array
+          title: JsonPath拦截
+          x-title-i18n:
+            en-US: JsonPath Interception
+          description: 对指定jsonpath拦截
+          x-description-i18n:
+            en-US: Intercept specified JsonPath
+          items:
+            type: string
+          default: []
+        deny_raw:
+          type: boolean
+          title: 原始Body拦截
+          x-title-i18n:
+            en-US: Raw Body Interception
+          description: 对原始body拦截
+          x-description-i18n:
+            en-US: Intercept raw body
+          default: false
+        system_deny:
+          type: boolean
+          title: 系统拦截规则
+          x-title-i18n:
+            en-US: System Interception Rules
+          description: 开启内置拦截规则
+          x-description-i18n:
+            en-US: Enable built-in interception rules
+          default: true
+        deny_code:
+          type: integer
+          title: 拦截状态码
+          x-title-i18n:
+            en-US: Interception Status Code
+          description: 拦截时http状态码
+          x-description-i18n:
+            en-US: HTTP status code when intercepted
+          default: 200
+        deny_message:
+          type: string
+          title: AI拦截消息
+          x-title-i18n:
+            en-US: AI Interception Message
+          description: 拦截时ai返回消息
+          x-description-i18n:
+            en-US: AI response message when intercepted
+          default: 提问或回答中包含敏感词，已被屏蔽
+        deny_raw_message:
+          type: string
+          title: 非AI拦截消息
+          x-title-i18n:
+            en-US: Non-AI Interception Message
+          description: 非openai拦截时返回内容
+          x-description-i18n:
+            en-US: Response content for non-OpenAI interception
+          default: '{"errmsg":"提问或回答中包含敏感词，已被屏蔽"}'
+        deny_content_type:
+          type: string
+          title: 拦截返回类型
+          x-title-i18n:
+            en-US: Interception Response Type
+          description: 非openai拦截时返回content_type头
+          x-description-i18n:
+            en-US: Content-Type header for non-OpenAI interception
+          default: application/json
+        deny_words:
+          type: array
+          title: 自定义敏感词
+          x-title-i18n:
+            en-US: Custom Sensitive Words
+          description: 自定义敏感词列表
+          x-description-i18n:
+            en-US: Custom sensitive word list
+          items:
+            type: string
+          default: []
+        replace_roles:
+          type: array
+          title: 敏感词替换规则
+          x-title-i18n:
+            en-US: Sensitive Word Replacement Rules
+          description: 自定义敏感词正则替换
+          x-description-i18n:
+            en-US: Custom sensitive word regex replacement
+          items:
+            type: object
+            properties:
+              regex:
+                type: string
+                title: 规则正则
+                x-title-i18n:
+                  en-US: Rule Regex
+                description: 规则正则(内置GROK规则)
+                x-description-i18n:
+                  en-US: Rule regex (built-in GROK rules)
+              type:
+                type: string
+                title: 替换类型
+                x-title-i18n:
+                  en-US: Replacement Type
+                description: 替换类型
+                x-description-i18n:
+                  en-US: Replacement type
+                enum:
+                - replace
+                - hash
+              restore:
+                type: boolean
+                title: 是否恢复
+                x-title-i18n:
+                  en-US: Restore
+                description: 是否恢复
+                x-description-i18n:
+                  en-US: Whether to restore
+                default: false
+              value:
+                type: string
+                title: 替换值
+                x-title-i18n:
+                  en-US: Replacement Value
+                description: 替换值（支持正则变量）
+                x-description-i18n:
+                  en-US: Replacement value (supports regex variables)
+      example:
+        system_deny: true
+        deny_openai: true
+        deny_jsonpath:
+        - $.messages[*].content
+        deny_message: Question or answer contains sensitive words and has been blocked.
+        deny_words:
+        - Custom Sensitive Word 1
+        - Custom Sensitive Word 2
+        replace_roles:
+        - regex: '%{MOBILE}'
+          type: replace
+          value: '****'
+        - regex: '%{EMAILLOCALPART}@%{HOSTNAME:domain}'
+          type: replace
+          restore: true
+          value: '****@$domain'
+        - regex: '%{IP}'
+          type: replace
+          restore: true
+          value: '***.***.***.***'
+        - regex: '%{IDCARD}'
+          type: replace
+          value: '****'
+        - regex: sk-[0-9a-zA-Z]*
+          restore: true
+          type: hash
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        deny_openai:
+          type: boolean
+          title: OpenAI协议拦截
+          x-title-i18n:
+            en-US: OpenAI Protocol Interception
+          description: 对openai协议进行拦截
+          x-description-i18n:
+            en-US: Intercept OpenAI protocol
+          default: true
+        deny_jsonpath:
+          type: array
+          title: JsonPath拦截
+          x-title-i18n:
+            en-US: JsonPath Interception
+          description: 对指定jsonpath拦截
+          x-description-i18n:
+            en-US: Intercept specified JsonPath
+          items:
+            type: string
+          default: []
+        deny_raw:
+          type: boolean
+          title: 原始Body拦截
+          x-title-i18n:
+            en-US: Raw Body Interception
+          description: 对原始body拦截
+          x-description-i18n:
+            en-US: Intercept raw body
+          default: false
+        system_deny:
+          type: boolean
+          title: 系统拦截规则
+          x-title-i18n:
+            en-US: System Interception Rules
+          description: 开启内置拦截规则
+          x-description-i18n:
+            en-US: Enable built-in interception rules
+          default: true
+        deny_code:
+          type: integer
+          title: 拦截状态码
+          x-title-i18n:
+            en-US: Interception Status Code
+          description: 拦截时http状态码
+          x-description-i18n:
+            en-US: HTTP status code when intercepted
+          default: 200
+        deny_message:
+          type: string
+          title: AI拦截消息
+          x-title-i18n:
+            en-US: AI Interception Message
+          description: 拦截时ai返回消息
+          x-description-i18n:
+            en-US: AI response message when intercepted
+          default: 提问或回答中包含敏感词，已被屏蔽
+        deny_raw_message:
+          type: string
+          title: 非AI拦截消息
+          x-title-i18n:
+            en-US: Non-AI Interception Message
+          description: 非openai拦截时返回内容
+          x-description-i18n:
+            en-US: Response content for non-OpenAI interception
+          default: '{"errmsg":"提问或回答中包含敏感词，已被屏蔽"}'
+        deny_content_type:
+          type: string
+          title: 拦截返回类型
+          x-title-i18n:
+            en-US: Interception Response Type
+          description: 非openai拦截时返回content_type头
+          x-description-i18n:
+            en-US: Content-Type header for non-OpenAI interception
+          default: application/json
+        deny_words:
+          type: array
+          title: 自定义敏感词
+          x-title-i18n:
+            en-US: Custom Sensitive Words
+          description: 自定义敏感词列表
+          x-description-i18n:
+            en-US: Custom sensitive word list
+          items:
+            type: string
+          default: []
+        replace_roles:
+          type: array
+          title: 敏感词替换规则
+          x-title-i18n:
+            en-US: Sensitive Word Replacement Rules
+          description: 自定义敏感词正则替换
+          x-description-i18n:
+            en-US: Custom sensitive word regex replacement
+          items:
+            type: object
+            properties:
+              regex:
+                type: string
+                title: 规则正则
+                x-title-i18n:
+                  en-US: Rule Regex
+                description: 规则正则(内置GROK规则)
+                x-description-i18n:
+                  en-US: Rule regex (built-in GROK rules)
+              type:
+                type: string
+                title: 替换类型
+                x-title-i18n:
+                  en-US: Replacement Type
+                description: 替换类型
+                x-description-i18n:
+                  en-US: Replacement type
+                enum:
+                - replace
+                - hash
+              restore:
+                type: boolean
+                title: 是否恢复
+                x-title-i18n:
+                  en-US: Restore
+                description: 是否恢复
+                x-description-i18n:
+                  en-US: Whether to restore
+                default: false
+              value:
+                type: string
+                title: 替换值
+                x-title-i18n:
+                  en-US: Replacement Value
+                description: 替换值（支持正则变量）
+                x-description-i18n:
+                  en-US: Replacement value (supports regex variables)
+      example:
+        system_deny: true
+        deny_openai: true
+        deny_jsonpath:
+        - $.messages[*].content
+        deny_message: Question or answer contains sensitive words and has been blocked.
+        deny_words:
+        - Custom Sensitive Word 1
+        - Custom Sensitive Word 2
+        replace_roles:
+        - regex: '%{MOBILE}'
+          type: replace
+          value: '****'
+        - regex: '%{EMAILLOCALPART}@%{HOSTNAME:domain}'
+          type: replace
+          restore: true
+          value: '****@$domain'
+        - regex: '%{IP}'
+          type: replace
+          restore: true
+          value: '***.***.***.***'
+        - regex: '%{IDCARD}'
+          type: replace
+          value: '****'
+        - regex: sk-[0-9a-zA-Z]*
+          restore: true
+          type: hash

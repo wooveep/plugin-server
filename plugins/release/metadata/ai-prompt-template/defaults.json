@@ -1,0 +1,1 @@
+{"templates":[{"name":"developer-chat","template":{"messages":[{"content":"你是一个 {{program}} 专家，编程语言为 {{language}}","role":"system"},{"content":"帮我写一个 {{program}} 程序","role":"user"}],"model":"gpt-3.5-turbo"}}]}

@@ -1,0 +1,19 @@
+{
+  "call_id": "call-image-1",
+  "target_id": "target-1",
+  "binding_id": "binding-1",
+  "operation_id": "operation-1",
+  "operation_kind": "image_generate",
+  "provider_account_id": "purchase-1",
+  "upstream_model": "upstream-image-1",
+  "cluster_ref": "cluster-1",
+  "credential_ref": "key-ref-1",
+  "credential_revision": "9007199254740993",
+  "selection_generation": "1",
+  "original_body_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "mapper_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "proxy_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "mechanism": "router",
+  "send_transport": "http_call",
+  "recording_owner": "ai_proxy"
+}

@@ -99,6 +99,39 @@ func RunHunyuanWasmSmokeTests(t *testing.T) {
 			defer h.Reset()
 			require.Equal(t, types.OnPluginStartStatusOK, st)
 		})
+
+		nativeCfg := providerSmokeLegacyJSON(map[string]interface{}{
+			"type":           "hunyuan",
+			"hunyuanAuthId":  "12345678-1234-1234-1234-123456789012",
+			"hunyuanAuthKey": "12345678901234567890123456789012",
+		})
+		t.Run("native signing strips client auth headers", func(t *testing.T) {
+			h, st := wasmhost.NewTestHost(nativeCfg)
+			defer h.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, st)
+
+			action := h.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "ex.com"},
+				{":path", "/v1/chat/completions"},
+				{":method", "POST"},
+				{"Content-Type", "application/json"},
+				{"x-api-key", "client-api-key"},
+				{"anthropic-api-key", "client-anthropic-key"},
+				{"x-authorization", "Bearer client-alt-token"},
+			})
+			require.Equal(t, types.HeaderStopIteration, action)
+
+			action = h.CallOnHttpRequestBody([]byte(`{"model":"hunyuan-lite","messages":[{"role":"user","content":"hi"}]}`))
+			require.Equal(t, types.ActionContinue, action)
+
+			requestHeaders := h.GetRequestHeaders()
+			authValue, hasAuth := wasmhost.GetHeaderValue(requestHeaders, "Authorization")
+			require.True(t, hasAuth, "Authorization header should exist")
+			require.Contains(t, authValue, "TC3-HMAC-SHA256")
+			require.False(t, wasmhost.HasHeader(requestHeaders, "x-api-key"), "x-api-key must not be forwarded to hunyuan")
+			require.False(t, wasmhost.HasHeader(requestHeaders, "anthropic-api-key"), "anthropic-api-key must not be forwarded to hunyuan")
+			require.False(t, wasmhost.HasHeader(requestHeaders, "x-authorization"), "x-authorization must not be forwarded to hunyuan")
+		})
 	})
 }
 

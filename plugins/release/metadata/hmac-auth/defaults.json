@@ -1,0 +1,1 @@
+{"consumers":[{"key":"appKey-example-1","name":"consumer-1","secret":"appSecret-example-1"},{"key":"appKey-example-2","name":"consumer-2","secret":"appSecret-example-2"}],"global_auth":false}

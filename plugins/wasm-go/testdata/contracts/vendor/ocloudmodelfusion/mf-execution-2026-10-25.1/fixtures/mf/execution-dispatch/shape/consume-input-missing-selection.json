@@ -1,0 +1,8 @@
+{
+  "dispatch_id": "dispatch-1",
+  "expected_dispatch_revision": "1",
+  "worker_claim_epoch": "9007199254740993",
+  "invocation_id": "invocation-1",
+  "gateway_boot_id": "gateway-boot-1",
+  "context_generation": "9007199254740993"
+}

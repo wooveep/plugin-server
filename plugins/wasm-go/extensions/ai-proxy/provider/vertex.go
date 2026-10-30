@@ -51,6 +51,7 @@ const (
 	contextVertexStreamToolCallIDs     = "vertexStreamToolCallIDs"
 	vertexAnthropicVersion             = "vertex-2023-10-16"
 	vertexImageVariationDefaultPrompt  = "Create variations of the provided image."
+	maxOAuthBearerTokenLength          = 8 * 1024
 )
 
 // vertexRawPathRegex 匹配原生 Vertex AI REST API 路径
@@ -201,14 +202,58 @@ func (v *vertexProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiNam
 
 	// 剥除 Anthropic 客户端携带的凭据头和协议头.
 	// 凭据头: vertex 一律用 OAuth Bearer 或 ?key= 鉴权, 留着只会把 sk-ant-... 泄漏到上游日志.
-	headers.Del("x-api-key")
-	headers.Del("anthropic-api-key")
+	util.RemoveClientAuthHeaders(headers)
 	// 协议头: vertex 的 Anthropic 端点不接受这些头 —
 	//   anthropic-beta  → vertex 不支持 Anthropic beta feature flags, 会 400
 	//   anthropic-version → vertex 的版本通过 body 里的 anthropic_version 字段传递,
 	//                       头里的 "2023-06-01" 与 vertex 预期的 "vertex-2023-10-16" 不符
 	headers.Del("anthropic-beta")
 	headers.Del("anthropic-version")
+}
+
+func (v *vertexProvider) TransformTransparentRequestHeaders(ctx wrapper.HttpContext, headers http.Header) {
+	finalVertexDomain := vertexDomain
+	if !v.isExpressMode() && v.config.vertexRegion != vertexGlobalRegion {
+		finalVertexDomain = fmt.Sprintf("%s-%s", v.config.vertexRegion, vertexDomain)
+	}
+	util.OverwriteRequestHostHeader(headers, finalVertexDomain)
+	clearTransparentCredentials(headers)
+}
+
+func (v *vertexProvider) AuthenticateTransparentRequest(
+	ctx wrapper.HttpContext,
+	body []byte,
+	headers http.Header,
+) (types.Action, error) {
+	clearTransparentCredentials(headers)
+	if v.isExpressMode() {
+		headers.Set("x-goog-api-key", v.getExpressAPIKey(ctx))
+		return types.ActionContinue, nil
+	}
+
+	cacheKeyName := v.buildTokenKey()
+	cachedAccessToken, err := v.getCachedAccessToken(cacheKeyName)
+	if err != nil {
+		return types.ActionContinue, err
+	}
+	if cachedAccessToken != "" {
+		headers.Set(util.HeaderAuthorization, "Bearer "+cachedAccessToken)
+		return types.ActionContinue, nil
+	}
+
+	cached, err := v.getToken()
+	if err != nil {
+		return types.ActionContinue, err
+	}
+	if cached {
+		cachedAccessToken, err = v.getCachedAccessToken(cacheKeyName)
+		if err != nil {
+			return types.ActionContinue, err
+		}
+		headers.Set(util.HeaderAuthorization, "Bearer "+cachedAccessToken)
+		return types.ActionContinue, nil
+	}
+	return types.ActionPause, nil
 }
 
 func (v *vertexProvider) getToken() (cached bool, err error) {
@@ -515,7 +560,7 @@ func (v *vertexProvider) onImageGenerationRequestBody(ctx wrapper.HttpContext, b
 
 func (v *vertexProvider) onImageEditRequestBody(ctx wrapper.HttpContext, body []byte, headers http.Header) ([]byte, error) {
 	request := &imageEditRequest{}
-	imageURLs := make([]string, 0)
+	var imageURLs []string
 	contentType := headers.Get("Content-Type")
 	if isMultipartFormData(contentType) {
 		parsedRequest, err := parseMultipartImageRequest(body, contentType)
@@ -562,7 +607,7 @@ func (v *vertexProvider) onImageEditRequestBody(ctx wrapper.HttpContext, body []
 
 func (v *vertexProvider) onImageVariationRequestBody(ctx wrapper.HttpContext, body []byte, headers http.Header) ([]byte, error) {
 	request := &imageVariationRequest{}
-	imageURLs := make([]string, 0)
+	var imageURLs []string
 	contentType := headers.Get("Content-Type")
 	if isMultipartFormData(contentType) {
 		parsedRequest, err := parseMultipartImageRequest(body, contentType)
@@ -909,7 +954,7 @@ func (v *vertexProvider) buildEmbeddingsResponse(ctx wrapper.HttpContext, vertex
 	response := embeddingsResponse{
 		Object: "list",
 		Data:   make([]embedding, 0, len(vertexResp.Predictions)),
-		Model:  ctx.GetStringContext(ctxKeyFinalRequestModel, ""),
+		Model:  ctx.GetContext(ctxKeyFinalRequestModel).(string),
 	}
 	totalTokens := 0
 	for _, item := range vertexResp.Predictions {
@@ -1574,29 +1619,48 @@ func (v *vertexProvider) getAccessToken(jwtToken string) error {
 		{"Content-Type", "application/x-www-form-urlencoded"},
 	}
 	reqBody := "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=" + jwtToken
-	err := v.client.Post("/token", headers, []byte(reqBody), func(statusCode int, responseHeaders http.Header, responseBody []byte) {
-		responseString := string(responseBody)
-		defer func() {
-			_ = proxywasm.ResumeHttpRequest()
-		}()
+	sensitiveClient, ok := v.client.(wrapper.SensitiveHttpClient)
+	if !ok {
+		return errors.New("vertex token client does not support sensitive callouts")
+	}
+	err := sensitiveClient.PostSensitive("/token", headers, []byte(reqBody), func(statusCode int, responseHeaders http.Header, responseBody []byte) {
 		if statusCode != http.StatusOK {
-			log.Errorf("failed to create vertex access key, status: %d body: %s", statusCode, responseString)
+			log.Errorf("vertex oauth token exchange failed, status=%d", statusCode)
 			_ = util.ErrorHandler("ai-proxy.vertex.load_ak_failed", fmt.Errorf("failed to load vertex ak"))
 			return
 		}
-		responseJson := gjson.Parse(responseString)
-		accessToken := responseJson.Get("access_token").String()
-		_ = proxywasm.ReplaceHttpRequestHeader("Authorization", "Bearer "+accessToken)
+
+		var response struct {
+			AccessToken string `json:"access_token"`
+			ExpiresIn   int64  `json:"expires_in"`
+		}
+		if err := json.Unmarshal(responseBody, &response); err != nil ||
+			!isValidOAuthBearerToken(response.AccessToken) {
+			log.Errorf("vertex oauth token exchange returned an invalid success response")
+			_ = util.ErrorHandler("ai-proxy.vertex.load_ak_failed", fmt.Errorf("failed to load vertex ak"))
+			return
+		}
+		if err := proxywasm.ReplaceHttpRequestHeader(
+			util.HeaderAuthorization,
+			"Bearer "+response.AccessToken,
+		); err != nil {
+			log.Errorf("vertex oauth bearer installation failed")
+			_ = util.ErrorHandler("ai-proxy.vertex.load_ak_failed", fmt.Errorf("failed to load vertex ak"))
+			return
+		}
 
 		expiresIn := int64(3600)
-		if expiresInVal := responseJson.Get("expires_in"); expiresInVal.Exists() {
-			expiresIn = expiresInVal.Int()
+		if response.ExpiresIn > 0 {
+			expiresIn = response.ExpiresIn
 		}
 		expireTime := time.Now().Add(time.Duration(expiresIn) * time.Second).Unix()
 		keyName := v.buildTokenKey()
-		err := setCachedAccessToken(keyName, accessToken, expireTime)
+		err := setCachedAccessToken(keyName, response.AccessToken, expireTime)
 		if err != nil {
 			log.Errorf("[vertex]: unable to cache access token: %v", err)
+		}
+		if err := proxywasm.ResumeHttpRequest(); err != nil {
+			log.Errorf("vertex oauth request resume failed")
 		}
 	}, v.config.timeout)
 	return err
@@ -1614,6 +1678,39 @@ type cachedAccessToken struct {
 	ExpireAt int64  `json:"expireAt"`
 }
 
+func isValidOAuthBearerToken(token string) bool {
+	if len(token) == 0 || len(token) > maxOAuthBearerTokenLength {
+		return false
+	}
+	if token[0] == '=' {
+		return false
+	}
+
+	padding := false
+	for i := 0; i < len(token); i++ {
+		character := token[i]
+		if character == '=' {
+			padding = true
+			continue
+		}
+		if padding {
+			return false
+		}
+		if (character >= 'A' && character <= 'Z') ||
+			(character >= 'a' && character <= 'z') ||
+			(character >= '0' && character <= '9') {
+			continue
+		}
+		switch character {
+		case '-', '.', '_', '~', '+', '/':
+			continue
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func (v *vertexProvider) getCachedAccessToken(key string) (string, error) {
 	data, _, err := proxywasm.GetSharedData(key)
 	if err != nil {
@@ -1629,6 +1726,9 @@ func (v *vertexProvider) getCachedAccessToken(key string) (string, error) {
 	var tokenInfo cachedAccessToken
 	if err = json.Unmarshal(data, &tokenInfo); err != nil {
 		return "", err
+	}
+	if !isValidOAuthBearerToken(tokenInfo.Token) {
+		return "", nil
 	}
 
 	now := time.Now().Unix()

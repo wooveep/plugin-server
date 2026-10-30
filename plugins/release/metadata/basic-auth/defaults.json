@@ -1,0 +1,1 @@
+{"consumers":[{"credential":"admin:123456","name":"consumer1"},{"credential":"guest:abc","name":"consumer2"}],"global_auth":false}

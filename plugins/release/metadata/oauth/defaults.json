@@ -1,0 +1,1 @@
+{"consumers":[{"client_id":"12345678-xxxx-xxxx-xxxx-xxxxxxxxxxxx","client_secret":"${MF_OAUTH_CONSUMERS_0_CLIENT_SECRET}","name":"consumer1"},{"client_id":"87654321-xxxx-xxxx-xxxx-xxxxxxxxxxxx","client_secret":"${MF_OAUTH_CONSUMERS_1_CLIENT_SECRET}","name":"consumer2"}],"global_auth":false}

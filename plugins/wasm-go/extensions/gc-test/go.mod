@@ -16,3 +16,7 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/resp v0.1.1 // indirect
 )
+
+replace github.com/higress-group/wasm-go => ../..
+
+replace github.com/higress-group/proxy-wasm-go-sdk => ../../../proxy-wasm-go-sdk

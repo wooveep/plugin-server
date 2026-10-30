@@ -1,0 +1,1 @@
+{"namespace":"higress-backend","policy":"example1","serviceName":"opa","servicePort":8181,"serviceSource":"k8s","timeout":"5s"}

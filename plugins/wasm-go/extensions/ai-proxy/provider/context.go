@@ -8,22 +8,22 @@ import (
 	"net/url"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
-	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/tidwall/gjson"
 )
 
 type ContextConfig struct {
 	// @Title zh-CN 文件URL
 	// @Description zh-CN 用于获取对话上下文的文件的URL。目前仅支持HTTP和HTTPS协议，纯文本格式文件
-	fileUrl string `required:"true" yaml:"url" json:"url"`
+	fileUrl string `required:"true" yaml:"url"`
 	// @Title zh-CN 上游服务名称
 	// @Description zh-CN 文件服务所对应的网关内上游服务名称
-	serviceName string `required:"true" yaml:"serviceName" json:"serviceName"`
+	serviceName string `required:"true" yaml:"serviceName"`
 	// @Title zh-CN 上游服务端口
 	// @Description zh-CN 文件服务所对应的网关内上游服务名称
-	servicePort int64 `required:"true" yaml:"servicePort" json:"servicePort"`
+	servicePort int64 `required:"true" yaml:"servicePort"`
 
 	fileUrlObj *url.URL `yaml:"-"`
 }

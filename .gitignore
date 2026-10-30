@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 # plugins/ contains maintained source; runtime output belongs in build/ and dist/.
+.codegraph/
+.local/
 # Distribution / packaging
 .Python
 build/

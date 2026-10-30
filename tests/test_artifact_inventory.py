@@ -1,6 +1,7 @@
 import importlib.util
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from artifact_storage import ArtifactStore, StorageUnavailable
@@ -13,7 +14,7 @@ spec.loader.exec_module(inventory)
 
 
 class ArtifactInventoryTests(unittest.TestCase):
-    def test_nonempty_complete_inventory_verifies_actual_payload_bytes(self):
+    def test_nonempty_inventory_reuses_registered_digests_and_checks_presence(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = ArtifactStore(Path(temporary) / "plugins")
             with self.assertRaises(ValueError):
@@ -34,3 +35,20 @@ class ArtifactInventoryTests(unittest.TestCase):
             (store.root / "test-plugin/1.0.0/archive.tgz").unlink()
             with self.assertRaises(StorageUnavailable):
                 inventory.export_inventory(store)
+
+    def test_inventory_and_metadata_list_never_read_wasm_or_archive_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = ArtifactStore(Path(temporary) / "plugins")
+            uploaded = store.commit("inventory", example_archive())
+            read_bytes = Path.read_bytes
+
+            def metadata_only(path):
+                if path.suffix == ".wasm" or path.name == "archive.tgz":
+                    self.fail("metadata/delivery path reread complete payload bytes")
+                return read_bytes(path)
+
+            with patch.object(Path, "read_bytes", metadata_only), patch(
+                "artifact_storage.validate_package", side_effect=AssertionError("unexpected package revalidation")
+            ):
+                self.assertEqual(inventory.export_inventory(store)["artifacts"][0]["content_digest"], uploaded["content_digest"])
+                self.assertEqual(store.list_metadata()[0]["manifest"], uploaded["manifest"])

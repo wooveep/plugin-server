@@ -1,492 +1,217 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
 	"github.com/higress-group/wasm-go/pkg/test"
 	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 )
 
-func getHeader(headers [][2]string, key string) (string, bool) {
-	for _, h := range headers {
-		if strings.EqualFold(h[0], key) {
-			return h[1], true
-		}
+const captureConfig = `{"capture_body_basis":true,"modelMapping":{"public.v1":"provider.v2","*":"no-wildcard-fallback"}}`
+
+func mapperHeaders() [][2]string {
+	return [][2]string{
+		{":authority", "mapper.test"},
+		{":path", "/v1/chat/completions"},
+		{":method", "POST"},
+		{"content-type", "application/json; charset=utf-8"},
+		{"x-modelfusion-original-body-digest", "client-spoof-1"},
+		{"X-Modelfusion-Original-Body-Digest", "client-spoof-2"},
+		{"x-modelfusion-original-public-model", "client-model"},
+		{"X-Modelfusion-Original-Public-Model", "client-model-2"},
+		{"x-unrelated", "keep"},
 	}
-	return "", false
 }
 
-// Basic configs for wasm test host
-var (
-	basicConfig = func() json.RawMessage {
-		data, _ := json.Marshal(map[string]interface{}{
-			"modelKey": "model",
-			"modelMapping": map[string]string{
-				"gpt-3.5-turbo": "gpt-4",
-			},
-			"enableOnPathSuffix": []string{
-				"/v1/chat/completions",
-			},
-		})
-		return data
-	}()
+func requireNoBasis(t *testing.T, headers [][2]string) {
+	t.Helper()
+	for _, header := range headers {
+		require.False(t, strings.EqualFold(header[0], bodybasis.DigestHeader))
+		require.False(t, strings.EqualFold(header[0], bodybasis.PublicModelHeader))
+	}
+}
 
-	customConfig = func() json.RawMessage {
-		data, _ := json.Marshal(map[string]interface{}{
-			"modelKey": "request.model",
-			"modelMapping": map[string]string{
-				"*":          "gpt-4o",
-				"gpt-3.5*":   "gpt-4-mini",
-				"gpt-3.5-t":  "gpt-4-turbo",
-				"gpt-3.5-t1": "gpt-4-turbo-1",
-			},
-			"enableOnPathSuffix": []string{
-				"/v1/chat/completions",
-				"/v1/embeddings",
-			},
-		})
-		return data
-	}()
-
-	headerSyncConfig = func() json.RawMessage {
-		data, _ := json.Marshal(map[string]interface{}{
-			"modelKey": "model",
-			"modelMapping": map[string]string{
-				"gpt-3.5-turbo": "gpt-4",
-			},
-			"modelToHeader": "x-final-model",
-			"enableOnPathSuffix": []string{
-				"/v1/chat/completions",
-			},
-		})
-		return data
-	}()
-)
-
-func TestParseConfig(t *testing.T) {
-	test.RunGoTest(t, func(t *testing.T) {
-		t.Run("basic config with defaults", func(t *testing.T) {
-			var cfg Config
-			jsonData := []byte(`{
-				"modelMapping": {
-					"gpt-3.5-turbo": "gpt-4",
-					"gpt-4*": "gpt-4o-mini",
-					"*": "gpt-4o"
-				}
-			}`)
-			err := parseConfig(gjson.ParseBytes(jsonData), &cfg)
-			require.NoError(t, err)
-
-			// default modelKey
-			require.Equal(t, "model", cfg.modelKey)
-			// exact mapping
-			require.Equal(t, "gpt-4", cfg.exactModelMapping["gpt-3.5-turbo"])
-			// prefix mapping
-			require.Len(t, cfg.prefixModelMapping, 1)
-			require.Equal(t, "gpt-4", cfg.prefixModelMapping[0].Prefix)
-			// default model
-			require.Equal(t, "gpt-4o", cfg.defaultModel)
-			// default enabled path suffixes
-			require.Contains(t, cfg.enableOnPathSuffix, "/completions")
-			require.Contains(t, cfg.enableOnPathSuffix, "/embeddings")
-		})
-
-		t.Run("custom modelKey and enableOnPathSuffix", func(t *testing.T) {
-			var cfg Config
-			jsonData := []byte(`{
-				"modelKey": "request.model",
-				"modelMapping": {
-					"gpt-3.5-turbo": "gpt-4",
-					"gpt-3.5*": "gpt-4-mini"
-				},
-				"enableOnPathSuffix": ["/v1/chat/completions", "/v1/embeddings"]
-			}`)
-			err := parseConfig(gjson.ParseBytes(jsonData), &cfg)
-			require.NoError(t, err)
-
-			require.Equal(t, "request.model", cfg.modelKey)
-			require.Equal(t, "gpt-4", cfg.exactModelMapping["gpt-3.5-turbo"])
-			require.Len(t, cfg.prefixModelMapping, 1)
-			require.Equal(t, "gpt-3.5", cfg.prefixModelMapping[0].Prefix)
-			require.Equal(t, "gpt-4-mini", cfg.prefixModelMapping[0].Target)
-			require.Equal(t, 2, len(cfg.enableOnPathSuffix))
-			require.Contains(t, cfg.enableOnPathSuffix, "/v1/chat/completions")
-			require.Contains(t, cfg.enableOnPathSuffix, "/v1/embeddings")
-		})
-
-		t.Run("modelMapping must be object", func(t *testing.T) {
-			var cfg Config
-			jsonData := []byte(`{
-				"modelMapping": "invalid"
-			}`)
-			err := parseConfig(gjson.ParseBytes(jsonData), &cfg)
-			require.Error(t, err)
-		})
-
-		t.Run("enableOnPathSuffix must be array", func(t *testing.T) {
-			var cfg Config
-			jsonData := []byte(`{
-				"enableOnPathSuffix": "not-array"
-			}`)
-			err := parseConfig(gjson.ParseBytes(jsonData), &cfg)
-			require.Error(t, err)
-		})
-
-		t.Run("modelToHeader default and custom", func(t *testing.T) {
-			var cfgDefault Config
-			require.NoError(t, parseConfig(gjson.ParseBytes([]byte(`{"modelMapping":{}}`)), &cfgDefault))
-			require.Equal(t, "x-higress-llm-model-final", cfgDefault.modelToHeader)
-
-			var cfgCustom Config
-			err := parseConfig(gjson.ParseBytes([]byte(`{
-				"modelToHeader": "x-my-model",
-				"modelMapping": {}
-			}`)), &cfgCustom)
-			require.NoError(t, err)
-			require.Equal(t, "x-my-model", cfgCustom.modelToHeader)
-		})
-
-		t.Run("empty modelMapping", func(t *testing.T) {
-			var cfg Config
-			err := parseConfig(gjson.ParseBytes([]byte(`{"modelMapping": {}}`)), &cfg)
-			require.NoError(t, err)
-			require.Empty(t, cfg.exactModelMapping)
-			require.Empty(t, cfg.prefixModelMapping)
-			require.Equal(t, "", cfg.defaultModel)
-		})
-
-		t.Run("prefix rules sorted by key for stable iteration", func(t *testing.T) {
-			var cfg Config
-			// Object key order in JSON is z then a; after sort, prefix "a" is tried before "z".
-			jsonData := []byte(`{
-				"modelMapping": {
-					"z*": "Z",
-					"a*": "A"
-				}
-			}`)
-			require.NoError(t, parseConfig(gjson.ParseBytes(jsonData), &cfg))
-			require.Len(t, cfg.prefixModelMapping, 2)
-			require.Equal(t, "a", cfg.prefixModelMapping[0].Prefix)
-			require.Equal(t, "A", cfg.prefixModelMapping[0].Target)
-			require.Equal(t, "z", cfg.prefixModelMapping[1].Prefix)
-			require.Equal(t, "Z", cfg.prefixModelMapping[1].Target)
-		})
-
-		t.Run("exact mapping wins over prefix", func(t *testing.T) {
-			var cfg Config
-			jsonData := []byte(`{
-				"modelKey": "model",
-				"modelMapping": {
-					"gpt-3.5*": "from-prefix",
-					"gpt-3.5-turbo": "from-exact"
-				}
-			}`)
-			require.NoError(t, parseConfig(gjson.ParseBytes(jsonData), &cfg))
-			require.Equal(t, "from-exact", cfg.exactModelMapping["gpt-3.5-turbo"])
-			require.Len(t, cfg.prefixModelMapping, 1)
-			require.Equal(t, "gpt-3.5", cfg.prefixModelMapping[0].Prefix)
-		})
+func TestMapperCapturesOriginalBytesBeforeExactRewrite(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		host, status := test.NewTestHost(json.RawMessage(captureConfig))
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		raw := []byte(" {\n\"model\" : \"public.v1\", \"amount\":9007199254740993.0000000001, \"messages\":[{\"role\":\"user\",\"content\":\"Hi\"}]}\n")
+		headers := append(mapperHeaders(), [2]string{"content-length", fmt.Sprint(len(raw))})
+		require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(headers))
+		require.Nil(t, host.GetLocalResponse())
+		requireNoBasis(t, host.GetRequestHeaders())
+		require.Equal(t, types.ActionContinue, host.CallOnHttpRequestBody(raw))
+		require.Nil(t, host.GetLocalResponse())
+		expectedBody := strings.Replace(string(raw), `"public.v1"`, `"provider.v2"`, 1)
+		require.Equal(t, expectedBody, string(host.GetRequestBody()))
+		basis, err := bodybasis.Read(host.GetRequestHeaders())
+		require.NoError(t, err)
+		canonical := []byte(`{"amount":9007199254740993.0000000001,"messages":[{"content":"Hi","role":"user"}],"model":"public.v1"}`)
+		require.Equal(t, fmt.Sprintf("sha256:%x", sha256.Sum256(canonical)), basis.Digest())
+		require.Equal(t, "public.v1", basis.PublicModel())
+		require.NotEqual(t, bodybasis.DigestBytes(host.GetRequestBody()), basis.Digest())
+		for _, header := range host.GetRequestHeaders() {
+			require.False(t, strings.EqualFold(header[0], "content-length"))
+		}
+		require.Contains(t, host.GetRequestHeaders(), [2]string{"x-unrelated", "keep"})
+		host.CompleteHttp()
 	})
 }
 
-func TestOnHttpRequestHeaders(t *testing.T) {
+func TestMapperBasisCaptureRequiresExplicitBooleanOptIn(t *testing.T) {
 	test.RunTest(t, func(t *testing.T) {
-		t.Run("skip when path not matched", func(t *testing.T) {
-			host, status := test.NewTestHost(basicConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			originalHeaders := [][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/other"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
-				{"content-length", "123"},
-			}
-			action := host.CallOnHttpRequestHeaders(originalHeaders)
-			require.Equal(t, types.ActionContinue, action)
-
-			newHeaders := host.GetRequestHeaders()
-			_, foundContentLength := getHeader(newHeaders, "content-length")
-			require.True(t, foundContentLength, "content-length should be kept when path is not enabled")
-		})
-
-		t.Run("process when path and content-type match", func(t *testing.T) {
-			host, status := test.NewTestHost(basicConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			originalHeaders := [][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
-				{"content-length", "123"},
-			}
-			action := host.CallOnHttpRequestHeaders(originalHeaders)
-			require.Equal(t, types.HeaderStopIteration, action)
-
-			newHeaders := host.GetRequestHeaders()
-			_, foundCL := getHeader(newHeaders, "content-length")
-			require.False(t, foundCL, "content-length should be removed when buffering body")
-		})
-
-		t.Run("path with query string still matches suffix", func(t *testing.T) {
-			host, status := test.NewTestHost(basicConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			action := host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions?trace=1"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
-				{"content-length", "99"},
+		for _, config := range []string{
+			`{"modelMapping":{"public.v1":"provider.v2"}}`,
+			`{"capture_body_basis":false,"modelMapping":{"public.v1":"provider.v2"}}`,
+		} {
+			t.Run(config, func(t *testing.T) {
+				host, status := test.NewTestHost(json.RawMessage(config))
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+				require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(mapperHeaders()))
+				requireNoBasis(t, host.GetRequestHeaders())
+				require.Equal(t, types.ActionContinue, host.CallOnHttpRequestBody([]byte(`{"model":"public.v1","messages":[]}`)))
+				require.Nil(t, host.GetLocalResponse())
+				require.JSONEq(t, `{"model":"provider.v2","messages":[]}`, string(host.GetRequestBody()))
+				requireNoBasis(t, host.GetRequestHeaders())
+				host.CompleteHttp()
 			})
-			require.Equal(t, types.HeaderStopIteration, action)
-			_, foundCL := getHeader(host.GetRequestHeaders(), "content-length")
-			require.False(t, foundCL)
-		})
+		}
 	})
 }
 
-func TestOnHttpRequestBody_ModelMapping(t *testing.T) {
+func TestMapperWaitsForCompleteBodyBeforePublishingBasis(t *testing.T) {
 	test.RunTest(t, func(t *testing.T) {
-		t.Run("exact mapping", func(t *testing.T) {
-			host, status := test.NewTestHost(basicConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
+		host, status := test.NewTestHost(json.RawMessage(captureConfig))
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		raw := []byte(`{"model":"public.v1","messages":[{"role":"user","content":"chunked"}]}`)
+		require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(mapperHeaders()))
+		require.Equal(t, types.ActionPause, host.CallOnHttpStreamingRequestBody(raw[:23], false))
+		requireNoBasis(t, host.GetRequestHeaders())
+		require.Nil(t, host.GetLocalResponse())
+		require.Equal(t, types.ActionContinue, host.CallOnHttpStreamingRequestBody(raw[23:], true))
+		basis, err := bodybasis.Read(host.GetRequestHeaders())
+		require.NoError(t, err)
+		canonical := []byte(`{"messages":[{"content":"chunked","role":"user"}],"model":"public.v1"}`)
+		require.Equal(t, fmt.Sprintf("sha256:%x", sha256.Sum256(canonical)), basis.Digest())
+		require.Equal(t, "public.v1", basis.PublicModel())
+		require.Equal(t, strings.Replace(string(raw), `"public.v1"`, `"provider.v2"`, 1), string(host.GetRequestBody()))
+		host.CompleteHttp()
+	})
+}
 
-			host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
+func TestMapperIdentityEncodingStillCapturesAndMapsThroughWrapper(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		host, status := test.NewTestHost(json.RawMessage(captureConfig))
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		headers := append(mapperHeaders(), [2]string{"content-encoding", "identity"})
+		require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(headers))
+		raw := []byte(`{"model":"public.v1","messages":[]}`)
+		require.Equal(t, types.ActionContinue, host.CallOnHttpRequestBody(raw))
+		require.Nil(t, host.GetLocalResponse())
+		require.Equal(t, `{"model":"provider.v2","messages":[]}`, string(host.GetRequestBody()))
+		basis, err := bodybasis.Read(host.GetRequestHeaders())
+		require.NoError(t, err)
+		require.Equal(t, "public.v1", basis.PublicModel())
+		require.Equal(t, fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(`{"messages":[],"model":"public.v1"}`))), basis.Digest())
+		host.CompleteHttp()
+	})
+}
+
+func TestMapperRejectsBodyWithoutAnExactMapping(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		cases := []struct {
+			name   string
+			body   []byte
+			status uint32
+		}{
+			{"unmapped despite star entry", []byte(`{"model":"unmapped","messages":[]}`), 422},
+			{"prefix is not exact", []byte(`{"model":"public","messages":[]}`), 422},
+			{"missing model", []byte(`{"messages":[]}`), 400},
+			{"nonstring model", []byte(`{"model":1}`), 400},
+			{"duplicate model", []byte(`{"model":"public.v1","model":"unmapped"}`), 400},
+			{"invalid JSON", []byte(`{"model":"public.v1"`), 400},
+			{"empty body", nil, 400},
+			{"over budget", []byte(strings.Repeat(" ", maxRequestBodyBytes+1)), 413},
+		}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				host, status := test.NewTestHost(json.RawMessage(captureConfig))
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+				require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(mapperHeaders()))
+				requireNoBasis(t, host.GetRequestHeaders())
+				require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody(tc.body))
+				response := host.GetLocalResponse()
+				require.NotNil(t, response)
+				require.Equal(t, tc.status, response.StatusCode)
+				requireNoBasis(t, host.GetRequestHeaders())
+				require.Equal(t, string(tc.body), string(host.GetRequestBody()))
+				host.CompleteHttp()
 			})
+		}
+	})
+}
 
-			origBody := []byte(`{
-				"model": "gpt-3.5-turbo",
-				"messages": [{"role": "user", "content": "hello"}]
-			}`)
-			action := host.CallOnHttpRequestBody(origBody)
-			require.Equal(t, types.ActionContinue, action)
-
-			processed := host.GetRequestBody()
-			require.NotNil(t, processed)
-			require.Equal(t, "gpt-4", gjson.GetBytes(processed, "model").String())
-			v, ok := getHeader(host.GetRequestHeaders(), "x-higress-llm-model-final")
-			require.True(t, ok)
-			require.Equal(t, "gpt-4", v)
-		})
-
-		t.Run("default model when key missing", func(t *testing.T) {
-			// use customConfig where default model is set with "*"
-			host, status := test.NewTestHost(customConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
-			})
-
-			origBody := []byte(`{
-				"request": {
-					"messages": [{"role": "user", "content": "hello"}]
+func TestMapperRejectsUnsupportedRequestsAfterClearingSpoofedBasis(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		cases := []struct {
+			name        string
+			method      string
+			contentType string
+			encoding    string
+			noBody      bool
+			status      uint32
+		}{
+			{"method", "GET", "application/json", "", false, 405},
+			{"media type", "POST", "text/plain", "", false, 415},
+			{"encoding", "POST", "application/json", "gzip", false, 415},
+			{"no body", "POST", "application/json", "", true, 400},
+		}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				host, status := test.NewTestHost(json.RawMessage(captureConfig))
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+				headers := mapperHeaders()
+				headers[2][1] = tc.method
+				headers[3][1] = tc.contentType
+				if tc.encoding != "" {
+					headers = append(headers, [2]string{"content-encoding", tc.encoding})
 				}
-			}`)
-			action := host.CallOnHttpRequestBody(origBody)
-			require.Equal(t, types.ActionContinue, action)
-
-			processed := host.GetRequestBody()
-			require.NotNil(t, processed)
-			// default model should be set at request.model
-			require.Equal(t, "gpt-4o", gjson.GetBytes(processed, "request.model").String())
-			v, ok := getHeader(host.GetRequestHeaders(), "x-higress-llm-model-final")
-			require.True(t, ok)
-			require.Equal(t, "gpt-4o", v)
-		})
-
-		t.Run("prefix mapping takes effect", func(t *testing.T) {
-			host, status := test.NewTestHost(customConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
+				require.Equal(t, types.ActionPause, host.CallOnHttpRequestHeaders(headers, test.WithEndOfStream(tc.noBody)))
+				requireNoBasis(t, host.GetRequestHeaders())
+				require.NotNil(t, host.GetLocalResponse())
+				require.Equal(t, tc.status, host.GetLocalResponse().StatusCode)
+				host.CompleteHttp()
 			})
+		}
+	})
+}
 
-			origBody := []byte(`{
-				"request": {
-					"model": "gpt-3.5-turbo-16k",
-					"messages": [{"role": "user", "content": "hello"}]
-				}
-			}`)
-			action := host.CallOnHttpRequestBody(origBody)
-			require.Equal(t, types.ActionContinue, action)
-
-			processed := host.GetRequestBody()
-			require.NotNil(t, processed)
-			require.Equal(t, "gpt-4-mini", gjson.GetBytes(processed, "request.model").String())
-			v, ok := getHeader(host.GetRequestHeaders(), "x-higress-llm-model-final")
-			require.True(t, ok)
-			require.Equal(t, "gpt-4-mini", v)
-		})
-
-		t.Run("exact mapping beats prefix for same family", func(t *testing.T) {
-			host, status := test.NewTestHost(customConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/embeddings"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
+func TestMapperRejectsAmbiguousControlledConfiguration(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		for _, config := range []string{
+			`{"capture_body_basis":"true","modelMapping":{"a":"b"}}`,
+			`{"capture_body_basis":true,"capture_body_basis":false,"modelMapping":{"a":"b"}}`,
+			`{"modelMapping":{"a":"b","a":"c"}}`,
+			`{"modelMapping":{"a":null}}`,
+			`{"modelMapping":{"a":"bad\r\nmodel"}}`,
+		} {
+			t.Run(config, func(t *testing.T) {
+				host, status := test.NewTestHost(json.RawMessage(config))
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusFailed, status)
 			})
-
-			origBody := []byte(`{
-				"request": {
-					"model": "gpt-3.5-t1",
-					"input": "hello"
-				}
-			}`)
-			action := host.CallOnHttpRequestBody(origBody)
-			require.Equal(t, types.ActionContinue, action)
-
-			processed := host.GetRequestBody()
-			require.NotNil(t, processed)
-			require.Equal(t, "gpt-4-turbo-1", gjson.GetBytes(processed, "request.model").String())
-			v, ok := getHeader(host.GetRequestHeaders(), "x-higress-llm-model-final")
-			require.True(t, ok)
-			require.Equal(t, "gpt-4-turbo-1", v)
-		})
-
-		t.Run("empty request body is a no-op", func(t *testing.T) {
-			host, status := test.NewTestHost(basicConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
-			})
-
-			action := host.CallOnHttpRequestBody(nil)
-			require.Equal(t, types.ActionContinue, action)
-			require.Nil(t, host.GetRequestBody())
-
-			action = host.CallOnHttpRequestBody([]byte{})
-			require.Equal(t, types.ActionContinue, action)
-		})
-
-		t.Run("invalid json body is skipped", func(t *testing.T) {
-			host, status := test.NewTestHost(basicConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
-				{"x-higress-llm-model-final", "should-not-change"},
-			})
-
-			bad := []byte(`not json`)
-			action := host.CallOnHttpRequestBody(bad)
-			require.Equal(t, types.ActionContinue, action)
-			out := host.GetRequestBody()
-			if out != nil {
-				require.Equal(t, string(bad), string(out))
-			}
-			v, ok := getHeader(host.GetRequestHeaders(), "x-higress-llm-model-final")
-			require.True(t, ok)
-			require.Equal(t, "should-not-change", v, "invalid JSON must not refresh model header")
-		})
-
-		t.Run("no body rewrite when already mapped target but header still refreshed", func(t *testing.T) {
-			host, status := test.NewTestHost(basicConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
-			})
-
-			origBody := []byte(`{"model":"gpt-4","messages":[]}`)
-			action := host.CallOnHttpRequestBody(origBody)
-			require.Equal(t, types.ActionContinue, action)
-			out := host.GetRequestBody()
-			if out != nil {
-				require.Equal(t, string(origBody), string(out))
-			}
-			v, ok := getHeader(host.GetRequestHeaders(), "x-higress-llm-model-final")
-			require.True(t, ok)
-			require.Equal(t, "gpt-4", v)
-		})
-
-		t.Run("modelToHeader always set to resolved model", func(t *testing.T) {
-			host, status := test.NewTestHost(headerSyncConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
-				{"x-final-model", "gpt-3.5-turbo"},
-			})
-
-			origBody := []byte(`{"model":"gpt-3.5-turbo"}`)
-			require.Equal(t, types.ActionContinue, host.CallOnHttpRequestBody(origBody))
-
-			processed := host.GetRequestBody()
-			require.NotNil(t, processed)
-			require.Equal(t, "gpt-4", gjson.GetBytes(processed, "model").String())
-
-			v, ok := getHeader(host.GetRequestHeaders(), "x-final-model")
-			require.True(t, ok)
-			require.Equal(t, "gpt-4", v)
-		})
-
-		t.Run("modelToHeader refreshed even when it already matches resolved model", func(t *testing.T) {
-			host, status := test.NewTestHost(basicConfig)
-			defer host.Reset()
-			require.Equal(t, types.OnPluginStartStatusOK, status)
-
-			host.CallOnHttpRequestHeaders([][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
-				{":method", "POST"},
-				{"content-type", "application/json"},
-				{"x-higress-llm-model-final", "gpt-4"},
-			})
-
-			origBody := []byte(`{"model":"gpt-3.5-turbo","messages":[]}`)
-			require.Equal(t, types.ActionContinue, host.CallOnHttpRequestBody(origBody))
-
-			processed := host.GetRequestBody()
-			require.NotNil(t, processed)
-			require.Equal(t, "gpt-4", gjson.GetBytes(processed, "model").String())
-			v, ok := getHeader(host.GetRequestHeaders(), "x-higress-llm-model-final")
-			require.True(t, ok)
-			require.Equal(t, "gpt-4", v)
-		})
+		}
 	})
 }

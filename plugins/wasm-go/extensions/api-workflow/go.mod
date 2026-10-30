@@ -22,3 +22,7 @@ require (
 	github.com/tidwall/resp v0.1.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/higress-group/wasm-go => ../..
+
+replace github.com/higress-group/proxy-wasm-go-sdk => ../../../proxy-wasm-go-sdk

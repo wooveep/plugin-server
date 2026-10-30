@@ -1,0 +1,48 @@
+apiVersion: extensions.higress.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: ai-billing
+  namespace: higress-system
+spec:
+  defaultConfig:
+    redis_stream:
+      service_name: redis-stack-server.dns
+      service_port: 6379
+      username: <redis-username>
+      password: <redis-password>
+      database: 0
+      timeout: 500
+      stream: billing:events
+    quota_scope: global
+    event_kind: usage
+    provider: default
+    tenant_header: x-mse-tenant
+    consumer_header: x-mse-consumer
+    path_scope: legacy_suffixes
+    enable_path_suffixes:
+    - /v1/chat/completions
+    - /v1/messages
+    fail_policy: open
+  defaultConfigDisable: false
+  matchRules:
+  - ingress:
+    - qwen
+    config:
+      quota_scope: route:qwen
+      provider: dashscope
+      # The Higress binding target defines the request set; omitted filters
+      # do not synthesize a path list.
+      path_scope: bound_target
+  - ingress:
+    - ai-memory-digest
+    config:
+      event_kind: internal_cost
+      quota_scope: internal:ai-memory.digest
+      provider: dashscope
+      cost_source: ai-memory
+      worker_kind: digest
+      bill_customer: false
+      path_scope: bound_target
+  phase: UNSPECIFIED_PHASE
+  priority: 270
+  url: http://higress-plugin-server.higress-system.svc/plugins/ai-billing/0.1.14/plugin.wasm

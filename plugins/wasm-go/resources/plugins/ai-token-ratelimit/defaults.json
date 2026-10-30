@@ -1,0 +1,1 @@
+{"redis":{"database":0,"password":"${MF_AI_TOKEN_RATELIMIT_REDIS_PASSWORD}","service_name":"redis.static","service_port":6379,"username":"default"},"rule_items":[{"limit_by_per_ip":"from-remote-addr","limit_keys":[{"key":"0.0.0.0/0","token_per_minute":100}]}],"rule_name":"default_rule"}

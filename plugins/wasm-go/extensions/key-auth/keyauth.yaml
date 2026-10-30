@@ -1,0 +1,71 @@
+apiVersion: networking.higress.io/v1
+kind: McpBridge
+metadata:
+  name: mcp-keyauth-httpbin
+  namespace: higress-system
+spec:
+  registries:
+    - domain: httpbin.org
+      name: httpbin
+      port: 80
+      type: dns
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    higress.io/destination: httpbin.dns
+    higress.io/upstream-vhost: "httpbin.org"
+    higress.io/backend-protocol: HTTP
+  name: ingress-keyauth-httpbin
+  namespace: higress-system
+spec:
+  ingressClassName: higress
+  rules:
+    - host: httpbin.example.com
+      http:
+        paths:
+          - backend:
+              resource:
+                apiGroup: networking.higress.io
+                kind: McpBridge
+                name: mcp-keyauth-httpbin
+            path: /
+            pathType: Prefix
+---
+apiVersion: extensions.higress.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: wasm-keyauth-httpbin
+  namespace: higress-system
+spec:
+  defaultConfig:
+    consumers:
+      - name: consumer1
+        tenant: tenant-a
+        credentials:
+          - 2bda943c-ba2b-11ec-ba07-00163e1250b5
+          - 2bda943c-ba2b-11ec-ba07-00163e1250b5-alt
+        keys:
+          - Authorization
+        in_header: true
+        in_query: false
+      - credential: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+        name: consumer2
+    global_auth: false
+    keys:
+      - x-api-key
+      - apikey
+      - Authorization
+    in_header: true
+    in_query: true
+  defaultConfigDisable: false
+  matchRules:
+    - config:
+        allow:
+          - consumer1
+      configDisable: false
+      ingress:
+        - ingress-keyauth-httpbin
+  url: http://higress-plugin-server.higress-system.svc/plugins/key-auth/1.0.3/plugin.wasm
+  imagePullPolicy: Always

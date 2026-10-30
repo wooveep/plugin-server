@@ -16,6 +16,24 @@ def wasm_libraries():
         patches = ["//bazel:absl.patch"],
     )
 
+    http_archive(
+        name = "com_github_thalhammer_jwt_cpp",
+        type = "tar.gz",
+        urls = ["https://codeload.github.com/Thalhammer/jwt-cpp/tar.gz/refs/tags/v0.7.1"],
+        sha256 = "e52f247d5e62fac5da6191170998271a70ce27f747f2ce8fde9b09f96a5375a4",
+        strip_prefix = "jwt-cpp-0.7.1",
+        build_file = "//bazel:jwt_cpp.BUILD",
+    )
+
+    http_archive(
+        name = "com_github_mariusbancila_stduuid",
+        type = "tar.gz",
+        urls = ["https://codeload.github.com/mariusbancila/stduuid/tar.gz/refs/tags/v1.2.3"],
+        sha256 = "b1176597e789531c38481acbbed2a6894ad419aab0979c10410d59eb0ebf40d3",
+        strip_prefix = "stduuid-1.2.3",
+        build_file = "//bazel:stduuid.BUILD",
+    )
+
     http_file(
         name = "com_github_nlohmann_json_single_header",
         sha256 = "3b5d2b8f8282b80557091514d8ab97e27f9574336c804ee666fda673a9b59926",
@@ -56,12 +74,6 @@ def wasm_libraries():
         actual = "@boringssl//:ssl",
     )
 
-    http_archive(
-        name = "com_google_protobuf",
-        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v{version}/protobuf-all-3.18.0.tar.gz"],
-        strip_prefix = "protobuf-3.18.0",
-    )
-
     native.bind(
         name = "protobuf",
         actual = "@com_google_protobuf//:protobuf",
@@ -97,6 +109,7 @@ def wasm_libraries():
 
     http_archive(
         name = "com_github_google_jwt_verify",
+        sha256 = "8964c2b3a833dc5fc2600b2768ea1e73a0fcf8a1ed9d2cbc5fa3387c4cdd5caa",
         urls = ["https://github.com/google/jwt_verify_lib/archive/26c22c0ce1bc607eec8fa5dd26b707378adc7a88.tar.gz"],
         strip_prefix = "jwt_verify_lib-26c22c0ce1bc607eec8fa5dd26b707378adc7a88"
     )

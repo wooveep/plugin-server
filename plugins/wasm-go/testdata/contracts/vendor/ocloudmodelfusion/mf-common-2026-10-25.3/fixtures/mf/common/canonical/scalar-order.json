@@ -1,0 +1,5 @@
+{
+  "input_asset": "scalar-order-input.bin",
+  "expected_asset": "scalar-order-expected.bin",
+  "expected_digest": "sha256:daec79d8b6582badd3b46bd783a72379bc0b5ae29f5d59f6133025aad69bc8d4"
+}

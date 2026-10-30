@@ -1,0 +1,1388 @@
+{
+  "fixture_format": "wasm-d0-draft-v1",
+  "status": "frozen",
+  "prepared_on": "2026-10-25",
+  "owner_card": "D0-WG-03",
+  "delegate": "Codex agent",
+  "natural_person": "待确认",
+  "backup": "待确认",
+  "branch": "codex/cache-auth-history-20261023",
+  "source_revision": "99a51c9e1e8a0f189f0d277628a5c1e3d41c8dd1",
+  "evidence_level": "offline_fixture",
+  "subject_layer": "contract_fixture",
+  "domain_validation": "runner_required",
+  "host_emulator_validation": "not_run",
+  "real_gateway_validation": "not_run",
+  "input_refs": [
+    {
+      "bundle_version": "mf-common-2026-10-25.3",
+      "manifest_sha256": "09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5",
+      "vendor_root": "testdata/contracts/vendor/ocloudmodelfusion/mf-common-2026-10-25.3"
+    },
+    {
+      "bundle_version": "mf-execution-2026-10-25.1",
+      "manifest_sha256": "7b2d3d58939302bb9baf736713d2e92338e341a373b2829b43b09805f6c1ce49",
+      "vendor_root": "testdata/contracts/vendor/ocloudmodelfusion/mf-execution-2026-10-25.1"
+    }
+  ],
+  "validation": {
+    "validator_id": "wg-execution-fixture.v1",
+    "registration_status": "registered_test_only",
+    "entrypoint": "go test ./internal/executionfixture",
+    "authoritative_transport": "locked MF02 defs",
+    "algorithm": "local fixture lifecycle plus actual SDK/matcher observations"
+  },
+  "digest_note": "input_sha256 绑定保存的input_json_utf8原字节；正文raw与固定mf-json.v1 canonical摘要分列；空正文仅raw-bytes.v1。",
+  "cases": [
+    {
+      "case_id": "D0-WG03-CB-001",
+      "name": "Two pending callbacks in forward order",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "ok-A"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 202,
+            "response_ref": "ok-B"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"ok-A\"},{\"action\":\"callback\",\"synthetic_callout_id\":202,\"response_ref\":\"ok-B\"}]}",
+      "input_sha256": "0418692097a09a039e2f4a2a16f8f9824e3b83ea024b90202e7a37b1b1152ff6",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "records_by_callout": {
+          "101": "snapshot-A",
+          "202": "snapshot-B"
+        },
+        "callback_order": [
+          101,
+          202
+        ],
+        "record_count": 2
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-002",
+      "name": "Two pending callbacks in reverse order",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 202,
+            "response_ref": "ok-B"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "ok-A"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"callback\",\"synthetic_callout_id\":202,\"response_ref\":\"ok-B\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"ok-A\"}]}",
+      "input_sha256": "7d1b1962f29a0edd5cbf925cac2f0ee3d76a559396330c2c72fc3ae73266c1fd",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "records_by_callout": {
+          "101": "snapshot-A",
+          "202": "snapshot-B"
+        },
+        "callback_order": [
+          202,
+          101
+        ],
+        "record_count": 2,
+        "first_callback_must_not_consume": 101
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-003",
+      "name": "Unknown callout ID must not consume a pending snapshot",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 999,
+            "response_ref": "ok-A"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"callback\",\"synthetic_callout_id\":999,\"response_ref\":\"ok-A\"}]}",
+      "input_sha256": "4dbc497092b23f95a990c2754df7167e12f4b7981d0e71882eaa1dd05c3e719e",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_CALLOUT_UNKNOWN",
+        "stage": "fixture_semantic",
+        "pending_remaining": [
+          101,
+          202
+        ],
+        "record_count": 0
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-004",
+      "name": "Nested map mutation after snapshot cannot reattribute callback A",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "mutate_source",
+            "snapshot_ref": "snapshot-A",
+            "path": "/selection/release_label",
+            "value": "release-B"
+          },
+          {
+            "action": "mutate_source",
+            "snapshot_ref": "snapshot-A",
+            "path": "/mutable_metadata/tags/0",
+            "value": "B"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "ok-A"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 202,
+            "response_ref": "ok-B"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"mutate_source\",\"snapshot_ref\":\"snapshot-A\",\"path\":\"/selection/release_label\",\"value\":\"release-B\"},{\"action\":\"mutate_source\",\"snapshot_ref\":\"snapshot-A\",\"path\":\"/mutable_metadata/tags/0\",\"value\":\"B\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"ok-A\"},{\"action\":\"callback\",\"synthetic_callout_id\":202,\"response_ref\":\"ok-B\"}]}",
+      "input_sha256": "17f5c06ec77b3a25b1bee3d062c017fe644525e3577b2a3e78e673c5bc6cf0b4",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "snapshot_A_selection": {
+          "binding_label": "binding-A",
+          "release_label": "release-A",
+          "credential_label": "fixture-key-A",
+          "credential_revision_label": "rev-A"
+        },
+        "snapshot_A_metadata": {
+          "model_label": "fixture-model-A",
+          "tags": [
+            "A"
+          ]
+        },
+        "record_count": 2
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-005",
+      "name": "Byte-slice mutation after snapshot leaves the captured body intact",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "mutate_source_bytes",
+            "snapshot_ref": "snapshot-A",
+            "field": "body_utf8",
+            "offset": 0,
+            "byte": 91
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 202,
+            "response_ref": "ok-B"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "ok-A"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"mutate_source_bytes\",\"snapshot_ref\":\"snapshot-A\",\"field\":\"body_utf8\",\"offset\":0,\"byte\":91},{\"action\":\"callback\",\"synthetic_callout_id\":202,\"response_ref\":\"ok-B\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"ok-A\"}]}",
+      "input_sha256": "9df1ff5aca21329f4a49400b5f7f5a2a5159d77817b6bf6c9c35e5bf3b313156",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "snapshot_A_body_raw_sha256": "e77b1b8d539da487cd2c234802c8070ce83677a55172c836b3589518b823d653",
+        "record_count": 2
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-006",
+      "name": "Old callback cannot resume a new generation of the same Context number",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "close_context",
+            "context_number": 37,
+            "context_generation": 7
+          },
+          {
+            "action": "open_context",
+            "context_number": 37,
+            "context_generation": 8,
+            "call_label": "call-new"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "ok-A"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"close_context\",\"context_number\":37,\"context_generation\":7},{\"action\":\"open_context\",\"context_number\":37,\"context_generation\":8,\"call_label\":\"call-new\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"ok-A\"}]}",
+      "input_sha256": "dd93f1ed448eed74e09f4823c7ce36837511dab30118c73fd94899e00d61d74c",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_CALLBACK_GENERATION_MISMATCH",
+        "stage": "fixture_semantic",
+        "resume_current_context": false,
+        "record_count": 0
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "capability_unverified",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-007",
+      "name": "Callback after Context close is a local lifecycle rejection",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "close_context",
+            "context_number": 37,
+            "context_generation": 7
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "ok-A"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"close_context\",\"context_number\":37,\"context_generation\":7},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"ok-A\"}]}",
+      "input_sha256": "63a6c2d3814424f33d99f20eff0d64837e4d58bdbb6a8c6420abdef99052e811",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_CONTEXT_CLOSED",
+        "stage": "fixture_semantic",
+        "resume_current_context": false,
+        "record_count": 0
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "capability_unverified",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-008",
+      "name": "Duplicate callback cannot produce a second simulated record",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "ok-A"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "ok-A"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"ok-A\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"ok-A\"}]}",
+      "input_sha256": "56e5a75a08988e9aa0af172740f43dae3b13ad57bdc1d660b679e4076969081d",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_CALLBACK_DUPLICATE",
+        "stage": "fixture_semantic",
+        "record_count": 1,
+        "duplicate_record_count": 0
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "capability_unverified",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-009",
+      "name": "Missing status remains absent rather than a synthetic 502",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "missing-status"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"missing-status\"}]}",
+      "input_sha256": "a80c05bd24d19fd3863b9aa2e9315fa68a084cf9f4600a4ea1cb5fdfbbfa4114",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "record_count": 1,
+        "http_status": null,
+        "status_origin": "missing",
+        "retry_allowed": false,
+        "acceptance_inference": "unresolved"
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-010",
+      "name": "201 is preserved as its own media acceptance input",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "created-201"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"created-201\"}]}",
+      "input_sha256": "9a43c230c2c2ee52b44f0fd40d5dc2ac266368ff457787b1ed55ecd00f29ea32",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "record_count": 1,
+        "http_status": 201,
+        "body_complete": true,
+        "provider_acceptance_marker": "fixture_job",
+        "retry_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-011",
+      "name": "202 is preserved separately from 201 and failures",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "accepted-202"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"accepted-202\"}]}",
+      "input_sha256": "4dfb2e223c316fedd1087aa1298a1a420e6d835dfa4f01f4865310f3e96632c9",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "record_count": 1,
+        "http_status": 202,
+        "body_complete": true,
+        "provider_acceptance_marker": "fixture_job",
+        "retry_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-012",
+      "name": "Truncated 201 body cannot prove an intact business result",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "truncated-201"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"truncated-201\"}]}",
+      "input_sha256": "2e765377f757e84c6c01ec483692e96057b36cab808aa18e5140aa9523fb952e",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_CALLBACK_BODY_TRUNCATED",
+        "stage": "fixture_semantic",
+        "record_count": 1,
+        "http_status": 201,
+        "body_complete": false,
+        "retry_allowed": false,
+        "recreate_provider_task_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-013",
+      "name": "Callback body read error cannot become a valid empty response",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "read-error"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"read-error\"}]}",
+      "input_sha256": "708bb1293e7d4ee89fbd013245ca18643595cf67b62ef29f5460ddf8a688b6f8",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_CALLBACK_BODY_READ_FAILED",
+        "stage": "fixture_semantic",
+        "record_count": 1,
+        "http_status": 200,
+        "body_complete": false,
+        "retry_allowed": false
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-014",
+      "name": "Callback B carrying snapshot A association must be rejected",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "EB01-V05",
+        "EB02-V02",
+        "EB02-V04"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 202,
+            "response_ref": "ok-B",
+            "asserted_snapshot_ref": "snapshot-A"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"callback\",\"synthetic_callout_id\":202,\"response_ref\":\"ok-B\",\"asserted_snapshot_ref\":\"snapshot-A\"}]}",
+      "input_sha256": "fa70d2a59d05a8e7c12c246550d7ffd5d37b71b6fc92b3b6356a1b81c7dfce0a",
+      "expected": {
+        "verdict": "reject",
+        "error_code": "WG_FIXTURE_CALLOUT_SNAPSHOT_MISMATCH",
+        "stage": "fixture_semantic",
+        "record_count": 0,
+        "pending_remaining": [
+          101,
+          202
+        ]
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    },
+    {
+      "case_id": "D0-WG03-CB-015",
+      "name": "Same call attempt B first, late A retains private attribution after shared streamInfo changes",
+      "status": "draft",
+      "source_refs": [
+        "IF-01",
+        "IF-02",
+        "IF-03",
+        "EB01-V05",
+        "EB02-V02"
+      ],
+      "assertion_layer": "fixture",
+      "domain_validation": "runner_required",
+      "input": {
+        "pending": [
+          {
+            "synthetic_callout_id": 101,
+            "snapshot_ref": "snapshot-retry-A",
+            "captured_host_callout_id": null
+          },
+          {
+            "synthetic_callout_id": 202,
+            "snapshot_ref": "snapshot-retry-B",
+            "captured_host_callout_id": null
+          }
+        ],
+        "barriers": [
+          {
+            "barrier_id": "both-pending",
+            "requires_pending_ids": [
+              101,
+              202
+            ]
+          }
+        ],
+        "parent_stream_info": {
+          "context_number": 37,
+          "context_generation": 7,
+          "latest_attempt_label": "attempt-retry-A",
+          "latest_selection": {
+            "binding_label": "binding-A",
+            "release_label": "release-A",
+            "credential_label": "fixture-key-A",
+            "credential_revision_label": "rev-A"
+          }
+        },
+        "events": [
+          {
+            "action": "barrier",
+            "barrier_id": "both-pending"
+          },
+          {
+            "action": "overwrite_parent_stream_info",
+            "context_number": 37,
+            "context_generation": 7,
+            "latest_attempt_label": "attempt-retry-B",
+            "latest_selection": {
+              "binding_label": "binding-B",
+              "release_label": "release-A",
+              "credential_label": "fixture-key-B",
+              "credential_revision_label": "rev-B"
+            }
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 202,
+            "response_ref": "ok-B"
+          },
+          {
+            "action": "callback",
+            "synthetic_callout_id": 101,
+            "response_ref": "ok-A"
+          }
+        ]
+      },
+      "input_json_utf8": "{\"pending\":[{\"synthetic_callout_id\":101,\"snapshot_ref\":\"snapshot-retry-A\",\"captured_host_callout_id\":null},{\"synthetic_callout_id\":202,\"snapshot_ref\":\"snapshot-retry-B\",\"captured_host_callout_id\":null}],\"barriers\":[{\"barrier_id\":\"both-pending\",\"requires_pending_ids\":[101,202]}],\"parent_stream_info\":{\"context_number\":37,\"context_generation\":7,\"latest_attempt_label\":\"attempt-retry-A\",\"latest_selection\":{\"binding_label\":\"binding-A\",\"release_label\":\"release-A\",\"credential_label\":\"fixture-key-A\",\"credential_revision_label\":\"rev-A\"}},\"events\":[{\"action\":\"barrier\",\"barrier_id\":\"both-pending\"},{\"action\":\"overwrite_parent_stream_info\",\"context_number\":37,\"context_generation\":7,\"latest_attempt_label\":\"attempt-retry-B\",\"latest_selection\":{\"binding_label\":\"binding-B\",\"release_label\":\"release-A\",\"credential_label\":\"fixture-key-B\",\"credential_revision_label\":\"rev-B\"}},{\"action\":\"callback\",\"synthetic_callout_id\":202,\"response_ref\":\"ok-B\"},{\"action\":\"callback\",\"synthetic_callout_id\":101,\"response_ref\":\"ok-A\"}]}",
+      "input_sha256": "dfe301cddf35cc401adef31152c9ab8bb95b43896ce343754b4dcfaedab9c224",
+      "expected": {
+        "verdict": "accept",
+        "error_code": null,
+        "stage": "fixture_semantic",
+        "callback_order": [
+          202,
+          101
+        ],
+        "records_by_callout": {
+          "101": "snapshot-retry-A",
+          "202": "snapshot-retry-B"
+        },
+        "attempts_by_callout": {
+          "101": "attempt-retry-A",
+          "202": "attempt-retry-B"
+        },
+        "parent_stream_info_must_not_reconstruct_private_records": true,
+        "record_count": 2
+      },
+      "actual": {
+        "status": "not_run",
+        "verdict": null,
+        "error_code": null
+      },
+      "host_emulator_expectation": {
+        "status": "not_run",
+        "when_unexpressible": "unsupported_in_emulator",
+        "result_layer": "host_emulator",
+        "observed": false
+      }
+    }
+  ],
+  "next_step": "运行 scripts/verify-d0-contracts.sh batch A；生产可信writer/guard/retry、真实EB与IF09导出另行验收。",
+  "callout_id_note": "101/202/999是稳定合成调度ID；实际SDK CalloutID由薄adapter按唯一upstream捕获（0也是合法ID），映射逐案写入fixture-tests.log，输入模板不写运行值。",
+  "snapshot_note": "本地纯测试模型快照；map、slice、正文均深拷贝，单独记录host_emulator实际callback与contract_fixture生命周期拒绝。",
+  "snapshots": {
+    "snapshot-A": {
+      "snapshot_id": "snapshot-A",
+      "call_label": "call-A",
+      "attempt_label": "attempt-A",
+      "context_number": 37,
+      "context_generation": 7,
+      "selection": {
+        "binding_label": "binding-A",
+        "release_label": "release-A",
+        "credential_label": "fixture-key-A",
+        "credential_revision_label": "rev-A"
+      },
+      "body_utf8": "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}]}",
+      "body_raw_sha256": "e77b1b8d539da487cd2c234802c8070ce83677a55172c836b3589518b823d653",
+      "outbound_utf8": "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"system\",\"content\":\"fixture memory\"},{\"role\":\"user\",\"content\":\"hello\"}]}",
+      "outbound_raw_sha256": "b17105abc0117c781a91fe42307e159df2a2cc84f285475549b4fe7bd90305e5",
+      "mutable_metadata": {
+        "model_label": "fixture-model-A",
+        "tags": [
+          "A"
+        ]
+      }
+    },
+    "snapshot-B": {
+      "snapshot_id": "snapshot-B",
+      "call_label": "call-B",
+      "attempt_label": "attempt-B",
+      "context_number": 41,
+      "context_generation": 2,
+      "selection": {
+        "binding_label": "binding-B",
+        "release_label": "release-B",
+        "credential_label": "fixture-key-B",
+        "credential_revision_label": "rev-B"
+      },
+      "body_utf8": "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"other\"}]}",
+      "body_raw_sha256": "1b1cec7421c51f55f5b7f61ad1be1126cbbd180ea9708e50ef482b274e7dd06d",
+      "outbound_utf8": "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"other\"}]}",
+      "outbound_raw_sha256": "1b1cec7421c51f55f5b7f61ad1be1126cbbd180ea9708e50ef482b274e7dd06d",
+      "mutable_metadata": {
+        "model_label": "fixture-model-B",
+        "tags": [
+          "B"
+        ]
+      }
+    },
+    "snapshot-retry-A": {
+      "snapshot_id": "snapshot-retry-A",
+      "call_label": "call-retry",
+      "attempt_label": "attempt-retry-A",
+      "context_number": 37,
+      "context_generation": 7,
+      "selection": {
+        "binding_label": "binding-A",
+        "release_label": "release-A",
+        "credential_label": "fixture-key-A",
+        "credential_revision_label": "rev-A"
+      },
+      "body_utf8": "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}]}",
+      "body_raw_sha256": "e77b1b8d539da487cd2c234802c8070ce83677a55172c836b3589518b823d653",
+      "outbound_utf8": "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"system\",\"content\":\"fixture memory\"},{\"role\":\"user\",\"content\":\"hello\"}]}",
+      "outbound_raw_sha256": "b17105abc0117c781a91fe42307e159df2a2cc84f285475549b4fe7bd90305e5",
+      "mutable_metadata": {
+        "model_label": "fixture-model-A",
+        "tags": [
+          "A"
+        ]
+      }
+    },
+    "snapshot-retry-B": {
+      "snapshot_id": "snapshot-retry-B",
+      "call_label": "call-retry",
+      "attempt_label": "attempt-retry-B",
+      "context_number": 37,
+      "context_generation": 7,
+      "selection": {
+        "binding_label": "binding-B",
+        "release_label": "release-A",
+        "credential_label": "fixture-key-B",
+        "credential_revision_label": "rev-B"
+      },
+      "body_utf8": "{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}]}",
+      "body_raw_sha256": "e77b1b8d539da487cd2c234802c8070ce83677a55172c836b3589518b823d653",
+      "outbound_utf8": "{\"model\":\"fixture-model-B\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}]}",
+      "outbound_raw_sha256": "fff1070e45fcf230a53e756a0024f6ba5e8065fad8e02a71386b0ccdd07ea5b9",
+      "mutable_metadata": {
+        "model_label": "fixture-model-B",
+        "tags": [
+          "retry-B"
+        ]
+      }
+    }
+  },
+  "responses": {
+    "ok-A": {
+      "headers": [
+        [
+          ":status",
+          "200"
+        ]
+      ],
+      "body_utf8": "{\"fixture_result\":\"A\"}",
+      "body_complete": true,
+      "body_read": "ok"
+    },
+    "ok-B": {
+      "headers": [
+        [
+          ":status",
+          "200"
+        ]
+      ],
+      "body_utf8": "{\"fixture_result\":\"B\"}",
+      "body_complete": true,
+      "body_read": "ok"
+    },
+    "missing-status": {
+      "headers": [],
+      "body_utf8": "",
+      "body_complete": true,
+      "body_read": "ok"
+    },
+    "created-201": {
+      "headers": [
+        [
+          ":status",
+          "201"
+        ]
+      ],
+      "body_utf8": "{\"fixture_job\":\"job-201\"}",
+      "body_complete": true,
+      "body_read": "ok"
+    },
+    "accepted-202": {
+      "headers": [
+        [
+          ":status",
+          "202"
+        ]
+      ],
+      "body_utf8": "{\"fixture_job\":\"job-202\"}",
+      "body_complete": true,
+      "body_read": "ok"
+    },
+    "truncated-201": {
+      "headers": [
+        [
+          ":status",
+          "201"
+        ]
+      ],
+      "body_utf8": "{\"fixture_job\":",
+      "body_complete": false,
+      "body_read": "ok"
+    },
+    "read-error": {
+      "headers": [
+        [
+          ":status",
+          "200"
+        ]
+      ],
+      "body_utf8": null,
+      "body_complete": false,
+      "body_read": "error"
+    }
+  },
+  "preparation_check": {
+    "status": "passed",
+    "checked_on": "2026-10-25",
+    "scope": "data_integrity_only",
+    "case_count": 15,
+    "reproduce": "README.md data self-check",
+    "domain_claim": false
+  },
+  "fixed_common_input": {
+    "bundle_version": "mf-common-2026-10-25.3",
+    "manifest_sha256": "09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5"
+  }
+}

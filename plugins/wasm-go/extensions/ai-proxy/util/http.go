@@ -10,10 +10,13 @@ import (
 )
 
 const (
-	HeaderContentType   = "Content-Type"
-	HeaderPath          = ":path"
-	HeaderAuthority     = ":authority"
-	HeaderAuthorization = "Authorization"
+	HeaderContentType     = "Content-Type"
+	HeaderPath            = ":path"
+	HeaderAuthority       = ":authority"
+	HeaderAuthorization   = "Authorization"
+	HeaderXApiKey         = "x-api-key"
+	HeaderXAuthorization  = "x-authorization"
+	HeaderAnthropicApiKey = "anthropic-api-key"
 
 	HeaderOriginalPath = "X-ENVOY-ORIGINAL-PATH"
 	HeaderOriginalHost = "X-ENVOY-ORIGINAL-HOST"
@@ -83,6 +86,7 @@ func OverwriteRequestPath(path string) error {
 }
 
 func OverwriteRequestAuthorization(credential string) error {
+	RemoveClientAuthRequestHeaders()
 	return proxywasm.ReplaceHttpRequestHeader(HeaderAuthorization, credential)
 }
 
@@ -218,7 +222,20 @@ func SetOriginalRequestAuth(auth string) {
 }
 
 func OverwriteRequestAuthorizationHeader(headers http.Header, credential string) {
+	RemoveClientAuthHeaders(headers)
 	headers.Set(HeaderAuthorization, credential)
+}
+
+func RemoveClientAuthHeaders(headers http.Header) {
+	headers.Del(HeaderXApiKey)
+	headers.Del(HeaderAnthropicApiKey)
+	headers.Del(HeaderXAuthorization)
+}
+
+func RemoveClientAuthRequestHeaders() {
+	_ = proxywasm.RemoveHttpRequestHeader(HeaderXApiKey)
+	_ = proxywasm.RemoveHttpRequestHeader(HeaderAnthropicApiKey)
+	_ = proxywasm.RemoveHttpRequestHeader(HeaderXAuthorization)
 }
 
 func HeaderToSlice(header http.Header) [][2]string {

@@ -1,0 +1,25 @@
+{
+  "packages": [
+    {
+      "producer_project": "wooveep/ocloudmodelfusion",
+      "bundle_version": "mf-common-2026-10-25.3",
+      "vendor_root": "testdata/contracts/vendor/ocloudmodelfusion/mf-common-2026-10-25.3",
+      "manifest_sha256": "09d0906d9f09b04f24266dee6bfab05785c5245373cc222612ec5b3b11e036f5",
+      "imported_schema_ids": [
+        "urn:modelfusion:contracts:v1:common",
+        "urn:modelfusion:contracts:v1:fixture-validation",
+        "urn:modelfusion:contracts:v1:bundle",
+        "urn:modelfusion:contracts:v1:lock"
+      ]
+    },
+    {
+      "producer_project": "wooveep/ocloudmodelfusion",
+      "bundle_version": "mf-execution-2026-10-25.1",
+      "vendor_root": "testdata/contracts/vendor/ocloudmodelfusion/mf-execution-2026-10-25.1",
+      "manifest_sha256": "7b2d3d58939302bb9baf736713d2e92338e341a373b2829b43b09805f6c1ce49",
+      "imported_schema_ids": [
+        "urn:modelfusion:contracts:v1:execution-dispatch"
+      ]
+    }
+  ]
+}

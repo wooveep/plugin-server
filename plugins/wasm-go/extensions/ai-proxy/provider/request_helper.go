@@ -12,7 +12,7 @@ func decodeChatCompletionRequest(body []byte, request *chatCompletionRequest) er
 	if err := json.Unmarshal(body, request); err != nil {
 		return fmt.Errorf("unable to unmarshal request: %v", err)
 	}
-	if request.Messages == nil || len(request.Messages) == 0 {
+	if len(request.Messages) == 0 {
 		return fmt.Errorf("no message found in the request body: %s", body)
 	}
 	return nil

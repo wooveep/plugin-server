@@ -1,0 +1,476 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: ai
+  name: ai-statistics
+  image: platform_wasm/ai-statistics
+  title: AI Statistics
+  x-title-i18n:
+    zh-CN: AI 统计
+  description: Provides AI observability metrics, logs, and trace attributes for OpenAI-compatible
+    and Claude-compatible traffic.
+  x-description-i18n:
+    zh-CN: 为 OpenAI 兼容和 Claude 兼容流量提供 AI 可观测指标、日志和链路追踪属性。
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-statistics/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-statistics/README_EN.md
+  version: 2.0.4
+  contact:
+    name: rinfx
+spec:
+  phase: AUTHN
+  priority: 900
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      allOf: &id001
+      - if:
+          required:
+          - path_scope
+          properties:
+            path_scope:
+              const: bound_target
+        then:
+          properties:
+            enable_methods:
+              maxItems: 0
+            enable_path_suffixes:
+              maxItems: 0
+      properties:
+        use_default_attributes:
+          type: boolean
+          title: 使用完整默认属性
+          x-title-i18n:
+            en-US: Use Full Default Attributes
+          description: 启用内置完整属性集合，包含 messages、question、answer、tool_calls、reasoning
+            和 token details，适合调试和审计。
+          x-description-i18n:
+            en-US: Enables the full built-in attribute set, including messages, question,
+              answer, tool_calls, reasoning, and token details. Suitable for debugging
+              and auditing.
+          default: false
+        use_default_response_attributes:
+          type: boolean
+          title: 使用轻量默认响应属性
+          x-title-i18n:
+            en-US: Use Lightweight Default Response Attributes
+          description: 启用轻量级默认属性集合，包含 model 和 token 统计，适合高并发生产环境。
+          x-description-i18n:
+            en-US: Enables the lightweight built-in response attribute set with model
+              and token statistics. Suitable for high-throughput production use.
+          default: false
+        attributes:
+          type: array
+          title: 可观测属性
+          x-title-i18n:
+            en-US: Observable Attributes
+          description: 自定义记录到日志或链路追踪 span 的属性。内置属性 key 可省略 value_source 和 value。
+          x-description-i18n:
+            en-US: Custom attributes recorded in logs or tracing spans. Built-in attribute
+              keys may omit value_source and value.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - key
+            properties:
+              key:
+                type: string
+                title: 属性名称
+                x-title-i18n:
+                  en-US: Attribute Key
+                description: 属性名称。内置值包括 question、system、answer、tool_calls、reasoning、reasoning_tokens、cached_tokens、input_token_details
+                  和 output_token_details。
+                x-description-i18n:
+                  en-US: Attribute name. Built-in values include question, system,
+                    answer, tool_calls, reasoning, reasoning_tokens, cached_tokens,
+                    input_token_details, and output_token_details.
+              value_source:
+                type: string
+                title: 取值来源
+                x-title-i18n:
+                  en-US: Value Source
+                description: 属性取值来源。内置属性可不配置。
+                x-description-i18n:
+                  en-US: Attribute value source. Optional for built-in attributes.
+                enum:
+                - fixed_value
+                - request_header
+                - request_body
+                - response_header
+                - response_body
+                - response_streaming_body
+              value:
+                type: string
+                title: 取值路径
+                x-title-i18n:
+                  en-US: Value Path
+                description: 固定值、Header 名称或 GJSON 路径。内置属性可不配置。
+                x-description-i18n:
+                  en-US: Fixed value, header name, or GJSON path. Optional for built-in
+                    attributes.
+              default_value:
+                type: string
+                title: 默认值
+                x-title-i18n:
+                  en-US: Default Value
+                description: 当取值为空时写入的默认值。
+                x-description-i18n:
+                  en-US: Default value written when extraction returns empty.
+              rule:
+                type: string
+                title: 流式提取规则
+                x-title-i18n:
+                  en-US: Streaming Extract Rule
+                description: 从流式响应中提取属性的规则。
+                x-description-i18n:
+                  en-US: Rule used to extract attributes from streaming responses.
+                enum:
+                - first
+                - replace
+                - append
+              apply_to_log:
+                type: boolean
+                title: 记录到日志
+                x-title-i18n:
+                  en-US: Apply to Log
+                description: 是否将属性记录到日志中。
+                x-description-i18n:
+                  en-US: Whether to record the attribute in logs.
+                default: false
+              apply_to_span:
+                type: boolean
+                title: 记录到链路追踪
+                x-title-i18n:
+                  en-US: Apply to Span
+                description: 是否将属性记录到链路追踪 span 中。
+                x-description-i18n:
+                  en-US: Whether to record the attribute in tracing spans.
+                default: false
+              trace_span_key:
+                type: string
+                title: 链路追踪属性名
+                x-title-i18n:
+                  en-US: Trace Span Key
+                description: 写入 span 时使用的属性名，未配置时使用 key。
+                x-description-i18n:
+                  en-US: Attribute name used when writing to spans. Defaults to key
+                    when omitted.
+              as_separate_log_field:
+                type: boolean
+                title: 单独日志字段
+                x-title-i18n:
+                  en-US: Separate Log Field
+                description: 是否作为单独日志字段记录。
+                x-description-i18n:
+                  en-US: Whether to record this attribute as a separate log field.
+                default: false
+        disable_openai_usage:
+          type: boolean
+          title: 禁用 OpenAI Usage 解析
+          x-title-i18n:
+            en-US: Disable OpenAI Usage Parsing
+          description: 非 OpenAI 兼容协议或 usage 非标准时跳过 model/input_token/output_token
+            日志。
+          x-description-i18n:
+            en-US: Skips model/input_token/output_token logs for non-OpenAI-compatible
+              protocols or non-standard usage fields.
+          default: false
+        value_length_limit:
+          type: integer
+          title: 属性长度限制
+          x-title-i18n:
+            en-US: Attribute Value Length Limit
+          description: 单个属性值写入日志或 span 前允许的最大长度。
+          x-description-i18n:
+            en-US: Maximum length for a single attribute value before writing to logs
+              or spans.
+          default: 32000
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: legacy_suffixes 保留历史后缀行为；启用内置默认属性且省略后缀时使用 /completions 与 /messages。bound_target
+            完整使用 Higress 绑定目标，仅允许省略或字面空数组过滤器
+          x-description-i18n:
+            en-US: legacy_suffixes preserves historical suffix behavior, using /completions
+              and /messages when built-in defaults are enabled and suffixes are omitted;
+              bound_target covers the complete Higress binding target and only accepts
+              omitted or literal-empty filters
+          enum:
+          - legacy_suffixes
+          - bound_target
+          default: legacy_suffixes
+        enable_path_suffixes:
+          type: array
+          title: 生效路径后缀
+          x-title-i18n:
+            en-US: Enabled Path Suffixes
+          description: 仅 legacy_suffixes 支持路径门控；bound_target 仅允许省略或 []
+          x-description-i18n:
+            en-US: Path gating applies only in legacy_suffixes; bound_target only
+              accepts omission or []
+          items:
+            type: string
+            pattern: .*\S.*
+        enable_methods:
+          type: array
+          title: 生效 HTTP 方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: legacy_suffixes 下可选的精确大小写 HTTP 方法过滤器；bound_target 仅允许省略或 []
+          x-description-i18n:
+            en-US: Optional exact-case HTTP method filtering in legacy_suffixes; bound_target
+              only accepts omission or []
+          items:
+            type: string
+            pattern: .*\S.*
+        enable_content_types:
+          type: array
+          title: 响应 Content-Type
+          x-title-i18n:
+            en-US: Enabled Content Types
+          description: 仅缓冲匹配的响应 Content-Type；配置 "*" 或留空表示所有类型。
+          x-description-i18n:
+            en-US: Buffers only matching response content types. Use "*" or leave
+              empty to match all types.
+          items:
+            type: string
+        session_id_header:
+          type: string
+          title: Session ID Header
+          x-title-i18n:
+            en-US: Session ID Header
+          description: 指定读取 session ID 的请求头名称。
+          x-description-i18n:
+            en-US: Request header name used to extract the session ID.
+      example:
+        use_default_response_attributes: true
+        value_length_limit: 4000
+        path_scope: legacy_suffixes
+        enable_path_suffixes:
+        - /completions
+        - /messages
+        enable_content_types:
+        - application/json
+        - text/event-stream
+        session_id_header: x-agent-session
+        attributes:
+        - key: consumer
+          value_source: request_header
+          value: x-mse-consumer
+          apply_to_log: true
+          apply_to_span: false
+        - key: answer
+          apply_to_log: true
+          rule: append
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      allOf: *id001
+      properties:
+        use_default_attributes:
+          type: boolean
+          title: 使用完整默认属性
+          x-title-i18n:
+            en-US: Use Full Default Attributes
+          description: 启用内置完整属性集合，包含 messages、question、answer、tool_calls、reasoning
+            和 token details，适合调试和审计。
+          x-description-i18n:
+            en-US: Enables the full built-in attribute set, including messages, question,
+              answer, tool_calls, reasoning, and token details. Suitable for debugging
+              and auditing.
+          default: false
+        use_default_response_attributes:
+          type: boolean
+          title: 使用轻量默认响应属性
+          x-title-i18n:
+            en-US: Use Lightweight Default Response Attributes
+          description: 启用轻量级默认属性集合，包含 model 和 token 统计，适合高并发生产环境。
+          x-description-i18n:
+            en-US: Enables the lightweight built-in response attribute set with model
+              and token statistics. Suitable for high-throughput production use.
+          default: false
+        attributes:
+          type: array
+          title: 可观测属性
+          x-title-i18n:
+            en-US: Observable Attributes
+          description: 自定义记录到日志或链路追踪 span 的属性。内置属性 key 可省略 value_source 和 value。
+          x-description-i18n:
+            en-US: Custom attributes recorded in logs or tracing spans. Built-in attribute
+              keys may omit value_source and value.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - key
+            properties:
+              key:
+                type: string
+                title: 属性名称
+                x-title-i18n:
+                  en-US: Attribute Key
+                description: 属性名称。内置值包括 question、system、answer、tool_calls、reasoning、reasoning_tokens、cached_tokens、input_token_details
+                  和 output_token_details。
+                x-description-i18n:
+                  en-US: Attribute name. Built-in values include question, system,
+                    answer, tool_calls, reasoning, reasoning_tokens, cached_tokens,
+                    input_token_details, and output_token_details.
+              value_source:
+                type: string
+                title: 取值来源
+                x-title-i18n:
+                  en-US: Value Source
+                description: 属性取值来源。内置属性可不配置。
+                x-description-i18n:
+                  en-US: Attribute value source. Optional for built-in attributes.
+                enum:
+                - fixed_value
+                - request_header
+                - request_body
+                - response_header
+                - response_body
+                - response_streaming_body
+              value:
+                type: string
+                title: 取值路径
+                x-title-i18n:
+                  en-US: Value Path
+                description: 固定值、Header 名称或 GJSON 路径。内置属性可不配置。
+                x-description-i18n:
+                  en-US: Fixed value, header name, or GJSON path. Optional for built-in
+                    attributes.
+              default_value:
+                type: string
+                title: 默认值
+                x-title-i18n:
+                  en-US: Default Value
+                description: 当取值为空时写入的默认值。
+                x-description-i18n:
+                  en-US: Default value written when extraction returns empty.
+              rule:
+                type: string
+                title: 流式提取规则
+                x-title-i18n:
+                  en-US: Streaming Extract Rule
+                description: 从流式响应中提取属性的规则。
+                x-description-i18n:
+                  en-US: Rule used to extract attributes from streaming responses.
+                enum:
+                - first
+                - replace
+                - append
+              apply_to_log:
+                type: boolean
+                title: 记录到日志
+                x-title-i18n:
+                  en-US: Apply to Log
+                description: 是否将属性记录到日志中。
+                x-description-i18n:
+                  en-US: Whether to record the attribute in logs.
+                default: false
+              apply_to_span:
+                type: boolean
+                title: 记录到链路追踪
+                x-title-i18n:
+                  en-US: Apply to Span
+                description: 是否将属性记录到链路追踪 span 中。
+                x-description-i18n:
+                  en-US: Whether to record the attribute in tracing spans.
+                default: false
+              trace_span_key:
+                type: string
+                title: 链路追踪属性名
+                x-title-i18n:
+                  en-US: Trace Span Key
+                description: 写入 span 时使用的属性名，未配置时使用 key。
+                x-description-i18n:
+                  en-US: Attribute name used when writing to spans. Defaults to key
+                    when omitted.
+              as_separate_log_field:
+                type: boolean
+                title: 单独日志字段
+                x-title-i18n:
+                  en-US: Separate Log Field
+                description: 是否作为单独日志字段记录。
+                x-description-i18n:
+                  en-US: Whether to record this attribute as a separate log field.
+                default: false
+        disable_openai_usage:
+          type: boolean
+          title: 禁用 OpenAI Usage 解析
+          x-title-i18n:
+            en-US: Disable OpenAI Usage Parsing
+          description: 非 OpenAI 兼容协议或 usage 非标准时跳过 model/input_token/output_token
+            日志。
+          x-description-i18n:
+            en-US: Skips model/input_token/output_token logs for non-OpenAI-compatible
+              protocols or non-standard usage fields.
+          default: false
+        value_length_limit:
+          type: integer
+          title: 属性长度限制
+          x-title-i18n:
+            en-US: Attribute Value Length Limit
+          description: 单个属性值写入日志或 span 前允许的最大长度。
+          x-description-i18n:
+            en-US: Maximum length for a single attribute value before writing to logs
+              or spans.
+          default: 32000
+        enable_content_types:
+          type: array
+          title: 响应 Content-Type
+          x-title-i18n:
+            en-US: Enabled Content Types
+          description: 仅缓冲匹配的响应 Content-Type；配置 "*" 或留空表示所有类型。
+          x-description-i18n:
+            en-US: Buffers only matching response content types. Use "*" or leave
+              empty to match all types.
+          items:
+            type: string
+        session_id_header:
+          type: string
+          title: Session ID Header
+          x-title-i18n:
+            en-US: Session ID Header
+          description: 指定读取 session ID 的请求头名称。
+          x-description-i18n:
+            en-US: Request header name used to extract the session ID.
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: 路由级路径作用域覆盖；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Route-level path scope override; inherits global configuration
+              when omitted
+          enum:
+          - legacy_suffixes
+          - bound_target
+        enable_path_suffixes:
+          type: array
+          description: legacy_suffixes 路由级路径后缀过滤器；bound_target 仅允许省略或 []
+          x-description-i18n:
+            en-US: Route-level path-suffix filtering in legacy_suffixes; bound_target
+              only accepts omission or []
+          items:
+            type: string
+            pattern: .*\S.*
+        enable_methods:
+          type: array
+          description: legacy_suffixes 路由级精确大小写 HTTP 方法过滤器；bound_target 仅允许省略或 []
+          x-description-i18n:
+            en-US: Optional exact-case HTTP method filtering in legacy_suffixes; bound_target
+              only accepts omission or []
+          items:
+            type: string
+            pattern: .*\S.*
+      example:
+        path_scope: bound_target

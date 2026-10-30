@@ -1,70 +1,46 @@
----
-title: AI 配额管理
-keywords: [ AI网关, AI配额 ]
-description: AI 配额管理插件配置参考
----
+# AI Quota：版本化余额只读准入
 
-## 功能说明
+版本 `2.0.4`，协议 `balance.v1`。仅给受管的新模型调用入口绑定本插件。PostgreSQL原钱包是资金权威；Console是余额/资格投影和维护状态的唯一写者。ai-quota不计价、不预扣、不结算、不写余额或ready；响应正文、缓存命中、错误和迟到用量均不触发第二次配额判断。
 
-`ai-quota` 插件实现给特定 consumer 根据分配固定的 quota 进行 quota 策略限流，同时支持 quota 管理能力，包括查询 quota 、刷新 quota、增减 quota。
+## 配置作用域
 
-`ai-quota` 插件需要配合 认证插件比如 `key-auth`、`jwt-auth` 等插件获取认证身份的 consumer 名称，同时需要配合 `ai-statistics` 插件获取 AI Token 统计信息。
+每份独立生效的余额配置必须有 `balance_scope_id`、`cache_generation`、`projection_schema: balance.v1` 和完整 `redis`。字段以 [资源 schema](../../resources/plugins/ai-quota/spec.yaml) 为准；两个 UUID 必须来自 Console 本次受控发布，不能使用示例值代表真实生效配置。`missing_balance_policy` 只接受 `deny`。旧用户名余额 key、`balance_key_template`、`tenant_header`、`consumer_header`、`quota_scope` 和 `provider` 配置已退役；旧裸整数 GET 不会作为新协议后备。
 
-## 运行属性
+支持两种配置形态：
 
-插件执行阶段：`默认阶段`
-插件执行优先级：`750`
+- **有效全局配置与继承规则：** 全局提供上述余额配置；规则继承 Redis、scope、generation、schema 和 missing policy，不能覆盖这些字段。规则可调整普通路径作用域及交集过滤条件；托管规则仍须完整提供自己的 `execution_admission`。
+- **仅路由完整规则：** `defaultConfigDisable: true` 且控制器下发的根只有 `_rules_` 时，基础配置休眠，未匹配流量不执行准入。每条匹配规则各自提供完整 `redis`、余额命名空间和托管字段，按独立配置校验及初始化。没有有效全局连接时，规则不能仅靠局部字段假定继承。非空且无效的全局配置也不能由规则补救。
 
-## 配置说明
+托管发布使用第二种形态；Console/SDK 将完整配置写入每个目标规则，不能假设被禁用的 `defaultConfig` 仍会传到插件。Redis 的 `service_name` 必填；认证信息来自受控 Secret，文档不包含真实凭据。
 
-| 名称                 | 数据类型            | 填写要求                                 | 默认值 | 描述                                         |
-|--------------------|-----------------|--------------------------------------| ---- |--------------------------------------------|
-| `redis_key_prefix` | string          |  选填                                     |   chat_quota:   | qutoa redis key 前缀                         |
-| `admin_consumer`   | string          | 必填                                   |      | 管理 quota 管理身份的 consumer 名称                 |
-| `admin_path`       | string          | 选填                                   |   /quota   | 管理 quota 请求 path 前缀                        |
-| `enable_path_suffixes` | []string     | 选填                                   |  ["/v1/chat/completions", "/v1/messages"] | 启用配额校验的请求路径后缀（仅用于 completion 请求，不影响管理接口路径） |
-| `redis`            | object          | 是                                    |      | redis相关配置                                  |
+## 可信身份与余额读取
 
-`redis`中每一项的配置字段说明
+受管链必须先执行支持原生 `credential_bindings` 的key-auth（本批版本1.1.0），它按实际成功认证的credential安装原PG `account_id`、`api_key_id`和`credential_generation`，先清除客户端同名字段。不得把任意客户端钱包header直接当可信身份，也不得把旧consumer别名替代具体Key。没有原生绑定、重复或非法身份字段均拒绝。Console/CUT/SDK生成并观察该配置后才可发布真实组合；仅升级二进制不会补出原账户绑定。
 
-| 配置项       | 类型   | 必填 | 默认值                                                     | 说明                                                                                         |
-| ------------ | ------ | ---- | ---------------------------------------------------------- | ---------------------------                                                                  |
-| service_name | string | 必填 | -                                                          | redis 服务名称，带服务类型的完整 FQDN 名称，例如 my-redis.dns、redis.my-ns.svc.cluster.local |
-| service_port | int    | 否   | 服务类型为固定地址（static service）默认值为80，其他为6379 | 输入redis服务的服务端口                                                                      |
-| username     | string | 否   | -                                                          | redis用户名                                                                                  |
-| password     | string | 否   | -                                                          | redis密码                                                                                    |
-| timeout      | int    | 否   | 1000                                                       | redis连接超时时间，单位毫秒                                                                  |
-| database     | int    | 否   | 0                                                          | 使用的数据库id，例如配置为1，对应`SELECT 1`                                                  |
+单个Redis脚本同次读取同slot的control、account和具体Key mapping。必须scope/generation/schema一致、三者ready、账户与Key映射的授权版本和凭据代际一致且Key enabled。金额、account_version和授权版本均按规范整数字符串精确读取，支持超过2^53与有符号i64边界。只有严格正余额允许；零余额和负余额拒绝。缺失、旧代、blocked/building、旧资格、格式/单位错误分别保留原因；Redis故障或不明结果503，不继续请求。
 
+## 逐调用托管准入
 
-## 配置示例
+`execution_admission` 使用固定 `schema_version: managed-execution-admission.v1`，在认证成功、版本化余额检查允许之后，为本次调用向 `POST /internal/execution-admission` 查询当前许可。它不替代余额检查，不预扣资金，也不跨调用缓存许可。
 
-### 识别请求参数 apikey，进行区别限流
-```yaml
-redis_key_prefix: "chat_quota:"
-admin_consumer: consumer3
-admin_path: /quota
-redis:
-  service_name: redis-service.default.svc.cluster.local
-  service_port: 6379
-  timeout: 2000
-```
+| 字段 | 来源与约束 |
+| --- | --- |
+| `release_id`、`route_id` | 本次冻结发布与原路由身份 |
+| `purpose` | `validation` 或 `production` |
+| `combination_key`、`profile_id` | 发布冻结的精确支持组合与受控操作 profile |
+| `access_id`、`revision` | validation 使用该候选许可及规范正整数字符串版本；production 省略或显式为 null |
+| `console_internal` | 完整的受控 Console 连接对象，包含 `service_name`、`service_port`、`host`、`auth_token`、`timeout_ms`；凭据由发布注入 |
 
+该对象必须在本条有效规则内完整给出，不能继承其他目标的许可。请求中的 `access_id`、`revision` 始终明确发送，包括 production 的 null。caller 的 tenant/principal/account/api_key/credential_generation 来自 key-auth 安装的原身份，release/profile/组合来自配置，客户端 body/header 不能选择或授予它们。
 
-###  刷新 quota
+插件清除客户端 call/attempt/准入字段，为本次检查生成 call_id，核对响应回显的完整身份与发布范围、允许结果、当前 revision 和 UTC 有效期。只有受控响应完整且尚有效，才安装本调用的 release/截止时间并继续；拒绝返回 403，依赖失败、超时、残缺/矛盾响应或过期许可返回 503。重复及迟到回调不发起第二个调用。
 
-如果当前请求 url 的后缀符合 admin_path，例如插件在 example.com/v1/chat/completions 这个路由上生效，那么更新 quota 可以通过
-curl https://example.com/v1/chat/completions/quota/refresh -H "Authorization: Bearer credential3" -d "consumer=consumer1&quota=10000" 
+## 路由范围与维护
 
-Redis 中 key 为 chat_quota:consumer1 的值就会被刷新为 10000
+托管配置必须使用 `path_scope: bound_target`，`enable_path_suffixes` 与 `enable_methods` 省略或为空数组；非空手工过滤器会使 `execution_admission` 配置无效。范围随绑定路由覆盖其全部方法，无需手填 URL 白名单。方法属于新调用时就执行准入；这不表示下游支持任意方法或操作，E1 实际文本执行仍校验自己的 POST JSON 边界。已受理任务查询、内部事实和结算使用各自入口，不绑定为新的模型销售调用。
 
-### 查询 quota
+无托管准入对象的兼容配置保留 `path_scope: legacy_suffixes` 默认后缀 `/v1/chat/completions`、`/v1/messages`；普通 `bound_target` 下的非空 suffix/method 仅作为交集。该兼容能力不能代替托管发布的逐调用许可。
 
-查询特定用户的 quota 可以通过 curl https://example.com/v1/chat/completions/quota?consumer=consumer1 -H "Authorization: Bearer credential3"
-将返回： {"quota": 10000, "consumer": "consumer1"}
+所有三类key使用 `mf:balance:{scope}:...` 同一hash slot。普通资金通知不能为缺失记录开户或解除冲突。维护时拒绝新调用；恢复开放由Console/REL/DEP完成真实配置和受控请求观察，插件没有维护或ready写入口。
 
-### 增减 quota 
-
-增减特定用户的 quota 可以通过 curl https://example.com/v1/chat/completions/quota/delta -d "consumer=consumer1&value=100" -H "Authorization: Bearer credential3"
-这样 Redis 中 Key 为 chat_quota:consumer1 的值就会增加100，可以支持负数，则减去对应值。
-
+本批源码与原生/模拟宿主结果、Wasm构建、实际K3S加载必须分别记录。参见[实施计划](../../docs/plans/2026-10-27-versioned-balance-admission.md)；未取得实际联合证据前，不把本地Redis或模拟宿主称为生产链通过。

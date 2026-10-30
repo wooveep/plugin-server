@@ -1,0 +1,90 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: security
+  name: waf
+  image: platform_wasm/waf
+  title: WAF
+  x-title-i18n:
+    zh-CN: WAF 防护
+  description: Support configuring WAF rules based on OWASP ModSecurity Core Rule
+    Set (CRS).
+  x-description-i18n:
+    zh-CN: 支持基于 OWASP ModSecurity Core Rule Set (CRS) 的 WAF 规则配置。
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN01jKT9vC1O059vNaq5u_!!6000000001642-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/waf/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/waf/README_EN.md
+  version: 2.0.3
+  contact:
+    name: Higress Team
+    url: http://higress.io/
+    email: admin@higress.io
+spec:
+  phase: AUTHZ
+  priority: 330
+  configSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        useCRS:
+          type: boolean
+          title: Enable OWASP CRS
+          x-title-i18n:
+            zh-CN: 启用 OWASP CRS
+          description: Whether to enable OWASP CRS, for details refer to coreruleset
+          x-description-i18n:
+            zh-CN: 是否开启 OWASP CRS，详情可参考 coreruleset
+          default: false
+        secRules:
+          type: array
+          title: WAF Protection Rules
+          x-title-i18n:
+            zh-CN: WAF 防护规则
+          description: User-defined WAF protection rules, syntax rules can refer to
+            ModSecurity Chinese Manual
+          x-description-i18n:
+            zh-CN: 用户自定义的 waf 防护规则，语法规则可参考 ModSecurity 中文手册
+          items:
+            type: string
+      example:
+        useCRS: true
+        secRules:
+        - SecDebugLogLevel 3
+        - SecRuleEngine On
+        - SecAction "id:100,phase:1,pass"
+        - SecRule REQUEST_URI "@streq /admin" "id:101,phase:1,t:lowercase,deny"
+        - SecRule REQUEST_BODY "@rx maliciouspayload" "id:102,phase:2,t:lowercase,deny"
+  routeConfigSchema:
+    openAPIV3Schema:
+      type: object
+      properties:
+        useCRS:
+          type: boolean
+          title: Enable OWASP CRS
+          x-title-i18n:
+            zh-CN: 启用 OWASP CRS
+          description: Whether to enable OWASP CRS, for details refer to coreruleset
+          x-description-i18n:
+            zh-CN: 是否开启 OWASP CRS，详情可参考 coreruleset
+          default: false
+        secRules:
+          type: array
+          title: WAF Protection Rules
+          x-title-i18n:
+            zh-CN: WAF 防护规则
+          description: User-defined WAF protection rules, syntax rules can refer to
+            ModSecurity Chinese Manual
+          x-description-i18n:
+            zh-CN: 用户自定义的 waf 防护规则，语法规则可参考 ModSecurity 中文手册
+          items:
+            type: string
+      example:
+        useCRS: true
+        secRules:
+        - SecDebugLogLevel 3
+        - SecRuleEngine On
+        - SecAction "id:100,phase:1,pass"
+        - SecRule REQUEST_URI "@streq /admin" "id:101,phase:1,t:lowercase,deny"
+        - SecRule REQUEST_BODY "@rx maliciouspayload" "id:102,phase:2,t:lowercase,deny"

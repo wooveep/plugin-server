@@ -4,6 +4,14 @@ keywords: [AI Gateway, AI Proxy]
 description: Reference for configuring the AI Proxy plugin
 ---
 
+## Frozen Credential Directory
+
+The `2.0.5` configuration contract keeps `_modelfusion_execution` v1's scalar `credential_ref`/`credential_revision` and adds `modelfusion-execution.v2` with a complete, nonempty `credentials` array. Each member contains only those two fields; references are unique, revisions are canonical positive decimal strings, and secrets or mixed scalar/array shapes are rejected. The directory is not a selected attempt: actual D0/FACT attribution still contains one selected credential tuple. Billing and cache never select the first directory member.
+
+For v2, `managed_execution.credentials` contains the matching ref/revision/value triples and excludes scalar `credential_value`. HEALTH is required: `upstream_health.targets` retains every original operation/member TargetReference and excludes `target`. V1 retains its original scalar settings and optional HEALTH. The existing generic `legacy_suffixes`/`bound_target` and `auto`/`passthrough` capability starts at version 1.0.2; it is separate from the v2 pool contract.
+
+> Plugin version: `2.0.9`
+
 ## Function Description
 
 The `AI Proxy` plugin implements AI proxy functionality based on the OpenAI API contract. It currently supports AI service providers such as OpenAI, Azure OpenAI, Moonshot, and Qwen.
@@ -14,6 +22,7 @@ The plugin now supports **automatic protocol detection**, allowing seamless comp
 
 - **OpenAI Protocol**: Request path `/v1/chat/completions`, using standard OpenAI Messages API format
 - **Claude Protocol**: Request path `/v1/messages`, using Anthropic Claude Messages API format  
+- **Responses Protocol**: Request path `/v1/responses`, preferring native provider Responses support and falling back to Chat Completions when needed
 - **Intelligent Conversion**: Automatically detects request protocol and performs conversion if the target provider doesn't natively support it
 - **Zero Configuration**: No need to set `protocol` field, the plugin handles everything automatically
 
@@ -23,9 +32,38 @@ The plugin now supports **automatic protocol detection**, allowing seamless comp
 
 > When the request path suffix matches `/v1/messages`, it corresponds to Claude text-to-text scenarios. The plugin automatically detects provider capabilities: if native Claude protocol is supported, requests are forwarded directly; otherwise, they are converted to OpenAI protocol first.
 
+> When the request path suffix matches `/v1/responses`, it corresponds to OpenAI Responses API scenarios. The plugin automatically detects provider capabilities: if `capabilities` includes `openai/v1/responses`, requests are forwarded natively; otherwise, when the provider supports `openai/v1/chatcompletions`, requests are converted to Chat Completions and non-streaming responses or streaming SSE are converted back to Responses format.
+
 > When the request path suffix matches `/v1/embeddings`, it corresponds to text vector scenarios. The request body will be parsed using OpenAI's text vector protocol and then converted to the corresponding LLM vendor's text vector protocol.
 
 > When the request path suffix matches `/v1/images/generations`, it corresponds to text-to-image scenarios. The request body will be parsed using OpenAI's image generation protocol and then converted to the corresponding LLM vendor's image generation protocol.
+
+## Routing Mode and Scope
+
+- `protocol_mode: auto` is the compatibility default: it uses registered adapters and preserves transparent forwarding when none matches. `passthrough` forces protocol conversion to be skipped.
+- Missing or explicit `path_scope: legacy_suffixes` preserves ai-proxy's historical operation classification. `path_scope: bound_target` processes requests already selected by the Higress binding target.
+- In `bound_target`, omitted or literal-empty `enable_path_suffixes: []` and `enable_methods: []` add no narrowing. Explicit non-empty filters intersect the binding target and never create or expand it.
+- ai-proxy trims and normalizes configured `enable_methods` to uppercase; examples use canonical uppercase HTTP methods. Omitted route-level fields inherit global configuration.
+
+```yaml
+# Legacy-compatible
+protocol_mode: auto
+path_scope: legacy_suffixes
+```
+
+```yaml
+# Bound target with no additional filters
+path_scope: bound_target
+```
+
+```yaml
+# Optional explicit intersection
+path_scope: bound_target
+enable_path_suffixes:
+  - /v1/responses
+enable_methods:
+  - POST
+```
 
 ## Execution Properties
 Plugin execution phase: `Default Phase`
@@ -52,6 +90,7 @@ Plugin execution priority: `100`
 | `context`        | object                 | Optional    | -       | Configuration for AI conversation context information                                                                                                                                                                                                                                                                                                                                     |
 | `customSettings` | array of customSetting | Optional    | -       | Specifies overrides or fills parameters for AI requests                                                                                                                                                                                                                                                                                                                                   |
 | `failover`       | object                 | Optional    | -       | Configures apiToken failover. When an apiToken becomes unavailable, it is removed from the available token list and restored after a successful health check or after the cooldown period expires.                                                                                                                                                                                        |
+| `capabilities`   | map of string          | Optional    | -       | Enables native forwarding for provider APIs that are already compatible with an OpenAI-style capability. Keys are protocol capabilities and values are upstream API paths. For Qwen, explicitly setting `openai/v1/responses` to an empty or whitespace-only value disables its default native Responses capability and activates compatible Chat Completions fallback; empty paths for other providers retain their existing keep-original-path semantics. Supported capability keys include `openai/v1/chatcompletions`, `openai/v1/responses`, `openai/v1/embeddings`, `openai/v1/imagegeneration`, `openai/v1/audiospeech`, and `cohere/v1/rerank`. |
 | `basePath`        | string                 | Optional    | -       | If configured, basePath can be used to remove the prefix from the request path, or prepend the prefix to the request path. Defaults to removal.                                                                                                                                                                                                                                              |
 | `basePathHandling` | string               | Optional    | removePrefix | basePathHandling specifies how basePath is processed. Possible values: removePrefix (removes the basePath prefix from the request path before forwarding to upstream), prepend (adds the basePath prefix to the request path when forwarding to upstream)                                                                                                                                                                                                                                                                                                |
 | `contextCleanupCommands` | array of string | Optional    | -       | List of context cleanup commands. When a user message in the request exactly matches any of the configured commands, that message and all non-system messages before it will be removed, keeping only system messages and messages after the command. This enables users to actively clear conversation history.                                                                           |
@@ -181,10 +220,6 @@ For OpenRouter, the corresponding `type` is `openrouter`. It has no unique confi
 #### Fireworks AI
 
 For Fireworks AI, the corresponding `type` is `fireworks`. It has no unique configuration fields.
-
-#### Galadriel
-
-For Galadriel, the corresponding `type` is `galadriel`. It has no unique configuration fields.
 
 #### ERNIE Bot
 
@@ -571,6 +606,70 @@ Response Example:
     }
 }
 ```
+
+**Image Generation and Audio Speech Media Capabilities**
+
+Qwen default capabilities do not automatically enable `/v1/images/generations` or `/v1/audio/speech`. To call synchronous DashScope media APIs through OpenAI-style paths, configure `capabilities` explicitly and keep `qwenEnableCompatible: false`. Image generation is converted to DashScope `multimodal-generation/generation`, supporting `prompt`, `n`, `seed`, and `size`; `size` is normalized from OpenAI `WIDTHxHEIGHT` to DashScope `WIDTH*HEIGHT`. Image models can map to synchronous text-to-image models such as `qwen-image-2.0-pro` or `wan2.6-t2i`. Audio speech is converted to the non-streaming Qwen-TTS request shape, supporting `input`, `voice`, and extension fields such as `language_type`, `instructions`, and `optimize_instructions`.
+
+```yaml
+provider:
+  type: qwen
+  apiTokens:
+    - "YOUR_QWEN_API_TOKEN"
+  qwenEnableCompatible: false
+  modelMapping:
+    'gpt-image-1': "qwen-image-2.0-pro" # or wan2.6-t2i
+    'tts-1': "qwen3-tts-flash"
+  capabilities:
+    'openai/v1/imagegeneration': "/api/v1/services/aigc/multimodal-generation/generation"
+    'openai/v1/audiospeech': "/api/v1/services/aigc/multimodal-generation/generation"
+```
+
+Image generation request example:
+
+```json
+{
+  "model": "gpt-image-1",
+  "prompt": "a quiet lake at sunrise",
+  "n": 1,
+  "seed": 42,
+  "size": "1280x720"
+}
+```
+
+Audio speech request example:
+
+```json
+{
+  "model": "tts-1",
+  "input": "Today is a wonderful day to build something people love.",
+  "voice": "Cherry",
+  "language_type": "English",
+  "instructions": "Speak warmly.",
+  "optimize_instructions": true
+}
+```
+
+The current audio speech response contract returns JSON containing a downloadable audio URL, not an OpenAI binary audio stream:
+
+```json
+{
+  "created": 1766113409,
+  "data": {
+    "url": "https://dashscope-result.example/audio.wav",
+    "id": "audio_123",
+    "expires_at": 1766113409
+  },
+  "usage": {
+    "input_tokens": 76,
+    "output_tokens": 1045,
+    "characters": 0,
+    "total_tokens": 1121
+  }
+}
+```
+
+When `qwenEnableCompatible: true` is enabled, explicitly configured media capabilities remain Qwen-compatible pass-through and do not use the DashScope-native request/response conversion above. OpenAI audio fields such as `response_format` and `speed` are not part of the Qwen-TTS native conversion yet.
 
 **Text Embedding Request Example**
 
@@ -1106,65 +1205,9 @@ provider:
 }
 ```
 
-### Using OpenAI Protocol Proxy for Galadriel Service
-
-**Configuration Information**
-
-```yaml
-provider:
-  type: galadriel
-  apiTokens:
-    - "YOUR_GALADRIEL_API_TOKEN"
-  modelMapping:
-    "gpt-4": "llama3.1"
-    "gpt-3.5-turbo": "llama3.1"
-    "*": "llama3.1"
-```
-
-**Example Request**
-
-```json
-{
-  "model": "llama3.1",
-  "messages": [
-    {
-      "role": "user",
-      "content": "Hello, who are you?"
-    }
-  ]
-}
-```
-
-**Example Response**
-
-```json
-{
-  "id": "id",
-  "choices": [
-    {
-      "finish_reason": "stop",
-      "index": 0,
-      "logprobs": null,
-      "message": {
-        "content": "Hello! I am an AI assistant built on the Llama 3.1 model. I run through the Galadriel network, which is a decentralized AI inference platform. I can help answer questions, engage in conversations, and assist with various tasks. What can I help you with today?",
-        "refusal": null,
-        "role": "assistant",
-        "function_call": null,
-        "tool_calls": null
-      }
-    }
-  ],
-  "created": 1728558433,
-  "model": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
-  "object": "chat.completion",
-  "service_tier": null,
-  "system_fingerprint": null
-}
-```
-
 ### Using Auto Protocol Compatibility
 
-The plugin now supports automatic protocol detection, capable of handling both OpenAI and Claude protocol format requests simultaneously.
+The plugin now supports automatic protocol detection, capable of handling OpenAI, Claude, and Responses protocol format requests simultaneously.
 
 **Configuration Information**
 
@@ -1210,9 +1253,47 @@ URL: `http://your-domain/v1/messages`
 }
 ```
 
+**Responses Protocol Request Example**
+
+URL: `http://your-domain/v1/responses`
+
+```json
+{
+  "model": "gpt-4o-mini",
+  "instructions": "Answer concisely.",
+  "input": "Hello, who are you?",
+  "max_output_tokens": 128,
+  "stream": false
+}
+```
+
+If the provider supports the Responses API natively, declare the native path in `capabilities`; the plugin will forward `/v1/responses` directly:
+
+```yaml
+provider:
+  type: openai
+  apiTokens:
+    - "YOUR_OPENAI_API_TOKEN"
+  capabilities:
+    openai/v1/responses: /v1/responses
+    openai/v1/chatcompletions: /v1/chat/completions
+```
+
+If `openai/v1/responses` is not declared and the provider supports `openai/v1/chatcompletions`, the plugin converts the supported Responses request subset to Chat Completions and converts non-streaming responses or streaming SSE back to Responses format. For Qwen, explicitly setting the Responses path to `''` (a whitespace-only value is equivalent) can override Qwen's default native Responses capability when a compatible-mode model only supports Chat Completions:
+
+```yaml
+provider:
+  type: qwen
+  qwenEnableCompatible: true
+  capabilities:
+    openai/v1/responses: ''
+```
+
+Fallback mode supports text `input`, message-array input made of `input_text`/`output_text`, `instructions`, common generation parameters, function tools, and compatible `tool_choice` values. Fallback mode does not support `previous_response_id`, `conversation`, hosted tools, file inputs, or multimodal inputs such as images.
+
 **Example Response**
 
-Both protocol formats will return responses in their respective formats:
+Each protocol format returns responses in its respective format:
 
 ```json
 {
@@ -2269,7 +2350,7 @@ providers:
             "index": 0,
             "message": {
                 "role": "assistant",
-                "content": "I am a language model."
+                "content": "I am a lagguage model."
             },
             "finish_reason": "stop",
         }
@@ -2386,7 +2467,8 @@ spec:
           - "YOUR_API_TOKEN"
     ingress:
     - groq
-  url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.0
+  # Standalone example pinned to upstream ai-proxy 1.0.2; not a native Modelfusion release artifact pin.
+  url: oci://higress-registry.cn-hangzhou.cr.aliyuncs.com/plugins/ai-proxy:1.0.2
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

@@ -1,0 +1,1252 @@
+apiVersion: 1.0.0
+info:
+  gatewayMinVersion: ''
+  type: oss
+  category: ai
+  image: platform_wasm/ai-billing
+  name: ai-billing
+  title: AI Billing Events
+  x-title-i18n:
+    zh-CN: AI 账单事件
+  description: Generate request-level AI billing events through Redis Stream, using
+    provider-authoritative token usage when available, tokenizer-based estimates when
+    usage is absent, and internal_cost events for platform-owned internal AI Routes.
+  x-description-i18n:
+    zh-CN: 通过 Redis Stream 生成请求级 AI 账单事件，优先使用 provider 上报的 token usage，缺失时使用 tokenizer
+      估算，并支持内部 AI Route 的 internal_cost 平台成本事件。
+  iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
+  readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README.md
+  x-readmeUrl-i18n:
+    en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README_EN.md
+  version: 0.1.14
+  contact:
+    name: 2456868764
+spec:
+  phase: default
+  priority: 270
+  x-modelfusion-ai-routing:
+    minimumPluginVersion: 0.1.7
+    pathScopes:
+    - legacy_suffixes
+    - bound_target
+  configSchema:
+    x-higress-external-resource:
+      kind: redis
+      registryType: dns
+      domainPath: redis_stream.service_name
+      portPath: redis_stream.service_port
+      projectedNamePath: redis_stream.service_name
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      allOf:
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - descriptor
+              properties:
+                descriptor:
+                  required:
+                  - capabilities
+                  properties:
+                    capabilities:
+                      required:
+                      - text_embedding
+        then:
+          required:
+          - native_execution
+          properties:
+            native_execution:
+              required:
+              - call_identity_source
+              properties:
+                call_identity_source:
+                  const: internal_execution
+      properties:
+        native_execution:
+          type: object
+          additionalProperties: false
+          required:
+          - producer_id
+          - call_identity_source
+          properties:
+            call_identity_source:
+              type: string
+              enum:
+              - admission
+              - internal_execution
+            producer_id:
+              type: string
+              minLength: 1
+        _modelfusion_execution:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          required:
+          - schema_version
+          - descriptor
+          - route_id
+          - sales_asset_id
+          - public_model
+          properties:
+            schema_version:
+              type: string
+              enum:
+              - modelfusion-execution.v1
+              - modelfusion-execution.v2
+            descriptor:
+              oneOf:
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    minProperties: 1
+                    properties:
+                      text_generate:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      image_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      video_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      task_query:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    const: openai-embeddings.v1
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        const: openai-embeddings.v1
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    properties:
+                      text_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-embedding.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                        description: OpenAI-compatible POST /v1/embeddings. The embedding
+                          classifier validates real data[].embedding and uses only
+                          actual provider-reported input token usage. No retries,
+                          fallback, queries or provider task lifecycle.
+                    required:
+                    - text_embedding
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+            route_id:
+              type: string
+              minLength: 1
+            sales_asset_id:
+              type: string
+              minLength: 1
+            public_model:
+              type: string
+              minLength: 1
+            credential_ref:
+              type: string
+              minLength: 1
+            credential_revision:
+              type: string
+              pattern: ^[1-9][0-9]*$
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Complete frozen credential identity directory; no secret
+                or selected-attempt authority.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+          oneOf:
+          - required:
+            - credential_ref
+            - credential_revision
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              schema_version:
+                const: modelfusion-execution.v1
+          - required:
+            - credentials
+            not:
+              anyOf:
+              - required:
+                - credential_ref
+              - required:
+                - credential_revision
+            properties:
+              schema_version:
+                const: modelfusion-execution.v2
+        redis_stream: &id001
+          type: object
+          additionalProperties: false
+          title: Redis Stream配置
+          x-title-i18n:
+            en-US: Redis Stream Configuration
+          description: BillingEvent Redis Stream XADD target
+          x-description-i18n:
+            en-US: BillingEvent Redis Stream XADD target
+          required:
+          - service_name
+          properties:
+            service_name:
+              type: string
+              title: Redis服务名称
+              x-title-i18n:
+                en-US: Redis Service Name
+              description: Redis 服务名或 Console 管理的 MCPBridge 服务名
+              x-description-i18n:
+                en-US: Redis service name or Console-managed MCPBridge service name
+            service_port:
+              type: integer
+              title: Redis服务端口
+              x-title-i18n:
+                en-US: Redis Service Port
+              default: 6379
+            username:
+              type: string
+              title: Redis用户名
+              x-title-i18n:
+                en-US: Redis Username
+            password:
+              writeOnly: true
+              x-sensitive: true
+              type: string
+              title: Redis密码
+              x-title-i18n:
+                en-US: Redis Password
+              description: Redis 密码，需按敏感字段处理
+              x-description-i18n:
+                en-US: Redis password. Treat as sensitive
+            database:
+              type: integer
+              title: Redis数据库
+              x-title-i18n:
+                en-US: Redis Database
+              default: 0
+            timeout:
+              type: integer
+              title: Redis超时时间
+              x-title-i18n:
+                en-US: Redis Timeout
+              description: Redis callout 超时时间，单位毫秒
+              x-description-i18n:
+                en-US: Redis callout timeout in milliseconds
+              default: 500
+            stream:
+              type: string
+              title: Stream名称
+              x-title-i18n:
+                en-US: Stream Name
+              default: billing:events
+        event_kind:
+          type: string
+          title: 事件类型
+          x-title-i18n:
+            en-US: Event Kind
+          description: Billing event 类型。usage 是规范客户用量事件，internal_cost 用于内部 AI Route
+            平台成本归因；旧 customer_usage 仅作兼容别名并归一化为 usage。
+          x-description-i18n:
+            en-US: Billing event type. usage is canonical customer usage, internal_cost
+              is platform cost attribution, and legacy customer_usage is a compatibility
+              alias normalized to usage.
+          enum:
+          - usage
+          - internal_cost
+          - customer_usage
+          default: usage
+        quota_scope:
+          type: string
+          title: 额度作用域
+          x-title-i18n:
+            en-US: Quota Scope
+          description: 默认额度作用域，规则级配置可覆盖
+          x-description-i18n:
+            en-US: Default quota scope. Route rule config can override it
+          default: global
+        provider:
+          type: string
+          title: AI Provider
+          description: 默认 AI provider 标识，规则级配置可覆盖
+          x-description-i18n:
+            en-US: Default AI provider identifier. Route rule config can override
+              it
+          default: default
+        cost_source:
+          type: string
+          title: 成本来源
+          x-title-i18n:
+            en-US: Cost Source
+          description: internal_cost 的配置来源标识
+          x-description-i18n:
+            en-US: Configuration-derived source identifier for internal_cost
+        worker_kind:
+          type: string
+          title: Worker类型
+          x-title-i18n:
+            en-US: Worker Kind
+          description: internal_cost 的配置 worker 类型
+          x-description-i18n:
+            en-US: Configuration-derived worker kind for internal_cost
+        bill_customer:
+          type: boolean
+          title: 是否计入客户账单
+          x-title-i18n:
+            en-US: Bill Customer
+          description: 配置派生的客户结算分类，内部成本路由通常设为 false
+          x-description-i18n:
+            en-US: Configuration-derived customer settlement classification; normally
+              false for internal-cost routes
+        tenant_header:
+          type: string
+          title: 租户请求头
+          x-title-i18n:
+            en-US: Tenant Header
+          description: 租户身份请求头
+          x-description-i18n:
+            en-US: Request header containing tenant identity
+          default: x-mse-tenant
+        consumer_header:
+          type: string
+          title: Consumer请求头
+          x-title-i18n:
+            en-US: Consumer Header
+          description: Consumer 身份请求头
+          x-description-i18n:
+            en-US: Request header containing consumer identity
+          default: x-mse-consumer
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: legacy_suffixes 保留默认 /v1/chat/completions 与 /v1/messages 后缀门控；bound_target
+            使用 Higress 绑定目标，缺省或空过滤器不额外收窄
+          x-description-i18n:
+            en-US: legacy_suffixes preserves the /v1/chat/completions and /v1/messages
+              default gates; bound_target uses the Higress binding target, with absent
+              or empty filters adding no narrowing
+          enum:
+          - legacy_suffixes
+          - bound_target
+          default: legacy_suffixes
+        enable_path_suffixes:
+          type: array
+          title: 生效路径后缀
+          x-title-i18n:
+            en-US: Enabled Path Suffixes
+          description: legacy_suffixes 的路径门控，或 bound_target 的可选非空交集过滤器
+          x-description-i18n:
+            en-US: Legacy path gating or an optional non-empty intersection filter
+              for bound_target; omission or [] adds no bound-target narrowing
+          items:
+            type: string
+            pattern: .*\S.*
+        enable_methods:
+          type: array
+          title: 生效 HTTP 方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: 可选的精确大小写 HTTP 方法交集过滤器
+          x-description-i18n:
+            en-US: Optional exact-case HTTP-method intersection filter; omission or
+              [] adds no bound-target narrowing
+          items:
+            type: string
+            pattern: .*\S.*
+        fail_policy:
+          type: string
+          title: 投递失败策略
+          x-title-i18n:
+            en-US: Failure Policy
+          description: 投递失败策略，当前支持 open
+          x-description-i18n:
+            en-US: Delivery failure policy. Currently supports open
+          enum:
+          - open
+          default: open
+      example:
+        redis_stream:
+          service_name: redis-stack-server.dns
+          service_port: 6379
+          username: <redis-username>
+          database: 0
+          timeout: 500
+          stream: billing:events
+        event_kind: usage
+        quota_scope: global
+        tenant_header: x-mse-tenant
+        consumer_header: x-mse-consumer
+        path_scope: legacy_suffixes
+        enable_path_suffixes:
+        - /v1/chat/completions
+        - /v1/messages
+        fail_policy: open
+  routeConfigSchema:
+    x-higress-external-resource:
+      kind: redis
+      registryType: dns
+      domainPath: redis_stream.service_name
+      portPath: redis_stream.service_port
+      projectedNamePath: redis_stream.service_name
+    openAPIV3Schema:
+      type: object
+      additionalProperties: false
+      allOf:
+      - if:
+          required:
+          - native_execution
+        then:
+          required:
+          - redis_stream
+          - _modelfusion_execution
+          - path_scope
+          properties:
+            path_scope:
+              const: bound_target
+            enable_methods:
+              maxItems: 0
+            enable_path_suffixes:
+              maxItems: 0
+      - if:
+          required:
+          - _modelfusion_execution
+          properties:
+            _modelfusion_execution:
+              required:
+              - descriptor
+              properties:
+                descriptor:
+                  required:
+                  - capabilities
+                  properties:
+                    capabilities:
+                      required:
+                      - text_embedding
+        then:
+          required:
+          - native_execution
+          properties:
+            native_execution:
+              required:
+              - call_identity_source
+              properties:
+                call_identity_source:
+                  const: internal_execution
+      properties:
+        native_execution:
+          type: object
+          additionalProperties: false
+          required:
+          - producer_id
+          - call_identity_source
+          properties:
+            call_identity_source:
+              type: string
+              enum:
+              - admission
+              - internal_execution
+            producer_id:
+              type: string
+              minLength: 1
+        _modelfusion_execution:
+          type: object
+          readOnly: true
+          additionalProperties: false
+          required:
+          - schema_version
+          - descriptor
+          - route_id
+          - sales_asset_id
+          - public_model
+          properties:
+            schema_version:
+              type: string
+              enum:
+              - modelfusion-execution.v1
+              - modelfusion-execution.v2
+            descriptor:
+              oneOf:
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    minProperties: 1
+                    properties:
+                      text_generate:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      image_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      video_generate:
+                        allOf:
+                        - type: object
+                          properties:
+                            send_mode:
+                              enum:
+                              - single_send
+                              - observable_retry
+                            response_classifier_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            query_capability_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            provider_idempotency_ref:
+                              $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                            max_attempts:
+                              type: integer
+                              minimum: 1
+                              maximum: 4294967295
+                            max_fallback_hops:
+                              type: integer
+                              minimum: 0
+                              maximum: 4294967295
+                          required:
+                          - send_mode
+                          - response_classifier_ref
+                          - max_attempts
+                          - max_fallback_hops
+                          additionalProperties: false
+                        - properties:
+                            send_mode:
+                              const: single_send
+                            max_attempts:
+                              const: 1
+                            max_fallback_hops:
+                              const: 0
+                      task_query:
+                        type: object
+                        properties:
+                          send_mode:
+                            enum:
+                            - single_send
+                            - observable_retry
+                          response_classifier_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          query_capability_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          provider_idempotency_ref:
+                            $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                          max_attempts:
+                            type: integer
+                            minimum: 1
+                            maximum: 4294967295
+                          max_fallback_hops:
+                            type: integer
+                            minimum: 0
+                            maximum: 4294967295
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+              - type: object
+                properties:
+                  release_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  target_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  binding_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  provider_account_id:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  region_endpoint_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  service_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  cluster_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  credential_pool_ref:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Id
+                  adapter_ref:
+                    const: openai-embeddings.v1
+                  credential_pool_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  adapter_revision:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Revision
+                  mapper_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  proxy_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  descriptor_digest:
+                    $ref: urn:modelfusion:contracts:v1:common#/$defs/Digest
+                  upstream_model:
+                    type: string
+                    minLength: 1
+                  config_canonicalization:
+                    type: string
+                    minLength: 1
+                  transport_contract:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                        minLength: 1
+                      sni:
+                        type: string
+                      path_adapter_ref:
+                        const: openai-embeddings.v1
+                    required:
+                    - host
+                    - sni
+                    - path_adapter_ref
+                    additionalProperties: false
+                  capabilities:
+                    type: object
+                    properties:
+                      text_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-embedding.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                        description: OpenAI-compatible POST /v1/embeddings. The embedding
+                          classifier validates real data[].embedding and uses only
+                          actual provider-reported input token usage. No retries,
+                          fallback, queries or provider task lifecycle.
+                    required:
+                    - text_embedding
+                    additionalProperties: false
+                required:
+                - release_id
+                - target_id
+                - binding_id
+                - provider_id
+                - provider_account_id
+                - region_endpoint_ref
+                - service_ref
+                - cluster_ref
+                - credential_pool_ref
+                - adapter_ref
+                - credential_pool_revision
+                - adapter_revision
+                - mapper_digest
+                - proxy_digest
+                - descriptor_digest
+                - upstream_model
+                - config_canonicalization
+                - transport_contract
+                - capabilities
+                additionalProperties: false
+            route_id:
+              type: string
+              minLength: 1
+            sales_asset_id:
+              type: string
+              minLength: 1
+            public_model:
+              type: string
+              minLength: 1
+            credential_ref:
+              type: string
+              minLength: 1
+            credential_revision:
+              type: string
+              pattern: ^[1-9][0-9]*$
+            credentials:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              description: Complete frozen credential identity directory; no secret
+                or selected-attempt authority.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - credential_ref
+                - credential_revision
+                properties:
+                  credential_ref:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  credential_revision:
+                    type: string
+                    pattern: ^[1-9][0-9]*$
+                    maxLength: 39
+          oneOf:
+          - required:
+            - credential_ref
+            - credential_revision
+            not:
+              anyOf:
+              - required:
+                - credentials
+            properties:
+              schema_version:
+                const: modelfusion-execution.v1
+          - required:
+            - credentials
+            not:
+              anyOf:
+              - required:
+                - credential_ref
+              - required:
+                - credential_revision
+            properties:
+              schema_version:
+                const: modelfusion-execution.v2
+        redis_stream: *id001
+        event_kind:
+          type: string
+          title: 事件类型
+          x-title-i18n:
+            en-US: Event Kind
+          description: 规则级 event_kind 覆盖。usage 为规范值，customer_usage 是归一化为 usage 的兼容别名；internal_cost
+            只做平台成本归因。
+          x-description-i18n:
+            en-US: Rule-level event_kind override. usage is canonical, customer_usage
+              is a compatibility alias normalized to usage, and internal_cost is platform
+              cost attribution only.
+          enum:
+          - usage
+          - internal_cost
+          - customer_usage
+        quota_scope:
+          type: string
+          title: 额度作用域
+          x-title-i18n:
+            en-US: Quota Scope
+          description: 规则级额度作用域覆盖；未配置时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level quota scope override. Inherits the global config when
+              omitted
+        provider:
+          type: string
+          title: AI Provider
+          description: 规则级 AI provider 覆盖；未配置时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level AI provider override. Inherits the global config when
+              omitted
+        cost_source:
+          type: string
+          title: 成本来源
+          x-title-i18n:
+            en-US: Cost Source
+          description: 规则级 internal_cost 成本来源；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level internal-cost source; inherits global configuration
+              when omitted
+        worker_kind:
+          type: string
+          title: Worker类型
+          x-title-i18n:
+            en-US: Worker Kind
+          description: 规则级 internal_cost worker 类型；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level internal-cost worker kind; inherits global configuration
+              when omitted
+        bill_customer:
+          type: boolean
+          title: 是否计入客户账单
+          x-title-i18n:
+            en-US: Bill Customer
+          description: 规则级客户结算分类；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level customer settlement classification; inherits global
+              configuration when omitted
+        tenant_header:
+          type: string
+          title: 租户请求头
+          x-title-i18n:
+            en-US: Tenant Header
+          description: 规则级租户身份请求头覆盖；未配置时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level tenant identity header override. Inherits the global
+              config when omitted
+        consumer_header:
+          type: string
+          title: Consumer请求头
+          x-title-i18n:
+            en-US: Consumer Header
+          description: 规则级 Consumer 身份请求头覆盖；未配置时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level consumer identity header override. Inherits the global
+              config when omitted
+        path_scope:
+          type: string
+          title: 路径作用域
+          x-title-i18n:
+            en-US: Path Scope
+          description: 路由级路径作用域覆盖；缺省时继承全局配置
+          x-description-i18n:
+            en-US: Route-level path scope override; inherits global configuration
+              when omitted
+          enum:
+          - legacy_suffixes
+          - bound_target
+        enable_path_suffixes:
+          type: array
+          title: 生效路径后缀
+          x-title-i18n:
+            en-US: Enabled Path Suffixes
+          description: 路由级路径后缀过滤器覆盖；bound_target 下缺省或空数组不额外收窄
+          x-description-i18n:
+            en-US: Route-level path-suffix filter override; omission or [] adds no
+              narrowing in bound_target
+          items:
+            type: string
+            pattern: .*\S.*
+        enable_methods:
+          type: array
+          title: 生效 HTTP 方法
+          x-title-i18n:
+            en-US: Enabled HTTP Methods
+          description: 路由级可选精确大小写 HTTP 方法交集过滤器
+          x-description-i18n:
+            en-US: Optional route-level exact-case HTTP-method intersection filter
+          items:
+            type: string
+            pattern: .*\S.*
+        fail_policy:
+          type: string
+          title: 投递失败策略
+          x-title-i18n:
+            en-US: Failure Policy
+          description: 规则级投递失败策略覆盖，当前支持 open；未配置时继承全局配置
+          x-description-i18n:
+            en-US: Rule-level delivery failure policy override. Currently supports
+              open and inherits the global config when omitted
+          enum:
+          - open
+      example:
+        redis_stream:
+          service_name: redis-stack-server.dns
+          service_port: 6379
+          username: <redis-username>
+          database: 0
+          timeout: 500
+          stream: billing:events
+        event_kind: internal_cost
+        quota_scope: internal:ai-memory.digest
+        cost_source: ai-memory
+        worker_kind: digest
+        bill_customer: false
+        path_scope: bound_target
