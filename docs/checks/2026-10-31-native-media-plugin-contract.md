@@ -57,3 +57,7 @@ MF/DEP 聊天在真实发布 `01a18e88-fa15-7610-b3be-fd5360e8111e` 中记录 20
 ai-proxy 2.0.10 的 Wasm 摘要为 `sha256:fb2157f81298555df26d56f189bf311b52a0ed03ea11bad720d217cf71767439`，内容摘要为 `sha256:6b1466d8c811c73d42a800347209af928aeb3a136fae73b3da3089574878f892`，归档摘要为 `sha256:93ccbf1411e2ce54e3cd95561ae8a433a019e6e24e432eb6cdd88d5f46627a73`。2026-10-30 20:56Z 经原持久化库的 operator CLI 入库；20:59Z 完成 manifest、Wasm、schema、archive 四个 HTTP 200 核对，大小与登记摘要一致。没有重发 2.0.9、改写既有版本或修改 Helm。
 
 MF/DEP 可据上述 manifest 注册新包，并显式保存并生效到最高 SemVer。真实 Envoy 初始化、目标路由恢复、实际媒体操作及账务验收仍待该责任聊天完成；本地宿主/编译后 Wasm 回归和 HTTP 200 不替代这些验收。线上旧镜像的批量 `/artifacts` 仍为 404，完整集合镜像交付时解决。
+
+## 后续完整集合交付
+
+上述旧镜像 `/artifacts` 404 已由[完整集合 Helm100 交付](2026-10-31-unified-plugin-source-and-delivery.md)解决，当前批量元数据为 HTTP 200、79 项；ai-proxy 2.0.10 与 ai-billing 1.0.1 的原 ID/字节保持。两者已在 Console 登记，真实 Qwen VM 与网关重建验收由[MF/DEP 权威记录](../../../ocloudmodelfusion/docs/checks/2026-10-31-route-publication-and-plugin-catalog.md)维护。本批完整集合消费列表仍有缺口，不能据下载或 VM 初始化宣称全部媒体业务/计费验收完成。

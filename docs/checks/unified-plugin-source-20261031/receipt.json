@@ -1,0 +1,2547 @@
+{
+  "evidence_version": 1,
+  "recorded_at": "2026-10-30T21:44:59.878947+00:00",
+  "status": "root_source_build_and_delivery_complete_console_library_gap_open",
+  "source_repository": "https://github.com/wooveep/plugin-server",
+  "source_branch": "codex/artifact-p1-20261026",
+  "upstream": {
+    "schema_version": 1,
+    "source_repository": "https://github.com/higress-group/higress",
+    "source_commit": "91a23e9f3e4736b1b145bdc33531dff3a664c2c9",
+    "source_prefix": "plugins",
+    "source_tree": "e98c0fc907b4b73959988e8892ee0ae5a5634741",
+    "tracking_commit": "d6d21280277f8ae3804dc28b84d7cde1832889b2",
+    "tracking_ref": "refs/heads/codex/upstream-higress-plugins",
+    "destination": "plugins",
+    "merge_strategy": [
+      "ort",
+      "subtree=plugins"
+    ],
+    "initial_import": "verbatim upstream plugins tree; subsequent customization is recorded separately"
+  },
+  "source_integration_commit": "4cc3e50941868b29300f47fae78cf28c9eb4e241",
+  "compiler_input_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+  "retired_repositories": {
+    "wasm_go_commit": "1202acf",
+    "proxy_wasm_go_sdk_commit": "dc7491f"
+  },
+  "formal_source_count": 55,
+  "source_implementation_count": 72,
+  "formal_compilers": [
+    {
+      "plugin_name": "ai-agent",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:a47da7af998f870c32fb0a808d229981009e61c145f759bf88d279a2a3c2b8f2",
+      "sha256": "sha256:22650e435b4f32ca8ea2fad99aa1569116153b36ce93e1d65cd2491a6b4e67f8",
+      "size_bytes": 7259934,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:15.760079+00:00",
+      "completed_at": "2026-10-30T21:07:16.332057+00:00"
+    },
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.1",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:f913e88dfb3f5d6d3e190192b5052888d2beee565ac13044872e657348a7fea1",
+      "sha256": "sha256:26d97652c71320a96cd28413e0bdf49d2e58d3019057d86768158c4c0479ac5c",
+      "size_bytes": 19139742,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:16.354007+00:00",
+      "completed_at": "2026-10-30T21:07:17.033637+00:00"
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.4",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:1587ce9159187d7ca49ab5f3c3b2959f8856a8d0fe8724ba35fba6a5e6a981d2",
+      "sha256": "sha256:aa64c2bdcff23b6147163e0ce4bf84e816981b9c1af94dfe8a352db449ef758f",
+      "size_bytes": 7582041,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:17.060661+00:00",
+      "completed_at": "2026-10-30T21:07:17.564117+00:00"
+    },
+    {
+      "plugin_name": "ai-context-limit",
+      "plugin_version": "1.0.0",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:0a7e93cf983d4d59749926ec8ecd93226fa1f0260a220ccb4ce44794d4cef699",
+      "sha256": "sha256:a283afe58fc37f48701f27c527dbdbdc32fd67782147024f3dc07bc7e6d0435b",
+      "size_bytes": 15964004,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:17.585466+00:00",
+      "completed_at": "2026-10-30T21:07:18.155535+00:00"
+    },
+    {
+      "plugin_name": "ai-data-masking",
+      "plugin_version": "2.0.3",
+      "implementation": "rust",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:c3f49cc0d0fed1cc676ec22b4b124484668ab677c0fe4a232208001a82b00648",
+      "sha256": "sha256:7249ba6d78ac624bfbbe697fc024ea8a5a53a1d9d59efef2d4c79aec02781073",
+      "size_bytes": 6589309,
+      "toolchain": "sha256:8f1e87f5a7be5751e4e8edf2b46c14865899a927a6a1f710921a99262cecc5fc",
+      "started_at": "2026-10-30T21:07:18.171277+00:00",
+      "completed_at": "2026-10-30T21:07:18.651049+00:00"
+    },
+    {
+      "plugin_name": "ai-endpoint-picker",
+      "plugin_version": "2.0.2",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:9afec3f78f94aab8eff01dc81d4140c54308e6ad45b802fff9f57679e0aeed01",
+      "sha256": "sha256:e188a912d70797d0e39612f462c9c07a1b9be520fafa33424ed369ddd4a5aa68",
+      "size_bytes": 12782774,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:18.671620+00:00",
+      "completed_at": "2026-10-30T21:07:19.222803+00:00"
+    },
+    {
+      "plugin_name": "ai-history",
+      "plugin_version": "2.0.4",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:071c2ccb99ab11eb864d7880b7a72ab27c78d27d58264d603bf4644082804737",
+      "sha256": "sha256:b9f18f9cd4913844c754de005e4ab01c14d8cabe279baca57ff6709bcfca82e0",
+      "size_bytes": 7142704,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:19.244722+00:00",
+      "completed_at": "2026-10-30T21:07:19.765026+00:00"
+    },
+    {
+      "plugin_name": "ai-intent",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:1ac86ede1a9da06100b2996d29e6151c9babb0edd39a5d0aea348d5235dad08c",
+      "sha256": "sha256:296c5e34164cdff5f51318765a6dcb1dc77fb5c1c0d0c078a55af71e7229cc97",
+      "size_bytes": 6273840,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:19.783899+00:00",
+      "completed_at": "2026-10-30T21:07:20.333203+00:00"
+    },
+    {
+      "plugin_name": "ai-json-resp",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:3824483872dfa58700b77397f61122c22e167dcb709052e76f1fec0868b87b9c",
+      "sha256": "sha256:9b25f1ff9c2e2ec1790798649184021141ddabcd00526fdc604f23366151e95b",
+      "size_bytes": 7251761,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:20.352667+00:00",
+      "completed_at": "2026-10-30T21:07:20.907117+00:00"
+    },
+    {
+      "plugin_name": "ai-load-balancer",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:091b09fc3387fcf9883d3ede2c251e5bf506a175f854b4dcc593cf652892cd3f",
+      "sha256": "sha256:09bc98b8a157dfddeb30d6f8a61eecc71293cab7b63a9d1d5523d73ec80d2710",
+      "size_bytes": 13046976,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:20.928824+00:00",
+      "completed_at": "2026-10-30T21:07:21.490786+00:00"
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.7",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:744bc8ca53b64f403e71ea8f2577704784c71aa6fd1b2165a4effb0681d3b466",
+      "sha256": "sha256:af9676a645f90a296a738530ac37ad7abf5aec71683ff1e5ab71eb36b235cd99",
+      "size_bytes": 7372271,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:21.516153+00:00",
+      "completed_at": "2026-10-30T21:07:21.990765+00:00"
+    },
+    {
+      "plugin_name": "ai-prompt-decorator",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:602fb99be8ef27bbd74b0be5bc1a7a96d5b99f50a04ae28fef91b3d28135e9a1",
+      "sha256": "sha256:1d70fb186ff17d57f9ad0ed115828de4861e9b72909475be5c1ad1d8a9267dbe",
+      "size_bytes": 6627540,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:22.009547+00:00",
+      "completed_at": "2026-10-30T21:07:22.480988+00:00"
+    },
+    {
+      "plugin_name": "ai-prompt-template",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:333c42a8591fe9dacd23fcfde3716350ce182f9c53f645c69f4981b72937e4b3",
+      "sha256": "sha256:6fb3743f47ed8bb90777b739c43a5037b12769d40e8f4cda5545a990018959e0",
+      "size_bytes": 6091459,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:22.501954+00:00",
+      "completed_at": "2026-10-30T21:07:22.990298+00:00"
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.10",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:d40cc64933d70e8ff2e132e13c5ebd091767603ffc68a5f35e5f564817d84cc0",
+      "sha256": "sha256:fb2157f81298555df26d56f189bf311b52a0ed03ea11bad720d217cf71767439",
+      "size_bytes": 11636149,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:23.013599+00:00",
+      "completed_at": "2026-10-30T21:07:23.536809+00:00"
+    },
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.4",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:5d794ef7177b7e3de327d23e30d04665d7f8f41852cc9fc5dcb1e1e84b587b3e",
+      "sha256": "sha256:acf4c506e9bda4ca066c7b5fd5897ad5b41d71b3738dea65f259b612dc48423a",
+      "size_bytes": 6979342,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:23.558496+00:00",
+      "completed_at": "2026-10-30T21:07:24.063609+00:00"
+    },
+    {
+      "plugin_name": "ai-rag",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:47f1a05b2154903a0bb56b69dd00c4cbbc06984eb0d79a5b361f15cf39d0ccb4",
+      "sha256": "sha256:49bd816eefaee93744241d9111498bc1fd36384f0e2b8f67b4932ee511579349",
+      "size_bytes": 6259586,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:24.083113+00:00",
+      "completed_at": "2026-10-30T21:07:24.576766+00:00"
+    },
+    {
+      "plugin_name": "ai-search",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:ada62ab34cd860e7e14446907ea2114e282ba4d9efec11c387e525e46071634e",
+      "sha256": "sha256:cdd6bb96c8b9fc97ad1ada8d0264bc48670e5af12510bc686eeee6740cdea1ec",
+      "size_bytes": 8511820,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:24.595820+00:00",
+      "completed_at": "2026-10-30T21:07:25.074841+00:00"
+    },
+    {
+      "plugin_name": "ai-security-guard",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:6a1d2ddc9e41988ae8b226f65647654a27a087b611c90af338167be0307ebc53",
+      "sha256": "sha256:1977bbfb92b5ed181e32fe74a2e7af59401125660f57578585a32f1e1d72fae5",
+      "size_bytes": 7450872,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:25.096961+00:00",
+      "completed_at": "2026-10-30T21:07:25.548025+00:00"
+    },
+    {
+      "plugin_name": "ai-statistics",
+      "plugin_version": "2.0.4",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:0b302646c0383e208fcfbafd8591b4cbbd70794fa30cf6aa9a9121730a125be2",
+      "sha256": "sha256:7b156eeb6e755be14e369dbdc12aed64b7981e02fadb9dc6ff1c5304a44384c2",
+      "size_bytes": 6959914,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:25.568202+00:00",
+      "completed_at": "2026-10-30T21:07:26.033500+00:00"
+    },
+    {
+      "plugin_name": "ai-token-ratelimit",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:c00db3f410d985cf59a88c6046245a0b5b0bc169c5f65ab0b5cee5530804657f",
+      "sha256": "sha256:b9287a745d3edaa83604db8d872622f603de3d43c8f9d9603aedfa0b8f59b5c5",
+      "size_bytes": 7030368,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:26.052050+00:00",
+      "completed_at": "2026-10-30T21:07:26.515314+00:00"
+    },
+    {
+      "plugin_name": "ai-transformer",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:786e3862b2ae4f7c53d8cb5dd486dabef0e08dff8fb318f6a9c88bef22e8e026",
+      "sha256": "sha256:7403d03802d3297de88bbd8cfa4e5b82be3bfcb507a6472a292a2caf7402369d",
+      "size_bytes": 6246068,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:26.533440+00:00",
+      "completed_at": "2026-10-30T21:07:27.044927+00:00"
+    },
+    {
+      "plugin_name": "basic-auth",
+      "plugin_version": "2.0.1",
+      "implementation": "cpp",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:bcf3cdb0386cba094e20a305b902c2aa5734081e1c4c9850ba1c02f92e33b0b2",
+      "sha256": "sha256:123a3f9faa49c01234eb6b690a4105c6a4011cf1179880b9e896210b9193e1a4",
+      "size_bytes": 277854,
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "started_at": "2026-10-30T21:07:27.054225+00:00",
+      "completed_at": "2026-10-30T21:07:37.992554+00:00"
+    },
+    {
+      "plugin_name": "bot-detect",
+      "plugin_version": "2.0.1",
+      "implementation": "cpp",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:fa21fdb06e4a1c578ef3278eb8cb4fe951efe1210d7bac625184c2b5b2738069",
+      "sha256": "sha256:6d5df941b485742beb08a98077527520a3aa5b9ba234538e27361b210de8114c",
+      "size_bytes": 486612,
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "started_at": "2026-10-30T21:07:38.000887+00:00",
+      "completed_at": "2026-10-30T21:07:48.216046+00:00"
+    },
+    {
+      "plugin_name": "cache-control",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:252e67c87a121ee6a3198b68c66065618b260c618be25635dd508e23d3a78138",
+      "sha256": "sha256:47c4eca3024bb4f3f2f77809d8738348fadfaab1cb4ca725ad6105a07c8993e9",
+      "size_bytes": 6099137,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:48.232319+00:00",
+      "completed_at": "2026-10-30T21:07:48.747105+00:00"
+    },
+    {
+      "plugin_name": "cluster-key-rate-limit",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:09e68cd410113ce109cffdd8f80a57dc2c36ba4a8d2117092a2ddbed89a21d3f",
+      "sha256": "sha256:6800a60e03d950c890908f80ae7935e213eb5b08f2fb73caa210d4e259d8942c",
+      "size_bytes": 6930942,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:48.767063+00:00",
+      "completed_at": "2026-10-30T21:07:49.304537+00:00"
+    },
+    {
+      "plugin_name": "cors",
+      "plugin_version": "2.0.4",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:627eb5956644f99a7567724c7866f00bc71610547394e06f5e4135f50aa7a8bf",
+      "sha256": "sha256:c863e52ad801692f89cd4e9fa456b51b9292fbd91b24d657ce740b74f890aada",
+      "size_bytes": 6737828,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:49.324761+00:00",
+      "completed_at": "2026-10-30T21:07:49.796339+00:00"
+    },
+    {
+      "plugin_name": "custom-response",
+      "plugin_version": "2.0.1",
+      "implementation": "cpp",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:22cda2036b35609e87b6d2e177cffac8cc798aad87b27b2dcb298551575dd7b9",
+      "sha256": "sha256:a7424986afd3d4519ec837b445183dd702371b2b13b52f0d013b8ec54ee55779",
+      "size_bytes": 192490,
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "started_at": "2026-10-30T21:07:49.806514+00:00",
+      "completed_at": "2026-10-30T21:07:59.090994+00:00"
+    },
+    {
+      "plugin_name": "de-graphql",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:2dce2b4ed7ddae7b5370c8927f7d1834b7c53e43f2642e4fa1a80daa1aef619c",
+      "sha256": "sha256:3d8b4b383a9627c74601e3a63e8023a940dfae1bd6dab2e8f3d6e5317d0e5b94",
+      "size_bytes": 6754531,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:59.107690+00:00",
+      "completed_at": "2026-10-30T21:07:59.571287+00:00"
+    },
+    {
+      "plugin_name": "ext-auth",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:6261b22e920c221ba7ba655a3eb2e0c1fd1376817b8f9c0991a55d1587a9a949",
+      "sha256": "sha256:5abfe1e553d80be50870a703c67a30044a32926ecc2a7ea492ebe82cb2f441e8",
+      "size_bytes": 6837504,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:07:59.592170+00:00",
+      "completed_at": "2026-10-30T21:08:00.066807+00:00"
+    },
+    {
+      "plugin_name": "frontend-gray",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:b10b46440d8eb03bdb192c69ca4ad9eaaaa5ca6f9716b44bee4ce2911aeb5b0d",
+      "sha256": "sha256:396af6c571330ab65f304ddd8f65bb651bc592d347b99a8d89c678da9e34c68d",
+      "size_bytes": 6816432,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:00.086344+00:00",
+      "completed_at": "2026-10-30T21:08:00.566407+00:00"
+    },
+    {
+      "plugin_name": "geo-ip",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:bb5d8c9bba9c6f067db36a430b5d6459617b52e1975cf5d93d96349c9358c2f3",
+      "sha256": "sha256:2e59a939847cca0060e07ccaf34ba9ba0737e90894b056f5e3e27ece9bddc768",
+      "size_bytes": 52936748,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:00.648229+00:00",
+      "completed_at": "2026-10-30T21:08:01.259048+00:00"
+    },
+    {
+      "plugin_name": "gw-error-format",
+      "plugin_version": "1.0.2",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:a2226bb2c841ae180eb17b721e6b6c34477eabdd9ef347aa68d478d1e2661fc6",
+      "sha256": "sha256:2623dd083c2861e6db635ff21f673097b1a95168718b40b86649d86e3890f7b5",
+      "size_bytes": 6102732,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:01.295657+00:00",
+      "completed_at": "2026-10-30T21:08:01.769857+00:00"
+    },
+    {
+      "plugin_name": "hmac-auth",
+      "plugin_version": "2.0.1",
+      "implementation": "cpp",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:a1a5c47f0360fb865eaa380a7f59cf6c16a7d5d1b80dcb72668b04a0ac34de85",
+      "sha256": "sha256:629fd29bcfe1c70f46ec449c698b309f9ec9098373d266ff9aee6434222bac3d",
+      "size_bytes": 450612,
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "started_at": "2026-10-30T21:08:01.779877+00:00",
+      "completed_at": "2026-10-30T21:08:11.096977+00:00"
+    },
+    {
+      "plugin_name": "hmac-auth-apisix",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:0b3db4f1ed2ad33b873e60ef0bc91bd9d8e2488dd7dd4d90dbe4aa9049e93054",
+      "sha256": "sha256:199600145547fbf50d03f67a591e9de3c3a6e46192abef83b2a1197785f3ef95",
+      "size_bytes": 6655170,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:11.113625+00:00",
+      "completed_at": "2026-10-30T21:08:11.607469+00:00"
+    },
+    {
+      "plugin_name": "ip-restriction",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:92c831e7f17d3332d9bc9f3df0c8094f21a417af0d2e43b22bf879788c0e79a9",
+      "sha256": "sha256:b10facd87e8e6efb0fb90845967e364c255a5956e2c6b244f7b605768f14b229",
+      "size_bytes": 6197251,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:11.627246+00:00",
+      "completed_at": "2026-10-30T21:08:12.153715+00:00"
+    },
+    {
+      "plugin_name": "json-converter",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:3d020c823447704d833c6c47a0c8ca4e7327df764fe5cf8e7b5ff900f2b1ed91",
+      "sha256": "sha256:14db8ec00f0f2629825651e8544b7700ce59306e13482d23eb57d8bb8d101cab",
+      "size_bytes": 17669940,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:12.174101+00:00",
+      "completed_at": "2026-10-30T21:08:12.803761+00:00"
+    },
+    {
+      "plugin_name": "jwt-auth",
+      "plugin_version": "2.0.1",
+      "implementation": "cpp",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:bc541efddeba88c1fe14b0acb3e5192d407c8b24f9028a015bd7b5e4e9a60685",
+      "sha256": "sha256:46c1f07ea5e9bce08d6f2dea0151007d73f41dd8493a5e4560f75544ef58fa54",
+      "size_bytes": 2233791,
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "started_at": "2026-10-30T21:08:12.818812+00:00",
+      "completed_at": "2026-10-30T21:08:26.353646+00:00"
+    },
+    {
+      "plugin_name": "key-auth",
+      "plugin_version": "1.2.1",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:7e5eb64ab6228b72b0d1e1a8d3a73cb1cd9bf77e567e9b91a88909dae6a702cb",
+      "sha256": "sha256:01b15b0a613dec69fb2e49676d6b2ede9ca8d7f5cff2dd43e9463613421cf3a3",
+      "size_bytes": 6856966,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:26.376757+00:00",
+      "completed_at": "2026-10-30T21:08:26.920976+00:00"
+    },
+    {
+      "plugin_name": "key-rate-limit",
+      "plugin_version": "2.0.1",
+      "implementation": "cpp",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:730ca8b6abd40c0f2515a639dc346c6eb8d1fe1f13e883af9454ca55b0b42e6b",
+      "sha256": "sha256:54642093b07c55a18236fcf4d14f57c55b39e4d340c0969673f35576a833f8fe",
+      "size_bytes": 248571,
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "started_at": "2026-10-30T21:08:26.931605+00:00",
+      "completed_at": "2026-10-30T21:08:49.411710+00:00"
+    },
+    {
+      "plugin_name": "log-request-response",
+      "plugin_version": "1.0.0",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:ab0bca1bbd801fb418befc2eea675122f204cdab72a03a486fa0540793ab2ebb",
+      "sha256": "sha256:c4b6695411acc708e3e0c41199d769e7e630521dcd661215279ddb2047f074ae",
+      "size_bytes": 6150730,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:49.429664+00:00",
+      "completed_at": "2026-10-30T21:08:49.995753+00:00"
+    },
+    {
+      "plugin_name": "mcp-router",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:3befb8f3cf5dea02b062851e77c4510117ba7fb508a3135f3d5e4c8e4a9ddac8",
+      "sha256": "sha256:dbbae2f8f652e04a49237cdd346f118f8666c48a14a51e2c9fbd08eb73ab0ae1",
+      "size_bytes": 17657389,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:50.016666+00:00",
+      "completed_at": "2026-10-30T21:08:50.680306+00:00"
+    },
+    {
+      "plugin_name": "mcp-server",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:987c3608b9779149bdf52b354e600270abe60a338c11fa2d431e72ed07f39112",
+      "sha256": "sha256:a33893f1d40c98bcee04e243bb75f4af9289f52577751e0d29dc1e3274ff2aa2",
+      "size_bytes": 19983603,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:50.715108+00:00",
+      "completed_at": "2026-10-30T21:08:51.981458+00:00"
+    },
+    {
+      "plugin_name": "model-mapper",
+      "plugin_version": "2.0.4",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:bb3481cc273d2a5aeeefb1edb87ec8b033be1972db66fd5b89bec9e2d78b8863",
+      "sha256": "sha256:c46e48d3f46ba4865ed47d0158a5fec9a472cc14886d26602e17631f508dbdf0",
+      "size_bytes": 6271259,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:52.008680+00:00",
+      "completed_at": "2026-10-30T21:08:52.557944+00:00"
+    },
+    {
+      "plugin_name": "model-router",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:99322631f4a99baf6a699b2e349598e5b573dc68cb7a2577b96dfcd4aab224c3",
+      "sha256": "sha256:b70e04819447a66f9330420b388b17fbcf3c8afb3707d1b6786a58af2d085016",
+      "size_bytes": 6804078,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:52.583344+00:00",
+      "completed_at": "2026-10-30T21:08:53.125717+00:00"
+    },
+    {
+      "plugin_name": "nginx-rewrite-compatible",
+      "plugin_version": "1.0.0",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:bb3d685dc3b67350b6b513d0ff8ac12b8d4c25defe0aac7f8c7ca7afa6d4c7ef",
+      "sha256": "sha256:e241355c23652db61bb4bc31e0944be93ec8c2a504aef952393d0c83f5331b1c",
+      "size_bytes": 6658478,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:08:53.146510+00:00",
+      "completed_at": "2026-10-30T21:08:53.742155+00:00"
+    },
+    {
+      "plugin_name": "oauth",
+      "plugin_version": "2.0.1",
+      "implementation": "cpp",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:f29ee83d9eb01ab5c141e7ccbacf0403ef7f02e9335d67ef4980f4299ed1441a",
+      "sha256": "sha256:e5c90863b4175389a6814ce4fede5d570a6010409069b395406005a6d98d5efd",
+      "size_bytes": 460451,
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "started_at": "2026-10-30T21:08:53.752521+00:00",
+      "completed_at": "2026-10-30T21:09:11.083985+00:00"
+    },
+    {
+      "plugin_name": "oidc",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:ddc27b1be08467e9f6735abfc0051dddf5f190c42659497cf0c6d6c41bb25716",
+      "sha256": "sha256:bb8d3ff033d1bc6690f7c06574d07ce4182b6ee0aa40fe504de14ccd5c6a7155",
+      "size_bytes": 9830815,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:09:11.103491+00:00",
+      "completed_at": "2026-10-30T21:09:11.756309+00:00"
+    },
+    {
+      "plugin_name": "opa",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:bf151da3e4835a1171fd337c269ebf0cd289109f14a1e42df9076e46481c215e",
+      "sha256": "sha256:089e7c864e31ca381cb1c7f8cfe2cf650260709d9d5555a9b999ef908d564635",
+      "size_bytes": 6284668,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:09:11.777588+00:00",
+      "completed_at": "2026-10-30T21:09:12.370216+00:00"
+    },
+    {
+      "plugin_name": "replay-protection",
+      "plugin_version": "1.0.0-alpha",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:e9d1633902ecc5db9fad05224b40b56fd44dcd2eed012ec8a8ca5f438805777e",
+      "sha256": "sha256:99a7e6f3b14f6484cddf704573ce1c908b0abc65212fe029420b6f7dae487b7d",
+      "size_bytes": 6713485,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:09:12.392356+00:00",
+      "completed_at": "2026-10-30T21:09:12.985308+00:00"
+    },
+    {
+      "plugin_name": "request-block",
+      "plugin_version": "2.0.1",
+      "implementation": "cpp",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:cffe7f1dd69a7f806007a16bbc18387b212e70fa73e8343d300bd8c959e677c3",
+      "sha256": "sha256:17974cf9348668898a229babc4a9b9a52cf15607f25c34e29fbcb0261e2d1f5b",
+      "size_bytes": 499597,
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "started_at": "2026-10-30T21:09:12.997789+00:00",
+      "completed_at": "2026-10-30T21:09:25.545514+00:00"
+    },
+    {
+      "plugin_name": "request-validation",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:027673c1b86939d4d049340f053fb5c1190aa1a7930c38b8fe35f98282476f80",
+      "sha256": "sha256:004329e1649d0744dd60e187fa0a51f4e2c06a6274107fd4ac7eb97a43689b16",
+      "size_bytes": 7169044,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:09:25.565977+00:00",
+      "completed_at": "2026-10-30T21:09:26.257215+00:00"
+    },
+    {
+      "plugin_name": "response-cache",
+      "plugin_version": "1.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:f03ecf8736ba363eee5d3239e89d6a5b1e6c9a341d0f684a6deeb49e25801e44",
+      "sha256": "sha256:6bd1c9a2da1bb418cd4aeb5623580eb51a8880ecb590093122ebec3efd1f8f6a",
+      "size_bytes": 6285637,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:09:26.278377+00:00",
+      "completed_at": "2026-10-30T21:09:26.992919+00:00"
+    },
+    {
+      "plugin_name": "traffic-tag",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:0aaf30263210b856b494b3e347241c69d5564e06cd2684b543f138d9e16f2472",
+      "sha256": "sha256:1bdde4c0e8f4aaa0e542c4c3fcc8ac64defb9dd069d34fa7b53e77715d0564ea",
+      "size_bytes": 6752794,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:09:27.025314+00:00",
+      "completed_at": "2026-10-30T21:09:27.817178+00:00"
+    },
+    {
+      "plugin_name": "transformer",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:5f695a9a4c0a038cd5953027fe9761920c3faa15a9a1214e7e6181f5912357f3",
+      "sha256": "sha256:f523ce9660177fd6f117496b1c5c309ca3def3d445f624f641cad6814182a651",
+      "size_bytes": 7145216,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:09:27.845663+00:00",
+      "completed_at": "2026-10-30T21:09:28.589605+00:00"
+    },
+    {
+      "plugin_name": "waf",
+      "plugin_version": "2.0.3",
+      "implementation": "go",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:59e80bd0876e0f77fa651bca3c8dfe4aa567ff89213b21ee29a5642ad482cb36",
+      "sha256": "sha256:465417b1e7bbf6a4ddad64d4b3b4f00a1b1eee454c16dc3ea2a4840720dc0bd0",
+      "size_bytes": 16406411,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "started_at": "2026-10-30T21:09:28.618212+00:00",
+      "completed_at": "2026-10-30T21:09:29.417911+00:00"
+    }
+  ],
+  "explicit_nonformal_builds": [
+    {
+      "plugin_name": "custom-response",
+      "plugin_version": null,
+      "implementation": "assemblyscript",
+      "distribution": "wasm",
+      "started_at": "2026-10-30T21:10:14.482194+00:00",
+      "completed_at": "2026-10-30T21:10:17.613281+00:00",
+      "toolchain": "node:24.22.1-bookworm@sha256:0925478b811e8890f5508ad2a75135933310effd45492696ecf7c111c8339d02",
+      "source_commit": "2c5a633f456e660bca6f38edb8d9df4cbc82fdcb",
+      "source_inputs_digest": "sha256:6e5403c4ee4db7f08a01a582b92980fe0797b7e578f5c4f188729246a2a3cbfb",
+      "artifact": "build/plugins/custom-response/unversioned/plugin.wasm",
+      "sha256": "sha256:c88bdc9ea2dd5238834792a083ca24c5a1506f231007613290451e1d327a2613",
+      "size_bytes": 81950
+    },
+    {
+      "plugin_name": "hello-world",
+      "plugin_version": null,
+      "implementation": "assemblyscript",
+      "distribution": "wasm",
+      "started_at": "2026-10-30T21:10:17.656985+00:00",
+      "completed_at": "2026-10-30T21:10:20.755653+00:00",
+      "toolchain": "node:24.22.1-bookworm@sha256:0925478b811e8890f5508ad2a75135933310effd45492696ecf7c111c8339d02",
+      "source_commit": "2c5a633f456e660bca6f38edb8d9df4cbc82fdcb",
+      "source_inputs_digest": "sha256:7010d64e71e396979b66d9edfdadf5b8c7feef84f83c0cff4e31e214e992ea6e",
+      "artifact": "build/plugins/hello-world/unversioned/plugin.wasm",
+      "sha256": "sha256:441f82affd3823149039ddca91bcfcadf33f0e34eb4cbb7e507f6e29678daf5c",
+      "size_bytes": 71691
+    },
+    {
+      "plugin_name": "golang-filter",
+      "plugin_version": null,
+      "implementation": "native-go",
+      "distribution": "native",
+      "started_at": "2026-10-30T21:09:15.113903+00:00",
+      "completed_at": "2026-10-30T21:09:59.863473+00:00",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:0fe22fa532391933251678f60acaf7d759977075139629e24abf7f205f371ccf",
+      "artifact": "build/native/golang-filter/unversioned/filter.so",
+      "sha256": "sha256:832e765485a056497a265a45f82ca071a57ac36f3a6b45102cacaeb60f73f8ae",
+      "size_bytes": 79304456
+    }
+  ],
+  "tests": {
+    "python_runtime": {
+      "command": [
+        "make",
+        "test"
+      ],
+      "started_at": "2026-10-30T21:16:10.502871+00:00",
+      "completed_at": "2026-10-30T21:16:26.719769+00:00",
+      "exit_code": 0,
+      "log_sha256": "7421393f7eb68fd1a61e15a513754be6d21df87b4a7d116f4bd2876c500cbb9f",
+      "log_bytes": 22977
+    },
+    "go_framework": {
+      "module": "wasm-go",
+      "started_at": "2026-10-30T21:07:28.280845+00:00",
+      "completed_at": "2026-10-30T21:07:55.480909+00:00",
+      "exit_code": 0,
+      "log_sha256": "d1ca2e51941fa67d6c83cddb19b9ac2418bbb1bc68393642b13e58fe4c3c2761",
+      "log_bytes": 1191
+    },
+    "go_memory": {
+      "module": "ai-memory",
+      "version": "0.1.7",
+      "started_at": "2026-10-30T21:08:44.152909+00:00",
+      "completed_at": "2026-10-30T21:09:18.296338+00:00",
+      "exit_code": 0,
+      "wasm_sha256": "af9676a645f90a296a738530ac37ad7abf5aec71683ff1e5ab71eb36b235cd99",
+      "log_sha256": "62c4cf6056739c4d4be2e11e25e16e4181a9899d129085b52760b880075b8e59",
+      "log_bytes": 160
+    },
+    "go_billing": {
+      "plugin": "ai-billing",
+      "version": "1.0.1",
+      "source_commit": "c29670ad0a1e3dbe9b2e08ebd4a98598b3ebe857",
+      "started_at": "2026-10-30T20:27:28.692498+00:00",
+      "completed_at": "2026-10-30T20:28:22.866291+00:00",
+      "exit_code": 0,
+      "wasm_sha256": "26d97652c71320a96cd28413e0bdf49d2e58d3019057d86768158c4c0479ac5c",
+      "log_sha256": "a7e54ad9e357eacfeca9b9d71506e0d5831647a5c496d7370dd123e495334bd3",
+      "log_bytes": 24
+    },
+    "go_proxy_qwen2": {
+      "plugin": "ai-proxy",
+      "version": "2.0.10",
+      "started_at": "2026-10-30T20:54:02.495198+00:00",
+      "completed_at": "2026-10-30T20:54:06.474536+00:00",
+      "exit_code": 0,
+      "wasm_sha256": "fb2157f81298555df26d56f189bf311b52a0ed03ea11bad720d217cf71767439",
+      "log_sha256": "816a61496cdfd291d59a4a274b073538547b7b849200b04562708c7a6fc45485",
+      "passes": [
+        "--- PASS: TestNativeMediaQwenProviderInitializes (3.09s)",
+        "--- PASS: TestNativeMediaQwenProviderInitializes/qwen_image20_pro_sync (3.09s)",
+        "--- PASS: TestNativeMediaQwenProviderInitializes/qwen_image20_pro_sync/go (0.00s)",
+        "--- PASS: TestNativeMediaQwenProviderInitializes/qwen_image20_pro_sync/wasm (3.09s)"
+      ],
+      "skips": []
+    },
+    "unchanged_custom_wasm_full_regressions": [
+      {
+        "module": "ai-quota",
+        "started_at": "2026-10-30T19:50:23.893275+00:00",
+        "completed_at": "2026-10-30T19:50:43.088618+00:00",
+        "exit_code": 0,
+        "log_sha256": "143589a71b6de7bf9f92129a3f9a0df6269a6fb510cc284b85bf5e8ade22e0c3",
+        "log_bytes": 156,
+        "wasm_sha256": "acf4c506e9bda4ca066c7b5fd5897ad5b41d71b3738dea65f259b612dc48423a"
+      },
+      {
+        "module": "ai-cache",
+        "started_at": "2026-10-30T19:50:43.094477+00:00",
+        "completed_at": "2026-10-30T19:51:39.320088+00:00",
+        "exit_code": 0,
+        "log_sha256": "cddf3d8696f14af5e2d929c913e1137615da4bac384cefce0571cee3199fae25",
+        "log_bytes": 158,
+        "wasm_sha256": "aa64c2bdcff23b6147163e0ce4bf84e816981b9c1af94dfe8a352db449ef758f"
+      },
+      {
+        "module": "ai-history",
+        "started_at": "2026-10-30T19:51:39.325833+00:00",
+        "completed_at": "2026-10-30T19:51:51.978698+00:00",
+        "exit_code": 0,
+        "log_sha256": "42e6d021fd853397719431be768718feb380971c7ebc88b51cbe689434ec0f4a",
+        "log_bytes": 78,
+        "wasm_sha256": "b9f18f9cd4913844c754de005e4ab01c14d8cabe279baca57ff6709bcfca82e0"
+      },
+      {
+        "module": "ai-statistics",
+        "started_at": "2026-10-30T19:51:51.993001+00:00",
+        "completed_at": "2026-10-30T19:52:31.239997+00:00",
+        "exit_code": 0,
+        "log_sha256": "eca909f07dfcb6ebc7ae5bfa89a86297672282688da87bdeabe083ed885d565e",
+        "log_bytes": 27,
+        "wasm_sha256": "7b156eeb6e755be14e369dbdc12aed64b7981e02fadb9dc6ff1c5304a44384c2"
+      },
+      {
+        "module": "model-mapper",
+        "started_at": "2026-10-30T19:52:31.245458+00:00",
+        "completed_at": "2026-10-30T19:52:53.265468+00:00",
+        "exit_code": 0,
+        "log_sha256": "4d445478636255baa1d030bc14e12394092aede6dd2298be738b8827dbcddba2",
+        "log_bytes": 80,
+        "wasm_sha256": "c46e48d3f46ba4865ed47d0158a5fec9a472cc14886d26602e17631f508dbdf0"
+      },
+      {
+        "module": "key-auth",
+        "started_at": "2026-10-30T19:54:02.580606+00:00",
+        "completed_at": "2026-10-30T19:54:18.324161+00:00",
+        "exit_code": 0,
+        "log_sha256": "1df197e221308d31cfd887fb076baa0a75bd1e08a13f04b574364ab455bb99f7",
+        "log_bytes": 22,
+        "wasm_sha256": "01b15b0a613dec69fb2e49676d6b2ede9ca8d7f5cff2dd43e9463613421cf3a3"
+      },
+      {
+        "module": "model-router",
+        "started_at": "2026-10-30T19:54:18.330901+00:00",
+        "completed_at": "2026-10-30T19:54:50.431113+00:00",
+        "exit_code": 0,
+        "log_sha256": "ee9221c7a1fb1cd4ef0006939144e21b299290ff115ee7d16f262a20da705d11",
+        "log_bytes": 26,
+        "wasm_sha256": "b70e04819447a66f9330420b388b17fbcf3c8afb3707d1b6786a58af2d085016"
+      },
+      {
+        "module": "ai-token-ratelimit",
+        "started_at": "2026-10-30T19:54:50.437612+00:00",
+        "completed_at": "2026-10-30T19:55:19.423178+00:00",
+        "exit_code": 0,
+        "log_sha256": "0142d2c15873d73ae8fb6406a2d43f2f8025610784b79ef1234c1e2f45b237de",
+        "log_bytes": 106,
+        "wasm_sha256": "b9287a745d3edaa83604db8d872622f603de3d43c8f9d9603aedfa0b8f59b5c5"
+      },
+      {
+        "module": "cluster-key-rate-limit",
+        "started_at": "2026-10-30T19:55:19.429962+00:00",
+        "completed_at": "2026-10-30T19:55:27.547331+00:00",
+        "exit_code": 0,
+        "log_sha256": "2a1a65e1db91e55dc9989bbfa7c205b3dbcf4ea7d2bc60eaf093e61e2f6a2aad",
+        "log_bytes": 117,
+        "wasm_sha256": "6800a60e03d950c890908f80ae7935e213eb5b08f2fb73caa210d4e259d8942c"
+      }
+    ],
+    "proxy_focused_log": {
+      "pass_events": 84,
+      "skip_events": 0,
+      "failure_events": 0,
+      "log_sha256": "cbba81cab518bf1fb21f8735804dc0d8076387f084291471d2c361c1a91b12c0"
+    }
+  },
+  "upload_ingestion": {
+    "new_complete_packages": 53,
+    "reused_registered_packages": 2,
+    "total_registered_store_versions": 79,
+    "trusted_policy_sha256": "bc88b90651cdf521b4aa67687c342b7a8b5b9f7df2bb7f379d229d6eb41c2bf8",
+    "initial_ingest_log_sha256": "c7c708c96433392fcc2a9107a9038617f09753a1515734eb15cf595005b1c343",
+    "metadata_only_resume_log_sha256": "dbc67b789f0e852104e76ee0ec65f72f26206221b564e3eb9526d51ef7cab6dc"
+  },
+  "image": {
+    "source_commit": "d4e422d1d302a5bfe7e530f2a9893cb35d0b3765",
+    "tag": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:unified-source-20261031-d4e422d1d302",
+    "started_at": "2026-10-30T21:17:36.160248+00:00",
+    "completed_at": "2026-10-30T21:17:59.452417+00:00",
+    "exit_code": 0,
+    "image_id": "sha256:791ce5e0431b29545dc040e40416183be9893b059bfee1e69bf8ae97e97cb7ad",
+    "log_sha256": "cd4567505c5f1b7ff84508214c0d8106da48fdc6b2eca816cc2977cac1e7730e",
+    "registry_digest": "sha256:791ce5e0431b29545dc040e40416183be9893b059bfee1e69bf8ae97e97cb7ad",
+    "pull_ref": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:unified-source-20261031-d4e422d1d302@sha256:791ce5e0431b29545dc040e40416183be9893b059bfee1e69bf8ae97e97cb7ad",
+    "pushed_at": "2026-10-30T21:19:22.606574+00:00",
+    "push_log_sha256": "744d9dbd5ae3872724c13470590cb83042a9f225a5449832193ecc60bde47842"
+  },
+  "local_image_http": {
+    "started_at": "2026-10-30T21:19:09.881219+00:00",
+    "completed_at": "2026-10-30T21:19:11.484570+00:00",
+    "image_id": "sha256:791ce5e0431b29545dc040e40416183be9893b059bfee1e69bf8ae97e97cb7ad",
+    "tag": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:unified-source-20261031-d4e422d1d302",
+    "registered_metadata_count": 79,
+    "metadata_status": 200,
+    "metadata_bytes": 1001797,
+    "metadata_sha256": "0f4c7be7b93d4604d59d3fb132ca2cb543ba6fc41f7bea577cc6196eecc50034",
+    "model_router": {
+      "version": "2.0.3",
+      "status": 200,
+      "artifact_id": "79a46ff7-218a-4797-83dc-801d1eac2f69",
+      "wasm_sha256": "sha256:b70e04819447a66f9330420b388b17fbcf3c8afb3707d1b6786a58af2d085016",
+      "size_bytes": 6804078
+    }
+  },
+  "deployment": {
+    "started_at": "2026-10-30T21:24:39.563394+00:00",
+    "baseline_revision": 99,
+    "completed_at": "2026-10-30T21:25:20.048924+00:00",
+    "exit_code": 0,
+    "revision": 100,
+    "status": "deployed"
+  },
+  "deployment_source_commit": "7450923",
+  "chart_sha256": "cef1b629cde0f97b202f478df501d1f681a3303fa2d88acc5d206c4599706384",
+  "server_dry_run": {
+    "exit_code": 0,
+    "baseline_revision": 99,
+    "baseline_manifest_count": 81,
+    "candidate_manifest_count": 80,
+    "changed_resources": [
+      [
+        "apps/v1",
+        "Deployment",
+        "higress-system",
+        "higress-plugin-server"
+      ],
+      [
+        "v1",
+        "ConfigMap",
+        "higress-system",
+        "higress-plugin-server-seed"
+      ]
+    ],
+    "plugin_server_image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:unified-source-20261031-d4e422d1d302@sha256:791ce5e0431b29545dc040e40416183be9893b059bfee1e69bf8ae97e97cb7ad",
+    "other_manifests_unchanged": true
+  },
+  "pvc_seed": {
+    "copied": [
+      "9eff78f7-494d-48e1-b11f-9dd65dd66e30",
+      "665e3c3a-befa-45f9-9dad-e300ea6527b1",
+      "1987eef9-e6dc-4e57-aac9-3553e4659ceb",
+      "6c15ce70-b94c-4b71-bc24-ea55cab39a6a",
+      "b0112686-d05d-40cd-bad7-28b61396f400",
+      "7e6048a7-961b-4599-a99d-3989ae90333e",
+      "524e81c6-d29e-4ec9-a72b-660612309b39",
+      "f3d3c5a2-00b1-4c1f-9fb2-8b2c0f9754ee",
+      "41114ddf-d48a-4c90-a1dd-427e224e1098",
+      "374a55be-32f9-431e-90ea-e4e260ee4c3d",
+      "5d8f5c8a-1962-49db-8b9a-c43c78ef850d",
+      "446c22b2-5784-42bf-9cd4-3e6fb3eb0611",
+      "dd5c192a-f883-4e9c-97b8-5c0f503ca25c",
+      "4bdf0615-07ae-438a-b807-09ba39f554f5",
+      "62134644-6df1-455e-a290-69d13ea4fb64",
+      "fb67a967-a0e5-42d5-ae80-fd4e9a55571d",
+      "06ad8274-c69e-4a84-9a17-20f2ba491c00",
+      "8c5dd495-4dd5-41fe-847d-9e298fdf9b6b",
+      "6ab090c3-f298-4038-8db0-0df1e963c8bc",
+      "8fd6e202-4e8a-4d03-b1e9-c8511afbaf4a",
+      "691807c3-08c5-4895-9981-07be470c5a14",
+      "6e4ff3d7-87d8-4b74-a162-c72a18224631",
+      "bea48496-a21c-4f82-bd8f-53d86252d324",
+      "b1d7f9b3-6273-41fd-91bf-f2c00173bb60",
+      "8e7c0e46-e0b6-4473-8196-0f204a0a007f",
+      "718de170-44ab-452f-9444-b3fd92498f47",
+      "6a34197e-03b4-4977-b007-b7ed1177174f",
+      "81dd1be9-060a-4d41-a2cd-50b1a6dea4aa",
+      "f4fcd379-dfac-4eed-8823-fe3a65880d90",
+      "9d9c2bf6-e0f9-4c6e-8c42-0fa051cf4b47",
+      "e52c82f2-2c09-4a6e-96f6-f497a6733a7f",
+      "b6bbbda0-6e14-4e23-939d-6f91bb49c8ae",
+      "ccfc7717-9719-4208-931d-2e1ace94c600",
+      "fccae2cd-884e-4022-9d16-b55085ffe07a",
+      "1f7a609a-f0d8-4506-a7cc-eecd6260af08",
+      "5c5b929c-dab6-46ff-997f-95882890dd1b",
+      "ae6c12bd-b381-485e-b088-a620a6990d03",
+      "95059b48-6f7d-494c-a04c-d22e4c0b4b17",
+      "4463c5bc-0d5e-4f69-9874-0ddfcba24dae",
+      "45ff7db5-1b09-4439-bfa5-576d4de3dad7",
+      "6d53e1c2-2f6a-478a-a9d3-b86b7849728a",
+      "79a46ff7-218a-4797-83dc-801d1eac2f69",
+      "64c12912-752d-43a3-baef-a111681cc217",
+      "376c18fa-f8f6-4380-8d7a-3a5b4d8f5a77",
+      "30ed0628-ac69-4763-b16f-6c58ae611ef6",
+      "423e5878-48b5-4d43-a525-435b81ef1747",
+      "6c969afa-2c4c-4281-8ac0-e3fb4082a41e",
+      "288d4ddd-dbab-4b66-99a3-002fb8c82db4",
+      "f8832bb0-582f-4fd6-9915-89312c003f9e",
+      "4f849c03-deb9-44d0-a7eb-9829591fda41",
+      "399573d2-8b64-4129-9ddf-856ab6104b24",
+      "cbe4c600-c761-4a0b-9ced-041e70d5bdbe",
+      "545eaaf5-9dad-4963-81f2-5f8c41d9d45c"
+    ],
+    "retained": [
+      "ffc73871-21a8-45bb-900b-b24720394a85",
+      "fc5782c2-eb61-4d4a-8a4f-04b499b813da",
+      "e10a0171-e504-40e6-81c9-d7a3329e8129",
+      "545e6c71-84a9-48f8-a254-8928698e96c2",
+      "78c9e3e1-03d4-4f2d-9e23-4fb10d0fe148",
+      "a072c353-2340-4bd2-9271-bc9edf082331",
+      "4f694d4a-75dd-4576-8c31-db2b6737a79a",
+      "f4308f43-a857-4951-aba9-33be474baf8a",
+      "d0b545fb-8ca5-49b8-b1a4-69de79f6313d",
+      "f18931b9-fde7-406c-8028-8c211306a760",
+      "53856b32-dff8-4a29-9671-72409ace664a",
+      "2add6ecc-8363-439f-8ebc-3c82bbd44ee7",
+      "ca1e0b77-781a-49f3-b63e-79c6948d5101",
+      "a87fd6d6-89a3-4625-8026-9978b0003744",
+      "e2a20fb3-1a2e-4c12-a799-d323d92c1e8e",
+      "97165091-3924-4278-afd3-761a3381b60d",
+      "3d39eac1-bcdc-47e9-9156-82f44444bb17",
+      "f3bed6b6-2848-4a74-92bd-bbbda2ed9ffa",
+      "41d50f84-e66b-4d2f-932f-12f8279bf9c2",
+      "6f671777-0b59-486a-9ff8-1290806c9c62",
+      "f51eace7-58cf-4127-8e38-3d9345aab6f1",
+      "defbb948-0c98-4b90-92d3-6e999cfbe309",
+      "6ddcbceb-f00e-48c6-bca6-ceba9be55c2b",
+      "e9412a1a-fcf7-43a4-9108-506870ea671d",
+      "8328af04-ae4c-402e-8c74-1fd7ea3ca441",
+      "eec9329b-dcc8-4681-91d6-d3139192f4d5"
+    ]
+  },
+  "pvc_matches_image": true,
+  "inventory_digest": "sha256:d41a60f7c06ed69b8d13dd4f602535d5a45467341002b33887c45c290cc96843",
+  "selected_artifacts": [
+    {
+      "plugin_name": "ai-agent",
+      "plugin_version": "2.0.3",
+      "artifact_id": "9eff78f7-494d-48e1-b11f-9dd65dd66e30",
+      "content_digest": "sha256:0739dc515187376f99241ae103727bfed05c4c06a7c0eeae0e4099f73814d35c",
+      "archive_digest": "sha256:65881de062c6b01bd1e5cfae2a094c2b64aba6f553114015a1de7817cd4113cb",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-agent/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:a47da7af998f870c32fb0a808d229981009e61c145f759bf88d279a2a3c2b8f2",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.1",
+      "artifact_id": "78c9e3e1-03d4-4f2d-9e23-4fb10d0fe148",
+      "content_digest": "sha256:4564750321553fda84086b7d3694a076a3e75df0320bb6d065261b2b3fa0d92e",
+      "archive_digest": "sha256:79e0645b245ae685368ab5e48bb35b11f69cd86407e8394545085ed44438c511",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-billing/1.0.1/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:2c61c11be39dd3b64b686ff790f87ffb8629e542a02212c7c624ff7f4cae75e1",
+        "commit": "c29670ad0a1e3dbe9b2e08ebd4a98598b3ebe857",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.4",
+      "artifact_id": "665e3c3a-befa-45f9-9dad-e300ea6527b1",
+      "content_digest": "sha256:747d065201be520b18ecf37ca2b441ad8916747e69f7d9bba2d735160bde1286",
+      "archive_digest": "sha256:ea501d85af4a2a21f0b8381183c4615587822f2775fc6ec30cfb727378eae0d2",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-cache/2.0.4/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:1587ce9159187d7ca49ab5f3c3b2959f8856a8d0fe8724ba35fba6a5e6a981d2",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-context-limit",
+      "plugin_version": "1.0.0",
+      "artifact_id": "1987eef9-e6dc-4e57-aac9-3553e4659ceb",
+      "content_digest": "sha256:c798700979453e3661334c8fbc0a52cb4a8c6addf189d19f592b142a5611038a",
+      "archive_digest": "sha256:8c9ab28f7566cf9b3dc9b678a8a575d1c209f33c023b52ac826971edc228e939",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-context-limit/1.0.0/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:0a7e93cf983d4d59749926ec8ecd93226fa1f0260a220ccb4ce44794d4cef699",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-data-masking",
+      "plugin_version": "2.0.3",
+      "artifact_id": "6c15ce70-b94c-4b71-bc24-ea55cab39a6a",
+      "content_digest": "sha256:54a5b40d6cfd7a73454db576373fe96e78f55d859db9596e08198f881546638d",
+      "archive_digest": "sha256:0737e2b973bd8814474d692680f1ae7bbadc37536df69afb9ec43e10293b530c",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-data-masking/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:c3f49cc0d0fed1cc676ec22b4b124484668ab677c0fe4a232208001a82b00648",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-endpoint-picker",
+      "plugin_version": "2.0.2",
+      "artifact_id": "b0112686-d05d-40cd-bad7-28b61396f400",
+      "content_digest": "sha256:5c449a30f453d4dcf75ee3e0c0e0939e2c1f9408691964554ff24fccab4bc19d",
+      "archive_digest": "sha256:94648b2f0bcc49f4f04d8752732e53dc73eb8d6b2fa7b8e2baf8846cf6da2300",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-endpoint-picker/2.0.2/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:9afec3f78f94aab8eff01dc81d4140c54308e6ad45b802fff9f57679e0aeed01",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-history",
+      "plugin_version": "2.0.4",
+      "artifact_id": "7e6048a7-961b-4599-a99d-3989ae90333e",
+      "content_digest": "sha256:6ed707aa94127f853256aabec77ad78f69df2395502e69c1ff93ca08c67d96ce",
+      "archive_digest": "sha256:2eea5412d402b34fd222b8cc5dc42983981e405222a2b0df2847510ee46a2e76",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-history/2.0.4/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:071c2ccb99ab11eb864d7880b7a72ab27c78d27d58264d603bf4644082804737",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-intent",
+      "plugin_version": "2.0.3",
+      "artifact_id": "524e81c6-d29e-4ec9-a72b-660612309b39",
+      "content_digest": "sha256:8579e1a8937aecfa114c57873f72fd84c58d5ad0cd78c660640c31695ec9bf4e",
+      "archive_digest": "sha256:997303909df44402d4194ab6405ef9be512efccd76d8d03d099e72dc8bee506a",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-intent/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:1ac86ede1a9da06100b2996d29e6151c9babb0edd39a5d0aea348d5235dad08c",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-json-resp",
+      "plugin_version": "2.0.3",
+      "artifact_id": "f3d3c5a2-00b1-4c1f-9fb2-8b2c0f9754ee",
+      "content_digest": "sha256:5e67aa7889bdcdc80e54b08db6e8258cd81a7ee15023d3296d75a2ee97ae3a66",
+      "archive_digest": "sha256:f50fe59c1158eb400302351a1d71c265071e8a8f72cffc6e09ba6c427a9d4a01",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-json-resp/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:3824483872dfa58700b77397f61122c22e167dcb709052e76f1fec0868b87b9c",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-load-balancer",
+      "plugin_version": "2.0.3",
+      "artifact_id": "41114ddf-d48a-4c90-a1dd-427e224e1098",
+      "content_digest": "sha256:faaa8de426d20e49f85496bec63bdff1b93acb5261d08443bbac9fdb8c145839",
+      "archive_digest": "sha256:3ef6dacdfd8370acb643ab967f8b34fc1494f0572731184b02a84a2bb0527c24",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-load-balancer/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:091b09fc3387fcf9883d3ede2c251e5bf506a175f854b4dcc593cf652892cd3f",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.7",
+      "artifact_id": "374a55be-32f9-431e-90ea-e4e260ee4c3d",
+      "content_digest": "sha256:67e9ab9ea6c93d38bf49e3c748fa673f7a82bfdf3802a59cc32e05ae9c772c5a",
+      "archive_digest": "sha256:5b9ff9d6aa379b78115724aa8bca56d36367f8bca6dbd892e3c1f4d4b0e0c67b",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-memory/0.1.7/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:744bc8ca53b64f403e71ea8f2577704784c71aa6fd1b2165a4effb0681d3b466",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-prompt-decorator",
+      "plugin_version": "2.0.3",
+      "artifact_id": "5d8f5c8a-1962-49db-8b9a-c43c78ef850d",
+      "content_digest": "sha256:87281c057e304954166e38ff15fd944ed2c5996cc3c6d93cab33231dca03af61",
+      "archive_digest": "sha256:c2114dc772192b746f1d0b143b93ed2729fe52f663a45d40b500d37d2a1b15b6",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-prompt-decorator/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:602fb99be8ef27bbd74b0be5bc1a7a96d5b99f50a04ae28fef91b3d28135e9a1",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-prompt-template",
+      "plugin_version": "2.0.3",
+      "artifact_id": "446c22b2-5784-42bf-9cd4-3e6fb3eb0611",
+      "content_digest": "sha256:e82d8d906cddde1759cb7b03162d097c3cc8e43cb19dd0a53db392c6e180f6dc",
+      "archive_digest": "sha256:04e550afca621fdd8874e702374c03d87ccb457549bbb4d1884ce37fcbb1a369",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-prompt-template/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:333c42a8591fe9dacd23fcfde3716350ce182f9c53f645c69f4981b72937e4b3",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.10",
+      "artifact_id": "97165091-3924-4278-afd3-761a3381b60d",
+      "content_digest": "sha256:6b1466d8c811c73d42a800347209af928aeb3a136fae73b3da3089574878f892",
+      "archive_digest": "sha256:93ccbf1411e2ce54e3cd95561ae8a433a019e6e24e432eb6cdd88d5f46627a73",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.10/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:ee59cce030ce0ef7aa805103c7ed0f1efbe91b100a882405ea93412f5da051ed",
+        "commit": "ea974f6aec6d6efd8d20564c3f8ddd2d8ab55c88",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.4",
+      "artifact_id": "dd5c192a-f883-4e9c-97b8-5c0f503ca25c",
+      "content_digest": "sha256:552f90d48192cda2ea0cb62f2c1fdf018f94d99a38e8ec06cc69d4f825eab45a",
+      "archive_digest": "sha256:939b3428cf5d856caaaa66e0b8494ffb05ce34b512e8f12dfc4661d7753f9a23",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-quota/2.0.4/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:5d794ef7177b7e3de327d23e30d04665d7f8f41852cc9fc5dcb1e1e84b587b3e",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-rag",
+      "plugin_version": "2.0.3",
+      "artifact_id": "4bdf0615-07ae-438a-b807-09ba39f554f5",
+      "content_digest": "sha256:93854f7f80ae5d00e61acbad56bd2e2c36913382692a5731f85a213f355a822c",
+      "archive_digest": "sha256:bcaa0959bca25247878f3237f6b816736e86e5d112c305f4e50ce934723754cf",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-rag/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:47f1a05b2154903a0bb56b69dd00c4cbbc06984eb0d79a5b361f15cf39d0ccb4",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-search",
+      "plugin_version": "2.0.3",
+      "artifact_id": "62134644-6df1-455e-a290-69d13ea4fb64",
+      "content_digest": "sha256:5fa2df3de1a555e07b1ed08100acb3db20ab05b14de5e7d2228708538bb1f430",
+      "archive_digest": "sha256:fa7ad117c3ea8cdc46c4d20f3608e93a2c4c241abe12dff6ee644f19aff3d552",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-search/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:ada62ab34cd860e7e14446907ea2114e282ba4d9efec11c387e525e46071634e",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-security-guard",
+      "plugin_version": "2.0.3",
+      "artifact_id": "fb67a967-a0e5-42d5-ae80-fd4e9a55571d",
+      "content_digest": "sha256:ea2b66be61dbc8b69b826fe57dd7bfd9ec574a3659e7bc9160f6eef6fdaef849",
+      "archive_digest": "sha256:36c5733bc0d0181d2fd679b4794b692de2e1c63995377d3d8133906358542955",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-security-guard/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:6a1d2ddc9e41988ae8b226f65647654a27a087b611c90af338167be0307ebc53",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-statistics",
+      "plugin_version": "2.0.4",
+      "artifact_id": "06ad8274-c69e-4a84-9a17-20f2ba491c00",
+      "content_digest": "sha256:29029eb02fb48dad61a21ce7b8872c15ff6a97c64aba9f1fea6cf6ea368dd1c7",
+      "archive_digest": "sha256:c28c5dcf93228de3efbbc7757706f73f78ee3af8e3f823d68dcde36ce7754fb3",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-statistics/2.0.4/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:0b302646c0383e208fcfbafd8591b4cbbd70794fa30cf6aa9a9121730a125be2",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-token-ratelimit",
+      "plugin_version": "2.0.3",
+      "artifact_id": "8c5dd495-4dd5-41fe-847d-9e298fdf9b6b",
+      "content_digest": "sha256:ba160079ba31a3f27a771c50cdbe4385c9485ceaefde2ba98dc51fbb028107b6",
+      "archive_digest": "sha256:172946cfea303c0c25882e42479e03b41c60b5b3e0e0fb8b9fb9d403e18db046",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-token-ratelimit/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:c00db3f410d985cf59a88c6046245a0b5b0bc169c5f65ab0b5cee5530804657f",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ai-transformer",
+      "plugin_version": "2.0.3",
+      "artifact_id": "6ab090c3-f298-4038-8db0-0df1e963c8bc",
+      "content_digest": "sha256:d2c8ffab82c396c97c9821c10e47e5c213812ad0d20ebeec333c3110a8d65db9",
+      "archive_digest": "sha256:6a9dbb97b14f937e1787e5f996f38501ced96604e5e3bf584156a12a83c2b1ba",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-transformer/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:786e3862b2ae4f7c53d8cb5dd486dabef0e08dff8fb318f6a9c88bef22e8e026",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "basic-auth",
+      "plugin_version": "2.0.1",
+      "artifact_id": "8fd6e202-4e8a-4d03-b1e9-c8511afbaf4a",
+      "content_digest": "sha256:f44606bbce0c8256c2d4fbd5b4bb85dbbcfeca654dc299a081fd2c8567c16efb",
+      "archive_digest": "sha256:4f38601c32577b74b7e53a9fc566c07e7477da7200da9f4321d4f18dcb398f12",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/basic-auth/2.0.1/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:bcf3cdb0386cba094e20a305b902c2aa5734081e1c4c9850ba1c02f92e33b0b2",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "bot-detect",
+      "plugin_version": "2.0.1",
+      "artifact_id": "691807c3-08c5-4895-9981-07be470c5a14",
+      "content_digest": "sha256:c344160f4e6ae392e17613a841fde2a8bf1982bb87c1dd91a8673f9d4b1b4180",
+      "archive_digest": "sha256:ae2c1fd1e0cc571ba10d0f3a4036ac67b3734a273090bc5bf96d17408df3f102",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/bot-detect/2.0.1/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:fa21fdb06e4a1c578ef3278eb8cb4fe951efe1210d7bac625184c2b5b2738069",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "cache-control",
+      "plugin_version": "2.0.3",
+      "artifact_id": "6e4ff3d7-87d8-4b74-a162-c72a18224631",
+      "content_digest": "sha256:e13a3405413bf8c814c4d117af6bf2e9e0c06ef063e0623843b73a6c2b9693c0",
+      "archive_digest": "sha256:35615d188f1e6b278ecab7f2952c82ad6ef9133197ec77ff2e9003cf8ffbef2d",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/cache-control/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:252e67c87a121ee6a3198b68c66065618b260c618be25635dd508e23d3a78138",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "cluster-key-rate-limit",
+      "plugin_version": "2.0.3",
+      "artifact_id": "bea48496-a21c-4f82-bd8f-53d86252d324",
+      "content_digest": "sha256:4fec9aade45a4c2b302d6978504008f813ffe27597a1aa03aa7c5afa1605de9c",
+      "archive_digest": "sha256:f3c27c3523ebea679da97d1733f2d6594d9d61fb6a7d217f51f5a8fe26aaa998",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/cluster-key-rate-limit/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:09e68cd410113ce109cffdd8f80a57dc2c36ba4a8d2117092a2ddbed89a21d3f",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "cors",
+      "plugin_version": "2.0.4",
+      "artifact_id": "b1d7f9b3-6273-41fd-91bf-f2c00173bb60",
+      "content_digest": "sha256:f30cd454485937f44e125ad775f6061289b151d7f334df324cf31593c701c92f",
+      "archive_digest": "sha256:61b652d121b67428b9415524d3975ee33ce1d595db31f75575772bc8495047af",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/cors/2.0.4/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:627eb5956644f99a7567724c7866f00bc71610547394e06f5e4135f50aa7a8bf",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "custom-response",
+      "plugin_version": "2.0.1",
+      "artifact_id": "8e7c0e46-e0b6-4473-8196-0f204a0a007f",
+      "content_digest": "sha256:b049973ef55538b318650e7c8132163d267cc0b9e2e47df379594cd41f2fe20e",
+      "archive_digest": "sha256:75951e4bd5ff4fd7722081d788ff36060cd0f1718c2925d955dc988891269257",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/custom-response/2.0.1/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:22cda2036b35609e87b6d2e177cffac8cc798aad87b27b2dcb298551575dd7b9",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "de-graphql",
+      "plugin_version": "2.0.3",
+      "artifact_id": "718de170-44ab-452f-9444-b3fd92498f47",
+      "content_digest": "sha256:a7d1dc998f4fb0a170799b527674d1bf882b8b9cd5986b2ff0a301129b709e24",
+      "archive_digest": "sha256:112f55dba1ddfdb9a47eb332fdb9e8c32c548ba743c1084aa1be698c48c7ee92",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/de-graphql/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:2dce2b4ed7ddae7b5370c8927f7d1834b7c53e43f2642e4fa1a80daa1aef619c",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ext-auth",
+      "plugin_version": "2.0.3",
+      "artifact_id": "6a34197e-03b4-4977-b007-b7ed1177174f",
+      "content_digest": "sha256:26af0a1dc9f4a864e9dfb2d2670c506cc8ba1bd2f9aa207d9b6c5b90a2d5a95f",
+      "archive_digest": "sha256:4e19e445756142a24f8f8fbc43e3e70a647a3c605e9b885af0b33f215849d79c",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ext-auth/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:6261b22e920c221ba7ba655a3eb2e0c1fd1376817b8f9c0991a55d1587a9a949",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "frontend-gray",
+      "plugin_version": "2.0.3",
+      "artifact_id": "81dd1be9-060a-4d41-a2cd-50b1a6dea4aa",
+      "content_digest": "sha256:d25b24b321cc7f1eb9d7210f6fb4aa482b9553830776e20dfc3ee594bd751a00",
+      "archive_digest": "sha256:eca2e6c6fc48c4ab8847cb974070f79a24788602cddf0e973a125bf5fead6819",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/frontend-gray/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:b10b46440d8eb03bdb192c69ca4ad9eaaaa5ca6f9716b44bee4ce2911aeb5b0d",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "geo-ip",
+      "plugin_version": "2.0.3",
+      "artifact_id": "f4fcd379-dfac-4eed-8823-fe3a65880d90",
+      "content_digest": "sha256:ff626840c397bee060a910f794b3cd92db760c01c261f8c6b7a35fce4bd49c85",
+      "archive_digest": "sha256:16508454af0296d9c8513664bfc57dfda142716f24d9a13fd7bcae11e4343083",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/geo-ip/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:bb5d8c9bba9c6f067db36a430b5d6459617b52e1975cf5d93d96349c9358c2f3",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "gw-error-format",
+      "plugin_version": "1.0.2",
+      "artifact_id": "9d9c2bf6-e0f9-4c6e-8c42-0fa051cf4b47",
+      "content_digest": "sha256:9fb98b1e23e7794685410de697212a6248128de856d17241755153a5091a7d8c",
+      "archive_digest": "sha256:7d895579c6c646ff11db21f519462d98dc937e2748a417543fc34f52b58a7d1f",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/gw-error-format/1.0.2/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:a2226bb2c841ae180eb17b721e6b6c34477eabdd9ef347aa68d478d1e2661fc6",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "hmac-auth",
+      "plugin_version": "2.0.1",
+      "artifact_id": "e52c82f2-2c09-4a6e-96f6-f497a6733a7f",
+      "content_digest": "sha256:b4fbc412e01d74dc333590be88fc230dec4d55dc0d3ddb799b6478c2dc31db5c",
+      "archive_digest": "sha256:0419458e71b6845646e66172100e58435d1f2e3bf1e93e7d99450c56036fffb1",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/hmac-auth/2.0.1/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:a1a5c47f0360fb865eaa380a7f59cf6c16a7d5d1b80dcb72668b04a0ac34de85",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "hmac-auth-apisix",
+      "plugin_version": "2.0.3",
+      "artifact_id": "b6bbbda0-6e14-4e23-939d-6f91bb49c8ae",
+      "content_digest": "sha256:a5856c8c0d1b1fc694f1eb1f734b50a46c566a6ff3cd8fc8c2adcb8364ce2819",
+      "archive_digest": "sha256:1cdeed56f1d8687d19ed8805443bc47dd1d35b50d4ab6e0cfa80573c029f2081",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/hmac-auth-apisix/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:0b3db4f1ed2ad33b873e60ef0bc91bd9d8e2488dd7dd4d90dbe4aa9049e93054",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "ip-restriction",
+      "plugin_version": "2.0.3",
+      "artifact_id": "ccfc7717-9719-4208-931d-2e1ace94c600",
+      "content_digest": "sha256:ccb567dfd894d6c2d1ce5ec0243b8c9c980669f335503ba5020b64b590c533b1",
+      "archive_digest": "sha256:89a323f2202996dd0ed8dabc46f6796a546db7949b881d186db520e9c5cfa8ce",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ip-restriction/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:92c831e7f17d3332d9bc9f3df0c8094f21a417af0d2e43b22bf879788c0e79a9",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "json-converter",
+      "plugin_version": "2.0.3",
+      "artifact_id": "fccae2cd-884e-4022-9d16-b55085ffe07a",
+      "content_digest": "sha256:511aee8bc3473e80259313d25a57bd58beaade872b3d9797d3b10131eaecf73c",
+      "archive_digest": "sha256:4336ac3b6e142707ad0200fc79fdaf487ab8ddfd1ed4220d0ddc3379b23a3d01",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/json-converter/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:3d020c823447704d833c6c47a0c8ca4e7327df764fe5cf8e7b5ff900f2b1ed91",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "jwt-auth",
+      "plugin_version": "2.0.1",
+      "artifact_id": "1f7a609a-f0d8-4506-a7cc-eecd6260af08",
+      "content_digest": "sha256:fbd66273c34be0e38a43f2a541f40f506ee81a396c89ab84cadcda754e4c7d87",
+      "archive_digest": "sha256:f93372cc978eb0b241f73db617b53c5ffb4d078c8cd5fc279d5ea5c73827766b",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/jwt-auth/2.0.1/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:bc541efddeba88c1fe14b0acb3e5192d407c8b24f9028a015bd7b5e4e9a60685",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "key-auth",
+      "plugin_version": "1.2.1",
+      "artifact_id": "5c5b929c-dab6-46ff-997f-95882890dd1b",
+      "content_digest": "sha256:63cf30183810c6e69bf95035b9b63ab9e77337a83e8d80d69b088aa09964b017",
+      "archive_digest": "sha256:2e0f346f4e0639a4dd6b8e9d71eaf2964fef7622c289f33709a005dc6aa101bc",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/key-auth/1.2.1/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:7e5eb64ab6228b72b0d1e1a8d3a73cb1cd9bf77e567e9b91a88909dae6a702cb",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "key-rate-limit",
+      "plugin_version": "2.0.1",
+      "artifact_id": "ae6c12bd-b381-485e-b088-a620a6990d03",
+      "content_digest": "sha256:92c347ede7c7ff11cf319af78725aee358f9accee6aa4d4175fbe98de84438f8",
+      "archive_digest": "sha256:7038c984d8e44ab32c6e3c96c939ac20418af54d92efbd8a4a8819c2c4b1129e",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/key-rate-limit/2.0.1/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:730ca8b6abd40c0f2515a639dc346c6eb8d1fe1f13e883af9454ca55b0b42e6b",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "log-request-response",
+      "plugin_version": "1.0.0",
+      "artifact_id": "95059b48-6f7d-494c-a04c-d22e4c0b4b17",
+      "content_digest": "sha256:237249c51f5f95cc932cc637109f99b531c98b4dcb8ea22e40e58c1a98e83cb7",
+      "archive_digest": "sha256:f350e1edead41b4379464683364c78580d200507782fa8c90744291710fb8f7e",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/log-request-response/1.0.0/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:ab0bca1bbd801fb418befc2eea675122f204cdab72a03a486fa0540793ab2ebb",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "mcp-router",
+      "plugin_version": "2.0.3",
+      "artifact_id": "4463c5bc-0d5e-4f69-9874-0ddfcba24dae",
+      "content_digest": "sha256:1d84a1f54939fcbb6d661032f367a43b7ce764630abd6add3a11e7252ced4cbc",
+      "archive_digest": "sha256:380ac1975b5d4e8259a6fd06e5cde71a024163cd56daddcd4a1e9b8582164d5c",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/mcp-router/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:3befb8f3cf5dea02b062851e77c4510117ba7fb508a3135f3d5e4c8e4a9ddac8",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "mcp-server",
+      "plugin_version": "2.0.3",
+      "artifact_id": "45ff7db5-1b09-4439-bfa5-576d4de3dad7",
+      "content_digest": "sha256:213a0170df55d10dc55c19b1b584ce8cae50a48a9be66094b74ae5755aae0d38",
+      "archive_digest": "sha256:699930f827c28008c4e88fef37162a199b66958190cada9e81e9f0db8746900b",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/mcp-server/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:987c3608b9779149bdf52b354e600270abe60a338c11fa2d431e72ed07f39112",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "model-mapper",
+      "plugin_version": "2.0.4",
+      "artifact_id": "6d53e1c2-2f6a-478a-a9d3-b86b7849728a",
+      "content_digest": "sha256:da0f9b8b0e7be379f3bd6698d41b3ca5702eb72f7f068ca17cb9f5b21194b8c9",
+      "archive_digest": "sha256:a977026133947093704355f08e1afdbb1799f1a834e53d6d303ca323461482ad",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/model-mapper/2.0.4/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:bb3481cc273d2a5aeeefb1edb87ec8b033be1972db66fd5b89bec9e2d78b8863",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "model-router",
+      "plugin_version": "2.0.3",
+      "artifact_id": "79a46ff7-218a-4797-83dc-801d1eac2f69",
+      "content_digest": "sha256:da4bd0a2aa5be22d6eb826df8d86ecd3025f0b06320c41ead624450f2a69e755",
+      "archive_digest": "sha256:01321156f75f7384ada47a3c31e1743f4d52d9bdff0c69c2a304ed918a54afc6",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/model-router/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:99322631f4a99baf6a699b2e349598e5b573dc68cb7a2577b96dfcd4aab224c3",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "nginx-rewrite-compatible",
+      "plugin_version": "1.0.0",
+      "artifact_id": "64c12912-752d-43a3-baef-a111681cc217",
+      "content_digest": "sha256:159d5152e58c5f8974a4397a2704ce58d515576bab62779c0dd8ffcdc3e6d39e",
+      "archive_digest": "sha256:d9e3866fc4152c36926896784f0ae4ac9fca41d1b716a74f78584da2ccc18cf9",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/nginx-rewrite-compatible/1.0.0/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:bb3d685dc3b67350b6b513d0ff8ac12b8d4c25defe0aac7f8c7ca7afa6d4c7ef",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "oauth",
+      "plugin_version": "2.0.1",
+      "artifact_id": "376c18fa-f8f6-4380-8d7a-3a5b4d8f5a77",
+      "content_digest": "sha256:f81ae4fe740eb92243ff3b644fbb9da6c9e5fef1482021a8c23bc0ba9acb362c",
+      "archive_digest": "sha256:7dbc845d604752ef9babb3ec2374f8b6d0731537a3a6de4d4640d69ec18c0c20",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/oauth/2.0.1/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:f29ee83d9eb01ab5c141e7ccbacf0403ef7f02e9335d67ef4980f4299ed1441a",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "oidc",
+      "plugin_version": "2.0.3",
+      "artifact_id": "30ed0628-ac69-4763-b16f-6c58ae611ef6",
+      "content_digest": "sha256:2df8ae8c8f37eeefbd474386218fb6b9e7205b25ef6cb99d8b27273855a9bc08",
+      "archive_digest": "sha256:f10784edc8d32d8f5d71f347573782e3f9d5439d9362b1185f20f20a08a39166",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/oidc/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:ddc27b1be08467e9f6735abfc0051dddf5f190c42659497cf0c6d6c41bb25716",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "opa",
+      "plugin_version": "2.0.3",
+      "artifact_id": "423e5878-48b5-4d43-a525-435b81ef1747",
+      "content_digest": "sha256:84c2ea2253ff5f7c45f6dcc78cc9426df1836afdf268aca06054ea5e638ac2e2",
+      "archive_digest": "sha256:6279fdd0598d1e238dbf587035f2eec907ce90aedbcd25ff8e64285fbcceb683",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/opa/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:bf151da3e4835a1171fd337c269ebf0cd289109f14a1e42df9076e46481c215e",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "replay-protection",
+      "plugin_version": "1.0.0-alpha",
+      "artifact_id": "6c969afa-2c4c-4281-8ac0-e3fb4082a41e",
+      "content_digest": "sha256:e42793e033d8c63a6070c1550b4c3e118b776ea36d3aadae80463c0aab8455cd",
+      "archive_digest": "sha256:c3c62f3500245b2138280954fe195107f87d7090124834e56e4728b7391267ff",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/replay-protection/1.0.0-alpha/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:e9d1633902ecc5db9fad05224b40b56fd44dcd2eed012ec8a8ca5f438805777e",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "request-block",
+      "plugin_version": "2.0.1",
+      "artifact_id": "288d4ddd-dbab-4b66-99a3-002fb8c82db4",
+      "content_digest": "sha256:00c2eb18370016d0ec8ea624f7dd31f42ad2746468e4e06c7a70370b7c97407a",
+      "archive_digest": "sha256:85ec46deac966d75286b3067e355b1638d4eebb571bc88a0a9c302e0e4e573c5",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/request-block/2.0.1/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:cffe7f1dd69a7f806007a16bbc18387b212e70fa73e8343d300bd8c959e677c3",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "request-validation",
+      "plugin_version": "2.0.3",
+      "artifact_id": "f8832bb0-582f-4fd6-9915-89312c003f9e",
+      "content_digest": "sha256:57e19fc8d6a968908bb33db3a5844b5085aa0d8800846582764100d8d8593c24",
+      "archive_digest": "sha256:52208d53012629e945419ddbb7f67019ffd4133d0458e00f5d2c73b8e5bd2c51",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/request-validation/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:027673c1b86939d4d049340f053fb5c1190aa1a7930c38b8fe35f98282476f80",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "response-cache",
+      "plugin_version": "1.0.3",
+      "artifact_id": "4f849c03-deb9-44d0-a7eb-9829591fda41",
+      "content_digest": "sha256:fb79ae207f079c8655ea22379ed64ef4478441e97789958f407ec0101d1290b5",
+      "archive_digest": "sha256:5a29c1d62e3b6b102bc646200cf73f7c55d8095072159ab4dccbba5e5ec805df",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/response-cache/1.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:f03ecf8736ba363eee5d3239e89d6a5b1e6c9a341d0f684a6deeb49e25801e44",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "traffic-tag",
+      "plugin_version": "2.0.3",
+      "artifact_id": "399573d2-8b64-4129-9ddf-856ab6104b24",
+      "content_digest": "sha256:0e356d8d5230bce413aaaf0daf4cc9fd3870731ae0a5167d11ddc0bdd3b7b72a",
+      "archive_digest": "sha256:5aeb85cd117da594b161f38605ccf0990ac96743fb8b88d37e0889459e74ac7c",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/traffic-tag/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:0aaf30263210b856b494b3e347241c69d5564e06cd2684b543f138d9e16f2472",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "transformer",
+      "plugin_version": "2.0.3",
+      "artifact_id": "cbe4c600-c761-4a0b-9ced-041e70d5bdbe",
+      "content_digest": "sha256:2ec2212ec511db6e9db9eca7c1fe8bef0be618ba38f580a7c1d38068a6a2f091",
+      "archive_digest": "sha256:b00c2314f21d077d37f30c380a7b59823ce13161a624d1ddd4363e0fd9ec316e",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/transformer/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:5f695a9a4c0a038cd5953027fe9761920c3faa15a9a1214e7e6181f5912357f3",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    },
+    {
+      "plugin_name": "waf",
+      "plugin_version": "2.0.3",
+      "artifact_id": "545eaaf5-9dad-4963-81f2-5f8c41d9d45c",
+      "content_digest": "sha256:ed9fbeac3b0cb4ae338cd1645e5d8854991da3fb9cad7f1fd25c48fe0036c315",
+      "archive_digest": "sha256:4d1101eda298e35e448c36ce934c2ecd2b52170cebd3de9bfe46967a6c04117d",
+      "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/waf/2.0.3/plugin.wasm",
+      "source": {
+        "build_inputs_digest": "sha256:59e80bd0876e0f77fa651bca3c8dfe4aa567ff89213b21ee29a5642ad482cb36",
+        "commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+        "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "local_build",
+        "repo": "https://github.com/wooveep/plugin-server.git",
+        "verification": "verified"
+      }
+    }
+  ],
+  "console_gap": {
+    "total": 45,
+    "returned": 45,
+    "missing_formal_names": [
+      "ai-context-limit",
+      "ai-endpoint-picker",
+      "gw-error-format",
+      "hmac-auth-apisix",
+      "json-converter",
+      "log-request-response",
+      "mcp-router",
+      "nginx-rewrite-compatible",
+      "replay-protection",
+      "response-cache"
+    ],
+    "entries": [
+      {
+        "name": "ai-agent",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-billing",
+        "expected_version": "1.0.1",
+        "visible": true,
+        "row_version": "0.1.13",
+        "artifact_ref": {
+          "artifact_id": "fc5782c2-eb61-4d4a-8a4f-04b499b813da",
+          "plugin_name": "ai-billing",
+          "plugin_version": "0.1.13",
+          "content_digest": "sha256:3b7b2ba8266718faa174ca3a3cd70c8b895f9319396fa7cd105104f0ffee4e3c",
+          "catalog_revision": "3"
+        },
+        "registered_versions": [
+          "0.1.13",
+          "0.1.10",
+          "0.1.9",
+          "1.0.1"
+        ]
+      },
+      {
+        "name": "ai-cache",
+        "expected_version": "2.0.4",
+        "visible": true,
+        "row_version": "1.0.7",
+        "artifact_ref": {
+          "artifact_id": "f4308f43-a857-4951-aba9-33be474baf8a",
+          "plugin_name": "ai-cache",
+          "plugin_version": "1.0.7",
+          "content_digest": "sha256:605f77701a501f9f927d2f598980b28e9f4e45ac723e1c4a80c9154c9f1f687d",
+          "catalog_revision": "6"
+        },
+        "registered_versions": [
+          "1.0.7",
+          "1.0.4",
+          "1.0.5",
+          "2.0.4"
+        ]
+      },
+      {
+        "name": "ai-context-limit",
+        "expected_version": "1.0.0",
+        "visible": false,
+        "row_version": null,
+        "artifact_ref": null,
+        "registered_versions": []
+      },
+      {
+        "name": "ai-data-masking",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-endpoint-picker",
+        "expected_version": "2.0.2",
+        "visible": false,
+        "row_version": null,
+        "artifact_ref": null,
+        "registered_versions": []
+      },
+      {
+        "name": "ai-history",
+        "expected_version": "2.0.4",
+        "visible": true,
+        "row_version": "0.1.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "0.1.3",
+          "2.0.4"
+        ]
+      },
+      {
+        "name": "ai-intent",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-json-resp",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-load-balancer",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-memory",
+        "expected_version": "0.1.7",
+        "visible": true,
+        "row_version": "0.1.6",
+        "artifact_ref": {
+          "artifact_id": "ca1e0b77-781a-49f3-b63e-79c6948d5101",
+          "plugin_name": "ai-memory",
+          "plugin_version": "0.1.6",
+          "content_digest": "sha256:ad626fd7455f3578c1a6537b6d3e51b743a69360dd5e35d97e85b39023c8b676",
+          "catalog_revision": "7"
+        },
+        "registered_versions": [
+          "0.1.6",
+          "0.1.3",
+          "0.1.4",
+          "0.1.5",
+          "0.1.7"
+        ]
+      },
+      {
+        "name": "ai-prompt-decorator",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-prompt-template",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-proxy",
+        "expected_version": "2.0.10",
+        "visible": true,
+        "row_version": "2.0.8",
+        "artifact_ref": {
+          "artifact_id": "f3bed6b6-2848-4a74-92bd-bbbda2ed9ffa",
+          "plugin_name": "ai-proxy",
+          "plugin_version": "2.0.8",
+          "content_digest": "sha256:4cdf270bd8395e58c05c09eafe4b5a612ee60697fe9cdc3c2273e7e170470963",
+          "catalog_revision": "2"
+        },
+        "registered_versions": [
+          "2.0.8",
+          "2.0.1",
+          "2.0.2",
+          "2.0.9",
+          "2.0.10"
+        ]
+      },
+      {
+        "name": "ai-quota",
+        "expected_version": "2.0.4",
+        "visible": true,
+        "row_version": "2.0.1",
+        "artifact_ref": {
+          "artifact_id": "f51eace7-58cf-4127-8e38-3d9345aab6f1",
+          "plugin_name": "ai-quota",
+          "plugin_version": "2.0.1",
+          "content_digest": "sha256:4c64ad47641c8f30061ba5df33174c60b1064658e14fc521843b7f2ceacf43cf",
+          "catalog_revision": "4"
+        },
+        "registered_versions": [
+          "2.0.1",
+          "2.0.4"
+        ]
+      },
+      {
+        "name": "ai-rag",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-search",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-security-guard",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-statistics",
+        "expected_version": "2.0.4",
+        "visible": true,
+        "row_version": "1.0.3",
+        "artifact_ref": {
+          "artifact_id": "defbb948-0c98-4b90-92d3-6e999cfbe309",
+          "plugin_name": "ai-statistics",
+          "plugin_version": "1.0.3",
+          "content_digest": "sha256:a04267f16f4221f92351a9e9bd73ceccd5066dd823894945fa36e91f87822e33",
+          "catalog_revision": "5"
+        },
+        "registered_versions": [
+          "1.0.3",
+          "2.0.4"
+        ]
+      },
+      {
+        "name": "ai-token-ratelimit",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ai-transformer",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "basic-auth",
+        "expected_version": "2.0.1",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.1"
+        ]
+      },
+      {
+        "name": "bot-detect",
+        "expected_version": "2.0.1",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.1"
+        ]
+      },
+      {
+        "name": "cache-control",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "cluster-key-rate-limit",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "cors",
+        "expected_version": "2.0.4",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.4"
+        ]
+      },
+      {
+        "name": "custom-response",
+        "expected_version": "2.0.1",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.1"
+        ]
+      },
+      {
+        "name": "de-graphql",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "ext-auth",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "frontend-gray",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "geo-ip",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "gw-error-format",
+        "expected_version": "1.0.2",
+        "visible": false,
+        "row_version": null,
+        "artifact_ref": null,
+        "registered_versions": []
+      },
+      {
+        "name": "hmac-auth",
+        "expected_version": "2.0.1",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.1"
+        ]
+      },
+      {
+        "name": "hmac-auth-apisix",
+        "expected_version": "2.0.3",
+        "visible": false,
+        "row_version": null,
+        "artifact_ref": null,
+        "registered_versions": []
+      },
+      {
+        "name": "ip-restriction",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "json-converter",
+        "expected_version": "2.0.3",
+        "visible": false,
+        "row_version": null,
+        "artifact_ref": null,
+        "registered_versions": []
+      },
+      {
+        "name": "jwt-auth",
+        "expected_version": "2.0.1",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.1"
+        ]
+      },
+      {
+        "name": "key-auth",
+        "expected_version": "1.2.1",
+        "visible": true,
+        "row_version": "1.2.0",
+        "artifact_ref": {
+          "artifact_id": "e9412a1a-fcf7-43a4-9108-506870ea671d",
+          "plugin_name": "key-auth",
+          "plugin_version": "1.2.0",
+          "content_digest": "sha256:554762c9202ce1adc7b1260f8762b3316c18667ab499336bd2c02ac34b6e61a7",
+          "catalog_revision": "19"
+        },
+        "registered_versions": [
+          "1.1.0",
+          "1.2.0",
+          "1.2.1"
+        ]
+      },
+      {
+        "name": "key-rate-limit",
+        "expected_version": "2.0.1",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.1"
+        ]
+      },
+      {
+        "name": "log-request-response",
+        "expected_version": "1.0.0",
+        "visible": false,
+        "row_version": null,
+        "artifact_ref": null,
+        "registered_versions": []
+      },
+      {
+        "name": "mcp-router",
+        "expected_version": "2.0.3",
+        "visible": false,
+        "row_version": null,
+        "artifact_ref": null,
+        "registered_versions": []
+      },
+      {
+        "name": "mcp-server",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "model-mapper",
+        "expected_version": "2.0.4",
+        "visible": true,
+        "row_version": "1.0.1",
+        "artifact_ref": {
+          "artifact_id": "eec9329b-dcc8-4681-91d6-d3139192f4d5",
+          "plugin_name": "model-mapper",
+          "plugin_version": "1.0.1",
+          "content_digest": "sha256:06c13eb435cecb57fefd0a7721beec382c740d609b73d78f80a1cd7a21bddd99",
+          "catalog_revision": "1"
+        },
+        "registered_versions": [
+          "1.0.1",
+          "2.0.4"
+        ]
+      },
+      {
+        "name": "model-router",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "nginx-rewrite-compatible",
+        "expected_version": "1.0.0",
+        "visible": false,
+        "row_version": null,
+        "artifact_ref": null,
+        "registered_versions": []
+      },
+      {
+        "name": "oauth",
+        "expected_version": "2.0.1",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.1"
+        ]
+      },
+      {
+        "name": "oidc",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "opa",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "replay-protection",
+        "expected_version": "1.0.0-alpha",
+        "visible": false,
+        "row_version": null,
+        "artifact_ref": null,
+        "registered_versions": []
+      },
+      {
+        "name": "request-block",
+        "expected_version": "2.0.1",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.1"
+        ]
+      },
+      {
+        "name": "request-validation",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "response-cache",
+        "expected_version": "1.0.3",
+        "visible": false,
+        "row_version": null,
+        "artifact_ref": null,
+        "registered_versions": []
+      },
+      {
+        "name": "traffic-tag",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "transformer",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      },
+      {
+        "name": "waf",
+        "expected_version": "2.0.3",
+        "visible": true,
+        "row_version": "1.0.0",
+        "artifact_ref": null,
+        "registered_versions": [
+          "2.0.3"
+        ]
+      }
+    ]
+  },
+  "original_goal_status": {
+    "checked_at": "2026-10-30T21:27:39.987965+00:00",
+    "original_tasks": 79,
+    "closed": 27,
+    "open": 52
+  },
+  "paid_provider_calls": false,
+  "funds_changed": false,
+  "mf_source_files_changed_by_this_batch": false
+}

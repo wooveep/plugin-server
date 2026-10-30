@@ -24,36 +24,37 @@
 | 顺序 | 交付物 | 状态 |
 | --- | --- | --- |
 | 1 | 原环境/候选检查点；源码与产物目录分离；导入及 Git 跟踪基线 | 完成；e0785a8、c3093be，真实合并父链保留上游和 SDK 历史 |
-| 2 | 上游/定制逐插件合并、版本裁决、完整正式交付清单 | 已形成 72 项源码分类、55 项正式集合和版本裁决；定制合并待本批测试/提交 |
-| 3 | 统一固定工具链构建、完整包、镜像与缺包拒绝 | 实施中；Go/Rust 已有实际产物，完整批次与包入库待完成 |
-| 4 | SDK 版本/URL、旧目录退出与项目文档引用 | 旧入口已标记归档；消费契约见下文，MF/DEP 由另一聊天修改 |
-| 5 | 分层批量验证；镜像/PVC/HTTP 对账及当前单网关模型匹配 | 待验证 |
-| 6 | 提交、Issue 验收证据与恢复原任务 | 待完成 |
+| 2 | 上游/定制逐插件合并、版本裁决、完整正式交付清单 | 完成；72 项源码分类、55 项正式集合与真实版本裁决，4cc3e509 保留定制历史合并父链 |
+| 3 | 统一固定工具链构建、完整包、镜像与缺包拒绝 | 完成；55/55 固定容器编译，53 新包与 2 原登记包，镜像/PVC/545 HTTP 文件对账通过 |
+| 4 | SDK 版本/URL、旧目录退出与项目文档引用 | 旧 Go/SDK 入口已提交退出；55 项 Console 已登记，列表仍缺 10 类，MF 消费修复待责任确认 |
+| 5 | 分层批量验证；镜像/PVC/HTTP 对账及当前单网关模型匹配 | 完成；Python114、Go分层回归、实际模型匹配4例与临时资源清理通过 |
+| 6 | 提交、Issue 验收证据与恢复原任务 | 源码、镜像与 DEP 已提交；证据已形成，阶段 Issue 回填及 MF 消费缺口继续 |
 
 ## 验收条件
 
 - [x] 导入来源可追溯；实际 Git 合并父链及 `ort -Xsubtree=plugins` 更新路线保留，已用隔离 Git 夹具核对三方更新。
-- [ ] 语义版本选择、未声明版本与定制升级可检查，model-router 默认选中真实 Go 新版本。
-- [ ] 从根目录完成单插件和全量本地编译，正式集合完整；缺包直接拒绝。
-- [ ] 完整包原校验与上传下载通过；镜像、PVC、HTTP 清单与摘要一致，原已发布版本没有被不同字节覆盖。
+- [x] 语义版本选择、未声明版本与定制升级可检查，model-router 默认选中真实 Go 2.0.3。
+- [x] 从根目录完成单插件和全量本地编译，正式集合完整；缺包直接拒绝。
+- [x] 完整包原校验与上传下载通过；镜像、PVC、HTTP 清单与摘要一致，原已发布版本没有被不同字节覆盖。
 - [ ] SDK spec/版本映射与实际 HTTP URL 一致；当前单网关实际加载并验证模型匹配正负路径。
-- [ ] 原独立目录退出日常构建；相关文档和相对链接更新。
+- [x] 原独立 Go/SDK 目录退出日常构建，归档提交已推送；统一入口和相关文档已更新。
 
 ## 已核对的回归与检查点
 
 实际 E1 构建显式传入 `LEGACY_PLUGINS_DIR=delivery-empty-legacy`，验证脚本要求 legacy 为零，最终仅交付 19 个版本化包。当前镜像和 PVC 缺少 model-router。原本地镜像有 90 个 Wasm、44 类插件。旧下载脚本另存在将 2.0.0 来源写入 1.0.0 目录的问题，不以恢复该别名行为修复缺包。
 
-原 Helm 91 的 9 项候选资源、四成员 preload 和 Recovery 检查点作为历史证据保留。用户随后要求网关从 4 副本减为 1，另一聊天已执行 Helm 92，当前成员为 `cfwnh`；旧四成员观察不能作为当前验收证据。本批尚未发送模型调用；不将 applied/preload 状态视为完整业务验收。
+原 Helm 91 的 9 项候选资源、四成员 preload 和 Recovery 检查点作为历史证据保留。用户随后要求网关从 4 副本减为 1，另一聊天执行 Helm 92 时成员为 `cfwnh`；Helm99 已实际重建为 `6gspj`，本批 Helm100 保持该 UID，旧四成员观察不能作为当前验收证据。本批尚未发送模型调用；不将 applied/preload 状态视为完整业务验收。
 
 ## 进展记录
 
 | 日期 | 进展与证据 | 下一步 |
 | --- | --- | --- |
-| 2026-10-31 | 用户确认整合；根因与当前运行检查点已冻结；[Issue 阶段回填](https://github.com/wooveep/modelfusionproject/issues/1#issuecomment-6529636236) | 导入源码并保留上游三方合并基线 |
+| 2026-10-31 | 用户确认整合；根因与初始运行检查点已冻结；[此前 Issue 阶段回填](https://github.com/wooveep/modelfusionproject/issues/1#issuecomment-6529636236) | 已保留导入历史，后续更新沿 Git 三方合并 |
+| 2026-10-31 | [55 项完整交付与 Helm100 验收](../checks/2026-10-31-unified-plugin-source-and-delivery.md)，Console 已登记 55 项、列表仍缺 10 类 | 完成 MF 消费缺口与阶段回填，继续原 79 项业务验收 |
 
 ## 完成记录
 
-待实际实施及验收后填写。
+root 源码与完整交付批次已验收；[完整验收报告](../checks/2026-10-31-unified-plugin-source-and-delivery.md)为本批权威证据。整项仍待 MF 插件库消费缺口和 Issue 回填，原 79 项总目标保持。
 
 ## 当前消费契约与共享文件责任
 
@@ -73,7 +74,7 @@ root 仅修改插件整合、原 Go/SDK 入口及本层文档。MF Console/Rust 
 | ai-billing | 1.0.1 | `/plugins/ai-billing/1.0.1/plugin.wasm` |
 | key-auth | 1.2.1 | `/plugins/key-auth/1.2.1/plugin.wasm` |
 
-完整集合仍是待发布目标；仅 ai-proxy 2.0.10、历史 2.0.9 与 ai-billing 1.0.1 已有实际入库和 HTTP 下载证据，详见文末媒体交付记录。正式入库后产出 `dist/plugin-catalog.json`，包含全部选定实现、artifact_id、version、content_digest、archive_digest、download_url 和 `x-higress` 元数据；镜像内为 `/opt/plugin-server/plugin-catalog.json`。运行时 `GET /artifacts` 返回全部已登记 manifest 与元数据，可一次获取后在前端分页，无须逐项下载 Wasm 或 archive。
+55 项完整集合均已实际入库、交付并通过 HTTP 下载摘要核对，详见[完整交付验收](../checks/2026-10-31-unified-plugin-source-and-delivery.md)。正式入库后产出 `dist/plugin-catalog.json`，包含全部选定实现、artifact_id、version、content_digest、archive_digest、download_url 和 `x-higress` 元数据；镜像内为 `/opt/plugin-server/plugin-catalog.json`。运行时 `GET /artifacts` 返回全部已登记 manifest 与元数据，可一次获取后在前端分页，无须逐项下载 Wasm 或 archive。
 
 ### DEP PVC 初始化接入
 
@@ -93,10 +94,10 @@ python3 /opt/plugin-server/scripts/seed-registered-store.py \
 
 ### 分层验证进展
 
-- Python 来源选择、存储、登记复制与清单读取首批 19 项已通过；新完整清单门槛与后续全套仍待统一运行。
+- Python 来源选择、存储、登记复制、完整清单与真实数值元数据全套 114 项通过。
 - 55 项配置模板已按实际解析器对齐并通过 schema 校验。空模板仅表示尚未配置；需要凭证的模板使用受控环境引用，不等同于部署即启用外部服务。
 - ai-context-limit 分词表已记录官方 URL、校验和及 tiktoken 来源提交，作为显式嵌入输入保存。Rust 工具链包含校验和固定的 WASI SDK，ai-data-masking 已完成实际容器编译。
-- 最终来源提交、全量编译、正式入库、镜像发布和当前网关运行验收尚未完成，后续以实际证据更新。
+- 完整编译、正式入库、镜像/PVC/HTTP 与当前单网关模型匹配均已完成；MF 插件库名称/默认版本消费缺口保持开放。
 
 
 ## 2026-10-31 原生媒体阻塞修复交付
@@ -108,3 +109,9 @@ ai-proxy 2.0.9、ai-billing 1.0.1 已在原持久化制品库提交并完成 8 �
 本批没有更改 Helm；另一聊天已在单网关上继续部署，Helm 93 为此前交接点，当前修订以该责任聊天的实际记录为准。MF 注册、真正的 Higress VM 初始化与目标路由恢复由该聊天继续，不能用本地 VM 回归替代真实网关验收。完整 55 项正式制品、统一镜像、PVC 清单及 model-router 正负运行路径仍待收口。
 
 2026-10-31 后继：真实 Qwen 媒体初始化暴露 2.0.9 的文本提供方家族限制，root 已从媒体协议归属修复并发布 **ai-proxy 2.0.10**。当前应消费 **2.0.10 / ai-billing 1.0.1**；[Qwen 后继机器回执](../checks/2026-10-31-native-media-qwen-plugin-delivery.json)包含实际登记 ID、Go/Wasm 回归和四个 HTTP 下载摘要。MF/DEP 继续真实 Envoy/媒体路径验收；本条不提前关闭运行验收项。
+
+## 2026-10-31 完整交付、实际模型匹配与消费缺口
+
+[完整验收报告](../checks/2026-10-31-unified-plugin-source-and-delivery.md)及[机器回执](../checks/unified-plugin-source-20261031/receipt.json)已记录：55/55 编译、114 项 Python、分层 Go/Wasm 回归、固定镜像、Helm100、79 个镜像/PVC 登记版本、545 个 HTTP 文件和真实单网关模型匹配四例。五个临时资源已删除，Envoy 引用最终清零；16 个部署就绪，四域名 200。
+
+55 个正式版本已通过 Console 原生注册，53 新登记、2 复用，133 项原运行资源规格/代次保持。但库 API 仍由内置 45 类驱动，缺 10 类，默认展示版本沿用旧内置目录；MF/SDK/Web 修复归属待用户确认。不能因制品已可下载而把消费项记为完成。原 79 卡实查仍 27 关闭/52 开放；本批没有付费调用或资金变更。

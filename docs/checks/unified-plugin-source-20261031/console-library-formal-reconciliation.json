@@ -1,0 +1,616 @@
+{
+  "total": 45,
+  "returned": 45,
+  "missing_formal_names": [
+    "ai-context-limit",
+    "ai-endpoint-picker",
+    "gw-error-format",
+    "hmac-auth-apisix",
+    "json-converter",
+    "log-request-response",
+    "mcp-router",
+    "nginx-rewrite-compatible",
+    "replay-protection",
+    "response-cache"
+  ],
+  "entries": [
+    {
+      "name": "ai-agent",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-billing",
+      "expected_version": "1.0.1",
+      "visible": true,
+      "row_version": "0.1.13",
+      "artifact_ref": {
+        "artifact_id": "fc5782c2-eb61-4d4a-8a4f-04b499b813da",
+        "plugin_name": "ai-billing",
+        "plugin_version": "0.1.13",
+        "content_digest": "sha256:3b7b2ba8266718faa174ca3a3cd70c8b895f9319396fa7cd105104f0ffee4e3c",
+        "catalog_revision": "3"
+      },
+      "registered_versions": [
+        "0.1.13",
+        "0.1.10",
+        "0.1.9",
+        "1.0.1"
+      ]
+    },
+    {
+      "name": "ai-cache",
+      "expected_version": "2.0.4",
+      "visible": true,
+      "row_version": "1.0.7",
+      "artifact_ref": {
+        "artifact_id": "f4308f43-a857-4951-aba9-33be474baf8a",
+        "plugin_name": "ai-cache",
+        "plugin_version": "1.0.7",
+        "content_digest": "sha256:605f77701a501f9f927d2f598980b28e9f4e45ac723e1c4a80c9154c9f1f687d",
+        "catalog_revision": "6"
+      },
+      "registered_versions": [
+        "1.0.7",
+        "1.0.4",
+        "1.0.5",
+        "2.0.4"
+      ]
+    },
+    {
+      "name": "ai-context-limit",
+      "expected_version": "1.0.0",
+      "visible": false,
+      "row_version": null,
+      "artifact_ref": null,
+      "registered_versions": []
+    },
+    {
+      "name": "ai-data-masking",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-endpoint-picker",
+      "expected_version": "2.0.2",
+      "visible": false,
+      "row_version": null,
+      "artifact_ref": null,
+      "registered_versions": []
+    },
+    {
+      "name": "ai-history",
+      "expected_version": "2.0.4",
+      "visible": true,
+      "row_version": "0.1.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "0.1.3",
+        "2.0.4"
+      ]
+    },
+    {
+      "name": "ai-intent",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-json-resp",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-load-balancer",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-memory",
+      "expected_version": "0.1.7",
+      "visible": true,
+      "row_version": "0.1.6",
+      "artifact_ref": {
+        "artifact_id": "ca1e0b77-781a-49f3-b63e-79c6948d5101",
+        "plugin_name": "ai-memory",
+        "plugin_version": "0.1.6",
+        "content_digest": "sha256:ad626fd7455f3578c1a6537b6d3e51b743a69360dd5e35d97e85b39023c8b676",
+        "catalog_revision": "7"
+      },
+      "registered_versions": [
+        "0.1.6",
+        "0.1.3",
+        "0.1.4",
+        "0.1.5",
+        "0.1.7"
+      ]
+    },
+    {
+      "name": "ai-prompt-decorator",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-prompt-template",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-proxy",
+      "expected_version": "2.0.10",
+      "visible": true,
+      "row_version": "2.0.8",
+      "artifact_ref": {
+        "artifact_id": "f3bed6b6-2848-4a74-92bd-bbbda2ed9ffa",
+        "plugin_name": "ai-proxy",
+        "plugin_version": "2.0.8",
+        "content_digest": "sha256:4cdf270bd8395e58c05c09eafe4b5a612ee60697fe9cdc3c2273e7e170470963",
+        "catalog_revision": "2"
+      },
+      "registered_versions": [
+        "2.0.8",
+        "2.0.1",
+        "2.0.2",
+        "2.0.9",
+        "2.0.10"
+      ]
+    },
+    {
+      "name": "ai-quota",
+      "expected_version": "2.0.4",
+      "visible": true,
+      "row_version": "2.0.1",
+      "artifact_ref": {
+        "artifact_id": "f51eace7-58cf-4127-8e38-3d9345aab6f1",
+        "plugin_name": "ai-quota",
+        "plugin_version": "2.0.1",
+        "content_digest": "sha256:4c64ad47641c8f30061ba5df33174c60b1064658e14fc521843b7f2ceacf43cf",
+        "catalog_revision": "4"
+      },
+      "registered_versions": [
+        "2.0.1",
+        "2.0.4"
+      ]
+    },
+    {
+      "name": "ai-rag",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-search",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-security-guard",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-statistics",
+      "expected_version": "2.0.4",
+      "visible": true,
+      "row_version": "1.0.3",
+      "artifact_ref": {
+        "artifact_id": "defbb948-0c98-4b90-92d3-6e999cfbe309",
+        "plugin_name": "ai-statistics",
+        "plugin_version": "1.0.3",
+        "content_digest": "sha256:a04267f16f4221f92351a9e9bd73ceccd5066dd823894945fa36e91f87822e33",
+        "catalog_revision": "5"
+      },
+      "registered_versions": [
+        "1.0.3",
+        "2.0.4"
+      ]
+    },
+    {
+      "name": "ai-token-ratelimit",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ai-transformer",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "basic-auth",
+      "expected_version": "2.0.1",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.1"
+      ]
+    },
+    {
+      "name": "bot-detect",
+      "expected_version": "2.0.1",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.1"
+      ]
+    },
+    {
+      "name": "cache-control",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "cluster-key-rate-limit",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "cors",
+      "expected_version": "2.0.4",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.4"
+      ]
+    },
+    {
+      "name": "custom-response",
+      "expected_version": "2.0.1",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.1"
+      ]
+    },
+    {
+      "name": "de-graphql",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "ext-auth",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "frontend-gray",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "geo-ip",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "gw-error-format",
+      "expected_version": "1.0.2",
+      "visible": false,
+      "row_version": null,
+      "artifact_ref": null,
+      "registered_versions": []
+    },
+    {
+      "name": "hmac-auth",
+      "expected_version": "2.0.1",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.1"
+      ]
+    },
+    {
+      "name": "hmac-auth-apisix",
+      "expected_version": "2.0.3",
+      "visible": false,
+      "row_version": null,
+      "artifact_ref": null,
+      "registered_versions": []
+    },
+    {
+      "name": "ip-restriction",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "json-converter",
+      "expected_version": "2.0.3",
+      "visible": false,
+      "row_version": null,
+      "artifact_ref": null,
+      "registered_versions": []
+    },
+    {
+      "name": "jwt-auth",
+      "expected_version": "2.0.1",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.1"
+      ]
+    },
+    {
+      "name": "key-auth",
+      "expected_version": "1.2.1",
+      "visible": true,
+      "row_version": "1.2.0",
+      "artifact_ref": {
+        "artifact_id": "e9412a1a-fcf7-43a4-9108-506870ea671d",
+        "plugin_name": "key-auth",
+        "plugin_version": "1.2.0",
+        "content_digest": "sha256:554762c9202ce1adc7b1260f8762b3316c18667ab499336bd2c02ac34b6e61a7",
+        "catalog_revision": "19"
+      },
+      "registered_versions": [
+        "1.1.0",
+        "1.2.0",
+        "1.2.1"
+      ]
+    },
+    {
+      "name": "key-rate-limit",
+      "expected_version": "2.0.1",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.1"
+      ]
+    },
+    {
+      "name": "log-request-response",
+      "expected_version": "1.0.0",
+      "visible": false,
+      "row_version": null,
+      "artifact_ref": null,
+      "registered_versions": []
+    },
+    {
+      "name": "mcp-router",
+      "expected_version": "2.0.3",
+      "visible": false,
+      "row_version": null,
+      "artifact_ref": null,
+      "registered_versions": []
+    },
+    {
+      "name": "mcp-server",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "model-mapper",
+      "expected_version": "2.0.4",
+      "visible": true,
+      "row_version": "1.0.1",
+      "artifact_ref": {
+        "artifact_id": "eec9329b-dcc8-4681-91d6-d3139192f4d5",
+        "plugin_name": "model-mapper",
+        "plugin_version": "1.0.1",
+        "content_digest": "sha256:06c13eb435cecb57fefd0a7721beec382c740d609b73d78f80a1cd7a21bddd99",
+        "catalog_revision": "1"
+      },
+      "registered_versions": [
+        "1.0.1",
+        "2.0.4"
+      ]
+    },
+    {
+      "name": "model-router",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "nginx-rewrite-compatible",
+      "expected_version": "1.0.0",
+      "visible": false,
+      "row_version": null,
+      "artifact_ref": null,
+      "registered_versions": []
+    },
+    {
+      "name": "oauth",
+      "expected_version": "2.0.1",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.1"
+      ]
+    },
+    {
+      "name": "oidc",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "opa",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "replay-protection",
+      "expected_version": "1.0.0-alpha",
+      "visible": false,
+      "row_version": null,
+      "artifact_ref": null,
+      "registered_versions": []
+    },
+    {
+      "name": "request-block",
+      "expected_version": "2.0.1",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.1"
+      ]
+    },
+    {
+      "name": "request-validation",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "response-cache",
+      "expected_version": "1.0.3",
+      "visible": false,
+      "row_version": null,
+      "artifact_ref": null,
+      "registered_versions": []
+    },
+    {
+      "name": "traffic-tag",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "transformer",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "name": "waf",
+      "expected_version": "2.0.3",
+      "visible": true,
+      "row_version": "1.0.0",
+      "artifact_ref": null,
+      "registered_versions": [
+        "2.0.3"
+      ]
+    }
+  ]
+}

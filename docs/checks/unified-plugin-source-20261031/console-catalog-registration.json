@@ -1,0 +1,1090 @@
+{
+  "started_at": "2026-10-30T21:39:54.425216+00:00",
+  "completed_at": "2026-10-30T21:40:20.131926+00:00",
+  "formal_count": 55,
+  "registered_catalog_count": 75,
+  "reused": 2,
+  "new_registrations": 53,
+  "existing_runtime_specs_and_generations_unchanged": true,
+  "runtime_resource_count": 133,
+  "records": [
+    {
+      "plugin_name": "ai-agent",
+      "plugin_version": "2.0.3",
+      "artifact_id": "9eff78f7-494d-48e1-b11f-9dd65dd66e30",
+      "content_digest": "sha256:0739dc515187376f99241ae103727bfed05c4c06a7c0eeae0e4099f73814d35c",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-4a9d-7140-b419-16654b742cc5",
+        "idempotency_key": "unified-source-20261031-9eff78f7-494d-48e1-b11f-9dd65dd66e30",
+        "artifact_id": "9eff78f7-494d-48e1-b11f-9dd65dd66e30",
+        "content_digest": "sha256:0739dc515187376f99241ae103727bfed05c4c06a7c0eeae0e4099f73814d35c",
+        "plugin_name": "ai-agent",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:39:54.989278Z",
+        "catalog_revision": "23"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.1",
+      "artifact_id": "78c9e3e1-03d4-4f2d-9e23-4fb10d0fe148",
+      "content_digest": "sha256:4564750321553fda84086b7d3694a076a3e75df0320bb6d065261b2b3fa0d92e",
+      "reused": true,
+      "state": "registered",
+      "catalog_revision": "20"
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.4",
+      "artifact_id": "665e3c3a-befa-45f9-9dad-e300ea6527b1",
+      "content_digest": "sha256:747d065201be520b18ecf37ca2b441ad8916747e69f7d9bba2d735160bde1286",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-4c71-7172-abae-d4aa21c77547",
+        "idempotency_key": "unified-source-20261031-665e3c3a-befa-45f9-9dad-e300ea6527b1",
+        "artifact_id": "665e3c3a-befa-45f9-9dad-e300ea6527b1",
+        "content_digest": "sha256:747d065201be520b18ecf37ca2b441ad8916747e69f7d9bba2d735160bde1286",
+        "plugin_name": "ai-cache",
+        "plugin_version": "2.0.4",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:39:55.578668Z",
+        "catalog_revision": "24"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-context-limit",
+      "plugin_version": "1.0.0",
+      "artifact_id": "1987eef9-e6dc-4e57-aac9-3553e4659ceb",
+      "content_digest": "sha256:c798700979453e3661334c8fbc0a52cb4a8c6addf189d19f592b142a5611038a",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-4ec6-7ee3-9d5d-9529a6d390c4",
+        "idempotency_key": "unified-source-20261031-1987eef9-e6dc-4e57-aac9-3553e4659ceb",
+        "artifact_id": "1987eef9-e6dc-4e57-aac9-3553e4659ceb",
+        "content_digest": "sha256:c798700979453e3661334c8fbc0a52cb4a8c6addf189d19f592b142a5611038a",
+        "plugin_name": "ai-context-limit",
+        "plugin_version": "1.0.0",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:39:56.305596Z",
+        "catalog_revision": "25"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-data-masking",
+      "plugin_version": "2.0.3",
+      "artifact_id": "6c15ce70-b94c-4b71-bc24-ea55cab39a6a",
+      "content_digest": "sha256:54a5b40d6cfd7a73454db576373fe96e78f55d859db9596e08198f881546638d",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-522b-7731-b9a5-d9a4ca1eb4e4",
+        "idempotency_key": "unified-source-20261031-6c15ce70-b94c-4b71-bc24-ea55cab39a6a",
+        "artifact_id": "6c15ce70-b94c-4b71-bc24-ea55cab39a6a",
+        "content_digest": "sha256:54a5b40d6cfd7a73454db576373fe96e78f55d859db9596e08198f881546638d",
+        "plugin_name": "ai-data-masking",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:39:56.902070Z",
+        "catalog_revision": "26"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-endpoint-picker",
+      "plugin_version": "2.0.2",
+      "artifact_id": "b0112686-d05d-40cd-bad7-28b61396f400",
+      "content_digest": "sha256:5c449a30f453d4dcf75ee3e0c0e0939e2c1f9408691964554ff24fccab4bc19d",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-53f3-7f93-9ef3-63f6157143df",
+        "idempotency_key": "unified-source-20261031-b0112686-d05d-40cd-bad7-28b61396f400",
+        "artifact_id": "b0112686-d05d-40cd-bad7-28b61396f400",
+        "content_digest": "sha256:5c449a30f453d4dcf75ee3e0c0e0939e2c1f9408691964554ff24fccab4bc19d",
+        "plugin_name": "ai-endpoint-picker",
+        "plugin_version": "2.0.2",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:39:57.515182Z",
+        "catalog_revision": "27"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-history",
+      "plugin_version": "2.0.4",
+      "artifact_id": "7e6048a7-961b-4599-a99d-3989ae90333e",
+      "content_digest": "sha256:6ed707aa94127f853256aabec77ad78f69df2395502e69c1ff93ca08c67d96ce",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-567f-7f11-836f-4061bf1be204",
+        "idempotency_key": "unified-source-20261031-7e6048a7-961b-4599-a99d-3989ae90333e",
+        "artifact_id": "7e6048a7-961b-4599-a99d-3989ae90333e",
+        "content_digest": "sha256:6ed707aa94127f853256aabec77ad78f69df2395502e69c1ff93ca08c67d96ce",
+        "plugin_name": "ai-history",
+        "plugin_version": "2.0.4",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:39:58.006499Z",
+        "catalog_revision": "28"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-intent",
+      "plugin_version": "2.0.3",
+      "artifact_id": "524e81c6-d29e-4ec9-a72b-660612309b39",
+      "content_digest": "sha256:8579e1a8937aecfa114c57873f72fd84c58d5ad0cd78c660640c31695ec9bf4e",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-5829-79f0-b1df-2ed076bf493a",
+        "idempotency_key": "unified-source-20261031-524e81c6-d29e-4ec9-a72b-660612309b39",
+        "artifact_id": "524e81c6-d29e-4ec9-a72b-660612309b39",
+        "content_digest": "sha256:8579e1a8937aecfa114c57873f72fd84c58d5ad0cd78c660640c31695ec9bf4e",
+        "plugin_name": "ai-intent",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:39:58.408862Z",
+        "catalog_revision": "29"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-json-resp",
+      "plugin_version": "2.0.3",
+      "artifact_id": "f3d3c5a2-00b1-4c1f-9fb2-8b2c0f9754ee",
+      "content_digest": "sha256:5e67aa7889bdcdc80e54b08db6e8258cd81a7ee15023d3296d75a2ee97ae3a66",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-59bc-7d40-bd14-57d28401c2d4",
+        "idempotency_key": "unified-source-20261031-f3d3c5a2-00b1-4c1f-9fb2-8b2c0f9754ee",
+        "artifact_id": "f3d3c5a2-00b1-4c1f-9fb2-8b2c0f9754ee",
+        "content_digest": "sha256:5e67aa7889bdcdc80e54b08db6e8258cd81a7ee15023d3296d75a2ee97ae3a66",
+        "plugin_name": "ai-json-resp",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:39:58.838548Z",
+        "catalog_revision": "30"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-load-balancer",
+      "plugin_version": "2.0.3",
+      "artifact_id": "41114ddf-d48a-4c90-a1dd-427e224e1098",
+      "content_digest": "sha256:faaa8de426d20e49f85496bec63bdff1b93acb5261d08443bbac9fdb8c145839",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-5b75-7742-8043-cdd2bd8a7ca9",
+        "idempotency_key": "unified-source-20261031-41114ddf-d48a-4c90-a1dd-427e224e1098",
+        "artifact_id": "41114ddf-d48a-4c90-a1dd-427e224e1098",
+        "content_digest": "sha256:faaa8de426d20e49f85496bec63bdff1b93acb5261d08443bbac9fdb8c145839",
+        "plugin_name": "ai-load-balancer",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:39:59.453365Z",
+        "catalog_revision": "31"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.7",
+      "artifact_id": "374a55be-32f9-431e-90ea-e4e260ee4c3d",
+      "content_digest": "sha256:67e9ab9ea6c93d38bf49e3c748fa673f7a82bfdf3802a59cc32e05ae9c772c5a",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-5e31-7833-9ca1-2a99045c5a0e",
+        "idempotency_key": "unified-source-20261031-374a55be-32f9-431e-90ea-e4e260ee4c3d",
+        "artifact_id": "374a55be-32f9-431e-90ea-e4e260ee4c3d",
+        "content_digest": "sha256:67e9ab9ea6c93d38bf49e3c748fa673f7a82bfdf3802a59cc32e05ae9c772c5a",
+        "plugin_name": "ai-memory",
+        "plugin_version": "0.1.7",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:39:59.984894Z",
+        "catalog_revision": "32"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-prompt-decorator",
+      "plugin_version": "2.0.3",
+      "artifact_id": "5d8f5c8a-1962-49db-8b9a-c43c78ef850d",
+      "content_digest": "sha256:87281c057e304954166e38ff15fd944ed2c5996cc3c6d93cab33231dca03af61",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-5fe7-7a73-86be-dcf8d9e2386e",
+        "idempotency_key": "unified-source-20261031-5d8f5c8a-1962-49db-8b9a-c43c78ef850d",
+        "artifact_id": "5d8f5c8a-1962-49db-8b9a-c43c78ef850d",
+        "content_digest": "sha256:87281c057e304954166e38ff15fd944ed2c5996cc3c6d93cab33231dca03af61",
+        "plugin_name": "ai-prompt-decorator",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:00.392700Z",
+        "catalog_revision": "33"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-prompt-template",
+      "plugin_version": "2.0.3",
+      "artifact_id": "446c22b2-5784-42bf-9cd4-3e6fb3eb0611",
+      "content_digest": "sha256:e82d8d906cddde1759cb7b03162d097c3cc8e43cb19dd0a53db392c6e180f6dc",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-617e-76b0-9170-b52069f7abb0",
+        "idempotency_key": "unified-source-20261031-446c22b2-5784-42bf-9cd4-3e6fb3eb0611",
+        "artifact_id": "446c22b2-5784-42bf-9cd4-3e6fb3eb0611",
+        "content_digest": "sha256:e82d8d906cddde1759cb7b03162d097c3cc8e43cb19dd0a53db392c6e180f6dc",
+        "plugin_name": "ai-prompt-template",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:00.786768Z",
+        "catalog_revision": "34"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.10",
+      "artifact_id": "97165091-3924-4278-afd3-761a3381b60d",
+      "content_digest": "sha256:6b1466d8c811c73d42a800347209af928aeb3a136fae73b3da3089574878f892",
+      "reused": true,
+      "state": "registered",
+      "catalog_revision": "22"
+    },
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.4",
+      "artifact_id": "dd5c192a-f883-4e9c-97b8-5c0f503ca25c",
+      "content_digest": "sha256:552f90d48192cda2ea0cb62f2c1fdf018f94d99a38e8ec06cc69d4f825eab45a",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-630c-7373-8b1c-8dd9d41cd73d",
+        "idempotency_key": "unified-source-20261031-dd5c192a-f883-4e9c-97b8-5c0f503ca25c",
+        "artifact_id": "dd5c192a-f883-4e9c-97b8-5c0f503ca25c",
+        "content_digest": "sha256:552f90d48192cda2ea0cb62f2c1fdf018f94d99a38e8ec06cc69d4f825eab45a",
+        "plugin_name": "ai-quota",
+        "plugin_version": "2.0.4",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:01.235227Z",
+        "catalog_revision": "35"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-rag",
+      "plugin_version": "2.0.3",
+      "artifact_id": "4bdf0615-07ae-438a-b807-09ba39f554f5",
+      "content_digest": "sha256:93854f7f80ae5d00e61acbad56bd2e2c36913382692a5731f85a213f355a822c",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-64c8-7123-8d94-df916501e32c",
+        "idempotency_key": "unified-source-20261031-4bdf0615-07ae-438a-b807-09ba39f554f5",
+        "artifact_id": "4bdf0615-07ae-438a-b807-09ba39f554f5",
+        "content_digest": "sha256:93854f7f80ae5d00e61acbad56bd2e2c36913382692a5731f85a213f355a822c",
+        "plugin_name": "ai-rag",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:01.637671Z",
+        "catalog_revision": "36"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-search",
+      "plugin_version": "2.0.3",
+      "artifact_id": "62134644-6df1-455e-a290-69d13ea4fb64",
+      "content_digest": "sha256:5fa2df3de1a555e07b1ed08100acb3db20ab05b14de5e7d2228708538bb1f430",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-6649-79d3-b089-77c066286128",
+        "idempotency_key": "unified-source-20261031-62134644-6df1-455e-a290-69d13ea4fb64",
+        "artifact_id": "62134644-6df1-455e-a290-69d13ea4fb64",
+        "content_digest": "sha256:5fa2df3de1a555e07b1ed08100acb3db20ab05b14de5e7d2228708538bb1f430",
+        "plugin_name": "ai-search",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:02.106836Z",
+        "catalog_revision": "37"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-security-guard",
+      "plugin_version": "2.0.3",
+      "artifact_id": "fb67a967-a0e5-42d5-ae80-fd4e9a55571d",
+      "content_digest": "sha256:ea2b66be61dbc8b69b826fe57dd7bfd9ec574a3659e7bc9160f6eef6fdaef849",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-6859-7f00-aa20-c0187109b8e2",
+        "idempotency_key": "unified-source-20261031-fb67a967-a0e5-42d5-ae80-fd4e9a55571d",
+        "artifact_id": "fb67a967-a0e5-42d5-ae80-fd4e9a55571d",
+        "content_digest": "sha256:ea2b66be61dbc8b69b826fe57dd7bfd9ec574a3659e7bc9160f6eef6fdaef849",
+        "plugin_name": "ai-security-guard",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:02.578498Z",
+        "catalog_revision": "38"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-statistics",
+      "plugin_version": "2.0.4",
+      "artifact_id": "06ad8274-c69e-4a84-9a17-20f2ba491c00",
+      "content_digest": "sha256:29029eb02fb48dad61a21ce7b8872c15ff6a97c64aba9f1fea6cf6ea368dd1c7",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-6a13-7162-a404-38b3199d7a2c",
+        "idempotency_key": "unified-source-20261031-06ad8274-c69e-4a84-9a17-20f2ba491c00",
+        "artifact_id": "06ad8274-c69e-4a84-9a17-20f2ba491c00",
+        "content_digest": "sha256:29029eb02fb48dad61a21ce7b8872c15ff6a97c64aba9f1fea6cf6ea368dd1c7",
+        "plugin_name": "ai-statistics",
+        "plugin_version": "2.0.4",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:03.017438Z",
+        "catalog_revision": "39"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-token-ratelimit",
+      "plugin_version": "2.0.3",
+      "artifact_id": "8c5dd495-4dd5-41fe-847d-9e298fdf9b6b",
+      "content_digest": "sha256:ba160079ba31a3f27a771c50cdbe4385c9485ceaefde2ba98dc51fbb028107b6",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-6bbb-75a2-9074-943292e3619d",
+        "idempotency_key": "unified-source-20261031-8c5dd495-4dd5-41fe-847d-9e298fdf9b6b",
+        "artifact_id": "8c5dd495-4dd5-41fe-847d-9e298fdf9b6b",
+        "content_digest": "sha256:ba160079ba31a3f27a771c50cdbe4385c9485ceaefde2ba98dc51fbb028107b6",
+        "plugin_name": "ai-token-ratelimit",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:03.443456Z",
+        "catalog_revision": "40"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ai-transformer",
+      "plugin_version": "2.0.3",
+      "artifact_id": "6ab090c3-f298-4038-8db0-0df1e963c8bc",
+      "content_digest": "sha256:d2c8ffab82c396c97c9821c10e47e5c213812ad0d20ebeec333c3110a8d65db9",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-6d7a-7e80-b4c9-8f60f6b78c0a",
+        "idempotency_key": "unified-source-20261031-6ab090c3-f298-4038-8db0-0df1e963c8bc",
+        "artifact_id": "6ab090c3-f298-4038-8db0-0df1e963c8bc",
+        "content_digest": "sha256:d2c8ffab82c396c97c9821c10e47e5c213812ad0d20ebeec333c3110a8d65db9",
+        "plugin_name": "ai-transformer",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:03.857071Z",
+        "catalog_revision": "41"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "basic-auth",
+      "plugin_version": "2.0.1",
+      "artifact_id": "8fd6e202-4e8a-4d03-b1e9-c8511afbaf4a",
+      "content_digest": "sha256:f44606bbce0c8256c2d4fbd5b4bb85dbbcfeca654dc299a081fd2c8567c16efb",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-6ef8-7722-b959-1d1b25a677d3",
+        "idempotency_key": "unified-source-20261031-8fd6e202-4e8a-4d03-b1e9-c8511afbaf4a",
+        "artifact_id": "8fd6e202-4e8a-4d03-b1e9-c8511afbaf4a",
+        "content_digest": "sha256:f44606bbce0c8256c2d4fbd5b4bb85dbbcfeca654dc299a081fd2c8567c16efb",
+        "plugin_name": "basic-auth",
+        "plugin_version": "2.0.1",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:04.054764Z",
+        "catalog_revision": "42"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "bot-detect",
+      "plugin_version": "2.0.1",
+      "artifact_id": "691807c3-08c5-4895-9981-07be470c5a14",
+      "content_digest": "sha256:c344160f4e6ae392e17613a841fde2a8bf1982bb87c1dd91a8673f9d4b1b4180",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-6f64-7d31-b4ec-ee75b069ae44",
+        "idempotency_key": "unified-source-20261031-691807c3-08c5-4895-9981-07be470c5a14",
+        "artifact_id": "691807c3-08c5-4895-9981-07be470c5a14",
+        "content_digest": "sha256:c344160f4e6ae392e17613a841fde2a8bf1982bb87c1dd91a8673f9d4b1b4180",
+        "plugin_name": "bot-detect",
+        "plugin_version": "2.0.1",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:04.166713Z",
+        "catalog_revision": "43"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "cache-control",
+      "plugin_version": "2.0.3",
+      "artifact_id": "6e4ff3d7-87d8-4b74-a162-c72a18224631",
+      "content_digest": "sha256:e13a3405413bf8c814c4d117af6bf2e9e0c06ef063e0623843b73a6c2b9693c0",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-6fde-7052-b92e-6e70ae34ed92",
+        "idempotency_key": "unified-source-20261031-6e4ff3d7-87d8-4b74-a162-c72a18224631",
+        "artifact_id": "6e4ff3d7-87d8-4b74-a162-c72a18224631",
+        "content_digest": "sha256:e13a3405413bf8c814c4d117af6bf2e9e0c06ef063e0623843b73a6c2b9693c0",
+        "plugin_name": "cache-control",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:04.465425Z",
+        "catalog_revision": "44"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "cluster-key-rate-limit",
+      "plugin_version": "2.0.3",
+      "artifact_id": "bea48496-a21c-4f82-bd8f-53d86252d324",
+      "content_digest": "sha256:4fec9aade45a4c2b302d6978504008f813ffe27597a1aa03aa7c5afa1605de9c",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-7155-7de3-aa68-c1190964db17",
+        "idempotency_key": "unified-source-20261031-bea48496-a21c-4f82-bd8f-53d86252d324",
+        "artifact_id": "bea48496-a21c-4f82-bd8f-53d86252d324",
+        "content_digest": "sha256:4fec9aade45a4c2b302d6978504008f813ffe27597a1aa03aa7c5afa1605de9c",
+        "plugin_name": "cluster-key-rate-limit",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:04.874034Z",
+        "catalog_revision": "45"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "cors",
+      "plugin_version": "2.0.4",
+      "artifact_id": "b1d7f9b3-6273-41fd-91bf-f2c00173bb60",
+      "content_digest": "sha256:f30cd454485937f44e125ad775f6061289b151d7f334df324cf31593c701c92f",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-7309-78e2-9941-fcc259f99d43",
+        "idempotency_key": "unified-source-20261031-b1d7f9b3-6273-41fd-91bf-f2c00173bb60",
+        "artifact_id": "b1d7f9b3-6273-41fd-91bf-f2c00173bb60",
+        "content_digest": "sha256:f30cd454485937f44e125ad775f6061289b151d7f334df324cf31593c701c92f",
+        "plugin_name": "cors",
+        "plugin_version": "2.0.4",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:05.299290Z",
+        "catalog_revision": "46"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "custom-response",
+      "plugin_version": "2.0.1",
+      "artifact_id": "8e7c0e46-e0b6-4473-8196-0f204a0a007f",
+      "content_digest": "sha256:b049973ef55538b318650e7c8132163d267cc0b9e2e47df379594cd41f2fe20e",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-74a3-7301-8f15-fc7ddf70c091",
+        "idempotency_key": "unified-source-20261031-8e7c0e46-e0b6-4473-8196-0f204a0a007f",
+        "artifact_id": "8e7c0e46-e0b6-4473-8196-0f204a0a007f",
+        "content_digest": "sha256:b049973ef55538b318650e7c8132163d267cc0b9e2e47df379594cd41f2fe20e",
+        "plugin_name": "custom-response",
+        "plugin_version": "2.0.1",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:05.500966Z",
+        "catalog_revision": "47"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "de-graphql",
+      "plugin_version": "2.0.3",
+      "artifact_id": "718de170-44ab-452f-9444-b3fd92498f47",
+      "content_digest": "sha256:a7d1dc998f4fb0a170799b527674d1bf882b8b9cd5986b2ff0a301129b709e24",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-7508-7692-999d-499ed783eba8",
+        "idempotency_key": "unified-source-20261031-718de170-44ab-452f-9444-b3fd92498f47",
+        "artifact_id": "718de170-44ab-452f-9444-b3fd92498f47",
+        "content_digest": "sha256:a7d1dc998f4fb0a170799b527674d1bf882b8b9cd5986b2ff0a301129b709e24",
+        "plugin_name": "de-graphql",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:05.804355Z",
+        "catalog_revision": "48"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ext-auth",
+      "plugin_version": "2.0.3",
+      "artifact_id": "6a34197e-03b4-4977-b007-b7ed1177174f",
+      "content_digest": "sha256:26af0a1dc9f4a864e9dfb2d2670c506cc8ba1bd2f9aa207d9b6c5b90a2d5a95f",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-76a6-7b61-8f73-f36030c1421f",
+        "idempotency_key": "unified-source-20261031-6a34197e-03b4-4977-b007-b7ed1177174f",
+        "artifact_id": "6a34197e-03b4-4977-b007-b7ed1177174f",
+        "content_digest": "sha256:26af0a1dc9f4a864e9dfb2d2670c506cc8ba1bd2f9aa207d9b6c5b90a2d5a95f",
+        "plugin_name": "ext-auth",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:06.230458Z",
+        "catalog_revision": "49"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "frontend-gray",
+      "plugin_version": "2.0.3",
+      "artifact_id": "81dd1be9-060a-4d41-a2cd-50b1a6dea4aa",
+      "content_digest": "sha256:d25b24b321cc7f1eb9d7210f6fb4aa482b9553830776e20dfc3ee594bd751a00",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-784a-75d1-ba19-0b611784afce",
+        "idempotency_key": "unified-source-20261031-81dd1be9-060a-4d41-a2cd-50b1a6dea4aa",
+        "artifact_id": "81dd1be9-060a-4d41-a2cd-50b1a6dea4aa",
+        "content_digest": "sha256:d25b24b321cc7f1eb9d7210f6fb4aa482b9553830776e20dfc3ee594bd751a00",
+        "plugin_name": "frontend-gray",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:06.651034Z",
+        "catalog_revision": "50"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "geo-ip",
+      "plugin_version": "2.0.3",
+      "artifact_id": "f4fcd379-dfac-4eed-8823-fe3a65880d90",
+      "content_digest": "sha256:ff626840c397bee060a910f794b3cd92db760c01c261f8c6b7a35fce4bd49c85",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-79fa-7f83-8fe0-3bc5746d2faa",
+        "idempotency_key": "unified-source-20261031-f4fcd379-dfac-4eed-8823-fe3a65880d90",
+        "artifact_id": "f4fcd379-dfac-4eed-8823-fe3a65880d90",
+        "content_digest": "sha256:ff626840c397bee060a910f794b3cd92db760c01c261f8c6b7a35fce4bd49c85",
+        "plugin_name": "geo-ip",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:08.454569Z",
+        "catalog_revision": "51"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "gw-error-format",
+      "plugin_version": "1.0.2",
+      "artifact_id": "9d9c2bf6-e0f9-4c6e-8c42-0fa051cf4b47",
+      "content_digest": "sha256:9fb98b1e23e7794685410de697212a6248128de856d17241755153a5091a7d8c",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-82b1-7620-a061-06526dd8766c",
+        "idempotency_key": "unified-source-20261031-9d9c2bf6-e0f9-4c6e-8c42-0fa051cf4b47",
+        "artifact_id": "9d9c2bf6-e0f9-4c6e-8c42-0fa051cf4b47",
+        "content_digest": "sha256:9fb98b1e23e7794685410de697212a6248128de856d17241755153a5091a7d8c",
+        "plugin_name": "gw-error-format",
+        "plugin_version": "1.0.2",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:09.294432Z",
+        "catalog_revision": "52"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "hmac-auth",
+      "plugin_version": "2.0.1",
+      "artifact_id": "e52c82f2-2c09-4a6e-96f6-f497a6733a7f",
+      "content_digest": "sha256:b4fbc412e01d74dc333590be88fc230dec4d55dc0d3ddb799b6478c2dc31db5c",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-843c-74a1-992e-bebeead8869a",
+        "idempotency_key": "unified-source-20261031-e52c82f2-2c09-4a6e-96f6-f497a6733a7f",
+        "artifact_id": "e52c82f2-2c09-4a6e-96f6-f497a6733a7f",
+        "content_digest": "sha256:b4fbc412e01d74dc333590be88fc230dec4d55dc0d3ddb799b6478c2dc31db5c",
+        "plugin_name": "hmac-auth",
+        "plugin_version": "2.0.1",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:09.507530Z",
+        "catalog_revision": "53"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "hmac-auth-apisix",
+      "plugin_version": "2.0.3",
+      "artifact_id": "b6bbbda0-6e14-4e23-939d-6f91bb49c8ae",
+      "content_digest": "sha256:a5856c8c0d1b1fc694f1eb1f734b50a46c566a6ff3cd8fc8c2adcb8364ce2819",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-84b2-7f52-89ce-4a61d94f9b03",
+        "idempotency_key": "unified-source-20261031-b6bbbda0-6e14-4e23-939d-6f91bb49c8ae",
+        "artifact_id": "b6bbbda0-6e14-4e23-939d-6f91bb49c8ae",
+        "content_digest": "sha256:a5856c8c0d1b1fc694f1eb1f734b50a46c566a6ff3cd8fc8c2adcb8364ce2819",
+        "plugin_name": "hmac-auth-apisix",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:09.815423Z",
+        "catalog_revision": "54"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "ip-restriction",
+      "plugin_version": "2.0.3",
+      "artifact_id": "ccfc7717-9719-4208-931d-2e1ace94c600",
+      "content_digest": "sha256:ccb567dfd894d6c2d1ce5ec0243b8c9c980669f335503ba5020b64b590c533b1",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-8645-7eb2-98d2-26291cffec95",
+        "idempotency_key": "unified-source-20261031-ccfc7717-9719-4208-931d-2e1ace94c600",
+        "artifact_id": "ccfc7717-9719-4208-931d-2e1ace94c600",
+        "content_digest": "sha256:ccb567dfd894d6c2d1ce5ec0243b8c9c980669f335503ba5020b64b590c533b1",
+        "plugin_name": "ip-restriction",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:10.205210Z",
+        "catalog_revision": "55"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "json-converter",
+      "plugin_version": "2.0.3",
+      "artifact_id": "fccae2cd-884e-4022-9d16-b55085ffe07a",
+      "content_digest": "sha256:511aee8bc3473e80259313d25a57bd58beaade872b3d9797d3b10131eaecf73c",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-87d9-7351-8e25-a6afed1e2f81",
+        "idempotency_key": "unified-source-20261031-fccae2cd-884e-4022-9d16-b55085ffe07a",
+        "artifact_id": "fccae2cd-884e-4022-9d16-b55085ffe07a",
+        "content_digest": "sha256:511aee8bc3473e80259313d25a57bd58beaade872b3d9797d3b10131eaecf73c",
+        "plugin_name": "json-converter",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:10.958767Z",
+        "catalog_revision": "56"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "jwt-auth",
+      "plugin_version": "2.0.1",
+      "artifact_id": "1f7a609a-f0d8-4506-a7cc-eecd6260af08",
+      "content_digest": "sha256:fbd66273c34be0e38a43f2a541f40f506ee81a396c89ab84cadcda754e4c7d87",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-8b5b-7252-bd11-1aacbac7b32c",
+        "idempotency_key": "unified-source-20261031-1f7a609a-f0d8-4506-a7cc-eecd6260af08",
+        "artifact_id": "1f7a609a-f0d8-4506-a7cc-eecd6260af08",
+        "content_digest": "sha256:fbd66273c34be0e38a43f2a541f40f506ee81a396c89ab84cadcda754e4c7d87",
+        "plugin_name": "jwt-auth",
+        "plugin_version": "2.0.1",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:11.394801Z",
+        "catalog_revision": "57"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "key-auth",
+      "plugin_version": "1.2.1",
+      "artifact_id": "5c5b929c-dab6-46ff-997f-95882890dd1b",
+      "content_digest": "sha256:63cf30183810c6e69bf95035b9b63ab9e77337a83e8d80d69b088aa09964b017",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-8c34-7510-91f6-745f1ffdc5a5",
+        "idempotency_key": "unified-source-20261031-5c5b929c-dab6-46ff-997f-95882890dd1b",
+        "artifact_id": "5c5b929c-dab6-46ff-997f-95882890dd1b",
+        "content_digest": "sha256:63cf30183810c6e69bf95035b9b63ab9e77337a83e8d80d69b088aa09964b017",
+        "plugin_name": "key-auth",
+        "plugin_version": "1.2.1",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:11.748823Z",
+        "catalog_revision": "58"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "key-rate-limit",
+      "plugin_version": "2.0.1",
+      "artifact_id": "ae6c12bd-b381-485e-b088-a620a6990d03",
+      "content_digest": "sha256:92c347ede7c7ff11cf319af78725aee358f9accee6aa4d4175fbe98de84438f8",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-8e34-7fb3-8f9c-291b2acabcdc",
+        "idempotency_key": "unified-source-20261031-ae6c12bd-b381-485e-b088-a620a6990d03",
+        "artifact_id": "ae6c12bd-b381-485e-b088-a620a6990d03",
+        "content_digest": "sha256:92c347ede7c7ff11cf319af78725aee358f9accee6aa4d4175fbe98de84438f8",
+        "plugin_name": "key-rate-limit",
+        "plugin_version": "2.0.1",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:12.054316Z",
+        "catalog_revision": "59"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "log-request-response",
+      "plugin_version": "1.0.0",
+      "artifact_id": "95059b48-6f7d-494c-a04c-d22e4c0b4b17",
+      "content_digest": "sha256:237249c51f5f95cc932cc637109f99b531c98b4dcb8ea22e40e58c1a98e83cb7",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-8ea2-7d41-b17f-472d6478ca3d",
+        "idempotency_key": "unified-source-20261031-95059b48-6f7d-494c-a04c-d22e4c0b4b17",
+        "artifact_id": "95059b48-6f7d-494c-a04c-d22e4c0b4b17",
+        "content_digest": "sha256:237249c51f5f95cc932cc637109f99b531c98b4dcb8ea22e40e58c1a98e83cb7",
+        "plugin_name": "log-request-response",
+        "plugin_version": "1.0.0",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:12.341649Z",
+        "catalog_revision": "60"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "mcp-router",
+      "plugin_version": "2.0.3",
+      "artifact_id": "4463c5bc-0d5e-4f69-9874-0ddfcba24dae",
+      "content_digest": "sha256:1d84a1f54939fcbb6d661032f367a43b7ce764630abd6add3a11e7252ced4cbc",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-901d-72f1-af7b-415d8ddd2a99",
+        "idempotency_key": "unified-source-20261031-4463c5bc-0d5e-4f69-9874-0ddfcba24dae",
+        "artifact_id": "4463c5bc-0d5e-4f69-9874-0ddfcba24dae",
+        "content_digest": "sha256:1d84a1f54939fcbb6d661032f367a43b7ce764630abd6add3a11e7252ced4cbc",
+        "plugin_name": "mcp-router",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:13.076068Z",
+        "catalog_revision": "61"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "mcp-server",
+      "plugin_version": "2.0.3",
+      "artifact_id": "45ff7db5-1b09-4439-bfa5-576d4de3dad7",
+      "content_digest": "sha256:213a0170df55d10dc55c19b1b584ce8cae50a48a9be66094b74ae5755aae0d38",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-938d-7f12-ac93-71c14c93dbd1",
+        "idempotency_key": "unified-source-20261031-45ff7db5-1b09-4439-bfa5-576d4de3dad7",
+        "artifact_id": "45ff7db5-1b09-4439-bfa5-576d4de3dad7",
+        "content_digest": "sha256:213a0170df55d10dc55c19b1b584ce8cae50a48a9be66094b74ae5755aae0d38",
+        "plugin_name": "mcp-server",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:14.028382Z",
+        "catalog_revision": "62"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "model-mapper",
+      "plugin_version": "2.0.4",
+      "artifact_id": "6d53e1c2-2f6a-478a-a9d3-b86b7849728a",
+      "content_digest": "sha256:da0f9b8b0e7be379f3bd6698d41b3ca5702eb72f7f068ca17cb9f5b21194b8c9",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-9760-76f2-afc5-b904fd0cf806",
+        "idempotency_key": "unified-source-20261031-6d53e1c2-2f6a-478a-a9d3-b86b7849728a",
+        "artifact_id": "6d53e1c2-2f6a-478a-a9d3-b86b7849728a",
+        "content_digest": "sha256:da0f9b8b0e7be379f3bd6698d41b3ca5702eb72f7f068ca17cb9f5b21194b8c9",
+        "plugin_name": "model-mapper",
+        "plugin_version": "2.0.4",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:14.592146Z",
+        "catalog_revision": "63"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "model-router",
+      "plugin_version": "2.0.3",
+      "artifact_id": "79a46ff7-218a-4797-83dc-801d1eac2f69",
+      "content_digest": "sha256:da4bd0a2aa5be22d6eb826df8d86ecd3025f0b06320c41ead624450f2a69e755",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-98f0-73a1-9866-03a3dfe8d3db",
+        "idempotency_key": "unified-source-20261031-79a46ff7-218a-4797-83dc-801d1eac2f69",
+        "artifact_id": "79a46ff7-218a-4797-83dc-801d1eac2f69",
+        "content_digest": "sha256:da4bd0a2aa5be22d6eb826df8d86ecd3025f0b06320c41ead624450f2a69e755",
+        "plugin_name": "model-router",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:14.995419Z",
+        "catalog_revision": "64"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "nginx-rewrite-compatible",
+      "plugin_version": "1.0.0",
+      "artifact_id": "64c12912-752d-43a3-baef-a111681cc217",
+      "content_digest": "sha256:159d5152e58c5f8974a4397a2704ce58d515576bab62779c0dd8ffcdc3e6d39e",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-9a83-7760-a056-2032ec5ff8ca",
+        "idempotency_key": "unified-source-20261031-64c12912-752d-43a3-baef-a111681cc217",
+        "artifact_id": "64c12912-752d-43a3-baef-a111681cc217",
+        "content_digest": "sha256:159d5152e58c5f8974a4397a2704ce58d515576bab62779c0dd8ffcdc3e6d39e",
+        "plugin_name": "nginx-rewrite-compatible",
+        "plugin_version": "1.0.0",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:15.398684Z",
+        "catalog_revision": "65"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "oauth",
+      "plugin_version": "2.0.1",
+      "artifact_id": "376c18fa-f8f6-4380-8d7a-3a5b4d8f5a77",
+      "content_digest": "sha256:f81ae4fe740eb92243ff3b644fbb9da6c9e5fef1482021a8c23bc0ba9acb362c",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-9c13-7913-ace7-b4677db4ba61",
+        "idempotency_key": "unified-source-20261031-376c18fa-f8f6-4380-8d7a-3a5b4d8f5a77",
+        "artifact_id": "376c18fa-f8f6-4380-8d7a-3a5b4d8f5a77",
+        "content_digest": "sha256:f81ae4fe740eb92243ff3b644fbb9da6c9e5fef1482021a8c23bc0ba9acb362c",
+        "plugin_name": "oauth",
+        "plugin_version": "2.0.1",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:15.608934Z",
+        "catalog_revision": "66"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "oidc",
+      "plugin_version": "2.0.3",
+      "artifact_id": "30ed0628-ac69-4763-b16f-6c58ae611ef6",
+      "content_digest": "sha256:2df8ae8c8f37eeefbd474386218fb6b9e7205b25ef6cb99d8b27273855a9bc08",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-9c92-7d40-911d-68acd41365c7",
+        "idempotency_key": "unified-source-20261031-30ed0628-ac69-4763-b16f-6c58ae611ef6",
+        "artifact_id": "30ed0628-ac69-4763-b16f-6c58ae611ef6",
+        "content_digest": "sha256:2df8ae8c8f37eeefbd474386218fb6b9e7205b25ef6cb99d8b27273855a9bc08",
+        "plugin_name": "oidc",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:16.036312Z",
+        "catalog_revision": "67"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "opa",
+      "plugin_version": "2.0.3",
+      "artifact_id": "423e5878-48b5-4d43-a525-435b81ef1747",
+      "content_digest": "sha256:84c2ea2253ff5f7c45f6dcc78cc9426df1836afdf268aca06054ea5e638ac2e2",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-9ec7-7f40-ae6e-5a9f2ccc766d",
+        "idempotency_key": "unified-source-20261031-423e5878-48b5-4d43-a525-435b81ef1747",
+        "artifact_id": "423e5878-48b5-4d43-a525-435b81ef1747",
+        "content_digest": "sha256:84c2ea2253ff5f7c45f6dcc78cc9426df1836afdf268aca06054ea5e638ac2e2",
+        "plugin_name": "opa",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:16.483954Z",
+        "catalog_revision": "68"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "replay-protection",
+      "plugin_version": "1.0.0-alpha",
+      "artifact_id": "6c969afa-2c4c-4281-8ac0-e3fb4082a41e",
+      "content_digest": "sha256:e42793e033d8c63a6070c1550b4c3e118b776ea36d3aadae80463c0aab8455cd",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-a051-7503-99bc-67bd6f03c86c",
+        "idempotency_key": "unified-source-20261031-6c969afa-2c4c-4281-8ac0-e3fb4082a41e",
+        "artifact_id": "6c969afa-2c4c-4281-8ac0-e3fb4082a41e",
+        "content_digest": "sha256:e42793e033d8c63a6070c1550b4c3e118b776ea36d3aadae80463c0aab8455cd",
+        "plugin_name": "replay-protection",
+        "plugin_version": "1.0.0-alpha",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:16.884368Z",
+        "catalog_revision": "69"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "request-block",
+      "plugin_version": "2.0.1",
+      "artifact_id": "288d4ddd-dbab-4b66-99a3-002fb8c82db4",
+      "content_digest": "sha256:00c2eb18370016d0ec8ea624f7dd31f42ad2746468e4e06c7a70370b7c97407a",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-a1e2-74b3-9600-810978dbfdb1",
+        "idempotency_key": "unified-source-20261031-288d4ddd-dbab-4b66-99a3-002fb8c82db4",
+        "artifact_id": "288d4ddd-dbab-4b66-99a3-002fb8c82db4",
+        "content_digest": "sha256:00c2eb18370016d0ec8ea624f7dd31f42ad2746468e4e06c7a70370b7c97407a",
+        "plugin_name": "request-block",
+        "plugin_version": "2.0.1",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:17.094674Z",
+        "catalog_revision": "70"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "request-validation",
+      "plugin_version": "2.0.3",
+      "artifact_id": "f8832bb0-582f-4fd6-9915-89312c003f9e",
+      "content_digest": "sha256:57e19fc8d6a968908bb33db3a5844b5085aa0d8800846582764100d8d8593c24",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-a256-7b71-91b5-a85d13581d6c",
+        "idempotency_key": "unified-source-20261031-f8832bb0-582f-4fd6-9915-89312c003f9e",
+        "artifact_id": "f8832bb0-582f-4fd6-9915-89312c003f9e",
+        "content_digest": "sha256:57e19fc8d6a968908bb33db3a5844b5085aa0d8800846582764100d8d8593c24",
+        "plugin_name": "request-validation",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:17.417544Z",
+        "catalog_revision": "71"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "response-cache",
+      "plugin_version": "1.0.3",
+      "artifact_id": "4f849c03-deb9-44d0-a7eb-9829591fda41",
+      "content_digest": "sha256:fb79ae207f079c8655ea22379ed64ef4478441e97789958f407ec0101d1290b5",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-a3ff-7222-bb37-fb2e788d1205",
+        "idempotency_key": "unified-source-20261031-4f849c03-deb9-44d0-a7eb-9829591fda41",
+        "artifact_id": "4f849c03-deb9-44d0-a7eb-9829591fda41",
+        "content_digest": "sha256:fb79ae207f079c8655ea22379ed64ef4478441e97789958f407ec0101d1290b5",
+        "plugin_name": "response-cache",
+        "plugin_version": "1.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:17.813237Z",
+        "catalog_revision": "72"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "traffic-tag",
+      "plugin_version": "2.0.3",
+      "artifact_id": "399573d2-8b64-4129-9ddf-856ab6104b24",
+      "content_digest": "sha256:0e356d8d5230bce413aaaf0daf4cc9fd3870731ae0a5167d11ddc0bdd3b7b72a",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-a588-7d92-9d3a-0e010be25aa0",
+        "idempotency_key": "unified-source-20261031-399573d2-8b64-4129-9ddf-856ab6104b24",
+        "artifact_id": "399573d2-8b64-4129-9ddf-856ab6104b24",
+        "content_digest": "sha256:0e356d8d5230bce413aaaf0daf4cc9fd3870731ae0a5167d11ddc0bdd3b7b72a",
+        "plugin_name": "traffic-tag",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:18.231209Z",
+        "catalog_revision": "73"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "transformer",
+      "plugin_version": "2.0.3",
+      "artifact_id": "cbe4c600-c761-4a0b-9ced-041e70d5bdbe",
+      "content_digest": "sha256:2ec2212ec511db6e9db9eca7c1fe8bef0be618ba38f580a7c1d38068a6a2f091",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-a724-7531-9021-eb332ebb2215",
+        "idempotency_key": "unified-source-20261031-cbe4c600-c761-4a0b-9ced-041e70d5bdbe",
+        "artifact_id": "cbe4c600-c761-4a0b-9ced-041e70d5bdbe",
+        "content_digest": "sha256:2ec2212ec511db6e9db9eca7c1fe8bef0be618ba38f580a7c1d38068a6a2f091",
+        "plugin_name": "transformer",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:18.684458Z",
+        "catalog_revision": "74"
+      },
+      "state": "registered"
+    },
+    {
+      "plugin_name": "waf",
+      "plugin_version": "2.0.3",
+      "artifact_id": "545eaaf5-9dad-4963-81f2-5f8c41d9d45c",
+      "content_digest": "sha256:ed9fbeac3b0cb4ae338cd1645e5d8854991da3fb9cad7f1fd25c48fe0036c315",
+      "reused": false,
+      "registration": {
+        "registration_id": "01a18ec1-a8f8-70b3-b390-5505c1b83d40",
+        "idempotency_key": "unified-source-20261031-545eaaf5-9dad-4963-81f2-5f8c41d9d45c",
+        "artifact_id": "545eaaf5-9dad-4963-81f2-5f8c41d9d45c",
+        "content_digest": "sha256:ed9fbeac3b0cb4ae338cd1645e5d8854991da3fb9cad7f1fd25c48fe0036c315",
+        "plugin_name": "waf",
+        "plugin_version": "2.0.3",
+        "registration_revision": "3",
+        "state": "registered",
+        "updated_at": "2026-10-30T21:40:19.392085Z",
+        "catalog_revision": "75"
+      },
+      "state": "registered"
+    }
+  ]
+}

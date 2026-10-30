@@ -1,0 +1,23 @@
+{
+  "checked_at": "2026-10-30T21:44:24.037359+00:00",
+  "healthy_deployments": 16,
+  "domain_health": [
+    {
+      "url": "http://admin.ai.lc.wooveep.com/",
+      "status": 200
+    },
+    {
+      "url": "http://user.ai.lc.wooveep.com/",
+      "status": 200
+    },
+    {
+      "url": "http://api.ai.lc.wooveep.com/",
+      "status": 200
+    },
+    {
+      "url": "http://model.ai.lc.wooveep.com/",
+      "status": 200
+    }
+  ],
+  "temporary_probe_resources_removed": true
+}

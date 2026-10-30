@@ -1,0 +1,26 @@
+{
+  "completed_at": "2026-10-30T21:37:56.063597+00:00",
+  "resources_removed": 5,
+  "reference_check": {
+    "remaining_kube_resources": 0,
+    "references": [
+      {
+        "cached_ecds_fixture_entries": 0
+      },
+      {
+        "listener": "0.0.0.0_80",
+        "active_references_fixture": false,
+        "warming_references_fixture": false,
+        "draining_references_fixture": false
+      },
+      {
+        "routes_reference_fixture": false
+      },
+      {
+        "routes_reference_fixture": false
+      }
+    ]
+  },
+  "status": "complete",
+  "initial_observation_note": "The first 15-second xDS convergence window still contained the retired ECDS entry; a later actual read confirmed zero cached entries, zero active/warming/draining listener references and zero route references. No gateway restart or additional business requests were used."
+}

@@ -1,0 +1,69 @@
+{
+  "status": "passed",
+  "plugin_name": "model-router",
+  "plugin_version": "2.0.3",
+  "gateway_uid": "6d0aed93-733b-43d0-8383-79061a0f5979",
+  "actual_envoy_code": {
+    "filename": "/var/lib/istio/data/9beb4ea7ebecceda396750a7061eda85bc46da510ae7a38a36e87a6af2b84273/b70e04819447a66f9330420b388b17fbcf3c8afb3707d1b6786a58af2d085016.wasm",
+    "sha256": "b70e04819447a66f9330420b388b17fbcf3c8afb3707d1b6786a58af2d085016"
+  },
+  "ecds": [
+    {
+      "ecds_filter": {
+        "@type": "type.googleapis.com/envoy.config.core.v3.TypedExtensionConfig",
+        "name": "extensions.istio.io/wasmplugin/higress-system.unified-model-router-20261031",
+        "typed_config": {
+          "@type": "type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm",
+          "config": {
+            "name": "higress-system.unified-model-router-20261031",
+            "root_id": "unified-model-router-20261031",
+            "vm_config": {
+              "runtime": "envoy.wasm.runtime.v8",
+              "code": {
+                "local": {
+                  "filename": "/var/lib/istio/data/9beb4ea7ebecceda396750a7061eda85bc46da510ae7a38a36e87a6af2b84273/b70e04819447a66f9330420b388b17fbcf3c8afb3707d1b6786a58af2d085016.wasm"
+                }
+              }
+            },
+            "configuration": {
+              "@type": "type.googleapis.com/google.protobuf.StringValue",
+              "value": "{\"_rules_\":[{\"_match_domain_\":[\"unified-model-router-20261031.internal\"],\"enable\":true,\"enableOnPathSuffix\":[\"/completions\"],\"modelToHeader\":\"x-mf-unified-model\"}]}"
+            }
+          }
+        }
+      },
+      "last_updated": "2026-10-30T21:32:19.167Z"
+    }
+  ],
+  "http": {
+    "checked_at": "2026-10-30T21:34:15.337936+00:00",
+    "host": "unified-model-router-20261031.internal",
+    "cases": [
+      {
+        "case": "header_control",
+        "expected_status": 200,
+        "status": 200,
+        "body": "{\"matched\": true, \"model_header\": \"allowed-model\", \"body\": {\"model\": \"other-model\"}}"
+      },
+      {
+        "case": "body_model_match",
+        "expected_status": 200,
+        "status": 200,
+        "body": "{\"matched\": true, \"model_header\": \"allowed-model\", \"body\": {\"model\": \"allowed-model\", \"messages\": [{\"role\": \"user\", \"content\": \"routing proof\"}]}}"
+      },
+      {
+        "case": "body_model_no_match",
+        "expected_status": 404,
+        "status": 404,
+        "body": "{\"matched\": false, \"model_header\": \"unmatched-model\", \"body\": {\"model\": \"unmatched-model\", \"messages\": [{\"role\": \"user\", \"content\": \"routing proof\"}]}}"
+      },
+      {
+        "case": "duplicate_model_rejected",
+        "expected_status": 400,
+        "status": 400,
+        "body": "duplicate \"model\" member in request body"
+      }
+    ]
+  },
+  "assertion_correction": "Higress exposes its downloaded Wasm as a local Envoy cache file; verified those actual bytes instead of expecting the original HTTP URL in config_dump"
+}
