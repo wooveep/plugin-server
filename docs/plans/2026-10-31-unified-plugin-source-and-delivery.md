@@ -67,13 +67,13 @@ root 仅修改插件整合、原 Go/SDK 入口及本层文档。MF Console/Rust 
 | --- | --- | --- |
 | model-router | 2.0.3（Go） | `/plugins/model-router/2.0.3/plugin.wasm` |
 | model-mapper | 2.0.4（Go，含原生正文基准及上游独立映射） | `/plugins/model-mapper/2.0.4/plugin.wasm` |
-| ai-proxy | 2.0.9 | `/plugins/ai-proxy/2.0.9/plugin.wasm` |
+| ai-proxy | 2.0.10 | `/plugins/ai-proxy/2.0.10/plugin.wasm` |
 | ai-quota / ai-cache / ai-history / ai-statistics | 2.0.4 | 对应 `/plugins/<名称>/2.0.4/plugin.wasm` |
 | ai-memory | 0.1.7 | `/plugins/ai-memory/0.1.7/plugin.wasm` |
 | ai-billing | 1.0.1 | `/plugins/ai-billing/1.0.1/plugin.wasm` |
 | key-auth | 1.2.1 | `/plugins/key-auth/1.2.1/plugin.wasm` |
 
-这些是待发布目标，不能据此宣称 HTTP 已可下载。正式入库后产出 `dist/plugin-catalog.json`，包含全部选定实现、artifact_id、version、content_digest、archive_digest、download_url 和 `x-higress` 元数据；镜像内为 `/opt/plugin-server/plugin-catalog.json`。运行时 `GET /artifacts` 返回全部已登记 manifest 与元数据，可一次获取后在前端分页，无须逐项下载 Wasm 或 archive。
+完整集合仍是待发布目标；仅 ai-proxy 2.0.10、历史 2.0.9 与 ai-billing 1.0.1 已有实际入库和 HTTP 下载证据，详见文末媒体交付记录。正式入库后产出 `dist/plugin-catalog.json`，包含全部选定实现、artifact_id、version、content_digest、archive_digest、download_url 和 `x-higress` 元数据；镜像内为 `/opt/plugin-server/plugin-catalog.json`。运行时 `GET /artifacts` 返回全部已登记 manifest 与元数据，可一次获取后在前端分页，无须逐项下载 Wasm 或 archive。
 
 ### DEP PVC 初始化接入
 
@@ -105,4 +105,6 @@ python3 /opt/plugin-server/scripts/seed-registered-store.py \
 
 ai-proxy 2.0.9、ai-billing 1.0.1 已在原持久化制品库提交并完成 8 个 HTTP 下载核对。ai-billing 采用 1.0.1 是因为线上已有登记的 1.0.0。配置字段边界、媒体唯一事实归属、源码、回归和接入地址以[原生媒体契约与交付](../checks/2026-10-31-native-media-plugin-contract.md)及其机器回执为权威来源。
 
-本批没有更改 Helm；当前运行已由另一聊天更新到 Helm 93，仍为单网关。MF 注册、真正的 Higress VM 初始化与目标路由恢复由该聊天继续，不能用本地 VM 回归替代真实网关验收。完整 55 项正式制品、统一镜像、PVC 清单及 model-router 正负运行路径仍待收口。
+本批没有更改 Helm；另一聊天已在单网关上继续部署，Helm 93 为此前交接点，当前修订以该责任聊天的实际记录为准。MF 注册、真正的 Higress VM 初始化与目标路由恢复由该聊天继续，不能用本地 VM 回归替代真实网关验收。完整 55 项正式制品、统一镜像、PVC 清单及 model-router 正负运行路径仍待收口。
+
+2026-10-31 后继：真实 Qwen 媒体初始化暴露 2.0.9 的文本提供方家族限制，root 已从媒体协议归属修复并发布 **ai-proxy 2.0.10**。当前应消费 **2.0.10 / ai-billing 1.0.1**；[Qwen 后继机器回执](../checks/2026-10-31-native-media-qwen-plugin-delivery.json)包含实际登记 ID、Go/Wasm 回归和四个 HTTP 下载摘要。MF/DEP 继续真实 Envoy/媒体路径验收；本条不提前关闭运行验收项。

@@ -19,11 +19,11 @@
 
 root 修改 `plugin-server/plugins/wasm-go` 的插件、测试和包，沿用完整包来源校验与不可变版本。另一聊天负责 MF 源生成器、SDK、Web、真实 VM 加载确认和目标路由恢复；root 不修改这些文件、不升级 Helm。
 
-本批已交付 ai-proxy 2.0.9、ai-billing 1.0.1。源码、回归、制品 ID、包摘要和 HTTP 核对详见下方实际交付记录。MF 侧注册和显式保存并生效由 MF/DEP 责任聊天继续完成。
+当前交付并供消费的版本为 **ai-proxy 2.0.10、ai-billing 1.0.1**。ai-proxy 2.0.9 的首批包与回执保留为历史，真实 Qwen 初始化失败已由后继版本修复。源码、回归、制品 ID、包摘要和 HTTP 核对详见下方实际交付记录。MF 侧注册和显式保存并生效由 MF/DEP 责任聊天继续完成。
 
 线上只读核对另发现 ai-billing 已登记 1.0.0；本次采用 1.0.1，保证显式保存并生效时按真实最高 SemVer 选择到新包。原 0.1.14 只是未发布的构建阶段版本，其回归记录保留，不作为线上版本声明。
 
-## 已完成的交付与接入
+## 首批交付记录（历史）
 
 [机器可读验收回执](2026-10-31-native-media-plugin-delivery.json)包含源码提交、Go/Wasm 回归、完整入库回执和实际 HTTP 校验。源码已推送至 `codex/artifact-p1-20261026`；媒体修复为 `4cc3e509`，最高 SemVer 发版修正为 `c29670ad`。
 
@@ -38,10 +38,22 @@ root 修改 `plugin-server/plugins/wasm-go` 的插件、测试和包，沿用完
 
 ai-billing 媒体配置会校验实际图片/视频能力并保持 dormant，不创建文本 delivery 或旧 BillingEvent；原生媒体事实仍由 ai-proxy 的工作器产生。ai-proxy 保持闭合的运行配置，错误下发 `usage_estimation` 会被真实 VM 初始化负例拒绝。基础配置、同步图片、异步图片和视频的 scoped 初始化已运行 Go 与实际编译后 Wasm 回归；这些结果不替代真实 Higress 加载或供应商媒体调用验收。
 
-## 真实 Qwen 提供方的后继修复（进行中）
+## 真实 Qwen 提供方的后继修复与交付
 
 MF/DEP 聊天在真实发布 `01a18e88-fa15-7610-b3be-fd5360e8111e` 中记录 2026-10-30 20:41:37.288Z 的 Envoy 初始化失败：`managed media route requires its explicit controlled provider`。其只读核对确认冻结 `providers[].type=qwen`，`activeProviderId` 与 provider id 一致；MF 没有丢失提供方。该坏候选已由对方标记 Failed 并清理，管理入口恢复 200。
 
 本地已用完整 v2 冻结配置的 qwen 同步图片案例复现相同失败。源码根因是媒体分支在 `Config.Complete` 已经验证真实业务提供方后，错误地再次要求文本适配器家族必须为 generic/openai。媒体 codec 和发送者实际由冻结 profile 与 notice worker 决定，该限制混淆了业务提供方和原生媒体协议层。
 
-后继 ai-proxy 2.0.10 移除这项错误的家族限制，保留精确 profile、active provider id、冻结凭证池和 token 对应检查；未知提供方仍由既有创建边界拒绝。没有把 qwen 改成 generic，没有加入虚构文本能力或放宽未知运行字段。正在执行真实 `type=qwen` 的同步图片、异步图片、video/task_query 初始化以及 ID/凭证负例；2.0.9 的原交付记录作为历史保留，新包入库证据完成后另行追加。
+后继 ai-proxy 2.0.10 移除这项错误的家族限制，保留精确 profile、active provider id、冻结凭证池和 token 对应检查；未知提供方仍由既有创建边界拒绝。没有把 qwen 改成 generic，没有加入虚构文本能力或放宽未知运行字段。真实 `type=qwen` 的同步图片、异步图片、video/task_query 初始化以及未知提供方、ID/凭证负例均已通过 Go 和编译后 Wasm 测试。该批有 84 个测试及父级 PASS 事件，零失败、零跳过；随后按线上实际 Qwen2 同步 profile 再次执行 Go/Wasm，二者均通过。2.0.9 的原交付记录作为历史保留。
+
+
+[Qwen 后继包机器回执](2026-10-31-native-media-qwen-plugin-delivery.json)记录源码 `ea974f6aec6d6efd8d20564c3f8ddd2d8ab55c88`、回归日志摘要、完整入库回执和 HTTP 结果。该提交已推送。
+
+| 当前插件 | 版本 | artifact_id | manifest（集群内） |
+| --- | --- | --- | --- |
+| ai-proxy | 2.0.10 | `97165091-3924-4278-afd3-761a3381b60d` | [manifest.json](http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.10/manifest.json) |
+| ai-billing | 1.0.1（沿用首批） | `78c9e3e1-03d4-4f2d-9e23-4fb10d0fe148` | [manifest.json](http://higress-plugin-server.higress-system.svc:80/plugins/ai-billing/1.0.1/manifest.json) |
+
+ai-proxy 2.0.10 的 Wasm 摘要为 `sha256:fb2157f81298555df26d56f189bf311b52a0ed03ea11bad720d217cf71767439`，内容摘要为 `sha256:6b1466d8c811c73d42a800347209af928aeb3a136fae73b3da3089574878f892`，归档摘要为 `sha256:93ccbf1411e2ce54e3cd95561ae8a433a019e6e24e432eb6cdd88d5f46627a73`。2026-10-30 20:56Z 经原持久化库的 operator CLI 入库；20:59Z 完成 manifest、Wasm、schema、archive 四个 HTTP 200 核对，大小与登记摘要一致。没有重发 2.0.9、改写既有版本或修改 Helm。
+
+MF/DEP 可据上述 manifest 注册新包，并显式保存并生效到最高 SemVer。真实 Envoy 初始化、目标路由恢复、实际媒体操作及账务验收仍待该责任聊天完成；本地宿主/编译后 Wasm 回归和 HTTP 200 不替代这些验收。线上旧镜像的批量 `/artifacts` 仍为 404，完整集合镜像交付时解决。

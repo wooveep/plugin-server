@@ -1,0 +1,178 @@
+{
+  "evidence_version": 1,
+  "status": "packages_committed_and_http_verified",
+  "scope": "Qwen native media provider initialization and immutable ai-proxy 2.0.10 delivery; actual Higress initialization and target route recovery remain with MF/DEP owner",
+  "current_consumer_versions": {
+    "ai-proxy": "2.0.10",
+    "ai-billing": "1.0.1"
+  },
+  "supersedes_proxy_version": "2.0.9",
+  "source_repository": "https://github.com/wooveep/plugin-server",
+  "source_branch": "codex/artifact-p1-20261026",
+  "source_commit": "ea974f6aec6d6efd8d20564c3f8ddd2d8ab55c88",
+  "helm_changed": false,
+  "funds_or_paid_model_calls": false,
+  "tests": {
+    "native_media_and_managed_regression": {
+      "selector": "TestNativeMedia|TestBaseConfiguration|TestEmptyRouteRuleList|TestManaged.*(Embedding|V2)",
+      "exit_code": 0,
+      "pass_events": 84,
+      "skip_events": 0,
+      "fail_events": 0,
+      "go_duration_seconds": 44.429,
+      "log_sha256": "cbba81cab518bf1fb21f8735804dc0d8076387f084291471d2c361c1a91b12c0"
+    },
+    "exact_live_qwen2_profile": {
+      "plugin": "ai-proxy",
+      "version": "2.0.10",
+      "started_at": "2026-10-30T20:54:02.495198+00:00",
+      "completed_at": "2026-10-30T20:54:06.474536+00:00",
+      "exit_code": 0,
+      "wasm_sha256": "fb2157f81298555df26d56f189bf311b52a0ed03ea11bad720d217cf71767439",
+      "log_sha256": "816a61496cdfd291d59a4a274b073538547b7b849200b04562708c7a6fc45485",
+      "passes": [
+        "--- PASS: TestNativeMediaQwenProviderInitializes (3.09s)",
+        "--- PASS: TestNativeMediaQwenProviderInitializes/qwen_image20_pro_sync (3.09s)",
+        "--- PASS: TestNativeMediaQwenProviderInitializes/qwen_image20_pro_sync/go (0.00s)",
+        "--- PASS: TestNativeMediaQwenProviderInitializes/qwen_image20_pro_sync/wasm (3.09s)"
+      ],
+      "skips": []
+    }
+  },
+  "delivery": [
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.10",
+      "ingestion_transport": "operator CLI invoking the existing ArtifactStore.commit on the original persistent store",
+      "upload_id": "native-media-ea974f6a-ai-proxy-2.0.10",
+      "started_at": "2026-10-30T20:56:49.312915+00:00",
+      "completed_at": "2026-10-30T20:56:50.934501+00:00",
+      "source_commit": "ea974f6aec6d6efd8d20564c3f8ddd2d8ab55c88",
+      "wasm_digest": "sha256:fb2157f81298555df26d56f189bf311b52a0ed03ea11bad720d217cf71767439",
+      "archive_digest": "sha256:93ccbf1411e2ce54e3cd95561ae8a433a019e6e24e432eb6cdd88d5f46627a73",
+      "receipt": {
+        "upload_id": "native-media-ea974f6a-ai-proxy-2.0.10",
+        "state": "committed",
+        "artifact_id": "97165091-3924-4278-afd3-761a3381b60d",
+        "content_digest": "sha256:6b1466d8c811c73d42a800347209af928aeb3a136fae73b3da3089574878f892",
+        "manifest": {
+          "archive_digest": "sha256:93ccbf1411e2ce54e3cd95561ae8a433a019e6e24e432eb6cdd88d5f46627a73",
+          "artifact_id": "97165091-3924-4278-afd3-761a3381b60d",
+          "canonicalization_version": "artifact-json.v1",
+          "config_schema_path": "config.schema.json",
+          "content_digest": "sha256:6b1466d8c811c73d42a800347209af928aeb3a136fae73b3da3089574878f892",
+          "created_at": "2026-10-30T20:56:51.072846Z",
+          "created_by": "native-media-source-release",
+          "defaults_path": "defaults.json",
+          "documentation_paths": [
+            "docs/README.md",
+            "docs/README_EN.md"
+          ],
+          "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.10/plugin.wasm",
+          "environment_refs": [],
+          "files": [
+            {
+              "path": "config.schema.json",
+              "role": "config_schema",
+              "sha256": "sha256:a55ded256e827ee6ba8a4ff7d7337fb573dc4bc768435d2703f14e570f5ebc76",
+              "size_bytes": "192816"
+            },
+            {
+              "path": "defaults.json",
+              "role": "defaults",
+              "sha256": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "size_bytes": "2"
+            },
+            {
+              "path": "docs/README.md",
+              "role": "documentation",
+              "sha256": "sha256:acc2052fee88d8454a0957d3f786d857e58d3873137e15f6ded46a31092c622b",
+              "size_bytes": "91771"
+            },
+            {
+              "path": "docs/README_EN.md",
+              "role": "documentation",
+              "sha256": "sha256:2e07515debca1e9ac251f05378ef3b5e548f087f53ac564b7cc7bd9992c765fe",
+              "size_bytes": "90959"
+            },
+            {
+              "path": "plugin.wasm",
+              "role": "wasm",
+              "sha256": "sha256:fb2157f81298555df26d56f189bf311b52a0ed03ea11bad720d217cf71767439",
+              "size_bytes": "11636149"
+            },
+            {
+              "path": "route.schema.json",
+              "role": "config_schema",
+              "sha256": "sha256:4dfe8442d419b3de0c65a611d48f1a227ceaabf4836a89448eacafb510dea8d8",
+              "size_bytes": "79501"
+            }
+          ],
+          "plugin_name": "ai-proxy",
+          "plugin_version": "2.0.10",
+          "schema_version": "artifact.v1",
+          "source": {
+            "build_inputs_digest": "sha256:ee59cce030ce0ef7aa805103c7ed0f1efbe91b100a882405ea93412f5da051ed",
+            "commit": "ea974f6aec6d6efd8d20564c3f8ddd2d8ab55c88",
+            "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "kind": "local_build",
+            "repo": "https://github.com/wooveep/plugin-server.git",
+            "verification": "verified"
+          },
+          "wasm_path": "plugin.wasm"
+        }
+      }
+    }
+  ],
+  "http": {
+    "verified_at": "2026-10-30T20:59:00.078703+00:00",
+    "server_pod": "higress-plugin-server-9dfb455d9-xgsp5",
+    "artifacts": [
+      {
+        "plugin_name": "ai-proxy",
+        "plugin_version": "2.0.10",
+        "artifact_id": "97165091-3924-4278-afd3-761a3381b60d",
+        "content_digest": "sha256:6b1466d8c811c73d42a800347209af928aeb3a136fae73b3da3089574878f892",
+        "files": [
+          {
+            "path": "manifest.json",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.10/manifest.json",
+            "status": 200,
+            "size_bytes": 2006,
+            "sha256": "sha256:d3c30ac8df1ccf1ca4e1cca31822fa9785b3951824c0beb9c0aadb65477524f4"
+          },
+          {
+            "path": "plugin.wasm",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.10/plugin.wasm",
+            "status": 200,
+            "size_bytes": 11636149,
+            "sha256": "sha256:fb2157f81298555df26d56f189bf311b52a0ed03ea11bad720d217cf71767439"
+          },
+          {
+            "path": "config.schema.json",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.10/config.schema.json",
+            "status": 200,
+            "size_bytes": 192816,
+            "sha256": "sha256:a55ded256e827ee6ba8a4ff7d7337fb573dc4bc768435d2703f14e570f5ebc76",
+            "metadata_identity": {
+              "name": "ai-proxy",
+              "version": "2.0.10"
+            }
+          },
+          {
+            "path": "archive.tgz",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.10/archive.tgz",
+            "status": 200,
+            "size_bytes": 3082047,
+            "sha256": "sha256:93ccbf1411e2ce54e3cd95561ae8a433a019e6e24e432eb6cdd88d5f46627a73"
+          }
+        ]
+      }
+    ],
+    "artifact_downloads_verified": true,
+    "registered_list_endpoint": {
+      "status": 404,
+      "availability": "current deployed image has no batch metadata endpoint; package manifests are individually HTTP-verified"
+    }
+  }
+}
