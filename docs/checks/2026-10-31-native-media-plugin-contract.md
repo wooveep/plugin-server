@@ -37,3 +37,11 @@ root 修改 `plugin-server/plugins/wasm-go` 的插件、测试和包，沿用完
 当前线上旧镜像的 `GET /artifacts` 返回 404；本次没有把这个缺口记成通过。两个具体 manifest 地址已可用于现有注册入口；MF 责任聊天继续登记/缓存它们的元数据，再由显式保存并生效选择最高版本。批量元数据接口已在 plugin-server 源码实现，随后续完整集合镜像交付接入。
 
 ai-billing 媒体配置会校验实际图片/视频能力并保持 dormant，不创建文本 delivery 或旧 BillingEvent；原生媒体事实仍由 ai-proxy 的工作器产生。ai-proxy 保持闭合的运行配置，错误下发 `usage_estimation` 会被真实 VM 初始化负例拒绝。基础配置、同步图片、异步图片和视频的 scoped 初始化已运行 Go 与实际编译后 Wasm 回归；这些结果不替代真实 Higress 加载或供应商媒体调用验收。
+
+## 真实 Qwen 提供方的后继修复（进行中）
+
+MF/DEP 聊天在真实发布 `01a18e88-fa15-7610-b3be-fd5360e8111e` 中记录 2026-10-30 20:41:37.288Z 的 Envoy 初始化失败：`managed media route requires its explicit controlled provider`。其只读核对确认冻结 `providers[].type=qwen`，`activeProviderId` 与 provider id 一致；MF 没有丢失提供方。该坏候选已由对方标记 Failed 并清理，管理入口恢复 200。
+
+本地已用完整 v2 冻结配置的 qwen 同步图片案例复现相同失败。源码根因是媒体分支在 `Config.Complete` 已经验证真实业务提供方后，错误地再次要求文本适配器家族必须为 generic/openai。媒体 codec 和发送者实际由冻结 profile 与 notice worker 决定，该限制混淆了业务提供方和原生媒体协议层。
+
+后继 ai-proxy 2.0.10 移除这项错误的家族限制，保留精确 profile、active provider id、冻结凭证池和 token 对应检查；未知提供方仍由既有创建边界拒绝。没有把 qwen 改成 generic，没有加入虚构文本能力或放宽未知运行字段。正在执行真实 `type=qwen` 的同步图片、异步图片、video/task_query 初始化以及 ID/凭证负例；2.0.9 的原交付记录作为历史保留，新包入库证据完成后另行追加。

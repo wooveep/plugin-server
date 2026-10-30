@@ -1404,9 +1404,9 @@
     },
     {
       "plugin": "ai-proxy",
-      "version": "2.0.9",
+      "version": "2.0.10",
       "path": "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml",
-      "sha256": "4743df4dfcc7fce5266a447a80990f942f055f5bc78ad8d0f1cf39294f326563"
+      "sha256": "bf18be0f3b2c5cf064f2b37f00a67953461635d6d71b80dbbeade797269fb5a6"
     },
     {
       "plugin": "ai-quota",

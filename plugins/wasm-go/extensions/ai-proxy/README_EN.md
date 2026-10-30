@@ -10,7 +10,7 @@ The `2.0.5` configuration contract keeps `_modelfusion_execution` v1's scalar `c
 
 For v2, `managed_execution.credentials` contains the matching ref/revision/value triples and excludes scalar `credential_value`. HEALTH is required: `upstream_health.targets` retains every original operation/member TargetReference and excludes `target`. V1 retains its original scalar settings and optional HEALTH. The existing generic `legacy_suffixes`/`bound_target` and `auto`/`passthrough` capability starts at version 1.0.2; it is separate from the v2 pool contract.
 
-> Plugin version: `2.0.9`
+> Plugin version: `2.0.10`
 
 ## Function Description
 

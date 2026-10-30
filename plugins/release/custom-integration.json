@@ -8,8 +8,9 @@
       "plugin": "ai-proxy",
       "upstream_version": "2.0.3",
       "prior_custom_version": "2.0.8",
-      "new_version": "2.0.9",
-      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+      "new_version": "2.0.10",
+      "reason": "native media codec is owned by the frozen profile and notice worker; retain the validated business provider family and exact active provider/credential checks",
+      "registered_predecessor": "2.0.9"
     },
     {
       "plugin": "ai-quota",
@@ -277,5 +278,15 @@
       "new_local_release": "2.0.1",
       "reason": "new local source build above the actual published SemVer; no claim of historical byte equality"
     }
-  ]
+  ],
+  "native_media_qwen_provider_fix": {
+    "version": "2.0.10",
+    "actual_rejected_release": "01a18e88-fa15-7610-b3be-fd5360e8111e",
+    "actual_failure": "managed media route requires its explicit controlled provider",
+    "frozen_provider_type": "qwen",
+    "source_fix": "remove text adapter family restriction from native profile validation; Config.Complete, profile, active provider and credential boundary checks remain",
+    "original_reproduction_log": "build/source-reconciliation-20261031/qwen-provider-original-reproduction.log",
+    "regression_log": "build/source-reconciliation-20261031/qwen-provider-2.0.10-regression.log",
+    "status": "84 recorded test/parent pass events; no failures or skips; exact Qwen2 sync follow-up and immutable upload pending"
+  }
 }

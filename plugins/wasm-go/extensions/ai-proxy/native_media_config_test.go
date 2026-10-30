@@ -95,3 +95,42 @@ func TestNativeMediaRuntimeRejectsConsoleOnlyEstimationPolicy(t *testing.T) {
 		require.Equal(t, types.OnPluginStartStatusFailed, status)
 	})
 }
+
+func TestNativeMediaQwenProviderInitializes(t *testing.T) {
+	for _, profile := range []string{mediaexecution.QwenImage20ProSync, mediaexecution.QwenImage30NativeSync, mediaexecution.Profile, mediaexecution.Wan30Text} {
+		t.Run(profile, func(t *testing.T) {
+			configuration, err := sjson.SetBytes(nativeMediaProxyConfiguration(t, profile, false), "_rules_.0.providers.0.type", "qwen")
+			require.NoError(t, err)
+			test.RunTest(t, func(t *testing.T) {
+				host, status := test.NewTestHost(configuration)
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+				require.NoError(t, host.SetRouteName("released-media-route"))
+				require.Equal(t, types.ActionPause, host.CallOnHttpRequestHeaders([][2]string{{":authority", "media.fixture.test"}, {":method", "POST"}, {":path", "/native/media"}, {"content-type", "application/json"}}))
+				require.NotNil(t, host.GetLocalResponse())
+				require.Equal(t, uint32(409), host.GetLocalResponse().StatusCode)
+			})
+		})
+	}
+}
+
+func TestNativeMediaProviderAndCredentialIdentityRemainExact(t *testing.T) {
+	for name, patch := range map[string]struct {
+		path  string
+		value string
+	}{
+		"unsupported provider": {"_rules_.0.providers.0.type", "unregistered-provider"},
+		"different active ID":  {"_rules_.0.activeProviderId", "another-provider"},
+		"different credential": {"_rules_.0.providers.0.apiTokens.0", "different-controlled-credential"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			configuration, err := sjson.SetBytes(nativeMediaProxyConfiguration(t, mediaexecution.QwenImage30NativeSync, false), patch.path, patch.value)
+			require.NoError(t, err)
+			test.RunTest(t, func(t *testing.T) {
+				host, status := test.NewTestHost(configuration)
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusFailed, status)
+			})
+		})
+	}
+}

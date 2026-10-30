@@ -162,10 +162,8 @@ func validateManagedMediaRelease(c *managedExecutionConfig, value gjson.Result, 
 		c.release.Descriptor.UpstreamModel != protocol.Model || value.Get("managed_execution.media_dispatch_mode").String() != "managed_operation" {
 		return errors.New("managed media route differs from its frozen native protocol")
 	}
-	provider := cfg.GetProvider()
-	if provider == nil || (provider.GetProviderType() != "generic" && provider.GetProviderType() != "openai") {
-		return errors.New("managed media route requires its explicit controlled provider")
-	}
+	// Config.Complete has already validated the selected business provider.
+	// Native media uses the frozen profile's codec, not its text adapter family.
 	providerValue := value.Get("provider")
 	if providers := value.Get("providers"); providers.Exists() {
 		// Config.FromJson keeps this original JSON unchanged and resolves the
