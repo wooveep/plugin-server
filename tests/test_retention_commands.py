@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from email.message import Message
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from artifact_contract import ArtifactError, digest, json_bytes
 from artifact_storage import ArtifactStore, StorageConflict, StorageUnavailable
@@ -51,6 +51,17 @@ class RetentionCommands(unittest.TestCase):
             decision=self.decision(key=kind, revision=str(index), action='retain', references=[{'kind':kind,'ref_id':'old-reference','retention_reason':'original history'}])
             self.assertEqual(self.store.retain_or_delete(decision)['state'],'retained')
         self.assertTrue((self.root/'test-plugin/1.0.0/plugin.wasm').is_file())
+
+    def test_delete_uses_registered_identity_without_reopening_payloads(self):
+        original_read = Path.read_bytes
+        def metadata_only(path):
+            if path.name != 'manifest.json':
+                raise AssertionError('deletion must not reopen accepted payloads: ' + path.name)
+            return original_read(path)
+        with patch('artifact_storage.Path.read_bytes', metadata_only):
+            result = self.store.retain_or_delete(self.decision())
+        self.assertEqual(result['state'], 'deleted')
+        self.assertFalse((self.root/'test-plugin/1.0.0').exists())
 
     def test_expired_permission_is_audited_without_filesystem_write(self):
         decision=self.decision()

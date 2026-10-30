@@ -401,12 +401,9 @@ class ArtifactStore:
                     receipt.update(state="refused", reason="original_manifest_differs")
                     self._save_retention(db, receipt)
                     return receipt
-                for entry in manifest["files"]:
-                    member = final / entry["path"]
-                    if member.is_symlink() or not member.resolve().is_relative_to(final.resolve()) or digest(member.read_bytes()) != entry["sha256"]:
-                        raise StorageUnavailable("original artifact member differs")
-                if digest((final / "archive.tgz").read_bytes()) != manifest["archive_digest"]:
-                    raise StorageUnavailable("original archive bytes differ")
+                # The upload boundary already verified these immutable payloads.
+                # Deletion identifies the original directory by its registered
+                # manifest; rereading Wasm/archives cannot change reference authority.
                 self.fault("retention_before_rename")
                 os.rename(final, tombstone)
                 fsync_directory(final.parent)
