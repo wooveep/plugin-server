@@ -31,3 +31,15 @@ class ReleaseCatalogTests(unittest.TestCase):
                                              "metadata": {"info": {"name": "router", "version": "1.0.0"}}}]
         with self.assertRaisesRegex(ValueError, "metadata identity differs"):
             release_catalog(store, catalog)
+
+    def test_previous_registered_versions_are_retained_but_not_selected(self):
+        catalog = {"requiredPlugins": ["router"], "plugins": [
+            {"logicalId": "router", "implementation": "go", "releaseEligible": True, "declaredVersion": "2.0.3"}]}
+        store = Mock()
+        store.list_metadata.return_value = [
+            {"manifest": {"plugin_name": "router", "plugin_version": version},
+             "metadata": {"info": {"name": "router", "version": version}}}
+            for version in ["2.0.2", "2.0.3"]]
+        result = release_catalog(store, catalog)
+        self.assertEqual(result["count"], 1)
+        self.assertEqual(result["artifacts"][0]["manifest"]["plugin_version"], "2.0.3")

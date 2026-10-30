@@ -17,10 +17,11 @@ def release_catalog(store: ArtifactStore, source_catalog: dict) -> dict:
     selected = {(entry["logicalId"], entry["declaredVersion"]): entry for entry in selected_entries(source_catalog)}
     registered = {(entry["manifest"]["plugin_name"], entry["manifest"]["plugin_version"]): entry
                   for entry in store.list_metadata()}
-    if set(selected) != set(registered):
+    # The selected release must be complete. Previously registered versions
+    # remain immutable and available without becoming this release's defaults.
+    if missing := selected.keys() - registered.keys():
         raise ValueError("registered release differs from the full source catalog: missing="
-                         + repr(sorted(selected.keys() - registered.keys()))
-                         + "; extra=" + repr(sorted(registered.keys() - selected.keys())))
+                         + repr(sorted(missing)))
     artifacts = []
     for identity, entry in sorted(selected.items()):
         item = registered[identity]
