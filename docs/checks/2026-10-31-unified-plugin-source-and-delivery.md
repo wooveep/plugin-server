@@ -1,6 +1,6 @@
 # 统一插件源码、编译与完整交付验收
 
-日期：2026-10-31（Asia/Shanghai）。插件源码、固定工具链编译、完整包入库、镜像/PVC/HTTP 和真实 model-router 匹配已完成；**MF 插件库消费仍有 10 类缺失及默认版本展示缺口，整项计划尚未关闭**。实施范围见[计划](../plans/2026-10-31-unified-plugin-source-and-delivery.md)，[总机器回执](unified-plugin-source-20261031/receipt.json)记录精确提交、版本、制品身份、摘要、工具链和分层回归。
+日期：2026-10-31（Asia/Shanghai）。插件源码、固定工具链编译、完整包入库、镜像/PVC/HTTP 和真实 model-router 匹配已完成；**后继Helm101已补齐55类目录、真实默认版本、配置与文档，本整合范围完成**。实施范围见[计划](../plans/2026-10-31-unified-plugin-source-and-delivery.md)，[总机器回执](unified-plugin-source-20261031/receipt.json)记录精确提交、版本、制品身份、摘要、工具链和分层回归。
 
 ## 源码与发行集合
 
@@ -53,14 +53,16 @@ MF/DEP 责任聊天先完成 Helm99 交接及 Qwen 媒体路由真实初始化/�
 
 五个临时资源已清理。首个 15 秒窗口仍有退役 ECDS 项，随后实际读回确认 Kubernetes 对象、ECDS、active/warming/draining listener 和路由引用均为零；[清理回执](unified-plugin-source-20261031/model-router-cleanup.json)保留该收敛边界，没有重启 gateway 或重跑业务用例来改变证据。
 
-## Console 接入与尚未完成项
+## Console 接入与后继消费完成
 
 [Console 原生注册回执](unified-plugin-source-20261031/console-catalog-registration.json)证实 55 个正式默认版本均已接纳：53 新登记、2 复用，Console 共 75 个登记版本。接纳后，原 133 个 Ingress/WasmPlugin 的 UID、规格与代次逐项保持；上传/登记不会自动改动既有生效绑定。
 
-[实际插件库对账](unified-plugin-source-20261031/console-library-formal-reconciliation.json)仍发现：列表总数 45，以下 10 类虽有真实登记制品，却未出现在库中；多项行默认版本还来自旧内置目录。缺少的是 `ai-context-limit`、`ai-endpoint-picker`、`gw-error-format`、`hmac-auth-apisix`、`json-converter`、`log-request-response`、`mcp-router`、`nginx-rewrite-compatible`、`replay-protection`、`response-cache`。
+Helm100时的[实际插件库对账](unified-plugin-source-20261031/console-library-formal-reconciliation.json)发现：列表总数 45，以下 10 类虽有真实登记制品，却未出现在库中；多项行默认版本还来自旧内置目录。缺少的是 `ai-context-limit`、`ai-endpoint-picker`、`gw-error-format`、`hmac-auth-apisix`、`json-converter`、`log-request-response`、`mcp-router`、`nginx-rewrite-compatible`、`replay-protection`、`response-cache`。
 
-CodeGraph 与当前源码确认列表入口 `console/src/compat.rs::list_wasm_plugins` 先从 SDK 内置目录取 45 类，过滤和分页后才查询这些名称的登记引用；因此重新登记、刷新浏览器或增加版本别名均不能补齐名称。单项详情和 README 同样先查内置目录。消费侧应以已接纳制品元数据覆盖可用名称/版本，按真实 SemVer 提供新配置的默认选项，保留已生效实例冻结的精确身份；列表、详情、配置和文档都需贯通，不能靠创建伪造的静态版本补洞。MF/SDK/Web 文件归属已向用户确认，本批尚未修改这些源文件。
+当时CodeGraph与当前文件核对确认列表入口 `console/src/compat.rs::list_wasm_plugins` 先从 SDK 内置目录取 45 类，过滤和分页后才查询这些名称的登记引用；因此重新登记、刷新浏览器或增加版本别名均不能补齐名称。单项详情和 README 同样先查内置目录。消费侧应以已接纳制品元数据覆盖可用名称/版本，按真实 SemVer 提供新配置的默认选项，保留已生效实例冻结的精确身份；列表、详情、配置和文档都需贯通，不能靠创建伪造的静态版本补洞。该段保留发现时状态；另一聊天批次结束后已由root串行接续修复。原生runtime和兼容compat两个入口均已贯通，详见[Helm101消费验收](../../../ocloudmodelfusion/docs/checks/2026-10-31-plugin-directory-consumer.md)。
 
-原目标 79 卡最新实查仍为 **27 关闭 / 52 开放**。本批没有执行付费供应商调用或资金变更，不据此关闭完整事实、计费、媒体、W12/EB 或全量业务卡；后续继续按原目标完成消费缺口与业务验收。
+原目标 79 卡最新实查仍为 **27 关闭 / 52 开放**。本批没有执行付费供应商调用或资金变更，不据此关闭完整事实、计费、媒体、W12/EB 或全量业务卡；后继消费缺口已关闭，原目标中的余额恢复与业务验收继续。
 
-本批已[回填原总 Issue](https://github.com/wooveep/modelfusionproject/issues/1#issuecomment-6534322266)，保留消费缺口和原 52 张开放卡的验收边界。
+本批已[回填原总 Issue](https://github.com/wooveep/modelfusionproject/issues/1#issuecomment-6534322266)，将后继消费结果并入同一阶段评论，原52张开放卡的验收边界保持。
+
+Helm101实际55项详情、路由配置、英语README共165次读取全部200；完整列表155.712ms，分页20/20/15，全部默认引用与正式交付清单一致。133项Ingress/WasmPlugin最终UID/spec与原文本plan_digest保持；key-auth.internal的generation变化单列于消费回执。该批未发送模型调用，原客户钱包和事实/账务数量保持。
