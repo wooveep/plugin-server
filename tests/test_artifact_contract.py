@@ -10,7 +10,7 @@ from pathlib import Path
 from artifact_contract import (ValidationPolicy, digest, json_bytes,
                                validate_document, validate_package)
 from artifact_packaging import build_archive
-from mf_canonical import ContractError, canonicalize
+from mf_canonical import ContractError, canonicalize, parse_json
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -58,6 +58,10 @@ class ArtifactContractTests(unittest.TestCase):
         for raw, code in ((b'{"a":1,"a":2}', "E_DUPLICATE_KEY"), (b'"\\ud800"', "E_SURROGATE"), (b'NaN', "E_JSON"), (b'1e1000000', "E_LIMIT"), (b'"\xff"', "E_UTF8")):
             with self.subTest(raw=raw):
                 self.assert_code(code, lambda: canonicalize(raw))
+
+    def test_parsed_metadata_serializes_without_decimal_precision_loss(self):
+        raw = b'{"priority":321,"nested":{"ratio":0.100000000000000000001,"integer":9007199254740993},"quantity":"1.234500"}'
+        self.assertEqual(json_bytes(parse_json(raw)), canonicalize(raw))
 
     def test_full_package_and_compression_independent_identity(self):
         raw = example_archive()

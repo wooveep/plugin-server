@@ -6,9 +6,10 @@ from urllib.request import urlopen
 from http.client import HTTPConnection
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from unittest.mock import patch
 
 from plugin_server import PluginRequestHandler
-from artifact_packaging import build_archive
+from artifact_packaging import build_archive, prepare_plugin
 from test_artifact_contract import descriptor, example_payload
 
 
@@ -75,6 +76,22 @@ class PluginServerTest(unittest.TestCase):
                                     headers={"Authorization": "Bearer secret-token"})
         self.assertEqual(status, 400)
         self.assertFalse((self.plugins_dir / "demo").exists())
+
+    def test_batch_metadata_returns_real_numeric_priority_without_revalidation(self):
+        archive = prepare_plugin(
+            spec=(Path(__file__).parent / "fixtures/schema-conversion/key-auth.yaml").read_bytes(),
+            wasm=b"\0asm\1\0\0\0", defaults=b"{}", documentation={"docs/README.md": b"Documented"},
+            source={"kind": "legacy_unknown", "verification": "unknown"})
+        status, _, body = self.request("PUT", "/uploads/metadata", body=archive,
+                                       headers={"Authorization": "Bearer secret-token"})
+        self.assertEqual(status, 201, body)
+        with patch("artifact_storage.validate_package", side_effect=AssertionError("unexpected package revalidation")):
+            status, _, body = self.request("GET", "/artifacts")
+        self.assertEqual(status, 200, body)
+        entry = json.loads(body)["artifacts"][0]
+        self.assertEqual(entry["metadata"]["priority"], 321)
+        self.assertEqual(entry["metadata"]["info"]["name"], "key-auth")
+        self.assertEqual(entry["manifest"]["plugin_version"], "1.0.3")
 
     def test_no_directory_listing_or_private_state_download(self):
         for path in ("/", "/plugins/", "/.plugins-artifact-state/state.sqlite3", "/plugins/../.plugins-artifact-state/store.lock"):

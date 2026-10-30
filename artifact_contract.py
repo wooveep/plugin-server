@@ -114,9 +114,20 @@ def digest(raw: bytes) -> str:
 
 
 def json_bytes(value: Any) -> bytes:
-    """Encode protocol records (whose numeric quantities are decimal strings)."""
-    return canonicalize(json.dumps(value, ensure_ascii=False, separators=(",", ":"),
-                                   allow_nan=False).encode("utf-8"))
+    """Encode records and parsed JSON metadata without rounding decimal numbers."""
+    def text(item: Any) -> str:
+        if isinstance(item, Decimal):
+            if not item.is_finite():
+                raise ValueError("non-finite JSON number")
+            return str(item)
+        if isinstance(item, (list, tuple)):
+            return "[" + ",".join(text(member) for member in item) + "]"
+        if isinstance(item, dict):
+            return "{" + ",".join(json.dumps(key, ensure_ascii=False) + ":" + text(member)
+                                  for key, member in item.items()) + "}"
+        return json.dumps(item, ensure_ascii=False, allow_nan=False)
+
+    return canonicalize(text(value).encode("utf-8"))
 
 
 def safe_path(name: str) -> bool:

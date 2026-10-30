@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import copy
-import json
 import posixpath
 import re
 from decimal import Decimal, InvalidOperation
@@ -14,7 +13,7 @@ from urllib.parse import unquote, urldefrag
 import yaml
 
 from artifact_contract import (ArtifactError, DIALECT, SCHEMA_KEYWORDS, SCHEMA_MAP_KEYS, SCHEMA_SINGLE_KEYS, SCHEMA_ARRAY_KEYS, SECRET_KEYS, COMMON, digest,
-                               check_shape, contract_registry, registry_for, reject_credentials, schema_nodes, schema_positions)
+                               check_shape, contract_registry, json_bytes, registry_for, reject_credentials, schema_nodes, schema_positions)
 from mf_canonical import MAX_DEPTH, MAX_INPUT_BYTES, canonicalize, parse_json, schema_numbers
 
 VERSION = "higress-conversion.v1"
@@ -59,22 +58,9 @@ def _yaml_decimal(loader, node):
 StrictLoader.add_constructor("tag:yaml.org,2002:float", _yaml_decimal)
 
 
-def _json_text(value: Any) -> str:
-    """Emit exact YAML decimal scalars; never round through a binary float."""
-    if isinstance(value, Decimal):
-        if not value.is_finite():
-            unsupported("non-finite YAML number")
-        return str(value)
-    if isinstance(value, list):
-        return "[" + ",".join(_json_text(v) for v in value) + "]"
-    if isinstance(value, dict):
-        return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + _json_text(v) for k, v in value.items()) + "}"
-    return json.dumps(value, ensure_ascii=False, allow_nan=False)
-
-
 def encode_yaml_value(value: Any) -> bytes:
     try:
-        return canonicalize(_json_text(value).encode())
+        return json_bytes(value)
     except (ValueError, TypeError, RecursionError) as exc:
         unsupported("YAML value is not a bounded JSON value")
         raise AssertionError from exc
