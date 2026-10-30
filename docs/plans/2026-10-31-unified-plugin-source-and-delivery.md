@@ -70,7 +70,7 @@ root 仅修改插件整合、原 Go/SDK 入口及本层文档。MF Console/Rust 
 | ai-proxy | 2.0.9 | `/plugins/ai-proxy/2.0.9/plugin.wasm` |
 | ai-quota / ai-cache / ai-history / ai-statistics | 2.0.4 | 对应 `/plugins/<名称>/2.0.4/plugin.wasm` |
 | ai-memory | 0.1.7 | `/plugins/ai-memory/0.1.7/plugin.wasm` |
-| ai-billing | 0.1.14 | `/plugins/ai-billing/0.1.14/plugin.wasm` |
+| ai-billing | 1.0.1 | `/plugins/ai-billing/1.0.1/plugin.wasm` |
 | key-auth | 1.2.1 | `/plugins/key-auth/1.2.1/plugin.wasm` |
 
 这些是待发布目标，不能据此宣称 HTTP 已可下载。正式入库后产出 `dist/plugin-catalog.json`，包含全部选定实现、artifact_id、version、content_digest、archive_digest、download_url 和 `x-higress` 元数据；镜像内为 `/opt/plugin-server/plugin-catalog.json`。运行时 `GET /artifacts` 返回全部已登记 manifest 与元数据，可一次获取后在前端分页，无须逐项下载 Wasm 或 archive。

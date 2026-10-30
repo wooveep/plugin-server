@@ -57,8 +57,9 @@
       "plugin": "ai-billing",
       "upstream_version": null,
       "prior_custom_version": "0.1.13",
-      "new_version": "0.1.14",
-      "reason": "new unified locally maintained release; retain native execution and platform business responsibilities; do not overwrite published bytes"
+      "new_version": "1.0.1",
+      "reason": "retain native media fact ownership and choose a release above every already registered SemVer; do not replace immutable 1.0.0",
+      "registered_predecessor": "1.0.0"
     },
     {
       "plugin": "key-auth",
@@ -214,7 +215,7 @@
   "runtime_layering": "Keep upstream standalone plugins and preserve the selected platform-native overrides. Do not combine obsolete gateway vector-store/usage producers with the native Console-backed lifecycle.",
   "native_media_contract_fix": {
     "ai_proxy": "2.0.9 keeps exact runtime settings; usage_estimation is owned by Console frozen media policy and is not a VM field",
-    "ai_billing": "0.1.14 validates real image/video capabilities and stays dormant for the ai-proxy-owned media fact path; original text and internal embedding delivery remain active",
+    "ai_billing": "1.0.1 validates real image/video capabilities and stays dormant for the ai-proxy-owned media fact path; original text and internal embedding delivery remain active",
     "receipt": "build/source-reconciliation-20261031/native-media-regression.json",
     "status": "Go and compiled Wasm regression passed; source freeze and upload pending"
   }

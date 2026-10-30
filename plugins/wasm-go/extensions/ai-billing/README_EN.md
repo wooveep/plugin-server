@@ -8,7 +8,7 @@ description: Configuration reference for request-level AI billing event delivery
 
 The `0.1.11` configuration contract keeps `_modelfusion_execution` v1's scalar `credential_ref`/`credential_revision` and adds `modelfusion-execution.v2` with a complete, nonempty `credentials` array. Each member contains only those two fields; references are unique, revisions are canonical positive decimal strings, and secrets or mixed scalar/array shapes are rejected. The directory is not a selected attempt: actual D0/FACT attribution still contains one selected credential tuple. Billing and cache never select the first directory member.
 
-> Plugin version: `0.1.14`
+> Plugin version: `1.0.1`
 
 ## Overview
 

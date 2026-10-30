@@ -8,7 +8,7 @@ description: ai-billing 托管交付事实与兼容账单事件配置参考
 
 `0.1.11` 配置契约保留 `_modelfusion_execution` v1 的单一 `credential_ref`/`credential_revision`，并支持 `modelfusion-execution.v2` 的完整非空 `credentials` 数组。每项仅含这两个字段，ref 唯一、revision 为规范正十进制字符串；拒绝秘密及 scalar/array 混用。完整目录不代表本次已选凭据，实际 D0/FACT 仍保留唯一已选 tuple，billing/cache 不取目录首项作为执行凭据。
 
-> 交付版本：`0.1.14`，以 [资源 schema](../../resources/plugins/ai-billing/spec.yaml) 为准。
+> 交付版本：`1.0.1`，以 [资源 schema](../../resources/plugins/ai-billing/spec.yaml) 为准。
 
 ## 功能说明
 

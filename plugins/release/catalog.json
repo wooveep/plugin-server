@@ -3092,7 +3092,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "0.1.14"
+      "declaredVersion": "1.0.1"
     },
     {
       "logicalId": "ai-memory",
