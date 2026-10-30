@@ -1,0 +1,8 @@
+{
+  "source_repository": "https://github.com/higress-group/proxy-wasm-go-sdk",
+  "imported_repository": "higress-plugin/proxy-wasm-go-sdk",
+  "source_commit": "19fcbaf467d0c0b3863970c6eea1aa0158ffef14",
+  "source_tree": "ba889d54f56c95ce162eadcd9b65b62ae07c7b2b",
+  "destination": "plugins/proxy-wasm-go-sdk",
+  "content": "verbatim current customized SDK; original history is a merge parent"
+}
