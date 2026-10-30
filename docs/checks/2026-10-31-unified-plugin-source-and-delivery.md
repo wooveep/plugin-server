@@ -12,6 +12,7 @@
 
 ## 分层验证
 
+- [49 个实际 Go 模块解析记录](unified-plugin-source-20261031/go-module-preflight.json)已在同一固定容器中按 `GOWORK=off go list -mod=readonly -m -json all` 冻结；记录 1,026 个去重依赖描述，旧绝对 replace 为零。覆盖 46 个正式 Go 插件、共享框架/SDK 和原生模块。
 - 55/55 正式插件在固定本地容器工具链下实际编译成功。两个 AssemblyScript 示例和原生 Go `.so` 另行显式编译成功，保持非正式分类；没有将 `.so` 作为 Wasm HTTP 制品。
 - Python 全套 **114/114**、编译检查及同步/保留入口通过。既有 D0 `.3` 语料与 golden 未被改写。
 - Go 框架、memory 失败项已从版本/契约断言根因修正并分别完整补验。quota、cache、history、statistics、mapper、key-auth、model-router、两种限流插件的原完整 Go/Wasm 回归与本批 Wasm 字节一致；ai-billing 1.0.1 完整回归及 ai-proxy 2.0.10 媒体/Qwen/托管执行分层回归另有精确回执。
@@ -61,3 +62,5 @@ MF/DEP 责任聊天先完成 Helm99 交接及 Qwen 媒体路由真实初始化/�
 CodeGraph 与当前源码确认列表入口 `console/src/compat.rs::list_wasm_plugins` 先从 SDK 内置目录取 45 类，过滤和分页后才查询这些名称的登记引用；因此重新登记、刷新浏览器或增加版本别名均不能补齐名称。单项详情和 README 同样先查内置目录。消费侧应以已接纳制品元数据覆盖可用名称/版本，按真实 SemVer 提供新配置的默认选项，保留已生效实例冻结的精确身份；列表、详情、配置和文档都需贯通，不能靠创建伪造的静态版本补洞。MF/SDK/Web 文件归属已向用户确认，本批尚未修改这些源文件。
 
 原目标 79 卡最新实查仍为 **27 关闭 / 52 开放**。本批没有执行付费供应商调用或资金变更，不据此关闭完整事实、计费、媒体、W12/EB 或全量业务卡；后续继续按原目标完成消费缺口与业务验收。
+
+本批已[回填原总 Issue](https://github.com/wooveep/modelfusionproject/issues/1#issuecomment-6534322266)，保留消费缺口和原 52 张开放卡的验收边界。

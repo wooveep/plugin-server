@@ -2543,5 +2543,14 @@
   },
   "paid_provider_calls": false,
   "funds_changed": false,
-  "mf_source_files_changed_by_this_batch": false
+  "mf_source_files_changed_by_this_batch": false,
+  "go_module_preflight": {
+    "module_count": 49,
+    "distinct_dependency_records": 1026,
+    "GOWORK": "off",
+    "module_mode": "readonly",
+    "legacy_absolute_replacements": 0,
+    "evidence": "go-module-preflight.json"
+  },
+  "issue_evidence_url": "https://github.com/wooveep/modelfusionproject/issues/1#issuecomment-6534322266"
 }
