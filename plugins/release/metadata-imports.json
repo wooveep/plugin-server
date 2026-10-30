@@ -1332,9 +1332,9 @@
     },
     {
       "plugin": "ai-billing",
-      "version": "0.1.14",
+      "version": "1.0.1",
       "path": "plugins/wasm-go/resources/plugins/ai-billing/spec.yaml",
-      "sha256": "ccfd461e4bf9d31dbb70a4567168fd0394d79d01d47cd46f47f5cf941811e124"
+      "sha256": "773edf0b548cd5b1815989c7bec80a5cdb34119670fb7593e6a7851131485b07"
     },
     {
       "plugin": "ai-cache",

@@ -217,6 +217,7 @@
     "ai_proxy": "2.0.9 keeps exact runtime settings; usage_estimation is owned by Console frozen media policy and is not a VM field",
     "ai_billing": "1.0.1 validates real image/video capabilities and stays dormant for the ai-proxy-owned media fact path; original text and internal embedding delivery remain active",
     "receipt": "build/source-reconciliation-20261031/native-media-regression.json",
-    "status": "Go and compiled Wasm regression passed; source freeze and upload pending"
+    "status": "source frozen and pushed; final ai-billing 1.0.1 full Go/Wasm regression, both complete-package ingestions and eight HTTP downloads passed; MF registration and real Higress verification remain with owner",
+    "delivery_evidence": "docs/checks/2026-10-31-native-media-plugin-delivery.json"
   }
 }

@@ -1,0 +1,308 @@
+{
+  "evidence_version": 1,
+  "status": "packages_committed_and_http_verified",
+  "scope": "native media configuration and immutable package delivery; actual Higress initialization, MF registration and target route recovery remain with MF/DEP owner",
+  "helm_changed": false,
+  "funds_or_paid_model_calls": false,
+  "source_repository": "https://github.com/wooveep/plugin-server",
+  "source_branch": "codex/artifact-p1-20261026",
+  "source_commits": [
+    "4cc3e50941868b29300f47fae78cf28c9eb4e241",
+    "c29670ad0a1e3dbe9b2e08ebd4a98598b3ebe857"
+  ],
+  "semver_selection_note": "ai-billing 1.0.0 was already registered; this release is 1.0.1 so highest-SemVer selection reaches the actual new package",
+  "tests": {
+    "ai_proxy_scoped_media_and_base_startup": {
+      "plugin": "ai-proxy",
+      "version": "2.0.9",
+      "selector": "TestNativeMedia|TestBaseConfiguration|TestEmptyRouteRuleList",
+      "started_at": "2026-10-30T20:16:04.568952+00:00",
+      "completed_at": "2026-10-30T20:16:31.232606+00:00",
+      "exit_code": 0,
+      "wasm_sha256": "8b3c986e32cbbc5b107f25597369827b247af00b9bab0a9e856bbe88319d1b9a",
+      "log_sha256": "cdad1bc997f9ddc54c87cc44f1d55b6a36021b60f34eed4f650ac389eba80f06",
+      "log_bytes": 76
+    },
+    "ai_billing_final_full_go_and_wasm": {
+      "plugin": "ai-billing",
+      "version": "1.0.1",
+      "source_commit": "c29670ad0a1e3dbe9b2e08ebd4a98598b3ebe857",
+      "started_at": "2026-10-30T20:27:28.692498+00:00",
+      "completed_at": "2026-10-30T20:28:22.866291+00:00",
+      "exit_code": 0,
+      "wasm_sha256": "26d97652c71320a96cd28413e0bdf49d2e58d3019057d86768158c4c0479ac5c",
+      "log_sha256": "a7e54ad9e357eacfeca9b9d71506e0d5831647a5c496d7370dd123e495334bd3",
+      "log_bytes": 24
+    },
+    "python_make_test": {
+      "command": [
+        "make",
+        "test"
+      ],
+      "started_at": "2026-10-30T20:21:43.829780+00:00",
+      "completed_at": "2026-10-30T20:21:59.464212+00:00",
+      "exit_code": 0,
+      "log_sha256": "b12d5262d4d03aec6112ca3f3fae5bcf7524b21615bc6ca914f2ade8bf4f1e87",
+      "log_bytes": 21788
+    }
+  },
+  "delivery": [
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.1",
+      "ingestion_transport": "operator CLI invoking the existing ArtifactStore.commit on the original persistent store",
+      "upload_id": "native-media-c29670ad-ai-billing-1.0.1",
+      "started_at": "2026-10-30T20:29:54.263340+00:00",
+      "completed_at": "2026-10-30T20:29:55.065032+00:00",
+      "source_commit": "c29670ad0a1e3dbe9b2e08ebd4a98598b3ebe857",
+      "wasm_digest": "sha256:26d97652c71320a96cd28413e0bdf49d2e58d3019057d86768158c4c0479ac5c",
+      "archive_digest": "sha256:79e0645b245ae685368ab5e48bb35b11f69cd86407e8394545085ed44438c511",
+      "receipt": {
+        "upload_id": "native-media-c29670ad-ai-billing-1.0.1",
+        "state": "committed",
+        "artifact_id": "78c9e3e1-03d4-4f2d-9e23-4fb10d0fe148",
+        "content_digest": "sha256:4564750321553fda84086b7d3694a076a3e75df0320bb6d065261b2b3fa0d92e",
+        "manifest": {
+          "archive_digest": "sha256:79e0645b245ae685368ab5e48bb35b11f69cd86407e8394545085ed44438c511",
+          "artifact_id": "78c9e3e1-03d4-4f2d-9e23-4fb10d0fe148",
+          "canonicalization_version": "artifact-json.v1",
+          "config_schema_path": "config.schema.json",
+          "content_digest": "sha256:4564750321553fda84086b7d3694a076a3e75df0320bb6d065261b2b3fa0d92e",
+          "created_at": "2026-10-30T20:29:55.210517Z",
+          "created_by": "native-media-source-release",
+          "defaults_path": "defaults.json",
+          "documentation_paths": [
+            "docs/README.md",
+            "docs/README_EN.md"
+          ],
+          "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-billing/1.0.1/plugin.wasm",
+          "environment_refs": [],
+          "files": [
+            {
+              "path": "config.schema.json",
+              "role": "config_schema",
+              "sha256": "sha256:339b05025740b901c42354916d8d08043f961177927a38f05d5020f0bc4f6695",
+              "size_bytes": "21268"
+            },
+            {
+              "path": "defaults.json",
+              "role": "defaults",
+              "sha256": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "size_bytes": "2"
+            },
+            {
+              "path": "docs/README.md",
+              "role": "documentation",
+              "sha256": "sha256:a1132bbe7adf34a483d02d623521d69d5c0040a40ba442d26200c468c27c50eb",
+              "size_bytes": "11174"
+            },
+            {
+              "path": "docs/README_EN.md",
+              "role": "documentation",
+              "sha256": "sha256:9e768edf7274f40c84c94647979ea6d95a68b026d4b7c3bc666681e0dcc69313",
+              "size_bytes": "8548"
+            },
+            {
+              "path": "plugin.wasm",
+              "role": "wasm",
+              "sha256": "sha256:26d97652c71320a96cd28413e0bdf49d2e58d3019057d86768158c4c0479ac5c",
+              "size_bytes": "19139742"
+            },
+            {
+              "path": "route.schema.json",
+              "role": "config_schema",
+              "sha256": "sha256:4d1af68f53aebd30a511b46a97fbc645c0370167ed7cfbdc5a7ca2d5c0044ca4",
+              "size_bytes": "12842"
+            }
+          ],
+          "plugin_name": "ai-billing",
+          "plugin_version": "1.0.1",
+          "schema_version": "artifact.v1",
+          "source": {
+            "build_inputs_digest": "sha256:2c61c11be39dd3b64b686ff790f87ffb8629e542a02212c7c624ff7f4cae75e1",
+            "commit": "c29670ad0a1e3dbe9b2e08ebd4a98598b3ebe857",
+            "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "kind": "local_build",
+            "repo": "https://github.com/wooveep/plugin-server.git",
+            "verification": "verified"
+          },
+          "wasm_path": "plugin.wasm"
+        }
+      }
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.9",
+      "ingestion_transport": "operator CLI invoking the existing ArtifactStore.commit on the original persistent store",
+      "upload_id": "native-media-c29670ad-ai-proxy-2.0.9",
+      "started_at": "2026-10-30T20:29:55.333731+00:00",
+      "completed_at": "2026-10-30T20:29:56.664505+00:00",
+      "source_commit": "4cc3e50941868b29300f47fae78cf28c9eb4e241",
+      "wasm_digest": "sha256:8b3c986e32cbbc5b107f25597369827b247af00b9bab0a9e856bbe88319d1b9a",
+      "archive_digest": "sha256:463daa96ab29124d3b3c59c32bd45d4bfd7e6ac54f288d09a3d22a1633a78e79",
+      "receipt": {
+        "upload_id": "native-media-c29670ad-ai-proxy-2.0.9",
+        "state": "committed",
+        "artifact_id": "41d50f84-e66b-4d2f-932f-12f8279bf9c2",
+        "content_digest": "sha256:abe4b6214d4accdf272525dcd97cec95f221ae967f10acdda2036aa5d91667aa",
+        "manifest": {
+          "archive_digest": "sha256:463daa96ab29124d3b3c59c32bd45d4bfd7e6ac54f288d09a3d22a1633a78e79",
+          "artifact_id": "41d50f84-e66b-4d2f-932f-12f8279bf9c2",
+          "canonicalization_version": "artifact-json.v1",
+          "config_schema_path": "config.schema.json",
+          "content_digest": "sha256:abe4b6214d4accdf272525dcd97cec95f221ae967f10acdda2036aa5d91667aa",
+          "created_at": "2026-10-30T20:29:56.842113Z",
+          "created_by": "native-media-source-release",
+          "defaults_path": "defaults.json",
+          "documentation_paths": [
+            "docs/README.md",
+            "docs/README_EN.md"
+          ],
+          "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.9/plugin.wasm",
+          "environment_refs": [],
+          "files": [
+            {
+              "path": "config.schema.json",
+              "role": "config_schema",
+              "sha256": "sha256:c507829d647e46db4f17e90f19289bc95bf0be3123ceeecd3cc22afbdeca0e87",
+              "size_bytes": "192815"
+            },
+            {
+              "path": "defaults.json",
+              "role": "defaults",
+              "sha256": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "size_bytes": "2"
+            },
+            {
+              "path": "docs/README.md",
+              "role": "documentation",
+              "sha256": "sha256:035acf0e29646b32efddc7d8702c96b52ea66cfa8f6ad5c3cf1f5297aa579c55",
+              "size_bytes": "91770"
+            },
+            {
+              "path": "docs/README_EN.md",
+              "role": "documentation",
+              "sha256": "sha256:21ac8ed7a51cba3be9b4ecb9df449fd5f718d642d314a653f9c92e45cb131861",
+              "size_bytes": "90958"
+            },
+            {
+              "path": "plugin.wasm",
+              "role": "wasm",
+              "sha256": "sha256:8b3c986e32cbbc5b107f25597369827b247af00b9bab0a9e856bbe88319d1b9a",
+              "size_bytes": "11636354"
+            },
+            {
+              "path": "route.schema.json",
+              "role": "config_schema",
+              "sha256": "sha256:4dfe8442d419b3de0c65a611d48f1a227ceaabf4836a89448eacafb510dea8d8",
+              "size_bytes": "79501"
+            }
+          ],
+          "plugin_name": "ai-proxy",
+          "plugin_version": "2.0.9",
+          "schema_version": "artifact.v1",
+          "source": {
+            "build_inputs_digest": "sha256:73ce5bb2c74f887a5d8ec57947f35220ed9e1db9c41550c2f394c50a663a0132",
+            "commit": "4cc3e50941868b29300f47fae78cf28c9eb4e241",
+            "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "kind": "local_build",
+            "repo": "https://github.com/wooveep/plugin-server.git",
+            "verification": "verified"
+          },
+          "wasm_path": "plugin.wasm"
+        }
+      }
+    }
+  ],
+  "http": {
+    "verified_at": "2026-10-30T20:34:37.529388+00:00",
+    "server_pod": "higress-plugin-server-9dfb455d9-xgsp5",
+    "artifacts": [
+      {
+        "plugin_name": "ai-billing",
+        "plugin_version": "1.0.1",
+        "artifact_id": "78c9e3e1-03d4-4f2d-9e23-4fb10d0fe148",
+        "content_digest": "sha256:4564750321553fda84086b7d3694a076a3e75df0320bb6d065261b2b3fa0d92e",
+        "files": [
+          {
+            "path": "manifest.json",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-billing/1.0.1/manifest.json",
+            "status": 200,
+            "size_bytes": 2006,
+            "sha256": "sha256:e34a8e928df2ea29ddd641688a620ab66f60323474971cb25c72ba94855d851d"
+          },
+          {
+            "path": "plugin.wasm",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-billing/1.0.1/plugin.wasm",
+            "status": 200,
+            "size_bytes": 19139742,
+            "sha256": "sha256:26d97652c71320a96cd28413e0bdf49d2e58d3019057d86768158c4c0479ac5c"
+          },
+          {
+            "path": "config.schema.json",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-billing/1.0.1/config.schema.json",
+            "status": 200,
+            "size_bytes": 21268,
+            "sha256": "sha256:339b05025740b901c42354916d8d08043f961177927a38f05d5020f0bc4f6695",
+            "metadata_identity": {
+              "name": "ai-billing",
+              "version": "1.0.1"
+            }
+          },
+          {
+            "path": "archive.tgz",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-billing/1.0.1/archive.tgz",
+            "status": 200,
+            "size_bytes": 4911708,
+            "sha256": "sha256:79e0645b245ae685368ab5e48bb35b11f69cd86407e8394545085ed44438c511"
+          }
+        ]
+      },
+      {
+        "plugin_name": "ai-proxy",
+        "plugin_version": "2.0.9",
+        "artifact_id": "41d50f84-e66b-4d2f-932f-12f8279bf9c2",
+        "content_digest": "sha256:abe4b6214d4accdf272525dcd97cec95f221ae967f10acdda2036aa5d91667aa",
+        "files": [
+          {
+            "path": "manifest.json",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.9/manifest.json",
+            "status": 200,
+            "size_bytes": 2004,
+            "sha256": "sha256:c284ee793eff8fe9c8cdd846f52c6e37513cc38d88f17a599e356dbb3f162ad9"
+          },
+          {
+            "path": "plugin.wasm",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.9/plugin.wasm",
+            "status": 200,
+            "size_bytes": 11636354,
+            "sha256": "sha256:8b3c986e32cbbc5b107f25597369827b247af00b9bab0a9e856bbe88319d1b9a"
+          },
+          {
+            "path": "config.schema.json",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.9/config.schema.json",
+            "status": 200,
+            "size_bytes": 192815,
+            "sha256": "sha256:c507829d647e46db4f17e90f19289bc95bf0be3123ceeecd3cc22afbdeca0e87",
+            "metadata_identity": {
+              "name": "ai-proxy",
+              "version": "2.0.9"
+            }
+          },
+          {
+            "path": "archive.tgz",
+            "url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.9/archive.tgz",
+            "status": 200,
+            "size_bytes": 3082395,
+            "sha256": "sha256:463daa96ab29124d3b3c59c32bd45d4bfd7e6ac54f288d09a3d22a1633a78e79"
+          }
+        ]
+      }
+    ],
+    "artifact_downloads_verified": true,
+    "registered_list_endpoint": {
+      "status": 404,
+      "availability": "current deployed image has no batch metadata endpoint; package manifests are individually HTTP-verified"
+    }
+  }
+}
