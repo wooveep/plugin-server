@@ -3158,7 +3158,11 @@
       "releaseEligible": false,
       "unmanagedReason": "unversioned AssemblyScript example; retained for explicit local development builds",
       "artifactInputs": [
-        "plugins/wasm-assemblyscript/extensions/custom-response/**"
+        "plugins/wasm-assemblyscript/extensions/custom-response/**",
+        "plugins/wasm-assemblyscript/assembly/**",
+        "plugins/wasm-assemblyscript/package.json",
+        "plugins/wasm-assemblyscript/package-lock.json",
+        "plugins/wasm-assemblyscript/asconfig.json"
       ],
       "declaredVersion": null
     },
@@ -3170,7 +3174,11 @@
       "releaseEligible": false,
       "unmanagedReason": "unversioned AssemblyScript example; retained for explicit local development builds",
       "artifactInputs": [
-        "plugins/wasm-assemblyscript/extensions/hello-world/**"
+        "plugins/wasm-assemblyscript/extensions/hello-world/**",
+        "plugins/wasm-assemblyscript/assembly/**",
+        "plugins/wasm-assemblyscript/package.json",
+        "plugins/wasm-assemblyscript/package-lock.json",
+        "plugins/wasm-assemblyscript/asconfig.json"
       ],
       "declaredVersion": null
     },

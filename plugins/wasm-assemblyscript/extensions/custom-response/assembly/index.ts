@@ -1,5 +1,5 @@
 export * from "@higress/proxy-wasm-assemblyscript-sdk/assembly/proxy";
-import { SetCtx, HttpContext, ProcessRequestHeadersBy, Logger, ParseConfigBy, ParseResult, ProcessResponseHeadersBy } from "@higress/wasm-assemblyscript/assembly";
+import { SetCtx, HttpContext, ProcessRequestHeadersBy, Logger, ParseConfigBy, ParseResult, ProcessResponseHeadersBy } from "../../../assembly";
 import { FilterHeadersStatusValues, Headers, send_http_response, stream_context, HeaderPair } from "@higress/proxy-wasm-assemblyscript-sdk/assembly"
 import { JSON } from "assemblyscript-json/assembly";
 
