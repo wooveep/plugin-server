@@ -181,6 +181,9 @@ func TestNativeCacheRedisAdmissionHasNoSyntheticExpiry(t *testing.T) {
 				require.Equal(t, nativeCacheOriginalCall, snapshot.Envelope().CallID)
 				require.Equal(t, nativeCacheOriginalTime, snapshot.Envelope().OccurredAt)
 				require.Empty(t, host.GetHttpCalloutAttributes())
+				require.Equal(t, types.ActionContinue, host.CallOnHttpResponseHeaders(append(response.Headers, [2]string{":status", "200"})))
+				require.Equal(t, types.ActionContinue, host.CallOnHttpStreamingResponseBody(response.Data, true))
+				require.Empty(t, host.GetRedisCalloutAttributes(), "local cache replay cannot become a new upstream cache event")
 			})
 		}
 	})

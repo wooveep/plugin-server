@@ -11,6 +11,8 @@ func TestIsCacheHitResponseCodeDetails(t *testing.T) {
 		{name: "versioned projected plugin", details: "via_wasm::higress-system.ai-cache-1.0.1::ai-cache.hit", want: true},
 		{name: "internal projected plugin", details: "via_wasm::higress-system.ai-cache.internal::ai-cache.hit", want: true},
 		{name: "bare plugin name", details: "via_wasm::ai-cache::ai-cache.hit", want: true},
+		{name: "released native plugin", details: "via_wasm::higress-system.rel-01a19450-12fe-7430-84e0-0773d5fecff6-ai-cache::ai-cache.hit", want: true},
+		{name: "different released role", details: "via_wasm::higress-system.rel-01a19450-12fe-7430-84e0-0773d5fecff6-ai-proxy::ai-cache.hit"},
 		{name: "raw detail", details: "ai-cache.hit"},
 		{name: "different plugin", details: "via_wasm::other-plugin::ai-cache.hit"},
 		{name: "empty plugin", details: "via_wasm::::ai-cache.hit"},

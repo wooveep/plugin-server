@@ -97,7 +97,7 @@ func captureThinResponseHeaders(ctx wrapper.HttpContext, log logs.Log) {
 }
 
 func handleThinResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chunk []byte, isLastChunk bool, log logs.Log) {
-	if !c.Event.RedisStream.Enabled {
+	if ctx.GetBoolContext(CACHE_LOCAL_REPLAY_KEY, false) || !c.Event.RedisStream.Enabled {
 		return
 	}
 

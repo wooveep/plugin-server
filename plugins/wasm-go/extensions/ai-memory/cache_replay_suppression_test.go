@@ -22,7 +22,7 @@ func TestMemoryCacheReplaySuppression(t *testing.T) {
 					requestBody = memoryStreamingResponseCaptureRequestBody()
 				}
 				host := startMemoryEventRequestWithBody(t, true, requestBody)
-				require.NoError(t, host.SetProperty([]string{"response", "code_details"}, []byte("via_wasm::higress-system.ai-cache-1.0.1::ai-cache.hit")))
+				require.NoError(t, host.SetProperty([]string{"response", "code_details"}, []byte("via_wasm::higress-system.rel-01a19450-12fe-7430-84e0-0773d5fecff6-ai-cache::ai-cache.hit")))
 
 				contentType := "application/json"
 				responseBody := memoryEventResponseBody(t, "cache replay answer", "stop", 4, 3, 7)

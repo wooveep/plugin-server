@@ -154,6 +154,7 @@ func replayMaterializedRecord(record MaterializedReplayRecord, stream bool, ctx 
 	if !send {
 		return nil
 	}
+	ctx.SetContext(CACHE_LOCAL_REPLAY_KEY, true)
 	ctx.SetUserAttribute("cache_status", "hit")
 	ctx.SetUserAttribute("upstream_invoked", false)
 	ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)

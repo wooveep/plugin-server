@@ -40,6 +40,7 @@ const (
 	CACHE_POLICY_VERSION_KEY   = "cacheEffectivePolicyVersion"
 	CACHE_NATIVE_IDENTITY_KEY  = "cacheNativeIdentity"
 	CACHE_SEMANTIC_CONTEXT_KEY = "cacheSemanticContextDigest"
+	CACHE_LOCAL_REPLAY_KEY     = "cacheLocalReplay"
 
 	DEFAULT_MAX_BODY_BYTES uint32 = 100 * 1024 * 1024
 )

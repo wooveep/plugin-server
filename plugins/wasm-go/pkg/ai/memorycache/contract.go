@@ -22,6 +22,10 @@ func IsCacheHitResponseCodeDetails(details string) bool {
 }
 
 func isAIcachePluginRuntimeName(name string) bool {
+	plugin := name[strings.LastIndex(name, ".")+1:]
+	if release, ok := strings.CutPrefix(plugin, "rel-"); ok {
+		return strings.HasSuffix(release, "-ai-cache") && release != "-ai-cache"
+	}
 	if index := strings.LastIndex(name, ".ai-cache"); index >= 0 {
 		name = name[index+1:]
 	}

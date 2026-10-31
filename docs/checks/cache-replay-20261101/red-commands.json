@@ -1,0 +1,81 @@
+[
+  {
+    "name": "contract",
+    "command": [
+      "go",
+      "test",
+      "./pkg/ai/memorycache",
+      "-p=2",
+      "-count=1",
+      "-v"
+    ],
+    "cwd": "plugins/wasm-go",
+    "started_at": "2026-10-31T23:52:14.577814+00:00",
+    "completed_at": "2026-10-31T23:52:14.686181+00:00",
+    "exit_code": 1,
+    "log_sha256": "258f88d158aea6d5fa7058941816c2f8ad49f303e5e3e53636380583dac0751c",
+    "source_files_sha256": {
+      "plugins/wasm-go/pkg/ai/memorycache/contract.go": "aabd5db55ffc328015646714331eb26a6f490f10c4b28f40e8a61233f2fa4335",
+      "plugins/wasm-go/pkg/ai/memorycache/contract_test.go": "682dd36617903e14edc8337920c86788a44949c4046129701f1c34c8dc67f1df",
+      "plugins/wasm-go/extensions/ai-memory/cache_replay_suppression_test.go": "c8fdc33753b8d55e83cfd7b1613ed936ccf5a8c9cedb7ab7e96cc5da5415870a",
+      "plugins/wasm-go/extensions/ai-cache/execution_delivery_test.go": "5a5c6d6e8bc41d550ea696d138894968c69b65667d0d7b9433a96412058185aa",
+      "plugins/wasm-go/extensions/ai-cache/materialized_record.go": "3541350f3f3059ead48f9d6d035c6c383a5defa78c6abbc2fa072b86605bfab7",
+      "plugins/wasm-go/extensions/ai-cache/cache_event.go": "a149bcdeb4ea052e45b22421b1c0841eb9ae9ceb2e3ec0dfc761083fee34439c"
+    },
+    "wasm_sha256": null
+  },
+  {
+    "name": "memory",
+    "command": [
+      "go",
+      "test",
+      "./...",
+      "-p=2",
+      "-count=1",
+      "-run",
+      "TestMemoryCacheReplaySuppression",
+      "-v"
+    ],
+    "cwd": "plugins/wasm-go/extensions/ai-memory",
+    "started_at": "2026-10-31T23:52:14.686521+00:00",
+    "completed_at": "2026-10-31T23:52:17.430862+00:00",
+    "exit_code": 1,
+    "log_sha256": "c2f71f74d9dccb2db4f5100f9f82f061562d4611ddeef3405f2aafa69d5dd01e",
+    "source_files_sha256": {
+      "plugins/wasm-go/pkg/ai/memorycache/contract.go": "aabd5db55ffc328015646714331eb26a6f490f10c4b28f40e8a61233f2fa4335",
+      "plugins/wasm-go/pkg/ai/memorycache/contract_test.go": "682dd36617903e14edc8337920c86788a44949c4046129701f1c34c8dc67f1df",
+      "plugins/wasm-go/extensions/ai-memory/cache_replay_suppression_test.go": "c8fdc33753b8d55e83cfd7b1613ed936ccf5a8c9cedb7ab7e96cc5da5415870a",
+      "plugins/wasm-go/extensions/ai-cache/execution_delivery_test.go": "5a5c6d6e8bc41d550ea696d138894968c69b65667d0d7b9433a96412058185aa",
+      "plugins/wasm-go/extensions/ai-cache/materialized_record.go": "3541350f3f3059ead48f9d6d035c6c383a5defa78c6abbc2fa072b86605bfab7",
+      "plugins/wasm-go/extensions/ai-cache/cache_event.go": "a149bcdeb4ea052e45b22421b1c0841eb9ae9ceb2e3ec0dfc761083fee34439c"
+    },
+    "wasm_sha256": "sha256:7c193dc4897348d38d7efde96b3d50a9b7ccc2661d66df98fa8c5c2c8b3d62d0"
+  },
+  {
+    "name": "cache",
+    "command": [
+      "go",
+      "test",
+      "./...",
+      "-p=2",
+      "-count=1",
+      "-run",
+      "TestNativeCacheRedisAdmissionHasNoSyntheticExpiry",
+      "-v"
+    ],
+    "cwd": "plugins/wasm-go/extensions/ai-cache",
+    "started_at": "2026-10-31T23:52:17.436006+00:00",
+    "completed_at": "2026-10-31T23:52:20.300581+00:00",
+    "exit_code": 1,
+    "log_sha256": "81b681bf89ab721a9a48838d9850165c17e3117de4b4338a381e1b61249d53d9",
+    "source_files_sha256": {
+      "plugins/wasm-go/pkg/ai/memorycache/contract.go": "aabd5db55ffc328015646714331eb26a6f490f10c4b28f40e8a61233f2fa4335",
+      "plugins/wasm-go/pkg/ai/memorycache/contract_test.go": "682dd36617903e14edc8337920c86788a44949c4046129701f1c34c8dc67f1df",
+      "plugins/wasm-go/extensions/ai-memory/cache_replay_suppression_test.go": "c8fdc33753b8d55e83cfd7b1613ed936ccf5a8c9cedb7ab7e96cc5da5415870a",
+      "plugins/wasm-go/extensions/ai-cache/execution_delivery_test.go": "5a5c6d6e8bc41d550ea696d138894968c69b65667d0d7b9433a96412058185aa",
+      "plugins/wasm-go/extensions/ai-cache/materialized_record.go": "3541350f3f3059ead48f9d6d035c6c383a5defa78c6abbc2fa072b86605bfab7",
+      "plugins/wasm-go/extensions/ai-cache/cache_event.go": "a149bcdeb4ea052e45b22421b1c0841eb9ae9ceb2e3ec0dfc761083fee34439c"
+    },
+    "wasm_sha256": "sha256:35594b4b498fcc2bcf6ed66dc254598e4afc0d54bdbf4c11064f77572fb0f71d"
+  }
+]
