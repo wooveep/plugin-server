@@ -2915,3 +2915,5 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 ```
 
 已下发的健康控制保留到显式配置更新：`valid_until` 仅表示观测时效，不是 Console 的发送许可租约。Console 停止刷新时，完整且版本一致的健康目标继续服务；已禁用凭据、永久封禁、冷却期、旧版本与冲突仍按原状态拒绝。
+
+普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。

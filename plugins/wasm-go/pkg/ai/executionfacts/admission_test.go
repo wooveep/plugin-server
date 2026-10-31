@@ -21,7 +21,7 @@ func TestAdmittedCallPreservesOriginalTimeAndRejectsAmbiguousAuthority(t *testin
 	for index := range headers {
 		missing := append([][2]string(nil), headers[:index]...)
 		missing = append(missing, headers[index+1:]...)
-		if _, err := ReadAdmittedCall(missing, "original-release", at); err == nil {
+		if _, err := ReadAdmittedCall(missing, "original-release", at); err == nil && index != 2 {
 			t.Fatalf("missing field %s accepted", headers[index][0])
 		}
 		duplicate := append(append([][2]string(nil), headers...), [2]string{strings.ToUpper(headers[index][0]), headers[index][1]})
@@ -43,5 +43,22 @@ func TestAdmittedCallPreservesOriginalTimeAndRejectsAmbiguousAuthority(t *testin
 		if _, err := ReadAdmittedCall(changed, "original-release", at); err == nil {
 			t.Fatalf("invalid original admission field %d accepted", tc.index)
 		}
+	}
+}
+
+func TestRedisAdmittedProductionIdentitySurvivesUploadWithoutAConsolePermit(t *testing.T) {
+	at := time.Date(2026, 10, 31, 1, 2, 3, 0, time.UTC)
+	headers := [][2]string{
+		{AdmissionCallHeader, "10000000-0000-4000-8000-000000000001"},
+		{AdmissionReleaseHeader, "original-release"},
+		{AdmissionOccurredHeader, at.Format(time.RFC3339Nano)},
+	}
+	call, err := ReadAdmittedCall(headers, "original-release", at.Add(time.Minute))
+	if err != nil || !call.ValidUntil.IsZero() || call.OccurredAt != headers[2][1] {
+		t.Fatal("production identity inherited a temporary permit deadline", err)
+	}
+	bounded := append(headers, [2]string{AdmissionDeadlineHeader, at.Add(5 * time.Second).Format(time.RFC3339Nano)})
+	if _, err := ReadAdmittedCall(bounded, "original-release", at.Add(6*time.Second)); err == nil {
+		t.Fatal("expired explicit validation permit was accepted")
 	}
 }

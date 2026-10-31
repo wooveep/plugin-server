@@ -205,3 +205,5 @@ APIs, authorization checks, and repair policy belong to Console.
 | Retention and deletion | Does not enforce retention or deletion; Console owns memory lifecycle policy. |
 | Management APIs | Exposes no memory management APIs from the gateway. |
 | Authorization checks | Trusts upstream identity headers and leaves memory authorization checks to Console APIs and workers. |
+
+Ordinary production retains the original Redis-admitted call identity and business time without a temporary Console permit deadline. Upload, send and retry keep their existing budgets. Explicit bounded validation/internal permits retain their expiry; no renewal or extension path is introduced.

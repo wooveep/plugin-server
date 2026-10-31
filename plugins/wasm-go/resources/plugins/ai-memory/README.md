@@ -189,3 +189,5 @@ deletion、management APIs、authorization checks 和 repair policy 都由 Conso
 | Retention / deletion | 不执行 retention 或 deletion policy；memory lifecycle 由 Console 管理。 |
 | Management APIs | 网关不暴露 memory management APIs。 |
 | Authorization checks | 网关信任上游身份头，memory authorization checks 由 Console API 和 worker 负责。 |
+
+普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。

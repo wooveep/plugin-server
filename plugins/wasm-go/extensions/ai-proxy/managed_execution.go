@@ -431,6 +431,12 @@ type managedExecutionState struct {
 	internal                                                   *managedInternalCall
 }
 
+// Production calls have no temporary Console permit. Validation and internal
+// calls retain their original finite deadline throughout upload and retries.
+func (s *managedExecutionState) admissionCurrent(at time.Time) bool {
+	return s.admissionDeadline.IsZero() && s.internal == nil || at.Before(s.admissionDeadline)
+}
+
 func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (types.Action, bool) {
 	managed, ok := cfg.ManagedExecution.(*managedExecutionConfig)
 	if !ok || managed == nil {
@@ -520,7 +526,7 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if state.internal != nil && state.internal.checkStarted {
 		return types.ActionPause, true
 	}
-	if state.internal == nil && !time.Now().Before(state.admissionDeadline) {
+	if state.internal == nil && !state.admissionCurrent(time.Now()) {
 		return rejectManagedRequest(ctx, 403, "execution_admission_expired"), true
 	}
 	if len(body) == 0 || uint64(len(body)) > uint64(defaultMaxBodyBytes) {
@@ -588,7 +594,7 @@ func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecut
 		return managedProtocolRequest{}, false
 	}
 	state.streaming, state.expectedEmbeddings = request.Streaming, request.ExpectedEmbeddings
-	if !time.Now().Before(state.admissionDeadline) {
+	if !state.admissionCurrent(time.Now()) {
 		rejectManagedPreparation(ctx, state, 403, "execution_admission_expired")
 		return managedProtocolRequest{}, false
 	}
@@ -612,7 +618,7 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 	if managedTextStopped(state) || state.dispatchStarted {
 		return
 	}
-	if !time.Now().Before(state.admissionDeadline) || state.health != nil && state.health.claimID != nil && !time.Now().Before(state.health.claimDeadline) {
+	if !state.admissionCurrent(time.Now()) || state.health != nil && state.health.claimID != nil && !time.Now().Before(state.health.claimDeadline) {
 		rejectManagedPreparation(ctx, state, 503, "health_or_admission_expired")
 		return
 	}

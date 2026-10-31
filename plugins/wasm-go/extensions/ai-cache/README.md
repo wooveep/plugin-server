@@ -4,7 +4,7 @@ keywords: [higress,ai cache]
 description: ai-cache 薄网关缓存插件配置参考
 ---
 
-> 配置契约版本：`2.0.4`
+> 配置契约版本：`2.0.5`
 
 ## 完整冻结凭据目录
 
@@ -230,3 +230,5 @@ OpenAI 响应体，用户请求或响应体中的同名字段也不能控制它�
 `materialized_lookup.redis` 和 `redis_stream` 支持 `username`、`password`、`database`（默认 0）。同一服务和端口使用共享原始 Redis 连接，两个目标的认证与数据库必须一致；初始化使用较短的有效超时和立即投递。凭据只进入受保护的运行配置，不写入事件或日志。
 
 1.0.3 的 memory-aware 策略将基础策略、memory policy 和可信摘要组合后，以 `cache-v<整数>` 结尾；查询、Console lookup 和 CacheEvent 使用同一有效版本，保证 Console 解析及物化读写 key 一致。
+
+普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。

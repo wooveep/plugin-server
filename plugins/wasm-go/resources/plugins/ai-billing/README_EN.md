@@ -8,7 +8,7 @@ description: Configuration reference for request-level AI billing event delivery
 
 The `0.1.11` configuration contract keeps `_modelfusion_execution` v1's scalar `credential_ref`/`credential_revision` and adds `modelfusion-execution.v2` with a complete, nonempty `credentials` array. Each member contains only those two fields; references are unique, revisions are canonical positive decimal strings, and secrets or mixed scalar/array shapes are rejected. The directory is not a selected attempt: actual D0/FACT attribution still contains one selected credential tuple. Billing and cache never select the first directory member.
 
-> Plugin version: `1.0.1`
+> Plugin version: `1.0.2`
 
 ## Overview
 
@@ -120,3 +120,5 @@ The old HTTP-shaped transport is removed from the current configuration surface.
 ## Independent deployment boundary
 
 `ai-billing`, `ai-quota`, and `ai-statistics` can be deployed independently. `ai-billing` only publishes billing events; the plugins do not depend on or share one another's private runtime state. Balance admission and observability stay within their respective plugins, while settlement and persistence belong to Console/billing-service.
+
+Ordinary production retains the original Redis-admitted call identity and business time without a temporary Console permit deadline. Upload, send and retry keep their existing budgets. Explicit bounded validation/internal permits retain their expiry; no renewal or extension path is introduced.

@@ -217,7 +217,7 @@ func checkExecutionAdmission(ctx wrapper.HttpContext, cfg QuotaConfig, identity 
 		// There is no financial reservation or synchronous Console dependency.
 		at := time.Now().UTC()
 		if err := executionAdmissionInstallHeaders(callID.String(), parsed.ReleaseID,
-			at.Add(5*time.Second).Format(time.RFC3339Nano), at.Format(time.RFC3339Nano)); err != nil {
+			"", at.Format(time.RFC3339Nano)); err != nil {
 			reject(503, "request_headers_unavailable")
 			return
 		}
@@ -356,8 +356,11 @@ func executionAdmissionInstallHeaders(callID, releaseID, deadline, occurredAt st
 	if callID != "" {
 		clean = append(clean, [2]string{executionAdmissionCallHeader, callID})
 	}
-	if releaseID != "" && deadline != "" && occurredAt != "" {
-		clean = append(clean, [2]string{executionAdmissionReleaseHeader, releaseID}, [2]string{executionAdmissionDeadlineHeader, deadline}, [2]string{executionAdmissionOccurredHeader, occurredAt})
+	if releaseID != "" && occurredAt != "" {
+		clean = append(clean, [2]string{executionAdmissionReleaseHeader, releaseID}, [2]string{executionAdmissionOccurredHeader, occurredAt})
+		if deadline != "" {
+			clean = append(clean, [2]string{executionAdmissionDeadlineHeader, deadline})
+		}
 	}
 	return proxywasm.ReplaceHttpRequestHeaders(clean)
 }
