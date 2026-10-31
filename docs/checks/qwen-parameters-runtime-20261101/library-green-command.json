@@ -1,0 +1,25 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./pkg/ai/mediaexecution",
+    "./pkg/ai/upstreamhealth",
+    "./pkg/ai/executionfacts",
+    "-count=1",
+    "-v"
+  ],
+  "cwd": "plugins/wasm-go",
+  "environment": {
+    "MODELFUSION_HEALTH_TEST_REDIS_ADDR": "127.0.0.1:32777",
+    "MEDIA_EXECUTION_TEST_REDIS_URL": "redis://127.0.0.1:32777"
+  },
+  "source_commit": "9ea11acb0f0a2edf7ae8fd367ae411a656b430ca",
+  "started_at": "2026-10-31T18:31:07.348391+00:00",
+  "completed_at": "2026-10-31T18:31:09.755365+00:00",
+  "exit_code": 0,
+  "log_sha256": "4c18cf5c1b74dae952b4870603c32e41b071df6dceaf4a90e9ea4f9839ca682e",
+  "log_size_bytes": 47721,
+  "passed_top_level": 78,
+  "passed_including_subcases": 244,
+  "skipped": 1
+}

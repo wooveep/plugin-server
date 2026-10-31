@@ -1,0 +1,30 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-p=2",
+    "-count=1",
+    "-timeout=15m",
+    "-v"
+  ],
+  "cwd": "plugins/wasm-go/extensions/ai-proxy",
+  "environment": {
+    "WASM_FILE_PATH": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/build/plugins/ai-proxy/2.0.18/plugin.wasm",
+    "GOMAXPROCS": "2"
+  },
+  "source_commit": "9ea11acb0f0a2edf7ae8fd367ae411a656b430ca",
+  "started_at": "2026-10-31T18:31:10.893845+00:00",
+  "completed_at": "2026-10-31T18:37:54.592844+00:00",
+  "exit_code": 0,
+  "log_sha256": "572f8b94d1bb4a8cf6fbb74f0d40a128645c8ff9b245b54c6a43fb1130f22bdd",
+  "log_size_bytes": 4558627,
+  "passed_top_level": 323,
+  "passed_including_subcases": 2203,
+  "skipped": 0,
+  "wasm_sha256": "992421f094caf36b2c54737f698656000d59ac546eaae3b33c7f77732246e21d",
+  "line_prefix_passed_top_level": 322,
+  "line_prefix_passed_including_subcases": 2202,
+  "pass_marker_parser": "unique Go PASS test names; raw guest logs can join a marker to the preceding line",
+  "same_test_names_as_2_0_17": true
+}

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./pkg/ai/mediaexecution",
+    "-run",
+    "TestNativeImageOmittedParametersUseAnObjectOnTheWire",
+    "-count=1"
+  ],
+  "exit_code": 1,
+  "log_sha256": "cf36f1e2dab7a65836141146cc08546c9a4d8745bf00f31e8b164895ac080f12",
+  "at": "2026-10-31T18:30:07.893369+00:00",
+  "production_parent_commit": "ef69f802484d0bf389a2cd5054a4b20354516626",
+  "regression_source_commit": "9ea11acb0f0a2edf7ae8fd367ae411a656b430ca",
+  "regression_test_file_sha256": "76ecbe714293eb709a7b57243e2a1814215c5adee932e402c5e6b244316f9489",
+  "red_symptom": "native image parameters must be an object when omitted by the caller"
+}
