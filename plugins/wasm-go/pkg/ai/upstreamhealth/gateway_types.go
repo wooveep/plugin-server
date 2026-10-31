@@ -148,27 +148,38 @@ func (c RecoveryCandidate) FinalSelection(claimID string) ([]byte, error) {
 	return canonicalHealthSelection(raw)
 }
 
-// Native:v2 embedding has its own registered selection schema. All other
-// operations still take the original v1 codec and its unchanged rejections.
-func embeddingHealthSelection(raw []byte) bool {
+// Health handles each registered operation without relabeling its original
+// selection or broadening the text-only fact registration codec.
+func healthSelectionOperation(raw []byte) string {
 	var operation struct {
 		OperationKind string `json:"operation_kind"`
 	}
-	return json.Unmarshal(raw, &operation) == nil && operation.OperationKind == executionfacts.NativeEmbeddingOperation
+	if json.Unmarshal(raw, &operation) != nil {
+		return ""
+	}
+	return operation.OperationKind
 }
 
 func healthSelectionDigest(raw []byte) (string, error) {
-	if embeddingHealthSelection(raw) {
+	switch healthSelectionOperation(raw) {
+	case executionfacts.NativeEmbeddingOperation:
 		return executionfacts.EmbeddingSelectionDigest(raw)
+	case "image_generate", "video_generate", "task_query":
+		return executionfacts.MediaSelectionDigest(raw)
+	default:
+		return executionfacts.SelectionDigest(raw)
 	}
-	return executionfacts.SelectionDigest(raw)
 }
 
 func canonicalHealthSelection(raw []byte) ([]byte, error) {
-	if embeddingHealthSelection(raw) {
+	switch healthSelectionOperation(raw) {
+	case executionfacts.NativeEmbeddingOperation:
 		return executionfacts.CanonicalEmbeddingSelection(raw)
+	case "image_generate", "video_generate", "task_query":
+		return executionfacts.CanonicalMediaSelection(raw)
+	default:
+		return executionfacts.CanonicalSelection(raw)
 	}
-	return executionfacts.CanonicalSelection(raw)
 }
 
 type ClaimRequest struct {
