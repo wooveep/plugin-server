@@ -39,8 +39,13 @@
     },
     {
       "cwd": "ocloudmodelfusion",
-      "command": "cargo build --offline --locked --manifest-path console/Cargo.toml --bin ocloudmodelfusion-console --bin e1_release_control",
-      "exit_code": 0
+      "command": null,
+      "exit_code": 0,
+      "targets": [
+        "bin:ocloudmodelfusion-console",
+        "example:e1_release_control"
+      ],
+      "invocation_note": "The successful original build log retained compiler output but not argv. The earlier bin e1_release_control invocation in this receipt was incorrectly reconstructed; e1_release_control is an example target. Deployed binaries and their build hashes are independently recorded."
     }
   ],
   "private_log_digests": {
