@@ -23,11 +23,20 @@ import (
 type managedMediaTestRedis struct {
 	upstreamhealth.RuntimeRedis
 	command func([]interface{}, wrapper.RedisResponseCallback) error
+	eval    func(string, int, []interface{}, []interface{}, wrapper.RedisResponseCallback) error
 }
 
 func (r managedMediaTestRedis) Command(args []interface{}, callback wrapper.RedisResponseCallback) error {
 	return r.command(args, callback)
 }
+func (r managedMediaTestRedis) Ready() bool { return true }
+func (r managedMediaTestRedis) Eval(script string, count int, keys, args []interface{}, callback wrapper.RedisResponseCallback) error {
+	if r.eval == nil {
+		return errors.New("unexpected media test Redis read")
+	}
+	return r.eval(script, count, keys, args, callback)
+}
+
 func mediaNoticeWire(t *testing.T, notice managedMediaNotice) []byte {
 	t.Helper()
 	var fields map[string]json.RawMessage

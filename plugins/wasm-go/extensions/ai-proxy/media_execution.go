@@ -115,32 +115,31 @@ type managedMediaRuntime struct {
 }
 
 type managedMediaJob struct {
-	runtime                        *managedMediaRuntime
-	notice                         managedMediaNotice
-	key, stage                     string
-	live                           mediaexecution.Invocation
-	deadline, retryAt              time.Time
-	reportDeadline, healthDeadline time.Time
-	executor                       *mediaexecution.Executor
-	archive                        managedMediaArchive
-	selection                      json.RawMessage
-	request                        mediaexecution.Request
-	attempt                        executionfacts.Attempt
-	actual, generation             *executionfacts.Snapshot
-	delivery                       *executionfacts.Snapshot
-	healthAfterFact                *executionfacts.Snapshot
-	manifest                       *mediaexecution.OutputManifest
-	health                         *upstreamhealth.Runtime
-	healthTarget                   upstreamhealth.TargetReference
-	healthDecision                 upstreamhealth.Decision
-	claimID                        *string
-	claimScopes                    []string
-	modelScopes                    []string
-	scopeRevisions                 map[string]upstreamhealth.Revision
-	reports                        []managedMediaReport
-	reportInFlight                 bool
-	healthInFlight                 bool
-	providerCallbackSeen           bool
+	runtime              *managedMediaRuntime
+	notice               managedMediaNotice
+	key, stage           string
+	live                 mediaexecution.Invocation
+	deadline, retryAt    time.Time
+	reportDeadline       time.Time
+	executor             *mediaexecution.Executor
+	archive              managedMediaArchive
+	selection            json.RawMessage
+	request              mediaexecution.Request
+	attempt              executionfacts.Attempt
+	actual, generation   *executionfacts.Snapshot
+	delivery             *executionfacts.Snapshot
+	healthAfterFact      *executionfacts.Snapshot
+	manifest             *mediaexecution.OutputManifest
+	health               *upstreamhealth.Runtime
+	healthTarget         upstreamhealth.TargetReference
+	healthDecision       upstreamhealth.Decision
+	claimID              *string
+	claimScopes          []string
+	modelScopes          []string
+	scopeRevisions       map[string]upstreamhealth.Revision
+	reports              []managedMediaReport
+	reportInFlight       bool
+	providerCallbackSeen bool
 }
 
 // These fields are private originals carried by the authenticated frozen notice.
@@ -455,14 +454,15 @@ func (r *managedMediaRuntime) tick() {
 			}
 			job.stage = "done"
 		}
+		if job.stage == "waiting_health" && !job.retryAt.After(now) && job.notice.ExpiresAt.After(now) {
+			job.health.FlushPending()
+			job.checkHealth()
+		}
 		if len(job.reports) > 0 && !job.reportInFlight && !job.retryAt.After(now) {
 			job.report()
 		}
 		if job.reportInFlight && !job.reportDeadline.After(now) {
 			job.reportInFlight = false
-		}
-		if job.healthInFlight && !job.healthDeadline.After(now) {
-			job.healthInFlight = false
 		}
 		if job.health != nil && !job.retryAt.After(now) {
 			job.health.FlushPending()
@@ -557,6 +557,14 @@ func (j *managedMediaJob) qualify() {
 		return
 	}
 	j.health = client
+	j.checkHealth()
+}
+
+// A queued original remains in its live gateway while health is unavailable.
+// The existing root tick retries only reads; it cannot renew a ticket or replay
+// an uncertain claim/consumption, and it does not need the notifying Console.
+func (j *managedMediaJob) checkHealth() {
+	client, target := j.health, j.healthTarget
 	j.stage, j.deadline = "qualifying", j.notice.ExpiresAt
 	client.Lookup(func(read upstreamhealth.ReadResult) {
 		if j.stage != "qualifying" {
@@ -564,7 +572,8 @@ func (j *managedMediaJob) qualify() {
 		}
 		decision := client.DecideNewCall(read, upstreamhealth.Candidate{Target: target}, j.runtime.now())
 		if (decision.Kind != upstreamhealth.Eligible && decision.Kind != upstreamhealth.RecoveryRequired) || read.Snapshot == nil {
-			j.stage = "done"
+			j.stage = "waiting_health"
+			j.retryAt = j.runtime.now().Add(time.Second)
 			return
 		}
 		modelScopes, _, err := read.Snapshot.ModelOperationScopes(target, j.runtime.now())
