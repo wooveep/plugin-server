@@ -299,7 +299,7 @@ func prepareNativeCacheBody(ctx wrapper.HttpContext, cfg config.PluginConfig, bo
 	if state.bodyReady {
 		return false
 	}
-	if !time.Now().Before(state.origin.ValidUntil) {
+	if !state.origin.ValidUntil.IsZero() && !time.Now().Before(state.origin.ValidUntil) {
 		return rejectNativeCache(ctx, state, 403, "execution_admission_expired")
 	}
 	if state.config.capture {
@@ -339,7 +339,7 @@ func nativeCacheBridge(ctx wrapper.HttpContext, record MaterializedReplayRecord)
 	if state.replied || state.closed {
 		return "", false
 	}
-	if state.rejected || !state.bodyReady || !time.Now().Before(state.origin.ValidUntil) {
+	if state.rejected || !state.bodyReady || !state.origin.ValidUntil.IsZero() && !time.Now().Before(state.origin.ValidUntil) {
 		rejectNativeCache(ctx, state, 403, "execution_admission_expired")
 		return "", false
 	}

@@ -1,0 +1,21 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-p=2",
+    "-count=1",
+    "-run",
+    "TestNativeCacheRedisAdmissionHasNoSyntheticExpiry",
+    "-v"
+  ],
+  "source_files_sha256": {
+    "plugins/wasm-go/extensions/ai-cache/execution_delivery.go": "45b0fa4aa6418e99cc6c9734c19d449af9357d706d7c593982134620298baef7",
+    "plugins/wasm-go/extensions/ai-cache/execution_delivery_test.go": "84463fcd8ae203ff08f905ebf2c853919ae9526ac819fca353ff08387986f274"
+  },
+  "started_at": "2026-10-31T23:27:52.538008+00:00",
+  "completed_at": "2026-10-31T23:27:55.541924+00:00",
+  "exit_code": 1,
+  "wasm_sha256": "sha256:2ebb3c5d93cfd7a6d681633f0ae6d6968728354f363b6544433c0f6723aa5a5c",
+  "log_sha256": "d8bf1612f001421f5a76c821537c12a05d0ebe6d67ba0675403c5749aecf76f4"
+}

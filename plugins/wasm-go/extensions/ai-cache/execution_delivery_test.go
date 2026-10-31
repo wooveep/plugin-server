@@ -149,6 +149,43 @@ func TestNativeCacheCaptureStillRunsForAUserRequestedBypass(t *testing.T) {
 	})
 }
 
+func TestNativeCacheRedisAdmissionHasNoSyntheticExpiry(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		for _, capture := range []bool{true, false} {
+			t.Run(strconv.FormatBool(capture), func(t *testing.T) {
+				host, status := test.NewTestHost(nativeCacheExecutionConfig(t, capture))
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+				defer host.Reset()
+				body := []byte(nativeCacheTestBody)
+				var headers [][2]string
+				for _, header := range nativeCacheExecutionHeaders(capture) {
+					if header[0] != executionfacts.AdmissionDeadlineHeader {
+						headers = append(headers, header)
+					}
+				}
+				if !capture {
+					basis, err := bodybasis.Capture(body)
+					require.NoError(t, err)
+					headers = append(headers, basis.Headers()...)
+				}
+				require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(headers))
+				require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody(body))
+				require.Nil(t, host.GetLocalResponse(), "an admitted Redis call can reach cache lookup")
+				require.Len(t, host.GetRedisCalloutAttributes(), 1)
+				host.CallOnRedisCall(0, test.CreateRedisRespString(nativeCacheExecutionRecord(t, body, false)))
+				response := host.GetLocalResponse()
+				require.NotNil(t, response)
+				require.Equal(t, uint32(200), response.StatusCode)
+				snapshot, err := executionfacts.DecodeDeliveryBridge(thinReplayPayloadHeader(response.Headers, executionfacts.DeliveryBridgeHeader))
+				require.NoError(t, err)
+				require.Equal(t, nativeCacheOriginalCall, snapshot.Envelope().CallID)
+				require.Equal(t, nativeCacheOriginalTime, snapshot.Envelope().OccurredAt)
+				require.Empty(t, host.GetHttpCalloutAttributes())
+			})
+		}
+	})
+}
+
 func TestNativeCacheConsumesTheEarlierOriginalBasisWithoutRecapturingInjectedBody(t *testing.T) {
 	test.RunTest(t, func(t *testing.T) {
 		host, status := test.NewTestHost(nativeCacheExecutionConfig(t, false))
