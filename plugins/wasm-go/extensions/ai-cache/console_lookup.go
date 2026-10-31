@@ -16,8 +16,16 @@ import (
 	"github.com/tidwall/resp"
 )
 
+// Original quota time is retained through the existing authenticated lookup.
+// A zero deadline remains an unbounded Redis-admitted production call.
+type cacheCallOrigin struct {
+	OccurredAt string `json:"occurred_at"`
+	ValidUntil string `json:"valid_until,omitempty"`
+}
+
 type consoleLookupRequest struct {
 	CallID                string                         `json:"call_id,omitempty"`
+	CallOrigin            *cacheCallOrigin               `json:"call_origin,omitempty"`
 	NativeIdentity        *nativeCacheProcessingIdentity `json:"native_identity,omitempty"`
 	Tenant                string                         `json:"tenant"`
 	Consumer              string                         `json:"consumer,omitempty"`
@@ -98,13 +106,22 @@ func lookupMaterializedRecordFromConsole(material ScopedCacheKeyMaterial, ctx wr
 }
 
 func buildConsoleLookupRequestBody(material ScopedCacheKeyMaterial, ctx wrapper.HttpContext, stream bool) ([]byte, error) {
+	parent := cacheNativeParentCall(ctx)
+	var callOrigin *cacheCallOrigin
+	if parent.CallID != "" {
+		callOrigin = &cacheCallOrigin{OccurredAt: parent.OccurredAt}
+		if !parent.ValidUntil.IsZero() {
+			callOrigin.ValidUntil = parent.ValidUntil.UTC().Format(time.RFC3339Nano)
+		}
+	}
 	semanticContext := ctx.GetStringContext(CACHE_SEMANTIC_CONTEXT_KEY, "")
 	semanticQuery := ""
 	if semanticContext != "" {
 		semanticQuery = strings.TrimSpace(ctx.GetStringContext(CACHE_USER_CONTENT_KEY, ""))
 	}
 	return json.Marshal(consoleLookupRequest{
-		CallID:                cacheNativeParentCallID(ctx),
+		CallID:                parent.CallID,
+		CallOrigin:            callOrigin,
 		NativeIdentity:        cacheNativeIdentity(ctx),
 		Tenant:                material.Tenant,
 		Consumer:              material.Consumer,

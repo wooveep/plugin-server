@@ -9,6 +9,7 @@ import (
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-cache/config"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/ai/sessionctx"
 	logs "github.com/higress-group/wasm-go/pkg/log"
@@ -34,7 +35,7 @@ func cacheNativeIdentity(ctx wrapper.HttpContext) *nativeCacheProcessingIdentity
 // The native delivery guard already captured this admitted call with the
 // authenticated caller before body processing. Reuse that immutable snapshot;
 // response/lookup code must never reread later headers or guess from request_id.
-func cacheNativeParentCallID(ctx wrapper.HttpContext) string {
+func cacheNativeParentCall(ctx wrapper.HttpContext) executionfacts.AdmittedCall {
 	identity := cacheNativeIdentity(ctx)
 	state, _ := ctx.GetContext(nativeCacheDeliveryContext).(*nativeCacheDeliveryState)
 	if identity == nil || state == nil || state.config == nil || state.rejected || state.caller != identity.Caller ||
@@ -42,9 +43,9 @@ func cacheNativeParentCallID(ctx wrapper.HttpContext) string {
 		state.origin.ReleaseID != identity.ReleaseID || state.config.releaseID != identity.ReleaseID || state.config.targetID != identity.TargetID || state.config.routeID != identity.RouteID ||
 		ctx.GetStringContext(CACHE_TENANT_CONTEXT_KEY, "") != state.caller.TenantID || ctx.GetStringContext(CACHE_CONSUMER_CONTEXT_KEY, "") != state.caller.PrincipalID ||
 		ctx.GetStringContext(CACHE_ROUTE_CONTEXT_KEY, "") != identity.RouteID {
-		return ""
+		return executionfacts.AdmittedCall{}
 	}
-	return state.origin.CallID
+	return state.origin
 }
 
 type ThinCacheEvent struct {
@@ -230,7 +231,7 @@ func buildThinCacheEvent(ctx wrapper.HttpContext, c config.PluginConfig, kind pr
 			StartedAtMS:   startedAt,
 			EndedAtMS:     endedAt,
 		}),
-		CallID:                cacheNativeParentCallID(ctx),
+		CallID:                cacheNativeParentCall(ctx).CallID,
 		NativeIdentity:        cacheNativeIdentity(ctx),
 		SemanticContextDigest: ctx.GetStringContext(CACHE_SEMANTIC_CONTEXT_KEY, ""),
 		SessionID:             ctx.GetStringContext(CACHE_SESSION_CONTEXT_KEY, ""),

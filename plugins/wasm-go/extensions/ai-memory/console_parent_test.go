@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -10,15 +11,18 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/test"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func TestManagedMemoryAssembleRetainsOriginalAdmissionParent(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
 		callID := "99999999-9999-4999-8999-999999999999"
-		for _, mode := range []string{"original", "single-client-id", "duplicate", "foreign-release", "legacy"} {
+		for _, mode := range []string{"original", "redis-unbounded", "single-client-id", "duplicate", "foreign-release", "legacy"} {
 			t.Run(mode, func(t *testing.T) {
 				admission := [][2]string{{executionfacts.AdmissionCallHeader, callID}, {executionfacts.AdmissionReleaseHeader, "original/release:opaque"}, {executionfacts.AdmissionOccurredHeader, time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}, {executionfacts.AdmissionDeadlineHeader, time.Now().UTC().Add(time.Minute).Format(time.RFC3339Nano)}}
 				switch mode {
+				case "redis-unbounded":
+					admission = admission[:3]
 				case "single-client-id":
 					admission = admission[:1]
 				case "duplicate":
@@ -31,6 +35,7 @@ func TestManagedMemoryAssembleRetainsOriginalAdmissionParent(t *testing.T) {
 					facts := memoryConsoleAssembleFactsWithConfig(t, memoryConsoleAssembleCustomConfig(t, "full", nil, false, true), body, append(memoryConsoleAssembleHeaders(), admission...))
 					require.NotContains(t, facts, "call_id", "legacy labels cannot acquire a native call authority")
 					require.NotContains(t, facts, "native_identity")
+					require.NotContains(t, facts, "call_origin")
 					return
 				}
 				headers := append(memoryNativeCallerFixture().Headers(), admission...)
@@ -46,10 +51,19 @@ func TestManagedMemoryAssembleRetainsOriginalAdmissionParent(t *testing.T) {
 				}
 				require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody(body))
 				facts := requireMemoryAssembleCall(t, host)
-				if mode == "original" {
+				if mode == "original" || mode == "redis-unbounded" {
 					require.Equal(t, callID, facts["call_id"])
+					origin, err := json.Marshal(facts["call_origin"])
+					require.NoError(t, err)
+					require.Equal(t, admission[2][1], gjson.GetBytes(origin, "occurred_at").String())
+					if mode == "original" {
+						require.Equal(t, admission[3][1], gjson.GetBytes(origin, "valid_until").String())
+					} else {
+						require.False(t, gjson.GetBytes(origin, "valid_until").Exists())
+					}
 				} else {
 					require.NotContains(t, facts, "call_id", "incomplete/duplicate/foreign admission remains unknown")
+					require.NotContains(t, facts, "call_origin")
 				}
 				native := facts["native_identity"].(map[string]interface{})
 				require.NotContains(t, native, "call_id", "runtime parent does not mutate the frozen static identity")

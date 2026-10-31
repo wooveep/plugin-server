@@ -1,0 +1,13 @@
+{
+  "formal_plugins": 55,
+  "changed_input_closures": [
+    "ai-cache",
+    "ai-memory"
+  ],
+  "private_processing_wire_types_are_in_each_plugin": true,
+  "shared_framework_inputs_match_base": true,
+  "selected_versions": {
+    "ai-memory": "0.1.9",
+    "ai-cache": "2.0.6"
+  }
+}

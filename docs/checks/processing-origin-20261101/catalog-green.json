@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-p",
+    "test_plugin_catalog.py",
+    "-v"
+  ],
+  "exit_code": 0,
+  "passed_tests": 4,
+  "log_sha256": "97d5e5cef0ef7166b2955a9277bb0c1e1a33298c489672412813fa10ae10d146"
+}

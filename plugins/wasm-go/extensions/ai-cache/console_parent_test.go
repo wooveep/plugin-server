@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/test"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
 
@@ -56,8 +58,19 @@ func TestNativeCacheLookupAndEventRetainOriginalAdmissionParent(t *testing.T) {
 				lookup := nativeCacheDecodeObject(t, calls[0].Body)
 				if mode == "original" {
 					require.Equal(t, nativeCacheOriginalCall, lookup["call_id"])
+					origin, err := json.Marshal(lookup["call_origin"])
+					require.NoError(t, err)
+					for _, header := range headers {
+						if header[0] == executionfacts.AdmissionOccurredHeader {
+							require.Equal(t, header[1], gjson.GetBytes(origin, "occurred_at").String())
+						}
+						if header[0] == executionfacts.AdmissionDeadlineHeader {
+							require.Equal(t, header[1], gjson.GetBytes(origin, "valid_until").String())
+						}
+					}
 				} else {
 					require.NotContains(t, lookup, "call_id", "missing original state cannot be filled by client headers")
+					require.NotContains(t, lookup, "call_origin")
 				}
 				if mode != "legacy" {
 					native := lookup["native_identity"].(map[string]interface{})

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-memory/config"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
@@ -34,8 +35,16 @@ type memoryNamedFact struct {
 	Name string `json:"name"`
 }
 
+// Original quota time accompanies the existing authenticated processing RPC.
+// It is provenance for this call, not a model-send permit or an attempt.
+type memoryCallOrigin struct {
+	OccurredAt string `json:"occurred_at"`
+	ValidUntil string `json:"valid_until,omitempty"`
+}
+
 type memoryAssembleRequest struct {
 	CallID            string                `json:"call_id,omitempty"`
+	CallOrigin        *memoryCallOrigin     `json:"call_origin,omitempty"`
 	NativeIdentity    *memoryNativeIdentity `json:"native_identity,omitempty"`
 	SchemaVersion     int                   `json:"schema_version"`
 	Tenant            string                `json:"tenant"`
@@ -78,6 +87,7 @@ type memoryAssembleMessage struct {
 func buildMemoryAssembleRequestBody(ctx wrapper.HttpContext, c config.PluginConfig) ([]byte, error) {
 	native := nativeMemoryIdentity(ctx, c)
 	callID := ""
+	var callOrigin *memoryCallOrigin
 	if native != nil {
 		// Reuse the original request-header snapshot. A later proxy callback or
 		// client-style request_id cannot supply missing admission parentage.
@@ -85,6 +95,10 @@ func buildMemoryAssembleRequestBody(ctx wrapper.HttpContext, c config.PluginConf
 			admitted.ReleaseID == native.ReleaseID && native.Caller.Validate() == nil && native.Caller.TenantID != "" && native.Caller.PrincipalID != "" &&
 			ctx.GetStringContext(memoryRouteContextKey, "") == native.RouteID {
 			callID = admitted.CallID
+			callOrigin = &memoryCallOrigin{OccurredAt: admitted.OccurredAt}
+			if !admitted.ValidUntil.IsZero() {
+				callOrigin.ValidUntil = admitted.ValidUntil.UTC().Format(time.RFC3339Nano)
+			}
 		}
 	}
 	route := memoryNamedFact{Name: ctx.GetStringContext(memoryRouteContextKey, "")}
@@ -93,6 +107,7 @@ func buildMemoryAssembleRequestBody(ctx wrapper.HttpContext, c config.PluginConf
 	}
 	return json.Marshal(memoryAssembleRequest{
 		CallID:            callID,
+		CallOrigin:        callOrigin,
 		NativeIdentity:    native,
 		SchemaVersion:     memoryAssembleSchemaVersion,
 		Tenant:            ctx.GetStringContext(memoryTenantContextKey, ""),

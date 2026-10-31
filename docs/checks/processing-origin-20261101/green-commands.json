@@ -1,0 +1,52 @@
+[
+  {
+    "name": "memory",
+    "command": [
+      "go",
+      "test",
+      "./..."
+    ],
+    "cwd": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/plugins/wasm-go/extensions/ai-memory",
+    "started_at": "2026-10-31T22:50:48.220597+00:00",
+    "completed_at": "2026-10-31T22:51:19.127878+00:00",
+    "exit_code": 0,
+    "log_sha256": "45768e9b44339a770e343e4893642ce3b75a5e291923195f5372692d18d5e89b",
+    "source_files_sha256": {
+      "plugins/wasm-go/extensions/ai-memory/console_assemble.go": "88a96a6bddc52c9296a018773e417dd415602616842dc14d60345e8d6c67c016",
+      "plugins/wasm-go/extensions/ai-memory/console_parent_test.go": "1fbefb942349e546df3dcfa5536f0576c909f6972eb4f3f30c4a076a09631fe7",
+      "plugins/wasm-go/extensions/ai-cache/cache_event.go": "a149bcdeb4ea052e45b22421b1c0841eb9ae9ceb2e3ec0dfc761083fee34439c",
+      "plugins/wasm-go/extensions/ai-cache/console_lookup.go": "dc277b73b8782bddb5ca14760c94fc4e1d351313a7a6ff0c5e6a37c241b8f5c9",
+      "plugins/wasm-go/extensions/ai-cache/console_parent_test.go": "e21e002d5571f8395da76b402638be2c678ab8eca56cbf7d0196e8b93f7565de",
+      "plugins/release/catalog.json": "8ac85d8505ecc99bea03d2a209d5a11576ad1a59d31213841ade00e87f75cb8f",
+      "plugins/wasm-go/extensions/ai-memory/VERSION": "e358d84552808a5c0bd6679d690c283b938ebe15c2bd843c898681d093213107",
+      "plugins/wasm-go/extensions/ai-cache/VERSION": "ac466878608d7cbd7c12ceadb12b9cb60ed8b94e1f9d90b2de60439b0bf27ef4",
+      "plugins/wasm-go/resources/plugins/ai-memory/spec.yaml": "51f35aea5a3b51971f09a1bd6def67e97c6b9727a397099f27558ce7473e54ca",
+      "plugins/wasm-go/resources/plugins/ai-cache/spec.yaml": "c9eea7bb2285a8cf3d0ccc413b2d2a56e8877d9d2a297541ff7082f437d36717"
+    }
+  },
+  {
+    "name": "cache",
+    "command": [
+      "go",
+      "test",
+      "./..."
+    ],
+    "cwd": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/plugins/wasm-go/extensions/ai-cache",
+    "started_at": "2026-10-31T22:51:19.128052+00:00",
+    "completed_at": "2026-10-31T22:52:16.432663+00:00",
+    "exit_code": 0,
+    "log_sha256": "d02add738cb9210b974f2ed90a7008deaf5e8c4a2aa43856b6d156e802ab860b",
+    "source_files_sha256": {
+      "plugins/wasm-go/extensions/ai-memory/console_assemble.go": "88a96a6bddc52c9296a018773e417dd415602616842dc14d60345e8d6c67c016",
+      "plugins/wasm-go/extensions/ai-memory/console_parent_test.go": "1fbefb942349e546df3dcfa5536f0576c909f6972eb4f3f30c4a076a09631fe7",
+      "plugins/wasm-go/extensions/ai-cache/cache_event.go": "a149bcdeb4ea052e45b22421b1c0841eb9ae9ceb2e3ec0dfc761083fee34439c",
+      "plugins/wasm-go/extensions/ai-cache/console_lookup.go": "dc277b73b8782bddb5ca14760c94fc4e1d351313a7a6ff0c5e6a37c241b8f5c9",
+      "plugins/wasm-go/extensions/ai-cache/console_parent_test.go": "e21e002d5571f8395da76b402638be2c678ab8eca56cbf7d0196e8b93f7565de",
+      "plugins/release/catalog.json": "8ac85d8505ecc99bea03d2a209d5a11576ad1a59d31213841ade00e87f75cb8f",
+      "plugins/wasm-go/extensions/ai-memory/VERSION": "e358d84552808a5c0bd6679d690c283b938ebe15c2bd843c898681d093213107",
+      "plugins/wasm-go/extensions/ai-cache/VERSION": "ac466878608d7cbd7c12ceadb12b9cb60ed8b94e1f9d90b2de60439b0bf27ef4",
+      "plugins/wasm-go/resources/plugins/ai-memory/spec.yaml": "51f35aea5a3b51971f09a1bd6def67e97c6b9727a397099f27558ce7473e54ca",
+      "plugins/wasm-go/resources/plugins/ai-cache/spec.yaml": "c9eea7bb2285a8cf3d0ccc413b2d2a56e8877d9d2a297541ff7082f437d36717"
+    }
+  }
+]
