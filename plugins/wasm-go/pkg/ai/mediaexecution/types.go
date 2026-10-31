@@ -246,8 +246,10 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 	}
 	transport, err := object(d["transport_contract"])
 	u, endpointErr := url.Parse(original.Endpoint)
+	// The archive retains the complete original source endpoint. The registered
+	// profile selects the actual create/query path independently of that URL.
 	if err != nil || endpointErr != nil || u.Hostname() == "" || (u.Scheme != "http" && u.Scheme != "https") ||
-		u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Path != "" && u.Path != "/") ||
+		u.User != nil || u.RawQuery != "" || u.Fragment != "" ||
 		field(transport, "host") != native.Authority ||
 		(u.Scheme == "https" && field(transport, "sni") != u.Hostname()) ||
 		(u.Scheme == "http" && field(transport, "sni") != "") {

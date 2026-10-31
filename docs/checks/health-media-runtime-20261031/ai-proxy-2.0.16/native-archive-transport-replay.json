@@ -1,0 +1,21 @@
+{
+  "evidence_level": "read_only_actual_rust_archive_constructor_replay",
+  "operation_id": "01a1927d-249e-7e21-a0ce-01d298a2fa07",
+  "original_archive_result": "ErrUnsupported",
+  "rejection_boundary": "transport_contract",
+  "source_endpoint_has_api_path": true,
+  "source_endpoint_scheme": "http",
+  "original_http_sni_present": true,
+  "corrected_source_http_sni": null,
+  "go_reader_change": "retain the complete source endpoint; registered profile supplies request path",
+  "corrected_archive_constructor_exit_code": 0,
+  "corrected_archive_changes": [
+    "HTTP SNI removed as in corrected source builder",
+    "descriptor digest recalculated"
+  ],
+  "original_endpoint_request_body_and_business_identities_preserved": true,
+  "provider_http_requests": 0,
+  "redis_mutations": 0,
+  "original_task_status": "unknown",
+  "original_task_replayed": false
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./pkg/ai/mediaexecution",
+    "-count=1",
+    "-v"
+  ],
+  "environment_names": [
+    "MEDIA_EXECUTION_TEST_REDIS_URL"
+  ],
+  "exit_code": 0,
+  "log_sha256": "9b2c33aecc41bda54cefee3cd6c90b633bc66500b4cb73c246629293e76c0c48"
+}

@@ -11,6 +11,7 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mediaexecution"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
+	"github.com/tidwall/resp"
 )
 
 func profileFixture(t *testing.T, profile string) fixture {
@@ -125,6 +126,38 @@ func TestSixRegisteredProtocolsPrepareExactSingleSendBodies(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestFrozenSourceEndpointKeepsItsPathWhileRegisteredProfileSelectsRequestPath(t *testing.T) {
+	for _, profile := range []string{mediaexecution.QwenImage20ProSync, mediaexecution.QwenImage30NativeSync, mediaexecution.QwenImage30Compatible, mediaexecution.Profile, mediaexecution.Wan30Text, mediaexecution.Wan30FirstFrame} {
+		for _, scheme := range []string{"http", "https"} {
+			t.Run(profile+"/"+scheme, func(t *testing.T) {
+				f := profileFixture(t, profile)
+				protocol, err := mediaexecution.LookupProfile(profile)
+				if err != nil {
+					t.Fatal(err)
+				}
+				endpoint := scheme + "://vendor.example" + protocol.CreatePath
+				f.archive["provider_endpoint"] = endpoint
+				if scheme == "http" {
+					f.descriptor["transport_contract"].(map[string]any)["sni"] = nil
+					sign(t, f.descriptor, "descriptor_digest")
+				}
+				e, err := mediaexecution.FromPrivateArchive(raw(t, f.archive), f.gateway, f.binding)
+				if err != nil {
+					t.Fatal(err)
+				}
+				selection, err := e.Selection(f.live, "", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				r, err := e.PrepareRedisCreate(resp.ArrayValue([]resp.Value{resp.StringValue("allow"), resp.StringValue("123-0")}), selection, f.live, f.now)
+				if err != nil || r.Endpoint() != endpoint || r.Path() != protocol.CreatePath {
+					t.Fatalf("original endpoint or registered create path changed: %v", err)
+				}
+			})
+		}
 	}
 }
 

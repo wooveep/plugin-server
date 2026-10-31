@@ -1,0 +1,13 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./pkg/ai/mediaexecution",
+    "-run",
+    "TestFrozenSourceEndpointKeepsItsPathWhileRegisteredProfileSelectsRequestPath",
+    "-count=1",
+    "-v"
+  ],
+  "exit_code": 1,
+  "log_sha256": "d9cdde4ae768c6c516525955019a1ffe24a5d5208cdd1cc0774bd5e11743e83c"
+}
