@@ -1,0 +1,22 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-p=2",
+    "-count=1",
+    "-timeout=15m",
+    "-v"
+  ],
+  "cwd": "plugins/wasm-go/extensions/ai-cache",
+  "started_at": "2026-10-31T23:55:01.068357+00:00",
+  "completed_at": "2026-10-31T23:56:02.549667+00:00",
+  "exit_code": 0,
+  "source_commit": "5bef252a5b14aad3261913df3845316f496d472f",
+  "wasm_sha256": "sha256:cb1b8f11c756815268e6f2928a54acbf349965b0f8a9e6ae8c711ae142888dd1",
+  "build_receipt_sha256": "09ca9fb72310ad024acbabcbcbb2c10a0822ccfa3231f81fbc582750fa25a7bd",
+  "log_sha256": "615ded82a518e6ac986942592f1f2883149ef7507724e69a67a71076caa3cd25",
+  "passed_top_level": 66,
+  "passed_including_subcases": 562,
+  "skipped": 0
+}

@@ -1,0 +1,21 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./pkg/ai/memorycache",
+    "-p=2",
+    "-count=1",
+    "-v"
+  ],
+  "cwd": "plugins/wasm-go",
+  "started_at": "2026-10-31T23:55:02.224843+00:00",
+  "completed_at": "2026-10-31T23:55:02.342969+00:00",
+  "exit_code": 0,
+  "source_commit": "5bef252a5b14aad3261913df3845316f496d472f",
+  "wasm_sha256": null,
+  "build_receipt_sha256": null,
+  "log_sha256": "3566223cbd0687b95534ba650c07f31e97849e7e1898844daeac9c3e2ccdce9f",
+  "passed_top_level": 1,
+  "passed_including_subcases": 12,
+  "skipped": 0
+}

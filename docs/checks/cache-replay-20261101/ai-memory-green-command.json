@@ -1,0 +1,22 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-p=2",
+    "-count=1",
+    "-timeout=15m",
+    "-v"
+  ],
+  "cwd": "plugins/wasm-go/extensions/ai-memory",
+  "started_at": "2026-10-31T23:54:59.908528+00:00",
+  "completed_at": "2026-10-31T23:55:32.335333+00:00",
+  "exit_code": 0,
+  "source_commit": "5bef252a5b14aad3261913df3845316f496d472f",
+  "wasm_sha256": "sha256:43a8c5b42a028ea3ef2825fd2d71e18c48ec5356b1298aa4e0ccddcfc9e61435",
+  "build_receipt_sha256": "d6ce91e2af2ed408d180f5c4f0828945228bc9d6f57aea63b467fec00fa96403",
+  "log_sha256": "d57e5280316cdb2c5f62fe21dc7e3d34ec677acc67cdefea36866c1e4d5e9cdd",
+  "passed_top_level": 72,
+  "passed_including_subcases": 607,
+  "skipped": 0
+}

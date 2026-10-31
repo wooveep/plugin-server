@@ -1,0 +1,46 @@
+{
+  "prior_immutable_manifests_preserved": 93,
+  "registered_artifacts": 95,
+  "plugins": [
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.10",
+      "source_commit": "5bef252a5b14aad3261913df3845316f496d472f",
+      "build_receipt_digest": "sha256:d6ce91e2af2ed408d180f5c4f0828945228bc9d6f57aea63b467fec00fa96403",
+      "source_inputs_digest": "sha256:3e928436fa8efead114c64ee14fed43bec1508b5eb7ad4b9774298cec794f0ad",
+      "archive_digest": "sha256:9e4643fc559b295f6c099a68bd99378375c8a084687314e0b97d94d0f8246923",
+      "wasm_digest": "sha256:43a8c5b42a028ea3ef2825fd2d71e18c48ec5356b1298aa4e0ccddcfc9e61435",
+      "content_digest": "sha256:69237eb89a3794f58a404bf3f922c433967abbf726cfe872f0e62b9c9c636445",
+      "source_digest": "sha256:04f0713ece612033387a0405760ccd59d6add66661dfc0becf78d3ab45d64cd5",
+      "full_wasm_test_exit_code": 0,
+      "full_wasm_passed_top_level": 72,
+      "full_wasm_passed_including_subcases": 607,
+      "full_wasm_skipped": 0,
+      "full_wasm_log_sha256": "d57e5280316cdb2c5f62fe21dc7e3d34ec677acc67cdefea36866c1e4d5e9cdd",
+      "approved_provenance_receipts": 71,
+      "prior_provenance_receipts_preserved": 69,
+      "manifest_digest": "sha256:656ea27ce86e5da77670e4d4ea463b8806690fe7d2bac0c028b084ec81b550f4",
+      "artifact_id": "48ded73d-69f9-4d55-8c9b-f8fd714de249"
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.8",
+      "source_commit": "5bef252a5b14aad3261913df3845316f496d472f",
+      "build_receipt_digest": "sha256:09ca9fb72310ad024acbabcbcbb2c10a0822ccfa3231f81fbc582750fa25a7bd",
+      "source_inputs_digest": "sha256:5820f59a5170beb3190b5871a09b4fa9ab5ce6fc83a612d505c4ef9056168b10",
+      "archive_digest": "sha256:cd5848b2ec3e9bedefc4b21763b14a67d6f83f6a1af1568214599843629db154",
+      "wasm_digest": "sha256:cb1b8f11c756815268e6f2928a54acbf349965b0f8a9e6ae8c711ae142888dd1",
+      "content_digest": "sha256:b8f3eba8f8f5d15f12529714367c8078762e67e7a1c5420c85e79da5931dae9c",
+      "source_digest": "sha256:8e18a7e195fd37cca3b7145755fee45d3ad0a69f6b2ffb67e0f19d760d7ba6d5",
+      "full_wasm_test_exit_code": 0,
+      "full_wasm_passed_top_level": 66,
+      "full_wasm_passed_including_subcases": 562,
+      "full_wasm_skipped": 0,
+      "full_wasm_log_sha256": "615ded82a518e6ac986942592f1f2883149ef7507724e69a67a71076caa3cd25",
+      "approved_provenance_receipts": 71,
+      "prior_provenance_receipts_preserved": 69,
+      "manifest_digest": "sha256:e97097e5b4b7f9b4e03c752f59e265e65e9cb9e80346096827bce3c0889f1e95",
+      "artifact_id": "6b9844f1-e003-43e3-8def-54613d223d36"
+    }
+  ]
+}

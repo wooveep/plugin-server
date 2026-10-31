@@ -7,3 +7,5 @@ Helm139 的完整对话请求实际命中缓存，客户供应商发送0次、�
 共享 framework 的命中函数由本聊天串行修改，实际调用方为 Memory；Cache 的私有回放状态改动位于原插件内。正式版本为 ai-memory0.1.10、ai-cache2.0.8。共享源码输入的变化会反映在 Go 插件的保守输入闭包中；本批制作这两个实际消费者的新制品，旧制品及其原来源保持。
 
 [三份 RED](cache-replay-20261101/red-commands.json)分别复现名称契约、已交付 Memory0.1.9 的普通/流式响应学习、已交付 Cache2.0.7 自身本地回放事件。后两者均在 Go/Wasm 上失败，错误与真实运行相符。修复后的完整批次和实际不递归验收继续，未将本地回放响应作为一次新模型发送。
+
+完整批次通过：[Memory72顶层/607含子项](cache-replay-20261101/ai-memory-green-command.json)、[Cache66顶层/562含子项](cache-replay-20261101/ai-cache-green-command.json)，均无跳过；[共享命中契约](cache-replay-20261101/contract-green-command.json)及[catalog五项检查](cache-replay-20261101/catalog-green-command.json)通过。[两份完整包资格](cache-replay-20261101/qualification.json)绑定当前已提交来源、原始输入和实际测试字节；95份制品包含这两个新版本，原93份manifest与69条来源批准保持。实际新包加载与不递归取证继续。

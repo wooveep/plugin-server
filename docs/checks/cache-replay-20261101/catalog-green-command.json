@@ -1,0 +1,18 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-p",
+    "test_plugin_catalog.py",
+    "-v"
+  ],
+  "started_at": "2026-10-31T23:57:10.255811+00:00",
+  "completed_at": "2026-10-31T23:57:11.674581+00:00",
+  "exit_code": 0,
+  "log_sha256": "935f6f21e3ef2dc695476add2b936ca3b671f6faa2150092aa1e87a843593b28",
+  "source_commit": "5bef252a5b14aad3261913df3845316f496d472f"
+}
