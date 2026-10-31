@@ -1,0 +1,24 @@
+{
+  "server_source_commit": "981805f98abfc708699faf0167a371d7bf0599de",
+  "plugin_source_commit": "981805f98abfc708699faf0167a371d7bf0599de",
+  "image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:health-media-20261031-981805f9-eaea95f40950",
+  "artifact_inventory_digest": "sha256:eaea95f40950c6048a51880041179b7b8ef1bcf37ec2585acab75432ca735541",
+  "approved_policy_sha256": "8ff59251f98f54cbfd8762cd2e8b3ab1385a6843c83875e13a4c357dce1d0a9a",
+  "qualified_candidate": {
+    "plugin_name": "ai-proxy",
+    "plugin_version": "2.0.13",
+    "source_commit": "981805f98abfc708699faf0167a371d7bf0599de",
+    "source_inputs_verified": 533,
+    "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+    "content_digest": "sha256:f304554b496658fe8b5c857bef836b6ee75c62e6beec89e2ea6706d673bb28b3",
+    "source_digest": "sha256:7ea1d26659d8742ec2eedee91dbc3d909afa28bb30b363371a3ce009ee84a26f",
+    "wasm_digest": "sha256:b3d22fc1d690cf70735aa9c20e129f13d42c5c3ef685e4a48155d25502155a8c",
+    "archive_digest": "sha256:3d8896f90e4bfdce093f0185703f6d49c0d71e199a9328449231c74dc3952955"
+  },
+  "tracked_image_input_files": 23,
+  "health_media_runtime_included": true,
+  "deployed": false,
+  "image_id": "sha256:db4f573ec98d2402d3ade0545cdb41ac578bda50374956c06a696f710b6f1ec6",
+  "image_digest": "sha256:db4f573ec98d2402d3ade0545cdb41ac578bda50374956c06a696f710b6f1ec6",
+  "pinned_image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:health-media-20261031-981805f9-eaea95f40950@sha256:db4f573ec98d2402d3ade0545cdb41ac578bda50374956c06a696f710b6f1ec6"
+}

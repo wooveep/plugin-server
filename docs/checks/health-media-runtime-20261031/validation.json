@@ -1,0 +1,58 @@
+{
+  "source_commit": "981805f98abfc708699faf0167a371d7bf0599de",
+  "proxy_version": "2.0.13",
+  "full_proxy": {
+    "command": [
+      "go",
+      "test",
+      "./...",
+      "-p=2",
+      "-count=1",
+      "-timeout=15m",
+      "-v"
+    ],
+    "cwd": "plugins/wasm-go/extensions/ai-proxy",
+    "environment": {
+      "WASM_FILE_PATH": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/build/plugins/ai-proxy/2.0.13/plugin.wasm",
+      "GOMAXPROCS": "2"
+    },
+    "log": "proxy-full.log",
+    "exit_code": 0,
+    "log_sha256": "013c0d5c759ff2106215b80302298c5093d61f85149bbb8f8d1c50c17efcf367",
+    "log_size_bytes": 4553874,
+    "passed_top_level": 321,
+    "passed_including_subcases": 2196,
+    "runtime_seconds": 393.035,
+    "actual_envoy_execution": false,
+    "collector_note": "The test command exited 0. Initial log decoding encountered intentional non-UTF-8 response bytes; summary was read from the unchanged original byte log without rerunning or modifying tests."
+  },
+  "managed_native_host": {
+    "command": [
+      "go",
+      "test",
+      ".",
+      "-run",
+      "^TestManaged",
+      "-count=1",
+      "-v"
+    ],
+    "cwd": "plugins/wasm-go/extensions/ai-proxy",
+    "exit_code": 0,
+    "log": "proxy-managed-integrated-3.log",
+    "top_level_passed": 60,
+    "including_subcases": 161,
+    "log_sha256": "5998e3699433dff816e68020e1bbc761d75ddbf91bf7b090863ceaace047fd87"
+  },
+  "health_native_core": {
+    "log": "go-native.log",
+    "log_sha256": "2f947ce960ec82ccfe4a0d846146a759ae57da2911b80ebfe8d0af0769a5824c",
+    "redis": "owned native Redis at 127.0.0.1:32769",
+    "result": "all existing upstreamhealth package tests and eight native runtime business scenarios passed",
+    "actual_provider_called": false
+  },
+  "deployment_state": "built_and_pushed_not_deployed",
+  "initial_failures": [
+    "Initial managed command used the parent Go module rather than the ai-proxy module; corrected the command working directory.",
+    "Redis host fixtures still returned HMGET values and compared uppercase EVAL literally. They now return the actual HGETALL field/value pairs plus Redis TIME and retain all denial/send-count assertions."
+  ]
+}
