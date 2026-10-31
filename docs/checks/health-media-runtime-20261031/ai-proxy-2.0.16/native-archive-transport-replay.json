@@ -6,11 +6,11 @@
   "source_endpoint_has_api_path": true,
   "source_endpoint_scheme": "http",
   "original_http_sni_present": true,
-  "corrected_source_http_sni": null,
+  "corrected_source_http_sni": "",
   "go_reader_change": "retain the complete source endpoint; registered profile supplies request path",
   "corrected_archive_constructor_exit_code": 0,
   "corrected_archive_changes": [
-    "HTTP SNI removed as in corrected source builder",
+    "HTTP SNI set to the empty string required by the existing descriptor schema",
     "descriptor digest recalculated"
   ],
   "original_endpoint_request_body_and_business_identities_preserved": true,

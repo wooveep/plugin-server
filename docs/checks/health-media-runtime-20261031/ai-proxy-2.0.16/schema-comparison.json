@@ -1,0 +1,17 @@
+[
+  {
+    "path": "config.schema.json",
+    "unchanged_from_live_2_0_15": false,
+    "changed_json_paths": [
+      "/x-higress/source_spec_digest",
+      "/x-higress/info/version"
+    ],
+    "sha256": "862cd12b08b15250a508243eb8bb0a188d9be269dd24ec5f20b379a9822b2b8d"
+  },
+  {
+    "path": "route.schema.json",
+    "unchanged_from_live_2_0_15": true,
+    "changed_json_paths": [],
+    "sha256": "45c2358f02892c765630abdd2708aba2afe9adb3ff2819f461d5d6673e873fcf"
+  }
+]

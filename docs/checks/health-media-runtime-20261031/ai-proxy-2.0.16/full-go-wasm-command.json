@@ -1,0 +1,25 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-p=2",
+    "-count=1",
+    "-timeout=15m",
+    "-v"
+  ],
+  "cwd": "plugins/wasm-go/extensions/ai-proxy",
+  "environment": {
+    "WASM_FILE_PATH": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/build/plugins/ai-proxy/2.0.16/plugin.wasm",
+    "GOMAXPROCS": "2"
+  },
+  "source_commit": "0a7234f1e9bfbddeecf285014dc7f4b26505b533",
+  "wasm_sha256": "33b2b158a101540bd1c7bdb2b6d1df60837ef708d7f6a34a17bfcb5e2a692bd5",
+  "exit_code": 0,
+  "log_capture": "raw bytes; process exit status persisted before parsing",
+  "log_sha256": "53cf55169d9df560d30690032d24c6bcb068cd05b74d94452c58058899925251",
+  "log_size_bytes": 4558831,
+  "passed_top_level": 323,
+  "passed_including_subcases": 2203,
+  "pass_count_method": "Go PASS records from raw bytes, including one record concatenated after fixture stdout without a newline"
+}
