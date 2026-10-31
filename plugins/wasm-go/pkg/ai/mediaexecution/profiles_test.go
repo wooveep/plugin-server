@@ -32,6 +32,17 @@ func profileFixture(t *testing.T, profile string) fixture {
 			f.body = []byte(`{"model":"public-image","input":{"prompt":"a moving tree"},"first_frame_url":"https://input.example/original.png?sig=original","parameters":{"duration":8,"seed":9007199254740993}}`)
 		}
 	}
+	var procurement map[string]json.RawMessage
+	if err := json.Unmarshal(raw(t, f.archive["procurement"]), &procurement); err != nil {
+		t.Fatal(err)
+	}
+	var identity map[string]string
+	if err := json.Unmarshal(procurement["identity"], &identity); err != nil {
+		t.Fatal(err)
+	}
+	identity["upstream_model_name"] = model
+	procurement["identity"], _ = json.Marshal(identity)
+	f.archive["procurement"] = procurement
 	f.descriptor["upstream_model"] = model
 	if !asynchronous {
 		f.binding.QueryClassifierRef, f.binding.QueryCapabilityRef = "", ""

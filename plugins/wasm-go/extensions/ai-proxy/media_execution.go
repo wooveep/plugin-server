@@ -24,13 +24,14 @@ import (
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/resp"
 )
 
 const (
 	managedMediaDispatchPath = "/__modelfusion/media/dispatch"
 	managedMediaQueryPath    = "/__modelfusion/media/query"
 	managedMediaContextKey   = "modelfusion.private_media_notice"
-	managedMediaNoticeLimit  = 4096
+	managedMediaNoticeLimit  = 32 << 20
 	managedMediaPrivateLimit = 32 << 20
 )
 
@@ -48,34 +49,42 @@ type managedMediaProfile struct {
 // credential and all accounting identity still come from the frozen REL archive.
 type managedMediaSettings struct {
 	ProducerID       string                `json:"producer_id"`
-	Console          managedHealthConsole  `json:"console_internal"`
+	ServiceAuthToken string                `json:"service_auth_token"`
+	PrivateStream    string                `json:"private_stream"`
+	Redis            managedRedisSettings  `json:"redis"`
 	Profiles         []managedMediaProfile `json:"profiles"`
 	QueueCapacity    int                   `json:"queue_capacity"`
 	MaxResponseBytes int                   `json:"max_response_bytes"`
 }
 
-type managedMediaNotice struct {
-	SchemaVersion string `json:"schema_version"`
-	DispatchID    string `json:"dispatch_id,omitempty"`
-	OperationID   string `json:"operation_id,omitempty"`
-	RequestID     string `json:"request_id,omitempty"`
+type managedMediaAdmission struct {
+	ScopeID              string  `json:"scope_id"`
+	Generation           string  `json:"generation"`
+	AccountID            string  `json:"account_id"`
+	AdmissionRevision    string  `json:"admission_revision"`
+	MappingRevision      string  `json:"mapping_revision"`
+	CredentialGeneration string  `json:"credential_generation"`
+	RouteID              string  `json:"route_id"`
+	KeyID                *string `json:"api_key_id"`
 }
-
+type managedMediaNotice struct {
+	SchemaVersion string                `json:"schema_version"`
+	DispatchID    string                `json:"dispatch_id"`
+	OperationID   string                `json:"operation_id"`
+	RequestID     string                `json:"request_id"`
+	TicketKey     string                `json:"ticket_key"`
+	TicketDigest  string                `json:"ticket_digest"`
+	ExpiresAt     time.Time             `json:"expires_at"`
+	Admission     managedMediaAdmission `json:"admission"`
+	Archive       json.RawMessage       `json:"archive"`
+}
 type managedMediaACK struct {
 	SchemaVersion string `json:"schema_version"`
-	DispatchID    string `json:"dispatch_id,omitempty"`
-	OperationID   string `json:"operation_id,omitempty"`
-	RequestID     string `json:"request_id,omitempty"`
+	OperationID   string `json:"operation_id"`
+	RequestID     string `json:"request_id"`
+	TicketDigest  string `json:"ticket_digest"`
 	Accepted      bool   `json:"accepted"`
 }
-
-type managedMediaPrivateReply struct {
-	Status                        int
-	HeadersComplete, BodyComplete bool
-	Body                          []byte
-}
-
-type managedMediaServiceCall func(method, path string, body []byte, callback func(managedMediaPrivateReply)) error
 type managedMediaProviderCall func(mediaexecution.Request, func(mediaexecution.Response)) error
 
 type managedMediaReport struct {
@@ -100,7 +109,7 @@ type managedMediaRuntime struct {
 	profiles map[string]mediaexecution.ProfileBinding
 	jobs     map[string]*managedMediaJob
 	sequence uint64
-	call     managedMediaServiceCall
+	redis    upstreamhealth.RuntimeRedis
 	provider managedMediaProviderCall
 	now      func() time.Time
 }
@@ -121,7 +130,7 @@ type managedMediaJob struct {
 	delivery                       *executionfacts.Snapshot
 	healthAfterFact                *executionfacts.Snapshot
 	manifest                       *mediaexecution.OutputManifest
-	health                         *upstreamhealth.GatewayClient
+	health                         *upstreamhealth.Runtime
 	healthTarget                   upstreamhealth.TargetReference
 	healthDecision                 upstreamhealth.Decision
 	claimID                        *string
@@ -250,10 +259,9 @@ func configureManagedMedia(value gjson.Result) error {
 	if owner == "" {
 		return errors.New("managed_media requires the original host node and VM startup")
 	}
-	endpoint := settings.Console
-	if _, err := newHealthGatewayClient(healthGatewayEndpoint{ServiceName: endpoint.ServiceName, ServicePort: endpoint.ServicePort,
-		Host: endpoint.Host, AuthToken: endpoint.AuthToken, TimeoutMS: endpoint.TimeoutMS}, owner); err != nil {
-		return err
+	if !managedID(settings.ServiceAuthToken) || !managedID(settings.PrivateStream) || !managedID(settings.Redis.ServiceName) ||
+		settings.Redis.ServicePort < 1 || settings.Redis.ServicePort > 65535 || settings.Redis.Timeout < 1 || settings.Redis.Timeout > 60000 || settings.Redis.Database < 0 {
+		return errors.New("managed_media requires existing Redis, Stream and service authentication")
 	}
 	profiles := make(map[string]mediaexecution.ProfileBinding, len(settings.Profiles))
 	for _, profile := range settings.Profiles {
@@ -297,7 +305,12 @@ func configureManagedMedia(value gjson.Result) error {
 	}
 	runtime := &managedMediaRuntime{settings: settings, owner: owner, digest: digest, profiles: profiles,
 		jobs: make(map[string]*managedMediaJob), now: time.Now}
-	runtime.call = runtime.consoleCall
+	redis := settings.Redis
+	client := wrapper.NewRedisEventClient(wrapper.FQDNCluster{FQDN: redis.ServiceName, Port: int64(redis.ServicePort)}, proxywasm.DispatchRedisCallInBackground)
+	if err := client.Init(redis.Username, redis.Password, redis.Timeout, wrapper.WithDataBase(redis.Database)); err != nil {
+		return errors.New("managed_media Redis initialization failed")
+	}
+	runtime.redis = client
 	runtime.provider = runtime.providerCall
 	managedMediaRetained = append(managedMediaRetained, runtime)
 	managedMediaActive = runtime
@@ -315,7 +328,7 @@ func onManagedMediaRequestHeaders(ctx wrapper.HttpContext) (types.Action, bool) 
 		return rejectManagedRequest(ctx, 503, "media_control_unavailable"), true
 	}
 	headers, err := proxywasm.GetHttpRequestHeaders()
-	if err != nil || !authorizeManagedMediaNotice(headers, runtime.settings.Console.AuthToken) {
+	if err != nil || !authorizeManagedMediaNotice(headers, runtime.settings.ServiceAuthToken) {
 		return rejectManagedRequest(ctx, 403, "media_control_authentication_required"), true
 	}
 	contentType, err := managedSingleHeader(headers, "content-type")
@@ -352,25 +365,44 @@ func (r *managedMediaRuntime) enqueue(path string, body []byte) (managedMediaACK
 	if len(body) > managedMediaNoticeLimit || decodeManagedMediaJSON(body, &notice) != nil {
 		return managedMediaACK{}, errors.New("invalid media notice")
 	}
-	var key string
-	ack := managedMediaACK{Accepted: true}
+	if !managedID(notice.DispatchID) || !managedID(notice.OperationID) || !managedID(notice.RequestID) ||
+		!strings.HasPrefix(notice.TicketKey, "mf:media:ticket:") || !managedID(notice.TicketKey) || notice.ExpiresAt.IsZero() || len(notice.Archive) == 0 ||
+		!managedID(notice.Admission.ScopeID) || !managedID(notice.Admission.AccountID) {
+		return managedMediaACK{}, errors.New("invalid original media ticket")
+	}
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(body, &fields) != nil {
+		return managedMediaACK{}, errors.New("invalid media ticket")
+	}
+	delete(fields, "ticket_digest")
+	original, err := json.Marshal(fields)
+	if err != nil {
+		return managedMediaACK{}, err
+	}
+	digest, err := mfjson.Digest(original)
+	if err != nil || digest != notice.TicketDigest {
+		return managedMediaACK{}, errors.New("media ticket differs from original payload")
+	}
+	key := notice.TicketKey
+	ack := managedMediaACK{OperationID: notice.OperationID, RequestID: notice.RequestID, TicketDigest: notice.TicketDigest, Accepted: true}
 	switch path {
 	case managedMediaDispatchPath:
-		if notice.SchemaVersion != "media-dispatch-notice.v1" || !managedID(notice.DispatchID) || notice.OperationID != "" || notice.RequestID != "" {
-			return managedMediaACK{}, errors.New("invalid original media dispatch notice")
+		if notice.SchemaVersion != "media-dispatch-notice.v2" || notice.RequestID != notice.DispatchID {
+			return managedMediaACK{}, errors.New("invalid create notice")
 		}
-		key = "dispatch/" + notice.DispatchID
-		ack.SchemaVersion, ack.DispatchID = "media-dispatch-ack.v1", notice.DispatchID
+		ack.SchemaVersion = "media-dispatch-ack.v2"
 	case managedMediaQueryPath:
-		if notice.SchemaVersion != "media-query-notice.v1" || !managedID(notice.OperationID) || !managedID(notice.RequestID) || notice.DispatchID != "" {
-			return managedMediaACK{}, errors.New("invalid original media query notice")
+		if notice.SchemaVersion != "media-query-notice.v2" {
+			return managedMediaACK{}, errors.New("invalid query notice")
 		}
-		key = managedMediaQueryAttempt(notice.OperationID, notice.RequestID)
-		ack.SchemaVersion, ack.OperationID, ack.RequestID = "media-query-ack.v1", notice.OperationID, notice.RequestID
+		ack.SchemaVersion = "media-query-ack.v2"
 	default:
 		return managedMediaACK{}, errors.New("unknown media control path")
 	}
-	if _, duplicate := r.jobs[key]; duplicate {
+	if original, duplicate := r.jobs[key]; duplicate {
+		if original.notice.TicketDigest != notice.TicketDigest {
+			return managedMediaACK{}, errors.New("media ticket conflict")
+		}
 		return ack, nil
 	}
 	if len(r.jobs) >= r.settings.QueueCapacity || r.sequence == ^uint64(0) {
@@ -427,80 +459,55 @@ func (r *managedMediaRuntime) tick() {
 		if job.healthInFlight && !job.healthDeadline.After(now) {
 			job.healthInFlight = false
 		}
-		if job.health != nil && !job.healthInFlight && !job.retryAt.After(now) {
-			pending := job.health.PendingOutcomes(job.healthTarget)
-			if len(pending) > 0 {
-				job.healthInFlight = true
-				job.healthDeadline = now.Add(time.Duration(r.settings.Console.TimeoutMS)*time.Millisecond + time.Second)
-				if err := job.health.ReportOutcome(pending[0], func(upstreamhealth.GatewayResult[upstreamhealth.OutcomeReceipt]) { job.healthInFlight = false }); err != nil {
-					job.healthInFlight = false
-				}
-				job.retryAt = now.Add(time.Second)
-			}
+		if job.health != nil && !job.retryAt.After(now) {
+			job.health.FlushPending()
 		}
 	}
 }
 
 func (j *managedMediaJob) fetch() {
 	r := j.runtime
-	j.stage, j.deadline = "fetching", r.now().Add(time.Duration(r.settings.Console.TimeoutMS)*time.Millisecond+time.Second)
-	path := "/internal/media/dispatches/" + url.PathEscape(j.notice.DispatchID) + "/execution"
-	if j.notice.OperationID != "" {
-		path = "/internal/media/operations/" + url.PathEscape(j.notice.OperationID) + "/execution"
-	}
-	err := r.call("GET", path, nil, func(reply managedMediaPrivateReply) {
-		if j.stage != "fetching" {
-			return
-		}
-		raw, err := managedMediaData(reply)
-		if err != nil || json.Unmarshal(raw, &j.archive) != nil {
-			j.stage = "done"
-			return
-		}
-		binding, supported := r.profiles[j.archive.Profile]
-		if !supported {
-			j.stage = "done"
-			return
-		}
-		j.executor, err = mediaexecution.FromPrivateArchive(raw, mediaexecution.GatewayIdentity{
-			ProducerID: r.settings.ProducerID, Actor: "service/gateway/" + r.settings.ProducerID, BootID: r.owner}, binding)
-		if err != nil || j.notice.DispatchID != "" && j.executor.DispatchID() != j.notice.DispatchID ||
-			j.notice.OperationID != "" && j.executor.OperationID() != j.notice.OperationID {
-			j.stage = "done"
-			return
-		}
-		if j.notice.DispatchID != "" && j.executor.DispatchState() != "prepared" {
-			j.stage = "done"
-			return
-		}
-		if j.archive.GenerationObservation != nil {
-			original, err := mediaexecution.DecodeOriginalObservation([]byte(*j.archive.GenerationObservation))
-			if err != nil {
-				j.stage = "done"
-				return
-			}
-			j.generation = &original
-		}
-		if j.archive.DeliveryObservation != nil {
-			original, err := mediaexecution.DecodeOriginalObservation([]byte(*j.archive.DeliveryObservation))
-			if err != nil || original.Envelope().Kind != "call_delivery" {
-				j.stage = "done"
-				return
-			}
-			j.delivery = &original
-		}
-		j.manifest = j.archive.OutputManifest
-		if j.notice.OperationID != "" && j.generation == nil {
-			// Keep the original task unknown until its source cursor is available.
-			j.stage = "done"
-			return
-		}
-		j.qualify()
-	})
-	if err != nil {
+	j.stage, j.deadline = "fetching", j.notice.ExpiresAt
+	raw := j.notice.Archive
+	if !j.notice.ExpiresAt.After(r.now()) || json.Unmarshal(raw, &j.archive) != nil {
 		j.stage = "done"
+		return
 	}
+	binding, supported := r.profiles[j.archive.Profile]
+	if !supported {
+		j.stage = "done"
+		return
+	}
+	var err error
+	j.executor, err = mediaexecution.FromPrivateArchive(raw, mediaexecution.GatewayIdentity{ProducerID: r.settings.ProducerID, Actor: "service/gateway/" + r.settings.ProducerID, BootID: r.owner}, binding)
+	if err != nil || j.executor.DispatchID() != j.notice.DispatchID || j.executor.OperationID() != j.notice.OperationID || !j.isQuery() && j.executor.DispatchState() != "prepared" {
+		j.stage = "done"
+		return
+	}
+	if j.archive.GenerationObservation != nil {
+		original, err := mediaexecution.DecodeOriginalObservation([]byte(*j.archive.GenerationObservation))
+		if err != nil {
+			j.stage = "done"
+			return
+		}
+		j.generation = &original
+	}
+	if j.archive.DeliveryObservation != nil {
+		original, err := mediaexecution.DecodeOriginalObservation([]byte(*j.archive.DeliveryObservation))
+		if err != nil || original.Envelope().Kind != "call_delivery" {
+			j.stage = "done"
+			return
+		}
+		j.delivery = &original
+	}
+	j.manifest = j.archive.OutputManifest
+	if j.isQuery() && j.generation == nil {
+		j.stage = "done"
+		return
+	}
+	j.qualify()
 }
+func (j *managedMediaJob) isQuery() bool { return j.notice.SchemaVersion == "media-query-notice.v2" }
 
 func (j *managedMediaJob) qualify() {
 	settings := j.archive.Native.Health
@@ -523,7 +530,7 @@ func (j *managedMediaJob) qualify() {
 		return
 	}
 	queryAttempt := ""
-	if j.notice.OperationID != "" {
+	if j.isQuery() {
 		queryAttempt = managedMediaQueryAttempt(j.notice.OperationID, j.notice.RequestID)
 	}
 	selection, err := j.executor.Selection(j.live, queryAttempt, nil)
@@ -539,17 +546,14 @@ func (j *managedMediaJob) qualify() {
 		return
 	}
 	j.selection, j.healthTarget = selection, target
-	endpoint := settings.Console
-	client, owner, err := managedGatewayHealthClient(settings.Snapshot.AuthorityID, healthGatewayEndpoint{ServiceName: endpoint.ServiceName,
-		ServicePort: endpoint.ServicePort, Host: endpoint.Host, AuthToken: endpoint.AuthToken, TimeoutMS: endpoint.TimeoutMS})
+	client, owner, err := managedGatewayHealthRuntime(settings, j.runtime.redis, j.runtime.settings.PrivateStream, j.runtime.settings.ProducerID)
 	if err != nil || owner != j.runtime.owner {
 		j.stage = "done"
 		return
 	}
 	j.health = client
-	j.stage, j.deadline = "qualifying", j.runtime.now().Add(time.Duration(endpoint.TimeoutMS)*time.Millisecond+time.Second)
-	config := upstreamhealth.Config{Prefix: settings.Snapshot.Prefix, AuthorityID: settings.Snapshot.AuthorityID, MinimumRevision: settings.Snapshot.MinimumRevision}
-	err = client.Snapshot(config, func(read upstreamhealth.ReadResult) {
+	j.stage, j.deadline = "qualifying", j.notice.ExpiresAt
+	client.Lookup(func(read upstreamhealth.ReadResult) {
 		if j.stage != "qualifying" {
 			return
 		}
@@ -574,125 +578,85 @@ func (j *managedMediaJob) qualify() {
 			j.consume()
 		}
 	})
-	if err != nil {
-		j.stage = "done"
-	}
-}
-
-func (j *managedMediaJob) command() ([]byte, string, error) {
-	if j.notice.OperationID != "" {
-		body, err := json.Marshal(struct {
-			OperationID string                             `json:"operation_id"`
-			RequestID   string                             `json:"query_request_id"`
-			Selection   json.RawMessage                    `json:"selection"`
-			Epochs      map[string]upstreamhealth.Revision `json:"expected_scope_epochs"`
-		}{j.notice.OperationID, j.notice.RequestID, j.selection, j.healthDecision.ScopeEpochs})
-		return body, "/internal/media/operations/" + url.PathEscape(j.notice.OperationID), err
-	}
-	body, err := json.Marshal(struct {
-		Revision  string                             `json:"expected_dispatch_revision"`
-		Selection json.RawMessage                    `json:"selection"`
-		Epochs    map[string]upstreamhealth.Revision `json:"expected_scope_epochs"`
-	}{j.executor.DispatchRevision(), j.selection, j.healthDecision.ScopeEpochs})
-	return body, "/internal/media/dispatches/" + url.PathEscape(j.notice.DispatchID), err
 }
 
 func (j *managedMediaJob) claim() {
-	body, path, err := j.command()
-	if err != nil || len(j.healthDecision.ScopeEpochs) == 0 {
+	var task *string
+	if j.isQuery() {
+		var history struct {
+			Attempt *struct {
+				Task *string `json:"provider_task_id"`
+			} `json:"attempt"`
+		}
+		if json.Unmarshal(j.executor.OriginalHistory(), &history) != nil || history.Attempt == nil {
+			j.stage = "done"
+			return
+		}
+		task = history.Attempt.Task
+	}
+	candidate, err := upstreamhealth.NewRecoveryCandidate(j.selection, j.executor.RuntimeConfigID(), upstreamhealth.Revision(j.executor.ConfigRevision()), task)
+	if err != nil {
 		j.stage = "done"
 		return
 	}
-	path += "/claim"
-	if j.notice.OperationID != "" {
-		path = strings.TrimSuffix(path, "/claim") + "/query-claim"
-	}
-	j.stage, j.deadline = "claiming", j.runtime.now().Add(time.Duration(j.runtime.settings.Console.TimeoutMS)*time.Millisecond+time.Second)
-	err = j.runtime.call("POST", path, body, func(reply managedMediaPrivateReply) {
+	request := upstreamhealth.ClaimRequest{ClaimRequestID: "media-health:" + j.key, OwnerInstance: j.runtime.owner, ExpectedEpochs: j.healthDecision.ScopeEpochs, Candidate: candidate, CandidateDigest: candidate.Digest()}
+	j.stage, j.deadline = "claiming", j.notice.ExpiresAt
+	err = j.health.ClaimConsumed(request, j.healthTarget, func(result upstreamhealth.GatewayResult[upstreamhealth.RecoveryClaim]) {
 		if j.stage != "claiming" {
 			return
 		}
-		raw, err := managedMediaData(reply)
-		var recovery struct {
-			Receipt struct {
-				Decision string `json:"decision"`
-				Claim    *struct {
-					ID        string                        `json:"claim_id"`
-					Actor     string                        `json:"actor"`
-					ExpiresAt time.Time                     `json:"expires_at"`
-					Scopes    []upstreamhealth.ClaimedScope `json:"scopes"`
-					Request   struct {
-						Owner string `json:"owner_instance"`
-					} `json:"request"`
-				} `json:"claim"`
-			} `json:"receipt"`
-		}
-		if err != nil || json.Unmarshal(raw, &recovery) != nil || recovery.Receipt.Decision != "granted" || recovery.Receipt.Claim == nil ||
-			!managedID(recovery.Receipt.Claim.ID) || recovery.Receipt.Claim.Request.Owner != j.runtime.owner ||
-			recovery.Receipt.Claim.Actor != "service/gateway/"+j.runtime.settings.ProducerID || !recovery.Receipt.Claim.ExpiresAt.After(j.runtime.now()) {
+		if result.State != upstreamhealth.GatewayAcknowledged || result.Value == nil {
 			j.stage = "done"
 			return
 		}
-		claim := recovery.Receipt.Claim
-		if len(claim.Scopes) != len(j.healthDecision.ScopeEpochs) {
+		claim := result.Value
+		expires, err := time.Parse(time.RFC3339Nano, claim.ExpiresAt)
+		if err != nil || !expires.After(j.runtime.now()) {
 			j.stage = "done"
 			return
 		}
+		j.selection, j.claimID = append([]byte(nil), claim.ConsumedSelection...), &claim.ClaimID
 		for _, scope := range claim.Scopes {
-			if epoch, exists := j.healthDecision.ScopeEpochs[scope.ScopeID]; !exists || epoch != scope.Epoch {
-				j.stage = "done"
-				return
-			}
 			j.claimScopes = append(j.claimScopes, scope.ScopeID)
 		}
-		queryAttempt := ""
-		if j.notice.OperationID != "" {
-			queryAttempt = managedMediaQueryAttempt(j.notice.OperationID, j.notice.RequestID)
-		}
-		j.selection, err = j.executor.Selection(j.live, queryAttempt, []string{claim.ID})
-		if err != nil {
-			j.stage = "done"
-			return
-		}
-		j.claimID = &claim.ID
 		j.consume()
 	})
 	if err != nil {
 		j.stage = "done"
 	}
 }
-
 func (j *managedMediaJob) consume() {
-	body, path, err := j.command()
+	if j.stage == "sending" || j.stage == "done" {
+		return
+	}
+	body, err := json.Marshal(struct {
+		Schema       string `json:"schema_version"`
+		ProducerID   string `json:"producer_id"`
+		OperationID  string `json:"operation_id"`
+		RequestID    string `json:"request_id"`
+		TicketDigest string `json:"ticket_digest"`
+		Selection    string `json:"selection"`
+	}{"media-dispatch-observed.v1", j.runtime.settings.ProducerID, j.executor.OperationID(), j.notice.RequestID, j.notice.TicketDigest, string(j.selection)})
 	if err != nil {
 		j.stage = "done"
 		return
 	}
-	path += "/consume"
-	if j.notice.OperationID != "" {
-		path = strings.TrimSuffix(path, "/consume") + "/query"
+	admission := j.notice.Admission
+	prefix := "mf:balance:" + admission.ScopeID
+	mapping := prefix + ":principal:key:"
+	if admission.KeyID != nil {
+		mapping += *admission.KeyID
 	}
-	j.stage, j.deadline = "consuming", j.runtime.now().Add(time.Duration(j.runtime.settings.Console.TimeoutMS)*time.Millisecond+time.Second)
-	err = j.runtime.call("POST", path, body, func(reply managedMediaPrivateReply) {
+	j.stage, j.deadline = "consuming", j.notice.ExpiresAt
+	err = j.runtime.redis.Command([]interface{}{"EVAL", mediaexecution.DispatchConsumeScript, 5, j.notice.TicketKey, prefix + ":control", prefix + ":account:" + admission.AccountID, mapping, j.runtime.settings.PrivateStream, j.notice.TicketDigest, string(body)}, func(reply resp.Value) {
 		if j.stage != "consuming" {
 			return
 		}
-		raw, err := managedMediaData(reply)
-		if err != nil {
-			j.resolveUnknownConsume()
-			return
-		}
-		if j.notice.OperationID == "" {
-			j.request, err = j.executor.PrepareCreate(raw, j.selection, j.live, j.runtime.now())
+		var err error
+		if !j.isQuery() {
+			j.request, err = j.executor.PrepareRedisCreate(reply, j.selection, j.live, j.runtime.now())
 		} else {
-			j.request, err = j.executor.PrepareQuery(raw, j.runtime.now())
-			if err == nil {
-				actual, actualErr := mfjson.Canonicalize(j.request.Selection())
-				expected, expectedErr := mfjson.Canonicalize(j.selection)
-				if actualErr != nil || expectedErr != nil || !bytes.Equal(actual, expected) {
-					err = mediaexecution.ErrIdentity
-				}
-			}
+			j.request, err = j.executor.PrepareRedisQuery(reply, j.selection, j.notice.ExpiresAt, j.runtime.now())
 		}
 		if err != nil {
 			j.stage = "done"
@@ -703,8 +667,6 @@ func (j *managedMediaJob) consume() {
 			j.stage = "done"
 			return
 		}
-		// The one committed permission is already irreversibly taken. Mark the
-		// actual handoff before the host call; every failure remains this attempt.
 		j.stage = "sending"
 		j.deadline = j.runtime.now().Add(time.Duration(j.request.TimeoutMilliseconds())*time.Millisecond + time.Second)
 		err = j.runtime.provider(j.request, func(response mediaexecution.Response) {
@@ -720,18 +682,7 @@ func (j *managedMediaJob) consume() {
 		}
 	})
 	if err != nil {
-		j.resolveUnknownConsume()
-	}
-}
-
-func (j *managedMediaJob) resolveUnknownConsume() {
-	j.executor.ConsumeUnknown()
-	j.stage = "resolving_unknown"
-	j.deadline = j.runtime.now().Add(time.Duration(j.runtime.settings.Console.TimeoutMS)*time.Millisecond + time.Second)
-	// This GET has no grant and is never converted back into permission. Even a
-	// consumed read only resolves the original command's durable state.
-	path := "/internal/media/dispatches/" + url.PathEscape(j.executor.DispatchID())
-	if err := j.runtime.call("GET", path, nil, func(managedMediaPrivateReply) { j.stage = "done" }); err != nil {
+		j.executor.ConsumeUnknown()
 		j.stage = "done"
 	}
 }
@@ -821,9 +772,12 @@ func (j *managedMediaJob) capture(response mediaexecution.Response) {
 // Retrying this wire cannot invoke Consume or the provider again.
 func (j *managedMediaJob) retainObservation(snapshot executionfacts.Snapshot, projection managedMediaProjection) {
 	body, err := json.Marshal(struct {
-		Observation string                 `json:"observation"`
-		Projection  managedMediaProjection `json:"projection"`
-	}{Observation: string(snapshot.Bytes()), Projection: projection})
+		SchemaVersion string                 `json:"schema_version"`
+		ProducerID    string                 `json:"producer_id"`
+		OperationID   string                 `json:"operation_id"`
+		Observation   string                 `json:"observation"`
+		Projection    managedMediaProjection `json:"projection"`
+	}{SchemaVersion: "media-observation.v1", ProducerID: j.runtime.settings.ProducerID, OperationID: j.request.OperationID(), Observation: string(snapshot.Bytes()), Projection: projection})
 	if err != nil || len(body) > managedMediaPrivateLimit {
 		log.Warn("media original FACT exceeds its private report budget")
 		return
@@ -877,7 +831,7 @@ func (j *managedMediaJob) reportHealth(snapshot executionfacts.Snapshot, mediaCo
 	if e.HTTPStatus == nil {
 		request.ObservationPhase = "transport_outcome"
 	}
-	if err = j.health.ReportOutcome(request, func(upstreamhealth.GatewayResult[upstreamhealth.OutcomeReceipt]) {}); err != nil {
+	if err = j.health.ReportOutcome(request, j.healthTarget, func(upstreamhealth.GatewayResult[upstreamhealth.OutcomeReceipt]) {}); err != nil {
 		log.Warn("media health outcome remains unacknowledged")
 	}
 }
@@ -885,31 +839,22 @@ func (j *managedMediaJob) reportHealth(snapshot executionfacts.Snapshot, mediaCo
 func (j *managedMediaJob) report() {
 	j.reportInFlight = true
 	j.retryAt = j.runtime.now().Add(time.Second)
-	j.reportDeadline = j.runtime.now().Add(time.Duration(j.runtime.settings.Console.TimeoutMS)*time.Millisecond + time.Second)
-	path := "/internal/media/operations/" + url.PathEscape(j.request.OperationID()) + "/observations"
+	j.reportDeadline = j.runtime.now().Add(time.Duration(j.runtime.settings.Redis.Timeout)*time.Millisecond + time.Second)
 	report := j.reports[0]
 	wire := append([]byte(nil), report.Wire...)
-	err := j.runtime.call("POST", path, wire, func(reply managedMediaPrivateReply) {
+	err := j.runtime.redis.Command([]interface{}{"XADD", j.runtime.settings.PrivateStream, "*", "message_type", "media_observation", "event", string(wire)}, func(reply resp.Value) {
 		j.reportInFlight = false
-		if data, err := managedMediaData(reply); err == nil && len(j.reports) > 0 && bytes.Equal(j.reports[0].Wire, wire) {
-			var receipt struct {
-				EventID string          `json:"event_id"`
-				Reason  *string         `json:"reason_code"`
-				Fact    json.RawMessage `json:"fact"`
-			}
-			if json.Unmarshal(data, &receipt) != nil || receipt.EventID != report.EventID {
-				return
-			}
-			if j.healthAfterFact != nil && receipt.EventID == j.healthAfterFact.EventID() &&
-				receipt.Reason == nil && len(receipt.Fact) > 0 && !bytes.Equal(receipt.Fact, []byte("null")) {
-				snapshot := *j.healthAfterFact
-				j.healthAfterFact = nil
-				j.reportHealth(snapshot, true)
-			}
-			if receipt.Reason != nil {
-				log.Warn("media original observation committed with a review reason")
-			}
-			j.reports = j.reports[1:]
+		if reply.Error() != nil || reply.Type() != resp.BulkString || !strings.Contains(reply.String(), "-") {
+			return
+		}
+		if len(j.reports) == 0 || !bytes.Equal(j.reports[0].Wire, wire) {
+			return
+		}
+		j.reports = j.reports[1:]
+		if j.healthAfterFact != nil && report.EventID == j.healthAfterFact.EventID() {
+			snapshot := *j.healthAfterFact
+			j.healthAfterFact = nil
+			j.reportHealth(snapshot, true)
 		}
 	})
 	if err != nil {
@@ -927,34 +872,6 @@ func decodeManagedMediaJSON(raw []byte, target interface{}) error {
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	decoder.DisallowUnknownFields()
 	return decoder.Decode(target)
-}
-
-func managedMediaData(reply managedMediaPrivateReply) ([]byte, error) {
-	if reply.Status < 200 || reply.Status >= 300 || !reply.HeadersComplete || !reply.BodyComplete {
-		return nil, errors.New("media Console commit response is unconfirmed")
-	}
-	var envelope struct {
-		Data json.RawMessage `json:"data"`
-	}
-	if err := decodeManagedMediaJSON(reply.Body, &envelope); err != nil || len(envelope.Data) == 0 || bytes.Equal(envelope.Data, []byte("null")) {
-		return nil, errors.New("media Console reply has no committed data")
-	}
-	return append([]byte(nil), envelope.Data...), nil
-}
-
-func (r *managedMediaRuntime) consoleCall(method, path string, body []byte, callback func(managedMediaPrivateReply)) error {
-	if !strings.HasPrefix(path, "/internal/media/") || strings.ContainsAny(path, "\r\n\x00?#") || len(body) > managedMediaPrivateLimit {
-		return errors.New("media Console destination differs from its original registration")
-	}
-	e := r.settings.Console
-	cluster := wrapper.FQDNCluster{FQDN: e.ServiceName, Port: int64(e.ServicePort), Host: e.Host}
-	headers := [][2]string{{":method", method}, {":scheme", "http"}, {":authority", e.Host}, {":path", path},
-		{"authorization", "Bearer " + e.AuthToken}, {"x-modelfusion-gateway-instance", r.owner}, {"content-type", "application/json"}, {"accept", "application/json"}}
-	_, err := proxywasm.DispatchHttpCall(cluster.ClusterName(), headers, body, nil, e.TimeoutMS, func(numHeaders, bodySize, _ int) {
-		response := readHealthGatewayResponse(numHeaders, bodySize, managedMediaPrivateLimit)
-		callback(managedMediaPrivateReply{Status: response.StatusCode, HeadersComplete: response.HeadersComplete, BodyComplete: response.BodyComplete, Body: response.Body})
-	})
-	return err
 }
 
 func (r *managedMediaRuntime) providerCall(request mediaexecution.Request, callback func(mediaexecution.Response)) error {

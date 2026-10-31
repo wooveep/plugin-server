@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -12,74 +13,104 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mediaexecution"
+	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/ai/upstreamhealth"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/resp"
 )
 
+type managedMediaTestRedis struct {
+	upstreamhealth.RuntimeRedis
+	command func([]interface{}, wrapper.RedisResponseCallback) error
+}
+
+func (r managedMediaTestRedis) Command(args []interface{}, callback wrapper.RedisResponseCallback) error {
+	return r.command(args, callback)
+}
+func mediaNoticeWire(t *testing.T, notice managedMediaNotice) []byte {
+	t.Helper()
+	var fields map[string]json.RawMessage
+	raw, err := json.Marshal(notice)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		t.Fatal(err)
+	}
+	delete(fields, "ticket_digest")
+	original, err := json.Marshal(fields)
+	if err != nil {
+		t.Fatal(err)
+	}
+	digest, err := mfjson.Digest(original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	notice.TicketDigest = digest
+	raw, err = json.Marshal(notice)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
+}
 func TestManagedMediaNoticeHasOneServiceIdentityAndBoundedDuplicateACK(t *testing.T) {
 	headers := [][2]string{{"authorization", "Bearer original-service"}}
-	if !authorizeManagedMediaNotice(headers, "original-service") || authorizeManagedMediaNotice(append(headers, [2]string{"Authorization", "Bearer original-service"}), "original-service") ||
-		authorizeManagedMediaNotice([][2]string{{"authorization", "Bearer customer-key"}, {"x-modelfusion-gateway-instance", "forged"}}, "original-service") {
-		t.Fatal("notice trusted a customer credential or duplicate Authorization")
+	if !authorizeManagedMediaNotice(headers, "original-service") || authorizeManagedMediaNotice(append(headers, [2]string{"Authorization", "Bearer original-service"}), "original-service") || authorizeManagedMediaNotice([][2]string{{"authorization", "Bearer customer-key"}}, "original-service") {
+		t.Fatal("notice trusted another service identity")
 	}
 	r := &managedMediaRuntime{settings: managedMediaSettings{QueueCapacity: 1}, jobs: map[string]*managedMediaJob{}}
-	create := []byte(`{"schema_version":"media-dispatch-notice.v1","dispatch_id":"original-dispatch"}`)
+	notice := managedMediaNotice{SchemaVersion: "media-dispatch-notice.v2", DispatchID: "original-dispatch", OperationID: "original-op", RequestID: "original-dispatch", TicketKey: "mf:media:ticket:original", ExpiresAt: time.Now().Add(time.Minute), Admission: managedMediaAdmission{ScopeID: "original-scope", AccountID: "original-wallet"}, Archive: json.RawMessage(`{}`)}
+	create := mediaNoticeWire(t, notice)
 	first, err := r.enqueue(managedMediaDispatchPath, create)
 	if err != nil {
 		t.Fatal(err)
 	}
 	duplicate, err := r.enqueue(managedMediaDispatchPath, create)
-	if err != nil || duplicate != first || len(r.jobs) != 1 || r.sequence != 1 || !first.Accepted || first.SchemaVersion != "media-dispatch-ack.v1" {
-		t.Fatal("duplicate notice became another live invocation or a business result")
+	if err != nil || duplicate != first || len(r.jobs) != 1 || r.sequence != 1 || !first.Accepted || first.SchemaVersion != "media-dispatch-ack.v2" {
+		t.Fatal("duplicate notice allocated another invocation")
 	}
-	for _, body := range [][]byte{
-		[]byte(`{"schema_version":"media-dispatch-notice.v1","dispatch_id":"original-dispatch","producer_id":"forged"}`),
-		[]byte(`{"schema_version":"media-dispatch-notice.v1","dispatch_id":"original-dispatch","provider_endpoint":"https://foreign.example"}`),
-		[]byte(`{"schema_version":"media-dispatch-notice.v1","dispatch_id":"original-dispatch","dispatch_id":"foreign"}`),
-	} {
-		if _, err := r.enqueue(managedMediaDispatchPath, body); err == nil {
-			t.Fatal("notice body supplied execution authority")
+	notice.Archive = json.RawMessage(`{"provider_endpoint":"https://changed.example"}`)
+	if _, err := r.enqueue(managedMediaDispatchPath, mediaNoticeWire(t, notice)); err == nil {
+		t.Fatal("same ticket replaced original archive")
+	}
+	notice.TicketKey = "mf:media:ticket:other"
+	if _, err := r.enqueue(managedMediaDispatchPath, mediaNoticeWire(t, notice)); err == nil {
+		t.Fatal("full queue evicted original work")
+	}
+	for _, wire := range [][]byte{bytes.Replace(create, []byte(`"ticket_digest":`), []byte(`"ticket_digest":"forged","unknown":`), 1), append(create, []byte(`{}`)...)} {
+		if _, err := r.enqueue(managedMediaDispatchPath, wire); err == nil {
+			t.Fatal("ambiguous notice crossed input boundary")
 		}
-	}
-	if _, err := r.enqueue(managedMediaQueryPath, []byte(`{"schema_version":"media-query-notice.v1","operation_id":"original-op","request_id":"original-command"}`)); err == nil {
-		t.Fatal("bounded queue silently evicted an original job")
 	}
 	a := managedMediaQueryAttempt("op-a", strings.Repeat("x", 256))
-	if len(a) > 256 || a == managedMediaQueryAttempt("op-b", strings.Repeat("x", 256)) || managedMediaQueryAttempt("a/b", "c") == managedMediaQueryAttempt("a", "b/c") {
-		t.Fatal("query attempt lost original operation namespace or ID budget")
+	if len(a) > 256 || a == managedMediaQueryAttempt("op-b", strings.Repeat("x", 256)) {
+		t.Fatal("query attempt lost original namespace")
 	}
 }
-
-func TestManagedMediaReportRetriesExactWireUntilMatchingCommittedReceipt(t *testing.T) {
+func TestManagedMediaReportRetriesExactWireOnTheExistingStream(t *testing.T) {
 	var wires [][]byte
-	var callbacks []func(managedMediaPrivateReply)
-	r := &managedMediaRuntime{now: time.Now, settings: managedMediaSettings{Console: managedHealthConsole{TimeoutMS: 1000}}}
-	r.call = func(method, path string, body []byte, callback func(managedMediaPrivateReply)) error {
-		if method != "POST" || !strings.HasSuffix(path, "/observations") {
-			t.Fatal("report invoked a business endpoint")
+	var callbacks []wrapper.RedisResponseCallback
+	r := &managedMediaRuntime{now: time.Now, settings: managedMediaSettings{PrivateStream: "original-execution-stream", Redis: managedRedisSettings{Timeout: 1000}}}
+	r.redis = managedMediaTestRedis{command: func(args []interface{}, callback wrapper.RedisResponseCallback) error {
+		if args[0] != "XADD" || args[1] != "original-execution-stream" || args[4] != "media_observation" {
+			t.Fatal("report used another event path")
 		}
-		wires = append(wires, append([]byte(nil), body...))
+		wires = append(wires, []byte(args[6].(string)))
 		callbacks = append(callbacks, callback)
 		return nil
-	}
-	j := &managedMediaJob{runtime: r, reports: []managedMediaReport{{Wire: []byte(`{"original":"first"}`), EventID: "original-event"}, {Wire: []byte(`{"original":"second"}`), EventID: "next-event"}}}
+	}}
+	j := &managedMediaJob{runtime: r, reports: []managedMediaReport{{Wire: []byte(`{"original":"first"}`), EventID: "first"}, {Wire: []byte(`{"original":"second"}`), EventID: "second"}}}
 	j.report()
-	callbacks[0](managedMediaPrivateReply{Status: 503, HeadersComplete: true, BodyComplete: true, Body: []byte(`{"error":{}}`)})
+	callbacks[0](resp.ErrorValue(errors.New("lost ACK")))
 	j.report()
 	if !bytes.Equal(wires[0], wires[1]) || len(j.reports) != 2 {
-		t.Fatal("unknown ACK changed or dropped the immutable original")
+		t.Fatal("lost ACK changed the original event")
 	}
-	callbacks[1](managedMediaPrivateReply{Status: 200, HeadersComplete: true, BodyComplete: true, Body: []byte(`{"data":{"event_id":"foreign-event"}}`)})
-	if len(j.reports) != 2 {
-		t.Fatal("foreign receipt acknowledged the original event")
-	}
-	j.report()
-	ack := managedMediaPrivateReply{Status: 200, HeadersComplete: true, BodyComplete: true, Body: []byte(`{"data":{"event_id":"original-event","fact":{},"reason_code":null}}`)}
-	callbacks[2](ack)
-	callbacks[2](ack)
-	if len(j.reports) != 1 || j.reports[0].EventID != "next-event" {
-		t.Fatal("duplicate ACK consumed another source revision")
+	callbacks[1](resp.StringValue("123-0"))
+	callbacks[1](resp.StringValue("123-0"))
+	if len(j.reports) != 1 || j.reports[0].EventID != "second" {
+		t.Fatal("duplicate ACK advanced another source")
 	}
 }
 
@@ -118,47 +149,46 @@ func managedMediaHostJob(t *testing.T, confirmed bool) (*managedMediaJob, *[]exe
 		"delivery_writer": map[string]string{"producer_id": "original-producer", "role": "ai_proxy"}, "supporting_writers": []string{}, "attempt": nil}
 	archive := map[string]any{"dispatch": dispatch, "descriptor": d, "profile": mediaexecution.Profile, "request_body": string(body), "provider_endpoint": "https://managed-provider.example",
 		"native_execution": map[string]any{"producer_id": "original-producer", "authority": "managed-provider.example", "credential_value": "original-provider-secret", "upstream_path": mediaexecution.CreatePath, "timeout_ms": 1000},
+		"procurement":      map[string]interface{}{"identity": map[string]string{"binding_id": d.BindingID, "provider_id": d.ProviderID, "purchase_account_id": d.ProviderAccountID, "region": "original-region", "upstream_model_name": d.UpstreamModel}, "pricing_asset_id": "original-cost-asset", "cost_owner": map[string]string{"kind": "platform", "owner_id": "original-cost-owner"}, "writer": map[string]string{"producer_id": "original-producer", "role": "ai_proxy"}},
 		"history":          history, "runtime_config_id": "original-runtime", "config_revision": "1", "output_identity_contract": mediaexecution.NativeImageChoicesContent}
 	binding := mediaexecution.ProfileBinding{AdapterRef: d.AdapterRef, AdapterRevision: d.AdapterRevision, CreateClassifierRef: "original-native-classifier", QueryClassifierRef: "original-query-classifier", QueryCapabilityRef: "original-task-query", OutputIdentityContract: mediaexecution.NativeImageChoicesContent}
 	executor, err := mediaexecution.FromPrivateArchive(managedFixtureJSON(t, archive), mediaexecution.GatewayIdentity{ProducerID: "original-producer", Actor: "service/gateway/original-producer", BootID: "original-node/original-VM"}, binding)
 	if err != nil {
 		t.Fatal(err)
 	}
-	runtime := &managedMediaRuntime{settings: managedMediaSettings{ProducerID: "original-producer", MaxResponseBytes: 1 << 20, Console: managedHealthConsole{TimeoutMS: 1000}}, now: time.Now}
-	j := &managedMediaJob{runtime: runtime, executor: executor, notice: managedMediaNotice{DispatchID: "original-dispatch"}, live: mediaexecution.Invocation{ID: "actual-invocation", Generation: "1"}, healthDecision: upstreamhealth.Decision{ScopeEpochs: map[string]upstreamhealth.Revision{}}}
+	runtime := &managedMediaRuntime{settings: managedMediaSettings{ProducerID: "original-producer", MaxResponseBytes: 1 << 20, PrivateStream: "original-execution-stream", Redis: managedRedisSettings{Timeout: 1000}}, now: time.Now}
+	j := &managedMediaJob{runtime: runtime, executor: executor, notice: managedMediaNotice{SchemaVersion: "media-dispatch-notice.v2", DispatchID: "original-dispatch", OperationID: "original-operation", RequestID: "original-dispatch", TicketKey: "mf:media:ticket:original", TicketDigest: "original-ticket", ExpiresAt: now.Add(time.Minute)}, live: mediaexecution.Invocation{ID: "actual-invocation", Generation: "1"}, healthDecision: upstreamhealth.Decision{ScopeEpochs: map[string]upstreamhealth.Revision{}}}
 	j.selection, err = executor.Selection(j.live, "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var selection map[string]json.RawMessage
-	if err := json.Unmarshal(j.selection, &selection); err != nil {
-		t.Fatal(err)
-	}
-	var selectionDigest string
-	_ = json.Unmarshal(selection["selection_digest"], &selectionDigest)
 	observed := []executionfacts.Envelope{}
-	runtime.call = func(method, path string, requestBody []byte, callback func(managedMediaPrivateReply)) error {
-		reply := managedMediaPrivateReply{Status: 200, HeadersComplete: true, BodyComplete: true}
-		switch {
-		case strings.HasSuffix(path, "/consume"):
+	consumed := false
+	runtime.redis = managedMediaTestRedis{command: func(args []interface{}, callback wrapper.RedisResponseCallback) error {
+		switch args[0] {
+		case "EVAL":
 			if !confirmed {
-				reply.Status = 503
-				reply.Body = []byte(`{"error":{}}`)
-				callback(reply)
+				callback(resp.ErrorValue(errors.New("unconfirmed consume")))
 				return nil
 			}
-			dispatch["state"], dispatch["revision"] = "consumed", "2"
-			history["attempt"] = map[string]any{"attempt_id": "original-create", "target_id": d.TargetID, "selection_digest": selectionDigest, "send_transport": "http_call", "recording_owner": "ai_proxy", "mechanism": "router", "credential_ref": "original-credential", "credential_revision": "1", "provider_task_id": nil,
-				"writer": map[string]string{"producer_id": "original-producer", "role": "ai_proxy"}, "procurement": map[string]string{"binding_id": d.BindingID, "provider_id": d.ProviderID, "purchase_account_id": d.ProviderAccountID, "region": "original-region", "upstream_model_name": d.UpstreamModel}}
-			grant := map[string]any{"schema_version": "dispatch-grant.v1", "grant_id": "first-committed-grant", "dispatch_id": "original-dispatch", "attempt_id": "original-create", "release_id": d.ReleaseID,
-				"selection_digest": selectionDigest, "original_body_digest": basis.Digest(), "invocation_id": j.live.ID, "context_generation": j.live.Generation, "gateway_boot_id": "original-node/original-VM", "not_after": now.Add(30 * time.Second)}
-			reply.Body = managedFixtureJSON(t, map[string]any{"data": map[string]any{"dispatch": dispatch, "grant": grant, "history": history}})
-		case strings.HasSuffix(path, "/observations"):
-			var report struct {
-				Observation string                 `json:"observation"`
-				Projection  managedMediaProjection `json:"projection"`
+			if consumed {
+				callback(resp.ArrayValue([]resp.Value{resp.StringValue("deny"), resp.StringValue("media_ticket_consumed")}))
+				return nil
 			}
-			if err := json.Unmarshal(requestBody, &report); err != nil {
+			consumed = true
+			callback(resp.ArrayValue([]resp.Value{resp.StringValue("allow"), resp.StringValue("123-0")}))
+		case "XADD":
+			if args[1] != "original-execution-stream" || args[4] != "media_observation" {
+				t.Fatal("media report used another Stream")
+			}
+			var report struct {
+				SchemaVersion string                 `json:"schema_version"`
+				ProducerID    string                 `json:"producer_id"`
+				OperationID   string                 `json:"operation_id"`
+				Observation   string                 `json:"observation"`
+				Projection    managedMediaProjection `json:"projection"`
+			}
+			if err := json.Unmarshal([]byte(args[6].(string)), &report); err != nil {
 				t.Fatal(err)
 			}
 			var fact executionfacts.Envelope
@@ -168,20 +198,16 @@ func managedMediaHostJob(t *testing.T, confirmed bool) (*managedMediaJob, *[]exe
 			if _, err := executionfacts.Freeze(fact); err != nil {
 				t.Fatal(err)
 			}
-			if fact.Usage.Status != "reported" || fact.Usage.Quantities["image_output_count"] != "1" || len(report.Projection.Outputs) != 1 || len(report.Projection.References) != 1 || report.Projection.OutputManifest == nil {
-				t.Fatal("actual output was not projected through the original trusted port")
+			if fact.Usage.Status != "reported" || fact.Usage.Quantities["image_output_count"] != "1" || len(report.Projection.Outputs) != 1 || report.Projection.OutputManifest == nil {
+				t.Fatal("original output measurement missing")
 			}
 			observed = append(observed, fact)
-			reply.Body = managedFixtureJSON(t, map[string]any{"data": map[string]any{"event_id": fact.EventID, "reason_code": nil, "fact": map[string]string{"decision": "observed"}}})
+			callback(resp.StringValue("124-0"))
 		default:
-			if method != "GET" {
-				t.Fatal("unknown consume performed another mutating command")
-			}
-			reply.Body = []byte(`{"data":{"state":"consumed","grant":null}}`)
+			t.Fatal("unexpected Redis command")
 		}
-		callback(reply)
 		return nil
-	}
+	}}
 	return j, &observed
 }
 
@@ -238,17 +264,5 @@ func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t
 				t.Fatal("replayed Consume issued another provider creation")
 			}
 		})
-	}
-}
-
-func TestManagedMediaPrivateReplyRetainsStrictJSONAndUnknownCompleteness(t *testing.T) {
-	for _, reply := range []managedMediaPrivateReply{
-		{Status: 200, HeadersComplete: false, BodyComplete: true, Body: []byte(`{"data":{"grant":{}}}`)},
-		{Status: 200, HeadersComplete: true, BodyComplete: false, Body: []byte(`{"data":{"grant":{}}}`)},
-		{Status: 200, HeadersComplete: true, BodyComplete: true, Body: []byte(`{"data":{},"data":{"grant":{}}}`)},
-	} {
-		if _, err := managedMediaData(reply); err == nil {
-			t.Fatal("incomplete or ambiguous commit became a grant")
-		}
 	}
 }

@@ -72,6 +72,13 @@ type archiveWire struct {
 	Revision               string                `json:"config_revision"`
 	OutputIdentityContract string                `json:"output_identity_contract"`
 	Estimation             UsageEstimationPolicy `json:"usage_estimation"`
+	Procurement            procurementWire       `json:"procurement"`
+}
+type procurementWire struct {
+	Identity       json.RawMessage `json:"identity"`
+	Writer         writerWire      `json:"writer"`
+	PricingAssetID json.RawMessage `json:"pricing_asset_id"`
+	CostOwner      json.RawMessage `json:"cost_owner"`
 }
 type writerWire struct {
 	ProducerID string `json:"producer_id"`
@@ -183,6 +190,14 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 		!strings.HasPrefix(gateway.Actor, "service/") || !identity(gateway.Actor) || !identity(gateway.BootID) ||
 		!identity(original.Runtime) || !decimalID(original.Revision) {
 		return nil, ErrUnsupported
+	}
+	origin := original.Procurement
+	procurement, err := object(origin.Identity)
+	descriptor, descriptorError := object(original.Descriptor)
+	var asset string
+	if err != nil || descriptorError != nil || origin.Writer.ProducerID != gateway.ProducerID || origin.Writer.Role != "ai_proxy" ||
+		!identityMatchesProcurement(procurement, descriptor) || json.Unmarshal(origin.PricingAssetID, &asset) != nil || !identity(asset) || len(origin.CostOwner) == 0 {
+		return nil, ErrIdentity
 	}
 	profile, err := registeredProfile(original.Profile)
 	if err != nil {
