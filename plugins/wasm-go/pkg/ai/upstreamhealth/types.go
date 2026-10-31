@@ -256,9 +256,6 @@ func (s *Snapshot) current(now time.Time) ReadStatus {
 	if s == nil || !s.validated || now.IsZero() {
 		return ReadInvalid
 	}
-	if !s.metadata.ValidUntil.After(now) {
-		return ReadExpired
-	}
 	if s.metadata.ObservedAt.After(now) {
 		return ReadFuture
 	}

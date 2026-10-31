@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/test"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/stretchr/testify/require"
@@ -141,34 +143,26 @@ func TestQuotaRuleOnlyMatchedTargetRunsBalanceThenFreshCallAdmission(t *testing.
 				require.Empty(t, host.GetHttpCalloutAttributes())
 				host.CallOnRedisCall(0, quotaDormantBalanceReply(t, tc.generation))
 				require.Empty(t, host.GetRedisCalloutAttributes())
-				calls := host.GetHttpCalloutAttributes()
-				require.Len(t, calls, 1)
-				require.Equal(t, "outbound|80||modelfusion-console.modelfusion-system.svc.cluster.local", calls[0].Upstream)
-				var request executionAdmissionRequest
-				require.NoError(t, json.Unmarshal(calls[0].Body, &request))
-				callID, err := uuid.Parse(request.CallID)
+				require.Empty(t, host.GetHttpCalloutAttributes())
+				origin, err := executionfacts.ReadAdmittedCall(host.GetRequestHeaders(), tc.release, time.Now())
+				require.NoError(t, err)
+				callID, err := uuid.Parse(origin.CallID)
 				require.NoError(t, err)
 				require.Equal(t, uuid.Version(4), callID.Version())
-				require.NotEqual(t, "forged-client-call", request.CallID)
-				require.False(t, seen[request.CallID])
-				seen[request.CallID] = true
-				require.Equal(t, tc.release, request.ReleaseID)
-				require.Equal(t, executionAdmissionCaller.AccountID, request.AccountID)
-				require.Equal(t, executionAdmissionCaller.APIKeyID, request.APIKeyID)
-				require.Equal(t, executionAdmissionCaller.CredentialGeneration, request.CredentialGeneration)
-				require.NotEqual(t, types.ActionContinue, host.GetHttpStreamAction())
-				host.CallOnHttpCall(executionAdmissionResponseHeaders(), executionAdmissionJSON(t, executionAdmissionAllowedReceipt(request)))
+				require.NotEqual(t, "forged-client-call", origin.CallID)
+				require.False(t, seen[origin.CallID])
+				seen[origin.CallID] = true
 				require.Nil(t, host.GetLocalResponse())
 				require.Equal(t, types.ActionContinue, host.GetHttpStreamAction())
 				require.Empty(t, host.GetHttpCalloutAttributes())
 				require.Empty(t, host.GetRedisCalloutAttributes())
 				callHeader, present := executionAdmissionSingleHeader(host.GetRequestHeaders(), executionAdmissionCallHeader)
 				require.True(t, present)
-				require.Equal(t, request.CallID, callHeader)
+				require.Equal(t, origin.CallID, callHeader)
 				require.Zero(t, executionAdmissionHeaderCount(host.GetRequestHeaders(), executionAdmissionAttemptHeader))
 				release, present := executionAdmissionSingleHeader(host.GetRequestHeaders(), executionAdmissionReleaseHeader)
 				require.True(t, present)
-				require.Equal(t, request.ReleaseID, release)
+				require.Equal(t, tc.release, release)
 				host.CompleteHttp()
 			})
 		}

@@ -8,7 +8,7 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 )
 
-// These private headers carry this call's original Console admission result.
+// These private headers carry this call's original quota admission result.
 // Quota clears client values before installing a successfully checked result.
 // Parsing is not authentication: released filter order establishes the source.
 const (
@@ -22,7 +22,9 @@ const (
 )
 
 // AdmittedCall retains a header-stage call identity without inventing an attempt.
-// The original business time comes from the same committed Console call record.
+// Production time comes from the original Redis-admitted gateway call and is
+// persisted through its existing registration event. Validation retains its
+// committed Console admission time.
 type AdmittedCall struct {
 	CallID     string
 	ReleaseID  string

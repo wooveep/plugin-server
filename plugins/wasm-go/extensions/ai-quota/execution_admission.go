@@ -116,8 +116,8 @@ func configureExecutionAdmission(value gjson.Result, cfg *QuotaConfig) error {
 	}
 	var parsed executionAdmissionConfig
 	if err := executionAdmissionDecodeObject([]byte(entry.Raw), []string{
-		"schema_version", "call_identity_source", "release_id", "route_id", "purpose", "combination_key", "profile_id", "console_internal",
-	}, []string{"access_id", "revision"}, &parsed); err != nil {
+		"schema_version", "call_identity_source", "release_id", "route_id", "purpose", "combination_key", "profile_id",
+	}, []string{"access_id", "revision", "console_internal"}, &parsed); err != nil {
 		return fmt.Errorf("execution_admission: %w", err)
 	}
 	if parsed.SchemaVersion != executionAdmissionSchema || !executionAdmissionText(parsed.ReleaseID, 256) ||
@@ -139,6 +139,12 @@ func configureExecutionAdmission(value gjson.Result, cfg *QuotaConfig) error {
 	default:
 		return errors.New("execution_admission purpose is unsupported")
 	}
+	// Production is admitted by the preceding Redis identity/balance read. Older
+	// complete configurations may retain this endpoint; it is never called there.
+	if !entry.Get("console_internal").Exists() && parsed.Purpose == "production" {
+		cfg.ExecutionAdmission = &parsed
+		return nil
+	}
 	var console executionAdmissionConsole
 	if err := executionAdmissionDecodeObject([]byte(entry.Get("console_internal").Raw), []string{
 		"service_name", "service_port", "host", "auth_token", "timeout_ms",
@@ -157,8 +163,8 @@ func configureExecutionAdmission(value gjson.Result, cfg *QuotaConfig) error {
 }
 
 // checkExecutionAdmission is called only after authentication and the existing
-// balance projection allow. It pauses until this single call's controlled
-// Console query succeeds; it never resumes or sends a model request itself.
+// balance projection allow. Production mints its original call locally; only a
+// controlled validation call consumes a Console permit. Neither sends upstream.
 func checkExecutionAdmission(ctx wrapper.HttpContext, cfg QuotaConfig, identity balanceidentity.Snapshot, allowed func()) {
 	if cfg.ExecutionAdmission == nil {
 		if allowed != nil {
@@ -205,6 +211,20 @@ func checkExecutionAdmission(ctx wrapper.HttpContext, cfg QuotaConfig, identity 
 		CombinationKey: parsed.CombinationKey, ProfileID: parsed.ProfileID, Purpose: parsed.Purpose,
 		TenantID: identity.TenantID, RouteID: parsed.RouteID, AccountID: identity.AccountID,
 		PrincipalID: identity.PrincipalID, APIKeyID: identity.APIKeyID, CredentialGeneration: identity.CredentialGeneration,
+	}
+	if parsed.Purpose == "production" {
+		// The existing registration event persists this exact identity/time later.
+		// There is no financial reservation or synchronous Console dependency.
+		at := time.Now().UTC()
+		if err := executionAdmissionInstallHeaders(callID.String(), parsed.ReleaseID,
+			at.Add(5*time.Second).Format(time.RFC3339Nano), at.Format(time.RFC3339Nano)); err != nil {
+			reject(503, "request_headers_unavailable")
+			return
+		}
+		pending.finished = true
+		ctx.SetUserAttribute("execution_admission_reason", "allowed")
+		allowed()
+		return
 	}
 	if err := executionAdmissionInstallHeaders(pending.request.CallID, "", "", ""); err != nil {
 		reject(503, "request_headers_unavailable")

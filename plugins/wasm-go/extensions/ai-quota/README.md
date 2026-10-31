@@ -1,6 +1,6 @@
 # AI Quota：版本化余额只读准入
 
-版本 `2.0.4`，协议 `balance.v1`。仅给受管的新模型调用入口绑定本插件。PostgreSQL原钱包是资金权威；Console是余额/资格投影和维护状态的唯一写者。ai-quota不计价、不预扣、不结算、不写余额或ready；响应正文、缓存命中、错误和迟到用量均不触发第二次配额判断。
+版本 `2.0.5`，协议 `balance.v1`。仅给受管的新模型调用入口绑定本插件。PostgreSQL原钱包是资金权威；Console是余额/资格投影和维护状态的唯一写者。ai-quota不计价、不预扣、不结算、不写余额或ready；响应正文、缓存命中、错误和迟到用量均不触发第二次配额判断。
 
 ## 配置作用域
 
@@ -21,19 +21,11 @@
 
 ## 逐调用托管准入
 
-`execution_admission` 使用固定 `schema_version: managed-execution-admission.v1`，在认证成功、版本化余额检查允许之后，为本次调用向 `POST /internal/execution-admission` 查询当前许可。它不替代余额检查，不预扣资金，也不跨调用缓存许可。
+`execution_admission` 使用 `schema_version: managed-execution-admission.v1`。认证成功且 Redis 余额/资格检查允许后，production 在网关本地生成调用 UUID、原业务时间和五秒发送窗口，直接继续到上游处理。它不向 Console 查询，不预扣资金，不把客户端的 call/attempt/准入头当作权限。ai-proxy 通过既有事件 Stream 登记同一调用身份、原始时间和实际尝试，后台据此结算、记账并更新 Redis。后台停止时允许事件积压、余额更新延迟和随后结算出现负余额；Redis 已知的零或负余额仍拒绝新请求。
 
-| 字段 | 来源与约束 |
-| --- | --- |
-| `release_id`、`route_id` | 本次冻结发布与原路由身份 |
-| `purpose` | `validation` 或 `production` |
-| `combination_key`、`profile_id` | 发布冻结的精确支持组合与受控操作 profile |
-| `access_id`、`revision` | validation 使用该候选许可及规范正整数字符串版本；production 省略或显式为 null |
-| `console_internal` | 完整的受控 Console 连接对象，包含 `service_name`、`service_port`、`host`、`auth_token`、`timeout_ms`；凭据由发布注入 |
+规则内保留冻结的 `release_id`、`route_id`、`purpose`、`combination_key` 和 `profile_id`。production 的 `access_id`、`revision` 缺省或为 null，不需要 `console_internal`。旧完整配置保留该字段时仍校验其结构，但 production 不调用它。
 
-该对象必须在本条有效规则内完整给出，不能继承其他目标的许可。请求中的 `access_id`、`revision` 始终明确发送，包括 production 的 null。caller 的 tenant/principal/account/api_key/credential_generation 来自 key-auth 安装的原身份，release/profile/组合来自配置，客户端 body/header 不能选择或授予它们。
-
-插件清除客户端 call/attempt/准入字段，为本次检查生成 call_id，核对响应回显的完整身份与发布范围、允许结果、当前 revision 和 UTC 有效期。只有受控响应完整且尚有效，才安装本调用的 release/截止时间并继续；拒绝返回 403，依赖失败、超时、残缺/矛盾响应或过期许可返回 503。重复及迟到回调不发起第二个调用。
+仅 validation 使用完整 `console_internal` 连接对象和原许可 `access_id/revision`，向 `POST /internal/execution-admission` 查询受控许可，核对完整回显、原业务时间和有效期。该测试权限不能用于 production。依赖失败或不完整响应保持拒绝；重复及迟到回调不创建第二个调用。
 
 ## 路由范围与维护
 

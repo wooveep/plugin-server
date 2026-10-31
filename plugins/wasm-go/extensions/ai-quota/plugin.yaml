@@ -27,4 +27,4 @@ spec:
       path_scope: bound_target
   phase: UNSPECIFIED_PHASE
   priority: 280
-  url: http://higress-plugin-server.higress-system.svc/plugins/ai-quota/2.0.4/plugin.wasm
+  url: http://higress-plugin-server.higress-system.svc/plugins/ai-quota/2.0.5/plugin.wasm

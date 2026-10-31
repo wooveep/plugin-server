@@ -74,9 +74,9 @@ func decodeHash(fields []string, config Config, now time.Time) ReadResult {
 	if err != nil || digest != wire.StateDigest {
 		return ReadResult{Status: ReadInvalid}
 	}
-	if !validUntil.After(now) {
-		return ReadResult{Status: ReadExpired}
-	}
+	// This is persistent control state, not a lease from a live Console process.
+	// Its age is observable through valid_until; only an explicit new revision
+	// changes sending eligibility. Structural and revision checks still apply.
 	if observed.After(now) {
 		return ReadResult{Status: ReadFuture}
 	}
