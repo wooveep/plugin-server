@@ -410,7 +410,7 @@ func managedTextUntried(s *managedExecutionState, members []managedHealthMember)
 // never become a new send merely because a retry pattern would match.
 func continueManagedText(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome, headers [][2]string, body []byte, finish func()) bool {
 	call := s.text
-	if call == nil || managedTextStopped(s) || outcome.HTTPStatus == nil || *outcome.HTTPStatus < 400 || !outcome.HeadersComplete || !outcome.BodyComplete || outcome.ExecutionResult != "failed" || outcome.Acceptance == "accepted" || outcome.ProviderTaskID != "" || !managedTextFailureClassified(s, outcome, headers, body) || len(call.attempts) >= int(call.maxAttempts) || !time.Now().Before(s.admissionDeadline) {
+	if call == nil || managedTextStopped(s) || outcome.HTTPStatus == nil || *outcome.HTTPStatus < 400 || !outcome.HeadersComplete || !outcome.BodyComplete || outcome.ExecutionResult != "failed" || outcome.Acceptance == "accepted" || outcome.ProviderTaskID != "" || !managedTextFailureClassified(s, outcome, headers, body) || len(call.attempts) >= int(call.maxAttempts) || !s.admissionCurrent(time.Now()) {
 		return false
 	}
 	policy := s.config.settings.TextExecution
@@ -489,7 +489,7 @@ func tryManagedTextFallback(ctx wrapper.HttpContext, previous *managedExecutionS
 		if call.closed || call.finalStarted {
 			return
 		}
-		if len(candidates) == 0 || len(call.attempts) >= int(call.maxAttempts) || !time.Now().Before(previous.admissionDeadline) {
+		if len(candidates) == 0 || len(call.attempts) >= int(call.maxAttempts) || !previous.admissionCurrent(time.Now()) {
 			call.current = previous
 			finish()
 			return

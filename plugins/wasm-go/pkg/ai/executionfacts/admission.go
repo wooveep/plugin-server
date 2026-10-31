@@ -46,14 +46,22 @@ func ReadAdmittedCall(headers [][2]string, releaseID string, at time.Time) (Admi
 			values[name] = header[1]
 		}
 	}
-	deadlineRaw, occurredRaw := values[AdmissionDeadlineHeader], values[AdmissionOccurredHeader]
-	deadline, deadlineErr := time.Parse(time.RFC3339Nano, deadlineRaw)
+	occurredRaw := values[AdmissionOccurredHeader]
 	occurred, occurredErr := time.Parse(time.RFC3339Nano, occurredRaw)
 	if !balanceidentity.ValidID(values[AdmissionCallHeader]) || !id(releaseID) ||
-		values[AdmissionReleaseHeader] != releaseID || deadlineErr != nil || occurredErr != nil ||
-		!strings.HasSuffix(deadlineRaw, "Z") || !strings.HasSuffix(occurredRaw, "Z") ||
-		occurred.Year() < 1 || !at.Before(deadline) || occurred.After(at) || !occurred.Before(deadline) {
+		values[AdmissionReleaseHeader] != releaseID || occurredErr != nil ||
+		!strings.HasSuffix(occurredRaw, "Z") || occurred.Year() < 1 || occurred.After(at) {
 		return AdmittedCall{}, errors.New("original current call admission is missing or invalid")
+	}
+	// Redis-admitted production calls retain identity and business time for this
+	// HTTP context. Only an explicit bounded permit carries an expiry.
+	var deadline time.Time
+	if raw, bounded := values[AdmissionDeadlineHeader]; bounded {
+		var err error
+		deadline, err = time.Parse(time.RFC3339Nano, raw)
+		if err != nil || !strings.HasSuffix(raw, "Z") || !at.Before(deadline) || !occurred.Before(deadline) {
+			return AdmittedCall{}, errors.New("original bounded call admission is expired or invalid")
+		}
 	}
 	return AdmittedCall{CallID: values[AdmissionCallHeader], ReleaseID: releaseID,
 		OccurredAt: occurredRaw, ValidUntil: deadline}, nil

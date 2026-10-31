@@ -302,3 +302,5 @@ or cache bypass until Console materializes memory-aware replay records.
 For managed native identity, `capture_body_basis: false` consumes and validates the original basis before auxiliary lookup or injection; a missing or mismatched basis bypasses memory without legacy fallback. Trusted publication assigns capture to the earliest actual history/memory rewriter using exact artifact phase/order, not incoming header presence. A later mapper must explicitly consume that basis. Independent legacy memory mode keeps its existing behavior.
 
 Managed consume validation uses the existing 100 MiB runtime HTTP limit after history injection. It retains the original basis unchanged and applies the shared strict parser without imposing the single canonical document byte budget on the combined conversation.
+
+普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。

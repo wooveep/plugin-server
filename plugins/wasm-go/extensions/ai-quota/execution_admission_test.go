@@ -271,7 +271,7 @@ func TestProductionAdmissionMintsOriginalCallWithoutConsole(t *testing.T) {
 			}
 			callID, err := uuid.Parse(origin.CallID)
 			occurred, timeErr := time.Parse(time.RFC3339Nano, origin.OccurredAt)
-			if err != nil || callID.Version() != 4 || timeErr != nil || occurred.Before(before) || !origin.ValidUntil.Equal(occurred.Add(5*time.Second)) {
+			if err != nil || callID.Version() != 4 || timeErr != nil || occurred.Before(before) || !origin.ValidUntil.IsZero() {
 				t.Fatal("production did not retain its original local admission identity and time")
 			}
 			if executionAdmissionHeaderCount(h.host.GetCurrentRequestHeaders(h.id), executionAdmissionAttemptHeader) != 0 {

@@ -2652,3 +2652,5 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 ```
 
 Delivered health controls persist until an explicit update. `valid_until` is an observation freshness watermark, not a sending lease from Console. A Console outage does not expire an otherwise eligible target. Explicit credential disablement, permanent blocks, cooldowns, and revision conflicts still deny sends.
+
+Ordinary production retains the original Redis-admitted call identity and business time without a temporary Console permit deadline. Upload, send and retry keep their existing budgets. Explicit bounded validation/internal permits retain their expiry; no renewal or extension path is introduced.

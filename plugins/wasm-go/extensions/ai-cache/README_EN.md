@@ -245,3 +245,5 @@ On cache replay, `ai-cache` sets trusted gateway facts such as
 `upstream_invoked=true`. These facts are not added to the user-visible OpenAI
 response body, and user-supplied request or response body fields cannot control
 them.
+
+Ordinary production retains the original Redis-admitted call identity and business time without a temporary Console permit deadline. Upload, send and retry keep their existing budgets. Explicit bounded validation/internal permits retain their expiry; no renewal or extension path is introduced.

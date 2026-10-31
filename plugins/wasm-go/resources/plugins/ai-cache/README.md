@@ -4,7 +4,7 @@ keywords: [higress,ai cache]
 description: ai-cache 薄网关缓存插件配置参考
 ---
 
-> 配置契约版本：`2.0.4`
+> 配置契约版本：`2.0.5`
 
 ## 完整冻结凭据目录
 
@@ -187,3 +187,5 @@ policy、management API 和 authorization boundary。
 缓存回放时，`ai-cache` 会设置可信网关事实，例如 `upstream_invoked=false`，供 `ai-billing`
 消费。真实上游 provider 调用会发出 `upstream_invoked=true`。这些事实不会加入用户可见的
 OpenAI 响应体，用户请求或响应体中的同名字段也不能控制它们。
+
+普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。

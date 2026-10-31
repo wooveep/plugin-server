@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/config"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
@@ -123,7 +122,6 @@ func managedRequestHeaders(t *testing.T, original []byte) [][2]string {
 	headers = append(headers,
 		[2]string{managedCallHeader, "50000000-0000-0000-0000-000000000001"},
 		[2]string{managedAdmissionReleaseHeader, "release-1"},
-		[2]string{managedAdmissionDeadlineHeader, time.Now().UTC().Add(5 * time.Second).Format(time.RFC3339Nano)},
 		[2]string{managedAdmissionOccurredHeader, "2026-10-27T10:00:00Z"})
 	headers = append(headers, balanceidentity.Snapshot{
 		AccountID: "10000000-0000-0000-0000-000000000001", APIKeyID: "20000000-0000-0000-0000-000000000001", CredentialGeneration: "9007199254740993",
