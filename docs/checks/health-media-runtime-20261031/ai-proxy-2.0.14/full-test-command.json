@@ -1,0 +1,23 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-p=2",
+    "-count=1",
+    "-timeout=15m",
+    "-v"
+  ],
+  "cwd": "plugins/wasm-go/extensions/ai-proxy",
+  "environment": {
+    "WASM_FILE_PATH": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/build/plugins/ai-proxy/2.0.14/plugin.wasm",
+    "GOMAXPROCS": "2"
+  },
+  "log": "proxy-2.0.14-full.log",
+  "source_commit": "fef6f9e1ed9f560ac41761e09fe6a03fca33c389",
+  "exit_code": 0,
+  "log_sha256": "511cb762c026853b03b08a0eaf167feb4f548b6ebeaf5d6400c60b7e6286fccb",
+  "log_size_bytes": 4555599,
+  "passed_top_level": 321,
+  "passed_including_subcases": 2199
+}

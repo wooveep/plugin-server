@@ -1,0 +1,11 @@
+{
+  "helm_revision": 115,
+  "ecds_name": "extensions.istio.io/wasmplugin/higress-system.modelfusion-console-api-media-notices",
+  "actual_configuration_matches_complete_k8s_default_config": true,
+  "actual_configuration_sha256": "b8a89fd4995651d263c99249420dbb3b7c25c0052bb6928c35a16c21085d2b3b",
+  "actual_loaded_wasm_sha256": "7edf030c784bd9e9bca294fff9393d230695a2c1403bbc46ff2312cf0a643e3b",
+  "actual_loaded_filename": "/var/lib/istio/data/b16f103db014cc55ef643d8c1eb043f3cb0c1e02d3c781cfd12a4ce867bf4486/7edf030c784bd9e9bca294fff9393d230695a2c1403bbc46ff2312cf0a643e3b.wasm",
+  "private_stream": "mf:execution:20261031-0be53d1e",
+  "producer_id": "e1-higress-system-ai-proxy-9e270e6f991e",
+  "old_release_instances_remaining": 0
+}

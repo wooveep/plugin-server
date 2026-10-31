@@ -1,0 +1,79 @@
+{
+  "source_commit": "fef6f9e1ed9f560ac41761e09fe6a03fca33c389",
+  "manifest_sha256": "f59d8f7d16b0e5068c4a066635952943a353640fd8b533074f0b317136d8d33a",
+  "manifest": {
+    "archive_digest": "sha256:aeadbad3244956516f00955b8ad6383b438a4ab366bfa6364dcdcee857d98dd2",
+    "artifact_id": "5c04bfd0-50db-46be-a282-11dcdb6238a3",
+    "canonicalization_version": "artifact-json.v1",
+    "config_schema_path": "config.schema.json",
+    "content_digest": "sha256:9ef4ad113a8d6d21e6fbacde66e0ece54bd82a76d6535432b23d6d13e478a6f4",
+    "created_at": "2026-10-31T10:48:13.401414Z",
+    "created_by": "plugin-server-source-release",
+    "defaults_path": "defaults.json",
+    "documentation_paths": [
+      "docs/README.md",
+      "docs/README_EN.md"
+    ],
+    "download_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.14/plugin.wasm",
+    "environment_refs": [],
+    "files": [
+      {
+        "path": "config.schema.json",
+        "role": "config_schema",
+        "sha256": "sha256:cdb83f2d9013b77afb92862158311b56b6544d5261951bec88f60b647028b0f0",
+        "size_bytes": "193767"
+      },
+      {
+        "path": "defaults.json",
+        "role": "defaults",
+        "sha256": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "size_bytes": "2"
+      },
+      {
+        "path": "docs/README.md",
+        "role": "documentation",
+        "sha256": "sha256:ad3555f40204bcde18b99798aebba5e9a7d5094726e6e39d7771b4f2ac396e91",
+        "size_bytes": "92363"
+      },
+      {
+        "path": "docs/README_EN.md",
+        "role": "documentation",
+        "sha256": "sha256:7e13130c37ca59775df69889abc98ad1c3bb37e57858456547f53516297c70db",
+        "size_bytes": "91569"
+      },
+      {
+        "path": "plugin.wasm",
+        "role": "wasm",
+        "sha256": "sha256:7edf030c784bd9e9bca294fff9393d230695a2c1403bbc46ff2312cf0a643e3b",
+        "size_bytes": "11555598"
+      },
+      {
+        "path": "route.schema.json",
+        "role": "config_schema",
+        "sha256": "sha256:45c2358f02892c765630abdd2708aba2afe9adb3ff2819f461d5d6673e873fcf",
+        "size_bytes": "79735"
+      }
+    ],
+    "plugin_name": "ai-proxy",
+    "plugin_version": "2.0.14",
+    "schema_version": "artifact.v1",
+    "source": {
+      "build_inputs_digest": "sha256:d1a9f51bc864c250dae8ad11c5022b7116d40dbf5ce6dd9bc8599102425bf16b",
+      "commit": "fef6f9e1ed9f560ac41761e09fe6a03fca33c389",
+      "dirty_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "local_build",
+      "repo": "https://github.com/wooveep/plugin-server.git",
+      "verification": "verified"
+    },
+    "wasm_path": "plugin.wasm"
+  },
+  "verification_files": {
+    "build-receipt.json": "9cfdaf43e609998392d481178bc7838c970f2d5b22a1a02a1520484ddde527b6",
+    "full-test-command.json": "0cf0be624c844b470611fbc96dce1946ce1e7c05ac77ba55faf10d1fbbfd763e",
+    "helm112-store-verification.json": "8144f5248e6f1ae7660fc867c1c138d9c9d9a125ed653691cfdc14f66b3468c2",
+    "helm115-global-worker-loaded.json": "686faf86d21a8dbf5c3445ead107de9ceea6441c648da62a74f6b9732ca8e21d",
+    "package-review.json": "f384e225da53a228d3fa3a6893c1682937d30f1a647cebb514fa1d680fae39dc",
+    "qualification.json": "409d8d1b05870cce0fc6d01b2c7ff5e0e162915f1487ec78216abc737fdbbdae",
+    "server-image-build.json": "ba14e99b9d67b93a48271bfff6bd19e39fd79e414ddcd21eb659b58b17d5d033"
+  }
+}

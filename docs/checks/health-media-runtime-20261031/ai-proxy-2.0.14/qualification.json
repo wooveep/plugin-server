@@ -1,0 +1,11 @@
+{
+  "plugin_name": "ai-proxy",
+  "plugin_version": "2.0.14",
+  "source_commit": "fef6f9e1ed9f560ac41761e09fe6a03fca33c389",
+  "source_inputs_verified": 534,
+  "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+  "content_digest": "sha256:9ef4ad113a8d6d21e6fbacde66e0ece54bd82a76d6535432b23d6d13e478a6f4",
+  "source_digest": "sha256:e37f35924968ba8f8167b255fa767ad6214c6a0d84330315c4a8c94007cfcee6",
+  "wasm_digest": "sha256:7edf030c784bd9e9bca294fff9393d230695a2c1403bbc46ff2312cf0a643e3b",
+  "archive_digest": "sha256:aeadbad3244956516f00955b8ad6383b438a4ab366bfa6364dcdcee857d98dd2"
+}

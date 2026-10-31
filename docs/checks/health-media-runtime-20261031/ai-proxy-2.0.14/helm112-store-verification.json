@@ -1,0 +1,15 @@
+{
+  "artifacts": 86,
+  "http_files_verified": 863,
+  "bytes_verified": 960075722,
+  "inventory_digest": "sha256:a397e99dee1b24db012cbf31b7468c71ff23e624ee5cb91fc675f0a15a5db50b",
+  "elapsed_seconds": 4.612,
+  "all_http_200_and_sha256_match": true,
+  "pvc_uid": "f49fed83-432d-4017-88eb-7f9dd5d6625a",
+  "helm_revision": 112,
+  "pod": "higress-plugin-server-5f96bcfd79-wqp24",
+  "pod_uid": "e5eb5382-0c09-47e2-8ff7-1275ee5424f8",
+  "image_ids": [
+    "registry.lc.wooveep.com:9980/modelfusion/plugin-server@sha256:3da81cd6a46d79ea508714c5c322758da7b13a70f628ca873fc18b9f8fb96356"
+  ]
+}
