@@ -45,7 +45,7 @@ type managedMediaProfile struct {
 	OutputIdentityContract string `json:"output_identity_contract"`
 }
 
-// This global control destination is deployment-owned. Original target transport,
+// This global Redis/Stream registration is deployment-owned. Original target transport,
 // credential and all accounting identity still come from the frozen REL archive.
 type managedMediaSettings struct {
 	ProducerID       string                `json:"producer_id"`
@@ -143,7 +143,7 @@ type managedMediaJob struct {
 	providerCallbackSeen           bool
 }
 
-// Both fields are private originals from Console, never notification inputs.
+// These fields are private originals carried by the authenticated frozen notice.
 // generation_observation is the complete committed FACT predecessor, not a
 // reconstructed revision counter. health_target resolves the actual operation.
 type managedMediaArchive struct {
@@ -259,9 +259,14 @@ func configureManagedMedia(value gjson.Result) error {
 	if owner == "" {
 		return errors.New("managed_media requires the original host node and VM startup")
 	}
-	if !managedID(settings.ServiceAuthToken) || !managedID(settings.PrivateStream) || !managedID(settings.Redis.ServiceName) ||
+	if len(settings.ServiceAuthToken) == 0 || len(settings.ServiceAuthToken) > 8192 || !managedID(settings.PrivateStream) || !managedID(settings.Redis.ServiceName) ||
 		settings.Redis.ServicePort < 1 || settings.Redis.ServicePort > 65535 || settings.Redis.Timeout < 1 || settings.Redis.Timeout > 60000 || settings.Redis.Database < 0 {
 		return errors.New("managed_media requires existing Redis, Stream and service authentication")
+	}
+	for _, character := range settings.ServiceAuthToken {
+		if character < 33 || character > 126 {
+			return errors.New("managed_media service authentication is not a valid Bearer credential")
+		}
 	}
 	profiles := make(map[string]mediaexecution.ProfileBinding, len(settings.Profiles))
 	for _, profile := range settings.Profiles {
