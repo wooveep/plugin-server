@@ -1,0 +1,22 @@
+{
+  "operation_id": "01a192dc-8fd0-7550-abc7-81600359300d",
+  "call_id": "01a192dc-8fd0-7550-abc7-8158c8c972a6",
+  "first_query_http_status": 429,
+  "provider_creates_before_fix": 1,
+  "provider_queries_before_fix": 1,
+  "console_outage_test_passed": false,
+  "observation_deadline": "2026-10-31T16:58:11.248203Z",
+  "query_deadline": "2026-11-01T16:48:11.248203Z",
+  "captured_native_redis_lookup": "ready",
+  "captured_native_health_decision": "recovery_required",
+  "recovery_scopes": 1,
+  "old_candidate_error": "registration profile requires frozen text selection",
+  "corrected_candidate_error": null,
+  "private_inputs_sha256": {
+    "original-query-wait-barrier.private.json": "4144057259b4ab114624edfd4f8322a6a8a4fd7e0111fd7d4eb4c6925c6a2a6b",
+    "original-health-redis-hash.private.json": "10f8bd9bdb43b8a467cfa4468d5d5328ca97e6aa7d8ff08c6f441130299f7523",
+    "receiver-during-offline.private.json": "78106f3421f835f18b559bf35cbc36e9fe4226ab36a4169e1608f42ef3a05436",
+    "execution-timeline.json": "7f340cc0951d247e9d2d29ef95c301820e4dc632a77ccdc5f907052deca76110"
+  },
+  "private_content_published": false
+}

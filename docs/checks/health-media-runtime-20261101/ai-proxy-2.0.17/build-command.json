@@ -1,0 +1,15 @@
+{
+  "command": [
+    "make",
+    "build-plugin",
+    "PLUGIN=ai-proxy"
+  ],
+  "cwd": ".",
+  "environment": {},
+  "source_commit": "745b97588683622bf080abc2ca37d0a30da30c3a",
+  "started_at": "2026-10-31T17:07:25.475202+00:00",
+  "completed_at": "2026-10-31T17:07:26.108602+00:00",
+  "exit_code": 0,
+  "log_sha256": "d673ee851a410060e5a9a7d0b1a0b0736c805ee7583701bb692a923a0bf5a571",
+  "log_size_bytes": 346
+}

@@ -1,0 +1,64 @@
+[
+  {
+    "name": "red-media-boundary",
+    "command": [
+      "go",
+      "test",
+      "-overlay",
+      "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/.local/health-runtime-20261031/recovery-2.0.17/before-overlay.json",
+      "./pkg/ai/mediaexecution",
+      "-run",
+      "^TestMediaRecoveryPreservesOriginalCreateAndTaskQuery$",
+      "-count=1",
+      "-v"
+    ],
+    "cwd": "plugins/wasm-go",
+    "started_at": "2026-10-31T17:06:23.438281+00:00",
+    "completed_at": "2026-10-31T17:06:23.721411+00:00",
+    "environment": {},
+    "exit_code": 1,
+    "expected_exit_code": 1,
+    "log_sha256": "c66014179e0e9b4dabd1a64e846a7292b6efe19c263fc5bfbfb92e6bf9430bfd",
+    "log_size_bytes": 3133
+  },
+  {
+    "name": "green-real-redis",
+    "command": [
+      "go",
+      "test",
+      "./pkg/ai/mediaexecution",
+      "./pkg/ai/upstreamhealth",
+      "./pkg/ai/executionfacts",
+      "-count=1",
+      "-v"
+    ],
+    "cwd": "plugins/wasm-go",
+    "started_at": "2026-10-31T17:06:23.721606+00:00",
+    "completed_at": "2026-10-31T17:06:26.189467+00:00",
+    "environment": {
+      "MODELFUSION_HEALTH_TEST_REDIS_ADDR": "127.0.0.1:32777",
+      "MEDIA_EXECUTION_TEST_REDIS_URL": "redis://127.0.0.1:32777"
+    },
+    "exit_code": 0,
+    "expected_exit_code": 0,
+    "log_sha256": "9564ba803a0b4fdcaab526b36d57af6f82005d8ac3dad8ebe87f0d77882c955d",
+    "log_size_bytes": 47027
+  },
+  {
+    "name": "green-original-native-notice",
+    "command": [
+      "go",
+      "run",
+      "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/.local/health-runtime-20261031/probe-native-429.go",
+      "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/.local/health-runtime-20261031/native-429-probe-input.private.json"
+    ],
+    "cwd": "plugins/wasm-go",
+    "started_at": "2026-10-31T17:06:26.189696+00:00",
+    "completed_at": "2026-10-31T17:06:26.238173+00:00",
+    "environment": {},
+    "exit_code": 0,
+    "expected_exit_code": 0,
+    "log_sha256": "e9dbb8b050d99b1b34a0627cfe1893017a18397e898921953d97b164141d7d5e",
+    "log_size_bytes": 152
+  }
+]
