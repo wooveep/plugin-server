@@ -2,6 +2,8 @@
 
 日期：2026-10-31。状态：媒体契约修复、Go/编译后 Wasm 回归、原持久化制品库入库及 HTTP 下载核对已完成；MF 注册、真实网关初始化和目标路由验收仍由 MF/DEP 责任聊天执行。
 
+后继协作更新：用户已明确授权同步本页判断与交付证据，并将 MF/SDK/Web 后续修复转回主执行聊天；root 现在按共享文件责任串行接续，对方已收到同步。以下“不修改 MF/不升级 Helm”等安排保留为插件交付阶段的历史边界。后继 Helm101 的 55 类目录消费与 Helm102 的 ART-05 已完成，分别以[目录消费验收](../../../ocloudmodelfusion/docs/checks/2026-10-31-plugin-directory-consumer.md)和[原生保留删除验收](2026-10-31-artifact-retention-native.md)为准；完整媒体业务、账务及原79卡目标继续。
+
 ## 契约判断
 
 1. `usage_estimation` 属于 Console 保存的原始媒体执行策略。`FrozenMediaInput`、`FrozenMediaIntent` 已持有它，并在构造时按媒体 profile 校验；`ai-proxy.managedSettings` 没有使用它生成真实请求或真实 usage。MF 源生成器应保留 Console frozen binding 中的策略，生成 `managed_execution` 时不下发这个字段。插件仍拒绝未知字段，不通过增加未消费字段或放宽解码来消除初始化错误。
