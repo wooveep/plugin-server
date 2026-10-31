@@ -1,11 +1,10 @@
-<!-- Generated package documentation from extensions/ai-quota/README.md. -->
 # AI Quota：版本化余额只读准入
 
-版本 `2.0.5`，协议 `balance.v1`。仅给受管的新模型调用入口绑定本插件。PostgreSQL原钱包是资金权威；Console是余额/资格投影和维护状态的唯一写者。ai-quota不计价、不预扣、不结算、不写余额或ready；响应正文、缓存命中、错误和迟到用量均不触发第二次配额判断。
+版本 `2.0.6`，协议 `balance.v1`。仅给受管的新模型调用入口绑定本插件。PostgreSQL原钱包是资金权威；Console是余额/资格投影和维护状态的唯一写者。ai-quota不计价、不预扣、不结算、不写余额或ready；响应正文、缓存命中、错误和迟到用量均不触发第二次配额判断。
 
 ## 配置作用域
 
-每份独立生效的余额配置必须有 `balance_scope_id`、`cache_generation`、`projection_schema: balance.v1` 和完整 `redis`。字段以 [资源 schema](spec.yaml) 为准；两个 UUID 必须来自 Console 本次受控发布，不能使用示例值代表真实生效配置。`missing_balance_policy` 只接受 `deny`。旧用户名余额 key、`balance_key_template`、`tenant_header`、`consumer_header`、`quota_scope` 和 `provider` 配置已退役；旧裸整数 GET 不会作为新协议后备。
+每份独立生效的余额配置必须有 `balance_scope_id`、`cache_generation`、`projection_schema: balance.v1` 和完整 `redis`。字段以 [资源 schema](../../resources/plugins/ai-quota/spec.yaml) 为准；两个 UUID 必须来自 Console 本次受控发布，不能使用示例值代表真实生效配置。`missing_balance_policy` 只接受 `deny`。旧用户名余额 key、`balance_key_template`、`tenant_header`、`consumer_header`、`quota_scope` 和 `provider` 配置已退役；旧裸整数 GET 不会作为新协议后备。
 
 支持两种配置形态：
 
@@ -36,4 +35,6 @@
 
 所有三类key使用 `mf:balance:{scope}:...` 同一hash slot。普通资金通知不能为缺失记录开户或解除冲突。维护时拒绝新调用；恢复开放由Console/REL/DEP完成真实配置和受控请求观察，插件没有维护或ready写入口。
 
-本批源码与原生/模拟宿主结果、Wasm构建、实际K3S加载必须分别记录。参见[实施计划](../../../docs/plans/2026-10-27-versioned-balance-admission.md)；未取得实际联合证据前，不把本地Redis或模拟宿主称为生产链通过。
+本批源码与原生/模拟宿主结果、Wasm构建、实际K3S加载必须分别记录。参见[实施计划](../../docs/plans/2026-10-27-versioned-balance-admission.md)；未取得实际联合证据前，不把本地Redis或模拟宿主称为生产链通过。
+
+生产托管路由还须在同一次 Redis 原子读中核对当前 Key 的 `authorized_routes`。空列表返回 `route_authorization_missing`，缺失或损坏的列表返回 `projection_unready`；不会以同用户另一把 Key 的权限代替。授权变更与原 identity revision/outbox 同事务提交，映射刷新不写资金。账户 key 使用稳定的 `mf:balance:{scope}:account:<id>`，当前代际由 control/account/mapping 一致性校验；缓存恢复无需重发路由，旧代写者仍被拒绝。配置中的 `cache_generation` 保留冻结来源标识，不作为永久的运行地址或就绪心跳。
