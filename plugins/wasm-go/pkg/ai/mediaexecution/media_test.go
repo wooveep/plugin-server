@@ -79,6 +79,13 @@ func original(t *testing.T) fixture {
 		"request_body": string(f.body), "provider_endpoint": "https://vendor.example", "history": f.history,
 		"native_execution": map[string]any{"producer_id": "proxy-original", "authority": "vendor.example", "credential_value": "original-secret",
 			"upstream_path": mediaexecution.CreatePath, "timeout_ms": 3000}, "runtime_config_id": "runtime-original", "config_revision": "7"}
+	f.archive["procurement"] = struct {
+		Identity       map[string]string `json:"identity"`
+		Writer         map[string]string `json:"writer"`
+		PricingAssetID string            `json:"pricing_asset_id"`
+		CostOwner      map[string]string `json:"cost_owner"`
+	}{map[string]string{"binding_id": "binding-original", "provider_id": "provider-original", "purchase_account_id": "purchase-original", "region": "beijing-original", "upstream_model_name": mediaexecution.Model},
+		map[string]string{"producer_id": "proxy-original", "role": "ai_proxy"}, "original-cost-asset", map[string]string{"kind": "platform", "owner_id": "original-cost-owner"}}
 	return f
 }
 

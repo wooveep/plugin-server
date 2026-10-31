@@ -20,8 +20,8 @@ func TestManagedMediaGlobalStartupPreservesOrdinaryTrafficAndAuthenticatesNotice
 	t.Cleanup(func() { managedMediaActive, managedMediaRetained = previous, retained })
 	settings := managedMediaSettings{
 		ProducerID: "original-media-producer", QueueCapacity: 64, MaxResponseBytes: 4 << 20,
-		Console: managedHealthConsole{ServiceName: "console.static", ServicePort: 8080,
-			Host: "console.internal", AuthToken: "original-private-console-token", TimeoutMS: 5000},
+		ServiceAuthToken: "original-private-console-token", PrivateStream: "original-execution-stream",
+		Redis: managedRedisSettings{ServiceName: "redis.static", ServicePort: 6379, Timeout: 1000},
 		Profiles: []managedMediaProfile{{Profile: mediaexecution.QwenImage30NativeSync,
 			AdapterRef: "original-native-adapter", AdapterRevision: "1", CreateClassifierRef: "original-native-classifier",
 			OutputIdentityContract: mediaexecution.NativeImageChoicesContent}},

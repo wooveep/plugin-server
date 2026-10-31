@@ -2,10 +2,120 @@ package mediaexecution
 
 import (
 	"encoding/json"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/tidwall/resp"
 )
+
+// PrepareRedisCreate uses the first original-ticket Redis consumption. It
+// preserves the same frozen transport/body and seals only the actual live
+// invocation. Replayed/lost Redis replies cannot grant a provider creation.
+func (e *Executor) PrepareRedisCreate(reply resp.Value, actualSelection []byte, live Invocation, now time.Time) (Request, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.createTaken {
+		return Request{}, ErrReplay
+	}
+	e.createTaken = true
+	if !firstRedisPermission(reply) {
+		return Request{}, ErrNoGrant
+	}
+	selection, err := e.selection(actualSelection, false)
+	if err != nil || field(selection, "gateway_boot_id") != e.gateway.BootID ||
+		field(selection, "invocation_id") != live.ID || field(selection, "context_generation") != live.Generation ||
+		field(selection, "dispatch_id") != e.original.Dispatch.ID || field(selection, "attempt_id") != e.original.Dispatch.AttemptID {
+		return Request{}, ErrIdentity
+	}
+	if now.IsZero() || !now.Before(e.original.Dispatch.Deadline) {
+		return Request{}, ErrExpired
+	}
+	origin := e.original.Procurement
+	history, err := object(e.original.History)
+	if err != nil {
+		return Request{}, ErrIdentity
+	}
+	attempt := map[string]json.RawMessage{
+		"procurement":       origin.Identity,
+		"parent_attempt_id": json.RawMessage("null"),
+		"provider_task_id":  json.RawMessage("null"),
+		"pricing_asset_id":  origin.PricingAssetID,
+		"cost_owner":        origin.CostOwner,
+	}
+	if len(attempt["pricing_asset_id"]) == 0 {
+		attempt["pricing_asset_id"] = json.RawMessage("null")
+	}
+	for name, value := range map[string]string{
+		"attempt_id": e.original.Dispatch.AttemptID, "target_id": field(e.descriptor, "target_id"),
+		"selection_digest": field(selection, "selection_digest"), "send_transport": "http_call", "recording_owner": "ai_proxy", "mechanism": "router",
+		"credential_ref": field(e.candidate, "credential_ref"), "credential_revision": field(e.candidate, "credential_revision"),
+	} {
+		attempt[name], _ = json.Marshal(value)
+	}
+	attempt["writer"], _ = json.Marshal(origin.Writer)
+	history["attempt"], err = json.Marshal(attempt)
+	if err != nil {
+		return Request{}, ErrIdentity
+	}
+	sealed, err := json.Marshal(history)
+	if err != nil || e.checkHistory(sealed, field(selection, "selection_digest")) != nil {
+		return Request{}, ErrIdentity
+	}
+	return e.request("POST", e.profile.path, e.original.Dispatch.AttemptID, "", sealed, actualSelection), nil
+}
+
+// PrepareRedisQuery uses the original-account read ticket independently of
+// generation balance and never changes the generation's sealed liability.
+func (e *Executor) PrepareRedisQuery(reply resp.Value, actualSelection []byte, expiresAt, now time.Time) (Request, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if !firstRedisPermission(reply) || !e.profile.asynchronous {
+		return Request{}, ErrNoGrant
+	}
+	selection, err := e.selection(actualSelection, true)
+	if err != nil || field(selection, "gateway_boot_id") != e.gateway.BootID || e.history.Attempt == nil ||
+		!taskID(e.history.Attempt.TaskID) || e.checkHistory(e.original.History, "") != nil {
+		return Request{}, ErrIdentity
+	}
+	attempt := field(selection, "attempt_id")
+	if _, exists := e.queries[attempt]; exists {
+		return Request{}, ErrReplay
+	}
+	if now.IsZero() || !now.Before(expiresAt) {
+		return Request{}, ErrExpired
+	}
+	if len(e.queries) >= 10_000 {
+		return Request{}, ErrCapacity
+	}
+	e.queries[attempt] = struct{}{}
+	return e.request("GET", "/api/v1/tasks/"+e.history.Attempt.TaskID, attempt, e.history.Attempt.TaskID, e.original.History, actualSelection), nil
+}
+
+func firstRedisPermission(value resp.Value) bool {
+	if value.Error() != nil || value.Type() != resp.Array {
+		return false
+	}
+	parts := value.Array()
+	if len(parts) != 2 || parts[0].String() != "allow" {
+		return false
+	}
+	first, second, found := strings.Cut(parts[1].String(), "-")
+	if !found || first == "" || second == "" {
+		return false
+	}
+	_, firstError := strconv.ParseUint(first, 10, 64)
+	_, secondError := strconv.ParseUint(second, 10, 64)
+	return firstError == nil && secondError == nil
+}
+
+func identityMatchesProcurement(procurement, descriptor map[string]json.RawMessage) bool {
+	return field(procurement, "binding_id") == field(descriptor, "binding_id") &&
+		field(procurement, "provider_id") == field(descriptor, "provider_id") &&
+		field(procurement, "purchase_account_id") == field(descriptor, "provider_account_id") &&
+		field(procurement, "upstream_model_name") == field(descriptor, "upstream_model") && identity(field(procurement, "region"))
+}
 
 // ConsumeUnknown permanently disables creation in this live executor. A lost
 // Consume/COMMIT response must be resolved by reading the original dispatch;
