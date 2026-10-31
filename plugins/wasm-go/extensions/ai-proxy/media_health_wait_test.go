@@ -6,6 +6,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/mediaexecution"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/ai/upstreamhealth"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -20,8 +21,16 @@ import (
 // tick and Redis may subsequently send the same original job; no Console exists
 // in this transport fixture. The source/classifier has its separate fact tests.
 func TestManagedMediaHealthWaitSurvivesNoticeEndAndKeepsOriginalTicket(t *testing.T) {
-	for _, resume := range []bool{true, false} {
-		t.Run(map[bool]string{true: "health_recovers", false: "original_deadline_expires"}[resume], func(t *testing.T) {
+	for _, test := range []struct {
+		name               string
+		resume, projection bool
+	}{
+		{"health_recovers", true, false},
+		{"health_deadline_expires", false, false},
+		{"projection_recovers", true, true},
+		{"projection_deadline_expires", false, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
 			job, _ := managedMediaHostJob(t, true)
 			runtime := job.runtime
 			clock := time.Now().UTC()
@@ -54,10 +63,17 @@ func TestManagedMediaHealthWaitSurvivesNoticeEndAndKeepsOriginalTicket(t *testin
 				managedHealthStartup.owner, managedHealthStartup.byAuthority = previousOwner, previousAuthorities
 			})
 			initial := clock
-			healthy := false
+			healthy := test.projection
+			admissionReady := !test.projection
 			reads := 0
 			originalRedis := runtime.redis
-			runtime.redis = managedMediaTestRedis{command: originalRedis.Command, eval: func(_ string, _ int, _ []interface{}, _ []interface{}, callback wrapper.RedisResponseCallback) error {
+			runtime.redis = managedMediaTestRedis{command: func(args []interface{}, callback wrapper.RedisResponseCallback) error {
+				if args[0] == "EVAL" && args[1] == mediaexecution.DispatchConsumeScript && !admissionReady {
+					callback(resp.ArrayValue([]resp.Value{resp.StringValue("deny"), resp.StringValue("projection_unready")}))
+					return nil
+				}
+				return originalRedis.Command(args, callback)
+			}, eval: func(_ string, _ int, _ []interface{}, _ []interface{}, callback wrapper.RedisResponseCallback) error {
 				reads++
 				revision := upstreamhealth.Revision("9")
 				scopeRevision := upstreamhealth.Revision("4")
@@ -124,19 +140,23 @@ func TestManagedMediaHealthWaitSurvivesNoticeEndAndKeepsOriginalTicket(t *testin
 			}
 			id := host.InitializeHttpContext()
 			host.CallOnRequestHeaders(id, [][2]string{{":method", "POST"}, {":path", managedMediaDispatchPath}, {":authority", "gateway.example"}}, true)
-			if job.stage != "waiting_health" || reads != 1 || len(host.GetCalloutAttributesFromContext(id)) != 0 {
+			stage := "waiting_health"
+			if test.projection {
+				stage = "waiting_admission"
+			}
+			if job.stage != stage || reads != 1 || len(host.GetCalloutAttributesFromContext(id)) != 0 {
 				t.Fatal("blocked job escaped its original wait")
 			}
 			host.CompleteHttpContext(id)
-			if resume {
-				healthy = true
+			if test.resume {
+				healthy, admissionReady = true, true
 				clock = initial.Add(31 * time.Second)
 			} else {
 				clock = job.notice.ExpiresAt.Add(time.Second)
 			}
 			host.Tick()
 			calls := host.GetCalloutAttributesFromContext(proxytest.PluginContextID)
-			if resume {
+			if test.resume {
 				if len(calls) != 1 || job.request.AttemptID() != "original-create" || job.notice.TicketKey != "mf:media:ticket:original" || reads != 2 {
 					t.Fatal("health recovery required another notice, ticket or attempt")
 				}

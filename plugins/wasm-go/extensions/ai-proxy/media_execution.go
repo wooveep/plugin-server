@@ -454,7 +454,7 @@ func (r *managedMediaRuntime) tick() {
 			}
 			job.stage = "done"
 		}
-		if job.stage == "waiting_health" && !job.retryAt.After(now) && job.notice.ExpiresAt.After(now) {
+		if (job.stage == "waiting_health" || job.stage == "waiting_admission") && !job.retryAt.After(now) && job.notice.ExpiresAt.After(now) {
 			job.health.FlushPending()
 			job.checkHealth()
 		}
@@ -656,13 +656,14 @@ func (j *managedMediaJob) consume() {
 		return
 	}
 	admission := j.notice.Admission
-	prefix := "mf:balance:" + admission.ScopeID
-	mapping := prefix + ":principal:key:"
+	prefix := "mf:balance:{" + admission.ScopeID + "}"
+	account := prefix + ":account:" + admission.AccountID
+	mapping := account + ":principal:key:"
 	if admission.KeyID != nil {
 		mapping += *admission.KeyID
 	}
 	j.stage, j.deadline = "consuming", j.notice.ExpiresAt
-	err = j.runtime.redis.Command([]interface{}{"EVAL", mediaexecution.DispatchConsumeScript, 5, j.notice.TicketKey, prefix + ":control", prefix + ":account:" + admission.AccountID, mapping, j.runtime.settings.PrivateStream, j.notice.TicketDigest, string(body)}, func(reply resp.Value) {
+	err = j.runtime.redis.Command([]interface{}{"EVAL", mediaexecution.DispatchConsumeScript, 5, j.notice.TicketKey, prefix + ":control", account, mapping, j.runtime.settings.PrivateStream, j.notice.TicketDigest, string(body)}, func(reply resp.Value) {
 		if j.stage != "consuming" {
 			return
 		}
@@ -671,6 +672,11 @@ func (j *managedMediaJob) consume() {
 			j.request, err = j.executor.PrepareRedisCreate(reply, j.selection, j.live, j.runtime.now())
 		} else {
 			j.request, err = j.executor.PrepareRedisQuery(reply, j.selection, j.notice.ExpiresAt, j.runtime.now())
+		}
+		if errors.Is(err, mediaexecution.ErrProjectionUnready) {
+			// This definite denial did not consume the original ticket.
+			j.stage, j.retryAt = "waiting_admission", j.runtime.now().Add(time.Second)
+			return
 		}
 		if err != nil {
 			j.stage = "done"

@@ -26,9 +26,11 @@ var (
 	ErrUnsupported = errors.New("media original native profile is unsupported")
 	ErrIdentity    = errors.New("media original execution identity mismatch")
 	ErrNoGrant     = errors.New("media first committed send permission is absent")
-	ErrReplay      = errors.New("media send permission has already been taken")
-	ErrExpired     = errors.New("media original send permission expired")
-	ErrCapacity    = errors.New("media live query replay-guard capacity exceeded")
+	// ErrProjectionUnready confirms that the original ticket remains unconsumed.
+	ErrProjectionUnready = errors.New("media balance projection is not ready")
+	ErrReplay            = errors.New("media send permission has already been taken")
+	ErrExpired           = errors.New("media original send permission expired")
+	ErrCapacity          = errors.New("media live query replay-guard capacity exceeded")
 )
 
 // GatewayIdentity comes from the authenticated service registration and actual

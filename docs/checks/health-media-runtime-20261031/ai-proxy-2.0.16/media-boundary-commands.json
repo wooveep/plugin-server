@@ -1,0 +1,30 @@
+[
+  {
+    "command": [
+      "go",
+      "test",
+      "./pkg/ai/mediaexecution",
+      "-count=1",
+      "-v"
+    ],
+    "cwd": "plugins/wasm-go",
+    "exit_code": 0,
+    "log_sha256": "f98394ea9c873b9db31c38302637d18c25b5c9ee2692901ec6288a9e860f92be",
+    "scope": "real Redis original-ticket Lua"
+  },
+  {
+    "command": [
+      "go",
+      "test",
+      "./...",
+      "-run",
+      "^TestManagedMedia(HostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce|HealthWaitSurvivesNoticeEndAndKeepsOriginalTicket)$",
+      "-count=1",
+      "-v"
+    ],
+    "cwd": "plugins/wasm-go/extensions/ai-proxy",
+    "exit_code": 0,
+    "log_sha256": "0f3f473c7e695654131fa7765ce0ad59912c61ff38283eb4d40ecbde4176b9e9",
+    "scope": "native Wasm SDK host emulator callbacks; no provider HTTP"
+  }
+]

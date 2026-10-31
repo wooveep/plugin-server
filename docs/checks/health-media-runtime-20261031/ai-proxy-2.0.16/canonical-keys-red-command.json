@@ -1,0 +1,13 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-run",
+    "^TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce$",
+    "-count=1",
+    "-v"
+  ],
+  "exit_code": 1,
+  "log_sha256": "ab88257de330da00005193eda3e49574aaaecececbfcd4ac08051aac29152852"
+}

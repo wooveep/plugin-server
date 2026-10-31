@@ -167,6 +167,7 @@ func managedMediaHostJob(t *testing.T, confirmed bool) (*managedMediaJob, *[]exe
 	}
 	runtime := &managedMediaRuntime{settings: managedMediaSettings{ProducerID: "original-producer", MaxResponseBytes: 1 << 20, PrivateStream: "original-execution-stream", Redis: managedRedisSettings{Timeout: 1000}}, now: time.Now}
 	j := &managedMediaJob{runtime: runtime, executor: executor, notice: managedMediaNotice{SchemaVersion: "media-dispatch-notice.v2", DispatchID: "original-dispatch", OperationID: "original-operation", RequestID: "original-dispatch", TicketKey: "mf:media:ticket:original", TicketDigest: "original-ticket", ExpiresAt: now.Add(time.Minute)}, live: mediaexecution.Invocation{ID: "actual-invocation", Generation: "1"}, healthDecision: upstreamhealth.Decision{ScopeEpochs: map[string]upstreamhealth.Revision{}}}
+	j.notice.Admission = managedMediaAdmission{ScopeID: "original-scope", AccountID: "original-wallet"}
 	j.selection, err = executor.Selection(j.live, "", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -176,6 +177,13 @@ func managedMediaHostJob(t *testing.T, confirmed bool) (*managedMediaJob, *[]exe
 	runtime.redis = managedMediaTestRedis{command: func(args []interface{}, callback wrapper.RedisResponseCallback) error {
 		switch args[0] {
 		case "EVAL":
+			mapping := "mf:balance:{original-scope}:account:original-wallet:principal:key:"
+			if j.notice.Admission.KeyID != nil {
+				mapping += *j.notice.Admission.KeyID
+			}
+			if args[4] != "mf:balance:{original-scope}:control" || args[5] != "mf:balance:{original-scope}:account:original-wallet" || args[6] != mapping {
+				t.Fatal("media consumption must use the canonical IF05 control, original wallet and account-scoped Key mapping")
+			}
 			if !confirmed {
 				callback(resp.ErrorValue(errors.New("unconfirmed consume")))
 				return nil
@@ -223,9 +231,20 @@ func managedMediaHostJob(t *testing.T, confirmed bool) (*managedMediaJob, *[]exe
 // Uses actual Wasm SDK provider-call callbacks and the production HTTP evidence
 // reader. Console replies are fixtures; this is not live supplier acceptance.
 func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t *testing.T) {
-	for _, confirmed := range []bool{false, true} {
-		t.Run(map[bool]string{false: "unknown_consume", true: "committed_consume"}[confirmed], func(t *testing.T) {
-			job, observed := managedMediaHostJob(t, confirmed)
+	for _, test := range []struct {
+		name                 string
+		confirmed, keyScoped bool
+	}{
+		{"unknown_consume", false, false},
+		{"committed_user", true, false},
+		{"committed_key", true, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			job, observed := managedMediaHostJob(t, test.confirmed)
+			if test.keyScoped {
+				key := "original-key"
+				job.notice.Admission.KeyID = &key
+			}
 			job.runtime.provider = job.runtime.providerCall
 			type mediaHostConfig struct{}
 			vm := wrapper.NewCommonVmCtx("media-original-http", wrapper.ParseConfig(func(gjson.Result, *mediaHostConfig) error { return nil }),
@@ -243,7 +262,7 @@ func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t
 			headers := [][2]string{{":method", "POST"}, {":path", "/test-not-public-route"}, {":authority", "gateway.example"}, {"authorization", "Bearer foreign-customer-key"}, {"x-modelfusion-gateway-instance", "forged"}}
 			host.CallOnRequestHeaders(id, headers, false)
 			calls := host.GetCalloutAttributesFromContext(id)
-			if !confirmed {
+			if !test.confirmed {
 				if len(calls) != 0 || len(*observed) != 0 {
 					t.Fatal("unknown Consume crossed into provider send/FACT")
 				}

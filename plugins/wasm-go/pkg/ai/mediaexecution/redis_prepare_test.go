@@ -71,3 +71,29 @@ func TestRedisMediaOriginalTaskQueryKeepsOriginalHistoryAndFiniteDeadline(t *tes
 		t.Fatal("query replay renewed a send")
 	}
 }
+
+func TestProjectionUnreadyRetainsOnlyTheOriginalUnconsumedCreate(t *testing.T) {
+	f := original(t)
+	e, err := mediaexecution.FromPrivateArchive(raw(t, f.archive), f.gateway, f.binding)
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err := e.Selection(f.live, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	denied := resp.ArrayValue([]resp.Value{resp.StringValue("deny"), resp.StringValue("projection_unready")})
+	for range 2 {
+		if _, err := e.PrepareRedisCreate(denied, selection, f.live, f.now); !errors.Is(err, mediaexecution.ErrProjectionUnready) {
+			t.Fatal("a definite unready denial consumed or changed the original permission")
+		}
+	}
+	allowed := resp.ArrayValue([]resp.Value{resp.StringValue("allow"), resp.StringValue("123-0")})
+	request, err := e.PrepareRedisCreate(allowed, selection, f.live, f.now)
+	if err != nil || request.AttemptID() != "attempt-create" {
+		t.Fatal("original readiness did not retain the original attempt", err)
+	}
+	if _, err := e.PrepareRedisCreate(denied, selection, f.live, f.now); !errors.Is(err, mediaexecution.ErrReplay) {
+		t.Fatal("a later denial reopened a consumed permission")
+	}
+}

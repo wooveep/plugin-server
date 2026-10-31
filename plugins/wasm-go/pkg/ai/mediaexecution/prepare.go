@@ -19,9 +19,13 @@ func (e *Executor) PrepareRedisCreate(reply resp.Value, actualSelection []byte, 
 	if e.createTaken {
 		return Request{}, ErrReplay
 	}
+	permission := firstRedisPermission(reply)
+	if permission == ErrProjectionUnready {
+		return Request{}, permission
+	}
 	e.createTaken = true
-	if !firstRedisPermission(reply) {
-		return Request{}, ErrNoGrant
+	if permission != nil {
+		return Request{}, permission
 	}
 	selection, err := e.selection(actualSelection, false)
 	if err != nil || field(selection, "gateway_boot_id") != e.gateway.BootID ||
@@ -71,7 +75,7 @@ func (e *Executor) PrepareRedisCreate(reply resp.Value, actualSelection []byte, 
 func (e *Executor) PrepareRedisQuery(reply resp.Value, actualSelection []byte, expiresAt, now time.Time) (Request, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if !firstRedisPermission(reply) || !e.profile.asynchronous {
+	if firstRedisPermission(reply) != nil || !e.profile.asynchronous {
 		return Request{}, ErrNoGrant
 	}
 	selection, err := e.selection(actualSelection, true)
@@ -93,21 +97,30 @@ func (e *Executor) PrepareRedisQuery(reply resp.Value, actualSelection []byte, e
 	return e.request("GET", "/api/v1/tasks/"+e.history.Attempt.TaskID, attempt, e.history.Attempt.TaskID, e.original.History, actualSelection), nil
 }
 
-func firstRedisPermission(value resp.Value) bool {
+func firstRedisPermission(value resp.Value) error {
 	if value.Error() != nil || value.Type() != resp.Array {
-		return false
+		return ErrNoGrant
 	}
 	parts := value.Array()
-	if len(parts) != 2 || parts[0].String() != "allow" {
-		return false
+	if len(parts) != 2 {
+		return ErrNoGrant
+	}
+	if parts[0].String() == "deny" && parts[1].String() == "projection_unready" {
+		return ErrProjectionUnready
+	}
+	if parts[0].String() != "allow" {
+		return ErrNoGrant
 	}
 	first, second, found := strings.Cut(parts[1].String(), "-")
 	if !found || first == "" || second == "" {
-		return false
+		return ErrNoGrant
 	}
 	_, firstError := strconv.ParseUint(first, 10, 64)
 	_, secondError := strconv.ParseUint(second, 10, 64)
-	return firstError == nil && secondError == nil
+	if firstError != nil || secondError != nil {
+		return ErrNoGrant
+	}
+	return nil
 }
 
 func identityMatchesProcurement(procurement, descriptor map[string]json.RawMessage) bool {

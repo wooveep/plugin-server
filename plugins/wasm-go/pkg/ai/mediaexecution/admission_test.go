@@ -59,8 +59,9 @@ func TestNativeMediaTicketConsumesOnceAndUsesOriginalAccount(t *testing.T) {
 		}
 		command(arguments...)
 	}
-	prefix := "media-test:{" + uuid.NewString() + "}:"
-	keys := []string{prefix + "ticket", prefix + "control", prefix + "account", prefix + "key", prefix + "stream"}
+	scope := uuid.NewString()
+	prefix := "mf:balance:{" + scope + "}"
+	keys := []string{"mf:media:ticket:test:" + scope, prefix + ":control", prefix + ":account:original-wallet", prefix + ":account:original-wallet:principal:key:original-key", "mf:media:test:" + scope}
 	t.Cleanup(func() { command(append([]string{"DEL"}, keys...)...) })
 	digest := "sha256:" + strings.Repeat("a", 64)
 	event := `{"schema_version":"media-dispatch-observed.v1","operation_id":"original-operation","ticket_digest":"` + digest + `"}`
@@ -114,6 +115,9 @@ func TestNativeMediaTicketConsumesOnceAndUsesOriginalAccount(t *testing.T) {
 					t.Fatal("duplicate notice produced a second send right or event")
 				}
 			} else {
+				if test.reason == "projection_unready" && command("HGET", keys[0], "state").String() != "prepared" {
+					t.Fatal("unready projection consumed the original ticket")
+				}
 				expectedEvents := 0
 				if test.reason == "insufficient_balance" || test.reason == "route_authorization_missing" || test.reason == "authorization_stale" {
 					expectedEvents = 1
