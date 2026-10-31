@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "host_go_available": false,
+  "wasm_matches_formal_candidate": true,
+  "wasm_sha256": "6afbb6aea7b8846724a40b943e07105bed32f51fda991e3ebdcd0732c19cc38b",
+  "source_commit": "a58f15ce",
+  "builder_log_sha256": "a835f0467b3dda22b29841619d6c523eb92e6af305808880b2eb76644cd7b59e"
+}

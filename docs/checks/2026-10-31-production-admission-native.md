@@ -13,3 +13,7 @@ quota 在现有一次 Redis 只读脚本中检查具体 Key 的 route grant，�
 准备过程曾因 Go 测试自动生成的 wasm-unit-test.wasm 落入源码目录而被既有来源检查拒绝；已将本次生成物移到 build/test-cache，并显式指定正式编译产物运行宿主测试。未放宽完整包的来源/不可变校验。新包仍只在准备边界；后继接纳只做原上传边界的完整验证，不给列表、选版本或发布追加重复验包。
 
 健康429、待确认outcome、本地veto和半开Claim/Consume、媒体专用派发等 Console 耦合仍开放；本批仅证明上述授权/期限及相关消费者。继续按原scope/epoch/撤销及实际发送/成本规则收敛，不能用健康普通目标通过掩盖特殊路径。
+
+## 容器构建的宿主依赖补正
+
+后继 `a58f15ce` 将默认固定 Go 容器使用的两项缓存归入现有 build/cache，不再先执行宿主 go env；--host 仍使用明确选择的宿主工具链。在只提供 Git/Docker 的 PATH 下，实际固定容器重编 quota2.0.6 成功，输出 Wasm 与上列候选逐字节一致。见[执行摘要](production-admission-20261031/container-no-host-go.json)。测试前后的原候选 Wasm/receipt 已成对保留并恢复；该结果不是新包接纳。构建脚本属于来源输入，最终集成仍须按后继固定源码重新生成 receipt/完整包，不能沿用旧 receipt 冒充新来源。
