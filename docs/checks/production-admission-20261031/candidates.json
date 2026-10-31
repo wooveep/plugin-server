@@ -1,0 +1,91 @@
+{
+  "recorded_at": "2026-10-31T06:40:55.075126+00:00",
+  "behavior_commit": "70b0ee74f3e7f22989c5741e43b49abfa4550b31",
+  "workspace_commit": "ce05e9890aeeb88a5f2d251d5f864f8c6ff3cae8",
+  "packages": [
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.6",
+      "source_commit": "ce05e9890aeeb88a5f2d251d5f864f8c6ff3cae8",
+      "source_inputs_count": 386,
+      "source_inputs_sha256": "sha256:ae614c235e71fecbc90c50cb722a030eb61ca20c9b4fd9b43fe2adaaeb29f2de",
+      "wasm_sha256": "sha256:6afbb6aea7b8846724a40b943e07105bed32f51fda991e3ebdcd0732c19cc38b",
+      "size_bytes": 6983373,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "content_digest": "sha256:192a3e78465a66af5b000f7ecdaa1930517ed6d8e613dba88f41ee13f61c437b",
+      "archive_digest": "sha256:9a1e31642a502cb637b145a5a48cfd94a39ebaff4e78dd00e7fc4b3ce41819df",
+      "host_log_sha256": "sha256:798904f6433254464f54c204332b37aa98bed02781f106c77036383921b990d5",
+      "host_test_result": "passed",
+      "accepted_or_deployed": false
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.12",
+      "source_commit": "70b0ee74f3e7f22989c5741e43b49abfa4550b31",
+      "source_inputs_count": 530,
+      "source_inputs_sha256": "sha256:c71b6440230a7cb0d8b0acdefbc60711be46935ebd2aa88684fd0ce09faaca4d",
+      "wasm_sha256": "sha256:45c14b6f21bed82b694e53f273756b0bc6809c5c7af8a2a5060d680f3f4cb687",
+      "size_bytes": 11636915,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "content_digest": "sha256:fcd47592dbed4d005ea6eebadde7b69d3f2ddeca7ca783e7c86fd0fbc8e1d1bd",
+      "archive_digest": "sha256:80355135e963acce6335607db30c269bc7886157deb001f853a32c25986e798b",
+      "host_log_sha256": "sha256:6108794bf4da2b7aea52a12c228d97bd7763d526c9f32aafefa3b32e74327678",
+      "host_test_result": "passed",
+      "accepted_or_deployed": false
+    },
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.2",
+      "source_commit": "70b0ee74f3e7f22989c5741e43b49abfa4550b31",
+      "source_inputs_count": 396,
+      "source_inputs_sha256": "sha256:0d5dfc5bd21c55998a388dd5104e2c275e8ce0558bccd4f5f4518042d3931094",
+      "wasm_sha256": "sha256:a248481f33ce53780e5122661de2ef368d37cd112d3d6aac9c66e9d7fa34d769",
+      "size_bytes": 19140008,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "content_digest": "sha256:7816fe2a34961598269b430463a10bda7c1caf61fe8ea5e7f4169eeb4c7ee620",
+      "archive_digest": "sha256:7931f9085a8c5803a9d9d33b4ee76261a4811cf38974dd26ee52c40610263b8c",
+      "host_log_sha256": "sha256:e2c9b0f824560de4c9296bdd5c25a0d545f560ba989c2e808af628934c7e45f1",
+      "host_test_result": "passed",
+      "accepted_or_deployed": false
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.5",
+      "source_commit": "70b0ee74f3e7f22989c5741e43b49abfa4550b31",
+      "source_inputs_count": 409,
+      "source_inputs_sha256": "sha256:111051b66bf1fba7c578901e97e4f1b71f41b915da8fa96854b5cca2af123276",
+      "wasm_sha256": "sha256:4f5bf8dff31ffb0c2d18438f85c3d67e019604caf27ea0f32d79b804a333d0f2",
+      "size_bytes": 7582334,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "content_digest": "sha256:3e5e7889ffd9f4c67cac04c00e844d4c20d33018a1380b8e0469fe8dc53e43eb",
+      "archive_digest": "sha256:f13b017d605078b7018da0912eba563453656074a02f3b50a616ecfbd9687b2e",
+      "host_log_sha256": "sha256:d8d06db8ef18eddfe3f3a61cdb73bff9186e5bd781bcdc26da9a21c22d98ed91",
+      "host_test_result": "passed",
+      "accepted_or_deployed": false
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.8",
+      "source_commit": "70b0ee74f3e7f22989c5741e43b49abfa4550b31",
+      "source_inputs_count": 417,
+      "source_inputs_sha256": "sha256:0e87cb24c85aa4846b1e1bb7d4f50779f12136d3ababb59e2219dfb1151f034a",
+      "wasm_sha256": "sha256:87b3c0d21aa07d9b5a7e7a9aaef981dea2f1466b988c423bcea1948f76ed4316",
+      "size_bytes": 7372563,
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "content_digest": "sha256:021bc2f0592b328b46b6ed93e6f54e89c9b67f0bcc40d42de44921be9092b8df",
+      "archive_digest": "sha256:b869d131741d6aef5c66b0264cb91f2fe398c44ed164b4cd77df806ed1943ef9",
+      "host_log_sha256": "sha256:acebed5bb031bab93f54763f113f197aae2493db114c5e2f642cb87466393e14",
+      "host_test_result": "passed",
+      "accepted_or_deployed": false
+    }
+  ],
+  "real_redis_quota_enabled": true,
+  "wasm_file_path_explicit": true,
+  "independent_slow_upload_probe": "same 6-second public host callback test passed independently; see workspace review",
+  "limitations": [
+    "No current K3S or paid E1 claim",
+    "Health 429 and recovery Claim/Consume still use Console and remain open",
+    "Media dedicated execution still has its own control-plane boundaries",
+    "Packages are prepared candidates; no live store/default change"
+  ]
+}
