@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-run",
+    "^TestManagedProtocolChatStreamRequestsProviderUsageBeforeFreezingOutboundBody$",
+    "-count=1",
+    "-v",
+    "."
+  ],
+  "cwd": "plugins/wasm-go/extensions/ai-proxy",
+  "exit_code": 1,
+  "log_sha256": "4aa4142ed535a1e0848e202ff755e60bfcca2990550a4385a6068346d0dce345"
+}

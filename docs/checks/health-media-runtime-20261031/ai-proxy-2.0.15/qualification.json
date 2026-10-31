@@ -1,0 +1,17 @@
+{
+  "plugin_name": "ai-proxy",
+  "plugin_version": "2.0.15",
+  "source_commit": "e1766d5e36be76241f603d2f4b9b4617a3edbb5d",
+  "release_catalog_commit": "0f222691f4ebf4835456911e47116423a87d874c",
+  "source_inputs_verified": 534,
+  "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+  "content_digest": "sha256:3daf39f61b74fb75d6457dcbd7c9bc274706f5653bd2d4c546a3e0c879006ec9",
+  "source_digest": "sha256:7d012612952d26e2aa50dab98b84ee64b56f59b0cd4693f561c2652044046815",
+  "wasm_digest": "sha256:23a554990f88fcdac352315508b5bd25ec75cada39830b2f88552d241b1ff75f",
+  "archive_digest": "sha256:3e6e036f2b405d3d8ecfa5bbf38c0ea81e2b8d625fc31b2c682a2639b558f9ab",
+  "full_go_wasm_test_exit_code": 0,
+  "full_go_wasm_log_sha256": "cca4701150d934a5fef31606ec13fd69bbee9fc909777fff5068c00f1fb41281",
+  "registered_artifacts": 87,
+  "prior_immutable_manifests_preserved": 86,
+  "manifest_digest": "sha256:d4dd640c7d7dad3ded9c62322819a3fac4bbc28762b328db5e6cac62855535cd"
+}
