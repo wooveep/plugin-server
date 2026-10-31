@@ -92,6 +92,39 @@ func prepareProfile(t *testing.T, profile string) (mediaexecution.Request, fixtu
 	return r, f, e
 }
 
+func TestNativeImageOmittedParametersUseAnObjectOnTheWire(t *testing.T) {
+	for _, profile := range []string{mediaexecution.QwenImage20ProSync, mediaexecution.QwenImage30NativeSync, mediaexecution.Profile} {
+		t.Run(profile, func(t *testing.T) {
+			f := profileFixture(t, profile)
+			f.body = []byte(`{"model":"public-image","input":{"prompt":"a tree"}}`)
+			f.archive["request_body"] = string(f.body)
+			basis, err := bodybasis.Capture(f.body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f.candidate["original_body_digest"] = basis.Digest()
+			e, err := mediaexecution.FromPrivateArchive(raw(t, f.archive), f.gateway, f.binding)
+			if err != nil {
+				t.Fatal(err)
+			}
+			selection := f.selection(t, false)
+			reply := f.commit(t, selection)
+			reply["history"].(map[string]any)["attempt"].(map[string]any)["procurement"].(map[string]any)["upstream_model_name"] = f.descriptor["upstream_model"]
+			r, err := e.PrepareCreate(raw(t, reply), raw(t, selection), f.live, f.now)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var body map[string]json.RawMessage
+			if json.Unmarshal(r.Body(), &body) != nil || string(body["parameters"]) != "{}" {
+				t.Fatal("native image parameters must be an object when omitted by the caller")
+			}
+			if !bytes.Equal(f.body, []byte(f.archive["request_body"].(string))) || f.candidate["original_body_digest"] != basis.Digest() {
+				t.Fatal("native wire normalization changed the original body basis")
+			}
+		})
+	}
+}
+
 func TestSixRegisteredProtocolsPrepareExactSingleSendBodies(t *testing.T) {
 	for _, profile := range []string{mediaexecution.QwenImage20ProSync, mediaexecution.QwenImage30NativeSync, mediaexecution.QwenImage30Compatible, mediaexecution.Profile, mediaexecution.Wan30Text, mediaexecution.Wan30FirstFrame} {
 		t.Run(profile, func(t *testing.T) {

@@ -168,6 +168,14 @@ func (p profileDefinition) prepareBody(original []byte) ([]byte, error) {
 	if err != nil {
 		return nil, ErrUnsupported
 	}
+	if p.operation == "image_generate" && root["parameters"] == nil {
+		// Native async image generation accepts a task before rejecting omitted
+		// parameters. Its optional parameter group must still be a wire object.
+		body, err = sjson.SetRawBytes(body, "parameters", []byte(`{}`))
+		if err != nil {
+			return nil, ErrUnsupported
+		}
+	}
 	return sjson.SetBytes(body, "model", p.model)
 }
 
