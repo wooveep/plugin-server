@@ -29,7 +29,7 @@ func (n balanceNamespace) validate() error {
 
 func (n balanceNamespace) keys(identity balanceidentity.Snapshot) []interface{} {
 	base := "mf:balance:{" + n.ScopeID + "}"
-	account := base + ":generation:" + n.Generation + ":account:" + identity.AccountID
+	account := base + ":account:" + identity.AccountID
 	return []interface{}{base + ":control", account, account + ":principal:key:" + identity.APIKeyID}
 }
 
@@ -85,7 +85,6 @@ end
 local control = redis.call('HMGET', KEYS[1], 'scope_id', 'cache_generation', 'projection_schema', 'projection_state')
 if not control[1] or not control[2] then return deny('projection_unready') end
 if control[1] ~= ARGV[1] then return deny('account_mismatch') end
-if control[2] ~= ARGV[2] then return deny('wrong_generation') end
 if control[3] ~= 'balance.v1' then return deny('projection_schema_mismatch') end
 if control[4] ~= 'ready' then return deny('projection_unready') end
 if redis.call('EXISTS', KEYS[2]) == 0 then return deny('balance_missing') end
@@ -93,7 +92,7 @@ local account = redis.call('HMGET', KEYS[2], 'account_id', 'cache_generation', '
     'projection_state', 'account_version', 'amount', 'currency', 'scale',
     'mapping_revision', 'admission_state_revision', 'credential_generation')
 if account[1] ~= ARGV[3] then return deny('account_mismatch') end
-if account[2] ~= ARGV[2] then return deny('wrong_generation') end
+if account[2] ~= control[2] then return deny('wrong_generation') end
 if account[3] ~= 'balance.v1' then return deny('projection_schema_mismatch') end
 if account[4] ~= 'ready' then return deny('projection_unready') end
 if not unsigned(account[5], '9223372036854775807') then return deny('projection_unready') end
@@ -104,16 +103,29 @@ if not unsigned(account[9], '9223372036854775807')
     return deny('authorization_stale')
 end
 local mapping = redis.call('HMGET', KEYS[3], 'account_id', 'cache_generation', 'projection_schema',
-    'projection_state', 'mapping_revision', 'admission_state_revision', 'credential_generation', 'enabled')
+    'projection_state', 'mapping_revision', 'admission_state_revision', 'credential_generation', 'enabled', 'authorized_routes')
 if mapping[1] ~= ARGV[3] then return deny('authorization_stale') end
-if mapping[2] ~= ARGV[2] then return deny('wrong_generation') end
+if mapping[2] ~= control[2] then return deny('wrong_generation') end
 if mapping[3] ~= 'balance.v1' then return deny('projection_schema_mismatch') end
 if mapping[4] ~= 'ready' then return deny('projection_unready') end
 if mapping[5] ~= account[9] or mapping[6] ~= account[10]
     or mapping[7] ~= account[11] or mapping[7] ~= ARGV[4] or mapping[8] ~= '1' then
     return deny('authorization_stale')
 end
-local result = {decision='allow', reason_code='ok', observed_account_version=account[5], observed_generation=ARGV[2]}
+-- Managed routes use the exact Key's grant list from the same atomic identity
+-- snapshot. A missing list is an unready projection; an empty list is a denial.
+if ARGV[5] and ARGV[5] ~= '' then
+    if type(mapping[9]) ~= 'string' or string.sub(mapping[9], 1, 1) ~= '[' then return deny('projection_unready') end
+    local valid, routes = pcall(cjson.decode, mapping[9])
+    if not valid or type(routes) ~= 'table' then return deny('projection_unready') end
+    local authorized = false
+    for _, route in ipairs(routes) do
+        if type(route) ~= 'string' then return deny('projection_unready') end
+        if route == ARGV[5] then authorized = true end
+    end
+    if not authorized then return deny('route_authorization_missing') end
+end
+local result = {decision='allow', reason_code='ok', observed_account_version=account[5], observed_generation=control[2]}
 if account[6] == '0' or string.sub(account[6], 1, 1) == '-' then
     result.decision = 'deny'
     result.reason_code = 'insufficient_balance'
@@ -158,7 +170,7 @@ func decodeBalanceAdmission(response resp.Value, namespace balanceNamespace) (ba
 	} else if result.Decision == "deny" {
 		switch result.ReasonCode {
 		case "balance_missing", "projection_unready", "wrong_generation", "projection_schema_mismatch",
-			"authorization_stale", "insufficient_balance", "dependency_unavailable", "account_mismatch", "invalid_amount":
+			"authorization_stale", "route_authorization_missing", "insufficient_balance", "dependency_unavailable", "account_mismatch", "invalid_amount":
 		default:
 			return result, errors.New("invalid denied projection result")
 		}
@@ -167,14 +179,14 @@ func decodeBalanceAdmission(response resp.Value, namespace balanceNamespace) (ba
 	}
 	observed := result.Decision == "allow" || result.ReasonCode == "insufficient_balance"
 	if observed || result.ObservedAccountVersion != "" || result.ObservedGeneration != "" {
-		if !canonicalVersion(result.ObservedAccountVersion) || result.ObservedGeneration != namespace.Generation {
+		if !canonicalVersion(result.ObservedAccountVersion) || !balanceidentity.ValidID(result.ObservedGeneration) {
 			return result, errors.New("invalid balance projection observations")
 		}
 	}
 	return result, nil
 }
 
-func readBalanceAdmission(client wrapper.RedisClient, namespace balanceNamespace, identity balanceidentity.Snapshot, callback func(balanceAdmission, error)) error {
+func readBalanceAdmission(client wrapper.RedisClient, namespace balanceNamespace, identity balanceidentity.Snapshot, routeID string, callback func(balanceAdmission, error)) error {
 	if err := namespace.validate(); err != nil {
 		return err
 	}
@@ -182,7 +194,7 @@ func readBalanceAdmission(client wrapper.RedisClient, namespace balanceNamespace
 		return err
 	}
 	return client.Eval(balanceAdmissionScript, 3, namespace.keys(identity), []interface{}{
-		namespace.ScopeID, namespace.Generation, identity.AccountID, identity.CredentialGeneration,
+		namespace.ScopeID, namespace.Generation, identity.AccountID, identity.CredentialGeneration, routeID,
 	}, func(response resp.Value) {
 		result, err := decodeBalanceAdmission(response, namespace)
 		callback(result, err)

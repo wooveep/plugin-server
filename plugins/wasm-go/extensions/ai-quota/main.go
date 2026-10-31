@@ -253,7 +253,11 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 	if err != nil {
 		return deniedMissingIdentity()
 	}
-	err = readBalanceAdmission(config.redisClient, config.namespace, identity, func(result balanceAdmission, err error) {
+	routeID := ""
+	if admission, ok := config.ExecutionAdmission.(*executionAdmissionConfig); ok && admission != nil {
+		routeID = admission.RouteID
+	}
+	err = readBalanceAdmission(config.redisClient, config.namespace, identity, routeID, func(result balanceAdmission, err error) {
 		if err != nil {
 			context.SetUserAttribute("balance_admission_reason", "dependency_unavailable")
 			log.Warn("ai-quota versioned balance read failed")

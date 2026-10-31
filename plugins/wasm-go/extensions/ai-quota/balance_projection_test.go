@@ -18,6 +18,7 @@ import (
 const testScope = "00000000-0000-0000-0000-000000000005"
 const testGeneration = "00000000-0000-0000-0000-000000000006"
 const testAccount = "00000000-0000-0000-0000-000000000002"
+const testRoute = "00000000-0000-0000-0000-000000000007"
 const testAPIKey = "00000000-0000-0000-0000-000000000003"
 
 var testIdentity = balanceidentity.Snapshot{AccountID: testAccount, APIKeyID: testAPIKey, CredentialGeneration: "9007199254740993"}
@@ -85,7 +86,7 @@ func TestNativeRedisVersionedAdmissionIsExactAtomicAndReadOnly(t *testing.T) {
 		for _, args := range [][]string{
 			{"HSET", control, "scope_id", namespace.ScopeID, "cache_generation", namespace.Generation, "projection_schema", "balance.v1", "projection_state", "ready"},
 			{"HSET", account, "account_id", testAccount, "cache_generation", namespace.Generation, "projection_schema", "balance.v1", "projection_state", "ready", "account_version", "9007199254740993", "amount", "9007199254740993", "currency", "CNY", "scale", "10", "mapping_revision", "9007199254740995", "admission_state_revision", "9007199254740997", "credential_generation", testIdentity.CredentialGeneration},
-			{"HSET", mapping, "account_id", testAccount, "cache_generation", namespace.Generation, "projection_schema", "balance.v1", "projection_state", "ready", "mapping_revision", "9007199254740995", "admission_state_revision", "9007199254740997", "credential_generation", testIdentity.CredentialGeneration, "enabled", "1"},
+			{"HSET", mapping, "account_id", testAccount, "cache_generation", namespace.Generation, "projection_schema", "balance.v1", "projection_state", "ready", "mapping_revision", "9007199254740995", "admission_state_revision", "9007199254740997", "credential_generation", testIdentity.CredentialGeneration, "enabled", "1", "authorized_routes", `["` + testRoute + `"]`},
 		} {
 			if err := command(args...).Error(); err != nil {
 				t.Fatal("owned Redis fixture setup failed")
@@ -95,8 +96,10 @@ func TestNativeRedisVersionedAdmissionIsExactAtomicAndReadOnly(t *testing.T) {
 	cases := []struct {
 		name, key, field, value, reason string
 		delete, dependencyError         bool
+		rotateGeneration                bool
 	}{
 		{name: "positive beyond double precision", reason: "ok"},
+		{name: "coherent recovery generation without route republication", reason: "ok", rotateGeneration: true},
 		{name: "maximum signed money", key: account, field: "amount", value: "9223372036854775807", reason: "ok"},
 		{name: "zero money", key: account, field: "amount", value: "0", reason: "insufficient_balance"},
 		{name: "minimum signed debt", key: account, field: "amount", value: "-9223372036854775808", reason: "insufficient_balance"},
@@ -118,6 +121,11 @@ func TestNativeRedisVersionedAdmissionIsExactAtomicAndReadOnly(t *testing.T) {
 		{name: "old account generation", key: account, field: "cache_generation", value: testAPIKey, reason: "wrong_generation"},
 		{name: "blocked account", key: account, field: "projection_state", value: "blocked", reason: "projection_unready"},
 		{name: "missing key mapping", key: mapping, delete: true, reason: "authorization_stale"},
+		{name: "ungranted key", key: mapping, field: "authorized_routes", value: "[]", reason: "route_authorization_missing"},
+		{name: "grant to different route", key: mapping, field: "authorized_routes", value: `["` + testAPIKey + `"]`, reason: "route_authorization_missing"},
+		{name: "missing grant projection", key: mapping, field: "authorized_routes", delete: true, reason: "projection_unready"},
+		{name: "malformed grant projection", key: mapping, field: "authorized_routes", value: "invalid-json", reason: "projection_unready"},
+		{name: "invalid grant element", key: mapping, field: "authorized_routes", value: "[1]", reason: "projection_unready"},
 		{name: "key disabled", key: mapping, field: "enabled", value: "0", reason: "authorization_stale"},
 		{name: "unready key mapping", key: mapping, field: "projection_state", value: "building", reason: "projection_unready"},
 		{name: "stale mapping version", key: mapping, field: "mapping_revision", value: "9007199254740994", reason: "authorization_stale"},
@@ -131,6 +139,13 @@ func TestNativeRedisVersionedAdmissionIsExactAtomicAndReadOnly(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			setup()
+			observedGeneration := namespace.Generation
+			if tc.rotateGeneration {
+				observedGeneration = testAPIKey
+				for _, key := range []string{control, account, mapping} {
+					command("HSET", key, "cache_generation", observedGeneration)
+				}
+			}
 			if tc.key != "" {
 				switch {
 				case tc.dependencyError:
@@ -148,7 +163,7 @@ func TestNativeRedisVersionedAdmissionIsExactAtomicAndReadOnly(t *testing.T) {
 				return []string{command("DUMP", control).String(), command("DUMP", account).String(), command("DUMP", mapping).String()}
 			}
 			before := dump()
-			response := command("EVAL", balanceAdmissionScript, "3", control, account, mapping, namespace.ScopeID, namespace.Generation, testAccount, testIdentity.CredentialGeneration)
+			response := command("EVAL", balanceAdmissionScript, "3", control, account, mapping, namespace.ScopeID, namespace.Generation, testAccount, testIdentity.CredentialGeneration, testRoute)
 			result, err := decodeBalanceAdmission(response, namespace)
 			if tc.dependencyError {
 				if err == nil {
@@ -158,7 +173,7 @@ func TestNativeRedisVersionedAdmissionIsExactAtomicAndReadOnly(t *testing.T) {
 				t.Fatalf("unexpected admission: %+v, %v", result, err)
 			}
 			if tc.reason == "ok" || tc.reason == "insufficient_balance" {
-				if result.ObservedAccountVersion != "9007199254740993" || result.ObservedGeneration != namespace.Generation {
+				if result.ObservedAccountVersion != "9007199254740993" || result.ObservedGeneration != observedGeneration {
 					t.Fatal("lost exact observed identity/version")
 				}
 			}

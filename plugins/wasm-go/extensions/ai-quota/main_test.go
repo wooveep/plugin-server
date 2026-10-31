@@ -103,7 +103,7 @@ func TestRequestAdmission(t *testing.T) {
 			status int
 		}{
 			{"ok", 0}, {"insufficient_balance", 403}, {"balance_missing", 403},
-			{"authorization_stale", 403}, {"account_mismatch", 403},
+			{"authorization_stale", 403}, {"route_authorization_missing", 403}, {"account_mismatch", 403},
 			{"projection_unready", 503}, {"wrong_generation", 503},
 			{"projection_schema_mismatch", 503}, {"invalid_amount", 503}, {"dependency_unavailable", 503},
 		} {
@@ -185,8 +185,9 @@ func TestAdmissionOnlyDoesNotDeduct(t *testing.T) {
 
 func TestKeyBuilders(t *testing.T) {
 	keys := testNamespace.keys(testIdentity)
+	require.Equal(t, keys, (balanceNamespace{ScopeID: testScope, Generation: testAPIKey}).keys(testIdentity))
 	require.Equal(t, "mf:balance:{"+testScope+"}:control", keys[0])
-	require.Equal(t, "mf:balance:{"+testScope+"}:generation:"+testGeneration+":account:"+testAccount, keys[1])
+	require.Equal(t, "mf:balance:{"+testScope+"}:account:"+testAccount, keys[1])
 	require.Equal(t, keys[1].(string)+":principal:key:"+testAPIKey, keys[2])
 	require.False(t, isAIPathEnabled("/v1/chat/completions/quota", []string{"/v1/chat/completions"}))
 	require.True(t, isAIPathEnabled("/proxy/v1/messages?debug=true", []string{"/v1/messages"}))
