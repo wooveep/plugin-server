@@ -6,6 +6,8 @@ description: ai-memory 薄网关插件配置参考
 
 ## 功能说明
 
+全局与路由 Schema 均声明控制台需要解析的三个外部服务目标：`redis_stream`、`recent_cache`、`console_internal`。声明对应既有 Redis/DNS 与 HTTP callout 依赖，不新增事件通道。
+
 `ai-memory` 是一个薄 Higress Wasm-Go 网关插件。它只处理请求路径上的
 memory injection、响应捕获和事件投递：对支持的 JSON AI 请求执行 request
 gating，读取租户和 consumer identity，从 Redis recent memory 读取 Console

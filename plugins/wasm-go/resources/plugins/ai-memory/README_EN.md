@@ -73,6 +73,8 @@ facts but omits `user_content` and `assistant_content`.
 
 ## Configuration
 
+The global and route schemas declare the three external service targets for the control plane: `redis_stream`, `recent_cache`, and `console_internal`. These declarations identify existing Redis/DNS and HTTP callout dependencies; they do not create a new event channel.
+
 Global `defaultConfig` contains Redis Stream, Redis recent memory, Console
 internal service, identity headers, path suffixes, and `fail_policy`.
 `matchRules[].config` contains route memory behavior and inherits the global

@@ -3120,7 +3120,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "0.1.7"
+      "declaredVersion": "0.1.8"
     },
     {
       "logicalId": "key-auth",

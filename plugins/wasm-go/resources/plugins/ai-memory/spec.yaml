@@ -16,11 +16,28 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-memory/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-memory/README_EN.md
-  version: 0.1.7
+  version: 0.1.8
 spec:
   phase: default
   priority: 260
   configSchema:
+    x-higress-external-resources:
+    - kind: redis
+      registryType: dns
+      domainPath: redis_stream.service_name
+      portPath: redis_stream.service_port
+      projectedNamePath: redis_stream.service_name
+    - kind: redis
+      registryType: dns
+      domainPath: recent_cache.service_name
+      portPath: recent_cache.service_port
+      projectedNamePath: recent_cache.service_name
+    - kind: http-callout
+      registryType: dns
+      domainPath: console_internal.service_name
+      portPath: console_internal.service_port
+      projectedNamePath: console_internal.service_name
+      protocol: http
     openAPIV3Schema:
       type: object
       properties:
@@ -251,6 +268,23 @@ spec:
         - /v1/responses
         fail_policy: open
   routeConfigSchema:
+    x-higress-external-resources:
+    - kind: redis
+      registryType: dns
+      domainPath: redis_stream.service_name
+      portPath: redis_stream.service_port
+      projectedNamePath: redis_stream.service_name
+    - kind: redis
+      registryType: dns
+      domainPath: recent_cache.service_name
+      portPath: recent_cache.service_port
+      projectedNamePath: recent_cache.service_name
+    - kind: http-callout
+      registryType: dns
+      domainPath: console_internal.service_name
+      portPath: console_internal.service_port
+      projectedNamePath: console_internal.service_name
+      protocol: http
     openAPIV3Schema:
       type: object
       additionalProperties: false
