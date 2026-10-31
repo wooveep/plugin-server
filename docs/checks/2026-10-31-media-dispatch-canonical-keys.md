@@ -6,7 +6,7 @@ Helm124的原生Qwen2已生成并发布票据，截止后保留unknown、没有�
 
 RESP边界统一返回已有授权错误或明确projection_unready，不在调度层反复解析原始回复。createTaken仅对真正的消费响应及未知状态封闭，明确未消费的投影等待可续接；首次allow后仍只许一次发送。原宿主用例新增用户/Key键断言及投影恢复/原截止到期两案，原生Redis用规范IF05键验证Lua；[分层命令](health-media-runtime-20261031/ai-proxy-2.0.16/media-boundary-commands.json)全部通过。
 
-本批发布版本2.0.16，保留15完整包。尚待统一实际Wasm批次、完整包入库/部署、六媒体与资金链；没有以宿主夹具代替实际供应商发送。
+本批2.0.16已构建、完整入库并在Helm125/126顺序部署，保留15完整包。六媒体与资金链已由实际K3S受控供应商收件完成验收，详见下方实际交付；真实供应商和故障场景继续。
 
 ## 原生传输契约
 
@@ -17,3 +17,7 @@ Rust的GatewayExecutionPayload保留完整原供应商endpoint，含API路径；
 传输修复前的完整Wasm批次曾通过323顶层/2203含子用例检查，但其制品未发布。当前源代码已变化，最终交付以重建制品与新统一批次为准。
 
 传输修复后的最终候选Wasm `33b2b158a101540bd1c7bdb2b6d1df60837ef708d7f6a34a17bfcb5e2a692bd5` 已通过[完整Go/Wasm批次](health-media-runtime-20261031/ai-proxy-2.0.16/full-go-wasm-command.json)：323顶层、2203含子用例，进程退出0。原始日志中的一个PASS与无换行夹具输出相连，按Go PASS记录统计，未重复执行测试。新旧Schema仅版本/来源元数据变化，route Schema字节一致，见[比较回执](health-media-runtime-20261031/ai-proxy-2.0.16/schema-comparison.json)。
+
+## Helm125/126实际交付
+
+[部署与六媒体逐笔对账](../../../modelfusion-deploy/docs/checks/2026-10-31-health-media-fresh-deployed.md#media-transport-helm126)为运行权威记录：88版本/883文件真实HTTP状态、大小/SHA全一致，Console登记catalog57后再切全局16，global及六条路由实际Wasm均为33b2b158…，原PVC/Gateway UID保持。六类原任务均成功且计量完整，共6创建/6原查询；按明确的受控验收价格，销售2.40/采购0.86 CNY独立结算、钱包7→13，六原幂等键重放没有新增物理请求或钱包变更。初始错误tokens价目、脚本把unknown当终态，以及旧过期/unknown任务全部保留，不将其改写为成功。
