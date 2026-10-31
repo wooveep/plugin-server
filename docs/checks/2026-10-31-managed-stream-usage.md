@@ -24,3 +24,9 @@
 | 原始manifest | `d4dd640c7d7dad3ded9c62322819a3fac4bbc28762b328db5e6cac62855535cd` |
 
 完整本地目录87版本、55正式类通过既有验证器。[服务器镜像回执](health-media-runtime-20261031/ai-proxy-2.0.15/server-image-build.json)固定镜像 `sha256:7f0167ba33a7261fcf137dd039635536eb3a603d0dc860569d13591ebc5a6f29`，inventory `sha256:ec2897ccfc28ccf21ac0a40b0e9d786ce8b3084df272c59d0a1363172992fbf3`。构建时 `deployed=false`，实际Helm、HTTP、网关加载及新调用资金验收将在后续运行原件中追加；本批测试不代替真实计费或全部媒体/停机业务通过。
+
+## 实际部署与新调用
+
+[DEP权威运行回执](../../../modelfusion-deploy/docs/checks/2026-10-31-health-media-fresh-deployed.md#managed-stream-helm120)记录Helm118首次引用时序404、修正为先制品HTTP核对后切引用的119/120，以及873个实际HTTP文件全200/摘要一致。实际全局媒体和Portal原生rev4两处ECDS、本地Wasm均为上表15摘要，API/Gateway UID与PVC保持。
+
+原UserWeb单独发送一条新消息，真实SSE200及原17/5用量、物理仅一次，原attempt/delivery两FACT均reported/provider。销售612500、采购122500（scale10）分别应用一次，钱包版本2到3、余额投递delivered。上游为明确受控synthetic fixture；供应商真实媒体另验。原14缺usage的调用原件保持，未重发或补写账务。
