@@ -1,0 +1,11 @@
+{
+  "old_objects": 80,
+  "new_objects_without_hidden_secrets": 75,
+  "changes": [
+    "Deployment/higress-plugin-server"
+  ],
+  "expected": [
+    "Deployment/higress-plugin-server"
+  ],
+  "new_helm_revision": 111
+}

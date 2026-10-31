@@ -1,0 +1,55 @@
+{
+  "checked_at": "2026-10-31T08:00:35.159756+00:00",
+  "helm_revision": 111,
+  "image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:native-admission-20261031-675d5e0a-61f5dc4549c1@sha256:596ff60f56a40f2e18d24813888efdbda36c0d4b6690192b6ce89bfa19b2d138",
+  "plugin_server_pod": "higress-plugin-server-75bc4b4449-5b5sr",
+  "plugin_server_uid": "2d90e003-63d0-4f8a-8298-74b245e43d31",
+  "pvc_name": "higress-plugin-server-e1-20261028",
+  "pvc_uid": "f49fed83-432d-4017-88eb-7f9dd5d6625a",
+  "pv": "pvc-f49fed83-432d-4017-88eb-7f9dd5d6625a",
+  "gateway_uid_before": "6d0aed93-733b-43d0-8383-79061a0f5979",
+  "gateway_uid_after": "6d0aed93-733b-43d0-8383-79061a0f5979",
+  "deployments_available": 16,
+  "retained_artifacts": 79,
+  "added_artifacts": 5,
+  "total_artifacts": 84,
+  "old_payload_files": 794,
+  "current_payload_files": 843,
+  "all_old_payload_hashes_unchanged": true,
+  "all_old_manifests_unchanged": true,
+  "retention_records_unchanged": true,
+  "retention_record_count": 2,
+  "protected_resource_specs_and_uids_unchanged": true,
+  "new_versions": [
+    {
+      "artifact_id": "4037a7d0-321d-4b90-bcab-28d4893e350b",
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.2",
+      "content_digest": "sha256:7816fe2a34961598269b430463a10bda7c1caf61fe8ea5e7f4169eeb4c7ee620"
+    },
+    {
+      "artifact_id": "6644ee67-6f5e-48d4-8960-a3d833f85181",
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.5",
+      "content_digest": "sha256:3e5e7889ffd9f4c67cac04c00e844d4c20d33018a1380b8e0469fe8dc53e43eb"
+    },
+    {
+      "artifact_id": "69ea71ad-736c-4ccd-a545-3b034b51fe5e",
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.8",
+      "content_digest": "sha256:021bc2f0592b328b46b6ed93e6f54e89c9b67f0bcc40d42de44921be9092b8df"
+    },
+    {
+      "artifact_id": "fe0fe082-850b-4774-80fe-fb333a354447",
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.12",
+      "content_digest": "sha256:fcd47592dbed4d005ea6eebadde7b69d3f2ddeca7ca783e7c86fd0fbc8e1d1bd"
+    },
+    {
+      "artifact_id": "518b7fb4-ea7b-416a-8515-eeaae0f1345a",
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.6",
+      "content_digest": "sha256:192a3e78465a66af5b000f7ecdaa1930517ed6d8e613dba88f41ee13f61c437b"
+    }
+  ]
+}

@@ -1,0 +1,242 @@
+{
+  "checked_at": "2026-10-31T08:01:06.009585+00:00",
+  "origin": "in-cluster service HTTP",
+  "packages": 5,
+  "all_files_http200_and_hashes_match": true,
+  "file_requests": 29,
+  "deleted_fixture_requests_http404": 4,
+  "records": [
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.2",
+      "path": "config.schema.json",
+      "http_status": 200,
+      "size_bytes": 21268,
+      "sha256": "sha256:a5c891565ecf01350af889e4932445cc61fb8e97ec2df76aac8e224ee570987b"
+    },
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.2",
+      "path": "defaults.json",
+      "http_status": 200,
+      "size_bytes": 2,
+      "sha256": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.2",
+      "path": "docs/README.md",
+      "http_status": 200,
+      "size_bytes": 11469,
+      "sha256": "sha256:5811517f059646116d7cfbd9e5eed5e9782faa21e688fb51713fd2634321b3db"
+    },
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.2",
+      "path": "docs/README_EN.md",
+      "http_status": 200,
+      "size_bytes": 8844,
+      "sha256": "sha256:eed90a133c0389b0127aaca25ccfa0e90f0722bfbe25ece8c256b18b0db2c724"
+    },
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.2",
+      "path": "plugin.wasm",
+      "http_status": 200,
+      "size_bytes": 19140008,
+      "sha256": "sha256:a248481f33ce53780e5122661de2ef368d37cd112d3d6aac9c66e9d7fa34d769"
+    },
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.2",
+      "path": "route.schema.json",
+      "http_status": 200,
+      "size_bytes": 12842,
+      "sha256": "sha256:4d1af68f53aebd30a511b46a97fbc645c0370167ed7cfbdc5a7ca2d5c0044ca4"
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.5",
+      "path": "config.schema.json",
+      "http_status": 200,
+      "size_bytes": 24914,
+      "sha256": "sha256:50c17fd03f465cf5874aa011ccd1b1e6d19a06d517d3350fd955fdee1a9686c9"
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.5",
+      "path": "defaults.json",
+      "http_status": 200,
+      "size_bytes": 898,
+      "sha256": "sha256:eba42947ff40bc5fae25cbe6f283b4e1cd7b6fda717736fd0232fc4e79f698e3"
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.5",
+      "path": "docs/README.md",
+      "http_status": 200,
+      "size_bytes": 9987,
+      "sha256": "sha256:40d2f843aad40ff6de4f5f29507ada31148634df33dcf9124dcd24e7ddcfd847"
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.5",
+      "path": "docs/README_EN.md",
+      "http_status": 200,
+      "size_bytes": 10136,
+      "sha256": "sha256:6848c3d5d633033409d14d5891773b16811142927692f2cd8765a78162b0740e"
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.5",
+      "path": "plugin.wasm",
+      "http_status": 200,
+      "size_bytes": 7582334,
+      "sha256": "sha256:4f5bf8dff31ffb0c2d18438f85c3d67e019604caf27ea0f32d79b804a333d0f2"
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.8",
+      "path": "config.schema.json",
+      "http_status": 200,
+      "size_bytes": 9221,
+      "sha256": "sha256:b7dccad32e60f01bf781139ededa9bea0cb12a7c15ae513254cdab63195ece32"
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.8",
+      "path": "defaults.json",
+      "http_status": 200,
+      "size_bytes": 669,
+      "sha256": "sha256:24dfcfffa812e591d9194f2dfdf7d2665906d9437aab9f9ef73ab127291ff9ed"
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.8",
+      "path": "docs/README.md",
+      "http_status": 200,
+      "size_bytes": 9295,
+      "sha256": "sha256:d4dab76838bcbdadfec2250c33e78955d7df91916643380969d96f4db44faeac"
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.8",
+      "path": "docs/README_EN.md",
+      "http_status": 200,
+      "size_bytes": 9559,
+      "sha256": "sha256:67e9c598d7664c9bd10e329086fb6f6039d23aba06f1999bc19dcc2c72c840b3"
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.8",
+      "path": "plugin.wasm",
+      "http_status": 200,
+      "size_bytes": 7372563,
+      "sha256": "sha256:87b3c0d21aa07d9b5a7e7a9aaef981dea2f1466b988c423bcea1948f76ed4316"
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.8",
+      "path": "route.schema.json",
+      "http_status": 200,
+      "size_bytes": 5467,
+      "sha256": "sha256:fdd5990ed7c64acf8eb97f877ea79da845dccde176033083dccc58f738fc1834"
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.12",
+      "path": "config.schema.json",
+      "http_status": 200,
+      "size_bytes": 192816,
+      "sha256": "sha256:ab08225bdd493c88cc8aa5d383fa6b0433d805ea51f6cb5823f92eb65248b998"
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.12",
+      "path": "defaults.json",
+      "http_status": 200,
+      "size_bytes": 2,
+      "sha256": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.12",
+      "path": "docs/README.md",
+      "http_status": 200,
+      "size_bytes": 92363,
+      "sha256": "sha256:ad3555f40204bcde18b99798aebba5e9a7d5094726e6e39d7771b4f2ac396e91"
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.12",
+      "path": "docs/README_EN.md",
+      "http_status": 200,
+      "size_bytes": 91569,
+      "sha256": "sha256:7e13130c37ca59775df69889abc98ad1c3bb37e57858456547f53516297c70db"
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.12",
+      "path": "plugin.wasm",
+      "http_status": 200,
+      "size_bytes": 11636915,
+      "sha256": "sha256:45c14b6f21bed82b694e53f273756b0bc6809c5c7af8a2a5060d680f3f4cb687"
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.12",
+      "path": "route.schema.json",
+      "http_status": 200,
+      "size_bytes": 79501,
+      "sha256": "sha256:4dfe8442d419b3de0c65a611d48f1a227ceaabf4836a89448eacafb510dea8d8"
+    },
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.6",
+      "path": "config.schema.json",
+      "http_status": 200,
+      "size_bytes": 11640,
+      "sha256": "sha256:c94d0118b202614fec23849c6ffba84a254dc2e9bef4e5257b9cf3d1aa41eb3a"
+    },
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.6",
+      "path": "defaults.json",
+      "http_status": 200,
+      "size_bytes": 398,
+      "sha256": "sha256:898a8d1974190c8d4f4b66af479b2ff49d4d03485a8d2e151e9f09c45b3a4889"
+    },
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.6",
+      "path": "docs/README.md",
+      "http_status": 200,
+      "size_bytes": 6591,
+      "sha256": "sha256:801130f591e094c45552d40926891feaf65a2774ed8cf122b7d7420cbd5aad9a"
+    },
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.6",
+      "path": "docs/README_EN.md",
+      "http_status": 200,
+      "size_bytes": 4227,
+      "sha256": "sha256:f46e419ceccfc64169e68e6621c044777994895a02631d6045e427b839dfc876"
+    },
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.6",
+      "path": "plugin.wasm",
+      "http_status": 200,
+      "size_bytes": 6983373,
+      "sha256": "sha256:6afbb6aea7b8846724a40b943e07105bed32f51fda991e3ebdcd0732c19cc38b"
+    },
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.6",
+      "path": "route.schema.json",
+      "http_status": 200,
+      "size_bytes": 7153,
+      "sha256": "sha256:4465bf9922b6fdd60bb617ef8c8231cbf1d40583f3d34f9fada0544d201bcaca"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "new_registered": 84,
+  "new_versions": [
+    "ai-billing/1.0.2",
+    "ai-cache/2.0.5",
+    "ai-memory/0.1.8",
+    "ai-proxy/2.0.12",
+    "ai-quota/2.0.6"
+  ],
+  "old_registered": 79,
+  "previous_manifests_unchanged": true
+}

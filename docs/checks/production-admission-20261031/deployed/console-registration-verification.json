@@ -1,0 +1,235 @@
+{
+  "checked_at": "2026-10-31T08:01:55.129035+00:00",
+  "helm_revision": 111,
+  "new_registered_packages": 5,
+  "formal_plugins": 55,
+  "new_defaults_match_exact_registered_artifacts": true,
+  "new_detail_schema_readme_requests_http200": 15,
+  "deleted_fixtures_not_selectable": true,
+  "registrations": [
+    {
+      "registration_id": "01a190fa-a9b0-7741-9904-dd40419bd96b",
+      "idempotency_key": "native-admission-20261031-ai-billing-1.0.2",
+      "artifact_id": "4037a7d0-321d-4b90-bcab-28d4893e350b",
+      "content_digest": "sha256:7816fe2a34961598269b430463a10bda7c1caf61fe8ea5e7f4169eeb4c7ee620",
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.2",
+      "registration_revision": "3",
+      "state": "registered",
+      "updated_at": "2026-10-31T08:01:49.998223Z",
+      "catalog_revision": "78"
+    },
+    {
+      "registration_id": "01a190fa-af70-7602-bc14-0c48e7adb61c",
+      "idempotency_key": "native-admission-20261031-ai-cache-2.0.5",
+      "artifact_id": "6644ee67-6f5e-48d4-8960-a3d833f85181",
+      "content_digest": "sha256:3e5e7889ffd9f4c67cac04c00e844d4c20d33018a1380b8e0469fe8dc53e43eb",
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.5",
+      "registration_revision": "3",
+      "state": "registered",
+      "updated_at": "2026-10-31T08:01:50.927857Z",
+      "catalog_revision": "79"
+    },
+    {
+      "registration_id": "01a190fa-b1d6-76c2-9ed0-e7681df618a4",
+      "idempotency_key": "native-admission-20261031-ai-memory-0.1.8",
+      "artifact_id": "69ea71ad-736c-4ccd-a545-3b034b51fe5e",
+      "content_digest": "sha256:021bc2f0592b328b46b6ed93e6f54e89c9b67f0bcc40d42de44921be9092b8df",
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.8",
+      "registration_revision": "3",
+      "state": "registered",
+      "updated_at": "2026-10-31T08:01:51.406633Z",
+      "catalog_revision": "80"
+    },
+    {
+      "registration_id": "01a190fa-b3c7-7fc3-b31c-05092961729a",
+      "idempotency_key": "native-admission-20261031-ai-proxy-2.0.12",
+      "artifact_id": "fe0fe082-850b-4774-80fe-fb333a354447",
+      "content_digest": "sha256:fcd47592dbed4d005ea6eebadde7b69d3f2ddeca7ca783e7c86fd0fbc8e1d1bd",
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.12",
+      "registration_revision": "3",
+      "state": "registered",
+      "updated_at": "2026-10-31T08:01:53.509875Z",
+      "catalog_revision": "81"
+    },
+    {
+      "registration_id": "01a190fa-bc54-7e91-8d0f-2b32a9db5b42",
+      "idempotency_key": "native-admission-20261031-ai-quota-2.0.6",
+      "artifact_id": "518b7fb4-ea7b-416a-8515-eeaae0f1345a",
+      "content_digest": "sha256:192a3e78465a66af5b000f7ecdaa1930517ed6d8e613dba88f41ee13f61c437b",
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.6",
+      "registration_revision": "3",
+      "state": "registered",
+      "updated_at": "2026-10-31T08:01:54.106753Z",
+      "catalog_revision": "82"
+    }
+  ],
+  "records": [
+    {
+      "label": "ai-billing-registration-original",
+      "http_status": 404,
+      "sha256": "6915813a44f3e083d892add416cd91aabd7fcffca51decdfa63320dee874c162",
+      "elapsed_ms": 8.922
+    },
+    {
+      "label": "ai-billing-register",
+      "http_status": 200,
+      "sha256": "1375a7b3d6fc465390547784aeaba9f870def0084bf1544c5aaa8d0f8d014e23",
+      "elapsed_ms": 1463.773
+    },
+    {
+      "label": "ai-cache-registration-original",
+      "http_status": 404,
+      "sha256": "6915813a44f3e083d892add416cd91aabd7fcffca51decdfa63320dee874c162",
+      "elapsed_ms": 6.854
+    },
+    {
+      "label": "ai-cache-register",
+      "http_status": 200,
+      "sha256": "62a7945430ba25ab4152975c71a73986a4f940dbe1672de1ab9251ca66cc01ea",
+      "elapsed_ms": 609.356
+    },
+    {
+      "label": "ai-memory-registration-original",
+      "http_status": 404,
+      "sha256": "6915813a44f3e083d892add416cd91aabd7fcffca51decdfa63320dee874c162",
+      "elapsed_ms": 6.447
+    },
+    {
+      "label": "ai-memory-register",
+      "http_status": 200,
+      "sha256": "49ac0fbbe94947a982ac14809e86db01d84e15d8add02b5cae4035bcae44abd7",
+      "elapsed_ms": 491.275
+    },
+    {
+      "label": "ai-proxy-registration-original",
+      "http_status": 404,
+      "sha256": "6915813a44f3e083d892add416cd91aabd7fcffca51decdfa63320dee874c162",
+      "elapsed_ms": 5.259
+    },
+    {
+      "label": "ai-proxy-register",
+      "http_status": 200,
+      "sha256": "77872d6b4791c07c2974d540ae5c124f2163471d64ab67362576ed53f50ba310",
+      "elapsed_ms": 2180.309
+    },
+    {
+      "label": "ai-quota-registration-original",
+      "http_status": 404,
+      "sha256": "6915813a44f3e083d892add416cd91aabd7fcffca51decdfa63320dee874c162",
+      "elapsed_ms": 7.758
+    },
+    {
+      "label": "ai-quota-register",
+      "http_status": 200,
+      "sha256": "6e219d36478a4a23d1faf25026cb271d1ff58a93e2bd727c4d3a8e3b7c449ace",
+      "elapsed_ms": 511.122
+    },
+    {
+      "label": "console-catalog-after-registration",
+      "http_status": 200,
+      "sha256": "1e69a9863d955f46632bf5ea4a5f591adec0b2510b000b13e25a9a3431c3269b",
+      "elapsed_ms": 143.086
+    },
+    {
+      "label": "ai-billing-detail-after-registration",
+      "http_status": 200,
+      "sha256": "d445f6bc3dc31b295673ec37df044a813ab0287320340a73b58fa230654dace4",
+      "elapsed_ms": 85.528
+    },
+    {
+      "label": "ai-billing-schema-after-registration",
+      "http_status": 200,
+      "sha256": "c4357b08d00fa203839c5d0126819407c1269a7d842608fba5a192d2ce2f8c9d",
+      "elapsed_ms": 37.35
+    },
+    {
+      "label": "ai-billing-readme-after-registration",
+      "http_status": 200,
+      "sha256": "c1195bec8940981babe75fa0e2823193c46936dbfc4b73d9c85530f5d282fa91",
+      "elapsed_ms": 10.166
+    },
+    {
+      "label": "ai-cache-detail-after-registration",
+      "http_status": 200,
+      "sha256": "711a01f8a5bf766ff0c27c03d39b53c60bf299671eb407656da341ec98f6df79",
+      "elapsed_ms": 84.894
+    },
+    {
+      "label": "ai-cache-schema-after-registration",
+      "http_status": 200,
+      "sha256": "43bcd2c046834923d483d1bd90dba78b90313b80c8fcfe6649c558d6c963639b",
+      "elapsed_ms": 35.288
+    },
+    {
+      "label": "ai-cache-readme-after-registration",
+      "http_status": 200,
+      "sha256": "f10493b5d42205bc5ebf8748dd4a9b861420ee07b63381cc1153e1ecabbd47c3",
+      "elapsed_ms": 10.225
+    },
+    {
+      "label": "ai-memory-detail-after-registration",
+      "http_status": 200,
+      "sha256": "dd3d5325a8876646d7a598f4ab89e0fb8a3872b60048ad448d037b608eff3795",
+      "elapsed_ms": 85.537
+    },
+    {
+      "label": "ai-memory-schema-after-registration",
+      "http_status": 200,
+      "sha256": "df53d8a658b029cf640b167994dd1159a1e3d82123a483f79bd259ead55e5051",
+      "elapsed_ms": 31.462
+    },
+    {
+      "label": "ai-memory-readme-after-registration",
+      "http_status": 200,
+      "sha256": "d054aa647845cfbcf49823c7df3ee9a0baa7ce3d471e0262a6298412de6a94fc",
+      "elapsed_ms": 9.686
+    },
+    {
+      "label": "ai-proxy-detail-after-registration",
+      "http_status": 200,
+      "sha256": "8deb4605d8d29ad86b2dfbd4fef05ac583fc71262aa47a3ce319039e63691443",
+      "elapsed_ms": 107.832
+    },
+    {
+      "label": "ai-proxy-schema-after-registration",
+      "http_status": 200,
+      "sha256": "3ca1c63a3648f68d1d41f139855415a409d1b4b5a54af6704662d71221213c28",
+      "elapsed_ms": 131.386
+    },
+    {
+      "label": "ai-proxy-readme-after-registration",
+      "http_status": 200,
+      "sha256": "915878b4848915f1d4f7d21f0498083fd7a00ea88122645153f0215f7d24f41d",
+      "elapsed_ms": 35.064
+    },
+    {
+      "label": "ai-quota-detail-after-registration",
+      "http_status": 200,
+      "sha256": "87fe157ad5b6ffdbc802952ff6419f7da94ba58ed6680f375dd3ffb7a9e82d0e",
+      "elapsed_ms": 88.782
+    },
+    {
+      "label": "ai-quota-schema-after-registration",
+      "http_status": 200,
+      "sha256": "bce69eac91ce73dc33373ff7e4e29a4a5eaf2f241106cc2cf5009c0ad5b31375",
+      "elapsed_ms": 31.738
+    },
+    {
+      "label": "ai-quota-readme-after-registration",
+      "http_status": 200,
+      "sha256": "e23bcc9eb9f515348c0324608a072b62369d04cf2f87f4a2ca200cc1020de424",
+      "elapsed_ms": 7.171
+    },
+    {
+      "label": "deleted-fixtures-after-registration",
+      "http_status": 200,
+      "sha256": "b89758f65d48ba47983fc013f88cce0a3da5e2eb41b0a820883e1291a0de1fe7",
+      "elapsed_ms": 143.435
+    }
+  ]
+}
