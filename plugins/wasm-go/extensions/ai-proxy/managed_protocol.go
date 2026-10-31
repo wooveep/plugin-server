@@ -12,6 +12,7 @@ import (
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
+	"github.com/tidwall/sjson"
 )
 
 const (
@@ -116,6 +117,14 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 	var convertedModel string
 	if decodeManagedJSON(actual, &converted, false) != nil || json.Unmarshal(converted["model"], &convertedModel) != nil || convertedModel != frozenModel {
 		return managedProtocolRequest{}, errors.New("managed protocol conversion changed frozen model")
+	}
+	if streaming && p.UpstreamProtocol == managedProtocolChat {
+		// Managed billing needs the provider's original usage, including when a
+		// client suppresses it. Freeze the resulting wire bytes after this step.
+		actual, err = sjson.SetBytes(actual, "stream_options.include_usage", true)
+		if err != nil {
+			return managedProtocolRequest{}, errors.New("managed Chat stream usage request failed")
+		}
 	}
 	headers := [][2]string{{"content-type", "application/json"}, {"accept", "application/json, text/event-stream"}, {"accept-encoding", "identity"}}
 	if p.UpstreamProtocol == managedProtocolMessages {

@@ -93,10 +93,38 @@ func TestManagedProtocolFallbackRequestsReuseConvertersAndKeepFrozenModel(t *tes
 		if value, _ := managedSingleHeader(request.Headers, "authorization"); value != "Bearer server-key" {
 			t.Fatal("fallback used client/native Messages authentication upstream")
 		}
+		var options struct {
+			IncludeUsage bool `json:"include_usage"`
+		}
+		if json.Unmarshal(object["stream_options"], &options) != nil || !options.IncludeUsage {
+			t.Fatal("Chat fallback did not request provider usage")
+		}
 	}
 	profile := managedProtocolFixture(t, managedProtocolResponses, managedProtocolChat)
 	if _, err := profile.PrepareRequest([]byte(`{"model":"frozen-upstream","input":"hello","previous_response_id":"old"}`), "frozen-upstream", "server-key"); err == nil {
 		t.Fatal("stateful Responses silently used stateless chat fallback")
+	}
+}
+
+func TestManagedProtocolChatStreamRequestsProviderUsageBeforeFreezingOutboundBody(t *testing.T) {
+	profile := managedProtocolFixture(t, managedProtocolChat, managedProtocolChat)
+	for _, body := range []string{
+		`{"model":"frozen-upstream","stream":true,"messages":[]}`,
+		`{"model":"frozen-upstream","stream":true,"stream_options":{"include_usage":false},"messages":[]}`,
+		`{"model":"frozen-upstream","stream":true,"stream_options":{"include_usage":true},"messages":[]}`,
+	} {
+		request, err := profile.PrepareRequest([]byte(body), "frozen-upstream", "server-key")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var actual struct {
+			StreamOptions struct {
+				IncludeUsage bool `json:"include_usage"`
+			} `json:"stream_options"`
+		}
+		if json.Unmarshal(request.Body, &actual) != nil || !actual.StreamOptions.IncludeUsage {
+			t.Fatalf("managed Chat stream did not request its original billable usage: %s", request.Body)
+		}
 	}
 }
 
