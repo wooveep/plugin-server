@@ -23,8 +23,7 @@ func managedPoolFixture(t *testing.T) map[string]interface{} {
 	settings.CredentialValue = ""
 	settings.Credentials = []managedCredential{{"credential-2", "7", "second-controlled-key"}, {"credential-1", "1", "first-controlled-key"}}
 	settings.UpstreamHealth = &managedHealthSettings{RuntimeConfigID: "release-1", ConfigRevision: "1",
-		Snapshot: managedHealthSnapshot{Prefix: "modelfusion", AuthorityID: "10000000-0000-0000-0000-000000000001", MinimumRevision: "0"},
-		Console:  managedHealthConsole{ServiceName: "console.static", ServicePort: 8080, Host: "console.internal", AuthToken: "controlled-service-token", TimeoutMS: 1000}}
+		Snapshot: managedHealthSnapshot{Prefix: "modelfusion", AuthorityID: "10000000-0000-0000-0000-000000000001", MinimumRevision: "0"}}
 	for _, member := range release.Credentials {
 		settings.UpstreamHealth.Targets = append(settings.UpstreamHealth.Targets, upstreamhealth.TargetReference{
 			TargetID: "target-1", BindingID: "binding-1", ProviderAccountID: "purchase-1", RegionEndpointRef: "region-1", UpstreamModel: "upstream-model",

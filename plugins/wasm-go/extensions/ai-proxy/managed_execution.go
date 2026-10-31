@@ -113,20 +113,21 @@ type managedRedisSettings struct {
 }
 
 type managedSettings struct {
-	MediaDispatchMode  string                 `json:"media_dispatch_mode,omitempty"`
-	ProducerID         string                 `json:"producer_id"`
-	CallIdentitySource string                 `json:"call_identity_source"`
-	PrivateStream      string                 `json:"private_stream"`
-	Redis              managedRedisSettings   `json:"redis"`
-	UpstreamPath       string                 `json:"upstream_path"`
-	Authority          string                 `json:"authority"`
-	CredentialValue    string                 `json:"credential_value,omitempty"`
-	Credentials        []managedCredential    `json:"credentials,omitempty"`
-	TimeoutMS          uint32                 `json:"timeout_ms,omitempty"`
-	InputProtocol      string                 `json:"input_protocol,omitempty"`
-	UpstreamProtocol   string                 `json:"upstream_protocol,omitempty"`
-	UpstreamHealth     *managedHealthSettings `json:"upstream_health,omitempty"`
-	TextExecution      *managedTextSettings   `json:"text_execution,omitempty"`
+	MediaDispatchMode  string                   `json:"media_dispatch_mode,omitempty"`
+	ProducerID         string                   `json:"producer_id"`
+	CallIdentitySource string                   `json:"call_identity_source"`
+	PrivateStream      string                   `json:"private_stream"`
+	Redis              managedRedisSettings     `json:"redis"`
+	UpstreamPath       string                   `json:"upstream_path"`
+	Authority          string                   `json:"authority"`
+	CredentialValue    string                   `json:"credential_value,omitempty"`
+	Credentials        []managedCredential      `json:"credentials,omitempty"`
+	TimeoutMS          uint32                   `json:"timeout_ms,omitempty"`
+	InputProtocol      string                   `json:"input_protocol,omitempty"`
+	UpstreamProtocol   string                   `json:"upstream_protocol,omitempty"`
+	UpstreamHealth     *managedHealthSettings   `json:"upstream_health,omitempty"`
+	InternalAuthority  *managedInternalEndpoint `json:"internal_authority,omitempty"`
+	TextExecution      *managedTextSettings     `json:"text_execution,omitempty"`
 }
 
 type managedRedisClient interface {
@@ -272,8 +273,18 @@ func (c *managedExecutionConfig) validate() error {
 	if c.settings.MediaDispatchMode != "" && c.settings.MediaDispatchMode != "disabled" && c.settings.MediaDispatchMode != "managed_operation" {
 		return errors.New("managed execution media dispatch mode is unsupported")
 	}
-	if c.settings.CallIdentitySource == executionfacts.CallIdentitySourceInternal && (c.settings.UpstreamHealth == nil || c.settings.MediaDispatchMode == "managed_operation") {
-		return errors.New("internal execution requires its registered service health endpoint and text operation")
+	if c.settings.CallIdentitySource == executionfacts.CallIdentitySourceInternal {
+		endpoint := c.settings.InternalAuthority
+		if c.settings.UpstreamHealth == nil || c.settings.MediaDispatchMode == "managed_operation" || endpoint == nil {
+			return errors.New("internal execution requires original job authority, health and a text operation")
+		}
+		if !managedID(endpoint.ServiceName) || strings.ContainsAny(endpoint.ServiceName, " /:@?#[]") ||
+			endpoint.ServicePort == 0 || endpoint.ServicePort > 65535 || !managedAuthority(endpoint.Host) ||
+			endpoint.TimeoutMS == 0 || endpoint.TimeoutMS > 5000 || !healthHeaderValue(endpoint.AuthToken) {
+			return errors.New("internal execution requires the registered original job authority endpoint")
+		}
+	} else if c.settings.InternalAuthority != nil {
+		return errors.New("original job authority is only valid for internal execution")
 	}
 	if managedOperation(c) == executionfacts.NativeEmbeddingOperation {
 		if err := validateManagedEmbedding(c); err != nil {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -33,7 +34,7 @@ func TestManagedHealthUsesDurableStateAndConsumesRecoveryBeforeSingleSend(t *tes
 				Snapshot: managedHealthSnapshot{Prefix: "modelfusion", AuthorityID: "10000000-0000-0000-0000-000000000001", MinimumRevision: "0"},
 				Target: upstreamhealth.TargetReference{TargetID: "target-1", BindingID: "binding-1", ProviderAccountID: "purchase-1", RegionEndpointRef: "region-1",
 					UpstreamModel: "upstream-model", OperationKind: "text_generate", CredentialRef: "credential-1", CredentialGeneration: "1", ScopeIDs: []string{"model-scope"}},
-				Console: managedHealthConsole{ServiceName: "console.static", ServicePort: 8080, Host: "console.internal", AuthToken: "controlled-service-token", TimeoutMS: 1000}}
+			}
 			fixture["managed_execution"] = settings
 			h := &managedHost{}
 			vm := wrapper.NewCommonVmCtx("health-managed-text",
@@ -142,7 +143,7 @@ func TestManagedHealthUsesDurableStateAndConsumesRecoveryBeforeSingleSend(t *tes
 				t.Fatal(err)
 			}
 			args := command.Array()
-			if len(args) != 16 || args[0].String() != "EVAL" {
+			if len(args) != 16 || !strings.EqualFold(args[0].String(), "EVAL") {
 				t.Fatal("recovery did not use its existing Redis/Stream script")
 			}
 			var event upstreamhealth.RuntimeEvent

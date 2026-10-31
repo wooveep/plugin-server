@@ -17,6 +17,16 @@ import (
 const managedInternalCallHeader = executionfacts.InternalCallReferenceHeader
 const managedInternalCheckPath = "/internal/internal-execution/check"
 
+// This endpoint checks an already registered service job. Health qualification
+// and ordinary customer sends use Redis and do not consume this configuration.
+type managedInternalEndpoint struct {
+	ServiceName string `json:"service_name"`
+	ServicePort uint32 `json:"service_port"`
+	Host        string `json:"host"`
+	AuthToken   string `json:"auth_token"`
+	TimeoutMS   uint32 `json:"timeout_ms"`
+}
+
 type managedInternalCall struct {
 	identity                     serviceidentity.Snapshot
 	ref, apiKeyID, generation    string
@@ -103,12 +113,7 @@ func checkManagedInternalCall(ctx wrapper.HttpContext, state *managedExecutionSt
 		return
 	}
 	original.checkStarted = true
-	health := state.config.settings.UpstreamHealth
-	if health == nil {
-		rejectManagedRequest(ctx, 503, "internal_execution_endpoint_missing")
-		return
-	}
-	endpoint := health.Console
+	endpoint := state.config.settings.InternalAuthority
 	request := managedInternalRequest{CallRef: original.ref, ReleaseID: state.config.release.Descriptor.ReleaseID, RouteID: state.config.release.RouteID, APIKeyID: original.apiKeyID, CredentialGeneration: original.generation, OriginalBodyDigest: basis.Digest()}
 	body, err := json.Marshal(request)
 	if err != nil {
@@ -122,12 +127,18 @@ func checkManagedInternalCall(ctx wrapper.HttpContext, state *managedExecutionSt
 			return
 		}
 		original.checkCompleted = true
-		response := readHealthGatewayResponse(count, size, 128*1024)
-		if !response.HeadersComplete || !response.BodyComplete || response.StatusCode != 200 {
+		responseHeaders, headerErr := proxywasm.GetHttpCallResponseHeaders()
+		status, statusErr := managedSingleHeader(responseHeaders, ":status")
+		if headerErr != nil || len(responseHeaders) != count || statusErr != nil || status != "200" || size <= 0 || size > 128*1024 {
 			rejectManagedRequest(ctx, 503, "internal_execution_check_unconfirmed")
 			return
 		}
-		receipt, err := decodeManagedInternalReceipt(response.Body, request, state.config, basis, operation, time.Now())
+		response, err := proxywasm.GetHttpCallResponseBody(0, size)
+		if err != nil || len(response) != size {
+			rejectManagedRequest(ctx, 503, "internal_execution_check_unconfirmed")
+			return
+		}
+		receipt, err := decodeManagedInternalReceipt(response, request, state.config, basis, operation, time.Now())
 		if err != nil {
 			rejectManagedRequest(ctx, 403, "internal_execution_not_authorized")
 			return

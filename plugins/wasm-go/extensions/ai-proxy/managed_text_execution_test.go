@@ -178,11 +178,12 @@ func respondManagedTextHealth(t *testing.T, h *managedHost, enabled map[string]b
 	observed, expires := now.Add(-time.Second).Format(time.RFC3339Nano), now.Add(time.Minute).Format(time.RFC3339Nano)
 	body, _ := json.Marshal(map[string]interface{}{"projection_schema": upstreamhealth.ProjectionSchema, "authority_id": authority, "revision": version, "state_digest": digest, "credentials": credentials, "scopes": scopes, "observed_at": observed, "valid_until": expires, "complete": true})
 	values := []resp.Value{}
-	for _, value := range []string{authority, version, digest, string(body), observed, expires, upstreamhealth.ProjectionSchema, "true"} {
-		values = append(values, resp.StringValue(value))
+	for i, value := range []string{authority, version, digest, string(body), observed, expires, upstreamhealth.ProjectionSchema, "true"} {
+		values = append(values, resp.StringValue(upstreamhealth.HashFields()[i]), resp.StringValue(value))
 	}
+	response := []resp.Value{resp.ArrayValue(values), resp.ArrayValue([]resp.Value{resp.StringValue(strconv.FormatInt(now.Unix(), 10)), resp.StringValue(strconv.FormatInt(int64(now.Nanosecond()/1000), 10))})}
 	var encoded bytes.Buffer
-	if err := resp.NewWriter(&encoded).WriteArray(values); err != nil {
+	if err := resp.NewWriter(&encoded).WriteArray(response); err != nil {
 		t.Fatal(err)
 	}
 	h.host.CallOnRedisCallResponse(lookups[0].CalloutID, 0, encoded.Bytes())

@@ -23,21 +23,12 @@ type managedHealthSettings struct {
 	Snapshot        managedHealthSnapshot            `json:"snapshot"`
 	Target          upstreamhealth.TargetReference   `json:"target"`
 	Targets         []upstreamhealth.TargetReference `json:"targets,omitempty"`
-	Console         managedHealthConsole             `json:"console_internal"`
 }
 
 type managedHealthSnapshot struct {
 	Prefix          string                  `json:"prefix"`
 	AuthorityID     string                  `json:"authority_id"`
 	MinimumRevision upstreamhealth.Revision `json:"minimum_revision"`
-}
-
-type managedHealthConsole struct {
-	ServiceName string `json:"service_name"`
-	ServicePort uint32 `json:"service_port"`
-	Host        string `json:"host"`
-	AuthToken   string `json:"auth_token"`
-	TimeoutMS   uint32 `json:"timeout_ms"`
 }
 
 type managedHealthRuntime struct {
@@ -214,6 +205,18 @@ func managedGatewayOwnerInstance() string {
 	managedHealthStartup.Lock()
 	defer managedHealthStartup.Unlock()
 	return managedHealthStartup.owner
+}
+
+func healthHeaderValue(value string) bool {
+	if len(value) == 0 || len(value) > 8192 {
+		return false
+	}
+	for _, char := range value {
+		if char <= 0x20 || char >= 0x7f {
+			return false
+		}
+	}
+	return true
 }
 
 func initializeManagedHealthRuntime(ctx wrapper.PluginContext) error {
