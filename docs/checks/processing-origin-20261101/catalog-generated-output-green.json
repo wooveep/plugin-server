@@ -1,0 +1,19 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-p",
+    "test_plugin_catalog.py",
+    "-v"
+  ],
+  "exit_code": 0,
+  "passed_top_level": 5,
+  "skipped": 0,
+  "recorded_at": "2026-10-31T23:01:30.612268+00:00",
+  "evidence_origin": "captured command result in this chat; no test rerun",
+  "regression": "generated wasm-unit-test.wasm does not enter source inputs; embedded Wasm remains included; main.go changes still change inputs"
+}

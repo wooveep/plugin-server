@@ -9,3 +9,5 @@ ai-memory 的 assemble 和 ai-cache 的 lookup 从 header 阶段已捕获、经�
 [最终 Go 批次](processing-origin-20261101/green-commands.json)覆盖两个模块及其 config 包，全部通过；memory 增加原 bounded 与生产 unbounded 的传递检查，两个入口继续拒绝缺失/重复/跨发布的假 parent，且校验 header 删除后来源保持。早期公共类型试验及日志已留在本地诊断目录，最终采用各 RPC 的私有类型，只以最终源码摘要作为交付依据。
 
 MF 的准确 PG RED、10项分层GREEN及严格Clippy见其唯一记录。完整制品构建、入库/HTTP读回、实际配置加载与语义/缓存请求仍待完成；Go 宿主检查不等同实际网关通过。
+
+完整 Wasm 批次已通过：Memory 72 个顶层用例（含子项607），Cache 65 个顶层用例（含子项555），均无跳过。首次打包被来源校验正确阻止：Wasm 测试框架在源码旁生成的 `wasm-unit-test.wasm` 被目录输入模式误收为源码，无法在记录的 Git 提交中找到。源码输入枚举现在只排除这个已知测试输出，仍保留实际嵌入的 Wasm 资产；[五项 catalog 检查](processing-origin-20261101/catalog-generated-output-green.json)覆盖生成测试产物不改变发布输入、真实源码改动仍改变摘要。旧构建与测试记录保留，重新构建后核对二进制及实际源码输入，再制作完整包；不会手工改写旧 receipt。

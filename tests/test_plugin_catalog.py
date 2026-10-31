@@ -4,12 +4,36 @@ import tempfile
 import subprocess
 import unittest
 
-from plugin_catalog import Version, load_catalog, select_releases
+from plugin_catalog import Version, load_catalog, select_releases, source_inputs
 from plugin_schema_conversion import convert_spec
 from artifact_contract import validate_defaults
 
 
 class PluginCatalogTests(unittest.TestCase):
+    def test_generated_wasm_test_output_does_not_change_release_inputs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "plugins/release").mkdir(parents=True)
+            directory = root / "plugins/go"
+            directory.mkdir()
+            (directory / "VERSION").write_text("1.0.0")
+            (directory / "main.go").write_text("package main\n")
+            (directory / "embedded.wasm").write_bytes(b"embedded source asset")
+            (root / "plugins/release/catalog.json").write_text(json.dumps({
+                "schemaVersion": 1, "requiredPlugins": ["example"], "plugins": [{
+                    "logicalId": "example", "implementation": "go", "sourceDir": "plugins/go",
+                    "declaredVersion": "1.0.0", "releaseEligible": True,
+                    "artifactInputs": ["plugins/go/**"],
+                }],
+            }))
+            source = select_releases(root)[0]
+            original = source_inputs(root, source)
+            self.assertIn("plugins/go/embedded.wasm", original)
+            (directory / "wasm-unit-test.wasm").write_bytes(b"generated test binary")
+            self.assertEqual(source_inputs(root, source), original)
+            (directory / "main.go").write_text("package main\nfunc main() {}\n")
+            self.assertNotEqual(source_inputs(root, source), original)
+
     def test_formal_inventory_covers_upstream_and_custom_sources_with_matching_metadata(self):
         root = Path(__file__).resolve().parents[1]
         lock = json.loads((root / "plugins/upstream-lock.json").read_bytes())

@@ -145,7 +145,9 @@ def source_inputs(root: Path, source: PluginSource) -> dict[str, str]:
         paths = [(root / pattern[:-3])] if pattern.endswith("/**") else root.glob(pattern)
         for path in paths:
             candidates = path.rglob("*") if path.is_dir() else [path]
+            # The Wasm test harness writes this output beside its Go sources.
             files.update(item for item in candidates if item.is_file()
+                         and item.name != "wasm-unit-test.wasm"
                          and not {"node_modules", "target", "__pycache__", ".git"}.intersection(item.parts))
     return {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sorted(files)}
