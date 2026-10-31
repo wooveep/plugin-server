@@ -102,7 +102,10 @@ func (r *Reader) decodeResponse(value resp.Value, now time.Time) ReadResult {
 	if missing != 0 {
 		return ReadResult{Status: ReadIncomplete}
 	}
-	result := decodeHash(fields, r.config, now)
+	return r.acceptSnapshot(decodeHash(fields, r.config, now))
+}
+
+func (r *Reader) acceptSnapshot(result ReadResult) ReadResult {
 	if result.Status != ReadReady {
 		return result
 	}

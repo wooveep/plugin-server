@@ -1,5 +1,5 @@
-// Package upstreamhealth reads Console's upstream-health.v1 projection. It
-// qualifies frozen candidates; it never elects targets or changes health state.
+// Package upstreamhealth reads explicit controls and coordinates natural traffic
+// cooldown in the existing Redis/Stream. It never elects dispatch targets.
 package upstreamhealth
 
 import (
@@ -208,6 +208,7 @@ type Snapshot struct {
 	raw             []byte
 	fence           *revisionFence
 	validated       bool
+	runtimeNow      time.Time
 	credentialIndex map[string]int
 	scopeIndex      map[string]int
 	accountScopes   map[string][]int
@@ -255,6 +256,9 @@ func utc(value string) (time.Time, bool) {
 func (s *Snapshot) current(now time.Time) ReadStatus {
 	if s == nil || !s.validated || now.IsZero() {
 		return ReadInvalid
+	}
+	if !s.runtimeNow.IsZero() {
+		now = s.runtimeNow
 	}
 	if s.metadata.ObservedAt.After(now) {
 		return ReadFuture

@@ -43,8 +43,7 @@ type managedHealthConsole struct {
 type managedHealthRuntime struct {
 	settings managedHealthSettings
 	owner    string
-	reader   *upstreamhealth.Reader
-	client   *upstreamhealth.GatewayClient
+	runtime  *upstreamhealth.Runtime
 }
 
 type managedHealthAttempt struct {
@@ -66,7 +65,11 @@ type managedHealthChoice struct {
 	decision upstreamhealth.Decision
 }
 
-func eligibleManagedHealthMembers(client *upstreamhealth.GatewayClient, read upstreamhealth.ReadResult, members []managedHealthMember, now time.Time) ([]managedHealthChoice, *uint64) {
+type managedHealthDecider interface {
+	DecideNewCall(upstreamhealth.ReadResult, upstreamhealth.Candidate, time.Time) upstreamhealth.Decision
+}
+
+func eligibleManagedHealthMembers(client managedHealthDecider, read upstreamhealth.ReadResult, members []managedHealthMember, now time.Time) ([]managedHealthChoice, *uint64) {
 	var eligible []managedHealthChoice
 	var retryAfter *uint64
 	for _, member := range members {
@@ -164,10 +167,8 @@ func freezeManagedHealthMember(state *managedExecutionState, member managedHealt
 // This is one plugin VM's existing startup state, not a cross-VM context or a
 // new recovery controller. Reload retains pending outcomes and read watermarks.
 type managedHealthShared struct {
-	endpointDigest string
 	snapshotDigest string
-	reader         *upstreamhealth.Reader
-	client         *upstreamhealth.GatewayClient
+	runtime        *upstreamhealth.Runtime
 }
 
 var managedHealthStartup = struct {
@@ -176,30 +177,35 @@ var managedHealthStartup = struct {
 	byAuthority map[string]*managedHealthShared
 }{byAuthority: map[string]*managedHealthShared{}}
 
-// managedGatewayHealthClient is shared by native text and media. Both retain
-// one exact pending/veto/read/ACK state for their original startup and authority.
-func managedGatewayHealthClient(authorityID string, endpoint healthGatewayEndpoint) (*upstreamhealth.GatewayClient, string, error) {
+// managedGatewayHealthRuntime shares one original Redis state and pending veto
+// across text/media configurations in the same actual host/VM startup.
+func managedGatewayHealthRuntime(settings *managedHealthSettings, redis upstreamhealth.RuntimeRedis, stream, producerID string) (*upstreamhealth.Runtime, string, error) {
 	managedHealthStartup.Lock()
 	defer managedHealthStartup.Unlock()
 	owner := managedHealthStartup.owner
-	if owner == "" {
+	if owner == "" || settings == nil {
 		return nil, "", errors.New("managed health requires the actual host node and VM startup identity")
 	}
-	raw, _ := json.Marshal(endpoint)
-	digest := bodybasis.DigestBytes(raw)
-	key := owner + "/" + authorityID
-	if shared, ok := managedHealthStartup.byAuthority[key]; ok {
-		if shared.endpointDigest != digest {
-			return nil, "", errors.New("managed health authority changed its registered endpoint during reload")
-		}
-		return shared.client, owner, nil
+	projection := upstreamhealth.Config{Prefix: settings.Snapshot.Prefix, AuthorityID: settings.Snapshot.AuthorityID, MinimumRevision: "0"}
+	if _, err := projection.SnapshotKey(); err != nil {
+		return nil, "", err
 	}
-	client, err := newHealthGatewayClient(endpoint, owner)
+	raw, _ := json.Marshal([]string{projection.Prefix, stream, producerID})
+	digest := bodybasis.DigestBytes(raw)
+	key := owner + "/" + projection.AuthorityID
+	if shared, ok := managedHealthStartup.byAuthority[key]; ok {
+		if shared.snapshotDigest != digest {
+			return nil, "", errors.New("managed health authority changed its original Redis/Stream during reload")
+		}
+		return shared.runtime, owner, nil
+	}
+	runtime, err := upstreamhealth.NewRuntime(redis, upstreamhealth.RuntimeConfig{Projection: projection, Stream: stream,
+		ProducerID: producerID, OwnerInstance: owner, Policy: upstreamhealth.DefaultRuntimePolicy()})
 	if err != nil {
 		return nil, "", err
 	}
-	managedHealthStartup.byAuthority[key] = &managedHealthShared{endpointDigest: digest, client: client}
-	return client, owner, nil
+	managedHealthStartup.byAuthority[key] = &managedHealthShared{snapshotDigest: digest, runtime: runtime}
+	return runtime, owner, nil
 }
 
 // Shared by managed text and media leaves; both use exactly the startup value
@@ -244,33 +250,13 @@ func configureManagedHealth(config *managedExecutionConfig) (*managedHealthRunti
 	if _, err := managedHealthMembers(config); err != nil {
 		return nil, err
 	}
-	endpoint := settings.Console
-	client, owner, err := managedGatewayHealthClient(settings.Snapshot.AuthorityID, healthGatewayEndpoint{
-		ServiceName: endpoint.ServiceName, ServicePort: endpoint.ServicePort, Host: endpoint.Host, AuthToken: endpoint.AuthToken, TimeoutMS: endpoint.TimeoutMS})
+	redis, ok := config.redis.(upstreamhealth.RuntimeRedis)
+	if !ok {
+		return nil, errors.New("managed health requires the existing foreground and root event Redis client")
+	}
+	runtime, owner, err := managedGatewayHealthRuntime(settings, redis, config.settings.PrivateStream, config.settings.ProducerID)
 	if err != nil {
 		return nil, err
-	}
-	managedHealthStartup.Lock()
-	defer managedHealthStartup.Unlock()
-	shared := managedHealthStartup.byAuthority[owner+"/"+settings.Snapshot.AuthorityID]
-	transport, _ := json.Marshal([]interface{}{settings.Snapshot.Prefix, config.settings.Redis})
-	transportDigest := bodybasis.DigestBytes(transport)
-	if shared.reader != nil && shared.snapshotDigest != transportDigest {
-		return nil, errors.New("managed health authority changed its original snapshot source during reload")
-	}
-	if shared.reader == nil {
-		redis, ok := config.redis.(upstreamhealth.RedisReader)
-		if !ok {
-			return nil, errors.New("managed health requires the original Redis snapshot reader")
-		}
-		// HMGet is the embedded foreground RedisClusterClient method. Only Command
-		// uses the existing event client's root-owned background dispatcher.
-		projection.MinimumRevision = "0"
-		reader, err := upstreamhealth.NewReader(redis, projection)
-		if err != nil {
-			return nil, err
-		}
-		shared.snapshotDigest, shared.reader = transportDigest, reader
 	}
 	// Own all slice fields independently of the config parser's temporary object.
 	retained := *settings
@@ -279,7 +265,7 @@ func configureManagedHealth(config *managedExecutionConfig) (*managedHealthRunti
 	for index := range retained.Targets {
 		retained.Targets[index].ScopeIDs = append([]string(nil), settings.Targets[index].ScopeIDs...)
 	}
-	return &managedHealthRuntime{settings: retained, owner: owner, reader: shared.reader, client: client}, nil
+	return &managedHealthRuntime{settings: retained, owner: owner, runtime: runtime}, nil
 }
 
 func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionState, basis bodybasis.Snapshot, body []byte) {
@@ -299,7 +285,7 @@ func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionStat
 	// not re-read or retain a caller-mutable body buffer after qualification.
 	body = append([]byte(nil), body...)
 	lookup := func() {
-		health.reader.Lookup(func(read upstreamhealth.ReadResult) {
+		health.runtime.Lookup(func(read upstreamhealth.ReadResult) {
 			if managedTextStopped(state) || state.dispatchStarted || state.credentialSelected {
 				return
 			}
@@ -313,7 +299,7 @@ func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionStat
 			// One original snapshot qualifies the complete pool. Pending local veto,
 			// disabled controls and old generations remain in the original decider.
 			now := time.Now()
-			eligible, retryAfter := eligibleManagedHealthMembers(health.client, read, members, now)
+			eligible, retryAfter := eligibleManagedHealthMembers(health.runtime, read, members, now)
 			if len(eligible) == 0 {
 				rejectManagedHealth(ctx, state, "upstream_health_unavailable", retryAfter)
 				return
@@ -350,80 +336,37 @@ func authorizeManagedHealth(ctx wrapper.HttpContext, state *managedExecutionStat
 			}
 			claimRequest := upstreamhealth.ClaimRequest{ClaimRequestID: "health:" + state.attemptID, OwnerInstance: health.owner,
 				ExpectedEpochs: decision.ScopeEpochs, Candidate: candidate, CandidateDigest: candidate.Digest()}
-			err = health.client.Claim(claimRequest, func(result upstreamhealth.GatewayResult[upstreamhealth.ClaimReceipt]) {
+			err = health.runtime.ClaimConsumed(claimRequest, selected.member.target, func(consumed upstreamhealth.GatewayResult[upstreamhealth.RecoveryClaim]) {
 				if managedTextStopped(state) || state.dispatchStarted {
 					return
 				}
-				if result.State != upstreamhealth.GatewayAcknowledged || result.Value == nil || result.Value.Decision != "granted" || result.Value.Claim == nil {
-					rejectManagedHealth(ctx, state, "health_recovery_not_granted", nil)
+				if consumed.State != upstreamhealth.GatewayAcknowledged || consumed.Value == nil {
+					rejectManagedHealth(ctx, state, "health_consume_unconfirmed", nil)
 					return
 				}
-				allocated := *result.Value.Claim
-				final, err := candidate.FinalSelection(allocated.ClaimID)
+				deadline, err := time.Parse(time.RFC3339Nano, consumed.Value.ExpiresAt)
 				if err != nil {
-					rejectManagedHealth(ctx, state, "health_final_selection_invalid", nil)
+					rejectManagedHealth(ctx, state, "health_consume_unconfirmed", nil)
 					return
 				}
-				err = health.client.Consume(allocated, final, func(consumed upstreamhealth.GatewayResult[upstreamhealth.RecoveryClaim]) {
-					if managedTextStopped(state) || state.dispatchStarted {
-						return
-					}
-					if consumed.State != upstreamhealth.GatewayAcknowledged || consumed.Value == nil {
-						rejectManagedHealth(ctx, state, "health_consume_unconfirmed", nil)
-						return
-					}
-					deadline, err := time.Parse(time.RFC3339Nano, consumed.Value.ExpiresAt)
-					if err != nil {
-						rejectManagedHealth(ctx, state, "health_consume_unconfirmed", nil)
-						return
-					}
-					id := consumed.Value.ClaimID
-					state.health.claimID, state.health.claimDeadline = &id, deadline
-					for _, scope := range consumed.Value.Scopes {
-						state.health.claimScopes = append(state.health.claimScopes, scope.ScopeID)
-					}
-					state.frozenSelection = append([]byte(nil), final...)
-					dispatchManagedPreparedRequest(ctx, state, basis, request)
-				})
-				if err != nil {
-					rejectManagedHealth(ctx, state, "health_consume_invalid", nil)
+				id := consumed.Value.ClaimID
+				state.health.claimID, state.health.claimDeadline = &id, deadline
+				for _, scope := range consumed.Value.Scopes {
+					state.health.claimScopes = append(state.health.claimScopes, scope.ScopeID)
 				}
+				state.frozenSelection = append([]byte(nil), consumed.Value.ConsumedSelection...)
+				dispatchManagedPreparedRequest(ctx, state, basis, request)
 			})
 			if err != nil {
 				rejectManagedHealth(ctx, state, "health_claim_invalid", nil)
 			}
+
 		})
 	}
-	// Retry the exact pending packets first so a fast Redis read cannot close the
-	// HTTP context before a durable outcome ACK callback arrives. This runs only
-	// on natural traffic, never as a timer/probe or another business send.
-	var pending []upstreamhealth.OutcomeRequest
-	seen := make(map[string]bool)
-	for _, member := range members {
-		for _, original := range health.client.PendingOutcomes(member.target) {
-			if !seen[original.EventID] {
-				seen[original.EventID] = true
-				pending = append(pending, original)
-			}
-		}
-	}
-	if len(pending) == 0 {
-		lookup()
-		return
-	}
-	remaining := len(pending)
-	complete := func() {
-		remaining--
-		if remaining == 0 && !state.closed {
-			lookup()
-		}
-	}
-	for _, original := range pending {
-		err := health.client.ReportOutcome(original, func(upstreamhealth.GatewayResult[upstreamhealth.OutcomeReceipt]) { complete() })
-		if err != nil {
-			complete()
-		}
-	}
+	// Root-owned retries retain exact health records. Current requests perform
+	// their own Redis lookup without waiting for Console or an outcome ACK.
+	health.runtime.FlushPending()
+	lookup()
 }
 
 func rejectManagedHealth(ctx wrapper.HttpContext, state *managedExecutionState, reason string, retryAfter *uint64) {
@@ -474,7 +417,7 @@ func reportManagedHealthOutcome(state *managedExecutionState, snapshot execution
 		evidence := *state.health.retryAfterEvidence
 		request.Effect.RetryAfterEvidence = &evidence
 	}
-	err = health.client.ReportOutcome(request, func(result upstreamhealth.GatewayResult[upstreamhealth.OutcomeReceipt]) {
+	err = health.runtime.ReportOutcome(request, health.settings.Target, func(result upstreamhealth.GatewayResult[upstreamhealth.OutcomeReceipt]) {
 		// Captured client state only: an original customer context may be deleted.
 		if result.State != upstreamhealth.GatewayAcknowledged {
 			log.Warn("upstream health original outcome remains unacknowledged")

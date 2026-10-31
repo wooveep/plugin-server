@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"strconv"
 	"testing"
 	"time"
 
@@ -17,9 +18,9 @@ import (
 	"github.com/tidwall/resp"
 )
 
-// Uses the real Wasm host callbacks across Redis lookup, Claim, final Consume,
-// original attempt registration and the existing sole provider send. It proves
-// native wiring only; it is not live Console/Redis/provider acceptance evidence.
+// Uses actual SDK host callbacks for Redis read/atomic consume, original attempt
+// registration and the sole provider send. No Console callout is acknowledged.
+// Native Redis state transitions have their separate owned-service batch.
 func TestManagedHealthUsesDurableStateAndConsumesRecoveryBeforeSingleSend(t *testing.T) {
 	for _, scenario := range []struct {
 		name                   string
@@ -103,25 +104,15 @@ func TestManagedHealthUsesDurableStateAndConsumesRecoveryBeforeSingleSend(t *tes
 			body, _ := json.Marshal(map[string]interface{}{"projection_schema": upstreamhealth.ProjectionSchema, "authority_id": authority, "revision": "9", "state_digest": digest,
 				"credentials": credentials, "scopes": scopes, "observed_at": observed, "valid_until": expires, "complete": true})
 			values := []resp.Value{}
-			for _, value := range []string{authority, "9", digest, string(body), observed, expires, upstreamhealth.ProjectionSchema, "true"} {
-				values = append(values, resp.StringValue(value))
+			for i, value := range []string{authority, "9", digest, string(body), observed, expires, upstreamhealth.ProjectionSchema, "true"} {
+				values = append(values, resp.StringValue(upstreamhealth.HashFields()[i]), resp.StringValue(value))
 			}
+			response := []resp.Value{resp.ArrayValue(values), resp.ArrayValue([]resp.Value{resp.StringValue(strconv.FormatInt(now.Unix(), 10)), resp.StringValue(strconv.FormatInt(int64(now.Nanosecond()/1000), 10))})}
 			var encoded bytes.Buffer
-			if err := resp.NewWriter(&encoded).WriteArray(values); err != nil {
+			if err := resp.NewWriter(&encoded).WriteArray(response); err != nil {
 				t.Fatal(err)
 			}
 			host.CallOnRedisCallResponse(lookups[0].CalloutID, 0, encoded.Bytes())
-			findCall := func(path string) proxytest.HttpCalloutAttribute {
-				for _, call := range host.GetCalloutAttributesFromContext(h.id) {
-					for _, header := range call.Headers {
-						if header[0] == ":path" && header[1] == path {
-							return call
-						}
-					}
-				}
-				t.Fatalf("missing native callout %s", path)
-				return proxytest.HttpCalloutAttribute{}
-			}
 			providerCount := func() int {
 				n := 0
 				for _, call := range host.GetCalloutAttributesFromContext(h.id) {
@@ -137,56 +128,60 @@ func TestManagedHealthUsesDurableStateAndConsumesRecoveryBeforeSingleSend(t *tes
 				}
 				return
 			}
-			claimCall := findCall(upstreamhealth.RecoveryClaimPath)
-			if providerCount() != 0 {
-				t.Fatal("allocated claim preceded provider send gate")
+			lookups = host.GetRedisCalloutAttributesFromContext(h.id)
+			if len(lookups) != 1 || len(host.GetCalloutAttributesFromContext(h.id)) != 0 {
+				t.Fatal("recovery requested Console or sent before fresh Redis qualification")
 			}
-			var original upstreamhealth.ClaimRequest
-			if err := json.Unmarshal(claimCall.Body, &original); err != nil {
+			host.CallOnRedisCallResponse(lookups[0].CalloutID, 0, encoded.Bytes())
+			mutations := host.GetRedisCalloutAttributesFromContext(h.id)
+			if len(mutations) != 1 || providerCount() != 0 {
+				t.Fatal("provider preceded original atomic consume")
+			}
+			command, _, err := resp.NewReader(bytes.NewReader(mutations[0].Query)).ReadValue()
+			if err != nil {
 				t.Fatal(err)
 			}
-			if original.OwnerInstance != managedGatewayOwnerInstance() || original.CandidateDigest != original.Candidate.Digest() {
-				t.Fatal("candidate lost original startup or digest")
+			args := command.Array()
+			if len(args) != 16 || args[0].String() != "EVAL" {
+				t.Fatal("recovery did not use its existing Redis/Stream script")
 			}
-			claimID := "20000000-0000-0000-0000-000000000001"
-			claim := upstreamhealth.RecoveryClaim{ClaimID: claimID, Request: original, Actor: "service/original-proxy", CredentialGeneration: "1", CredentialControlRevision: "2", CredentialRef: "credential-1",
-				Scopes: []upstreamhealth.ClaimedScope{{ScopeID: "model-scope", Epoch: "4", FailureGeneration: "2"}}, CreatedAt: now.Format(time.RFC3339Nano), ExpiresAt: expires, Status: "allocated"}
-			raw, _ := json.Marshal(upstreamhealth.ClaimReceipt{Decision: "granted", Claim: &claim})
-			host.CallOnHttpCallResponse(claimCall.CalloutID, [][2]string{{":status", "200"}}, nil, raw)
-			consumeCall := findCall(upstreamhealth.RecoveryClaimPath + "/" + claimID + "/consume")
-			if providerCount() != 0 {
-				t.Fatal("provider send preceded committed final consume")
-			}
-			var consume struct {
-				Request   upstreamhealth.ClaimRequest `json:"request"`
-				Selection json.RawMessage             `json:"selection"`
-			}
-			if err := json.Unmarshal(consumeCall.Body, &consume); err != nil {
+			var event upstreamhealth.RuntimeEvent
+			if err = json.Unmarshal([]byte(args[10].String()), &event); err != nil {
 				t.Fatal(err)
 			}
+			if event.Claim == nil || event.Claim.Request.OwnerInstance != managedGatewayOwnerInstance() || event.Claim.Status != "consumed" || len(event.Claim.ConsumedSelection) == 0 {
+				t.Fatal("Redis consume lost original startup/final selection")
+			}
+			reply := []resp.Value{resp.StringValue("committed"), resp.StringValue(args[11].String())}
 			if !scenario.confirmed {
-				host.CallOnHttpCallResponse(consumeCall.CalloutID, [][2]string{{":status", "200"}}, nil, []byte(`{"status":`))
+				reply[0] = resp.StringValue("unavailable")
+				reply[1] = resp.StringValue("")
+			}
+			encoded.Reset()
+			if err = resp.NewWriter(&encoded).WriteArray(reply); err != nil {
+				t.Fatal(err)
+			}
+			host.CallOnRedisCallResponse(mutations[0].CalloutID, 0, encoded.Bytes())
+			if !scenario.confirmed {
 				if providerCount() != 0 || host.GetSentLocalResponse(h.id) == nil {
-					t.Fatal("unknown Consume sent or failed to reject")
+					t.Fatal("unknown atomic consume sent or failed to reject")
 				}
 				return
 			}
-			claim.Status, claim.ConsumedSelection = "consumed", consume.Selection
-			raw, _ = json.Marshal(claim)
-			host.CallOnHttpCallResponse(consumeCall.CalloutID, [][2]string{{":status", "200"}}, nil, raw)
-			if providerCount() != 1 {
-				t.Fatal("first committed Consume did not permit exactly one original send")
+			if providerCount() != 1 || len(host.GetCalloutAttributesFromContext(h.id)) != 1 {
+				t.Fatal("committed Redis consume did not allow exactly one provider without Console")
 			}
 			state := h.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
-			var final map[string]json.RawMessage
-			if err := json.Unmarshal(consume.Selection, &final); err != nil {
+			var final struct {
+				Digest string `json:"selection_digest"`
+			}
+			if err = json.Unmarshal(event.Claim.ConsumedSelection, &final); err != nil {
 				t.Fatal(err)
 			}
-			var finalDigest string
-			_ = json.Unmarshal(final["selection_digest"], &finalDigest)
-			if state.original.SelectionDigest != finalDigest || state.health.claimID == nil || *state.health.claimID != claimID {
-				t.Fatal("actual attempt lost consumed final selection")
+			if state.original.SelectionDigest != final.Digest || state.health.claimID == nil || *state.health.claimID != event.Claim.ClaimID {
+				t.Fatal("actual attempt lost its consumed selection")
 			}
+
 		})
 	}
 }
