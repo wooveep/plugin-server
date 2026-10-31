@@ -1,0 +1,21 @@
+{
+  "plugin_name": "ai-cache",
+  "plugin_version": "2.0.7",
+  "source_commit": "b2940c8c8e98d5a506d795a9f5f473a63078655d",
+  "build_receipt_digest": "sha256:bc4dcac3779370efc98ee2d879178a756c82cd59c506b4d1b0c9c1e73f6d2835",
+  "source_inputs_digest": "sha256:c0860d575f00684330c8c411b51aa5f2f7a13ce42751d51aa5667b8f25c72dfc",
+  "archive_digest": "sha256:ce8b10c44e05ab2a514cbaff236d75e9aaa3a68a3655b1ca077cbf27572d8890",
+  "wasm_digest": "sha256:35594b4b498fcc2bcf6ed66dc254598e4afc0d54bdbf4c11064f77572fb0f71d",
+  "content_digest": "sha256:3ff5a3d006bc0d5181ba8c69cbb2654d276143479c21781b4f1f5d352c7033c1",
+  "source_digest": "sha256:19a26c8c46f2adc2f2a14a8d7ad2c8927735829f02854308b0ceb394b66a2235",
+  "approved_provenance_receipts": 69,
+  "prior_provenance_receipts_preserved": 68,
+  "full_wasm_passed_top_level": 66,
+  "full_wasm_passed_including_subcases": 562,
+  "full_wasm_skipped": 0,
+  "full_go_wasm_test_exit_code": 0,
+  "full_go_wasm_log_sha256": "c7e2cc28cf735da904e1dec4c4f15fbb86445f91cd5d2fc53f7cc823cab6590c",
+  "registered_artifacts": 93,
+  "prior_immutable_manifests_preserved": 92,
+  "manifest_digest": "sha256:624528cee6d2c03062c883c95928891249d136382138442a8ae7d62deb41316a"
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/.venv/bin/python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-p",
+    "test_plugin_catalog.py",
+    "-v"
+  ],
+  "started_at": "2026-10-31T23:30:35.148683+00:00",
+  "completed_at": "2026-10-31T23:30:36.605094+00:00",
+  "exit_code": 0,
+  "log_sha256": "1c224c456622c2d6edafdfdeca0f5d6504f7185bfda88746276bffe550c1ab01",
+  "source_commit": "b2940c8c8e98d5a506d795a9f5f473a63078655d"
+}

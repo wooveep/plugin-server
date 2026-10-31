@@ -1,0 +1,21 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-p=2",
+    "-count=1",
+    "-timeout=15m",
+    "-v"
+  ],
+  "source_commit": "b2940c8c8e98d5a506d795a9f5f473a63078655d",
+  "started_at": "2026-10-31T23:29:36.232645+00:00",
+  "completed_at": "2026-10-31T23:30:35.133382+00:00",
+  "exit_code": 0,
+  "wasm_sha256": "sha256:35594b4b498fcc2bcf6ed66dc254598e4afc0d54bdbf4c11064f77572fb0f71d",
+  "build_receipt_sha256": "bc4dcac3779370efc98ee2d879178a756c82cd59c506b4d1b0c9c1e73f6d2835",
+  "log_sha256": "c7e2cc28cf735da904e1dec4c4f15fbb86445f91cd5d2fc53f7cc823cab6590c",
+  "passed_top_level": 66,
+  "passed_including_subcases": 562,
+  "skipped": 0
+}
