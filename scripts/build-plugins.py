@@ -80,8 +80,8 @@ def build_one(root: Path, source, *, host: bool, images: dict, run: Path) -> dic
         if host:
             invoke(argv, env=dict(environment, **variables))
         else:
-            modules = Path(subprocess.check_output(["go", "env", "GOMODCACHE"], text=True).strip())
-            go_cache = Path(subprocess.check_output(["go", "env", "GOCACHE"], text=True).strip())
+            modules = cache / "go-modules"
+            go_cache = cache / "go-build"
             modules.mkdir(parents=True, exist_ok=True)
             go_cache.mkdir(parents=True, exist_ok=True)
             variables.update({"GOMODCACHE": "/cache/modules", "GOCACHE": "/cache/build"})
