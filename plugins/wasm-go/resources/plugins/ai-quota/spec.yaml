@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README_EN.md
-  version: 2.0.4
+  version: 2.0.5
   contact:
     name: 2456868764
 spec:
@@ -70,7 +70,6 @@ spec:
           - purpose
           - combination_key
           - profile_id
-          - console_internal
           properties:
             schema_version:
               type: string
@@ -78,7 +77,7 @@ spec:
             call_identity_source:
               type: string
               const: admission
-              description: 仅使用本次成功准入事务保存的原 Call 身份与时间，不从插件发送时钟重建。
+              description: 使用本次 Redis 准入生成的原 Call 身份与时间；validation 使用受控许可事务的原始时间。
             release_id:
               type: string
               minLength: 1
@@ -120,6 +119,7 @@ spec:
               description: validation 的规范正十进制 uint128 字符串，最大 340282366920938463463374607431768211455；production
                 只能缺省或 null。
             console_internal:
+              description: 仅 validation 查询受控许可；production 无需此字段，也不会调用 Console。
               type: object
               additionalProperties: false
               required:
@@ -167,6 +167,7 @@ spec:
               required:
               - access_id
               - revision
+              - console_internal
               properties:
                 access_id:
                   type: string

@@ -224,7 +224,7 @@ func TestReaderFencesOutOfOrderAndConflictingSnapshots(t *testing.T) {
 	}
 }
 
-func TestHeldSnapshotExpiresAndCannotOverrideNewerRevocation(t *testing.T) {
+func TestHeldSnapshotRetainsStateAndCannotOverrideNewerRevocation(t *testing.T) {
 	client := &fakeReader{ready: true}
 	reader := newFixtureReader(t, client)
 	var held, current ReadResult
@@ -233,8 +233,8 @@ func TestHeldSnapshotExpiresAndCannotOverrideNewerRevocation(t *testing.T) {
 	if held.DecideNewCall(Candidate{Target: fixtureTarget()}, fixtureNow).Kind != Eligible {
 		t.Fatal("ordinary complete healthy control was not eligible")
 	}
-	if result := held.DecideNewCall(Candidate{Target: fixtureTarget()}, fixtureNow.Add(time.Minute)); result.ControlStatus != ReadExpired || result.Kind != Denied {
-		t.Fatal("held snapshot received a local freshness extension")
+	if result := held.DecideNewCall(Candidate{Target: fixtureTarget()}, fixtureNow.Add(24*time.Hour)); result.ControlStatus != ReadReady || result.Kind != Eligible {
+		t.Fatal("healthy persisted control expired during a Console outage")
 	}
 	changed := fixtureWire()
 	changed.Revision, changed.Credentials[0].Enabled = "9007199254740994", false
@@ -242,6 +242,28 @@ func TestHeldSnapshotExpiresAndCannotOverrideNewerRevocation(t *testing.T) {
 	client.callbacks[1](redisHash(t, hashFixture(t, changed)))
 	if current.Status != ReadReady || held.DecideNewCall(Candidate{Target: fixtureTarget()}, fixtureNow).ControlStatus != ReadStale {
 		t.Fatal("previous snapshot escaped the reader's newer control watermark")
+	}
+}
+
+func TestAgedControlRetainsExplicitDenials(t *testing.T) {
+	for _, reason := range []string{"credential_unavailable", "scope_permanently_blocked", "scope_cooling_down"} {
+		t.Run(reason, func(t *testing.T) {
+			wire := fixtureWire()
+			switch reason {
+			case "credential_unavailable":
+				wire.Credentials[0].Enabled = false
+			case "scope_permanently_blocked":
+				wire.Scopes[0].PermanentReason = pointer("confirmed_account_debt")
+			case "scope_cooling_down":
+				wire.Scopes[0].BlockedUntil = pointer(fixtureNow.Add(48 * time.Hour).Format(time.RFC3339Nano))
+			}
+			at := fixtureNow.Add(24 * time.Hour)
+			read := decodeHash(hashFixture(t, wire), fixtureConfig(), at)
+			decision := read.DecideNewCall(Candidate{Target: fixtureTarget()}, at)
+			if read.Status != ReadReady || decision.Kind != Denied || decision.Reason != reason {
+				t.Fatalf("persisted denial lost its meaning during a Console outage: %#v", decision)
+			}
+		})
 	}
 }
 
@@ -293,7 +315,7 @@ func TestDecodeRejectsWrongAuthorityExpiryCorruptionAndAmbiguousOriginalBytes(t 
 		now    time.Time
 		status ReadStatus
 	}{
-		{fixtureWire(), fixtureNow.Add(time.Minute), ReadExpired},
+		{fixtureWire(), fixtureNow.Add(24 * time.Hour), ReadReady},
 		{fixtureWire(), fixtureNow.Add(-time.Minute), ReadFuture},
 	} {
 		if result := decodeHash(hashFixture(t, tc.wire), fixtureConfig(), tc.now); result.Status != tc.status {

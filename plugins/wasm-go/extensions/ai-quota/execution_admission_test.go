@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
 )
@@ -250,8 +252,41 @@ func (h *executionAdmissionHost) assertDenied(t *testing.T, status uint32) {
 	}
 }
 
-func TestExecutionAdmissionControlledQueryAndExactProductionPermit(t *testing.T) {
-	h := newExecutionAdmissionHost(t, executionAdmissionFixture("production"))
+func TestProductionAdmissionMintsOriginalCallWithoutConsole(t *testing.T) {
+	for _, retainEndpoint := range []bool{false, true} {
+		t.Run(fmt.Sprint(retainEndpoint), func(t *testing.T) {
+			fixture := executionAdmissionFixture("production")
+			if !retainEndpoint {
+				delete(fixture["execution_admission"].(map[string]interface{}), "console_internal")
+			}
+			h := newExecutionAdmissionHost(t, fixture)
+			before := time.Now().UTC()
+			h.start(t, executionAdmissionCaller)
+			if h.allowed != 1 || h.host.GetSentLocalResponse(h.id) != nil || len(h.host.GetCalloutAttributesFromContext(h.id)) != 0 {
+				t.Fatal("production still depends on a Console response")
+			}
+			origin, err := executionfacts.ReadAdmittedCall(h.host.GetCurrentRequestHeaders(h.id), "release-original", time.Now())
+			if err != nil {
+				t.Fatal(err)
+			}
+			callID, err := uuid.Parse(origin.CallID)
+			occurred, timeErr := time.Parse(time.RFC3339Nano, origin.OccurredAt)
+			if err != nil || callID.Version() != 4 || timeErr != nil || occurred.Before(before) || !origin.ValidUntil.Equal(occurred.Add(5*time.Second)) {
+				t.Fatal("production did not retain its original local admission identity and time")
+			}
+			if executionAdmissionHeaderCount(h.host.GetCurrentRequestHeaders(h.id), executionAdmissionAttemptHeader) != 0 {
+				t.Fatal("quota invented a provider attempt")
+			}
+			checkExecutionAdmission(h.ctx, h.cfg, h.identity, h.onAllowed)
+			if h.allowed != 1 || len(h.host.GetCalloutAttributesFromContext(h.id)) != 0 || len(h.host.GetRedisCalloutAttributesFromContext(h.id)) != 0 {
+				t.Fatal("repeated callback created another call or changed a balance")
+			}
+		})
+	}
+}
+
+func TestExecutionAdmissionControlledQueryAndExactValidationPermit(t *testing.T) {
+	h := newExecutionAdmissionHost(t, executionAdmissionFixture("validation"))
 	request := h.start(t, executionAdmissionCaller)
 	parsed, err := uuid.Parse(request.CallID)
 	if err != nil || parsed.Version() != 4 || request.CallID == "forged-client" || request.CredentialGeneration != "9007199254740993" {
@@ -267,8 +302,8 @@ func TestExecutionAdmissionControlledQueryAndExactProductionPermit(t *testing.T)
 		}
 	}
 	var wire map[string]json.RawMessage
-	if err := json.Unmarshal(callout.Body, &wire); err != nil || len(wire) != 13 || string(wire["access_id"]) != "null" || string(wire["revision"]) != "null" {
-		t.Fatalf("production wire is not explicit nullable CheckRequest: %s", callout.Body)
+	if err := json.Unmarshal(callout.Body, &wire); err != nil || len(wire) != 13 || string(wire["access_id"]) != `"validation-access-original"` || string(wire["revision"]) != `"9007199254740993"` {
+		t.Fatalf("validation wire lost its exact grant: %s", callout.Body)
 	}
 	if len(h.host.GetRedisCalloutAttributesFromContext(h.id)) != 0 {
 		t.Fatal("license query performed a monetary write")
@@ -285,7 +320,7 @@ func TestExecutionAdmissionControlledQueryAndExactProductionPermit(t *testing.T)
 	receipt := executionAdmissionAllowedReceipt(request)
 	h.response(t, executionAdmissionResponseHeaders(), executionAdmissionJSON(t, receipt))
 	if h.allowed != 1 || h.host.GetSentLocalResponse(h.id) != nil || h.host.GetCurrentHttpStreamAction(h.id) != types.ActionContinue {
-		t.Fatal("complete current production permit did not invoke allow exactly once")
+		t.Fatal("complete current validation permit did not invoke allow exactly once")
 	}
 	after := h.host.GetCurrentRequestHeaders(h.id)
 	for name, expected := range map[string]string{executionAdmissionCallHeader: request.CallID, executionAdmissionReleaseHeader: request.ReleaseID, executionAdmissionDeadlineHeader: receipt["valid_until"].(string), executionAdmissionOccurredHeader: "2026-10-27T10:00:00Z"} {
@@ -321,15 +356,6 @@ func TestExecutionAdmissionRejectsEveryMismatchedEcho(t *testing.T) {
 			request := h.start(t, executionAdmissionCaller)
 			receipt := executionAdmissionAllowedReceipt(request)
 			receipt[field] = "different-original-scope"
-			h.response(t, executionAdmissionResponseHeaders(), executionAdmissionJSON(t, receipt))
-			h.assertDenied(t, 503)
-		})
-	}
-	for _, field := range []string{"access_id", "current_revision"} {
-		t.Run("production cannot consume "+field, func(t *testing.T) {
-			h := newExecutionAdmissionHost(t, executionAdmissionFixture("production"))
-			receipt := executionAdmissionAllowedReceipt(h.start(t, executionAdmissionCaller))
-			receipt[field] = "1"
 			h.response(t, executionAdmissionResponseHeaders(), executionAdmissionJSON(t, receipt))
 			h.assertDenied(t, 503)
 		})
@@ -404,7 +430,7 @@ func TestExecutionAdmissionDoesNotInventMissingHTTPStatusOrAcceptTruncation(t *t
 		"incomplete declared body": {{":status", "200"}, {"content-type", "application/json"}, {"content-length", "99999"}},
 	} {
 		t.Run(name, func(t *testing.T) {
-			h := newExecutionAdmissionHost(t, executionAdmissionFixture("production"))
+			h := newExecutionAdmissionHost(t, executionAdmissionFixture("validation"))
 			raw := executionAdmissionJSON(t, executionAdmissionAllowedReceipt(h.start(t, executionAdmissionCaller)))
 			h.response(t, headers, raw)
 			status := uint32(503)
@@ -423,7 +449,7 @@ func TestExecutionAdmissionTimeoutAndDuplicateCannotResumeOrQueryAgain(t *testin
 			name = "duplicate"
 		}
 		t.Run(name, func(t *testing.T) {
-			h := newExecutionAdmissionHost(t, executionAdmissionFixture("production"))
+			h := newExecutionAdmissionHost(t, executionAdmissionFixture("validation"))
 			receipt := executionAdmissionAllowedReceipt(h.start(t, executionAdmissionCaller))
 			if duplicate {
 				checkExecutionAdmission(h.ctx, h.cfg, h.identity, h.onAllowed)
@@ -441,7 +467,7 @@ func TestExecutionAdmissionTimeoutAndDuplicateCannotResumeOrQueryAgain(t *testin
 
 func TestExecutionAdmissionCannotUseMissingNativeCallerOrCrossCallPermit(t *testing.T) {
 	t.Run("missing tenant", func(t *testing.T) {
-		h := newExecutionAdmissionHost(t, executionAdmissionFixture("production"))
+		h := newExecutionAdmissionHost(t, executionAdmissionFixture("validation"))
 		identity := executionAdmissionCaller
 		identity.TenantID, identity.PrincipalID = "", ""
 		h.start(t, identity)
@@ -451,7 +477,7 @@ func TestExecutionAdmissionCannotUseMissingNativeCallerOrCrossCallPermit(t *test
 		}
 	})
 	t.Run("different call", func(t *testing.T) {
-		h := newExecutionAdmissionHost(t, executionAdmissionFixture("production"))
+		h := newExecutionAdmissionHost(t, executionAdmissionFixture("validation"))
 		first := h.start(t, executionAdmissionCaller)
 		firstID := h.id
 		h.id = h.host.InitializeHttpContext()
@@ -501,7 +527,7 @@ func TestExecutionAdmissionJSONRejectsDuplicateEscapesAndInvalidUnicode(t *testi
 func TestExecutionAdmissionRequiresThisResponsesUniqueOriginalCallTime(t *testing.T) {
 	for _, malformed := range []string{"absent", "duplicate", "future", "non-UTC"} {
 		t.Run(malformed, func(t *testing.T) {
-			h := newExecutionAdmissionHost(t, executionAdmissionFixture("production"))
+			h := newExecutionAdmissionHost(t, executionAdmissionFixture("validation"))
 			receipt := executionAdmissionAllowedReceipt(h.start(t, executionAdmissionCaller))
 			headers := executionAdmissionResponseHeaders()
 			switch malformed {

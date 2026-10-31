@@ -2913,3 +2913,5 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
   ]
 }'
 ```
+
+已下发的健康控制保留到显式配置更新：`valid_until` 仅表示观测时效，不是 Console 的发送许可租约。Console 停止刷新时，完整且版本一致的健康目标继续服务；已禁用凭据、永久封禁、冷却期、旧版本与冲突仍按原状态拒绝。

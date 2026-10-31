@@ -20,13 +20,12 @@ import (
 // Uses the real Wasm host callbacks across Redis lookup, Claim, final Consume,
 // original attempt registration and the existing sole provider send. It proves
 // native wiring only; it is not live Console/Redis/provider acceptance evidence.
-func TestManagedHealthConsumesOriginalRecoveryBeforeSingleSend(t *testing.T) {
-	for _, confirmed := range []bool{false, true} {
-		name := "unknown_consume"
-		if confirmed {
-			name = "committed_consume"
-		}
-		t.Run(name, func(t *testing.T) {
+func TestManagedHealthUsesDurableStateAndConsumesRecoveryBeforeSingleSend(t *testing.T) {
+	for _, scenario := range []struct {
+		name                   string
+		confirmed, agedHealthy bool
+	}{{"unknown_consume", false, false}, {"committed_consume", true, false}, {"healthy_console_unavailable", false, true}} {
+		t.Run(scenario.name, func(t *testing.T) {
 			fixture := managedConfigFixture()
 			settings := fixture["managed_execution"].(managedSettings)
 			settings.UpstreamHealth = &managedHealthSettings{RuntimeConfigID: "release-1", ConfigRevision: "1",
@@ -91,6 +90,16 @@ func TestManagedHealthConsumesOriginalRecoveryBeforeSingleSend(t *testing.T) {
 			}
 			digest := bodybasis.DigestBytes(canonical)
 			observed, expires := now.Add(-time.Second).Format(time.RFC3339Nano), now.Add(time.Minute).Format(time.RFC3339Nano)
+			if scenario.agedHealthy {
+				scopes[0].BlockedUntil = nil
+				projection, _ = json.Marshal([]interface{}{authority, "9", credentials, scopes})
+				canonical, err = mfjson.Canonicalize(projection)
+				if err != nil {
+					t.Fatal(err)
+				}
+				digest = bodybasis.DigestBytes(canonical)
+				observed, expires = now.Add(-24*time.Hour).Format(time.RFC3339Nano), now.Add(-23*time.Hour).Format(time.RFC3339Nano)
+			}
 			body, _ := json.Marshal(map[string]interface{}{"projection_schema": upstreamhealth.ProjectionSchema, "authority_id": authority, "revision": "9", "state_digest": digest,
 				"credentials": credentials, "scopes": scopes, "observed_at": observed, "valid_until": expires, "complete": true})
 			values := []resp.Value{}
@@ -122,6 +131,12 @@ func TestManagedHealthConsumesOriginalRecoveryBeforeSingleSend(t *testing.T) {
 				}
 				return n
 			}
+			if scenario.agedHealthy {
+				if providerCount() != 1 || len(host.GetCalloutAttributesFromContext(h.id)) != 1 || host.GetSentLocalResponse(h.id) != nil {
+					t.Fatal("healthy persisted state called Console or blocked the provider send")
+				}
+				return
+			}
 			claimCall := findCall(upstreamhealth.RecoveryClaimPath)
 			if providerCount() != 0 {
 				t.Fatal("allocated claim preceded provider send gate")
@@ -149,7 +164,7 @@ func TestManagedHealthConsumesOriginalRecoveryBeforeSingleSend(t *testing.T) {
 			if err := json.Unmarshal(consumeCall.Body, &consume); err != nil {
 				t.Fatal(err)
 			}
-			if !confirmed {
+			if !scenario.confirmed {
 				host.CallOnHttpCallResponse(consumeCall.CalloutID, [][2]string{{":status", "200"}}, nil, []byte(`{"status":`))
 				if providerCount() != 0 || host.GetSentLocalResponse(h.id) == nil {
 					t.Fatal("unknown Consume sent or failed to reject")
