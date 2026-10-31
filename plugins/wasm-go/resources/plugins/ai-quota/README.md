@@ -4,7 +4,7 @@
 
 ## 配置作用域
 
-每份独立生效的余额配置必须有 `balance_scope_id`、`cache_generation`、`projection_schema: balance.v1` 和完整 `redis`。字段以 [资源 schema](../../resources/plugins/ai-quota/spec.yaml) 为准；两个 UUID 必须来自 Console 本次受控发布，不能使用示例值代表真实生效配置。`missing_balance_policy` 只接受 `deny`。旧用户名余额 key、`balance_key_template`、`tenant_header`、`consumer_header`、`quota_scope` 和 `provider` 配置已退役；旧裸整数 GET 不会作为新协议后备。
+每份独立生效的余额配置必须有 `balance_scope_id`、`cache_generation`、`projection_schema: balance.v1` 和完整 `redis`。字段以 [资源 schema](spec.yaml) 为准；两个 UUID 必须来自 Console 本次受控发布，不能使用示例值代表真实生效配置。`missing_balance_policy` 只接受 `deny`。旧用户名余额 key、`balance_key_template`、`tenant_header`、`consumer_header`、`quota_scope` 和 `provider` 配置已退役；旧裸整数 GET 不会作为新协议后备。
 
 支持两种配置形态：
 
@@ -21,7 +21,7 @@
 
 ## 逐调用托管准入
 
-`execution_admission` 使用 `schema_version: managed-execution-admission.v1`。认证成功且 Redis 余额/资格检查允许后，production 在网关本地生成调用 UUID、原业务时间和五秒发送窗口，直接继续到上游处理。它不向 Console 查询，不预扣资金，不把客户端的 call/attempt/准入头当作权限。ai-proxy 通过既有事件 Stream 登记同一调用身份、原始时间和实际尝试，后台据此结算、记账并更新 Redis。后台停止时允许事件积压、余额更新延迟和随后结算出现负余额；Redis 已知的零或负余额仍拒绝新请求。
+`execution_admission` 使用 `schema_version: managed-execution-admission.v1`。认证成功且 Redis 余额/资格检查允许后，production 在网关本地生成调用 UUID 和原业务时间，不签发临时发送许可，直接继续到上游处理。它不向 Console 查询，不预扣资金，不把客户端的 call/attempt/准入头当作权限。ai-proxy 通过既有事件 Stream 登记同一调用身份、原始时间和实际尝试，后台据此结算、记账并更新 Redis。后台停止时允许事件积压、余额更新延迟和随后结算出现负余额；Redis 已知的零或负余额仍拒绝新请求。
 
 规则内保留冻结的 `release_id`、`route_id`、`purpose`、`combination_key` 和 `profile_id`。production 的 `access_id`、`revision` 缺省或为 null，不需要 `console_internal`。旧完整配置保留该字段时仍校验其结构，但 production 不调用它。
 
@@ -33,9 +33,9 @@
 
 无托管准入对象的兼容配置保留 `path_scope: legacy_suffixes` 默认后缀 `/v1/chat/completions`、`/v1/messages`；普通 `bound_target` 下的非空 suffix/method 仅作为交集。该兼容能力不能代替托管发布的逐调用许可。
 
-所有三类key使用 `mf:balance:{scope}:...` 同一hash slot。普通资金通知不能为缺失记录开户或解除冲突。维护时拒绝新调用；恢复开放由Console/REL/DEP完成真实配置和受控请求观察，插件没有维护或ready写入口。
+所有三类key使用 `mf:balance:{scope}:...` 同一hash slot。普通资金通知不能为缺失记录开户或解除冲突。维护时拒绝新调用；恢复开放由 Console 的原生钱包维护、扫描和 Redis 读回核验控制；路由配置与业务验收独立进行，插件没有维护或ready写入口。
 
-本批源码与原生/模拟宿主结果、Wasm构建、实际K3S加载必须分别记录。参见[实施计划](../../docs/plans/2026-10-27-versioned-balance-admission.md)；未取得实际联合证据前，不把本地Redis或模拟宿主称为生产链通过。
+本批源码与原生/模拟宿主结果、Wasm构建、实际K3S加载必须分别记录。参见[实施计划](../../../docs/plans/2026-10-27-versioned-balance-admission.md)；未取得实际联合证据前，不把本地Redis或模拟宿主称为生产链通过。
 
 生产托管路由还须在同一次 Redis 原子读中核对当前 Key 的 `authorized_routes`。空列表返回 `route_authorization_missing`，缺失或损坏的列表返回 `projection_unready`；不会以同用户另一把 Key 的权限代替。授权变更与原 identity revision/outbox 同事务提交，映射刷新不写资金。账户 key 使用稳定的 `mf:balance:{scope}:account:<id>`，当前代际由 control/account/mapping 一致性校验；缓存恢复无需重发路由，旧代写者仍被拒绝。配置中的 `cache_generation` 保留冻结来源标识，不作为永久的运行地址或就绪心跳。
 
