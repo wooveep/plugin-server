@@ -382,8 +382,8 @@ type geminiInlineData struct {
 }
 
 type geminiFunctionCall struct {
-	FunctionName string `json:"name"`
-	Arguments    any    `json:"args"`
+	FunctionName string          `json:"name"`
+	Arguments    json.RawMessage `json:"args"`
 }
 
 // geminiImageGenerationRequest is the request body for generate image using Imagen 3
@@ -741,77 +741,85 @@ func (g *geminiProvider) buildChatCompletionResponse(ctx wrapper.HttpContext, re
 			TotalTokens:      response.UsageMetadata.TotalTokenCount,
 		},
 	}
-	choiceIndex := 0
 	for _, candidate := range response.Candidates {
-		for _, part := range candidate.Content.Parts {
-			choice := chatCompletionChoice{
-				Index: choiceIndex,
-				Message: &chatMessage{
-					Role: roleAssistant,
-				},
-				FinishReason: util.Ptr(finishReasonStop),
-			}
-			if part.FunctionCall != nil {
-				choice.Message.ToolCalls = g.buildToolCalls(&candidate)
-			} else if part.InlineData != nil {
-				choice.Message.Content = part.InlineData.Data
-			} else {
-				choice.Message.Content = part.Text
-			}
-
-			choice.FinishReason = util.Ptr(geminiOpenAIFinishReason(candidate.FinishReason))
-			fullTextResponse.Choices = append(fullTextResponse.Choices, choice)
-			choiceIndex += 1
+		message := g.buildChatMessage(&candidate)
+		reason := geminiOpenAIFinishReason(candidate.FinishReason)
+		if reason == finishReasonStop && len(message.ToolCalls) != 0 {
+			reason = "tool_calls"
 		}
+		fullTextResponse.Choices = append(fullTextResponse.Choices, chatCompletionChoice{
+			Index: int(candidate.Index), Message: message, FinishReason: util.Ptr(reason),
+		})
 	}
 	return &fullTextResponse
 }
 
-func (g *geminiProvider) buildToolCalls(candidate *geminiChatCandidate) []toolCall {
-	var toolCalls []toolCall
+func (g *geminiProvider) buildChatMessage(candidate *geminiChatCandidate) *chatMessage {
+	var text strings.Builder
+	for _, part := range candidate.Content.Parts {
+		if part.InlineData != nil {
+			text.WriteString(part.InlineData.Data)
+		} else {
+			text.WriteString(part.Text)
+		}
+	}
+	return &chatMessage{Role: roleAssistant, Content: text.String(), ToolCalls: g.buildToolCalls(candidate)}
+}
 
-	item := candidate.Content.Parts[0]
-	if item.FunctionCall != nil {
-		return toolCalls
+func (g *geminiProvider) buildToolCalls(candidate *geminiChatCandidate) []toolCall {
+	var calls []toolCall
+	for _, part := range candidate.Content.Parts {
+		if part.FunctionCall == nil {
+			continue
+		}
+		arguments := part.FunctionCall.Arguments
+		if len(arguments) == 0 {
+			arguments = json.RawMessage("{}")
+		}
+		calls = append(calls, toolCall{
+			Index: len(calls), Id: fmt.Sprintf("call_%s", uuid.New().String()), Type: "function",
+			Function: functionCall{Arguments: string(arguments), Name: part.FunctionCall.FunctionName},
+		})
 	}
-	argsBytes, err := json.Marshal(item.FunctionCall.Arguments)
-	if err != nil {
-		log.Errorf("get toolCalls from gemini response failed: " + err.Error())
-		return toolCalls
-	}
-	toolCall := toolCall{
-		Id:   fmt.Sprintf("call_%s", uuid.New().String()),
-		Type: "function",
-		Function: functionCall{
-			Arguments: string(argsBytes),
-			Name:      item.FunctionCall.FunctionName,
-		},
-	}
-	toolCalls = append(toolCalls, toolCall)
-	return toolCalls
+	return calls
+}
+
+type geminiStreamState struct {
+	id            string
+	nextToolIndex map[int64]int
 }
 
 func (g *geminiProvider) buildChatCompletionStreamResponse(ctx wrapper.HttpContext, geminiResp *geminiChatResponse) *chatCompletionResponse {
-	var choice chatCompletionChoice
-	if len(geminiResp.Candidates) > 0 && len(geminiResp.Candidates[0].Content.Parts) > 0 {
-		choice.Delta = &chatMessage{Role: roleAssistant, Content: geminiResp.Candidates[0].Content.Parts[0].Text}
-		if geminiResp.Candidates[0].FinishReason != "" {
-			choice.FinishReason = util.Ptr(geminiOpenAIFinishReason(geminiResp.Candidates[0].FinishReason))
+	// This belongs to the original HTTP request context, not provider/global state.
+	state, exists := ctx.GetContext("gemini.response_stream_state").(*geminiStreamState)
+	if !exists {
+		state = &geminiStreamState{id: fmt.Sprintf("chatcmpl-%s", uuid.New().String()), nextToolIndex: make(map[int64]int)}
+		ctx.SetContext("gemini.response_stream_state", state)
+	}
+	response := &chatCompletionResponse{
+		Id: state.id, Object: objectChatCompletionChunk, Created: time.Now().UnixMilli() / 1000,
+		Model: ctx.GetStringContext(ctxKeyFinalRequestModel, ""),
+		Usage: &usage{PromptTokens: geminiResp.UsageMetadata.PromptTokenCount, CompletionTokens: geminiResp.UsageMetadata.CandidatesTokenCount, TotalTokens: geminiResp.UsageMetadata.TotalTokenCount},
+	}
+	for _, candidate := range geminiResp.Candidates {
+		message := g.buildChatMessage(&candidate)
+		prior := state.nextToolIndex[candidate.Index]
+		for index := range message.ToolCalls {
+			message.ToolCalls[index].Index += prior
 		}
+		state.nextToolIndex[candidate.Index] += len(message.ToolCalls)
+		choice := chatCompletionChoice{Index: int(candidate.Index), Delta: message}
+		// Google may send finishReason in a separate frame with no content.parts.
+		if candidate.FinishReason != "" {
+			reason := geminiOpenAIFinishReason(candidate.FinishReason)
+			if reason == finishReasonStop && state.nextToolIndex[candidate.Index] != 0 {
+				reason = "tool_calls"
+			}
+			choice.FinishReason = util.Ptr(reason)
+		}
+		response.Choices = append(response.Choices, choice)
 	}
-	streamResponse := chatCompletionResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", uuid.New().String()),
-		Object:  objectChatCompletionChunk,
-		Created: time.Now().UnixMilli() / 1000,
-		Model:   ctx.GetStringContext(ctxKeyFinalRequestModel, ""),
-		Choices: []chatCompletionChoice{choice},
-		Usage: &usage{
-			PromptTokens:     geminiResp.UsageMetadata.PromptTokenCount,
-			CompletionTokens: geminiResp.UsageMetadata.CandidatesTokenCount,
-			TotalTokens:      geminiResp.UsageMetadata.TotalTokenCount,
-		},
-	}
-	return &streamResponse
+	return response
 }
 
 type geminiEmbeddingResponse struct {

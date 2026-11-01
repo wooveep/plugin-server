@@ -58,9 +58,28 @@ type responsesResponse struct {
 }
 
 type responsesOutputMessage struct {
-	Type    string                   `json:"type"`
-	Role    string                   `json:"role"`
-	Content []responsesOutputContent `json:"content"`
+	Type      string                   `json:"type"`
+	ID        string                   `json:"id,omitempty"`
+	Status    string                   `json:"status,omitempty"`
+	Role      string                   `json:"role,omitempty"`
+	Content   []responsesOutputContent `json:"content,omitempty"`
+	CallID    string                   `json:"call_id,omitempty"`
+	Name      string                   `json:"name,omitempty"`
+	Arguments *string                  `json:"arguments,omitempty"`
+}
+
+type responsesOutputItemEvent struct {
+	Type        string                 `json:"type"`
+	OutputIndex int                    `json:"output_index"`
+	Item        responsesOutputMessage `json:"item"`
+}
+
+type responsesFunctionArgumentsEvent struct {
+	Type        string  `json:"type"`
+	ItemID      string  `json:"item_id"`
+	OutputIndex int     `json:"output_index"`
+	Delta       *string `json:"delta,omitempty"`
+	Arguments   *string `json:"arguments,omitempty"`
 }
 
 type responsesOutputContent struct {
@@ -304,6 +323,12 @@ func convertChatCompletionResponseToResponses(body []byte) ([]byte, error) {
 	if len(output.Content) > 0 {
 		response.Output = []responsesOutputMessage{output}
 	}
+	for _, call := range choice.Message.ToolCalls {
+		response.Output = append(response.Output, responsesOutputMessage{
+			Type: "function_call", ID: "fc_" + call.Id, Status: "completed", CallID: call.Id,
+			Name: call.Function.Name, Arguments: &call.Function.Arguments,
+		})
+	}
 	return json.Marshal(response)
 }
 
@@ -347,7 +372,7 @@ func convertChatCompletionMessageToResponsesOutput(message *chatMessage) respons
 		})
 		return output
 	}
-	if text, ok := chatCompletionContentText(message.Content); ok {
+	if text, ok := chatCompletionContentText(message.Content); ok && text != "" {
 		output.Content = append(output.Content, responsesOutputContent{
 			Type: "output_text",
 			Text: text,
@@ -376,6 +401,9 @@ type chatCompletionToResponsesStreamConverter struct {
 	finishReason string
 	usage        *responsesUsage
 	completed    bool
+	outputs      []responsesOutputMessage
+	toolIndexes  map[int]int
+	textIndex    int
 }
 
 type ChatCompletionToResponsesStreamConverter = chatCompletionToResponsesStreamConverter
@@ -422,16 +450,52 @@ func (c *chatCompletionToResponsesStreamConverter) convert(chunk []byte, isLastC
 		choice := chatChunk.Choices[0]
 		if choice.Delta != nil {
 			if delta, ok := chatCompletionContentText(choice.Delta.Content); ok && delta != "" {
+				if !c.hasText {
+					c.textIndex = len(c.outputs)
+					c.outputs = append(c.outputs, responsesOutputMessage{Type: "message", ID: "msg_0", Role: roleAssistant})
+				}
 				c.text.WriteString(delta)
 				c.hasText = true
 				if err := writeResponsesStreamEvent(&output, "response.output_text.delta", map[string]any{
 					"type":          "response.output_text.delta",
 					"item_id":       "msg_0",
-					"output_index":  0,
+					"output_index":  c.textIndex,
 					"content_index": 0,
 					"delta":         delta,
 				}); err != nil {
 					return nil, err
+				}
+			}
+			for _, call := range choice.Delta.ToolCalls {
+				if c.toolIndexes == nil {
+					c.toolIndexes = make(map[int]int)
+				}
+				index, exists := c.toolIndexes[call.Index]
+				if !exists {
+					index = len(c.outputs)
+					c.toolIndexes[call.Index] = index
+					id := "fc_" + call.Id
+					if call.Id == "" {
+						id = fmt.Sprintf("fc_%s_%d", c.id, call.Index)
+					}
+					arguments := ""
+					c.outputs = append(c.outputs, responsesOutputMessage{Type: "function_call", ID: id, Status: "in_progress", CallID: call.Id, Name: call.Function.Name, Arguments: &arguments})
+					if err := writeResponsesStreamEvent(&output, "response.output_item.added", responsesOutputItemEvent{Type: "response.output_item.added", OutputIndex: index, Item: c.outputs[index]}); err != nil {
+						return nil, err
+					}
+				}
+				item := &c.outputs[index]
+				if call.Id != "" {
+					item.CallID = call.Id
+				}
+				if call.Function.Name != "" {
+					item.Name = call.Function.Name
+				}
+				*item.Arguments += call.Function.Arguments
+				if call.Function.Arguments != "" {
+					if err := writeResponsesStreamEvent(&output, "response.function_call_arguments.delta", responsesFunctionArgumentsEvent{Type: "response.function_call_arguments.delta", ItemID: item.ID, OutputIndex: index, Delta: &call.Function.Arguments}); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
@@ -506,7 +570,7 @@ func (c *chatCompletionToResponsesStreamConverter) writeTextDoneEvent(output *by
 	return writeResponsesStreamEvent(output, "response.output_text.done", map[string]any{
 		"type":          "response.output_text.done",
 		"item_id":       "msg_0",
-		"output_index":  0,
+		"output_index":  c.textIndex,
 		"content_index": 0,
 		"text":          c.text.String(),
 	})
@@ -533,19 +597,29 @@ func (c *chatCompletionToResponsesStreamConverter) writeCompletedEvent(output *b
 		applyResponsesFinishStatus(&response, c.finishReason)
 	}
 	if c.hasText {
-		response.Output = []responsesOutputMessage{{
-			Type: "message",
-			Role: roleAssistant,
-			Content: []responsesOutputContent{{
-				Type: "output_text",
-				Text: c.text.String(),
-			}},
+		c.outputs[c.textIndex].Content = []responsesOutputContent{{
+			Type: "output_text",
+			Text: c.text.String(),
 		}}
 	}
+	for index := range c.outputs {
+		item := &c.outputs[index]
+		item.Status = "completed"
+		if item.Type == "function_call" {
+			if err := writeResponsesStreamEvent(output, "response.function_call_arguments.done", responsesFunctionArgumentsEvent{Type: "response.function_call_arguments.done", ItemID: item.ID, OutputIndex: index, Arguments: item.Arguments}); err != nil {
+				return err
+			}
+			if err := writeResponsesStreamEvent(output, "response.output_item.done", responsesOutputItemEvent{Type: "response.output_item.done", OutputIndex: index, Item: *item}); err != nil {
+				return err
+			}
+		}
+	}
+	response.Output = c.outputs
 
 	c.completed = true
-	return writeResponsesStreamEvent(output, "response.completed", map[string]any{
-		"type":     "response.completed",
+	event := "response." + response.Status
+	return writeResponsesStreamEvent(output, event, map[string]any{
+		"type":     event,
 		"response": response,
 	})
 }

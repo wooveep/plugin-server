@@ -178,3 +178,70 @@ func TestManagedGeminiBatchEmbeddingPreservesPositionsWithoutFabricatingUsage(t 
 		t.Fatal("embedding counters absent upstream became reported zero")
 	}
 }
+
+func TestManagedGeminiSeparateTerminalAndRealFunctionCallsAcrossClients(t *testing.T) {
+	for _, input := range []string{managedProtocolChat, managedProtocolResponses, managedProtocolMessages} {
+		for _, test := range []struct {
+			name, parts, reason, expected string
+			stream                        bool
+		}{
+			{"separate-stop", `[{"text":"hello"}]`, "STOP", "succeeded", true},
+			{"separate-length", `[{"text":"hello"}]`, "MAX_TOKENS", "partial", true},
+			{"tools-json", `[{"text":"checking"},{"functionCall":{"name":"first_tool","args":{"value":9007199254740993}}},{"functionCall":{"name":"second_tool","args":{"value":"second"}}}]`, "STOP", "succeeded", false},
+			{"tools-stream", `[{"text":"checking"},{"functionCall":{"name":"first_tool","args":{"value":9007199254740993}}},{"functionCall":{"name":"second_tool","args":{"value":"second"}}}]`, "STOP", "succeeded", true},
+			{"tool-first-json", `[{"functionCall":{"name":"first_tool","args":{"value":9007199254740993}}}]`, "STOP", "succeeded", false},
+		} {
+			t.Run(input+"/"+test.name, func(t *testing.T) {
+				fixture := managedConfigFixture()
+				fixture["provider"] = json.RawMessage(`{"type":"gemini","apiTokens":["controlled-upstream-key"]}`)
+				settings := fixture["managed_execution"].(managedSettings)
+				settings.InputProtocol, settings.UpstreamProtocol = input, managedProtocolChat
+				fixture["managed_execution"] = settings
+				h := newManagedHost(t, fixture)
+				payload := `"messages":[{"role":"user","content":"hello"}],"max_tokens":12`
+				if input == managedProtocolResponses {
+					payload = `"input":"hello"`
+				}
+				original := []byte(fmt.Sprintf(`{"model":"public-model",%s,"stream":%t}`, payload, test.stream))
+				h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("upstream-model"), 1))
+				calls := h.host.GetCalloutAttributesFromContext(h.id)
+				if len(calls) != 1 {
+					t.Fatal("expected exactly one business send")
+				}
+				body := []byte(`{"candidates":[{"index":0,"content":{"parts":` + test.parts + `},"finishReason":"` + test.reason + `"}],"usageMetadata":` + managedGoogleFixtureUsage + `}`)
+				headers := [][2]string{{":status", "200"}, {"content-type", "application/json"}}
+				if test.stream {
+					body = []byte("data: {\"candidates\":[{\"index\":0,\"content\":{\"parts\":" + test.parts + "}}]}\n\ndata: {\"candidates\":[{\"index\":0,\"finishReason\":\"" + test.reason + "\"}],\"usageMetadata\":" + managedGoogleFixtureUsage + "}\n\n")
+					headers[1][1] = "text/event-stream"
+				}
+				h.response(t, headers, body)
+				response := h.host.GetSentLocalResponse(h.id)
+				if response == nil || response.StatusCode != 200 {
+					t.Fatal("native content or standalone terminal conversion failed")
+				}
+				profile, err := newManagedProtocolProfile(input, input)
+				if err != nil {
+					t.Fatal(err)
+				}
+				observed := profile.ObserveResponse(200, response.Headers, response.Data, true)
+				if observed.Acceptance != "accepted" || observed.ExecutionResult != test.expected || observed.Usage.Quantities["output"] != "5" {
+					t.Fatalf("separate terminal or original exact usage lost: %#v", observed)
+				}
+				if strings.Contains(test.name, "tool") {
+					for _, content := range []string{"first_tool", "9007199254740993"} {
+						if !bytes.Contains(response.Data, []byte(content)) {
+							t.Fatal("actual native functionCall content lost or rounded", content)
+						}
+					}
+					if test.name != "tool-first-json" && (!bytes.Contains(response.Data, []byte("checking")) || !bytes.Contains(response.Data, []byte("second_tool"))) {
+						t.Fatal("mixed text and multiple native function calls were lost")
+					}
+				}
+				fact := decodeManagedFact(t, h.records(t)[1].raw)
+				if fact.Acceptance != "accepted" || fact.ResponseBodyDigest != managedBodyDigest(body) || fact.Usage.Quantities["output"] != "5" {
+					t.Fatal("content repair replaced original wire facts")
+				}
+			})
+		}
+	}
+}

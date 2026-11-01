@@ -90,7 +90,9 @@ func claudeContentFromOpenAIMessage(ctx wrapper.HttpContext, message *chatMessag
 		}
 		var input map[string]interface{}
 		if toolCall.Function.Arguments != "" {
-			if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &input); err != nil {
+			decoder := json.NewDecoder(strings.NewReader(toolCall.Function.Arguments))
+			decoder.UseNumber()
+			if err := decoder.Decode(&input); err != nil {
 				log.Errorf("Failed to parse tool call arguments: %v, arguments: %s", err, toolCall.Function.Arguments)
 				input = map[string]interface{}{}
 			}

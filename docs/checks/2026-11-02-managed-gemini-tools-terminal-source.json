@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-02",
+  "status": "SOURCE_CHECKED_NOT_DEPLOYED",
+  "base_commit": "ac3ac7897412736ee5e61513f4c63a05b754c7c0",
+  "plugin_version": "2.0.22",
+  "problem": [
+    "Gemini original SDK inverted the functionCall presence guard, dropping tool-first content and dereferencing nil on mixed text/tool parts",
+    "Gemini original SDK copied terminal reason only when content.parts existed",
+    "Original Responses converter dropped function calls and emitted response.completed for incomplete status",
+    "Original Anthropic JSON converter decoded tool-argument numbers through float64"
+  ],
+  "behavior": [
+    "Fix the original Gemini converter to preserve mixed text/multiple function calls, exact RawMessage arguments, per-candidate choices and standalone STOP/MAX_TOKENS terminals",
+    "Keep request-local stream identity and tool-call indexes in the existing SDK conversion path; no extra send/conversion path",
+    "Extend original Responses conversion with typed function-call output items, incremental argument events, arrival-order output indexes and actual incomplete terminal event",
+    "Use number-preserving JSON decoding in the original Anthropic tool-input boundary; retain existing public content types",
+    "Preserve original request/response byte digests, original usage and the managed single business sender"
+  ],
+  "checks": [
+    {
+      "command": "go test . -run '^Test(Managed|Internal)' -count=1",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-gemini-tools-terminal-callbacks-20261102.log",
+      "new_business_cases": 15
+    },
+    {
+      "command": "go test ./provider ./config ./util -count=1",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-gemini-tools-terminal-units-20261102.log",
+      "additional_scope": "Responses fragmented arguments / text-after-tool output order / exact large integers"
+    },
+    {
+      "command": "go vet ./provider ./config ./util",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-gemini-tools-terminal-vet-20261102.log"
+    },
+    {
+      "command": "PYTHONPATH=tests .venv/bin/python -m unittest test_plugin_catalog test_release_catalog test_artifact_packaging test_artifact_storage",
+      "result": "PASS",
+      "exit_code": 0,
+      "tests": 24,
+      "log": ".local/managed-gemini-tools-terminal-package-20261102.log"
+    }
+  ],
+  "red_evidence": {
+    "command": "go test . -run '^TestManagedGeminiSeparateTerminalAndRealFunctionCallsAcrossClients/.*/separate-' -count=1",
+    "result": "FAIL_BEFORE_FIX",
+    "exit_code": 1,
+    "log": ".local/managed-gemini-separate-terminal-red-20261102.log",
+    "note": "Original terminal assertions retained through the final passing batch. Initial broader cross-client failure output is retained in the task tool transcript; its combined local log was superseded by the rerun."
+  },
+  "codegraph": {
+    "result": "UNKNOWN_FOR_GO",
+    "logs": [
+      ".local/managed-gemini-function-terminal-codegraph-20261102.txt",
+      ".local/managed-native-client-content-codegraph-20261102.txt"
+    ],
+    "detail": "Queried named original conversion symbols before edits; existing index omits Go. Reviewed current source and caller chain, no reindex and no absence-of-edge no-risk claim."
+  },
+  "references": [
+    "https://developers.openai.com/api/reference/resources/responses/streaming-events",
+    "https://developers.openai.com/api/docs/guides/function-calling",
+    "https://ai.google.dev/api/generate-content"
+  ],
+  "review_boundary": "Read-only peer ac3ac789 review reported one Standards finding and two Spec findings. This receipt implements the correction; no fresh peer all-clear is inferred.",
+  "limitations": [
+    "2.0.21 is already immutable in the local store and remains unchanged; corrected Wasm/package/image must use 2.0.22",
+    "External supplier execution, deployment and final same-version business matrix NOT_RUN",
+    "Other native supplier families and the pending human health-policy choice remain open"
+  ],
+  "sha256": {
+    "plugins/release/catalog.json": "50e967008773111352b2ba26c078f664b11a6a0bbe9e311beb2f192eb19788d1",
+    "plugins/wasm-go/extensions/ai-proxy/VERSION": "c6b4cb7bd0a282c8d5a0067666187b71ccfbeeafada35f1cc27ed0daf26f74f9",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier_google_test.go": "cc64b36c1352ee4df4e589eafe73d7a9518be23d3ce6ca336ecad37afb85b0b8",
+    "plugins/wasm-go/extensions/ai-proxy/provider/claude_to_openai.go": "ba6fa16c61751aa7bc50bc6d06bbea44feeecc8f062741cb68c5f4b5f475bc63",
+    "plugins/wasm-go/extensions/ai-proxy/provider/gemini.go": "ff29647d9fe6f04f2324b7751cbcf28f7867e02fb19989c99710ed2a4a119256",
+    "plugins/wasm-go/extensions/ai-proxy/provider/responses.go": "a49b39d61e5dad202295ace2461f6da1f451946c177b29b33ae129145e11fff1",
+    "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml": "4762124641fcd741f841f95d0270cf7f9215091aa49152135db8a9e8f7788a66",
+    "plugins/wasm-go/extensions/ai-proxy/provider/responses_functions_test.go": "29a5dd7486be61a1cf8ea263dacc7ef247ca1187fa9cccf286f2d8677c11a721",
+    ".local/managed-gemini-tools-terminal-callbacks-20261102.log": "43e3bb46b0456bf91abd2baadc35349d0cb9e198ff266b719281ac1cf75393e9",
+    ".local/managed-gemini-tools-terminal-units-20261102.log": "5eb552059a7c45d8b9a5d2ce588baeea3a6111ed227be2e7dead68ddc9f1e5c9",
+    ".local/managed-gemini-tools-terminal-vet-20261102.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".local/managed-gemini-tools-terminal-package-20261102.log": "50a3107007e16f09857d1f59121731e7717211313a8fed168bf88d2c02bf0152",
+    ".local/managed-gemini-separate-terminal-red-20261102.log": "d033b3b6d41a27e29fa95c12bb831349f536e11a39247cd3fa43388f7e2c714b",
+    ".local/managed-gemini-function-terminal-codegraph-20261102.txt": "f75b27f2f6d8b736aa14b55280d67377c8dbc2bbafe79f3c925dadab1fe46ec3",
+    ".local/managed-native-client-content-codegraph-20261102.txt": "11d75a41fe0c00cb40bec94701ff8264000db688f77981015ca288c100984a75"
+  }
+}
