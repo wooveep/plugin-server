@@ -72,7 +72,7 @@ func (m *zhipuAiProvider) OnRequestBody(ctx wrapper.HttpContext, apiName ApiName
 }
 
 func (m *zhipuAiProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header) {
-	util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), m.config.capabilities)
+	m.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 	// Use configured domain or default to China domain
 	domain := m.config.zhipuDomain
 	if domain == "" {

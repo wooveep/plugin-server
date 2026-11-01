@@ -66,6 +66,15 @@ func TestManagedSupplierRequestUsesOriginalAdaptersAndTheFrozenKey(t *testing.T)
 		{"together-ai", `{"type":"together-ai"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
 		{"doubao", `{"type":"doubao"}`, "/api/v3/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
 		{"openrouter", `{"type":"openrouter"}`, "/api/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"baidu", `{"type":"baidu"}`, "/v2/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"ollama", `{"type":"ollama","ollamaServerHost":"frozen-ollama","ollamaServerPort":11434}`, "/v1/chat/completions", "authorization", "", ApiNameChatCompletion, false},
+		{"vllm", `{"type":"vllm","vllmCustomUrl":"https://wire.example/egress"}`, "/egress/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"vllm-full", `{"type":"vllm","vllmCustomUrl":"https://wire.example/egress/custom/completions"}`, "/egress/custom/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"zhipuai", `{"type":"zhipuai"}`, "/api/paas/v4/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"zhipuai-code", `{"type":"zhipuai","zhipuCodePlanMode":true,"zhipuDomain":"api.z.ai"}`, "/api/coding/paas/v4/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"cloudflare", `{"type":"cloudflare","cloudflareAccountId":"frozen-account"}`, "/client/v4/accounts/frozen-account/ai/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"hunyuan-compatible", `{"type":"hunyuan"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"minimax-v2", `{"type":"minimax","minimaxApiType":"v2"}`, "/v1/text/chatcompletion_v2", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
 		{"azure", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/frozen-upstream?api-version=2024-10-21"}`, "/openai/deployments/frozen-upstream/chat/completions?api-version=2024-10-21", "api-key", "pool-b", ApiNameChatCompletion, false},
 		{"azure-frozen-deployment", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/other-deployment?api-version=2024-10-21"}`, "/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21", "api-key", "pool-b", ApiNameChatCompletion, false},
 		{"azure-frozen-full-url", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21"}`, "/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21", "api-key", "pool-b", ApiNameChatCompletion, false},
@@ -105,4 +114,33 @@ func TestManagedSupplierRequestUsesOriginalAdaptersAndTheFrozenKey(t *testing.T)
 			}
 		})
 	}
+}
+
+func TestManagedSupplierDoesNotReinterpretNativeModesAsCompatible(t *testing.T) {
+	for _, raw := range []string{
+		`{"type":"hunyuan","hunyuanAuthId":"123456789012345678901234567890123456","hunyuanAuthKey":"12345678901234567890123456789012"}`,
+		`{"type":"minimax","apiTokens":["frozen-key"],"minimaxApiType":"pro","minimaxGroupId":"frozen-group"}`,
+	} {
+		var config ProviderConfig
+		config.FromJson(gjson.Parse(raw))
+		require.NoError(t, config.Validate())
+		_, err := NewManagedAdapter(config, ApiNameChatCompletion, "/v1/chat/completions")
+		require.Error(t, err)
+	}
+}
+
+func TestManagedZhipuKeepsCodePlanAndConvertsReasoning(t *testing.T) {
+	var config ProviderConfig
+	config.FromJson(gjson.Parse(`{"type":"zhipuai","apiTokens":["pool-a","pool-b"],"zhipuCodePlanMode":true,"zhipuDomain":"api.z.ai"}`))
+	require.NoError(t, config.Validate())
+	adapter, err := NewManagedAdapter(config, ApiNameChatCompletion, "/v1/chat/completions?region=owned")
+	require.NoError(t, err)
+	headers := make(http.Header)
+	body, err := adapter.Prepare(&managedAdapterContext{newMapCtx()}, []byte(`{"model":"frozen-upstream","messages":[],"reasoning_effort":"high"}`), headers, "frozen-upstream", "pool-b", false)
+	require.NoError(t, err)
+	require.Equal(t, "/api/coding/paas/v4/chat/completions?region=owned", headers.Get(":path"))
+	require.Equal(t, "frozen-upstream", gjson.GetBytes(body, "model").String())
+	require.Equal(t, "enabled", gjson.GetBytes(body, "thinking.type").String())
+	require.False(t, gjson.GetBytes(body, "reasoning_effort").Exists())
+	require.Equal(t, "Bearer pool-b", headers.Get("authorization"))
 }

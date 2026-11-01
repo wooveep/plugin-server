@@ -888,6 +888,10 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 	var observed managedProtocolObservation
 	if s.config.vendor != nil && s.config.vendor.NativeQwen() {
 		observed = managedQwenObservation(s.config.profile.UpstreamProtocol, *o.HTTPStatus, headers, body, o.BodyComplete, s.expectedEmbeddings)
+	} else if s.config.vendor != nil && s.config.vendor.NativeResponseFormat() == "gemini" {
+		observed = managedGoogleObservation(s.config.profile.UpstreamProtocol, *o.HTTPStatus, headers, body, o.BodyComplete, s.expectedEmbeddings)
+	} else if s.config.vendor != nil && s.config.vendor.NativeResponseFormat() == "moonshot" {
+		observed = managedMoonshotObservation(s.config.profile, *o.HTTPStatus, headers, body, o.BodyComplete)
 	} else if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
 		observed = managedEmbeddingObservation(*o.HTTPStatus, headers, body, o.BodyComplete, s.expectedEmbeddings)
 	} else {

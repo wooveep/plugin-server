@@ -142,7 +142,7 @@ func (m *hunyuanProvider) OnRequestHeaders(ctx wrapper.HttpContext, apiName ApiN
 func (m *hunyuanProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header) {
 	if m.useOpenAICompatibleAPI() {
 		util.OverwriteRequestHostHeader(headers, hunyuanOpenAiDomain)
-		util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), m.config.capabilities)
+		m.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 		util.OverwriteRequestAuthorizationHeader(headers, "Bearer "+m.config.GetApiTokenInUse(ctx))
 	} else {
 		util.OverwriteRequestHostHeader(headers, hunyuanDomain)

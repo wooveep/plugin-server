@@ -116,7 +116,7 @@ func (m *vllmProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName 
 	if m.isDirectCustomPath {
 		util.OverwriteRequestPathHeader(headers, m.customPath)
 	} else if apiName != "" {
-		util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), m.config.capabilities)
+		m.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 	}
 
 	// Set vLLM server host

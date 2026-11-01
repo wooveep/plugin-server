@@ -120,13 +120,13 @@ func managedQwenObservation(protocol string, status uint16, headers [][2]string,
 
 // Strip only usage before invoking the original content converters. Preserve
 // exact counters separately, and restore them after conversion (or omit unknown).
-func managedQwenConversionInput(body []byte, stream bool) ([]byte, error) {
+func managedSupplierConversionInput(body []byte, stream bool, usageField string) ([]byte, error) {
 	strip := func(raw []byte) ([]byte, error) {
 		var object map[string]json.RawMessage
 		if decodeManagedJSON(raw, &object, false) != nil || object == nil {
-			return nil, errors.New("invalid native Qwen content")
+			return nil, errors.New("invalid native supplier content")
 		}
-		delete(object, "usage")
+		delete(object, usageField)
 		return json.Marshal(object)
 	}
 	if !stream {
@@ -152,21 +152,25 @@ func managedQwenConversionInput(body []byte, stream bool) ([]byte, error) {
 
 func convertManagedSupplierResponse(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome, headers [][2]string, body []byte) (managedProtocolClientResponse, error) {
 	profile := s.config.profile
-	if s.config.vendor == nil || !s.config.vendor.NativeQwen() || *outcome.HTTPStatus >= 400 {
+	if s.config.vendor == nil || s.config.vendor.NativeResponseFormat() == "" || *outcome.HTTPStatus >= 400 {
 		return profile.ConvertResponse(ctx, *outcome.HTTPStatus, headers, body)
 	}
 	if !outcome.BodyComplete || outcome.ExecutionResult != "succeeded" && outcome.ExecutionResult != "partial" {
-		return managedProtocolClientResponse{}, errors.New("native Qwen terminal response is not verified")
+		return managedProtocolClientResponse{}, errors.New("native supplier terminal response is not verified")
 	}
 	stream, err := managedProtocolContentType(headers)
 	if err != nil {
 		return managedProtocolClientResponse{}, err
 	}
-	conversionInput, err := managedQwenConversionInput(body, stream)
+	usageField := "usage"
+	if s.config.vendor.NativeResponseFormat() == "gemini" {
+		usageField = "usageMetadata"
+	}
+	conversionInput, err := managedSupplierConversionInput(body, stream, usageField)
 	if err != nil {
 		return managedProtocolClientResponse{}, err
 	}
-	converted, err := s.config.vendor.ConvertQwenResponse(ctx, conversionInput, stream)
+	converted, err := s.config.vendor.ConvertNativeResponse(ctx, conversionInput, stream)
 	if err != nil {
 		return managedProtocolClientResponse{}, err
 	}

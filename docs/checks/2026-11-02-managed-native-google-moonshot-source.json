@@ -1,0 +1,104 @@
+{
+  "date": "2026-11-02",
+  "status": "SOURCE_CHECKED_NOT_DEPLOYED",
+  "base_commit": "4035d87b7e6f6ffc28038a7ccec2086c48131380",
+  "plugin_version": "2.0.21",
+  "compatible_suppliers_added": [
+    "baidu",
+    "ollama",
+    "vllm",
+    "zhipuai",
+    "cloudflare",
+    "hunyuan-compatible",
+    "minimax-v2"
+  ],
+  "native_suppliers_added": [
+    "gemini-chat-and-embedding",
+    "moonshot-nested-stream-usage"
+  ],
+  "behavior": [
+    "Reuse original SDK supplier body/path/auth parameter conversion inside the sole managed sender; preserve custom vLLM URL, Zhipu code-plan/reasoning and Cloudflare account path",
+    "Native Gemini JSON/SSE usage is projected directly from original RawMessage/BigInt counters before SDK content conversion; reported tool-use prompts and thinking output are included and validated against reported total",
+    "Native cumulative Google usage uses the last reported frame without adding cumulative frames; missing/truncated native counters never become reported zero",
+    "Preserve actual request/response wire digests and frozen selected model/key/exit authority across Chat, Responses and Anthropic clients",
+    "Fix original Gemini SDK stream assistant-role emission, finish-reason mapping and batch embedding ordinal indexes at their source",
+    "Reuse original Moonshot SDK stream content conversion; observe original choices[0].usage without rounding"
+  ],
+  "checks": [
+    {
+      "command": "go test . -run '^Test(Managed|Internal)' -count=1",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-native-google-moonshot-callbacks-20261102.log"
+    },
+    {
+      "command": "go test ./provider ./config ./util -count=1",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-native-google-moonshot-units-20261102.log"
+    },
+    {
+      "command": "go vet ./provider ./config ./util",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-native-google-moonshot-vet-20261102.log"
+    }
+  ],
+  "references": [
+    "https://ai.google.dev/api/generate-content#UsageMetadata",
+    "provider/moonshot.go:OnStreamingEvent"
+  ],
+  "codegraph": {
+    "result": "UNKNOWN_FOR_GO",
+    "detail": "Queried changed exact symbols before edits. Existing index omits Go provider/conversion files; followed current-source paths manually, no reindex and no absent-edge no-risk claim.",
+    "logs": [
+      ".local/managed-compatible-second-codegraph-20261102.txt",
+      ".local/managed-native-response-codegraph-20261102.txt",
+      ".local/managed-google-converter-root-codegraph-20261102.txt"
+    ]
+  },
+  "retained_attempts": [
+    {
+      "log": ".local/managed-native-google-missing-role-attempt-20261102.log",
+      "result": "SOURCE_CONVERTER_FAILURE_FIXED",
+      "root": "Gemini SDK stream delta omitted assistant role, preventing the Anthropic converter from emitting message_start. Fixed original stream formatter; all original cross-client assertions retained."
+    },
+    {
+      "log": ".local/managed-compatible-second-compile-attempt-20261102.log",
+      "result": "COMPILE_ERROR_FIXED",
+      "root": "Managed path helper takes a string API identifier; preserve the explicit ApiName conversion used by the existing adapters."
+    }
+  ],
+  "limitations": [
+    "No external supplier calls or deployment in this receipt",
+    "Native Hunyuan signing, Minimax Pro, Vertex and remaining native/service protocols are not claimed supported by this batch",
+    "Old prebuilt Wasm suite was not run; source callbacks/provider/config/util scope only",
+    "2.0.21 has not been stored yet; immutable 2.0.20 is retained"
+  ],
+  "sha256": {
+    "plugins/wasm-go/extensions/ai-proxy/managed_execution.go": "f58d417748b56dab4ea68f010edeeb96f08cf9e83be400106a51d8af795a3e8a",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier.go": "c2ac401700d781cbcb03f47210e29fe3178d933c82f2ac766526d460007ff519",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier_test.go": "642980e3763eaabc0ca4792f77a7079dd729b2654b4e583bf52751b013324600",
+    "plugins/wasm-go/extensions/ai-proxy/provider/baidu.go": "2b895641eb74b422f125f2c5197cfa5c4376a7cdcc1e935db96ed34fa7f4e411",
+    "plugins/wasm-go/extensions/ai-proxy/provider/gemini.go": "ba85ed87db447708782f4017acc04039181b078a13118483faa64bd060da95ed",
+    "plugins/wasm-go/extensions/ai-proxy/provider/hunyuan.go": "bb5b3f52facb22f2b3147fd71415bc4900f240d4d0ea1b30c1cbce1285241d7d",
+    "plugins/wasm-go/extensions/ai-proxy/provider/managed_adapter.go": "21a1510cea4f3d5c39c90e3a3e8c1e295a15e5ce1b26af7d1e13ffea8663ae79",
+    "plugins/wasm-go/extensions/ai-proxy/provider/managed_adapter_test.go": "9a6d2b72436a9d5100b509d2dd682efc85616636763a45ee6e807e3f0629d7c4",
+    "plugins/wasm-go/extensions/ai-proxy/provider/moonshot.go": "b8fa69c19e64a970adbf9873e1217de5a1305dc1d99bcf7a105f6077aae7a17f",
+    "plugins/wasm-go/extensions/ai-proxy/provider/ollama.go": "6e1d9705cbde0ae3524f3085362e9b9fbd61c3c1cfdefc4140b6527547779b22",
+    "plugins/wasm-go/extensions/ai-proxy/provider/vllm.go": "5b12b9cecccfda5c49fb9f59ba759795bdc092c149fd4d71ff46e590983bff2c",
+    "plugins/wasm-go/extensions/ai-proxy/provider/zhipuai.go": "96e426a73fc6b3fc5b2ef091ded4d0ab4a75bcddfd0c878e0a8a0946dee49f11",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier_google.go": "de038f66e4c1827f9308fed1e4af965876b266e3ca60af3f4fb5d811df97c4a5",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier_google_test.go": "cdba0727a3ef45f665da1776bf88cbf3922fbd4f11c6311d9772c56f3b025c70",
+    ".local/managed-compatible-second-callbacks-20261102.log": "caf3d0a78b5d50cb56b5d095b5c5d7abf49c702a487b0e8de153bf4347e92c9a",
+    ".local/managed-compatible-second-units-20261102.log": "cc4c3ccc6ce819e8c7c352c5bdc55f9df0b413684a274974e0164eeac188ae6a",
+    ".local/managed-native-google-moonshot-callbacks-20261102.log": "a745bf42119a56ea48958aa80cc84c52db84abede4015afb35768e8a1fa0fb61",
+    ".local/managed-native-google-moonshot-units-20261102.log": "c936d2b59d0df0e066cdddc10087e45fb7ce36a1f51629cf48df05125f4a8298",
+    ".local/managed-native-google-moonshot-vet-20261102.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".local/managed-native-google-missing-role-attempt-20261102.log": "2182565d4e836513d7eeecf3f2e6345cf27d997281e75c657726736e6c12ee84",
+    ".local/managed-compatible-second-compile-attempt-20261102.log": "f1986d42626780deb80958d2b22f54f4ea06596726b2ebaae1d73835c8f0dc0a",
+    ".local/managed-compatible-second-codegraph-20261102.txt": "cfa61686e83f816d099a95f343df709b204c7c207c8e717564c4eaeb7b056437",
+    ".local/managed-native-response-codegraph-20261102.txt": "7a7ba839ca5ab47cfe3a38a464defb783276c2d392dbee80c80bf666109f5642",
+    ".local/managed-google-converter-root-codegraph-20261102.txt": "60618369cde34a16cd00c481f95a35f7d604f716a5013a1053f7906cfde5fe6c"
+  }
+}

@@ -759,7 +759,7 @@ func (g *geminiProvider) buildChatCompletionResponse(ctx wrapper.HttpContext, re
 				choice.Message.Content = part.Text
 			}
 
-			choice.FinishReason = util.Ptr(strings.ToLower(candidate.FinishReason))
+			choice.FinishReason = util.Ptr(geminiOpenAIFinishReason(candidate.FinishReason))
 			fullTextResponse.Choices = append(fullTextResponse.Choices, choice)
 			choiceIndex += 1
 		}
@@ -794,9 +794,9 @@ func (g *geminiProvider) buildToolCalls(candidate *geminiChatCandidate) []toolCa
 func (g *geminiProvider) buildChatCompletionStreamResponse(ctx wrapper.HttpContext, geminiResp *geminiChatResponse) *chatCompletionResponse {
 	var choice chatCompletionChoice
 	if len(geminiResp.Candidates) > 0 && len(geminiResp.Candidates[0].Content.Parts) > 0 {
-		choice.Delta = &chatMessage{Content: geminiResp.Candidates[0].Content.Parts[0].Text}
+		choice.Delta = &chatMessage{Role: roleAssistant, Content: geminiResp.Candidates[0].Content.Parts[0].Text}
 		if geminiResp.Candidates[0].FinishReason != "" {
-			choice.FinishReason = util.Ptr(strings.ToLower(geminiResp.Candidates[0].FinishReason))
+			choice.FinishReason = util.Ptr(geminiOpenAIFinishReason(geminiResp.Candidates[0].FinishReason))
 		}
 	}
 	streamResponse := chatCompletionResponse{
@@ -832,10 +832,10 @@ func (g *geminiProvider) buildEmbeddingsResponse(ctx wrapper.HttpContext, gemini
 			TotalTokens: 0,
 		},
 	}
-	for _, item := range geminiResp.Embeddings {
+	for index, item := range geminiResp.Embeddings {
 		response.Data = append(response.Data, embedding{
 			Object:    `embedding`,
-			Index:     0,
+			Index:     index,
 			Embedding: item.Values,
 		})
 	}
@@ -857,4 +857,16 @@ func (g *geminiProvider) GetApiName(path string) ApiName {
 		return ApiNameImageGeneration
 	}
 	return ""
+}
+
+// Gemini terminal reasons have different names from the OpenAI wire contract.
+func geminiOpenAIFinishReason(reason string) string {
+	switch reason {
+	case "MAX_TOKENS":
+		return "length"
+	case "SAFETY", "RECITATION", "LANGUAGE", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII", "IMAGE_SAFETY", "IMAGE_PROHIBITED_CONTENT", "IMAGE_RECITATION":
+		return "content_filter"
+	default:
+		return strings.ToLower(reason)
+	}
 }

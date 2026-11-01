@@ -37,10 +37,29 @@ func NewManagedAdapter(config ProviderConfig, apiName ApiName, upstreamPath stri
 		if apiName != ApiNameAnthropicMessages {
 			return nil, errors.New("managed Claude requires its Messages payload")
 		}
+	case providerTypeZhipuAi:
+		if apiName != ApiNameChatCompletion && apiName != ApiNameEmbeddings {
+			return nil, errors.New("managed ZhipuAI API is unsupported")
+		}
+	case providerTypeMinimax:
+		if config.minimaxApiType == minimaxApiTypePro || apiName != ApiNameChatCompletion {
+			return nil, errors.New("managed Minimax API is unsupported")
+		}
+	case providerTypeGemini:
+		if apiName != ApiNameChatCompletion && apiName != ApiNameEmbeddings {
+			return nil, errors.New("managed Gemini API is unsupported")
+		}
+	case providerTypeHunyuan:
+		if config.hunyuanAuthId != "" || config.hunyuanAuthKey != "" {
+			return nil, errors.New("managed Hunyuan native signing is unsupported")
+		}
+		fallthrough
 	case providerTypeDeepSeek, providerTypeGroq, providerTypeGrok, providerTypeYi,
 		providerTypeBaichuan, providerTypeAi360, providerTypeGithub, providerTypeStepfun,
 		providerTypeMistral, providerTypeLongcat, providerTypeFireworks,
-		providerTypeTogetherAI, providerTypeDoubao, providerTypeOpenRouter:
+		providerTypeTogetherAI, providerTypeDoubao, providerTypeOpenRouter,
+		providerTypeBaidu, providerTypeOllama, providerTypeVllm, providerTypeCloudflare,
+		providerTypeMoonshot:
 		initializer, declared := providerInitializers[config.typ].(interface{ DefaultCapabilities() map[string]string })
 		if !declared {
 			return nil, errors.New("managed supplier has no declared API capabilities")
@@ -70,6 +89,16 @@ func NewManagedAdapter(config ProviderConfig, apiName ApiName, upstreamPath stri
 
 func (a *ManagedAdapter) NativeQwen() bool {
 	return a.config.typ == providerTypeQwen && !a.config.qwenEnableCompatible
+}
+
+func (a *ManagedAdapter) NativeResponseFormat() string {
+	if a.NativeQwen() {
+		return providerTypeQwen
+	}
+	if a.config.typ == providerTypeGemini || a.config.typ == providerTypeMoonshot {
+		return a.config.typ
+	}
+	return ""
 }
 
 // Prepare transforms the actual wire body and headers using the selected key.
@@ -104,22 +133,32 @@ func (a *ManagedAdapter) Prepare(ctx wrapper.HttpContext, body []byte, headers h
 	return body, nil
 }
 
-// ConvertQwenResponse only shapes the client payload. Native usage is observed
+// ConvertNativeResponse only shapes the client payload. Native usage is observed
 // separately from the original response before this content conversion.
-func (a *ManagedAdapter) ConvertQwenResponse(ctx wrapper.HttpContext, body []byte, streaming bool) ([]byte, error) {
-	if !a.NativeQwen() {
+func (a *ManagedAdapter) ConvertNativeResponse(ctx wrapper.HttpContext, body []byte, streaming bool) ([]byte, error) {
+	if a.NativeResponseFormat() == "" {
 		return body, nil
 	}
 	if !streaming {
 		handler, ok := a.provider.(TransformResponseBodyHandler)
 		if !ok {
-			return nil, errors.New("native Qwen response conversion is unavailable")
+			if a.config.typ == providerTypeMoonshot {
+				return body, nil
+			}
+			return nil, errors.New("native supplier response conversion is unavailable")
 		}
 		return handler.TransformResponseBody(ctx, a.apiName, body)
 	}
 	handler, ok := a.provider.(StreamingEventHandler)
 	if !ok {
-		return nil, errors.New("native Qwen stream conversion is unavailable")
+		if streamHandler, ok := a.provider.(StreamingResponseBodyHandler); ok {
+			converted, err := streamHandler.OnStreamingResponseBody(ctx, a.apiName, body, false)
+			if err != nil {
+				return nil, err
+			}
+			return append(converted, []byte("data: [DONE]\n\n")...), nil
+		}
+		return nil, errors.New("native supplier stream conversion is unavailable")
 	}
 	var result strings.Builder
 	for _, event := range ExtractStreamingEvents(ctx, body) {
@@ -128,7 +167,7 @@ func (a *ManagedAdapter) ConvertQwenResponse(ctx wrapper.HttpContext, body []byt
 		}
 		events, err := handler.OnStreamingEvent(ctx, a.apiName, event)
 		if err != nil {
-			return nil, fmt.Errorf("convert native Qwen stream: %w", err)
+			return nil, fmt.Errorf("convert native supplier stream: %w", err)
 		}
 		for _, converted := range events {
 			result.WriteString(converted.ToHttpString())

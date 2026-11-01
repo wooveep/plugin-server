@@ -63,7 +63,7 @@ func (g *baiduProvider) OnRequestBody(ctx wrapper.HttpContext, apiName ApiName, 
 }
 
 func (g *baiduProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header) {
-	util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), g.config.capabilities)
+	g.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 	util.OverwriteRequestHostHeader(headers, baiduDomain)
 	util.OverwriteRequestAuthorizationHeader(headers, "Bearer "+g.config.GetApiTokenInUse(ctx))
 	headers.Del("Content-Length")

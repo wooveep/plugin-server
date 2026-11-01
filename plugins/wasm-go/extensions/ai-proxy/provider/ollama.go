@@ -68,7 +68,7 @@ func (m *ollamaProvider) OnRequestBody(ctx wrapper.HttpContext, apiName ApiName,
 }
 
 func (m *ollamaProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header) {
-	util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), m.config.capabilities)
+	m.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 	util.OverwriteRequestHostHeader(headers, m.serviceDomain)
 	headers.Del("Content-Length")
 }

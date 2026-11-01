@@ -138,6 +138,15 @@ func TestManagedSupplierHeadersAndBodyReachTheSoleBusinessSender(t *testing.T) {
 		{"together-ai", `{"type":"together-ai"}`, managedProtocolChat, "/v1/chat/completions", "authorization", "Bearer controlled-upstream-key"},
 		{"doubao", `{"type":"doubao"}`, managedProtocolChat, "/api/v3/chat/completions", "authorization", "Bearer controlled-upstream-key"},
 		{"openrouter", `{"type":"openrouter"}`, managedProtocolChat, "/api/v1/chat/completions", "authorization", "Bearer controlled-upstream-key"},
+		{"baidu", `{"type":"baidu"}`, managedProtocolChat, "/v2/chat/completions", "authorization", "Bearer controlled-upstream-key"},
+		{"ollama", `{"type":"ollama","ollamaServerHost":"frozen-ollama","ollamaServerPort":11434}`, managedProtocolChat, "/v1/chat/completions", "authorization", ""},
+		{"vllm", `{"type":"vllm","vllmCustomUrl":"https://wire.example/egress"}`, managedProtocolChat, "/egress/chat/completions", "authorization", "Bearer controlled-upstream-key"},
+		{"vllm-full", `{"type":"vllm","vllmCustomUrl":"https://wire.example/egress/custom/completions"}`, managedProtocolChat, "/egress/custom/completions", "authorization", "Bearer controlled-upstream-key"},
+		{"zhipuai", `{"type":"zhipuai"}`, managedProtocolChat, "/api/paas/v4/chat/completions", "authorization", "Bearer controlled-upstream-key"},
+		{"zhipuai-code", `{"type":"zhipuai","zhipuCodePlanMode":true,"zhipuDomain":"api.z.ai"}`, managedProtocolChat, "/api/coding/paas/v4/chat/completions", "authorization", "Bearer controlled-upstream-key"},
+		{"cloudflare", `{"type":"cloudflare","cloudflareAccountId":"frozen-account"}`, managedProtocolChat, "/client/v4/accounts/frozen-account/ai/v1/chat/completions", "authorization", "Bearer controlled-upstream-key"},
+		{"hunyuan-compatible", `{"type":"hunyuan"}`, managedProtocolChat, "/v1/chat/completions", "authorization", "Bearer controlled-upstream-key"},
+		{"minimax-v2", `{"type":"minimax","minimaxApiType":"v2"}`, managedProtocolChat, "/v1/text/chatcompletion_v2", "authorization", "Bearer controlled-upstream-key"},
 		{"azure", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/upstream-model?api-version=2024-10-21"}`, managedProtocolChat, "/openai/deployments/upstream-model/chat/completions?api-version=2024-10-21", "api-key", "controlled-upstream-key"},
 		{"azure-frozen-deployment", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/other-deployment?api-version=2024-10-21"}`, managedProtocolChat, "/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21", "api-key", "controlled-upstream-key"},
 		{"azure-frozen-full-url", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21"}`, managedProtocolChat, "/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21", "api-key", "controlled-upstream-key"},
@@ -159,7 +168,7 @@ func TestManagedSupplierHeadersAndBodyReachTheSoleBusinessSender(t *testing.T) {
 			actual := bytes.Clone(calls[0].Body)
 			for name, expected := range map[string]string{":path": test.path, ":authority": "managed-provider.example", test.authName: test.authValue} {
 				value, err := managedSingleHeader(calls[0].Headers, name)
-				if err != nil || value != expected {
+				if (err != nil && expected != "") || value != expected {
 					t.Fatalf("%s was not prepared by the original supplier adapter", name)
 				}
 			}
