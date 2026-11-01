@@ -76,6 +76,24 @@ class PluginServerTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(raw), receipt["manifest"])
 
+    def test_formal_release_catalog_is_fixed_when_a_higher_version_is_uploaded(self):
+        selected = {"catalog_version": "plugin-release.v1", "count": 1,
+                    "artifacts": [{"manifest": {"plugin_name": "test-plugin", "plugin_version": "1.0.0"}}]}
+        path = Path(self.temp_dir.name) / "plugin-catalog.json"
+        raw = json.dumps(selected).encode()
+        path.write_bytes(raw)
+        self.server.RequestHandlerClass.release_catalog_file = path
+        self.assertEqual(self.request("GET", "/plugin-catalog.json")[2], raw)
+        archive = build_archive(descriptor(version="2.0.0"), example_payload())
+        status, _, result = self.request("PUT", "/uploads/higher-than-default", body=archive,
+                                        headers={"Authorization": "Bearer secret-token"})
+        self.assertEqual(status, 201, result)
+        status, headers, body = self.request("GET", "/plugin-catalog.json")
+        self.assertEqual(status, 200)
+        self.assertEqual(body, raw)
+        self.assertEqual(headers["Content-Type"], "application/json")
+        self.assertEqual(self.request("GET", "/plugins/test-plugin/2.0.0/manifest.json")[0], 200)
+
     def test_raw_wasm_write_cannot_bypass_package_commit(self):
         status, _, _ = self.request("PUT", "/plugins/demo/1.2.3/plugin.wasm", body=b"raw-wasm",
                                     headers={"Authorization": "Bearer secret-token"})

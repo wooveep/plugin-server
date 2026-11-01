@@ -27,6 +27,7 @@ COPY --from=builder /work/.release-plugins-artifact-state/ /usr/share/plugin-ser
 ENV PLUGIN_SERVER_PLUGINS_DIR=/usr/share/plugin-server/plugins
 ENV PLUGIN_SERVER_STATE_DIR=/usr/share/plugin-server/.plugins-artifact-state
 ENV PLUGIN_SERVER_POLICY_FILE=/opt/plugin-server/policy.json
+ENV PLUGIN_SERVER_RELEASE_CATALOG_FILE=/opt/plugin-server/plugin-catalog.json
 VOLUME ["/usr/share/plugin-server"]
 EXPOSE 8080
 CMD ["python3", "/opt/plugin-server/plugin_server.py"]

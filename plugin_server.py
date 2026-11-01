@@ -30,16 +30,18 @@ class PluginRequestHandler(BaseHTTPRequestHandler):
     upload_token = None
     retention_token = None
     created_by = "artifact-service"
+    release_catalog_file = None
 
     @classmethod
     def create(cls, plugins_dir, upload_token, *, public_base_url="http://localhost:8080",
-               state_dir=None, policy=None, created_by="artifact-service", retention_token=None):
+               state_dir=None, policy=None, created_by="artifact-service", retention_token=None, release_catalog_file=None):
         class ConfiguredPluginRequestHandler(cls):
             pass
         handler = ConfiguredPluginRequestHandler
         handler.plugins_dir = Path(plugins_dir).resolve()
         handler.upload_token, handler.created_by = upload_token, created_by
         handler.retention_token = retention_token
+        handler.release_catalog_file = Path(release_catalog_file) if release_catalog_file is not None else None
         handler.store = ArtifactStore(handler.plugins_dir, state_dir=state_dir,
                                      public_base_url=public_base_url, policy=policy)
         return handler
@@ -179,6 +181,12 @@ class PluginRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             path = unquote(urlsplit(self.path).path, errors="strict")
+            if path == "/plugin-catalog.json":
+                if self.release_catalog_file is None:
+                    self._error(HTTPStatus.NOT_FOUND, "release_catalog_unconfigured")
+                else:
+                    self._reply(HTTPStatus.OK, self.release_catalog_file.read_bytes())
+                return
             if path == "/artifacts":
                 self._reply(HTTPStatus.OK, json_bytes({"artifacts": self.store.list_metadata()}))
                 return
@@ -256,10 +264,11 @@ def main():
     parser.add_argument("--upload-token", default=os.getenv("PLUGIN_SERVER_UPLOAD_TOKEN"))
     parser.add_argument("--retention-token", default=os.getenv("PLUGIN_SERVER_RETENTION_TOKEN"))
     parser.add_argument("--policy", type=Path, default=os.getenv("PLUGIN_SERVER_POLICY_FILE"))
+    parser.add_argument("--release-catalog-file", type=Path, default=os.getenv("PLUGIN_SERVER_RELEASE_CATALOG_FILE"))
     args = parser.parse_args()
     policy = load_policy(args.policy)
     run_server(args.host, args.port, args.plugins_dir, args.upload_token, retention_token=args.retention_token, state_dir=args.state_dir,
-               public_base_url=args.public_base_url, policy=policy)
+               public_base_url=args.public_base_url, policy=policy, release_catalog_file=args.release_catalog_file)
 
 
 if __name__ == "__main__":
