@@ -15,3 +15,9 @@
 CodeGraph 已先行核对；当前 plugin-server 索引不含新增 Go 包的唯一文件命中，因此按实际路径读取源文件，并与 Console 现有 ExecutionSelection schema、恢复候选与摘要入口交叉核对。没有重建或升级索引。
 
 完整新字节 Go/Wasm 宿主批次为 323 个顶层 / 2,203 个含子项通过，退出码 0；[实际命令](health-media-runtime-20261101/ai-proxy-2.0.17/full-go-wasm-command.json)绑定同一源与 Wasm 字节。完整包已入库，88 份原不可变 manifest 保持，现 89 个版本、55 类正式默认版本；[来源核对](health-media-runtime-20261101/ai-proxy-2.0.17/qualification.json)与[镜像回执](health-media-runtime-20261101/ai-proxy-2.0.17/server-image-build.json)完整保留。制品 HTTP 交付、原任务 refresh、Console 完全无 Pod 超过65秒期间的媒体恢复与普通文本、恢复后的精确账务均已实际通过。89版本/893 HTTP文件全核对，Helm128实际加载同一Wasm；原失败保留，原任务同ID恢复且截止不变。完整运行事实只维护于部署仓库的 [Helm128 停机与恢复权威记录](../../../modelfusion-deploy/docs/checks/2026-10-31-health-media-fresh-deployed.md#console-offline-helm128)。完整HEALTH矩阵、Gateway新UID重启、真实供应商与其他联合范围继续。
+
+## 2026-11-01 健康原生 Redis 与 K3S 退避
+
+当前 ai-proxy2.0.18 的实际 Wasm为 `992421f094caf36b2c54737f698656000d59ac546eaae3b33c7f77732246e21d`；健康包及其 bodybasis/mfjson/wrapper 生产依赖与该制品源 `9ea11acb` 逐字相同。本批复用既有 `go test -json -count=1 ./pkg/ai/upstreamhealth`，真实 owned Redis 上28顶层/79含子项通过、0跳过，[命令及源摘要](health-matrix-20261101/native-redis-command.json)可核对。两个 Runtime 用独立 boot/owner 竞争同一epoch，验证唯一consume、同attempt不续租、丢ACK否决、撤销/旧成功、时钟与Stream失败原子性；使用1/2秒快速策略，不宣称实际双K3S Pod已验收。
+
+生产30–300秒自然退避、90秒Retry-After、原路由重复发布、撤销前后实际迟到200以及物理收件到钱包的统一结果，只维护于部署仓[健康矩阵](../../../modelfusion-deploy/docs/checks/2026-11-01-health-matrix.md)。11次供应商发送/22条accepted事实/19份健康原件已实际经网关Stream归档。Go可选导出样例未冒充Rust互通；实际K3S消息交付另有原call/attempt证据。双Gateway Pod和完整IF02-V05仍继续，WG-I07不据局部矩阵关闭。
