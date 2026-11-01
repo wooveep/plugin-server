@@ -8,6 +8,7 @@ This does not claim coordination across independent volumes or remote replicas.
 from __future__ import annotations
 
 import fcntl
+import hashlib
 import os
 import re
 import shutil
@@ -256,29 +257,44 @@ class ArtifactStore:
             return parse_json(row["manifest"]) if row else None
 
     def read_file(self, name: str, version: str, path: str) -> bytes | None:
-        if not safe_path(path):
-            return None
-        manifest = self.manifest(name, version)
+        with self.open_file(name, version, path) as stream:
+            return stream.read() if stream is not None else None
+
+    @contextmanager
+    def open_file(self, name: str, version: str, path: str):
+        """Hold one verified immutable member without buffering its full body."""
+        manifest = self.manifest(name, version) if safe_path(path) else None
         if manifest is None:
-            return None
-        return self._read_member(manifest, path)
+            yield None
+            return
+        with self._open_member(manifest, path) as stream:
+            yield stream
 
     def _read_member(self, manifest: dict, path: str) -> bytes | None:
+        with self._open_member(manifest, path) as stream:
+            return stream.read() if stream is not None else None
+
+    @contextmanager
+    def _open_member(self, manifest: dict, path: str):
         allowed = {entry["path"]: entry for entry in manifest["files"]}
         if path not in allowed and path not in ("package.json", "metadata.txt", "archive.tgz"):
-            return None
+            yield None
+            return
         target = self.root / manifest["plugin_name"] / manifest["plugin_version"] / path
         if target.is_symlink() or not target.resolve().is_relative_to(self.root):
             raise StorageUnavailable("unexpected file alias")
         try:
-            raw = target.read_bytes()
+            with target.open("rb") as stream:
+                size = os.fstat(stream.fileno()).st_size
+                actual = "sha256:" + hashlib.file_digest(stream, "sha256").hexdigest()
+                if path in allowed and (actual != allowed[path]["sha256"] or str(size) != allowed[path]["size_bytes"]):
+                    raise StorageUnavailable("committed payload bytes differ")
+                if path == "archive.tgz" and actual != manifest["archive_digest"]:
+                    raise StorageUnavailable("committed archive bytes differ")
+                stream.seek(0)
+                yield stream
         except OSError as exc:
             raise StorageUnavailable("committed artifact member is unavailable") from exc
-        if path in allowed and (digest(raw) != allowed[path]["sha256"] or str(len(raw)) != allowed[path]["size_bytes"]):
-            raise StorageUnavailable("committed payload bytes differ")
-        if path == "archive.tgz" and digest(raw) != manifest["archive_digest"]:
-            raise StorageUnavailable("committed archive bytes differ")
-        return raw
 
     def list_manifests(self) -> list[dict]:
         """Read committed versions for a producer inventory; never select latest."""

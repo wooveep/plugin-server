@@ -1,0 +1,21 @@
+{
+  "pod": "higress-plugin-server-58899fb96c-qt26f",
+  "pod_uid": "a0b616fa-b8a1-4557-9bf2-c127db7f3569",
+  "container": "higress-core",
+  "observed_restart_count": 1,
+  "last_termination": {
+    "reason": "OOMKilled",
+    "exitCode": 137,
+    "startedAt": "2026-11-01T00:00:38Z",
+    "finishedAt": "2026-11-01T01:52:00Z"
+  },
+  "memory_limit": "768Mi",
+  "cpu_limit": "500m",
+  "same_pod_recovered_after_restart": true,
+  "raw_pod_snapshot_sha256": "2182d0bdc225f7fa4e6ec3e20893b06ea5c78d17e966c15bdc642f77883ed897",
+  "original_parallel_python_heap_peak_bytes": 137097101,
+  "regression_budget_bytes": 33554432,
+  "test_files": 16,
+  "single_file_bytes": 8388608,
+  "initial_test_bootstrap_failures_not_product_red": true
+}

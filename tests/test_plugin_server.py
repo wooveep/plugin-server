@@ -2,6 +2,10 @@ import tempfile
 import threading
 import unittest
 import json
+import hashlib
+import random
+import tracemalloc
+from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen
 from http.client import HTTPConnection
 from http.server import ThreadingHTTPServer
@@ -166,6 +170,51 @@ class PluginServerTest(unittest.TestCase):
         self.assertEqual(payload, b"download-me")
         normalized_headers = {key.lower(): value for key, value in headers.items()}
         self.assertEqual(normalized_headers["content-type"], "application/wasm")
+
+    def test_parallel_cold_downloads_keep_bounded_memory_exact_bytes_and_corruption_refusal(self):
+        payload = example_payload()
+        payload["docs/README.md"] = random.Random(7).randbytes(4 * 1024 * 1024).hex().encode()
+        archive = build_archive(descriptor(payload), payload)
+        status, _, raw = self.request("PUT", "/uploads/parallel-cold-read", body=archive,
+                                       headers={"Authorization": "Bearer secret-token"})
+        self.assertEqual(status, 201, raw)
+        expected_size = len(payload["docs/README.md"])
+        expected_digest = hashlib.sha256(payload["docs/README.md"]).hexdigest()
+        path = "/plugins/test-plugin/1.0.0/docs/README.md"
+        readers = threading.Barrier(16)
+
+        def download(_):
+            connection = HTTPConnection(self.host, self.port, timeout=20)
+            try:
+                connection.request("GET", path)
+                response = connection.getresponse()
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response.getheader("Content-Length"), str(expected_size))
+                # Concurrent cold consumers hold their bodies until all headers
+                # arrive, as Gateway startup does; no client buffers a whole file.
+                readers.wait(timeout=20)
+                observed, digest = 0, hashlib.sha256()
+                while chunk := response.read(65536):
+                    observed += len(chunk)
+                    digest.update(chunk)
+                return observed, digest.hexdigest()
+            finally:
+                connection.close()
+
+        tracemalloc.start()
+        try:
+            with ThreadPoolExecutor(max_workers=16) as pool:
+                results = list(pool.map(download, range(16)))
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        self.assertEqual(results, [(expected_size, expected_digest)] * 16)
+        self.assertLess(peak, expected_size * 4,
+                        "parallel downloads must not retain a whole file per response")
+        status, headers, body = self.request("HEAD", path)
+        self.assertEqual((status, headers["Content-Length"], body), (200, str(expected_size), b""))
+        (self.plugins_dir / "test-plugin/1.0.0/docs/README.md").write_bytes(b"corrupted")
+        self.assertEqual(self.request("GET", path)[0], 503)
 
 
 if __name__ == "__main__":

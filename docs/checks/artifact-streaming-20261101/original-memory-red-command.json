@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python (owned requirements.lock environment)",
+    "-m",
+    "unittest",
+    "test_plugin_server.PluginServerTest.test_parallel_cold_downloads_keep_bounded_memory_exact_bytes_and_corruption_refusal"
+  ],
+  "cwd": "owned original-source directory",
+  "started_at": "2026-11-01T02:04:25.361865+00:00",
+  "completed_at": "2026-11-01T02:04:27.377784+00:00",
+  "exit_code": 1,
+  "source_commit": "719090dd0740e94d553ebbcf85c7f2ccef9a326f",
+  "log_sha256": "714a1972aeded7bd4ded567e4baecd19d49b9393fe30febcfa32e6ab43196e98"
+}

@@ -5,6 +5,7 @@ import argparse
 import hmac
 import mimetypes
 import os
+import shutil
 import sqlite3
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -43,16 +44,30 @@ class PluginRequestHandler(BaseHTTPRequestHandler):
                                      public_base_url=public_base_url, policy=policy)
         return handler
 
-    def _reply(self, status, raw, content_type="application/json"):
+    def _reply_headers(self, status, size, content_type):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(raw)))
+        self.send_header("Content-Length", str(size))
         self.send_header("Connection", "close")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
         self.close_connection = True
+
+    def _reply(self, status, raw, content_type="application/json"):
+        self._reply_headers(status, len(raw), content_type)
         if self.command != "HEAD":
             self.wfile.write(raw)
+
+    def _reply_file(self, stream, content_type):
+        try:
+            self._reply_headers(HTTPStatus.OK, os.fstat(stream.fileno()).st_size, content_type)
+            if self.command != "HEAD":
+                shutil.copyfileobj(stream, self.wfile, length=65536)
+        except OSError as exc:
+            # Headers may already be delivered; an interrupted body cannot be
+            # replaced by another HTTP response on this connection.
+            self.close_connection = True
+            self.log_error("artifact transfer interrupted: %s", type(exc).__name__)
 
     def _error(self, status, code):
         self._reply(status, json_bytes({"error": code}))
@@ -197,19 +212,22 @@ class PluginRequestHandler(BaseHTTPRequestHandler):
             if member == "manifest.json" and manifest is not None:
                 self._reply(HTTPStatus.OK, json_bytes(manifest))
                 return
-            raw = self.store.read_file(name, version, member) if manifest else None
+            content_type = "application/wasm" if member.endswith(".wasm") else mimetypes.guess_type(member)[0] or "application/octet-stream"
+            if manifest is not None:
+                with self.store.open_file(name, version, member) as stream:
+                    if stream is not None:
+                        self._reply_file(stream, content_type)
+                        return
             if manifest is None and member in ("plugin.wasm", "metadata.txt"):
                 # Old versions stay readable; partially published managed versions
                 # must never fall through to this compatibility path.
                 directory = self.plugins_dir / name / version
                 target = directory / member
                 if not (directory / "manifest.json").exists() and not (directory / "package.json").exists() and target.is_file() and not target.is_symlink() and target.resolve().is_relative_to(self.plugins_dir):
-                    raw = target.read_bytes()
-            if raw is None:
-                self._error(HTTPStatus.NOT_FOUND, "artifact_not_found")
-                return
-            content_type = "application/wasm" if member.endswith(".wasm") else mimetypes.guess_type(member)[0] or "application/octet-stream"
-            self._reply(HTTPStatus.OK, raw, content_type)
+                    with target.open("rb") as stream:
+                        self._reply_file(stream, content_type)
+                    return
+            self._error(HTTPStatus.NOT_FOUND, "artifact_not_found")
         except ContractError as exc:
             self._error(HTTPStatus.BAD_REQUEST, exc.code)
         except (StorageUnavailable, OSError, sqlite3.Error):

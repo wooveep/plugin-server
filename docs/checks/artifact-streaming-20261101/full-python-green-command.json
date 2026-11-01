@@ -1,0 +1,24 @@
+{
+  "command": [
+    "python (owned requirements.lock environment)",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-v"
+  ],
+  "started_at": "2026-11-01T02:05:25.483807+00:00",
+  "completed_at": "2026-11-01T02:05:42.748266+00:00",
+  "exit_code": 0,
+  "source_base_commit": "719090dd0740e94d553ebbcf85c7f2ccef9a326f",
+  "source_files_sha256": {
+    "plugin_server.py": "55a121ee47dbfae04393a0e4e592f521bc733b0f365c01195cdb359599d4494f",
+    "artifact_storage.py": "f4bcc8f01e327c338c2d87f0ecfcb0d85d0f4a6104a30a829461fca1e64f2899",
+    "tests/test_plugin_server.py": "440e3b25495dee0dcd7046878844cedb14b8f90396136b4c9a93401cb172ecc7"
+  },
+  "log_sha256": "50845b7e8d4ec37593ae7af7c4dae022aea45529a07af5a4154efe17c3c28b15",
+  "python": "Python 3.12.13",
+  "tests_passed": 117,
+  "tests_skipped": 0
+}
