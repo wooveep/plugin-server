@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
@@ -17,18 +18,18 @@ import (
 	"time"
 )
 
-// The notifying HTTP context ends while health is blocked. Only the live root
-// tick and Redis may subsequently send the same original job; no Console exists
-// in this transport fixture. The source/classifier has its separate fact tests.
-func TestManagedMediaHealthWaitSurvivesNoticeEndAndKeepsOriginalTicket(t *testing.T) {
+// A blocked creation closes its original prepared ticket and never becomes a
+// cooldown queue after the notifying HTTP context ends. Console independently
+// verifies that close; losing its ACK does not prove the provider was unsent.
+func TestManagedMediaCreationClosesOriginalTicketWithoutWaiting(t *testing.T) {
 	for _, test := range []struct {
-		name               string
-		resume, projection bool
+		name                string
+		projection, lostACK bool
 	}{
-		{"health_recovers", true, false},
-		{"health_deadline_expires", false, false},
-		{"projection_recovers", true, true},
-		{"projection_deadline_expires", false, true},
+		{"health_blocked", false, false},
+		{"health_close_ack_lost", false, true},
+		{"projection_unready", true, false},
+		{"projection_close_ack_lost", true, true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			job, _ := managedMediaHostJob(t, true)
@@ -66,9 +67,23 @@ func TestManagedMediaHealthWaitSurvivesNoticeEndAndKeepsOriginalTicket(t *testin
 			healthy := test.projection
 			admissionReady := !test.projection
 			reads := 0
+			closes, consumes := 0, 0
 			originalRedis := runtime.redis
 			runtime.redis = managedMediaTestRedis{command: func(args []interface{}, callback wrapper.RedisResponseCallback) error {
+				if args[0] == "EVAL" && args[1] == mediaexecution.DispatchCloseUnavailableScript {
+					closes++
+					if args[2] != 1 || args[3] != job.notice.TicketKey || args[4] != job.notice.TicketDigest || args[5] != job.notice.OperationID || args[6] != strconv.FormatInt(job.notice.ExpiresAt.UnixMilli(), 10) {
+						t.Fatal("unavailability must close the same original prepared ticket")
+					}
+					if test.lostACK {
+						callback(resp.ErrorValue(errors.New("lost close ACK")))
+					} else {
+						callback(resp.ArrayValue([]resp.Value{resp.StringValue("closed"), resp.StringValue("upstream_unavailable")}))
+					}
+					return nil
+				}
 				if args[0] == "EVAL" && args[1] == mediaexecution.DispatchConsumeScript && !admissionReady {
+					consumes++
 					callback(resp.ArrayValue([]resp.Value{resp.StringValue("deny"), resp.StringValue("projection_unready")}))
 					return nil
 				}
@@ -140,33 +155,20 @@ func TestManagedMediaHealthWaitSurvivesNoticeEndAndKeepsOriginalTicket(t *testin
 			}
 			id := host.InitializeHttpContext()
 			host.CallOnRequestHeaders(id, [][2]string{{":method", "POST"}, {":path", managedMediaDispatchPath}, {":authority", "gateway.example"}}, true)
-			stage := "waiting_health"
-			if test.projection {
-				stage = "waiting_admission"
+			if job.stage != "done" || reads != 1 || closes != 1 || len(host.GetCalloutAttributesFromContext(id)) != 0 {
+				t.Fatal("blocked creation must close immediately without a provider call")
 			}
-			if job.stage != stage || reads != 1 || len(host.GetCalloutAttributesFromContext(id)) != 0 {
-				t.Fatal("blocked job escaped its original wait")
+			if (test.projection && consumes != 1) || (!test.projection && consumes != 0) {
+				t.Fatal("health-blocked creation must not attempt admission consumption")
 			}
 			host.CompleteHttpContext(id)
-			if test.resume {
-				healthy, admissionReady = true, true
-				clock = initial.Add(31 * time.Second)
-			} else {
-				clock = job.notice.ExpiresAt.Add(time.Second)
-			}
+			healthy, admissionReady = true, true
+			clock = initial.Add(31 * time.Second)
 			host.Tick()
-			calls := host.GetCalloutAttributesFromContext(proxytest.PluginContextID)
-			if test.resume {
-				if len(calls) != 1 || job.request.AttemptID() != "original-create" || job.notice.TicketKey != "mf:media:ticket:original" || reads != 2 {
-					t.Fatal("health recovery required another notice, ticket or attempt")
-				}
-				host.Tick()
-				after := host.GetCalloutAttributesFromContext(proxytest.PluginContextID)
-				if len(after) != 1 || after[0].CalloutID != calls[0].CalloutID || reads != 2 {
-					t.Fatal("root tick replayed provider creation")
-				}
-			} else if len(calls) != 0 || reads != 1 {
-				t.Fatal("expired ticket was renewed or sent")
+			clock = job.notice.ExpiresAt.Add(time.Second)
+			host.Tick()
+			if len(host.GetCalloutAttributesFromContext(proxytest.PluginContextID)) != 0 || reads != 1 || closes != 1 || job.notice.TicketKey != "mf:media:ticket:original" {
+				t.Fatal("health recovery must not revive or renew an unavailable creation")
 			}
 		})
 	}

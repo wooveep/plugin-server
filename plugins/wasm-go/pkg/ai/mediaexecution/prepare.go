@@ -127,7 +127,7 @@ func identityMatchesProcurement(procurement, descriptor map[string]json.RawMessa
 	return field(procurement, "binding_id") == field(descriptor, "binding_id") &&
 		field(procurement, "provider_id") == field(descriptor, "provider_id") &&
 		field(procurement, "purchase_account_id") == field(descriptor, "provider_account_id") &&
-		field(procurement, "upstream_model_name") == field(descriptor, "upstream_model") && identity(field(procurement, "region"))
+		field(procurement, "upstream_model_name") == field(descriptor, "upstream_model") && (field(procurement, "region") == "" || identity(field(procurement, "region")))
 }
 
 // ConsumeUnknown permanently disables creation in this live executor. A lost
@@ -332,7 +332,7 @@ func (e *Executor) checkHistory(raw []byte, digest string) error {
 		a.Transport != "http_call" || a.Owner != "ai_proxy" || a.Mechanism != "router" ||
 		a.CredentialRef != field(e.candidate, "credential_ref") || a.CredentialRevision != field(e.candidate, "credential_revision") ||
 		a.Procurement.BindingID != field(e.descriptor, "binding_id") || a.Procurement.ProviderID != field(e.descriptor, "provider_id") ||
-		a.Procurement.Account != field(e.descriptor, "provider_account_id") || a.Procurement.Model != e.profile.model || !identity(a.Procurement.Region) ||
+		a.Procurement.Account != field(e.descriptor, "provider_account_id") || a.Procurement.Model != e.profile.model || (a.Procurement.Region != "" && !identity(a.Procurement.Region)) ||
 		(digest != "" && a.SelectionDigest != digest) {
 		return ErrIdentity
 	}

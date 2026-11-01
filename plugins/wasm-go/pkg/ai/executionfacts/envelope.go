@@ -71,7 +71,7 @@ type Envelope struct {
 type CostOwner struct {
 	Kind        string `json:"kind"`
 	OwnerID     string `json:"owner_id"`
-	SourceJobID string `json:"source_job_id"`
+	SourceJobID string `json:"source_job_id,omitempty"`
 }
 
 // Usage preserves the evidence status of this attempt or final delivery only.
@@ -118,13 +118,17 @@ type AttemptOutcome struct {
 // It neither allocates a second purchase attempt nor claims the upstream sent.
 func NewAttempt(original Envelope) (Attempt, error) {
 	original.Kind = "upstream_attempt"
-	if original.SchemaVersion != "" && original.SchemaVersion != SchemaVersion {
+	version := SchemaVersion
+	if original.ProviderAccountID == "" {
+		version = ConnectionSchemaVersion
+	}
+	if original.SchemaVersion != "" && original.SchemaVersion != version {
 		return Attempt{}, errorsForVersion()
 	}
 	if original.PayloadCanonicalization != "" && original.PayloadCanonicalization != Canonicalization {
 		return Attempt{}, errorsForVersion()
 	}
-	original.SchemaVersion = SchemaVersion
+	original.SchemaVersion = version
 	original.PayloadCanonicalization = Canonicalization
 	if err := validateIdentity(original); err != nil {
 		return Attempt{}, err

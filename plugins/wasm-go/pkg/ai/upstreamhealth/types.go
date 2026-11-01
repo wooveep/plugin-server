@@ -67,7 +67,7 @@ func (c Config) SnapshotKey() (string, error) {
 
 type CredentialIdentity struct {
 	CredentialRef     string `json:"credential_ref"`
-	ProviderAccountID string `json:"provider_account_id"`
+	ProviderAccountID string `json:"provider_account_id,omitempty"`
 	OwnerKind         string `json:"owner_kind"`
 	OwnerID           string `json:"owner_id"`
 }
@@ -82,7 +82,7 @@ type CredentialControl struct {
 type ScopeIdentity struct {
 	ScopeID              string    `json:"scope_id"`
 	Kind                 string    `json:"kind"`
-	ProviderAccountID    string    `json:"provider_account_id"`
+	ProviderAccountID    string    `json:"provider_account_id,omitempty"`
 	RegionEndpointRef    *string   `json:"region_endpoint_ref"`
 	CredentialRef        *string   `json:"credential_ref"`
 	CredentialGeneration *Revision `json:"credential_generation"`
@@ -109,7 +109,7 @@ type ScopeState struct {
 type TargetReference struct {
 	TargetID             string   `json:"target_id"`
 	BindingID            string   `json:"binding_id"`
-	ProviderAccountID    string   `json:"provider_account_id"`
+	ProviderAccountID    string   `json:"provider_account_id,omitempty"`
 	RegionEndpointRef    string   `json:"region_endpoint_ref"`
 	UpstreamModel        string   `json:"upstream_model"`
 	OperationKind        string   `json:"operation_kind"`
@@ -211,7 +211,7 @@ type Snapshot struct {
 	runtimeNow      time.Time
 	credentialIndex map[string]int
 	scopeIndex      map[string]int
-	accountScopes   map[string][]int
+	scopeGroups     map[string][]int
 }
 
 type revisionFence struct {

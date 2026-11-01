@@ -297,3 +297,34 @@ func TestLedgerBoundedRetentionDoesNotDiscardFirstBytes(t *testing.T) {
 		t.Fatal("per-call byte limit was ignored")
 	}
 }
+
+func TestConnectionAttemptDoesNotInventAnExternalProcurementAccount(t *testing.T) {
+	original := attemptFixture()
+	original.ProviderAccountID = ""
+	attempt, err := NewAttempt(original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	observed, err := attempt.Finish(AttemptOutcome{
+		ObservedAt: original.ObservedAt, SendState: original.SendState, Acceptance: original.Acceptance,
+		ExecutionResult: original.ExecutionResult, HTTPStatus: original.HTTPStatus,
+		HeadersComplete: true, Usage: original.Usage, EvidenceRefs: original.EvidenceRefs,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if observed.Envelope().SchemaVersion != ConnectionSchemaVersion || bytes.Contains(observed.Bytes(), []byte(`"provider_account_id"`)) {
+		t.Fatal("new supplier fact must omit an unconfirmed external account")
+	}
+	replacement := observed.Envelope()
+	replacement.ObservedAt = "2026-10-27T10:00:02Z"
+	corrected, err := Correct(observed, replacement)
+	if err != nil || corrected.Revision() != "2" || corrected.SourceFactID() != observed.SourceFactID() || corrected.Envelope().ProviderAccountID != "" {
+		t.Fatal("correction did not preserve the original accountless attempt", err)
+	}
+	original.ProviderAccountID = "retained-original-account"
+	legacy, err := NewAttempt(original)
+	if err != nil || legacy.original.SchemaVersion != SchemaVersion {
+		t.Fatal("retained account-bearing attempts must keep their original contract", err)
+	}
+}

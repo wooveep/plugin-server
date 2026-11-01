@@ -1470,7 +1470,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-cache",
-      "declaredVersion": "2.0.8"
+      "declaredVersion": "2.0.9"
     },
     {
       "logicalId": "ai-context-limit",
@@ -1573,7 +1573,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-history",
-      "declaredVersion": "2.0.4"
+      "declaredVersion": "2.0.5"
     },
     {
       "logicalId": "ai-image-reader",
@@ -1753,7 +1753,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-proxy",
-      "declaredVersion": "2.0.18"
+      "declaredVersion": "2.0.19"
     },
     {
       "logicalId": "ai-quota",
@@ -3092,7 +3092,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "1.0.2"
+      "declaredVersion": "1.0.3"
     },
     {
       "logicalId": "ai-memory",
@@ -3120,7 +3120,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "0.1.10"
+      "declaredVersion": "0.1.11"
     },
     {
       "logicalId": "key-auth",

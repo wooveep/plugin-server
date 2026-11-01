@@ -49,9 +49,9 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 		}
 		return nil
 	}
-	if !settings.IsObject() || !release.IsObject() || cfg.NativeIdentity == nil ||
+	if !settings.IsObject() || !release.IsObject() || (cfg.NativeIdentity == nil && cfg.TenantPolicies == nil) ||
 		!cfg.PublishedProtocolConfigured || !isSupportedThinProtocol(cfg.PublishedProtocol) ||
-		len(cfg.RoutePolicy.EnabledPathSuffixes) != 0 || cfg.RoutePolicy.EnableBypass || !cfg.RoutePolicy.EnableReplay {
+		(cfg.TenantPolicies == nil && (len(cfg.RoutePolicy.EnabledPathSuffixes) != 0 || cfg.RoutePolicy.EnableBypass || !cfg.RoutePolicy.EnableReplay)) {
 		return errors.New("native cache delivery requires complete unfiltered published target configuration")
 	}
 	if _, err := mfjson.Canonicalize([]byte(value.Raw)); err != nil {
@@ -75,11 +75,18 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 	if err := validateNativeCacheCredentials(envelope); err != nil {
 		return err
 	}
-	descriptor, err := nativeCacheObject(envelope["descriptor"], "release_id target_id binding_id provider_id provider_account_id region_endpoint_ref service_ref cluster_ref credential_pool_ref credential_pool_revision adapter_ref adapter_revision mapper_digest proxy_digest descriptor_digest upstream_model config_canonicalization transport_contract capabilities")
+	descriptorFields := "release_id target_id binding_id provider_id region_endpoint_ref service_ref cluster_ref credential_pool_ref credential_pool_revision adapter_ref adapter_revision mapper_digest proxy_digest descriptor_digest upstream_model config_canonicalization transport_contract capabilities"
+	if release.Get("descriptor.provider_account_id").Exists() {
+		descriptorFields += " provider_account_id"
+	}
+	descriptor, err := nativeCacheObject(envelope["descriptor"], descriptorFields)
 	if err != nil {
 		return errors.New("native cache delivery requires the original full descriptor")
 	}
 	for name, raw := range descriptor {
+		if name == "provider_account_id" && bytes.Equal(raw, []byte("null")) {
+			continue
+		}
 		if name != "transport_contract" && name != "capabilities" && !nativeCacheText(raw) {
 			return errors.New("native cache descriptor has invalid identity fields")
 		}
@@ -159,9 +166,14 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 		targetID: nativeCacheString(descriptor["target_id"]), routeID: nativeCacheString(envelope["route_id"]),
 		salesAssetID: nativeCacheString(envelope["sales_asset_id"]), publicModel: nativeCacheString(envelope["public_model"]), capture: captures,
 	}
-	if !balanceidentity.ValidID(out.routeID) || !balanceidentity.ValidID(out.salesAssetID) ||
-		out.releaseID != cfg.NativeIdentity.ReleaseID || out.targetID != cfg.NativeIdentity.TargetID || out.routeID != cfg.NativeIdentity.RouteID {
+	if !balanceidentity.ValidID(out.routeID) || !balanceidentity.ValidID(out.salesAssetID) {
+		return errors.New("native cache requires its original route and sales asset")
+	}
+	if cfg.NativeIdentity != nil && (out.releaseID != cfg.NativeIdentity.ReleaseID || out.targetID != cfg.NativeIdentity.TargetID || out.routeID != cfg.NativeIdentity.RouteID) {
 		return errors.New("native cache static policy differs from its frozen execution ownership")
+	}
+	if cfg.TenantPolicies != nil && (out.releaseID != cfg.TenantPolicies.Route.ReleaseID || out.targetID != cfg.TenantPolicies.Route.TargetID || out.routeID != cfg.TenantPolicies.Route.RouteID || out.publicModel != cfg.TenantPolicies.PublicModel) {
+		return errors.New("native cache tenant directory differs from its frozen execution ownership")
 	}
 	cfg.NativeExecution = out
 	return nil

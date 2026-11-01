@@ -62,10 +62,16 @@ func init() {
 }
 
 func parseConfig(json gjson.Result, c *config.PluginConfig, log log.Log) error {
+	if json.Get("tenant_policies").Exists() {
+		return parseTenantMemoryPolicies(json, c, log)
+	}
 	return c.ParseRoot(json, log)
 }
 
 func parseOverrideConfig(json gjson.Result, global config.PluginConfig, c *config.PluginConfig, log log.Log) error {
+	if json.Get("tenant_policies").Exists() || global.TenantPolicies != nil {
+		return parseConfig(json, c, log)
+	}
 	c.FromJsonWithGlobal(json, global, log)
 	if err := c.Validate(); err != nil {
 		return err
@@ -75,6 +81,7 @@ func parseOverrideConfig(json gjson.Result, global config.PluginConfig, c *confi
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) types.Action {
 	ctx.DisableReroute()
+	c = selectedMemoryPolicy(ctx, c)
 	if c.CaptureBodyBasis {
 		headers, err := proxywasm.GetHttpRequestHeaders()
 		if err != nil {
@@ -188,6 +195,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []byte, log log.Log) types.Action {
+	c = selectedMemoryPolicy(ctx, c)
 	if ctx.GetBoolContext(memoryBodyBasisRejectedKey, false) {
 		return types.ActionPause
 	}
@@ -364,6 +372,7 @@ func memoryConsoleAssembleConfigured(c config.PluginConfig) bool {
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) types.Action {
+	c = selectedMemoryPolicy(ctx, c)
 	// Assembly is complete before upstream response headers arrive. Keep only
 	// the small event facts while the model's streaming response stays open.
 	ctx.SetContext(memoryUserContentContextKey, strings.Clone(ctx.GetStringContext(memoryUserContentContextKey, "")))
@@ -388,6 +397,7 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log l
 }
 
 func onHttpResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chunk []byte, isLastChunk bool, log log.Log) []byte {
+	c = selectedMemoryPolicy(ctx, c)
 	if ctx.GetBoolContext(memoryStreamContextKey, false) {
 		memoryCaptureStreamingResponseChunk(ctx, c, chunk, isLastChunk, log)
 		if isLastChunk {

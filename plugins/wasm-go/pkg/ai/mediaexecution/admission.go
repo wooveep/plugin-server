@@ -1,5 +1,20 @@
 package mediaexecution
 
+// DispatchCloseUnavailableScript closes only the same original, unconsumed
+// creation ticket. It cannot replace a missing ticket or undo a consumed send.
+// Arguments are original digest, operation ID and authorization deadline.
+const DispatchCloseUnavailableScript = `
+if redis.call('TYPE',KEYS[1]).ok ~= 'hash' then return 'unknown' end
+local ticket=redis.call('HMGET',KEYS[1],'digest','state','expires_at_ms','operation_id','mode','closed_reason')
+if ticket[1]~=ARGV[1] or ticket[3]~=ARGV[3] or ticket[4]~=ARGV[2] or ticket[5]~='create' then return 'unknown' end
+if ticket[2]=='prepared' then
+ redis.call('HSET',KEYS[1],'state','closed','closed_reason','upstream_unavailable')
+ return 'closed'
+end
+if ticket[2]=='closed' and ticket[6]=='upstream_unavailable' then return 'closed' end
+return 'unknown'
+`
+
 // DispatchConsumeScript consumes an original Console-installed media ticket.
 // Keys are ticket, balance control, account, optional concrete Key mapping, and
 // the existing execution Stream. Arguments are the immutable ticket digest and

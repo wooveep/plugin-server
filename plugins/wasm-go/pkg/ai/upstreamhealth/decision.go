@@ -69,7 +69,7 @@ func (s *Snapshot) DecideNewCall(candidate Candidate, now time.Time) Decision {
 		SnapshotRevision: s.metadata.Revision, CredentialGeneration: control.Generation, CredentialControlRevision: control.Revision,
 		ScopeVersions: make(map[string]ScopeVersion), ScopeEpochs: make(map[string]Revision)}
 	var deadline time.Time
-	for _, index := range s.accountScopes[target.ProviderAccountID] {
+	for _, index := range s.scopeGroups[scopeGroup(target.ProviderAccountID, target.CredentialRef)] {
 		scope := s.wire.Scopes[index]
 		if !scopeApplies(scope.Identity, target) {
 			continue
@@ -125,8 +125,18 @@ func scopeApplies(scope ScopeIdentity, target TargetReference) bool {
 	return true
 }
 
+func scopeGroup(account, credential string) string {
+	if account != "" {
+		return "account:" + account
+	}
+	return "credential:" + credential
+}
+
 func validTarget(target TargetReference) bool {
-	for _, value := range []string{target.TargetID, target.BindingID, target.ProviderAccountID, target.RegionEndpointRef, target.UpstreamModel, target.OperationKind, target.CredentialRef} {
+	if target.ProviderAccountID != "" && !identity(target.ProviderAccountID) {
+		return false
+	}
+	for _, value := range []string{target.TargetID, target.BindingID, target.RegionEndpointRef, target.UpstreamModel, target.OperationKind, target.CredentialRef} {
 		if !identity(value) {
 			return false
 		}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
+	"github.com/higress-group/wasm-go/pkg/ai/tenantpolicy"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -76,8 +77,9 @@ type RouteConfig struct {
 
 // PluginConfig is the ai-memory plugin configuration root.
 type PluginConfig struct {
-	recentRedis wrapper.RedisClient
-	eventRedis  EventRedisClient
+	TenantPolicies *tenantpolicy.Directory[PluginConfig] `yaml:"-" json:"-"`
+	recentRedis    wrapper.RedisClient
+	eventRedis     EventRedisClient
 
 	RedisStream        RedisStreamConfig     `yaml:"redis_stream" json:"redis_stream"`
 	RecentCache        RecentCacheConfig     `yaml:"recent_cache" json:"recent_cache"`

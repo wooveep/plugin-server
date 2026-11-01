@@ -13,11 +13,15 @@ type EmbeddingAttempt struct{ original Envelope }
 
 func NewEmbeddingAttempt(original Envelope) (EmbeddingAttempt, error) {
 	original.Kind = "upstream_attempt"
-	if original.SchemaVersion != "" && original.SchemaVersion != NativeEmbeddingSchemaVersion ||
+	version := NativeEmbeddingSchemaVersion
+	if original.ProviderAccountID == "" {
+		version = ConnectionSchemaVersion
+	}
+	if original.SchemaVersion != "" && original.SchemaVersion != version ||
 		original.PayloadCanonicalization != "" && original.PayloadCanonicalization != Canonicalization {
 		return EmbeddingAttempt{}, errorsForVersion()
 	}
-	original.SchemaVersion, original.PayloadCanonicalization = NativeEmbeddingSchemaVersion, Canonicalization
+	original.SchemaVersion, original.PayloadCanonicalization = version, Canonicalization
 	if err := validateEmbeddingIdentity(original); err != nil {
 		return EmbeddingAttempt{}, err
 	}
@@ -38,11 +42,19 @@ func (a EmbeddingAttempt) Finish(outcome AttemptOutcome) (Snapshot, error) {
 // FreezeEmbedding retains the unchanged billing-json.v1 business projection,
 // with the native:v2 operation and input-only provider usage constraints.
 func FreezeEmbedding(input Envelope) (Snapshot, error) {
-	return freezeObservation(input, NativeEmbeddingSchemaVersion, validateEmbeddingUsage, validateEmbeddingEnvelope)
+	version := NativeEmbeddingSchemaVersion
+	if input.SchemaVersion == ConnectionSchemaVersion {
+		version = ConnectionSchemaVersion
+	}
+	return freezeObservation(input, version, validateEmbeddingUsage, validateEmbeddingEnvelope)
 }
 
 func CorrectEmbedding(previous Snapshot, replacement Envelope) (Snapshot, error) {
-	return correctObservation(previous, replacement, NativeEmbeddingSchemaVersion, FreezeEmbedding)
+	version := NativeEmbeddingSchemaVersion
+	if previous.envelope.SchemaVersion == ConnectionSchemaVersion {
+		version = ConnectionSchemaVersion
+	}
+	return correctObservation(previous, replacement, version, FreezeEmbedding)
 }
 
 func validateEmbeddingIdentity(e Envelope) error {
@@ -62,7 +74,7 @@ func validateEmbeddingIdentity(e Envelope) error {
 }
 
 func validateEmbeddingEnvelope(e Envelope) error {
-	if e.SchemaVersion != NativeEmbeddingSchemaVersion || e.PayloadCanonicalization != Canonicalization {
+	if (e.SchemaVersion != NativeEmbeddingSchemaVersion && e.SchemaVersion != ConnectionSchemaVersion) || e.PayloadCanonicalization != Canonicalization {
 		return errorsForVersion()
 	}
 	if err := validateEmbeddingIdentity(e); err != nil {

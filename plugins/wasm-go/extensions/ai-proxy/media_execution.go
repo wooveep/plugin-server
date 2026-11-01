@@ -560,9 +560,8 @@ func (j *managedMediaJob) qualify() {
 	j.checkHealth()
 }
 
-// A queued original remains in its live gateway while health is unavailable.
-// The existing root tick retries only reads; it cannot renew a ticket or replay
-// an uncertain claim/consumption, and it does not need the notifying Console.
+// New creations never wait for a cooling upstream. Original task queries retain
+// their own read-only window and may continue observing their existing task.
 func (j *managedMediaJob) checkHealth() {
 	client, target := j.health, j.healthTarget
 	j.stage, j.deadline = "qualifying", j.notice.ExpiresAt
@@ -572,13 +571,20 @@ func (j *managedMediaJob) checkHealth() {
 		}
 		decision := client.DecideNewCall(read, upstreamhealth.Candidate{Target: target}, j.runtime.now())
 		if (decision.Kind != upstreamhealth.Eligible && decision.Kind != upstreamhealth.RecoveryRequired) || read.Snapshot == nil {
-			j.stage = "waiting_health"
-			j.retryAt = j.runtime.now().Add(time.Second)
+			if j.isQuery() {
+				j.stage, j.retryAt = "waiting_health", j.runtime.now().Add(time.Second)
+			} else {
+				j.closeUnavailable()
+			}
 			return
 		}
 		modelScopes, _, err := read.Snapshot.ModelOperationScopes(target, j.runtime.now())
 		if err != nil {
-			j.stage = "done"
+			if j.isQuery() {
+				j.stage = "done"
+			} else {
+				j.closeUnavailable()
+			}
 			return
 		}
 		j.modelScopes, j.healthDecision = modelScopes, decision
@@ -592,6 +598,22 @@ func (j *managedMediaJob) checkHealth() {
 			j.consume()
 		}
 	})
+}
+
+func (j *managedMediaJob) closeUnavailable() {
+	// Block local creation immediately, even when the atomic close outcome is lost.
+	j.executor.ConsumeUnknown()
+	j.stage = "closing_unavailable"
+	err := j.runtime.redis.Command([]interface{}{"EVAL", mediaexecution.DispatchCloseUnavailableScript, 1,
+		j.notice.TicketKey, j.notice.TicketDigest, j.notice.OperationID,
+		strconv.FormatInt(j.notice.ExpiresAt.UnixMilli(), 10)}, func(_ resp.Value) {
+		// Console independently reads the original ticket; this callback is not
+		// evidence that the ticket was unconsumed or that a provider did not run.
+		j.stage = "done"
+	})
+	if err != nil {
+		j.stage = "done"
+	}
 }
 
 func (j *managedMediaJob) claim() {
@@ -674,8 +696,11 @@ func (j *managedMediaJob) consume() {
 			j.request, err = j.executor.PrepareRedisQuery(reply, j.selection, j.notice.ExpiresAt, j.runtime.now())
 		}
 		if errors.Is(err, mediaexecution.ErrProjectionUnready) {
-			// This definite denial did not consume the original ticket.
-			j.stage, j.retryAt = "waiting_admission", j.runtime.now().Add(time.Second)
+			if j.isQuery() {
+				j.stage, j.retryAt = "waiting_admission", j.runtime.now().Add(time.Second)
+			} else {
+				j.closeUnavailable()
+			}
 			return
 		}
 		if err != nil {

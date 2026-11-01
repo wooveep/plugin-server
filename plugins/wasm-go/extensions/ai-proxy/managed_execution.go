@@ -71,7 +71,7 @@ type managedDescriptor struct {
 	TargetID               string                       `json:"target_id"`
 	BindingID              string                       `json:"binding_id"`
 	ProviderID             string                       `json:"provider_id"`
-	ProviderAccountID      string                       `json:"provider_account_id"`
+	ProviderAccountID      string                       `json:"provider_account_id,omitempty"`
 	RegionEndpointRef      string                       `json:"region_endpoint_ref"`
 	ServiceRef             string                       `json:"service_ref"`
 	ClusterRef             string                       `json:"cluster_ref"`
@@ -172,7 +172,7 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 	if providerConfig == nil || activeProvider == nil {
 		return errors.New("managed execution requires a configured text provider")
 	}
-	if !managedRequiredFields(releaseValue, "schema_version descriptor route_id sales_asset_id public_model") || !managedRequiredFields(releaseValue.Get("descriptor"), "release_id target_id binding_id provider_id provider_account_id region_endpoint_ref service_ref cluster_ref credential_pool_ref adapter_ref credential_pool_revision adapter_revision mapper_digest proxy_digest descriptor_digest upstream_model config_canonicalization transport_contract capabilities") || !managedRequiredFields(releaseValue.Get("descriptor.transport_contract"), "host sni path_adapter_ref") {
+	if !managedRequiredFields(releaseValue, "schema_version descriptor route_id sales_asset_id public_model") || !managedRequiredFields(releaseValue.Get("descriptor"), "release_id target_id binding_id provider_id region_endpoint_ref service_ref cluster_ref credential_pool_ref adapter_ref credential_pool_revision adapter_revision mapper_digest proxy_digest descriptor_digest upstream_model config_canonicalization transport_contract capabilities") || !managedRequiredFields(releaseValue.Get("descriptor.transport_contract"), "host sni path_adapter_ref") {
 		return errors.New("managed execution requires the complete released descriptor")
 	}
 	if err := validateManagedCredentialShape(settingsValue, releaseValue); err != nil {
@@ -239,10 +239,13 @@ func (c *managedExecutionConfig) validate() error {
 	if (c.release.SchemaVersion != "modelfusion-execution.v1" && c.release.SchemaVersion != "modelfusion-execution.v2") || d.ConfigCanonicalization != "mf-json.v1" {
 		return errors.New("unsupported managed execution release schema")
 	}
-	for _, field := range []string{c.settings.ProducerID, c.settings.PrivateStream, c.release.RouteID, c.release.SalesAssetID, c.release.PublicModel, d.ReleaseID, d.TargetID, d.BindingID, d.ProviderID, d.ProviderAccountID, d.RegionEndpointRef, d.ServiceRef, d.ClusterRef, d.CredentialPoolRef, d.AdapterRef, d.UpstreamModel, d.Transport.PathAdapterRef} {
+	for _, field := range []string{c.settings.ProducerID, c.settings.PrivateStream, c.release.RouteID, c.release.SalesAssetID, c.release.PublicModel, d.ReleaseID, d.TargetID, d.BindingID, d.ProviderID, d.RegionEndpointRef, d.ServiceRef, d.ClusterRef, d.CredentialPoolRef, d.AdapterRef, d.UpstreamModel, d.Transport.PathAdapterRef} {
 		if !managedID(field) {
 			return errors.New("managed execution requires complete frozen identities")
 		}
+	}
+	if d.ProviderAccountID != "" && !managedID(d.ProviderAccountID) {
+		return errors.New("invalid retained supplier account metadata")
 	}
 	for _, revision := range []string{d.CredentialPoolRevision, d.AdapterRevision} {
 		n, ok := managedInteger(revision)
@@ -712,6 +715,9 @@ func stateSelection(s *managedExecutionState, basis bodybasis.Snapshot) []byte {
 		"credential_ref": s.config.release.CredentialRef, "credential_revision": s.config.release.CredentialRevision, "selection_generation": "1",
 		"selection_canonicalization": "selection-json.v1", "original_body_digest": basis.Digest(), "mapper_digest": d.MapperDigest, "proxy_digest": d.ProxyDigest, "descriptor_digest": d.DescriptorDigest,
 		"mechanism": managedTextMechanism(s), "send_transport": "http_call", "recording_owner": "ai_proxy",
+	}
+	if d.ProviderAccountID == "" {
+		delete(selection, "provider_account_id")
 	}
 	if s.selectionGeneration != 0 {
 		selection["selection_generation"] = strconv.FormatUint(uint64(s.selectionGeneration), 10)

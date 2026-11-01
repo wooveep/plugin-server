@@ -19,6 +19,9 @@ import (
 )
 
 const SchemaVersion = "billing-facts.v1"
+
+// ConnectionSchemaVersion permits unconfirmed supplier account metadata to be absent.
+const ConnectionSchemaVersion = "billing-facts.v3"
 const Canonicalization = "billing-json.v1"
 
 // This matches the frozen mf-json.v1 input budget; these typed envelopes cannot
@@ -53,7 +56,11 @@ func (s Snapshot) Envelope() Envelope    { e, _ := cloneEnvelope(s.envelope); re
 // excludes only payload_digest/request_id/trace_id from the business digest.
 // It never reads a clock, request headers, current routing state or final usage.
 func Freeze(input Envelope) (Snapshot, error) {
-	return freezeObservation(input, SchemaVersion, validateUsage, validateEnvelope)
+	version := SchemaVersion
+	if input.SchemaVersion == ConnectionSchemaVersion {
+		version = ConnectionSchemaVersion
+	}
+	return freezeObservation(input, version, validateUsage, validateEnvelope)
 }
 
 // Both explicit wire versions retain the original IF03 projection and byte
@@ -136,7 +143,11 @@ func freezeObservation(input Envelope, version string, usage func(Usage) error, 
 // The caller supplies newly observed evidence and observed_at; it cannot move
 // original ownership/selection/occurred_at or turn a retry into a new purchase.
 func Correct(previous Snapshot, replacement Envelope) (Snapshot, error) {
-	return correctObservation(previous, replacement, SchemaVersion, Freeze)
+	version := SchemaVersion
+	if previous.envelope.SchemaVersion == ConnectionSchemaVersion {
+		version = ConnectionSchemaVersion
+	}
+	return correctObservation(previous, replacement, version, Freeze)
 }
 
 func correctObservation(previous Snapshot, replacement Envelope, version string, freeze func(Envelope) (Snapshot, error)) (Snapshot, error) {
@@ -402,10 +413,13 @@ func validateIdentity(e Envelope) error {
 	return nil
 }
 func validateAttemptIdentity(e Envelope) error {
-	for _, v := range []string{e.AttemptID, e.TargetID, e.BindingID, e.ProviderID, e.ProviderAccountID, e.UpstreamModel} {
+	for _, v := range []string{e.AttemptID, e.TargetID, e.BindingID, e.ProviderID, e.UpstreamModel} {
 		if !id(v) {
 			return errors.New("missing original attempt selection")
 		}
+	}
+	if e.ProviderAccountID == "" && e.SchemaVersion != ConnectionSchemaVersion || e.ProviderAccountID != "" && !id(e.ProviderAccountID) {
+		return errors.New("invalid retained supplier account metadata")
 	}
 	if !validDigest(e.SelectionDigest) {
 		return errors.New("missing original selection digest")
@@ -434,7 +448,7 @@ func validateAttemptIdentity(e Envelope) error {
 	return nil
 }
 func validateEnvelope(e Envelope) error {
-	if e.SchemaVersion != SchemaVersion || e.PayloadCanonicalization != Canonicalization {
+	if (e.SchemaVersion != SchemaVersion && e.SchemaVersion != ConnectionSchemaVersion) || e.PayloadCanonicalization != Canonicalization {
 		return errors.New("unsupported fact schema or canonicalization")
 	}
 	if err := validateIdentity(e); err != nil {
@@ -738,7 +752,7 @@ func decodeSelectionFields(raw []byte, optionalFields string) (map[string]interf
 	if !ok {
 		return nil, errors.New("selection must be a complete object")
 	}
-	requiredFields := strings.Fields("call_id release_id target_id binding_id attempt_id operation_kind provider_account_id upstream_model cluster_ref credential_ref credential_revision selection_generation selection_digest selection_canonicalization original_body_digest mapper_digest proxy_digest descriptor_digest mechanism send_transport recording_owner")
+	requiredFields := strings.Fields("call_id release_id target_id binding_id attempt_id operation_kind upstream_model cluster_ref credential_ref credential_revision selection_generation selection_digest selection_canonicalization original_body_digest mapper_digest proxy_digest descriptor_digest mechanism send_transport recording_owner")
 	allowed := map[string]bool{}
 	for _, k := range requiredFields {
 		allowed[k] = true
@@ -747,12 +761,15 @@ func decodeSelectionFields(raw []byte, optionalFields string) (map[string]interf
 			return nil, errors.New("original selection is incomplete")
 		}
 	}
-	for _, k := range strings.Fields(optionalFields) {
+	for _, k := range strings.Fields("provider_account_id " + optionalFields) {
 		allowed[k] = true
 	}
 	for k, v := range object {
 		if !allowed[k] {
 			return nil, errors.New("selection has an undeclared field")
+		}
+		if k == "provider_account_id" && v == nil {
+			continue
 		}
 		if k == "recovery_claim_refs" {
 			refs, ok := v.([]interface{})

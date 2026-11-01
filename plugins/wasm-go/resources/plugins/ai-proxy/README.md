@@ -10,7 +10,7 @@ description: AI 代理插件配置参考
 
 v2 的 `managed_execution.credentials` 保存逐项匹配的 ref/revision/value，与单一 `credential_value` 互斥；必须具备 HEALTH，`upstream_health.targets` 保留每个原操作/凭据成员的完整 TargetReference，与 `target` 互斥。v1 保留原单一配置及可省略的 HEALTH。既有 `legacy_suffixes`/`bound_target`、`auto`/`passthrough` 通用能力自 1.0.2 起提供，不以本次 v2 凭据池版本替代其起始版本。
 
-> 插件版本：`2.0.10`
+> 插件版本：`2.0.19`
 
 ## 功能说明
 
@@ -2871,3 +2871,8 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 已下发的健康控制保留到显式配置更新：`valid_until` 仅表示观测时效，不是 Console 的发送许可租约。Console 停止刷新时，完整且版本一致的健康目标继续服务；已禁用凭据、永久封禁、冷却期、旧版本与冲突仍按原状态拒绝。
 
 普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。
+
+
+## 供应商连接与媒体创建不可用
+
+供应商连接使用实际端点、Key 及其版本，不要求虚构外部采购账户。原生版本化 descriptor 可以省略该账户；原有账户型 descriptor 和已冻结任务保持原身份。媒体创建遇到全部上游冷却或当前 HEALTH 投影不可用时立即结束本次派发，不进入创建等待队列。只有原 prepared ticket 的原子关闭得到确认，才能证明该次未消费、未发送；HTTP 503、丢失确认、缺失或已消费 ticket 均不能代替此证明。已受理任务仍使用原查询链。

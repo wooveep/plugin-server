@@ -8,15 +8,15 @@ info:
   title: AI Memory
   x-title-i18n:
     zh-CN: AI 记忆
-  description: Thin gateway memory plugin for request memory injection, response capture,
-    and Redis Stream MemoryEvent emission.
+  description: Thin gateway memory plugin for request memory injection, response capture, and Redis Stream
+    MemoryEvent emission.
   x-description-i18n:
     zh-CN: 薄网关记忆插件，用于请求记忆注入、响应捕获和 Redis Stream MemoryEvent 投递。
   iconUrl: https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-memory/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-memory/README_EN.md
-  version: 0.1.10
+  version: 0.1.11
 spec:
   phase: default
   priority: 260
@@ -162,8 +162,7 @@ spec:
           default: x-request-id
         enable_path_suffixes:
           type: array
-          description: Legacy-only path filters. A bound_target route does not inherit
-            these filters.
+          description: Legacy-only path filters. A bound_target route does not inherit these filters.
           items:
             type: string
           default:
@@ -179,8 +178,8 @@ spec:
           - route_id
           - policy_id
           - policy_version
-          description: Original publication and policy frozen by the control plane.
-            The authenticated caller is captured per request and cannot be configured.
+          description: Original publication and policy frozen by the control plane. The authenticated
+            caller is captured per request and cannot be configured.
           properties:
             release_id:
               type: string
@@ -206,25 +205,24 @@ spec:
           - legacy
           - bound_target
           default: legacy
-          description: The control plane sets bound_target on managed route bindings;
-            published protocol fields are then required.
+          description: The control plane sets bound_target on managed route bindings; published protocol
+            fields are then required.
         capture_body_basis:
           type: boolean
           default: false
-          description: Trusted release configuration designates memory as the first
-            original JSON body capture boundary. Requires a supported published text
-            protocol on bound_target. Captures before any rewrite, including memory-off
-            and identity bypasses; invalid bodies are rejected.
+          description: Trusted release configuration designates memory as the first original JSON body
+            capture boundary. Requires a supported published text protocol on bound_target. Captures before
+            any rewrite, including memory-off and identity bypasses; invalid bodies are rejected.
         client_protocol:
           type: string
           minLength: 1
-          description: Trusted published client protocol. Text adapters support openai_chat,
-            openai_responses, and anthropic_messages.
+          description: Trusted published client protocol. Text adapters support openai_chat, openai_responses,
+            and anthropic_messages.
         operation_kind:
           type: string
           minLength: 1
-          description: Trusted published operation. Only text_generate uses memory
-            adapters; unsupported operations pass through.
+          description: Trusted published operation. Only text_generate uses memory adapters; unsupported
+            operations pass through.
         enable_methods:
           type: array
           maxItems: 0
@@ -286,10 +284,11 @@ spec:
       projectedNamePath: console_internal.service_name
       protocol: http
     openAPIV3Schema:
+      title: ai-memory
       type: object
       additionalProperties: false
       properties:
-        redis_stream:
+        redis_stream: &id001
           type: object
           title: Redis Stream配置
           x-title-i18n:
@@ -342,7 +341,7 @@ spec:
               x-title-i18n:
                 en-US: Stream Name
               default: memory:events
-        recent_cache:
+        recent_cache: &id002
           type: object
           title: Redis最近记忆配置
           x-title-i18n:
@@ -371,7 +370,7 @@ spec:
             key_prefix:
               type: string
               default: memory:recent
-        console_internal:
+        console_internal: &id003
           type: object
           title: Console内部服务配置
           x-title-i18n:
@@ -396,24 +395,24 @@ spec:
               writeOnly: true
               x-sensitive: true
               description: Internal bearer token for Console assemble authorization
-        tenant_header:
+        tenant_header: &id004
           type: string
           default: x-mse-tenant
-        consumer_header:
+        consumer_header: &id005
           type: string
           default: x-mse-consumer
-        session_header:
+        session_header: &id006
           type: string
           default: x-mse-session
-        request_id_header:
+        request_id_header: &id007
           type: string
           default: x-request-id
-        fail_policy:
+        fail_policy: &id008
           type: string
           enum:
           - open
           default: open
-        native_identity:
+        native_identity: &id009
           type: object
           additionalProperties: false
           required:
@@ -422,8 +421,8 @@ spec:
           - route_id
           - policy_id
           - policy_version
-          description: Original publication and policy frozen by the control plane.
-            The authenticated caller is captured per request and cannot be configured.
+          description: Original publication and policy frozen by the control plane. The authenticated
+            caller is captured per request and cannot be configured.
           properties:
             release_id:
               type: string
@@ -445,40 +444,34 @@ spec:
               maximum: 9223372036854775807
         path_scope:
           type: string
-          enum:
-          - legacy
-          - bound_target
-          description: bound_target uses the actual matched route and discards inherited
-            legacy path filters.
-        capture_body_basis:
+          const: bound_target
+        capture_body_basis: &id010
           type: boolean
           default: false
-          description: Trusted release configuration designates memory as the first
-            original JSON body capture boundary before memory rewrite, including memory-off
-            and identity bypasses.
-        client_protocol:
+          description: Trusted release configuration designates memory as the first original JSON body
+            capture boundary before memory rewrite, including memory-off and identity bypasses.
+        client_protocol: &id011
           type: string
           minLength: 1
-          description: Original published client protocol; client headers and rewritten
-            upstream paths cannot override it.
-        operation_kind:
+          description: Original published client protocol; client headers and rewritten upstream paths
+            cannot override it.
+        operation_kind: &id012
           type: string
           minLength: 1
-          description: Original published operation; memory supports text_generate
-            only.
-        enable_path_suffixes:
+          description: Original published operation; memory supports text_generate only.
+        enable_path_suffixes: &id013
           type: array
           maxItems: 0
           items:
             type: string
           description: Only an empty filter is accepted for a bound_target route.
-        enable_methods:
+        enable_methods: &id014
           type: array
           maxItems: 0
           items:
             type: string
           description: Only an empty filter is accepted for a bound_target route.
-        memory_mode:
+        memory_mode: &id015
           type: string
           enum:
           - 'off'
@@ -487,43 +480,43 @@ spec:
           - semantic
           - full
           default: 'off'
-        recent_window_turns:
+        recent_window_turns: &id016
           type: integer
           default: 0
-        memory_token_budget:
+        memory_token_budget: &id017
           type: integer
           default: 0
-        assemble_timeout_ms:
+        assemble_timeout_ms: &id018
           type: integer
           default: 0
-        inject_role:
+        inject_role: &id019
           type: string
           enum:
           - system
           - developer
           default: system
-        developer_compatible:
+        developer_compatible: &id020
           type: boolean
           default: false
-        semantic_top_k:
+        semantic_top_k: &id021
           type: integer
           default: 0
-        capture_response:
+        capture_response: &id022
           type: boolean
           default: true
-        no_store_header:
+        no_store_header: &id023
           type: string
           default: x-higress-ai-memory-no-store
-        question_from:
+        question_from: &id024
           type: string
           default: messages.@reverse.#(role=="user").content
-        response_value_from:
+        response_value_from: &id025
           type: string
           default: choices.0.message.content
-        stream_value_from:
+        stream_value_from: &id026
           type: string
           default: choices.0.delta.content
-        tool_calls_from:
+        tool_calls_from: &id027
           type: array
           items:
             type: string
@@ -532,8 +525,153 @@ spec:
           - choices.0.message.function_call
           - choices.0.delta.tool_calls
           - choices.0.delta.function_call
-        policy_version:
+        policy_version: &id028
           type: string
+        public_model:
+          type: string
+          minLength: 1
+        native_route:
+          type: object
+          additionalProperties: false
+          properties:
+            release_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            target_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+            route_id:
+              type: string
+              minLength: 1
+              maxLength: 256
+          required:
+          - release_id
+          - target_id
+          - route_id
+        tenant_policies:
+          type: object
+          minProperties: 1
+          propertyNames:
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+          additionalProperties:
+            type: object
+            additionalProperties: false
+            properties:
+              redis_stream: *id001
+              recent_cache: *id002
+              console_internal: *id003
+              tenant_header: *id004
+              consumer_header: *id005
+              session_header: *id006
+              request_id_header: *id007
+              fail_policy: *id008
+              native_identity: *id009
+              path_scope:
+                type: string
+                enum:
+                - legacy
+                - bound_target
+                description: bound_target uses the actual matched route and discards inherited legacy
+                  path filters.
+              capture_body_basis: *id010
+              client_protocol: *id011
+              operation_kind: *id012
+              enable_path_suffixes: *id013
+              enable_methods: *id014
+              memory_mode: *id015
+              recent_window_turns: *id016
+              memory_token_budget: *id017
+              assemble_timeout_ms: *id018
+              inject_role: *id019
+              developer_compatible: *id020
+              semantic_top_k: *id021
+              capture_response: *id022
+              no_store_header: *id023
+              question_from: *id024
+              response_value_from: *id025
+              stream_value_from: *id026
+              tool_calls_from: *id027
+              policy_version: *id028
+            example:
+              path_scope: bound_target
+              client_protocol: openai_chat
+              operation_kind: text_generate
+              memory_mode: semantic
+              recent_window_turns: 6
+              memory_token_budget: 1500
+              assemble_timeout_ms: 100
+              inject_role: system
+              developer_compatible: false
+              semantic_top_k: 3
+              capture_response: true
+              no_store_header: x-higress-ai-memory-no-store
+              question_from: messages.@reverse.#(role=="user").content
+              response_value_from: choices.0.message.content
+              stream_value_from: choices.0.delta.content
+              tool_calls_from:
+              - choices.0.message.tool_calls
+              - choices.0.message.function_call
+              - choices.0.delta.tool_calls
+              - choices.0.delta.function_call
+              policy_version: memory-policy-v1
+          description: Original tenant-owned processing policies selected only by the authenticated, admitted
+            caller tenant; absence bypasses processing.
+      allOf:
+      - if:
+          required:
+          - tenant_policies
+        then:
+          required:
+          - path_scope
+          - client_protocol
+          - operation_kind
+          - public_model
+          - native_route
+          - capture_body_basis
+          - tenant_policies
+          propertyNames:
+            enum:
+            - path_scope
+            - client_protocol
+            - operation_kind
+            - public_model
+            - native_route
+            - capture_body_basis
+            - tenant_policies
+        else:
+          propertyNames:
+            enum:
+            - redis_stream
+            - recent_cache
+            - console_internal
+            - tenant_header
+            - consumer_header
+            - session_header
+            - request_id_header
+            - fail_policy
+            - native_identity
+            - path_scope
+            - capture_body_basis
+            - client_protocol
+            - operation_kind
+            - enable_path_suffixes
+            - enable_methods
+            - memory_mode
+            - recent_window_turns
+            - memory_token_budget
+            - assemble_timeout_ms
+            - inject_role
+            - developer_compatible
+            - semantic_top_k
+            - capture_response
+            - no_store_header
+            - question_from
+            - response_value_from
+            - stream_value_from
+            - tool_calls_from
+            - policy_version
       example:
         path_scope: bound_target
         client_protocol: openai_chat

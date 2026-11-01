@@ -19,7 +19,7 @@ func (s *Snapshot) ModelOperationScopes(target TargetReference, now time.Time) (
 	}
 	var ids []string
 	revisions := map[string]Revision{}
-	for _, index := range s.accountScopes[target.ProviderAccountID] {
+	for _, index := range s.scopeGroups[scopeGroup(target.ProviderAccountID, target.CredentialRef)] {
 		scope := s.wire.Scopes[index]
 		if scope.Identity.Kind == "model_operation" && declared[scope.Identity.ScopeID] && scopeApplies(scope.Identity, target) {
 			ids = append(ids, scope.Identity.ScopeID)

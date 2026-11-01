@@ -507,3 +507,43 @@ func TestClosedCanonicalProjectionPreservesUnicodeNullAndIntegerValues(t *testin
 		}
 	}
 }
+
+func TestConnectionRateLimitScopesDoNotInferSharedExternalAccounts(t *testing.T) {
+	wire := fixtureWire()
+	wire.Credentials = nil
+	wire.Scopes = nil
+	for _, key := range []string{"key:a", "key:b"} {
+		wire.Credentials = append(wire.Credentials, CredentialControl{
+			Identity:   CredentialIdentity{CredentialRef: key, OwnerKind: "platform", OwnerID: "platform"},
+			Generation: "1", Revision: "1", Enabled: true,
+		})
+		scope := ScopeState{Identity: ScopeIdentity{
+			ScopeID: "model:" + key, Kind: "model_operation", RegionEndpointRef: pointer("endpoint:original"),
+			CredentialRef: pointer(key), CredentialGeneration: pointer(Revision("1")),
+			UpstreamModel: pointer("model:original"), OperationKind: pointer("text_generate"),
+		}, Revision: "1", FailureGeneration: "0", RecoveryEpoch: "0"}
+		if key == "key:a" {
+			scope.BlockedUntil = pointer(fixtureNow.Add(time.Minute).UTC().Format(time.RFC3339Nano))
+		}
+		wire.Scopes = append(wire.Scopes, scope)
+	}
+	read := readyFixture(t, wire)
+	target := fixtureTarget()
+	target.ProviderAccountID, target.RegionEndpointRef = "", "endpoint:original"
+	target.CredentialRef, target.ScopeIDs = "key:a", []string{"model:key:a"}
+	if decision := read.DecideNewCall(Candidate{Target: target}, fixtureNow); decision.Kind != Denied {
+		t.Fatal("the actual limited Key must stay cooling")
+	}
+	scopes, _, err := read.Snapshot.ModelOperationScopes(target, fixtureNow)
+	if err != nil || len(scopes) != 1 || scopes[0] != "model:key:a" {
+		t.Fatal("rate-limit scope escaped its actual Key", err)
+	}
+	target.CredentialRef, target.ScopeIDs = "key:b", []string{"model:key:b"}
+	if decision := read.DecideNewCall(Candidate{Target: target}, fixtureNow); decision.Kind != Eligible {
+		t.Fatal("an unrelated Key was blocked by an inferred shared account", decision)
+	}
+	wire.Scopes[0].Identity.CredentialRef = nil
+	if result := decodeHash(hashFixture(t, wire), fixtureConfig(), fixtureNow); result.Status != ReadInvalid {
+		t.Fatal("an unconfirmed account-wide model scope was accepted")
+	}
+}

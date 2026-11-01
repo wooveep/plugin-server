@@ -4,6 +4,11 @@ keywords: [AI网关, AI记忆, ai-memory]
 description: ai-memory 薄网关插件配置参考
 ---
 
+## 平台路由的租户策略
+
+本版本支持发布端冻结的 `native_route` 与 `tenant_policies`。公共路由按原认证和准入结果中的租户选择完整策略；租户之间不继承策略、版本或缓存前缀。缺少本租户策略时跳过处理，仍完成本插件已被分配的原始正文采集。策略由原业务配置发布生成，不接受请求头指定策略。原单租户冻结配置继续按自身身份解析。
+
+
 ## 功能说明
 
 全局与路由 Schema 均声明控制台需要解析的三个外部服务目标：`redis_stream`、`recent_cache`、`console_internal`。声明对应既有 Redis/DNS 与 HTTP callout 依赖，不新增事件通道。

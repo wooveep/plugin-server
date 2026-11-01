@@ -8,7 +8,7 @@ description: ai-billing 托管交付事实与兼容账单事件配置参考
 
 `0.1.11` 配置契约保留 `_modelfusion_execution` v1 的单一 `credential_ref`/`credential_revision`，并支持 `modelfusion-execution.v2` 的完整非空 `credentials` 数组。每项仅含这两个字段，ref 唯一、revision 为规范正十进制字符串；拒绝秘密及 scalar/array 混用。完整目录不代表本次已选凭据，实际 D0/FACT 仍保留唯一已选 tuple，billing/cache 不取目录首项作为执行凭据。
 
-> 交付版本：`1.0.2`，以 [资源 schema](spec.yaml) 为准。
+> 交付版本：`1.0.3`，以 [资源 schema](spec.yaml) 为准。
 
 ## 功能说明
 
@@ -146,3 +146,8 @@ enable_methods:
 `ai-billing`、`ai-quota` 和 `ai-statistics` 可以独立部署。`ai-billing` 只发布账单事件，不依赖或共享彼此的私有运行时状态；余额准入和可观测性分别由另外两个插件独立处理，结算与持久化归 Console/billing-service 所有。
 
 普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。
+
+
+## 无外部采购账户的供应商连接
+
+原生接收契约支持 `billing-facts.v3`，以实际 provider、binding、Key 版本及冻结执行 descriptor 归属采购，不补造外部采购账户。钱包与租户仍来自原认证链，销售和采购仍按原权威事实分别结算；保留原 v1/v2 事实读取。

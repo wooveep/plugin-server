@@ -61,6 +61,9 @@ func init() {
 }
 
 func parseConfig(json gjson.Result, c *config.PluginConfig, log log.Log) error {
+	if json.Get("tenant_policies").Exists() {
+		return parseTenantCachePolicies(json, c, log)
+	}
 	c.FromJson(json, log)
 	if err := configureNativeCacheDelivery(json, c); err != nil {
 		return err
@@ -77,6 +80,9 @@ func parseConfig(json gjson.Result, c *config.PluginConfig, log log.Log) error {
 }
 
 func parseOverrideConfig(json gjson.Result, global config.PluginConfig, c *config.PluginConfig, log log.Log) error {
+	if json.Get("tenant_policies").Exists() || global.TenantPolicies != nil {
+		return parseConfig(json, c, log)
+	}
 	c.FromJsonWithGlobal(json, global, log)
 	if err := configureNativeCacheDelivery(json, c); err != nil {
 		return err
@@ -93,6 +99,7 @@ func parseOverrideConfig(json gjson.Result, global config.PluginConfig, c *confi
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) (action types.Action) {
 	ctx.DisableReroute()
+	c = selectedCachePolicy(ctx, c)
 	if c.NativeExecution != nil {
 		if !prepareNativeCacheHeaders(ctx, c) {
 			return types.ActionPause
@@ -108,6 +115,9 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 			}
 			action = types.HeaderStopIteration
 		}()
+	}
+	if cacheGateReason(ctx) == "no-tenant-policy" {
+		return types.ActionContinue
 	}
 	_ = proxywasm.RemoveHttpRequestHeader(memorycache.DeprecatedDigestHeader)
 	skipCache, _ := proxywasm.GetHttpRequestHeader(SKIP_CACHE_HEADER)
@@ -208,6 +218,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []byte, log log.Log) types.Action {
+	c = selectedCachePolicy(ctx, c)
 	if c.NativeExecution != nil && !prepareNativeCacheBody(ctx, c, body) {
 		return types.ActionPause
 	}
@@ -372,6 +383,7 @@ func consumeThinMemoryDigest(ctx wrapper.HttpContext, c config.PluginConfig) {
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) types.Action {
+	c = selectedCachePolicy(ctx, c)
 	if cacheGateReason(ctx) != "" || ctx.GetContext(SKIP_CACHE_HEADER) != nil {
 		ctx.SetUserAttribute("cache_status", "skip")
 		ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
@@ -456,6 +468,7 @@ func isTruthyHeaderValue(value string) bool {
 }
 
 func onHttpResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chunk []byte, isLastChunk bool, log log.Log) []byte {
+	c = selectedCachePolicy(ctx, c)
 	log.Debugf("[onHttpResponseBody] is last chunk: %v", isLastChunk)
 	log.Debugf("[onHttpResponseBody] chunk: %s", string(chunk))
 

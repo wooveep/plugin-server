@@ -52,7 +52,7 @@ type nativeBillingDescriptor struct {
 	TargetID               string                             `json:"target_id"`
 	BindingID              string                             `json:"binding_id"`
 	ProviderID             string                             `json:"provider_id"`
-	ProviderAccountID      string                             `json:"provider_account_id"`
+	ProviderAccountID      string                             `json:"provider_account_id,omitempty"`
 	RegionEndpointRef      string                             `json:"region_endpoint_ref"`
 	ServiceRef             string                             `json:"service_ref"`
 	ClusterRef             string                             `json:"cluster_ref"`
@@ -166,11 +166,14 @@ func validateNativeBillingRelease(value gjson.Result, release nativeBillingRelea
 		return err
 	}
 	descriptor := value.Get("descriptor")
-	for _, field := range strings.Fields("release_id target_id binding_id provider_id provider_account_id region_endpoint_ref service_ref cluster_ref credential_pool_ref credential_pool_revision adapter_ref adapter_revision mapper_digest proxy_digest descriptor_digest upstream_model config_canonicalization") {
+	for _, field := range strings.Fields("release_id target_id binding_id provider_id region_endpoint_ref service_ref cluster_ref credential_pool_ref credential_pool_revision adapter_ref adapter_revision mapper_digest proxy_digest descriptor_digest upstream_model config_canonicalization") {
 		entry := descriptor.Get(field)
 		if entry.Type != gjson.String || !nativeBillingID(entry.String()) {
 			return errors.New("native billing requires a complete frozen target descriptor")
 		}
+	}
+	if entry := descriptor.Get("provider_account_id"); entry.Exists() && entry.Type != gjson.Null && (entry.Type != gjson.String || !nativeBillingID(entry.String())) {
+		return errors.New("invalid retained supplier account metadata")
 	}
 	if !nativeBillingRevision(release.Descriptor.CredentialPoolRevision) || !nativeBillingRevision(release.Descriptor.AdapterRevision) {
 		return errors.New("native billing requires exact positive released revisions")

@@ -8,6 +8,7 @@ import (
 
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
+	"github.com/higress-group/wasm-go/pkg/ai/tenantpolicy"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -109,6 +110,7 @@ type NativeIdentityConfig struct {
 }
 
 type PluginConfig struct {
+	TenantPolicies    *tenantpolicy.Directory[PluginConfig]
 	materializedRedis wrapper.RedisClient
 	eventRedis        wrapper.RedisClient
 	legacyConfig      bool

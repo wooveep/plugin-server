@@ -128,4 +128,44 @@ func TestNativeMediaTicketConsumesOnceAndUsesOriginalAccount(t *testing.T) {
 			}
 		})
 	}
+	for _, scenario := range []string{"prepared", "consumed", "missing", "conflict", "query"} {
+		t.Run("unavailable closes only original prepared ticket/"+scenario, func(t *testing.T) {
+			seed("create")
+			expiry := command("HGET", keys[0], "expires_at_ms").String()
+			originalDigest := digest
+			switch scenario {
+			case "consumed":
+				if consume()[0].String() != "allow" {
+					t.Fatal("fixture did not consume")
+				}
+			case "missing":
+				command("DEL", keys[0])
+			case "conflict":
+				originalDigest = "sha256:" + strings.Repeat("b", 64)
+			case "query":
+				command("HSET", keys[0], "mode", "query")
+			}
+			close := func() string {
+				return command("EVAL", mediaexecution.DispatchCloseUnavailableScript, "1", keys[0], originalDigest, "original-operation", expiry).String()
+			}
+			actual := close()
+			if scenario == "prepared" {
+				if actual != "closed" || close() != "closed" || command("HGET", keys[0], "closed_reason").String() != "upstream_unavailable" {
+					t.Fatal("original prepared close was not retained")
+				}
+				if consume()[0].String() != "deny" || command("XLEN", keys[4]).Integer() != 0 {
+					t.Fatal("rejected original acquired a late send right")
+				}
+			} else if actual != "unknown" {
+				t.Fatal("missing, conflicting, query or consumed evidence was claimed unconsumed")
+			}
+			if scenario == "consumed" && (command("HGET", keys[0], "state").String() != "consumed" || command("XLEN", keys[4]).Integer() != 1) {
+				t.Fatal("an unavailable result erased a real original consumption")
+			}
+			if scenario == "missing" && command("EXISTS", keys[0]).Integer() != 0 {
+				t.Fatal("a missing ticket was recreated")
+			}
+		})
+	}
+
 }

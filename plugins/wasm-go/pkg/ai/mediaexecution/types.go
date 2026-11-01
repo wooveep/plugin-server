@@ -257,7 +257,7 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 	}
 	if h.Kind != profile.operation || h.OperationID != original.Dispatch.OperationID ||
 		h.ReleaseID != field(d, "release_id") || !identity(h.CallID) || !identity(h.RouteID) ||
-		!identity(h.PublicModel) || !identity(field(d, "provider_account_id")) || !identity(field(d, "region_endpoint_ref")) {
+		!identity(h.PublicModel) || !identity(field(d, "region_endpoint_ref")) {
 		return nil, ErrIdentity
 	}
 	caller, err := object(h.Caller)
@@ -269,7 +269,7 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 			return nil, ErrIdentity
 		}
 	}
-	for _, key := range []string{"release_id", "target_id", "binding_id", "provider_id", "provider_account_id", "upstream_model", "cluster_ref", "descriptor_digest", "mapper_digest", "proxy_digest"} {
+	for _, key := range []string{"release_id", "target_id", "binding_id", "provider_id", "upstream_model", "cluster_ref", "descriptor_digest", "mapper_digest", "proxy_digest"} {
 		if !identity(field(d, key)) {
 			return nil, ErrIdentity
 		}

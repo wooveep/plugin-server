@@ -13,6 +13,7 @@ import (
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/tenantpolicy"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -50,7 +51,7 @@ func init() {
 // @Title zh-CN AI History
 // @Description zh-CN 大模型对话历史缓存
 // @IconUrl
-// @Version 0.1.3
+// @Version 2.0.5
 //
 // @Contact.name sakura
 // @Contact.url
@@ -92,6 +93,7 @@ type KVExtractor struct {
 }
 
 type PluginConfig struct {
+	tenantPolicies *tenantpolicy.Directory[PluginConfig]
 	// @Title zh-CN Redis 地址信息
 	// @Description zh-CN 用于存储缓存结果的 Redis 地址
 	RedisInfo RedisInfo `required:"true" yaml:"redis" json:"redis"`
@@ -127,6 +129,9 @@ type ChatHistory struct {
 }
 
 func parseConfig(json gjson.Result, c *PluginConfig, log log.Log) error {
+	if json.Get("tenant_policies").Exists() {
+		return parseTenantHistoryPolicies(json, c, log)
+	}
 	if err := parseHistoryBinding(json, c); err != nil {
 		return err
 	}
@@ -184,7 +189,8 @@ func parseHistoryRuleConfig(json gjson.Result, _ PluginConfig, c *PluginConfig, 
 
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config PluginConfig, log log.Log) types.Action {
 	ctx.DisableReroute()
-	if config.historyBinding != nil && config.historyBinding.CaptureBodyBasis {
+	config = selectedHistoryPolicy(ctx, config)
+	if (config.historyBinding != nil && config.historyBinding.CaptureBodyBasis) || (config.tenantPolicies != nil && config.tenantPolicies.CaptureBodyBasis) {
 		if action := prepareHistoryBodyBasis(ctx); action != types.ActionContinue {
 			return action
 		}
@@ -222,6 +228,7 @@ func TrimQuote(source string) string {
 }
 
 func onHttpRequestBody(ctx wrapper.HttpContext, config PluginConfig, body []byte, log log.Log) types.Action {
+	config = selectedHistoryPolicy(ctx, config)
 	if action := captureHistoryBodyBasis(ctx, body); action != types.ActionContinue {
 		return action
 	}
@@ -433,6 +440,7 @@ func processSSEMessage(ctx wrapper.HttpContext, config PluginConfig, sseMessage 
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, config PluginConfig, log log.Log) types.Action {
+	config = selectedHistoryPolicy(ctx, config)
 	if ctx.GetStringContext(historyGateContextKey, "") != "" {
 		ctx.DontReadResponseBody()
 		return types.ActionContinue
@@ -447,6 +455,7 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, config PluginConfig, log log
 	return types.ActionContinue
 }
 func onHttpStreamResponseBody(ctx wrapper.HttpContext, config PluginConfig, chunk []byte, isLastChunk bool, log log.Log) []byte {
+	config = selectedHistoryPolicy(ctx, config)
 	if ctx.GetStringContext(historyGateContextKey, "") != "" {
 		return chunk
 	}

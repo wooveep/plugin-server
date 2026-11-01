@@ -84,14 +84,17 @@ func decodeHash(fields []string, config Config, now time.Time) ReadResult {
 		StateDigest: wire.StateDigest, ObservedAt: observed, ValidUntil: validUntil}, raw: []byte(fields[3]), validated: true}
 	snapshot.credentialIndex = make(map[string]int, len(wire.Credentials))
 	snapshot.scopeIndex = make(map[string]int, len(wire.Scopes))
-	snapshot.accountScopes = make(map[string][]int)
+	snapshot.scopeGroups = make(map[string][]int)
 	for index, control := range wire.Credentials {
 		snapshot.credentialIndex[control.Identity.CredentialRef] = index
 	}
 	for index, scope := range wire.Scopes {
 		snapshot.scopeIndex[scope.Identity.ScopeID] = index
-		account := scope.Identity.ProviderAccountID
-		snapshot.accountScopes[account] = append(snapshot.accountScopes[account], index)
+		group := scopeGroup(scope.Identity.ProviderAccountID, "")
+		if scope.Identity.ProviderAccountID == "" {
+			group = scopeGroup("", *scope.Identity.CredentialRef)
+		}
+		snapshot.scopeGroups[group] = append(snapshot.scopeGroups[group], index)
 	}
 	return ReadResult{Status: ReadReady, Snapshot: snapshot}
 }
@@ -105,7 +108,7 @@ func validateWire(wire snapshotWire) bool {
 	}
 	credentials := make(map[string]bool, len(wire.Credentials))
 	for _, control := range wire.Credentials {
-		if !identity(control.Identity.CredentialRef) || !identity(control.Identity.ProviderAccountID) || !identity(control.Identity.OwnerID) ||
+		if !identity(control.Identity.CredentialRef) || (control.Identity.ProviderAccountID != "" && !identity(control.Identity.ProviderAccountID)) || !identity(control.Identity.OwnerID) ||
 			control.Identity.OwnerKind != "platform" && control.Identity.OwnerKind != "tenant" || credentials[control.Identity.CredentialRef] {
 			return false
 		}
@@ -145,7 +148,7 @@ func validateWire(wire snapshotWire) bool {
 }
 
 func validScope(scope ScopeIdentity) bool {
-	if !identity(scope.ScopeID) || !identity(scope.ProviderAccountID) {
+	if !identity(scope.ScopeID) || (scope.ProviderAccountID != "" && !identity(scope.ProviderAccountID)) {
 		return false
 	}
 	for _, value := range []*string{scope.RegionEndpointRef, scope.CredentialRef, scope.UpstreamModel, scope.OperationKind, scope.QuotaGroupRef} {
@@ -162,11 +165,12 @@ func validScope(scope ScopeIdentity) bool {
 	case "credential":
 		return scope.CredentialRef != nil && scope.CredentialGeneration != nil && scope.UpstreamModel == nil && scope.OperationKind == nil && scope.QuotaGroupRef == nil
 	case "account":
-		return scope.CredentialRef == nil && scope.CredentialGeneration == nil && scope.UpstreamModel == nil && scope.OperationKind == nil && scope.QuotaGroupRef == nil
+		return scope.ProviderAccountID != "" && scope.CredentialRef == nil && scope.CredentialGeneration == nil && scope.UpstreamModel == nil && scope.OperationKind == nil && scope.QuotaGroupRef == nil
 	case "model_operation":
-		return scope.CredentialRef == nil && scope.CredentialGeneration == nil && scope.RegionEndpointRef != nil && scope.UpstreamModel != nil && scope.OperationKind != nil && scope.QuotaGroupRef == nil
+		return ((scope.ProviderAccountID != "" && scope.CredentialRef == nil && scope.CredentialGeneration == nil) ||
+			(scope.ProviderAccountID == "" && scope.CredentialRef != nil && scope.CredentialGeneration != nil)) && scope.RegionEndpointRef != nil && scope.UpstreamModel != nil && scope.OperationKind != nil && scope.QuotaGroupRef == nil
 	case "quota_group":
-		return scope.CredentialRef == nil && scope.CredentialGeneration == nil && scope.QuotaGroupRef != nil
+		return scope.ProviderAccountID != "" && scope.CredentialRef == nil && scope.CredentialGeneration == nil && scope.QuotaGroupRef != nil
 	}
 	return false
 }
@@ -187,14 +191,24 @@ func validDigest(value string) bool {
 	return true
 }
 
-func exactObject(value interface{}, names string) (map[string]interface{}, bool) {
+func exactObject(value interface{}, names string, optional ...string) (map[string]interface{}, bool) {
 	object, ok := value.(map[string]interface{})
 	keys := splitFields(names)
-	if !ok || len(object) != len(keys) {
+	if !ok || len(object) < len(keys) || len(object) > len(keys)+len(optional) {
 		return nil, false
 	}
+	allowed := make(map[string]bool, len(keys)+len(optional))
+	for _, key := range optional {
+		allowed[key] = true
+	}
 	for _, key := range keys {
+		allowed[key] = true
 		if _, found := object[key]; !found {
+			return nil, false
+		}
+	}
+	for key := range object {
+		if !allowed[key] {
 			return nil, false
 		}
 	}
@@ -236,7 +250,7 @@ func snapshotShape(tree interface{}) bool {
 		if _, ok := control["enabled"].(bool); !ok {
 			return false
 		}
-		if _, ok := exactObject(control["identity"], "credential_ref provider_account_id owner_kind owner_id"); !ok {
+		if _, ok := exactObject(control["identity"], "credential_ref owner_kind owner_id", "provider_account_id"); !ok {
 			return false
 		}
 	}
@@ -248,7 +262,7 @@ func snapshotShape(tree interface{}) bool {
 		if _, ok := state["backoff_step"].(json.Number); !ok {
 			return false
 		}
-		if _, ok := exactObject(state["identity"], "scope_id kind provider_account_id region_endpoint_ref credential_ref credential_generation upstream_model operation_kind quota_group_ref"); !ok {
+		if _, ok := exactObject(state["identity"], "scope_id kind region_endpoint_ref credential_ref credential_generation upstream_model operation_kind quota_group_ref", "provider_account_id"); !ok {
 			return false
 		}
 	}
