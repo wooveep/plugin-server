@@ -1,0 +1,128 @@
+{
+  "date": "2026-11-02",
+  "status": "SOURCE_AND_OFFICIAL_SDK_CONSUMER_CHECKED_NOT_DEPLOYED",
+  "base_commit": "de3b5a0953d865afe01b71a7cae834b9c767e7e2",
+  "plugin_version": "2.0.22",
+  "supersedes": "de3b5a09 source checks did not establish the complete Responses event lifecycle; the read-only peer Spec finding is addressed here",
+  "behavior": [
+    "Complete the original Responses converter stream lifecycle in one typed event writer: response.created, message/function item added/done, text content part added/done, text/function argument deltas/done, monotonic required sequence_number and matching completed/incomplete terminal",
+    "Preserve arrival-order output indexes including function -> text -> function; original exact argument fragments, original usage and the sole business sender remain intact",
+    "Use the existing managed host callback to export actual converted SSE only when an explicit test evidence directory is supplied; optional official SDK consumer uses in-process mock transport and adds no runtime dependency"
+  ],
+  "checks": [
+    {
+      "command": "MODELFUSION_NATIVE_SSE_EVIDENCE_DIR=<private-dir> go test . -run '^Test(Managed|Internal)' -count=1",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-responses-lifecycle-callbacks-20261102.log"
+    },
+    {
+      "command": "go test ./provider ./config ./util -count=1",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-responses-lifecycle-units-20261102.log"
+    },
+    {
+      "command": "go vet ./provider ./config ./util",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-responses-lifecycle-vet-20261102.log"
+    },
+    {
+      "command": "<isolated-sdk-python> tests/sdk/consume_responses_callbacks.py <private-evidence-dir>",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-openai-sdk-consumer-20261102/sdk-consumer.log",
+      "receipt": ".local/managed-openai-sdk-consumer-20261102/sdk-consumer.json",
+      "sdk_version": "3.42.1",
+      "cases": 3
+    }
+  ],
+  "sdk_consumer": {
+    "status": "PASS",
+    "openai_sdk_version": "3.42.1",
+    "source": "Actual managed sole-sender host callback SSE after supplier/client conversion and exact usage restoration",
+    "transport": "httpx2.MockTransport (SDK dependency); no network or supplier calls",
+    "cases": [
+      {
+        "case": "separate-stop",
+        "result": "PASS",
+        "sdk_events": 8,
+        "wire_events": 8,
+        "status": "completed",
+        "output_items": 1,
+        "source_sse_sha256": "61c273ef26ec02419cabfb5dd7f22ad6e378d6589fa2cc54b7acd9b65b0333c7",
+        "in_process_mock_requests": 1,
+        "network_or_supplier_calls": 0
+      },
+      {
+        "case": "separate-length",
+        "result": "PASS",
+        "sdk_events": 8,
+        "wire_events": 8,
+        "status": "incomplete",
+        "output_items": 1,
+        "source_sse_sha256": "bc3f8416e6427b1ccbdc098db5516de4cb4068387059b4ea2b7cf3ceeb28f8c5",
+        "in_process_mock_requests": 1,
+        "network_or_supplier_calls": 0
+      },
+      {
+        "case": "tools-stream",
+        "result": "PASS",
+        "sdk_events": 16,
+        "wire_events": 16,
+        "status": "completed",
+        "output_items": 3,
+        "source_sse_sha256": "5bad619f1f31a154058e1e316d5f5bf579f3e73e311d98eefd695f068df4916a",
+        "in_process_mock_requests": 1,
+        "network_or_supplier_calls": 0
+      }
+    ]
+  },
+  "package_checks": "24 package/catalog/storage tests passed in the previous source batch; VERSION/catalog/spec remain byte-identical 2.0.22. No rerun or expansion of that scope is claimed.",
+  "codegraph": {
+    "result": "UNKNOWN_FOR_UNINDEXED_GO_AND_NEW_SDK_CONSUMER",
+    "logs": [
+      ".local/managed-responses-lifecycle-codegraph-20261102.txt",
+      ".local/managed-responses-sdk-consumer-codegraph-20261102.txt"
+    ],
+    "detail": "Queried exact original stream symbols and new optional SDK fixture consumer before edits. No reindex; current source/manual callers and SDK consumption provide the executed evidence."
+  },
+  "retained_environment_attempt": {
+    "log": ".local/managed-openai-sdk-consumer-20261102/attempt1-dependency-name.log",
+    "result": "HARNESS_IMPORT_CORRECTED",
+    "root": "Installed official SDK 3.42.1 declares httpx2, not httpx. Used its actual declared dependency; no product or upstream failure is inferred."
+  },
+  "references": [
+    "https://developers.openai.com/api/reference/resources/responses/streaming-events",
+    "https://developers.openai.com/api/docs/guides/function-calling"
+  ],
+  "limitations": [
+    "Candidate 2.0.22 has not been committed to immutable storage; de3b5a09 prepared Wasm is superseded and must be rebuilt at the final source commit",
+    "Official SDK checks use actual host-callback bytes through in-process transport; real supplier/gateway execution NOT_RUN",
+    "Other native supplier families, pending human health-policy choice, unified rollout and full ordinary matrix remain open"
+  ],
+  "sha256": {
+    ".local/managed-openai-sdk-consumer-20261102/attempt1-dependency-name.log": "dc9962ed37466ec0efd42d86eee5508a430d0713d8ce9e819c8aa3b53f2096ce",
+    ".local/managed-openai-sdk-consumer-20261102/callbacks/separate-length.sse": "bc3f8416e6427b1ccbdc098db5516de4cb4068387059b4ea2b7cf3ceeb28f8c5",
+    ".local/managed-openai-sdk-consumer-20261102/callbacks/separate-stop.sse": "61c273ef26ec02419cabfb5dd7f22ad6e378d6589fa2cc54b7acd9b65b0333c7",
+    ".local/managed-openai-sdk-consumer-20261102/callbacks/tools-stream.sse": "5bad619f1f31a154058e1e316d5f5bf579f3e73e311d98eefd695f068df4916a",
+    ".local/managed-openai-sdk-consumer-20261102/sdk-consumer.json": "83865cdbc334f52ea55c952bf48e2b0f7b0c664fe1c7bc81efe063faa11fb6b5",
+    ".local/managed-openai-sdk-consumer-20261102/sdk-consumer.log": "bfbe62b0809ddc446b5b054f361c62082f379015ba38a29d1d2b547678fe0215",
+    ".local/managed-responses-lifecycle-callbacks-20261102.log": "ee5b84bb394158c6555b5786fbfeb5a918e6700156129a238cd452c0e7a417c1",
+    ".local/managed-responses-lifecycle-codegraph-20261102.txt": "fbc874db91eb50f793582741ccd1bdf40847cd5e5e5bfb8497ef853a10cf1db8",
+    ".local/managed-responses-lifecycle-units-20261102.log": "0f379cfd2b9f8005fa0342b1e6973957e2c338cb3dd462eacbe3a06879f40a5f",
+    ".local/managed-responses-lifecycle-vet-20261102.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".local/managed-responses-sdk-consumer-codegraph-20261102.txt": "4a4f952b6ceca4e8e5065b2659fa0a8adacef1b21b6901500853d55e8a8e912f",
+    "plugins/release/catalog.json": "50e967008773111352b2ba26c078f664b11a6a0bbe9e311beb2f192eb19788d1",
+    "plugins/wasm-go/extensions/ai-proxy/VERSION": "c6b4cb7bd0a282c8d5a0067666187b71ccfbeeafada35f1cc27ed0daf26f74f9",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier_google_test.go": "0bf569f0c29ac368709826d2c0a0f032b2f5d2e95383b6340422981ef752ac11",
+    "plugins/wasm-go/extensions/ai-proxy/provider/claude_to_openai.go": "ba6fa16c61751aa7bc50bc6d06bbea44feeecc8f062741cb68c5f4b5f475bc63",
+    "plugins/wasm-go/extensions/ai-proxy/provider/gemini.go": "ff29647d9fe6f04f2324b7751cbcf28f7867e02fb19989c99710ed2a4a119256",
+    "plugins/wasm-go/extensions/ai-proxy/provider/responses.go": "1d790d0462856a3f706982e7ecfd8529eb8f704c5c348fc688ff4024969eeaf9",
+    "plugins/wasm-go/extensions/ai-proxy/provider/responses_functions_test.go": "81de8b121e6806dd36127371ec95c385f47ef2bc8ecc7d389c7450a7b71a70c1",
+    "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml": "4762124641fcd741f841f95d0270cf7f9215091aa49152135db8a9e8f7788a66",
+    "tests/sdk/consume_responses_callbacks.py": "c00564f86c0fb010f9e7ecb2a777eafd6d9568d72b0c0954b7c457762b4fb734",
+    "tests/sdk/requirements.txt": "68f9ea58d7ceec8f0112cbe3f216ee450b494f5bf1872fddd03ec01629245d79"
+  }
+}

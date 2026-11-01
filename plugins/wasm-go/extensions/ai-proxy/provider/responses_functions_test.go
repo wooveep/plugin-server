@@ -23,11 +23,18 @@ func TestResponsesFunctionStreamPreservesFragmentedArgumentsAndArrivalOrder(t *t
 		result.Write(out)
 	}
 	text := result.String()
-	require.Equal(t, 2, strings.Count(text, "event: response.output_item.added\n"))
+	require.Equal(t, 3, strings.Count(text, "event: response.output_item.added\n"))
+	require.Equal(t, 3, strings.Count(text, "event: response.output_item.done\n"))
+	require.Equal(t, 1, strings.Count(text, "event: response.created\n"))
+	require.Equal(t, 1, strings.Count(text, "event: response.content_part.added\n"))
+	require.Equal(t, 1, strings.Count(text, "event: response.content_part.done\n"))
 	require.Equal(t, 2, strings.Count(text, "event: response.function_call_arguments.done\n"))
 	var completed gjson.Result
-	for _, event := range strings.Split(strings.TrimSpace(text), "\n\n") {
+	for sequence, event := range strings.Split(strings.TrimSpace(text), "\n\n") {
 		lines := strings.SplitN(event, "\n", 2)
+		decoded := gjson.Parse(strings.TrimPrefix(lines[1], "data: "))
+		require.True(t, decoded.Get("sequence_number").Exists())
+		require.Equal(t, int64(sequence), decoded.Get("sequence_number").Int())
 		if lines[0] == "event: response.completed" {
 			completed = gjson.Parse(strings.TrimPrefix(lines[1], "data: "))
 		}

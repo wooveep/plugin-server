@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -212,12 +214,22 @@ func TestManagedGeminiSeparateTerminalAndRealFunctionCallsAcrossClients(t *testi
 				headers := [][2]string{{":status", "200"}, {"content-type", "application/json"}}
 				if test.stream {
 					body = []byte("data: {\"candidates\":[{\"index\":0,\"content\":{\"parts\":" + test.parts + "}}]}\n\ndata: {\"candidates\":[{\"index\":0,\"finishReason\":\"" + test.reason + "\"}],\"usageMetadata\":" + managedGoogleFixtureUsage + "}\n\n")
+					if test.name == "tools-stream" {
+						body = []byte("data: {\"candidates\":[{\"index\":0,\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"first_tool\",\"args\":{\"value\":9007199254740993}}}]}}]}\n\ndata: {\"candidates\":[{\"index\":0,\"content\":{\"parts\":[{\"text\":\"checking\"},{\"functionCall\":{\"name\":\"second_tool\",\"args\":{\"value\":\"second\"}}}]}}]}\n\ndata: {\"candidates\":[{\"index\":0,\"finishReason\":\"STOP\"}],\"usageMetadata\":" + managedGoogleFixtureUsage + "}\n\n")
+					}
 					headers[1][1] = "text/event-stream"
 				}
 				h.response(t, headers, body)
 				response := h.host.GetSentLocalResponse(h.id)
 				if response == nil || response.StatusCode != 200 {
 					t.Fatal("native content or standalone terminal conversion failed")
+				}
+				// Export the actual callback output for an optional external SDK
+				// consumer check; this does not change the ordinary test path.
+				if directory := os.Getenv("MODELFUSION_NATIVE_SSE_EVIDENCE_DIR"); directory != "" && input == managedProtocolResponses && test.stream {
+					if err := os.WriteFile(filepath.Join(directory, test.name+".sse"), response.Data, 0600); err != nil {
+						t.Fatal(err)
+					}
 				}
 				profile, err := newManagedProtocolProfile(input, input)
 				if err != nil {
