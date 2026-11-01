@@ -1,0 +1,34 @@
+{
+  "base_commit": "4644e3386690f6f763b57de86c666b1601baa967",
+  "sources": [
+    {
+      "path": "Dockerfile",
+      "sha256": "b5c875a395777219006b00b6d679d44a959862dbcf0d555fc1c1f80624272a0f"
+    },
+    {
+      "path": "scripts/verify-release-store.py",
+      "sha256": "ea66ad2af59792e423648003797f57e51be89893ab1738d902ca67b0480105de"
+    },
+    {
+      "path": "tests/test_release_catalog.py",
+      "sha256": "f57dce7e1d6141dc0426bcc1ca5787d85081641aafbc706ded6c315f85be5102"
+    }
+  ],
+  "authoritative_manifest": "plugins/release/catalog.json",
+  "manifest_sha256": "9922b050441ee10ed7d882e6f4ba1bc8f91ddf8b3fb3c9bce1736347f089f295",
+  "checks": {
+    "python_tests": 12,
+    "result": "PASS",
+    "real_store_scenario": "Three immutable versions in source; one catalog-selected version in fresh image store; later upload does not alter default; seeding an existing store retains referenced old version bytes.",
+    "image_build_and_deployment": "NOT_RUN",
+    "console_default_manifest_consumption": "NOT_IMPLEMENTED_IN_THIS_BATCH"
+  },
+  "log": {
+    "path": ".local/release-selection-20261102-green.log",
+    "sha256": "4b74562e02f45cc70123450d9be7697a2fa6a785004dd4e32677c4ce93302a9a"
+  },
+  "retained_failure": {
+    "path": ".local/release-selection-20261102-attempt1.log",
+    "reason": "An attempted SemVer prerelease filter excluded the explicitly declared replay-protection release; removed that filter so the source release catalog remains authoritative. New copy test initially lacked required Higress metadata; replaced its generic archive with a complete package fixture."
+  }
+}

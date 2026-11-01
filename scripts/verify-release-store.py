@@ -38,8 +38,15 @@ def main() -> int:
     parser.add_argument("--plugins-dir", type=Path, required=True)
     parser.add_argument("--catalog", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--release-dir", type=Path, help="Build a fresh store containing only this release's selected packages")
     args = parser.parse_args()
     value = release_catalog(ArtifactStore(args.plugins_dir), parse_json(args.catalog.read_bytes()))
+    if args.release_dir is not None:
+        if args.release_dir.exists():
+            raise ValueError("release store output must be a new directory")
+        selected = ArtifactStore(args.release_dir)
+        selected.seed_registered(args.plugins_dir, [entry["manifest"] for entry in value["artifacts"]])
+        value = release_catalog(selected, parse_json(args.catalog.read_bytes()))
     args.output.write_bytes(json_bytes(value))
     print(json.dumps({"complete": True, "count": value["count"], "output": str(args.output)}))
     return 0

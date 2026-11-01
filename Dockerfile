@@ -12,8 +12,8 @@ COPY plugins/release/catalog.json ./source-catalog.json
 COPY dist/plugins/ ./plugins/
 COPY dist/.plugins-artifact-state/ ./.plugins-artifact-state/
 COPY dist/policy.json ./policy.json
-RUN python3 scripts/verify-release-store.py --plugins-dir plugins --catalog source-catalog.json --output plugin-catalog.json
-RUN python3 scripts/export-artifact-inventory.py --plugins-dir plugins --output artifact-inventory.json
+RUN python3 scripts/verify-release-store.py --plugins-dir plugins --catalog source-catalog.json --output plugin-catalog.json --release-dir release-plugins
+RUN python3 scripts/export-artifact-inventory.py --plugins-dir release-plugins --output artifact-inventory.json
 
 FROM ${PYTHON_IMAGE}
 WORKDIR /opt/plugin-server
@@ -22,8 +22,8 @@ COPY --from=builder /work/*.py ./
 COPY --from=builder /work/artifact_schemas/ ./artifact_schemas/
 COPY --from=builder /work/scripts/ ./scripts/
 COPY --from=builder /work/requirements.lock /work/policy.json /work/artifact-inventory.json /work/plugin-catalog.json /work/source-catalog.json ./
-COPY --from=builder /work/plugins/ /usr/share/plugin-server/plugins/
-COPY --from=builder /work/.plugins-artifact-state/ /usr/share/plugin-server/.plugins-artifact-state/
+COPY --from=builder /work/release-plugins/ /usr/share/plugin-server/plugins/
+COPY --from=builder /work/.release-plugins-artifact-state/ /usr/share/plugin-server/.plugins-artifact-state/
 ENV PLUGIN_SERVER_PLUGINS_DIR=/usr/share/plugin-server/plugins
 ENV PLUGIN_SERVER_STATE_DIR=/usr/share/plugin-server/.plugins-artifact-state
 ENV PLUGIN_SERVER_POLICY_FILE=/opt/plugin-server/policy.json
