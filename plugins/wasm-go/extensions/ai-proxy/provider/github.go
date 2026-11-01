@@ -66,7 +66,7 @@ func (m *githubProvider) OnRequestBody(ctx wrapper.HttpContext, apiName ApiName,
 
 func (m *githubProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header) {
 	util.OverwriteRequestHostHeader(headers, githubDomain)
-	util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), m.config.capabilities)
+	m.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 	util.OverwriteRequestAuthorizationHeader(headers, m.config.GetApiTokenInUse(ctx))
 }
 

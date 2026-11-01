@@ -20,7 +20,7 @@ import (
 	"github.com/tidwall/resp"
 )
 
-func managedTextFixture(t *testing.T, fallback bool) map[string]interface{} {
+func managedTextFixture(t *testing.T, fallback bool, fallbackProviderType ...string) map[string]interface{} {
 	t.Helper()
 	initial := managedPoolFixture(t)
 	makeEntry := func(value map[string]interface{}, second bool) managedTextDirectoryEntry {
@@ -54,7 +54,11 @@ func managedTextFixture(t *testing.T, fallback bool) map[string]interface{} {
 		delete(value, "provider")
 		value["activeProviderId"] = "runtime-provider-slug"
 		value["retryOnFailure"] = map[string]bool{"enabled": false}
-		value["providers"] = []map[string]interface{}{{"id": "runtime-provider-slug", "type": "openai", "apiTokens": tokens}}
+		providerType := "openai"
+		if second && len(fallbackProviderType) != 0 {
+			providerType = fallbackProviderType[0]
+		}
+		value["providers"] = []map[string]interface{}{{"id": "runtime-provider-slug", "type": providerType, "apiTokens": tokens}}
 		mapper := json.RawMessage(managedFixtureJSON(t, map[string]interface{}{"modelMapping": map[string]string{"public-model": model}, "capture_body_basis": false}))
 		mapperDigest, err := mfjson.Digest(mapper)
 		if err != nil {
@@ -245,40 +249,48 @@ func TestManagedTextCredentialRetryKeepsActualAttemptsAndOneDelivery(t *testing.
 }
 
 func TestManagedTextFallbackUsesOriginalEffectiveInputAndExactPeer(t *testing.T) {
-	h := newManagedTextHost(t, managedTextFixture(t, true))
-	mapped := []byte(`{"model":"upstream-model","messages":[{"role":"system","content":"actual memory"},{"role":"user","content":[{"type":"text","text":"hello"},{"type":"image_url","image_url":{"url":"https://input.invalid/image"}}]}]}`)
-	h.start(t, []byte(managedOriginalBody), mapped)
-	respondManagedTextHealth(t, h, map[string]bool{"credential-1": true})
-	first := h.host.GetCalloutAttributesFromContext(h.id)[0]
-	h.host.CallOnHttpCallResponse(first.CalloutID, [][2]string{{":status", "503"}, {"content-type", "application/json"}}, nil, []byte(`{"error":{"message":"controlled unavailable"}}`))
-	// No remaining eligible credential at the first target, then choose the
-	// original fallback. Neither lookup alone is a business send.
-	respondManagedTextHealth(t, h, map[string]bool{"second-credential": true})
-	respondManagedTextHealth(t, h, map[string]bool{"second-credential": true})
-	sends := h.host.GetCalloutAttributesFromContext(h.id)
-	if len(sends) != 1 {
-		t.Fatalf("fallback send count %d", len(sends))
-	}
-	second := sends[0]
-	if second.Upstream != "outbound|80||second-provider.static" || !bytes.Contains(second.Body, []byte(`"model":"second-upstream-model"`)) || !bytes.Contains(second.Body, []byte("actual memory")) || !bytes.Contains(second.Body, []byte("image_url")) {
-		t.Fatal("fallback reused the first target/model or dropped effective input attachments")
-	}
-	auth, _ := managedSingleHeader(second.Headers, "authorization")
-	if auth != "Bearer second-target-key" {
-		t.Fatal("fallback reused old credentials")
-	}
-	h.host.CallOnHttpCallResponse(second.CalloutID, [][2]string{{":status", "200"}, {"content-type", "application/json"}}, nil, []byte(strings.ReplaceAll(managedSuccessfulBody, "upstream-model", "second-upstream-model")))
-	var attempts []executionfacts.Envelope
-	for _, record := range h.records(t) {
-		if record.messageType == "observation" {
-			attempts = append(attempts, decodeManagedFact(t, record.raw))
-		}
-	}
-	if len(attempts) != 2 || attempts[1].Mechanism != "fallback" || attempts[1].ParentAttemptID != attempts[0].AttemptID || attempts[1].CallID != attempts[0].CallID || attempts[1].BindingID != "binding-2" || attempts[1].ProviderAccountID != "purchase-2" {
-		t.Fatal("fallback did not freeze independent purchase lineage")
-	}
-	if h.bridge(t).Envelope().PublicModel != "public-model" {
-		t.Fatal("fallback changed the sale model")
+	for _, target := range []struct{ kind, path string }{{"openai", "/second/path"}, {"deepseek", "/v1/chat/completions"}, {"groq", "/openai/v1/chat/completions"}} {
+		t.Run(target.kind, func(t *testing.T) {
+			h := newManagedTextHost(t, managedTextFixture(t, true, target.kind))
+			mapped := []byte(`{"model":"upstream-model","messages":[{"role":"system","content":"actual memory"},{"role":"user","content":[{"type":"text","text":"hello"},{"type":"image_url","image_url":{"url":"https://input.invalid/image"}}]}]}`)
+			h.start(t, []byte(managedOriginalBody), mapped)
+			respondManagedTextHealth(t, h, map[string]bool{"credential-1": true})
+			first := h.host.GetCalloutAttributesFromContext(h.id)[0]
+			h.host.CallOnHttpCallResponse(first.CalloutID, [][2]string{{":status", "503"}, {"content-type", "application/json"}}, nil, []byte(`{"error":{"message":"controlled unavailable"}}`))
+			// No remaining eligible credential at the first target, then choose the
+			// original fallback. Neither lookup alone is a business send.
+			respondManagedTextHealth(t, h, map[string]bool{"second-credential": true})
+			respondManagedTextHealth(t, h, map[string]bool{"second-credential": true})
+			sends := h.host.GetCalloutAttributesFromContext(h.id)
+			if len(sends) != 1 {
+				t.Fatalf("fallback send count %d", len(sends))
+			}
+			second := sends[0]
+			actualPath, _ := managedSingleHeader(second.Headers, ":path")
+			if actualPath != target.path {
+				t.Fatal("fallback did not use its original supplier path", actualPath)
+			}
+			if second.Upstream != "outbound|80||second-provider.static" || !bytes.Contains(second.Body, []byte(`"model":"second-upstream-model"`)) || !bytes.Contains(second.Body, []byte("actual memory")) || !bytes.Contains(second.Body, []byte("image_url")) {
+				t.Fatal("fallback reused the first target/model or dropped effective input attachments")
+			}
+			auth, _ := managedSingleHeader(second.Headers, "authorization")
+			if auth != "Bearer second-target-key" {
+				t.Fatal("fallback reused old credentials")
+			}
+			h.host.CallOnHttpCallResponse(second.CalloutID, [][2]string{{":status", "200"}, {"content-type", "application/json"}}, nil, []byte(strings.ReplaceAll(managedSuccessfulBody, "upstream-model", "second-upstream-model")))
+			var attempts []executionfacts.Envelope
+			for _, record := range h.records(t) {
+				if record.messageType == "observation" {
+					attempts = append(attempts, decodeManagedFact(t, record.raw))
+				}
+			}
+			if len(attempts) != 2 || attempts[1].Mechanism != "fallback" || attempts[1].ParentAttemptID != attempts[0].AttemptID || attempts[1].CallID != attempts[0].CallID || attempts[1].BindingID != "binding-2" || attempts[1].ProviderAccountID != "purchase-2" {
+				t.Fatal("fallback did not freeze independent purchase lineage")
+			}
+			if h.bridge(t).Envelope().PublicModel != "public-model" {
+				t.Fatal("fallback changed the sale model")
+			}
+		})
 	}
 }
 

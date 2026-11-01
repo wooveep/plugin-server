@@ -63,7 +63,7 @@ func (f *fireworksProvider) OnRequestBody(ctx wrapper.HttpContext, apiName ApiNa
 }
 
 func (f *fireworksProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header) {
-	util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), f.config.capabilities)
+	f.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 	util.OverwriteRequestHostHeader(headers, fireworksDomain)
 	util.OverwriteRequestAuthorizationHeader(headers, "Bearer "+f.config.GetApiTokenInUse(ctx))
 	headers.Del("Content-Length")

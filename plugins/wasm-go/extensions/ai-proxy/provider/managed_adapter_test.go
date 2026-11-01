@@ -17,6 +17,26 @@ func (c *managedAdapterContext) GetStringContext(key, fallback string) string {
 	}
 	return fallback
 }
+
+func TestManagedCompatibleSupplierKeepsBusinessParametersAndDeclaredAPIs(t *testing.T) {
+	var config ProviderConfig
+	config.FromJson(gjson.Parse(`{"type":"openrouter","apiTokens":["pool-a","pool-b"],"providerBasePath":"/egress","modelMapping":{}}`))
+	require.NoError(t, config.Validate())
+	adapter, err := NewManagedAdapter(config, ApiNameChatCompletion, "/v1/chat/completions?region=owned")
+	require.NoError(t, err)
+	ctx := &managedAdapterContext{newMapCtx()}
+	headers := make(http.Header)
+	headers.Set(":path", "/client-alias?region=client")
+	body, err := adapter.Prepare(ctx, []byte(`{"model":"frozen-upstream","messages":[],"reasoning_max_tokens":50}`), headers, "frozen-upstream", "pool-b", false)
+	require.NoError(t, err)
+	require.Equal(t, "/egress/api/v1/chat/completions?region=owned", headers.Get(":path"))
+	require.Equal(t, "pool-b", strings.TrimPrefix(headers.Get("authorization"), "Bearer "))
+	require.Equal(t, "frozen-upstream", gjson.GetBytes(body, "model").String())
+	require.Equal(t, int64(50), gjson.GetBytes(body, "reasoning.max_tokens").Int())
+	require.False(t, gjson.GetBytes(body, "reasoning_max_tokens").Exists())
+	_, err = NewManagedAdapter(config, ApiNameEmbeddings, "/v1/embeddings")
+	require.Error(t, err)
+}
 func (c *managedAdapterContext) GetBoolContext(key string, fallback bool) bool {
 	if value, ok := c.GetContext(key).(bool); ok {
 		return value
@@ -32,6 +52,20 @@ func TestManagedSupplierRequestUsesOriginalAdaptersAndTheFrozenKey(t *testing.T)
 	}{
 		{"qwen-compatible", `{"type":"qwen","protocol":"original","qwenEnableCompatible":true,"qwenEnableSearch":true}`, "/compatible-mode/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
 		{"qwen-native", `{"type":"qwen","protocol":"original","qwenEnableCompatible":false,"qwenEnableSearch":true}`, "/api/v1/services/aigc/text-generation/generation", "authorization", "Bearer pool-b", ApiNameChatCompletion, true},
+		{"deepseek", `{"type":"deepseek"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"groq", `{"type":"groq"}`, "/openai/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"grok", `{"type":"grok"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"yi", `{"type":"yi"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"baichuan", `{"type":"baichuan"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"ai360", `{"type":"ai360"}`, "/v1/chat/completions", "authorization", "pool-b", ApiNameChatCompletion, false},
+		{"github", `{"type":"github"}`, "/chat/completions", "authorization", "pool-b", ApiNameChatCompletion, false},
+		{"stepfun", `{"type":"stepfun"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"mistral", `{"type":"mistral"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"longcat", `{"type":"longcat"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"fireworks", `{"type":"fireworks"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"together-ai", `{"type":"together-ai"}`, "/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"doubao", `{"type":"doubao"}`, "/api/v3/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
+		{"openrouter", `{"type":"openrouter"}`, "/api/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
 		{"azure", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/frozen-upstream?api-version=2024-10-21"}`, "/openai/deployments/frozen-upstream/chat/completions?api-version=2024-10-21", "api-key", "pool-b", ApiNameChatCompletion, false},
 		{"azure-frozen-deployment", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/other-deployment?api-version=2024-10-21"}`, "/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21", "api-key", "pool-b", ApiNameChatCompletion, false},
 		{"azure-frozen-full-url", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21"}`, "/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21", "api-key", "pool-b", ApiNameChatCompletion, false},

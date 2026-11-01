@@ -65,7 +65,7 @@ func (o *openrouterProvider) OnRequestBody(ctx wrapper.HttpContext, apiName ApiN
 }
 
 func (o *openrouterProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header) {
-	util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), o.config.capabilities)
+	o.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 	util.OverwriteRequestHostHeader(headers, openrouterDomain)
 	util.OverwriteRequestAuthorizationHeader(headers, "Bearer "+o.config.GetApiTokenInUse(ctx))
 	headers.Del("Content-Length")

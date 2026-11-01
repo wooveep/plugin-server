@@ -1,0 +1,115 @@
+{
+  "date": "2026-11-02",
+  "status": "SOURCE_CHECKED_NOT_DEPLOYED",
+  "base_commit": "27337856734b3fb821e4bc32768448ce23fd00d3",
+  "plugin_version": "2.0.21",
+  "suppliers": [
+    "deepseek",
+    "groq",
+    "grok",
+    "yi",
+    "baichuan",
+    "ai360",
+    "github",
+    "stepfun",
+    "mistral",
+    "longcat",
+    "fireworks",
+    "together-ai",
+    "doubao",
+    "openrouter"
+  ],
+  "behavior": [
+    "Reuse each original SDK request formatter and declared API capabilities through the managed sole sender; remove the second divergent provider-type allowlist",
+    "Published upstream path is set at the adapter boundary; provider API path mapping and explicit providerBasePath retain original SDK semantics",
+    "Frozen selected credential, model, authority, request/response byte digests and exact original usage remain verified by actual host callbacks",
+    "Cross-supplier OpenAI-to-DeepSeek and OpenAI-to-Groq fallback preserves original effective input, attachments, purchase lineage and public sale model"
+  ],
+  "checks": [
+    {
+      "command": "go test . -run '^Test(Managed|Internal)' -count=1",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-compatible-fallback-callbacks-20261102.log"
+    },
+    {
+      "command": "go test ./provider ./config ./util -count=1",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-compatible-units-20261102.log"
+    },
+    {
+      "command": "go vet ./provider ./config ./util",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-compatible-vet-20261102.log"
+    },
+    {
+      "command": "PYTHONPATH=tests .venv/bin/python -m unittest test_plugin_catalog test_release_catalog test_artifact_packaging test_artifact_storage",
+      "result": "PASS",
+      "exit_code": 0,
+      "tests": 24,
+      "log": ".local/managed-compatible-package-tests-20261102.log"
+    }
+  ],
+  "codegraph": {
+    "result": "UNKNOWN_FOR_GO",
+    "detail": "Queried exact symbols before edits and final source review. Existing project graph omits Go adapter files. No reindex, absence is not evidence of no impact.",
+    "log": ".local/managed-compatible-codegraph-final-20261102.txt"
+  },
+  "retained_attempts": [
+    {
+      "log": ".local/managed-compatible-compile-attempt1-20261102.log",
+      "result": "COMPILE_ERROR_FIXED",
+      "root": "DefaultCapabilities is implemented by concrete SDK initializers, not the base interface. Use a narrow typed optional interface at the adapter boundary."
+    },
+    {
+      "log": ".local/managed-compatible-auth-oracle-attempt2-20261102.log",
+      "result": "INVALID_AUTH_ORACLE_CORRECTED",
+      "root": "Original ai360/github SDK emits the selected raw Authorization value. Do not impose a generic Bearer prefix or silently change supplier authentication."
+    },
+    {
+      "log": ".local/managed-compatible-path-oracle-attempt2-20261102.log",
+      "result": "INVALID_PATH_ORACLE_CORRECTED",
+      "root": "Original Mistral SDK preserves the published custom path. Assert actual published input rather than assuming the common Chat path."
+    }
+  ],
+  "limitations": [
+    "Source-layer and host-emulator evidence only; external supplier execution NOT_RUN",
+    "Native protocol/signature provider families remain outside this compatible-provider batch",
+    "No image deployment or full business matrix acceptance in this receipt",
+    "Old prebuilt Wasm suite was not run; immutable 2.0.20 artifact remains untouched"
+  ],
+  "sha256": {
+    "plugins/release/catalog.json": "76a16cee516b2c90eb1aee2a2cae9a78d637b848017fdae57f4ec14f389b8151",
+    "plugins/wasm-go/extensions/ai-proxy/VERSION": "1e2b4da0466f73978b688319301f62b69cca563258d9dc3e834eaab6d3e03b0b",
+    "plugins/wasm-go/extensions/ai-proxy/managed_execution.go": "b4bcf7bea856962d914df7ffda2b7995f6438f0663da4cee8b66c48a92972070",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier_test.go": "00369015c71af7343b2157a88bb38d21cc0cce9ca18d7c590edaef84affa314b",
+    "plugins/wasm-go/extensions/ai-proxy/managed_text_execution.go": "db04a7254c79113341b3221158f66fdbe3000c75420fd7217826e6f654ddac8b",
+    "plugins/wasm-go/extensions/ai-proxy/managed_text_execution_test.go": "fc1541648d0760bc458987422fe2ce56132ebe8c65363e0c72277a770d054481",
+    "plugins/wasm-go/extensions/ai-proxy/provider/ai360.go": "46a0f6abdd24aed91b5627ee9f18841a14b73063be90d0f3f011e47a2e132a5b",
+    "plugins/wasm-go/extensions/ai-proxy/provider/baichuan.go": "209db153acbf5437689e9af5dfb1fe20b4ae43827e54284d14fa706a6e2cd863",
+    "plugins/wasm-go/extensions/ai-proxy/provider/deepseek.go": "3b14b29c2c76be49dd991f314a17ecbaedd8f42836465e0c73b1ee903be22744",
+    "plugins/wasm-go/extensions/ai-proxy/provider/doubao.go": "14495501f22ee0fd8eb5b371a5713e213c26863d948f37e252058e37a5452ac5",
+    "plugins/wasm-go/extensions/ai-proxy/provider/fireworks.go": "d60b4e939134ff21ccae3518c982e01e8504f9c1c8981d807b63182461df8d8a",
+    "plugins/wasm-go/extensions/ai-proxy/provider/github.go": "9927ef3eafbc4b8487f282cdc2a5b4a7f50aaef9ec3a1b75c89e670039e89cea",
+    "plugins/wasm-go/extensions/ai-proxy/provider/grok.go": "b0fd1414c1c08227993a089cfeade7ec266316e783de753efc583b94fbb45c4c",
+    "plugins/wasm-go/extensions/ai-proxy/provider/groq.go": "37ebe9e1385f817b1659824518e507c52296cf27f2fa882c970daf03ef403a37",
+    "plugins/wasm-go/extensions/ai-proxy/provider/longcat.go": "1a0f1acc873687e291577d171927a5c301446878628c1a3638d90522ce8a959a",
+    "plugins/wasm-go/extensions/ai-proxy/provider/managed_adapter.go": "a4f310800472358db53ec3028d60cb1784ab979deaa6f636483e7641aec95a0d",
+    "plugins/wasm-go/extensions/ai-proxy/provider/managed_adapter_test.go": "9182f4f8de4bec0702cdb817480a8c2786c46577b2986435825829cafb76ca2e",
+    "plugins/wasm-go/extensions/ai-proxy/provider/openrouter.go": "9dddae3f6b50740148f26975904461e800923584bf44afc35c72f5e03a5302a0",
+    "plugins/wasm-go/extensions/ai-proxy/provider/stepfun.go": "7a538a46de09c302751c540c74ace7598aee0808d60e59eb1552333a12e4b1d8",
+    "plugins/wasm-go/extensions/ai-proxy/provider/together_ai.go": "d59fa494943c03a468e25f7156f5a23ddfdace343d6a5ff60c4ec4d542d66879",
+    "plugins/wasm-go/extensions/ai-proxy/provider/yi.go": "37ceaacab7fa84b7d891f631fd9fb6566251712e78bd7e43f47a19aec9f79139",
+    "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml": "c9d7cea6fa3ec8b5ea6ebe6a2f3909ecf636f5f6ed4936b3ad9e58b399ec082c",
+    ".local/managed-compatible-fallback-callbacks-20261102.log": "95c8772eba04669cbebca24ea044c759c14867b9ae5f09056bdf9f7debec75b1",
+    ".local/managed-compatible-units-20261102.log": "0f379cfd2b9f8005fa0342b1e6973957e2c338cb3dd462eacbe3a06879f40a5f",
+    ".local/managed-compatible-vet-20261102.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".local/managed-compatible-package-tests-20261102.log": "9403d4b324ae8bbb8133f192dd4a873f88527e755185ded6708ff49db2b19a87",
+    ".local/managed-compatible-codegraph-final-20261102.txt": "5e92742de0d50bccad8f6985affc8948ae24df71d47b4379fb2cdb272b01399b",
+    ".local/managed-compatible-compile-attempt1-20261102.log": "a5ac4bf1e3ef2bd8feb1168909aafd7ce88f875d336393a3d22d14f02ec9866e",
+    ".local/managed-compatible-auth-oracle-attempt2-20261102.log": "f5ad08360996919e77fb08b943c5f6bf889bc75dfbc9d9cc8be9ec92c113e6ee",
+    ".local/managed-compatible-path-oracle-attempt2-20261102.log": "2eb7e9445883cd4c05eb4ddebe076cdb3f335bd4adec7c8af06d496a8c76b59a"
+  }
+}

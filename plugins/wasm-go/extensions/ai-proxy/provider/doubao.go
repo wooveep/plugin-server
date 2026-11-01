@@ -69,7 +69,7 @@ func (m *doubaoProvider) OnRequestBody(ctx wrapper.HttpContext, apiName ApiName,
 }
 
 func (m *doubaoProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header) {
-	util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), m.config.capabilities)
+	m.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 	if m.config.doubaoDomain != "" {
 		util.OverwriteRequestHostHeader(headers, m.config.doubaoDomain)
 	} else {

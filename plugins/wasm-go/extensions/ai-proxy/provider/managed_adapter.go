@@ -37,6 +37,17 @@ func NewManagedAdapter(config ProviderConfig, apiName ApiName, upstreamPath stri
 		if apiName != ApiNameAnthropicMessages {
 			return nil, errors.New("managed Claude requires its Messages payload")
 		}
+	case providerTypeDeepSeek, providerTypeGroq, providerTypeGrok, providerTypeYi,
+		providerTypeBaichuan, providerTypeAi360, providerTypeGithub, providerTypeStepfun,
+		providerTypeMistral, providerTypeLongcat, providerTypeFireworks,
+		providerTypeTogetherAI, providerTypeDoubao, providerTypeOpenRouter:
+		initializer, declared := providerInitializers[config.typ].(interface{ DefaultCapabilities() map[string]string })
+		if !declared {
+			return nil, errors.New("managed supplier has no declared API capabilities")
+		}
+		if _, supported := initializer.DefaultCapabilities()[string(apiName)]; !supported {
+			return nil, errors.New("managed supplier does not support this API")
+		}
 	default:
 		return nil, errors.New("managed supplier adapter is unsupported")
 	}
@@ -64,6 +75,7 @@ func (a *ManagedAdapter) NativeQwen() bool {
 // Prepare transforms the actual wire body and headers using the selected key.
 // The caller freezes these resulting bytes and path before its sole send.
 func (a *ManagedAdapter) Prepare(ctx wrapper.HttpContext, body []byte, headers http.Header, model, credential string, streaming bool) ([]byte, error) {
+	headers.Set(":path", a.config.managedRequestPath)
 	ctx.SetContext(a.config.failover.ctxApiTokenInUse, credential)
 	ctx.SetContext(ctxKeyOriginalRequestModel, model)
 	ctx.SetContext(ctxKeyFinalRequestModel, model)
@@ -77,12 +89,18 @@ func (a *ManagedAdapter) Prepare(ctx wrapper.HttpContext, body []byte, headers h
 	if handler, ok := a.provider.(TransformRequestHeadersHandler); ok {
 		handler.TransformRequestHeaders(ctx, a.apiName, headers)
 	}
+	var err error
 	if handler, ok := a.provider.(TransformRequestBodyHandler); ok {
-		return handler.TransformRequestBody(ctx, a.apiName, body)
+		body, err = handler.TransformRequestBody(ctx, a.apiName, body)
+	} else if handler, ok := a.provider.(TransformRequestBodyHeadersHandler); ok {
+		body, err = handler.TransformRequestBodyHeaders(ctx, a.apiName, body, headers)
+	} else {
+		body, err = a.config.defaultTransformRequestBody(ctx, a.apiName, body)
 	}
-	if handler, ok := a.provider.(TransformRequestBodyHeadersHandler); ok {
-		return handler.TransformRequestBodyHeaders(ctx, a.apiName, body, headers)
+	if err != nil {
+		return nil, err
 	}
+	headers.Set(":path", a.config.applyProviderBasePath(headers.Get(":path")))
 	return body, nil
 }
 

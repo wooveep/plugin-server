@@ -610,7 +610,6 @@ func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecut
 		for _, header := range request.Headers {
 			headers.Add(header[0], header[1])
 		}
-		headers.Set(":path", managed.settings.UpstreamPath)
 		request.Body, err = managed.vendor.Prepare(ctx, request.Body, headers, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue, request.Streaming)
 		if err != nil {
 			rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_supplier_request")

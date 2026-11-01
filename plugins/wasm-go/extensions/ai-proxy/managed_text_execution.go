@@ -272,8 +272,7 @@ func validateManagedTextProvider(proxy gjson.Result, c *managedExecutionConfig) 
 	} else if c.release.SchemaVersion != "modelfusion-execution.v1" || proxy.Get("activeProviderId").Exists() || !provider.IsObject() {
 		return errors.New("managed text provider is absent")
 	}
-	typ := provider.Get("type").String()
-	if typ != "openai" && typ != "generic" && typ != "qwen" && typ != "azure" && (typ != "claude" || c.settings.UpstreamProtocol != managedProtocolMessages) || provider.Get("failover.enabled").Bool() || provider.Get("retryOnFailure.enabled").Bool() || proxy.Get("retryOnFailure.enabled").Bool() {
+	if provider.Get("failover.enabled").Bool() || provider.Get("retryOnFailure.enabled").Bool() || proxy.Get("retryOnFailure.enabled").Bool() {
 		return errors.New("managed text provider cannot run another sender")
 	}
 	// All authentication remains the frozen ref/revision -> secret mapping.
