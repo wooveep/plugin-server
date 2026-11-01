@@ -266,6 +266,11 @@ func isAzureMultipartImageRequest(apiName ApiName, contentType string) bool {
 }
 
 func (m *azureProvider) TransformRequestBody(ctx wrapper.HttpContext, apiName ApiName, body []byte) (transformedBody []byte, err error) {
+	// Managed JSON already carries the frozen model in context, so header
+	// preparation resolved its Azure path. Do not mutate the original request.
+	if m.config.managedRequest {
+		return m.config.defaultTransformRequestBody(ctx, apiName, body)
+	}
 	transformedBody = body
 	err = nil
 
@@ -318,7 +323,7 @@ func (m *azureProvider) transformRequestPath(ctx wrapper.HttpContext, apiName Ap
 		return ""
 	}
 
-	originalPath := util.GetOriginalRequestPath()
+	originalPath := m.config.pathMappingInput()
 
 	if m.serviceUrlType == azureServiceUrlTypeFull {
 		log.Debugf("azureProvider: use configured path %s", m.serviceUrlFullPath)

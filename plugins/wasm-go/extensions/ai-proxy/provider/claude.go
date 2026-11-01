@@ -350,7 +350,7 @@ func (c *claudeProvider) OnRequestHeaders(ctx wrapper.HttpContext, apiName ApiNa
 }
 
 func (c *claudeProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName ApiName, headers http.Header) {
-	util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), c.config.capabilities)
+	c.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 	util.OverwriteRequestHostHeader(headers, claudeDomain)
 
 	if c.config.apiVersion == "" {

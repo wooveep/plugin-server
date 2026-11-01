@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-02",
+  "status": "SOURCE_CHECKED_RUNTIME_NOT_RUN",
+  "base_commit": "b97182ff9dffb129a8c70463fa6882d2ccdaabb7",
+  "plugin_version": "2.0.20",
+  "behavior": [
+    "Reuse existing Qwen compatible/native, Azure and Claude/Claude Code request conversion; no legacy OnRequest/OnFailure, timers or second HTTP sender",
+    "Published upstream path is the mapping input; frozen model, selected credential and authority remain owned by the managed executor",
+    "Actual supplier-converted request bytes are frozen before the existing sole DispatchHttpCall",
+    "Native Qwen JSON/SSE facts are observed from original response bytes; cumulative usage uses the final native terminal, not a sum of frames",
+    "Exact integer input/output/cache quantities are restored after content conversion; missing native usage stays unknown without SDK-generated zero values",
+    "Native Qwen embeddings preserve original vector indexes and exact input-only usage under the existing internal execution authority",
+    "Payload-free generated Qwen usage frames are omitted before one exact final Chat usage frame; validators were not relaxed",
+    "Authoritative formal inventory remains 55 selected plugins and explicitly selects ai-proxy 2.0.20"
+  ],
+  "checks": [
+    {
+      "command": "go -C plugins/wasm-go/extensions/ai-proxy test . -run '^Test(Managed|Internal)' -count=1",
+      "result": "PASS",
+      "log": ".local/managed-supplier-native-complete-20261102.log"
+    },
+    {
+      "command": "go -C plugins/wasm-go/extensions/ai-proxy test ./provider ./config ./util -count=1",
+      "result": "PASS",
+      "log": ".local/managed-supplier-provider-regression-20261102.log"
+    },
+    {
+      "command": "go -C plugins/wasm-go/extensions/ai-proxy vet . ./provider ./config ./util",
+      "result": "PASS",
+      "log": ".local/managed-supplier-vet-20261102.log"
+    },
+    {
+      "command": "plugin_catalog.select_releases(Path.cwd())",
+      "result": "PASS",
+      "selected_plugins": 55,
+      "ai_proxy": "2.0.20"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "codegraph": {
+    "result": "UNKNOWN_FOR_GO",
+    "query": "managed_protocol.go RestoreUsage managed_supplier.go convertManagedSupplierResponse qwenProvider buildChatCompletionStreamingResponse",
+    "detail": "Existing index returns Python symbols and does not cover these Go files. Used targeted current-source and call-path inspection; no reindex and no inferred zero risk."
+  },
+  "retained_failures": [
+    {
+      "log": ".local/managed-supplier-native-batch-20261102.log",
+      "result": "FAIL",
+      "root": "Qwen converter generated an extra empty delta with default usage after the terminal; stripping usage alone left a payload-free frame that broke terminal verification. Fixed conversion boundary; kept strict terminal oracle."
+    },
+    {
+      "log": ".local/managed-supplier-full-batch-20261102.log",
+      "result": "INTERRUPTED",
+      "root": "Unfiltered root main_test loads an old prebuilt Wasm and spent minutes in wazero JIT; not evidence for this changed Go source. Kept trace; verified current managed/internal callbacks and all provider/config/util units instead."
+    },
+    {
+      "log": ".local/managed-supplier-host-fixture-lock-20261102.log",
+      "result": "INTERRUPTED",
+      "root": "Registering a mock Wasm host inside a multiply-called fixture helper deadlocked its global registration mutex. Use the existing one-host-per-test lifecycle."
+    },
+    {
+      "logs": [
+        ".local/managed-supplier-adapter-original-path-dependency-20261102.log",
+        ".local/managed-supplier-adapter-body-header-dependency-20261102.log",
+        ".local/managed-supplier-adapter-azure-body-dependency-20261102.log"
+      ],
+      "result": "FAIL_BEFORE_FIX",
+      "root": "Original supplier formatters depended on ambient original HTTP path/content-type/header mutation. Added a managed preparation boundary using the frozen published path and explicit outgoing headers; did not conceal with more mocks."
+    }
+  ],
+  "limitations": [
+    "Host-emulator callbacks are real SDK callbacks, not an external supplier/network execution receipt",
+    "No new image build, artifact registration, deployment or final whole-business acceptance in this source batch",
+    "Other supplier families are still outside the managed adapter support set; no all-supplier runtime claim",
+    "Health threshold/probe policy awaits the already pending human decision; no competing health/retry control chain introduced",
+    "Media and AI Memory specialty acceptance remain deferred; internal embedding source validation does not close those tasks"
+  ],
+  "primary_source": "https://help.aliyun.com/en/model-studio/context-cache",
+  "sha256": {
+    "plugins/wasm-go/extensions/ai-proxy/managed_execution.go": "f050e522c26d7791161066134c399124428f78c2e4d92e09fe3c5ec2b4ca87b8",
+    "plugins/wasm-go/extensions/ai-proxy/managed_protocol.go": "01ada77fc18918233cfe8493ae65c05cc62c8cbaf91f235e5f98153318174cc9",
+    "plugins/wasm-go/extensions/ai-proxy/managed_protocol_test.go": "bcc04af3c9a0d0b62c8214f14fb3a49482b2f04245303aa6c8aa8bf4f96af2e8",
+    "plugins/wasm-go/extensions/ai-proxy/managed_text_execution.go": "9897c3c1808dd2b77f4261dac623fc7395e1344e6ff3aeaa47bddd230a2ff6d8",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier.go": "88c2d59fe20b1afa590076a587b475f57ec8d7d3bebb0affa4fca2289fd33927",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier_test.go": "ecb2f032ed0b6ebdba7cc55c4d9a616eb90c9f72a3d759ae67a58d00abbdd76f",
+    "plugins/wasm-go/extensions/ai-proxy/provider/managed_adapter.go": "979cd55eaf779e473b44c9782290ddb09e8de75eb21ae9587fae2deb624d3921",
+    "plugins/wasm-go/extensions/ai-proxy/provider/managed_adapter_test.go": "9a3230bb029f024303d27fb03ab9411b834df826182c4b134eb8f06aeacc8667",
+    "plugins/wasm-go/extensions/ai-proxy/provider/azure.go": "7d7f00bbd730c305638b2f98ae05eb9f0ef51e0dc330a79b19dc14ee6a7ab659",
+    "plugins/wasm-go/extensions/ai-proxy/provider/claude.go": "434fb683655d9dd67c802aafb4c1506a0944ebea1d82e69451fc97121733dcb4",
+    "plugins/wasm-go/extensions/ai-proxy/provider/provider.go": "2110372f9241ecad104520757b8638d92b2ea2ba90f94eef6009010f70e10548",
+    "plugins/wasm-go/extensions/ai-proxy/provider/qwen.go": "81214e2b62570ae2ab613a1a203a27d44dd4fd7949c93b22774061fc65c13fb3",
+    "plugins/wasm-go/extensions/ai-proxy/VERSION": "74290049d5ee2a1efcbbdf900f770f80a245aaa533db565fa4ac02e8aab04dd2",
+    "plugins/release/catalog.json": "8758a6576c064d7a2cbec4383c85765c567f769fada630790d39aece76adef27",
+    ".local/managed-supplier-native-complete-20261102.log": "d7954286d98ccb86aa3ebbdb2532ddef902e218d87b1ba090f479f26db166794",
+    ".local/managed-supplier-provider-regression-20261102.log": "ff7c64b67e556690b9d5dca9f76a04db11b4f08e2a8c85a93d5e55f524c587fc",
+    ".local/managed-supplier-vet-20261102.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".local/managed-supplier-native-batch-20261102.log": "39121227cbd54ed6bf1c10d055542549d71759c2c941c6e4e71f6959d1dd947a",
+    ".local/managed-supplier-full-batch-20261102.log": "2c01cd34b831e5c312658ad0b6f713e5def470716b73c7f7dbc8da669eb26e2e",
+    ".local/managed-supplier-host-fixture-lock-20261102.log": "a4589f41dc5fe7376bb7c88c64d3ac7e80a2baccb2899d2cbfa6a8483b7740c2",
+    ".local/managed-supplier-adapter-original-path-dependency-20261102.log": "2df694e2fdb7dd572d0bf600fa70a7f4f512f9d0688827439d083dc9b888fd51",
+    ".local/managed-supplier-adapter-body-header-dependency-20261102.log": "68073c1310a0605c2a1961e3212c76177adbe9b2d4775ac5989756e067206a23",
+    ".local/managed-supplier-adapter-azure-body-dependency-20261102.log": "bfd2e1c8bb7ae1b74d1f64e59db7d35607ab0eb9b54da0591ebec7f474d8352b"
+  }
+}

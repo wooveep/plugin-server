@@ -43,6 +43,7 @@ func TestManagedProtocolProfilesAreConfiguredAndBounded(t *testing.T) {
 }
 
 func TestManagedProtocolNativeRequestPreservesMappedBytesAndControlledAuthentication(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	body := []byte("{ \"model\" : \"frozen-upstream\", \"messages\" : [{\"role\":\"user\",\"content\":\"hello\"}], \"stream\":false }")
 	for _, protocol := range []string{managedProtocolChat, managedProtocolMessages, managedProtocolResponses} {
 		profile := managedProtocolFixture(t, protocol, protocol)
@@ -74,6 +75,7 @@ func TestManagedProtocolNativeRequestPreservesMappedBytesAndControlledAuthentica
 }
 
 func TestManagedProtocolFallbackRequestsReuseConvertersAndKeepFrozenModel(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	for _, test := range []struct {
 		protocol string
 		body     string
@@ -107,6 +109,7 @@ func TestManagedProtocolFallbackRequestsReuseConvertersAndKeepFrozenModel(t *tes
 }
 
 func TestManagedProtocolChatStreamRequestsProviderUsageBeforeFreezingOutboundBody(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	profile := managedProtocolFixture(t, managedProtocolChat, managedProtocolChat)
 	for _, body := range []string{
 		`{"model":"frozen-upstream","stream":true,"messages":[]}`,
@@ -129,6 +132,7 @@ func TestManagedProtocolChatStreamRequestsProviderUsageBeforeFreezingOutboundBod
 }
 
 func TestManagedProtocolRejectsAmbiguousRequestWithoutChangingSelection(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	profile := managedProtocolFixture(t, "", "")
 	for _, body := range []string{
 		`{"model":"other-model","messages":[]}`,
@@ -147,6 +151,7 @@ func TestManagedProtocolRejectsAmbiguousRequestWithoutChangingSelection(t *testi
 }
 
 func TestManagedProtocolNativeUsageIsExactAndHTTPErrorDoesNotEraseIt(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	for _, test := range []struct {
 		protocol, body, input, output, hit, miss string
 	}{
@@ -171,6 +176,7 @@ func TestManagedProtocolNativeUsageIsExactAndHTTPErrorDoesNotEraseIt(t *testing.
 }
 
 func TestManagedProtocolMissingInvalidAndExplicitZeroUsageStayDistinct(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	profile := managedProtocolFixture(t, managedProtocolResponses, managedProtocolResponses)
 	for _, raw := range []string{`null`, `{}`, `{"input_tokens":1}`, `{"input_tokens":1e3,"output_tokens":0}`, `{"input_tokens":"1","output_tokens":0}`, `{"input_tokens":1,"output_tokens":0,"total_tokens":2}`, `{"input_tokens":340282366920938463463374607431768211456,"output_tokens":0}`} {
 		observed := profile.ObserveResponse(200, managedProtocolJSONHeaders, []byte(`{"status":"completed","usage":`+raw+`}`), true)
@@ -192,6 +198,7 @@ func TestManagedProtocolMissingInvalidAndExplicitZeroUsageStayDistinct(t *testin
 }
 
 func TestManagedProtocolChatAggregatedStreamRequiresRealTerminal(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	profile := managedProtocolFixture(t, "", "")
 	body := managedProtocolChatStream(managedProtocolHuge, "0")
 	observed := profile.ObserveResponse(200, managedProtocolSSEHeaders, body, true)
@@ -215,6 +222,7 @@ func TestManagedProtocolChatAggregatedStreamRequiresRealTerminal(t *testing.T) {
 }
 
 func TestManagedProtocolResponsesAggregatedStreamUsesOriginalTerminalEnvelope(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	profile := managedProtocolFixture(t, managedProtocolResponses, managedProtocolResponses)
 	body := []byte("event: response.created\ndata: " + `{"type":"response.created","response":{"model":"frozen-upstream","status":"in_progress"}}` + "\n\n" +
 		"event: response.completed\ndata: " + `{"type":"response.completed","response":{"model":"frozen-upstream","status":"completed","usage":{"input_tokens":9007199254740993,"output_tokens":0,"total_tokens":9007199254740993}}}` + "\n\n")
@@ -235,6 +243,7 @@ func TestManagedProtocolResponsesAggregatedStreamUsesOriginalTerminalEnvelope(t 
 }
 
 func TestManagedProtocolMessagesAggregatedStreamRequiresFinalCumulativeUsage(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	profile := managedProtocolFixture(t, managedProtocolMessages, managedProtocolMessages)
 	start := "event: message_start\ndata: " + `{"type":"message_start","message":{"type":"message","model":"frozen-upstream","usage":{"input_tokens":9007199254740993,"output_tokens":0}}}` + "\n\n"
 	finish := "event: message_delta\ndata: " + `{"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":2}}` + "\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n"
@@ -255,6 +264,7 @@ func TestManagedProtocolMessagesAggregatedStreamRequiresFinalCumulativeUsage(t *
 }
 
 func TestManagedProtocolFallbackResponseReusesConverterAndPreservesExactUsage(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	for _, input := range []string{managedProtocolResponses, managedProtocolMessages} {
 		profile := managedProtocolFixture(t, input, managedProtocolChat)
 		body := []byte(strings.Replace(managedProtocolChatReply, "9007199254740993", managedProtocolHuge, 1))
@@ -290,6 +300,7 @@ func TestManagedProtocolFallbackResponseReusesConverterAndPreservesExactUsage(t 
 }
 
 func TestManagedProtocolFallbackAggregatedSSEDoesNotInventFinalityOrRoundCounts(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	for _, input := range []string{managedProtocolResponses, managedProtocolMessages} {
 		profile := managedProtocolFixture(t, input, managedProtocolChat)
 		body := managedProtocolChatStream(managedProtocolHuge, "0")
@@ -309,6 +320,7 @@ func TestManagedProtocolFallbackAggregatedSSEDoesNotInventFinalityOrRoundCounts(
 }
 
 func TestManagedProtocolMissingUsageIsNotReplacedByConverterDefaults(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	body := []byte(`{"id":"reply-1","model":"frozen-upstream","choices":[{"index":0,"message":{"role":"assistant","content":"hello"},"finish_reason":"stop"}]}`)
 	for _, input := range []string{managedProtocolResponses, managedProtocolMessages} {
 		profile := managedProtocolFixture(t, input, managedProtocolChat)
@@ -327,6 +339,7 @@ func TestManagedProtocolMissingUsageIsNotReplacedByConverterDefaults(t *testing.
 }
 
 func TestManagedProtocolConversionErrorsPreserveActualProviderFacts(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	profile := managedProtocolFixture(t, managedProtocolResponses, managedProtocolChat)
 	bad := []byte(`{"choices":[{"index":0,"message":null,"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":0}}`)
 	original := bytes.Clone(bad)
@@ -354,6 +367,7 @@ func TestManagedProtocolConversionErrorsPreserveActualProviderFacts(t *testing.T
 }
 
 func TestManagedProtocolUnreadableResponseNeverInventsUsage(t *testing.T) {
+	newManagedHost(t) // One SDK host per test for the original converter log callbacks.
 	profile := managedProtocolFixture(t, "", "")
 	for _, headers := range [][][2]string{
 		{},

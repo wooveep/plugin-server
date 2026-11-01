@@ -29,6 +29,7 @@ type managedProtocolProfile struct {
 }
 
 type managedProtocolRequest struct {
+	UpstreamPath       string
 	Body               []byte
 	Headers            [][2]string
 	Streaming          bool
@@ -644,20 +645,25 @@ func (p managedProtocolProfile) ConvertResponse(ctx wrapper.HttpContext, status 
 	if err != nil {
 		return managedProtocolClientResponse{}, err
 	}
-	result.Headers = nil
+	result.Headers = managedProtocolConvertedHeaders(headers, stream)
+	return result, nil
+}
+
+func managedProtocolConvertedHeaders(headers [][2]string, stream bool) [][2]string {
+	var result [][2]string
 	for _, header := range managedResponseHeaders(headers) {
 		switch strings.ToLower(header[0]) {
 		case "content-type", "content-encoding", "etag", "content-md5", "digest", "content-digest", "repr-digest":
 			continue
 		}
-		result.Headers = append(result.Headers, header)
+		result = append(result, header)
 	}
 	contentType := "application/json"
 	if stream {
 		contentType = "text/event-stream"
 	}
-	result.Headers = append(result.Headers, [2]string{"content-type", contentType})
-	return result, nil
+	result = append(result, [2]string{"content-type", contentType})
+	return result
 }
 
 func managedProtocolConversionInput(body []byte, stream bool) ([]byte, error) {
@@ -713,26 +719,45 @@ func managedProtocolWireUsage(protocol string, usage *executionfacts.Usage) json
 	}
 	quantities := usage.Quantities
 	input, inputOK := managedInteger(quantities["input"])
-	output, outputOK := managedInteger(quantities["output"])
-	if !inputOK || !outputOK {
+	if !inputOK {
 		return nil
 	}
-	wire := map[string]interface{}{"input_tokens": json.Number(input.String()), "output_tokens": json.Number(output.String())}
-	if protocol == managedProtocolResponses {
-		total := new(big.Int).Add(input, output)
-		if total.BitLen() > 128 {
+	wire := map[string]json.RawMessage{}
+	if protocol == managedProtocolEmbeddings {
+		wire["prompt_tokens"], wire["total_tokens"] = json.RawMessage(input.String()), json.RawMessage(input.String())
+	} else {
+		output, outputOK := managedInteger(quantities["output"])
+		if !outputOK {
 			return nil
 		}
-		wire["total_tokens"] = json.Number(total.String())
-		if hit, exists := quantities["cache_hit"]; exists {
-			wire["input_tokens_details"] = map[string]json.Number{"cached_tokens": json.Number(hit)}
+		if protocol == managedProtocolChat || protocol == managedProtocolResponses {
+			total := new(big.Int).Add(input, output)
+			if total.BitLen() > 128 {
+				return nil
+			}
+			wire["total_tokens"] = json.RawMessage(total.String())
 		}
-	} else if hit, exists := quantities["cache_hit"]; exists {
-		wire["input_tokens"] = json.Number(quantities["cache_miss"])
-		wire["cache_read_input_tokens"] = json.Number(hit)
-		wire["cache_creation_input_tokens"] = json.Number("0")
+		if protocol == managedProtocolChat {
+			wire["prompt_tokens"], wire["completion_tokens"] = json.RawMessage(input.String()), json.RawMessage(output.String())
+			if hit, exists := quantities["cache_hit"]; exists {
+				wire["prompt_tokens_details"], _ = json.Marshal(map[string]json.Number{"cached_tokens": json.Number(hit)})
+			}
+		} else {
+			wire["input_tokens"], wire["output_tokens"] = json.RawMessage(input.String()), json.RawMessage(output.String())
+			if hit, exists := quantities["cache_hit"]; exists {
+				if protocol == managedProtocolResponses {
+					wire["input_tokens_details"], _ = json.Marshal(map[string]json.Number{"cached_tokens": json.Number(hit)})
+				} else {
+					wire["input_tokens"] = json.RawMessage(quantities["cache_miss"])
+					wire["cache_read_input_tokens"], wire["cache_creation_input_tokens"] = json.RawMessage(hit), json.RawMessage("0")
+				}
+			}
+		}
 	}
-	encoded, _ := json.Marshal(wire)
+	encoded, err := json.Marshal(wire)
+	if err != nil {
+		return nil
+	}
 	return encoded
 }
 
@@ -740,6 +765,58 @@ func managedProtocolRestoreUsage(body []byte, stream bool, protocol string, usag
 	wire := managedProtocolWireUsage(protocol, usage)
 	if wire == nil && usage != nil && usage.Status == "reported" {
 		return nil, errors.New("exact managed usage cannot be represented by client profile")
+	}
+	if stream && protocol == managedProtocolChat {
+		events, err := managedProtocolEvents(body)
+		if err != nil {
+			return nil, err
+		}
+		var output bytes.Buffer
+		var last map[string]json.RawMessage
+		for _, event := range events {
+			if bytes.Equal(event.Data, []byte("[DONE]")) {
+				if wire != nil {
+					if last == nil {
+						return nil, errors.New("converted Chat response has no content frame")
+					}
+					last["choices"], last["usage"] = json.RawMessage("[]"), wire
+					encoded, err := json.Marshal(last)
+					if err != nil {
+						return nil, err
+					}
+					managedProtocolWriteEvent(&output, "", encoded)
+				}
+				managedProtocolWriteEvent(&output, event.Name, event.Data)
+				continue
+			}
+			var object map[string]json.RawMessage
+			if decodeManagedJSON(event.Data, &object, false) != nil || object == nil {
+				return nil, errors.New("invalid converted Chat frame")
+			}
+			_, hadUsage := object["usage"]
+			delete(object, "usage")
+			last = object
+			if hadUsage {
+				var choices []struct {
+					Delta        map[string]json.RawMessage `json:"delta"`
+					FinishReason *string                    `json:"finish_reason"`
+				}
+				if err := json.Unmarshal(object["choices"], &choices); err != nil {
+					return nil, errors.New("invalid converted Chat usage frame")
+				}
+				// Qwen's content converter emits an empty delta for its generated
+				// usage. Omit that payload-free frame; exact usage is emitted at DONE.
+				if len(choices) == 0 || len(choices) == 1 && len(choices[0].Delta) == 0 && choices[0].FinishReason == nil {
+					continue
+				}
+			}
+			encoded, err := json.Marshal(object)
+			if err != nil {
+				return nil, err
+			}
+			managedProtocolWriteEvent(&output, event.Name, encoded)
+		}
+		return output.Bytes(), nil
 	}
 	patch := func(raw []byte) ([]byte, error) {
 		var object map[string]json.RawMessage

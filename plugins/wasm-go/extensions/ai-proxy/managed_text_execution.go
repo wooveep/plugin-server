@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	supplier "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
@@ -198,6 +199,7 @@ func configureManagedTextDirectory(value gjson.Result, origin *managedExecutionC
 			return errors.New("managed fallback changes the original call or fact transport")
 		}
 		profile, err := newManagedProtocolProfile(peer.settings.InputProtocol, peer.settings.UpstreamProtocol)
+		peer.profile = profile
 		if err != nil || validateManagedTextProvider(proxy, peer) != nil {
 			return errors.New("unsupported managed fallback provider configuration")
 		}
@@ -271,7 +273,7 @@ func validateManagedTextProvider(proxy gjson.Result, c *managedExecutionConfig) 
 		return errors.New("managed text provider is absent")
 	}
 	typ := provider.Get("type").String()
-	if typ != "openai" && typ != "generic" && (typ != "claude" || c.settings.UpstreamProtocol != managedProtocolMessages) || provider.Get("failover.enabled").Bool() || provider.Get("retryOnFailure.enabled").Bool() || proxy.Get("retryOnFailure.enabled").Bool() {
+	if typ != "openai" && typ != "generic" && typ != "qwen" && typ != "azure" && (typ != "claude" || c.settings.UpstreamProtocol != managedProtocolMessages) || provider.Get("failover.enabled").Bool() || provider.Get("retryOnFailure.enabled").Bool() || proxy.Get("retryOnFailure.enabled").Bool() {
 		return errors.New("managed text provider cannot run another sender")
 	}
 	// All authentication remains the frozen ref/revision -> secret mapping.
@@ -292,6 +294,16 @@ func validateManagedTextProvider(proxy gjson.Result, c *managedExecutionConfig) 
 			values[token.String()]--
 		}
 	}
+	var parsed supplier.ProviderConfig
+	parsed.FromJson(provider)
+	if err := parsed.Validate(); err != nil {
+		return errors.New("managed supplier configuration is invalid")
+	}
+	adapter, err := supplier.NewManagedAdapter(parsed, managedSupplierAPIName(c.profile), c.settings.UpstreamPath)
+	if err != nil {
+		return err
+	}
+	c.vendor = adapter
 	return nil
 }
 

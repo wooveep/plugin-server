@@ -118,7 +118,7 @@ func (m *qwenProvider) TransformRequestHeaders(ctx wrapper.HttpContext, apiName 
 	util.OverwriteRequestAuthorizationHeader(headers, "Bearer "+m.config.GetApiTokenInUse(ctx))
 
 	if !m.config.IsOriginal() {
-		util.OverwriteRequestPathHeaderByCapability(headers, string(apiName), m.config.capabilities)
+		m.config.overwriteRequestPathHeaderByCapability(headers, string(apiName))
 	}
 }
 

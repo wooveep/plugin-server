@@ -328,6 +328,9 @@ type TransformResponseBodyHandler interface {
 }
 
 type ProviderConfig struct {
+	// Managed execution maps only its published upstream path, never a client alias/query.
+	managedRequestPath string
+	managedRequest     bool
 	// @Title zh-CN ID
 	// @Description zh-CN AI服务提供商标识
 	id string `required:"true" yaml:"id"`
@@ -936,6 +939,23 @@ func (c *ProviderConfig) ReplaceByCustomSettings(body []byte) ([]byte, error) {
 	return ReplaceByCustomSettings(body, c.customSettings)
 }
 
+func (c *ProviderConfig) pathMappingInput() string {
+	if c.managedRequest {
+		return c.managedRequestPath
+	}
+	return util.GetOriginalRequestPath()
+}
+
+func (c *ProviderConfig) overwriteRequestPathHeaderByCapability(headers http.Header, apiName string) {
+	if !c.managedRequest {
+		util.OverwriteRequestPathHeaderByCapability(headers, apiName, c.capabilities)
+		return
+	}
+	if path := util.MapRequestPathByCapability(apiName, c.pathMappingInput(), c.capabilities); path != "" {
+		util.OverwriteRequestPathHeader(headers, path)
+	}
+}
+
 func CreateProvider(pc ProviderConfig) (Provider, error) {
 	initializer, has := providerInitializers[pc.typ]
 	if !has {
@@ -961,7 +981,9 @@ func (c *ProviderConfig) parseRequestAndMapModel(ctx wrapper.HttpContext, reques
 
 		streaming := req.Stream
 		if streaming {
-			_ = proxywasm.ReplaceHttpRequestHeader("Accept", "text/event-stream")
+			if !c.managedRequest {
+				_ = proxywasm.ReplaceHttpRequestHeader("Accept", "text/event-stream")
+			}
 			ctx.SetContext(ctxKeyIsStreaming, true)
 		} else {
 			ctx.SetContext(ctxKeyIsStreaming, false)
@@ -1424,8 +1446,10 @@ func (c *ProviderConfig) handleRequestHeaders(provider Provider, ctx wrapper.Htt
 
 // defaultTransformRequestBody 默认的请求体转换方法，只做模型映射，用slog替换模型名称，不用序列化和反序列化，提高性能
 func (c *ProviderConfig) defaultTransformRequestBody(ctx wrapper.HttpContext, apiName ApiName, body []byte) ([]byte, error) {
-	if contentType, err := proxywasm.GetHttpRequestHeader(util.HeaderContentType); err == nil && isMultipartFormData(contentType) {
-		return c.defaultTransformMultipartRequestBody(ctx, apiName, body, contentType)
+	if !c.managedRequest {
+		if contentType, err := proxywasm.GetHttpRequestHeader(util.HeaderContentType); err == nil && isMultipartFormData(contentType) {
+			return c.defaultTransformMultipartRequestBody(ctx, apiName, body, contentType)
+		}
 	}
 
 	switch apiName {
@@ -1434,7 +1458,9 @@ func (c *ProviderConfig) defaultTransformRequestBody(ctx wrapper.HttpContext, ap
 		ApiNameVideoRemix:
 		stream := gjson.GetBytes(body, "stream").Bool()
 		if stream {
-			_ = proxywasm.ReplaceHttpRequestHeader("Accept", "text/event-stream")
+			if !c.managedRequest {
+				_ = proxywasm.ReplaceHttpRequestHeader("Accept", "text/event-stream")
+			}
 			ctx.SetContext(ctxKeyIsStreaming, true)
 		} else {
 			ctx.SetContext(ctxKeyIsStreaming, false)

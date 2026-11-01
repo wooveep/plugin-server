@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/big"
 	"mime"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/config"
+	supplier "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/google/uuid"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
@@ -135,6 +137,7 @@ type managedRedisClient interface {
 }
 
 type managedExecutionConfig struct {
+	vendor   *supplier.ManagedAdapter
 	settings managedSettings
 	release  managedRelease
 	redis    managedRedisClient
@@ -209,10 +212,9 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 		return errors.New("unsupported managed execution protocol profile")
 	}
 	parsed.profile = profile
-	providerType := activeProvider.GetProviderType()
-	if providerType != "openai" && providerType != "generic" &&
-		(providerType != "claude" || profile.UpstreamProtocol != managedProtocolMessages) {
-		return errors.New("managed execution provider does not support its frozen protocol profile")
+	parsed.vendor, err = supplier.NewManagedAdapter(*providerConfig, managedSupplierAPIName(profile), parsed.settings.UpstreamPath)
+	if err != nil {
+		return errors.New("managed execution supplier does not support its frozen protocol profile")
 	}
 	redis := parsed.settings.Redis
 	client := wrapper.NewRedisEventClient(wrapper.FQDNCluster{FQDN: redis.ServiceName, Port: int64(redis.ServicePort)}, proxywasm.DispatchRedisCallInBackground)
@@ -597,14 +599,37 @@ func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecut
 		rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")
 		return managedProtocolRequest{}, false
 	}
-	if len(request.Body) == 0 || uint64(len(request.Body)) > uint64(defaultMaxBodyBytes) {
-		rejectManagedPreparation(ctx, state, 413, "mapped_request_body_out_of_bounds")
-		return managedProtocolRequest{}, false
-	}
 	var outboundObject map[string]json.RawMessage
 	var model string
 	if decodeManagedJSON(request.Body, &outboundObject, false) != nil || json.Unmarshal(outboundObject["model"], &model) != nil || model != managed.release.Descriptor.UpstreamModel {
 		rejectManagedPreparation(ctx, state, 500, "protocol_conversion_changed_selection")
+		return managedProtocolRequest{}, false
+	}
+	if managed.vendor != nil {
+		headers := make(http.Header, len(request.Headers)+1)
+		for _, header := range request.Headers {
+			headers.Add(header[0], header[1])
+		}
+		headers.Set(":path", managed.settings.UpstreamPath)
+		request.Body, err = managed.vendor.Prepare(ctx, request.Body, headers, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue, request.Streaming)
+		if err != nil {
+			rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_supplier_request")
+			return managedProtocolRequest{}, false
+		}
+		request.UpstreamPath = headers.Get(":path")
+		request.Headers = nil
+		for name, values := range headers {
+			switch strings.ToLower(name) {
+			case ":path", ":authority", "host", "content-length":
+				continue
+			}
+			for _, value := range values {
+				request.Headers = append(request.Headers, [2]string{strings.ToLower(name), value})
+			}
+		}
+	}
+	if len(request.Body) == 0 || uint64(len(request.Body)) > uint64(defaultMaxBodyBytes) {
+		rejectManagedPreparation(ctx, state, 413, "mapped_request_body_out_of_bounds")
 		return managedProtocolRequest{}, false
 	}
 	state.streaming, state.expectedEmbeddings = request.Streaming, request.ExpectedEmbeddings
@@ -655,7 +680,11 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 	state.dispatchStarted = true
 	markManagedTextAttempt(state)
 	recordManagedAccessAttempt(ctx, state)
-	outbound := [][2]string{{":method", "POST"}, {":path", managed.settings.UpstreamPath}, {":authority", managed.settings.Authority}, {managedCallHeader, state.callID}, {managedAttemptHeader, state.attemptID}}
+	upstreamPath := managed.settings.UpstreamPath
+	if managed.vendor != nil {
+		upstreamPath = request.UpstreamPath
+	}
+	outbound := [][2]string{{":method", "POST"}, {":path", upstreamPath}, {":authority", managed.settings.Authority}, {managedCallHeader, state.callID}, {managedAttemptHeader, state.attemptID}}
 	outbound = append(outbound, request.Headers...)
 	_, err = proxywasm.DispatchHttpCall(managed.release.Descriptor.ClusterRef, outbound, body, nil, managed.settings.TimeoutMS, func(numHeaders, bodySize, numTrailers int) {
 		onManagedHTTPResponse(ctx, state, numHeaders, bodySize)
@@ -787,7 +816,7 @@ func finishManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState
 			deliveryState = "unknown"
 		}
 	}
-	clientResponse, err := s.config.profile.ConvertResponse(ctx, *outcome.HTTPStatus, headers, body)
+	clientResponse, err := convertManagedSupplierResponse(ctx, s, outcome, headers, body)
 	if err != nil {
 		managedFactGap(ctx, "protocol_response_conversion_failed")
 		sendManagedFinal(ctx, s, outcome, "failed", 502, [][2]string{{"content-type", "application/json"}}, managedErrorBody("upstream_protocol_response_incomplete"))
@@ -858,7 +887,9 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 		return o
 	}
 	var observed managedProtocolObservation
-	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
+	if s.config.vendor != nil && s.config.vendor.NativeQwen() {
+		observed = managedQwenObservation(s.config.profile.UpstreamProtocol, *o.HTTPStatus, headers, body, o.BodyComplete, s.expectedEmbeddings)
+	} else if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
 		observed = managedEmbeddingObservation(*o.HTTPStatus, headers, body, o.BodyComplete, s.expectedEmbeddings)
 	} else {
 		observed = s.config.profile.ObserveResponse(*o.HTTPStatus, headers, body, o.BodyComplete)
