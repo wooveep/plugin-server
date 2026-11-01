@@ -6,11 +6,12 @@ import hashlib
 import random
 import tracemalloc
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from urllib.request import urlopen
 from http.client import HTTPConnection
 from http.server import ThreadingHTTPServer
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from plugin_server import PluginRequestHandler
 from artifact_packaging import build_archive, prepare_plugin
@@ -80,6 +81,63 @@ class PluginServerTest(unittest.TestCase):
                                     headers={"Authorization": "Bearer secret-token"})
         self.assertEqual(status, 400)
         self.assertFalse((self.plugins_dir / "demo").exists())
+
+    def test_full_package_with_invalid_wasm_is_rejected_before_publication(self):
+        payload = example_payload()
+        payload["plugin.wasm"] = b"not-wasm"
+        archive = build_archive(descriptor(payload), payload)
+        status, _, _ = self.request(
+            "PUT", "/uploads/invalid-wasm", body=archive,
+            headers={"Authorization": "Bearer secret-token"},
+        )
+        self.assertEqual(status, 422)
+        self.assertEqual(self.request("GET", "/plugins/test-plugin/1.0.0/plugin.wasm")[0], 404)
+
+    def test_committed_get_reads_body_once_and_head_reads_no_body(self):
+        payload = example_payload()
+        archive = build_archive(descriptor(payload), payload)
+        status, _, response = self.request(
+            "PUT", "/uploads/read-once", body=archive,
+            headers={"Authorization": "Bearer secret-token"},
+        )
+        self.assertEqual(status, 201, response)
+        wasm_path = self.plugins_dir / "test-plugin/1.0.0/plugin.wasm"
+        original_open = Path.open
+        read_bytes = []
+
+        @contextmanager
+        def observed_open(target, *args, **kwargs):
+            with original_open(target, *args, **kwargs) as stream:
+                if target != wasm_path:
+                    yield stream
+                    return
+                observed = Mock(wraps=stream)
+
+                def read(*args, **kwargs):
+                    data = stream.read(*args, **kwargs)
+                    read_bytes.append(len(data))
+                    return data
+
+                def readinto(buffer):
+                    size = stream.readinto(buffer)
+                    read_bytes.append(size)
+                    return size
+
+                observed.read.side_effect = read
+                observed.readinto.side_effect = readinto
+                yield observed
+
+        path = "/plugins/test-plugin/1.0.0/plugin.wasm"
+        with patch.object(Path, "open", observed_open):
+            status, headers, body = self.request("GET", path)
+            self.assertEqual((status, body), (200, payload["plugin.wasm"]))
+            self.assertEqual(headers["Content-Length"], str(len(body)))
+            self.assertEqual(sum(read_bytes), len(body), "GET must not scan the body before sending it")
+            read_bytes.clear()
+            status, headers, body = self.request("HEAD", path)
+            self.assertEqual((status, body), (200, b""))
+            self.assertEqual(headers["Content-Length"], str(len(payload["plugin.wasm"])))
+            self.assertEqual(sum(read_bytes), 0, "HEAD must not read the body")
 
     def test_batch_metadata_returns_real_numeric_priority_without_revalidation(self):
         archive = prepare_plugin(
@@ -171,7 +229,7 @@ class PluginServerTest(unittest.TestCase):
         normalized_headers = {key.lower(): value for key, value in headers.items()}
         self.assertEqual(normalized_headers["content-type"], "application/wasm")
 
-    def test_parallel_cold_downloads_keep_bounded_memory_exact_bytes_and_corruption_refusal(self):
+    def test_parallel_cold_downloads_keep_bounded_memory_exact_bytes_and_size_refusal(self):
         payload = example_payload()
         payload["docs/README.md"] = random.Random(7).randbytes(4 * 1024 * 1024).hex().encode()
         archive = build_archive(descriptor(payload), payload)

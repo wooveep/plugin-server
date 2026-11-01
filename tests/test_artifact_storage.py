@@ -144,7 +144,7 @@ class ArtifactStorageTests(unittest.TestCase):
         self.assertEqual(self.store.query("new")["state"], "failed")
         self.assertEqual(self.store.query("old")["state"], "committed")
 
-    def test_get_waits_for_whole_commit_and_corruption_fails_closed(self):
+    def test_get_waits_for_whole_commit_and_refuses_changed_size(self):
         entered, release = threading.Event(), threading.Event()
         def fault(phase):
             if phase == "after_rename":
@@ -160,7 +160,7 @@ class ArtifactStorageTests(unittest.TestCase):
             release.set()
             self.assertEqual(committed.result(timeout=5)["state"], "committed")
             self.assertEqual(read.result(timeout=5), example_payload()["docs/README.md"])
-        (self.root / "test-plugin/1.0.0/plugin.wasm").write_bytes(b"tampered")
+        (self.root / "test-plugin/1.0.0/plugin.wasm").write_bytes(b"short")
         with self.assertRaises(StorageUnavailable):
             self.store.read_file("test-plugin", "1.0.0", "plugin.wasm")
 

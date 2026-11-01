@@ -8,7 +8,6 @@ This does not claim coordination across independent volumes or remote replicas.
 from __future__ import annotations
 
 import fcntl
-import hashlib
 import os
 import re
 import shutil
@@ -262,7 +261,7 @@ class ArtifactStore:
 
     @contextmanager
     def open_file(self, name: str, version: str, path: str):
-        """Hold one verified immutable member without buffering its full body."""
+        """Open one registered immutable member without scanning its body."""
         manifest = self.manifest(name, version) if safe_path(path) else None
         if manifest is None:
             yield None
@@ -286,12 +285,9 @@ class ArtifactStore:
         try:
             with target.open("rb") as stream:
                 size = os.fstat(stream.fileno()).st_size
-                actual = "sha256:" + hashlib.file_digest(stream, "sha256").hexdigest()
-                if path in allowed and (actual != allowed[path]["sha256"] or str(size) != allowed[path]["size_bytes"]):
-                    raise StorageUnavailable("committed payload bytes differ")
-                if path == "archive.tgz" and actual != manifest["archive_digest"]:
-                    raise StorageUnavailable("committed archive bytes differ")
-                stream.seek(0)
+                # commit() validates full content before publishing this immutable version.
+                if path in allowed and str(size) != allowed[path]["size_bytes"]:
+                    raise StorageUnavailable("committed payload size differs")
                 yield stream
         except OSError as exc:
             raise StorageUnavailable("committed artifact member is unavailable") from exc
