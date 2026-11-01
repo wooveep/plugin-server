@@ -1,0 +1,82 @@
+{
+  "date": "2026-11-02",
+  "status": "IMMUTABLE_CANDIDATE_IMAGE_HTTP_VERIFIED_NOT_DEPLOYED",
+  "source_commit": "c305f04b648def9b79c39b9de2313dc9255d0bfc",
+  "source_receipts": [
+    "docs/checks/2026-11-02-managed-compatible-suppliers-source.json",
+    "docs/checks/2026-11-02-managed-native-google-moonshot-source.json",
+    "docs/checks/2026-11-02-managed-gemini-tools-terminal-source.json",
+    "docs/checks/2026-11-02-responses-sdk-consumer-source.json"
+  ],
+  "qualification": {
+    "source_commit": "c305f04b648def9b79c39b9de2313dc9255d0bfc",
+    "prior_immutable_manifests_preserved": 103,
+    "registered_artifacts": 104,
+    "plugins": [
+      {
+        "plugin_name": "ai-proxy",
+        "plugin_version": "2.0.22",
+        "source_commit": "c305f04b648def9b79c39b9de2313dc9255d0bfc",
+        "build_receipt_digest": "sha256:f7c8c7c96c0d6bf1cd9650a33c92bc3a318cc762a91c1638eabca5ec297dfa3e",
+        "source_inputs_digest": "sha256:96286ed507a8878ef524e84ed954df36ecc150a11dcbc91b69cb2d7723090fa2",
+        "archive_digest": "sha256:a12013c4b703989d4bebdf4da52e423a26bfe421bda15bc95d22028a1a112dc8",
+        "wasm_digest": "sha256:0570108372599cbc05911b3b3dbe43fa12fe10e9e670e61a0cba09e76fb84449",
+        "content_digest": "sha256:9b063d87a2c774a33142c68c3e7534f50f5f6f711ede3ff8011b39edf6946a7b",
+        "source_digest": "sha256:2e4e06660dba91040f555ea0912550e4d8d85d413e44428809fe3f4499791f5d",
+        "artifact_id": "0e608787-cf8a-4d48-9fcb-55a6b9f8661c",
+        "source_checks": "docs/checks/2026-11-02-responses-sdk-consumer-source.json",
+        "full_wasm_suite_executed": false,
+        "host_emulator_and_provider_config_util_passed": true,
+        "external_supplier_execution": "NOT_RUN"
+      }
+    ],
+    "artifact_inventory_file": ".local/managed-responses-sdk-20261102/inventory.json",
+    "deployed": false
+  },
+  "image": {
+    "status": "IMAGE_HTTP_CHECKED_NOT_DEPLOYED",
+    "source_commit": "c305f04b648def9b79c39b9de2313dc9255d0bfc",
+    "pinned_image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:provider-identity-20261101-c305f04b-db2ffb4a1004@sha256:a8f9292e48eed0efd8064901ac9e06ddee0028a7a8b5703619e1ace8abe228c9",
+    "image_registered_artifacts": 55,
+    "input_store_registered_artifacts": 104,
+    "prior_immutable_manifests_preserved": 103,
+    "http_verified_files": 491,
+    "http_verified_bytes": 574508856,
+    "formal_catalog_sha256": "12cacc7429f8c31caac757397c8aea3224138d53af8329657cc5c18e1127b447",
+    "formal_catalog_byte_identical_to_generated_input": true,
+    "ai_proxy_version": "2.0.22",
+    "ai_proxy_wasm_sha256": "0570108372599cbc05911b3b3dbe43fa12fe10e9e670e61a0cba09e76fb84449",
+    "deployed": false,
+    "http_verified_manifest_files": 55,
+    "http_verified_total_artifact_files": 546,
+    "http_verified_total_artifact_bytes": 574619466,
+    "native_directory_entries": 55
+  },
+  "image_source_inputs_sha256": "ae20384501811139733a955e6b8bda441849596f8f2c9ba2536ff646c8428adc",
+  "formal_catalog": "Exact built-image plugin-catalog.json; use the same bytes for Console candidate readonly ConfigMap",
+  "review": {
+    "fixed_source": "c305f04b",
+    "standards_new_findings": 0,
+    "spec_new_findings": 0,
+    "scope": "Read-only source review and 5 physical SDK/SSE evidence hashes independently matched; peer did not rerun SDK/Go or qualify the Docker image."
+  },
+  "limitations": [
+    "Image contains the 55 selected formal packages. Local input store contains 104 immutable versions and preserves prior 103; no runtime/PVC count is inferred.",
+    "2.0.20 and 2.0.21 packages/images retained; source review prevented 2.0.21 deployment. Superseded de3b5a09 2.0.22 prepared bytes were never committed to immutable storage.",
+    "Current K3S remains Helm12 with old API/PS/Web/route references. No candidate rollout or external supplier execution is claimed.",
+    "Native Hunyuan signing, Minimax Pro, Vertex and other service protocols remain outside these source receipts; human health-policy decision, ordinary full matrix and unified rollout remain open.",
+    "Media and AI Memory specialty acceptance remain deferred"
+  ],
+  "sha256": {
+    ".local/managed-responses-sdk-20261102/qualification.json": "72394ce3794ebd57486c21d6c397c360a251bc0f647facc290abf2bca59d2321",
+    ".local/managed-responses-sdk-20261102/image-http-verified.json": "a087648ef0f847a1c76d792c37e56ef66090d74aa2fa3e3b51b4486411ee7d33",
+    ".local/managed-responses-sdk-20261102/plugin-catalog.json": "12cacc7429f8c31caac757397c8aea3224138d53af8329657cc5c18e1127b447",
+    ".local/managed-responses-sdk-20261102/artifact-inventory.json": "2baf656bb7fda80e1ab44729d8d0762fccb09519bd394b2f1cebf860c0eb730e",
+    ".local/provider-media-simplification-20261101/image-c305f04b/source-inputs.json": "ae20384501811139733a955e6b8bda441849596f8f2c9ba2536ff646c8428adc",
+    ".local/provider-media-simplification-20261101/image-c305f04b/build-receipt.json": "652de9615775def466d106aad33cb19bb648a6f2aa1cde449f14fc03dcaee4e9",
+    ".local/managed-responses-sdk-build-20261102.log": "ff533f1d21d3eef3d23d14f83a9f8ade9059a738af9802ea32673716f93c9054",
+    ".local/managed-responses-sdk-prepare-20261102.log": "84a59ea84bdf9435084166e02342a6f761a7c907f6cc3cc245e4d4380d18a16a",
+    ".local/managed-responses-sdk-image-http-20261102.log": "265406544d1ced1c9a60f0cdce77f14c09895ff4765335f427260687da9d1084",
+    ".local/managed-responses-sdk-image-manifests-20261102.log": "3ffc6233774eac18cb582377b95834cc90ace43f187940b996e28d0035e6f00e"
+  }
+}

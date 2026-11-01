@@ -121,3 +121,10 @@ ai-proxy 2.0.9、ai-billing 1.0.1 已在原持久化制品库提交并完成 8 �
 ## 2026-10-31 Helm101目录消费完成
 
 另一聊天批次结束后由root串行接续，MF实现fc6364a1，原生与兼容入口共用已登记元数据。21项分层检查和严格Clippy通过；线上55项详情、配置、README共165次读取全部200，完整列表约156ms、分页20/20/15，原生默认引用与正式清单完全一致。[权威验收](../../../ocloudmodelfusion/docs/checks/2026-10-31-plugin-directory-consumer.md)保留准确镜像、二进制和资源/钱包比较。原Recovery仍requested，未置ready；下一步恢复原79项业务及ART05联合出口。
+
+
+## 2026-11-02 供应商与跨协议候选制品（尚未部署）
+
+本聊天串行接续 MF/SDK/Web/DEP 共享文件。PS `c305f04b` 的 ai-proxy **2.0.22** 已完成受管唯一发送点的供应商适配与原始精确用量接线，并在原 Gemini／Responses／Anthropic 转换器修复实际工具内容、终态、精度及 SSE 生命周期；分层 Go、可选官方 Python SDK 3.42.1 消费真实 host callback 三例通过，固定源码只读复验新增 Standards 0／Spec 0。
+
+[候选交付权威回执](../checks/2026-11-02-managed-suppliers-candidate-image.json)记录固定镜像、Wasm、包与来源摘要。镜像保有55类正式制品，491 payload加55 manifest共546文件真实HTTP大小/SHA通过；本地完整入库104版本并保留此前103，与镜像55项分开。原2.0.20／2.0.21不可变字节保持。当前Helm12旧应用及路由没有切换；MF 8h Token和新正式默认目录也仍为候选，不据此关闭运行卡。下一步继续其余原生家族／既有健康人类决策与同版普通链矩阵，媒体和AI Memory专项延期。
