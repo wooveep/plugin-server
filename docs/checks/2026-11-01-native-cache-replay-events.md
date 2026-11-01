@@ -9,3 +9,5 @@ Helm139 的完整对话请求实际命中缓存，客户供应商发送0次、�
 [三份 RED](cache-replay-20261101/red-commands.json)分别复现名称契约、已交付 Memory0.1.9 的普通/流式响应学习、已交付 Cache2.0.7 自身本地回放事件。后两者均在 Go/Wasm 上失败，错误与真实运行相符。修复后的完整批次和实际不递归验收继续，未将本地回放响应作为一次新模型发送。
 
 完整批次通过：[Memory72顶层/607含子项](cache-replay-20261101/ai-memory-green-command.json)、[Cache66顶层/562含子项](cache-replay-20261101/ai-cache-green-command.json)，均无跳过；[共享命中契约](cache-replay-20261101/contract-green-command.json)及[catalog五项检查](cache-replay-20261101/catalog-green-command.json)通过。[两份完整包资格](cache-replay-20261101/qualification.json)绑定当前已提交来源、原始输入和实际测试字节；95份制品包含这两个新版本，原93份manifest与69条来源批准保持。实际新包加载与不递归取证继续。
+
+[Helm140实际交付与完整验收](../../../modelfusion-deploy/docs/checks/2026-11-01-internal-runtime.md#internal-native-helm140)已完成：PS固定5bef252a，95制品/950 HTTP文件共1,068,512,073字节全部200且SHA/大小匹配；原PVC/Gateway保持。客户原路由rev12实际加载Memory0.1.10 `43a8c5b4…`、Cache2.0.8 `cb1b8f11…` 与原Proxy2.0.18。完整对话命中HTTP200、客户供应商新增0，只结算当前一次销售；必要Memory查询一次独立采购。173秒后Memory/Cache事件、提取/Cache后台向量均新增0，原候选/回放/向量块逐行保持。旧错误事件和实际费用完整保留。钱包36/946988975000（scale10），PG/Redis/User一致，Stream lag/pending0。

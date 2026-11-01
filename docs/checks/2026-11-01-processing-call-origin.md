@@ -11,3 +11,5 @@ ai-memory 的 assemble 和 ai-cache 的 lookup 从 header 阶段已捕获、经�
 MF 的准确 PG RED、10项分层GREEN及严格Clippy见其唯一记录。完整制品构建、入库/HTTP读回、实际配置加载与语义/缓存请求仍待完成；Go 宿主检查不等同实际网关通过。
 
 完整 Wasm 批次已通过：Memory 72 个顶层用例（含子项607），Cache 65 个顶层用例（含子项555），均无跳过。首次打包被来源校验正确阻止：Wasm 测试框架在源码旁生成的 `wasm-unit-test.wasm` 被目录输入模式误收为源码，无法在记录的 Git 提交中找到。源码输入枚举现在只排除这个已知测试输出，仍保留实际嵌入的 Wasm 资产；[五项 catalog 检查](processing-origin-20261101/catalog-generated-output-green.json)覆盖生成测试产物不改变发布输入、真实源码改动仍改变摘要。旧构建与测试记录保留，重新构建后核对二进制及实际源码输入，再制作完整包；不会手工改写旧 receipt。
+
+[Helm137–140原生运行](../../../modelfusion-deploy/docs/checks/2026-11-01-internal-runtime.md#internal-native-helm140)已实际验证：原父call时间与后到注册一致，Memory召回/Cache查询均真实发送并保留source_query。后续无期限准入与本地回放事件缺陷分别从原边界修复，当前完整Memory0.1.10/Cache2.0.8已实际加载；32次内部供应商发送分别有call/attempt、采购、父call/source_job，内部销售/服务钱包0，缓存命中不递归采集。源码与分层检查不替代运行的限制保持，交付结论以DEP实际回执为准。
