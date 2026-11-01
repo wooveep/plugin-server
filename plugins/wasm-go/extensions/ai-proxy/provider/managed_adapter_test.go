@@ -33,6 +33,8 @@ func TestManagedSupplierRequestUsesOriginalAdaptersAndTheFrozenKey(t *testing.T)
 		{"qwen-compatible", `{"type":"qwen","protocol":"original","qwenEnableCompatible":true,"qwenEnableSearch":true}`, "/compatible-mode/v1/chat/completions", "authorization", "Bearer pool-b", ApiNameChatCompletion, false},
 		{"qwen-native", `{"type":"qwen","protocol":"original","qwenEnableCompatible":false,"qwenEnableSearch":true}`, "/api/v1/services/aigc/text-generation/generation", "authorization", "Bearer pool-b", ApiNameChatCompletion, true},
 		{"azure", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/frozen-upstream?api-version=2024-10-21"}`, "/openai/deployments/frozen-upstream/chat/completions?api-version=2024-10-21", "api-key", "pool-b", ApiNameChatCompletion, false},
+		{"azure-frozen-deployment", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/other-deployment?api-version=2024-10-21"}`, "/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21", "api-key", "pool-b", ApiNameChatCompletion, false},
+		{"azure-frozen-full-url", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21"}`, "/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21", "api-key", "pool-b", ApiNameChatCompletion, false},
 		{"claude", `{"type":"claude","claudeVersion":"fixture-version","claudeCodeMode":false}`, "/v1/messages", "x-api-key", "pool-b", ApiNameAnthropicMessages, false},
 		{"claude-code", `{"type":"claude","claudeVersion":"fixture-version","claudeCodeMode":true}`, "/v1/messages?beta=true", "authorization", "Bearer pool-b", ApiNameAnthropicMessages, false},
 	} {
@@ -58,7 +60,7 @@ func TestManagedSupplierRequestUsesOriginalAdaptersAndTheFrozenKey(t *testing.T)
 				require.True(t, gjson.GetBytes(body, "parameters.enable_search").Bool())
 				require.Equal(t, "enable", headers.Get("X-DashScope-SSE"))
 			}
-			if test.name == "azure" {
+			if strings.HasPrefix(test.name, "azure") {
 				require.Empty(t, headers.Get("authorization"))
 			}
 			if strings.HasPrefix(test.name, "claude") {

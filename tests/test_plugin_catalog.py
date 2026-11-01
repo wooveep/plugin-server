@@ -2,14 +2,52 @@ import json
 from pathlib import Path
 import tempfile
 import subprocess
+import runpy
 import unittest
+from unittest.mock import patch
 
-from plugin_catalog import Version, load_catalog, select_releases, source_inputs
+from plugin_catalog import PluginSource, Version, load_catalog, select_releases, source_inputs
 from plugin_schema_conversion import convert_spec
 from artifact_contract import validate_defaults
 
 
 class PluginCatalogTests(unittest.TestCase):
+    def test_package_identity_drift_is_rejected_before_writing_a_candidate_review(self):
+        from artifact_contract import digest
+
+        root = Path(__file__).resolve().parents[1]
+        prepare = runpy.run_path(str(root / "scripts/package-plugins.py"))["prepare"]
+        for name, version in [("example", "1.0.0"), ("other-plugin", "1.1.0")]:
+            with self.subTest(name=name, version=version), tempfile.TemporaryDirectory() as temporary:
+                work = Path(temporary)
+                metadata = work / "metadata"
+                metadata.mkdir()
+                (metadata / "README.md").write_text("Release fixture")
+                (metadata / "defaults.json").write_text("{}")
+                (metadata / "environment.json").write_text("[]")
+                (metadata / "spec.yaml").write_text(json.dumps({
+                    "apiVersion": "1.0.0", "info": {"name": name, "version": version},
+                    "spec": {"phase": "default", "priority": 1, "configSchema": {
+                        "openAPIV3Schema": {"type": "object", "additionalProperties": False}}},
+                }))
+                output = work / "build/plugins/example/1.1.0"
+                output.mkdir(parents=True)
+                wasm = output / "plugin.wasm"
+                wasm.write_bytes(b"\0asm\1\0\0\0")
+                (output / "build-receipt.json").write_text(json.dumps({
+                    "plugin_name": "example", "plugin_version": "1.1.0", "implementation": "go",
+                    "source_commit": "a" * 40, "source_inputs": {}, "artifact": str(wasm.relative_to(work)),
+                    "sha256": digest(wasm.read_bytes()), "size_bytes": wasm.stat().st_size,
+                }))
+                source = PluginSource("example", "go", metadata, "1.1.0", True, "wasm", None, metadata)
+                with patch.dict(prepare.__globals__, {
+                    "select_releases": lambda _: [source], "source_inputs": lambda *_: {},
+                }), patch("subprocess.check_output", side_effect=["https://example.invalid/plugins", ""]), patch("subprocess.run"):
+                    with self.assertRaisesRegex(ValueError, "metadata identity differs from selected source VERSION"):
+                        prepare(work)
+                self.assertFalse((work / "build/packages").exists())
+                self.assertFalse((work / "dist/plugins").exists())
+
     def test_generated_wasm_test_output_does_not_change_release_inputs(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

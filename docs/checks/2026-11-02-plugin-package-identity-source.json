@@ -1,0 +1,85 @@
+{
+  "date": "2026-11-02",
+  "status": "SOURCE_CHECKED_REBUILD_PENDING",
+  "base_commit": "ed7859c7854e6573b5d0368a315e899a5609a26f",
+  "plugin_version": "2.0.20",
+  "behavior": [
+    "Correct ai-proxy spec.yaml metadata from 2.0.19 to the selected VERSION/catalog 2.0.20 before any published package exists",
+    "Package preparation rejects descriptor name/version differing from the selected source before writing candidate archive/review; immutable storage identity checks remain unchanged",
+    "Azure explicit full/deployment URL deployment and model ID may differ. Preserve the frozen supplier URL contract; no incorrect model==deployment guard or path rewrite was added",
+    "Added request-unit and sole-sender callback cases for explicit URL deployment differing from the model, verifying original wire digests, frozen authority and exact usage"
+  ],
+  "checks": [
+    {
+      "command": "go test . -run '^Test(Managed|Internal)' -count=1",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-supplier-freeze-contract-callbacks-20261102.log"
+    },
+    {
+      "command": "go test ./provider ./config ./util -count=1",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-supplier-freeze-contract-units-20261102.log"
+    },
+    {
+      "command": "PYTHONPATH=tests .venv/bin/python -m unittest test_plugin_catalog test_release_catalog test_artifact_packaging test_artifact_storage",
+      "result": "PASS",
+      "exit_code": 0,
+      "log": ".local/managed-supplier-package-identity-tests-20261102.log",
+      "tests": 24
+    }
+  ],
+  "codegraph": {
+    "result": "UNKNOWN_FOR_GO_AND_PACKAGING_SCRIPT",
+    "detail": "Explored named symbols first; existing index has stale artifact storage and omits new Go/script files. Used current-source inspection without reindex."
+  },
+  "retained_attempts": [
+    {
+      "log": ".local/managed-supplier-qualification-20261102.log",
+      "result": "REJECTED_BEFORE_STORE_COMMIT",
+      "root": "Prepared archive identity was 2.0.19 while review path claimed 2.0.20. Store rejected ART_IDENTITY. Fix authoritative metadata and preparation boundary; no old immutable artifact overwritten."
+    },
+    {
+      "log": ".local/managed-azure-freeze-red-20261102.log",
+      "result": "INVALID_ORACLE_WITHDRAWN",
+      "root": "An initial review incorrectly equated Azure deployment name and model ID. Existing explicit URL semantics permit them to differ; corrected the test oracle, retained behavior and strengthened the valid contract cases."
+    },
+    {
+      "log": ".local/managed-supplier-azure-contract-20261102.log",
+      "result": "INCORRECT_ROOT_TEST_SCOPE",
+      "root": "TestAzure in the root package invokes the old prebuilt Wasm harness. Scope corrected to managed/internal callbacks and full provider/config/util unit layer; no old Wasm failure counted as PASS."
+    }
+  ],
+  "contract_reference": "ocloudmodelfusion/sdk/resources/plugins/ai-proxy/README.md:216-221",
+  "limitations": [
+    "Corrected candidate must be rebuilt and prepared after this commit; source Go production behavior remains from ed7859c7",
+    "No external supplier execution, deployment, full all-supplier support or final business matrix acceptance in this source receipt",
+    "Old prebuilt Wasm suite remains outside the executed source-layer scope"
+  ],
+  "sha256": {
+    "plugins/wasm-go/extensions/ai-proxy/managed_execution.go": "f050e522c26d7791161066134c399124428f78c2e4d92e09fe3c5ec2b4ca87b8",
+    "plugins/wasm-go/extensions/ai-proxy/managed_protocol.go": "01ada77fc18918233cfe8493ae65c05cc62c8cbaf91f235e5f98153318174cc9",
+    "plugins/wasm-go/extensions/ai-proxy/managed_protocol_test.go": "bcc04af3c9a0d0b62c8214f14fb3a49482b2f04245303aa6c8aa8bf4f96af2e8",
+    "plugins/wasm-go/extensions/ai-proxy/managed_text_execution.go": "9897c3c1808dd2b77f4261dac623fc7395e1344e6ff3aeaa47bddd230a2ff6d8",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier.go": "88c2d59fe20b1afa590076a587b475f57ec8d7d3bebb0affa4fca2289fd33927",
+    "plugins/wasm-go/extensions/ai-proxy/managed_supplier_test.go": "ea10d7892dc5c0d770e26bcba9e5ca4af9b32795c626e49158828fbdf9339219",
+    "plugins/wasm-go/extensions/ai-proxy/provider/managed_adapter.go": "979cd55eaf779e473b44c9782290ddb09e8de75eb21ae9587fae2deb624d3921",
+    "plugins/wasm-go/extensions/ai-proxy/provider/managed_adapter_test.go": "420be07458887bd678ffaafa35549519f85e02d2718eac118212cc83b2fe66a0",
+    "plugins/wasm-go/extensions/ai-proxy/provider/azure.go": "7d7f00bbd730c305638b2f98ae05eb9f0ef51e0dc330a79b19dc14ee6a7ab659",
+    "plugins/wasm-go/extensions/ai-proxy/provider/claude.go": "434fb683655d9dd67c802aafb4c1506a0944ebea1d82e69451fc97121733dcb4",
+    "plugins/wasm-go/extensions/ai-proxy/provider/provider.go": "2110372f9241ecad104520757b8638d92b2ea2ba90f94eef6009010f70e10548",
+    "plugins/wasm-go/extensions/ai-proxy/provider/qwen.go": "81214e2b62570ae2ab613a1a203a27d44dd4fd7949c93b22774061fc65c13fb3",
+    "plugins/wasm-go/extensions/ai-proxy/VERSION": "74290049d5ee2a1efcbbdf900f770f80a245aaa533db565fa4ac02e8aab04dd2",
+    "plugins/release/catalog.json": "8758a6576c064d7a2cbec4383c85765c567f769fada630790d39aece76adef27",
+    "scripts/package-plugins.py": "5bd7e11762b5913768ade12784ff37e301de5b598639a374c5e3a1ae39992f02",
+    "tests/test_plugin_catalog.py": "9f7803490bd4ff947363e73f30f8ba1c04032c58c8573b46f3f8cd629337d500",
+    "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml": "5749e06d88a9593f0bdb8bab66c0cb45c3f63692029986ed9e85a7c11a3e1157",
+    ".local/managed-supplier-freeze-contract-callbacks-20261102.log": "0f4f5442485244b1fa386694d3f129690acc0d3a651b975031d792e341830472",
+    ".local/managed-supplier-freeze-contract-units-20261102.log": "0f379cfd2b9f8005fa0342b1e6973957e2c338cb3dd462eacbe3a06879f40a5f",
+    ".local/managed-supplier-package-identity-tests-20261102.log": "bc01cf8a5711297e1fadb324c9d2175c9242eef9fc14f2c7eaa77f049665b208",
+    ".local/managed-supplier-qualification-20261102.log": "c47e7efd9895a176c6ee2cea96f7425f557a7808df0ecf2815c5b041951d47d1",
+    ".local/managed-azure-freeze-red-20261102.log": "5912547ab5f92ba32179e3461e90f2921930048f42924aaa08dd31e660c658ab",
+    ".local/managed-supplier-azure-contract-20261102.log": "096097c668758435d32132887f9849f44fa478ef4eea5c9da37081d8b0d35a6c"
+  }
+}

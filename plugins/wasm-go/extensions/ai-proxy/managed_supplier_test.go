@@ -125,6 +125,8 @@ func TestManagedSupplierHeadersAndBodyReachTheSoleBusinessSender(t *testing.T) {
 	}{
 		{"qwen-compatible", `{"type":"qwen","qwenEnableCompatible":true}`, managedProtocolChat, "/compatible-mode/v1/chat/completions", "authorization", "Bearer controlled-upstream-key"},
 		{"azure", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/upstream-model?api-version=2024-10-21"}`, managedProtocolChat, "/openai/deployments/upstream-model/chat/completions?api-version=2024-10-21", "api-key", "controlled-upstream-key"},
+		{"azure-frozen-deployment", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/other-deployment?api-version=2024-10-21"}`, managedProtocolChat, "/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21", "api-key", "controlled-upstream-key"},
+		{"azure-frozen-full-url", `{"type":"azure","azureServiceUrl":"https://wire.example/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21"}`, managedProtocolChat, "/openai/deployments/other-deployment/chat/completions?api-version=2024-10-21", "api-key", "controlled-upstream-key"},
 		{"claude", `{"type":"claude","claudeVersion":"fixture-version"}`, managedProtocolMessages, "/v1/messages", "x-api-key", "controlled-upstream-key"},
 		{"claude-code", `{"type":"claude","claudeCodeMode":true,"claudeVersion":"fixture-version"}`, managedProtocolMessages, "/v1/messages?beta=true", "authorization", "Bearer controlled-upstream-key"},
 	} {

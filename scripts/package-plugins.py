@@ -61,6 +61,8 @@ def prepare(root: Path, plugins: list[str] | None = None) -> None:
         with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as package:
             descriptor = package.extractfile("package.json").read()
         declared = validate_document(descriptor)
+        if (declared["document"]["plugin_name"], declared["document"]["plugin_version"]) != (source.name, source.version):
+            raise ValueError("package metadata identity differs from selected source VERSION: " + source.name)
         published = registered.get((source.name, source.version))
         if published is not None:
             original = parse_json(registered_store.read_file(source.name, source.version, "package.json"))
