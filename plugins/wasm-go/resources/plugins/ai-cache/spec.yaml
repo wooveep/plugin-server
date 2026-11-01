@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-cache/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-cache/README_EN.md
-  version: 2.0.9
+  version: 2.0.10
   contact:
     name: johnlanni
   gatewayMinVersion: 2.0.0
@@ -1109,6 +1109,23 @@ spec:
         cache_policy_version: cache-policy-v1
         fail_policy: open
   routeConfigSchema:
+    x-higress-external-resources:
+    - kind: redis
+      registryType: dns
+      domainPath: redis_stream.service_name
+      portPath: redis_stream.service_port
+      projectedNamePath: redis_stream.service_name
+    - kind: redis
+      registryType: dns
+      domainPath: materialized_lookup.redis.service_name
+      portPath: materialized_lookup.redis.service_port
+      projectedNamePath: materialized_lookup.redis.service_name
+    - kind: http-callout
+      registryType: dns
+      domainPath: console_lookup.service_name
+      portPath: console_lookup.service_port
+      projectedNamePath: console_lookup.service_name
+      protocol: http
     openAPIV3Schema:
       title: ai-cache
       type: object
