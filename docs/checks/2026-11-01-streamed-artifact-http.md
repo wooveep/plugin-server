@@ -8,4 +8,4 @@
 
 按固定 `requirements.lock` 的独立 Python3.12.13 环境，`python -m unittest discover -s tests -v` 共 **117通过、0跳过**；[统一批次](artifact-streaming-20261101/full-python-green-command.json)覆盖有界并发下载、所有消费者完整SHA/长度、HEAD、损坏拒绝，以及原不可变存储、提交/查询、保留、配置转换和来源验证。并发读取堆峰值低于32MiB的回归预算。初次pytest的导入路径、借用环境缺jsonschema两次启动失败未计为产品RED；正式RED/GREEN使用同一隔离锁定依赖环境和原始源码副本。
 
-运行镜像仍使用原Dockerfile固定Python3.13.5。后续仅更新plugin-server镜像，沿原95个制品与原PVC验证实际Gateway冷下载和HTTP字节；本页源码结果尚不代表修复已部署，部署与双节点恢复结果将在交付仓统一回填。不增加内存配额、下载重试框架或模型重发来掩盖该故障。
+运行镜像仍使用原Dockerfile固定Python3.13.5。后续仅更新plugin-server镜像，沿原95个制品与原PVC验证实际Gateway冷下载和HTTP字节；Helm141已实际交付，95版本/950成员完整HTTP大小与SHA核对通过；第二节点Gateway独立冷启65.469秒，plugin-server原Pod零重启。冷启、原Redis配置故障的处理、三次正常对照及双Pod原期限竞争的实际结果见[交付仓权威回执](https://github.com/wooveep/modelfusion-deploy/blob/5527a70/docs/checks/2026-11-01-streaming-health-peer.md)。不增加内存配额、下载重试框架或模型重发来掩盖该故障。
