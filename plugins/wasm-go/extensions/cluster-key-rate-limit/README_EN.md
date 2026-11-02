@@ -29,7 +29,7 @@ It supports three rate limiting modes:
 ## Operational Attributes
 
 - **Plugin execution phase**: `Default phase`
-- **Plugin execution priority**: `20`
+- **Plugin execution priority**: `275`, after authentication and quota checks and before an AI proxy takes ownership of the request.
 
 ## Configuration Instructions
 

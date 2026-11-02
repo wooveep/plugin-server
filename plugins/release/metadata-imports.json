@@ -1193,6 +1193,13 @@
       "original_spec_sha256": "1919b9d9b13f7b33977987b43be291c025d731221c8893599f90456145c01924",
       "new_spec_sha256": "0dc9e44795469124fee579f20a2c9016e888cd3f98e2fa8566d2ee8e99c85842",
       "version": "2.0.3"
+    },
+    {
+      "plugin": "cluster-key-rate-limit",
+      "operation": "order request counting before managed AI dispatch",
+      "original_spec_sha256": "0edb9f355fce5fdd66d369ca50c1a6bb15f6650c887bdfe629a0574daddd4ad7",
+      "new_spec_sha256": "5921feabb3e2307dad74e2718b37526850c2fca490247ee4e55fdf4aad40088a",
+      "version": "2.0.4"
     }
   ],
   "missing_metadata": [],
@@ -1291,7 +1298,7 @@
     "basic-auth": "c0676147744d2dd944b3fdd86deac7cb9faee303266bbb46b0f8fa07fcf2d222",
     "bot-detect": "e24405d48690446636c1b919b327e39a0fd82a868483fe947feb53442d57e6b0",
     "cache-control": "1e0ee86edeef1aeef375f60aa0582baefd73daea073d2de0af8c570b811773e5",
-    "cluster-key-rate-limit": "0edb9f355fce5fdd66d369ca50c1a6bb15f6650c887bdfe629a0574daddd4ad7",
+    "cluster-key-rate-limit": "5921feabb3e2307dad74e2718b37526850c2fca490247ee4e55fdf4aad40088a",
     "cors": "764a680a08880bb127d0295670d8322a0b3415c2e48c567e1b8ad8f02f747dda",
     "custom-response": "5dda32042861fe995c19f2ce127826e9f5886081e5c21847d389fe8e2bd2d61b",
     "de-graphql": "1eaaaf96a0d928ebed980d4ebb57d49b37ff232bd9388dcee62039c2c65ae019",
@@ -1470,9 +1477,9 @@
     },
     {
       "plugin": "cluster-key-rate-limit",
-      "version": "2.0.3",
+      "version": "2.0.4",
       "path": "plugins/wasm-go/resources/plugins/cluster-key-rate-limit/spec.yaml",
-      "sha256": "0edb9f355fce5fdd66d369ca50c1a6bb15f6650c887bdfe629a0574daddd4ad7"
+      "sha256": "5921feabb3e2307dad74e2718b37526850c2fca490247ee4e55fdf4aad40088a"
     },
     {
       "plugin": "cors",

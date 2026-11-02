@@ -2029,7 +2029,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/cluster-key-rate-limit",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "cors",
