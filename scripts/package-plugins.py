@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -95,31 +96,51 @@ def prepare(root: Path, plugins: list[str] | None = None) -> None:
 
 def ingest(root: Path, policy_file: Path, base_url: str) -> None:
     policy = load_policy(policy_file)
-    store = ArtifactStore(root / "dist/plugins", policy=policy, public_base_url=base_url)
-    existing = {(item["plugin_name"], item["plugin_version"]): item for item in store.list_manifests()}
-    for source in select_releases(root):
-        candidate = root / "build/packages" / source.name / source.version
-        review = parse_json((candidate / "review.json").read_bytes())
-        registered = existing.get((source.name, source.version))
-        if registered is not None:
-            if registered["content_digest"] != review["content_digest"]:
-                raise StorageConflict("version_conflict")
-            print(json.dumps({"registered": source.name, "reused": True, "artifact_id": registered["artifact_id"]}), flush=True)
-            continue
-        raw = (candidate / "package.tgz").read_bytes()
-        if digest(raw) != review["archive_digest"]:
-            raise ValueError("candidate changed since preparation: " + source.name)
-        receipt = store.commit("release-" + review["content_digest"].split(":")[1], raw,
-                               created_by="plugin-server-source-release", expected_identity=(source.name, source.version))
-        print(json.dumps({"registered": source.name, "artifact_id": receipt["artifact_id"]}), flush=True)
-    shutil.copyfile(policy_file, root / "dist/policy.json")
-    subprocess.run([sys.executable, str(root / "scripts/verify-release-store.py"),
-                    "--plugins-dir", str(store.root), "--catalog", str(root / "plugins/release/catalog.json"),
-                    "--output", str(root / "dist/plugin-catalog.json")], cwd=root, check=True)
-    inventory = root / "dist/artifact-inventory.json"
-    inventory.unlink(missing_ok=True)
-    subprocess.run([sys.executable, str(root / "scripts/export-artifact-inventory.py"),
-                    "--plugins-dir", str(store.root), "--output", str(inventory)], cwd=root, check=True)
+    releases = select_releases(root)
+    destination = root / "dist"
+    original = ArtifactStore(destination / "plugins") if (destination / ".plugins-artifact-state/state.sqlite3").is_file() else None
+    existing = {(item["plugin_name"], item["plugin_version"]): item
+                for item in original.list_manifests()} if original else {}
+    (root / "build").mkdir(exist_ok=True)
+    # dist is one complete local delivery, not the online persistent store.
+    # Reuse the image export's registered-store port to preserve identities.
+    with tempfile.TemporaryDirectory(prefix="release-dist-", dir=root / "build") as temporary:
+        staged = Path(temporary) / "dist"
+        store = ArtifactStore(staged / "plugins", policy=policy, public_base_url=base_url)
+        retained = [existing[(source.name, source.version)] for source in releases
+                    if (source.name, source.version) in existing]
+        if original is not None:
+            store.seed_registered(original.root, retained)
+        for source in releases:
+            candidate = root / "build/packages" / source.name / source.version
+            review = parse_json((candidate / "review.json").read_bytes())
+            registered = existing.get((source.name, source.version))
+            if registered is not None:
+                if registered["content_digest"] != review["content_digest"]:
+                    raise StorageConflict("version_conflict")
+                print(json.dumps({"registered": source.name, "reused": True, "artifact_id": registered["artifact_id"]}), flush=True)
+                continue
+            raw = (candidate / "package.tgz").read_bytes()
+            if digest(raw) != review["archive_digest"]:
+                raise ValueError("candidate changed since preparation: " + source.name)
+            receipt = store.commit("release-" + review["content_digest"].split(":")[1], raw,
+                                   created_by="plugin-server-source-release", expected_identity=(source.name, source.version))
+            print(json.dumps({"registered": source.name, "artifact_id": receipt["artifact_id"]}), flush=True)
+        shutil.copyfile(policy_file, staged / "policy.json")
+        subprocess.run([sys.executable, str(root / "scripts/verify-release-store.py"),
+                        "--plugins-dir", str(store.root), "--catalog", str(root / "plugins/release/catalog.json"),
+                        "--output", str(staged / "plugin-catalog.json")], cwd=root, check=True)
+        subprocess.run([sys.executable, str(root / "scripts/export-artifact-inventory.py"),
+                        "--plugins-dir", str(store.root), "--output", str(staged / "artifact-inventory.json")], cwd=root, check=True)
+        previous = Path(temporary) / "previous-dist"
+        if destination.exists():
+            destination.rename(previous)
+        try:
+            staged.rename(destination)
+        except OSError:
+            if previous.exists():
+                previous.rename(destination)
+            raise
 
 
 def main() -> int:

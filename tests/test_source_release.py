@@ -7,11 +7,13 @@ import unittest
 from unittest.mock import patch
 
 from artifact_contract import ValidationPolicy, digest, json_bytes
+from artifact_packaging import package_plugin
 from artifact_storage import ArtifactStore, StorageConflict
 from plugin_catalog import select_releases, source_inputs
 
 ROOT = Path(__file__).resolve().parents[1]
 prepare = runpy.run_path(str(ROOT / 'scripts/package-plugins.py'))['prepare']
+ingest = runpy.run_path(str(ROOT / 'scripts/package-plugins.py'))['ingest']
 
 
 class SourceReleaseTests(unittest.TestCase):
@@ -96,3 +98,40 @@ class SourceReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(StorageConflict, 'version_conflict'):
             prepare(self.root)
         self.assertEqual(self.store.read_file('key-auth', '1.0.3', 'archive.tgz'), self.original_archive)
+
+    def test_local_dist_rebuild_keeps_only_formal_release_and_original_identity(self):
+        for name in ['verify-release-store.py', 'export-artifact-inventory.py']:
+            (self.root / 'scripts' / name).symlink_to(ROOT / 'scripts' / name)
+        policy = self.root / 'build/policy.json'
+        policy.write_bytes(json_bytes({'provenance_receipts': [{
+            key: self.original_review[key]
+            for key in ['source_digest', 'wasm_digest', 'content_digest']}]}))
+        spec = json_bytes({'apiVersion': '1.0.0', 'info': {'name': 'key-auth', 'version': '1.0.2'},
+                           'spec': {'phase': 'default', 'priority': 1, 'configSchema': {
+                               'openAPIV3Schema': {'type': 'object', 'additionalProperties': False}}}})
+        self.store.commit('historical', package_plugin(
+            spec=spec, wasm=self.wasm, defaults=b'{}',
+            documentation={'docs/README.md': b'Old local release'},
+            source={'kind': 'legacy_unknown', 'verification': 'unknown'}))
+        for _ in range(2):
+            ingest(self.root, policy, 'http://plugins.example.test')
+            current = ArtifactStore(self.root / 'dist/plugins')
+            self.assertEqual(current.list_manifests(), [self.original_receipt['manifest']])
+            self.assertFalse((current.root / 'key-auth/1.0.2').exists())
+            self.assertEqual(current.read_file('key-auth', '1.0.3', 'archive.tgz'), self.original_archive)
+            self.assertEqual(json.loads((self.root / 'dist/plugin-catalog.json').read_bytes())['count'], 1)
+            inventory = json.loads((self.root / 'dist/artifact-inventory.json').read_bytes())
+            self.assertEqual([x['artifact_id'] for x in inventory['artifacts']],
+                             [self.original_receipt['artifact_id']])
+
+    def test_incomplete_local_release_preserves_previous_usable_dist(self):
+        policy = self.root / 'build/policy.json'
+        policy.write_bytes(json_bytes({'provenance_receipts': [{
+            key: self.original_review[key]
+            for key in ['source_digest', 'wasm_digest', 'content_digest']}]}))
+        (self.candidate / 'review.json').unlink()
+        with self.assertRaises(FileNotFoundError):
+            ingest(self.root, policy, 'http://plugins.example.test')
+        current = ArtifactStore(self.root / 'dist/plugins')
+        self.assertEqual(current.list_manifests(), [self.original_receipt['manifest']])
+        self.assertEqual(current.read_file('key-auth', '1.0.3', 'archive.tgz'), self.original_archive)

@@ -1,0 +1,41 @@
+{
+  "source_commit": "efb15fc1f8f9a699abb6c7ffc43e93b42b74b716",
+  "previous_versions": 104,
+  "selected_versions": 55,
+  "rpm_package": {
+    "archive_digest": "sha256:4754011bb6d7b9e46d88f5cbff1ed248aa9c51524da30d9b5ace04792fec298e",
+    "build_receipt_digest": "sha256:3a48ae293c7ba88f06965a9d97eb8f7a1bf56222a4bd243e100b7603efd45e51",
+    "content_digest": "sha256:b08616db74e6c8cbbb9ad91c2a66afdac1e57cf1a91c4f83096c020e4f7f1fb6",
+    "current_build_commit": "efb15fc1f8f9a699abb6c7ffc43e93b42b74b716",
+    "current_build_inputs_digest": "sha256:f7f3aaa9a179ce96f2751a0ca45dbfbb3c4cca053bc6bbec9be75eb53124498f",
+    "environment_refs": [],
+    "package": "build/packages/cluster-key-rate-limit/2.0.4/package.tgz",
+    "plugin_name": "cluster-key-rate-limit",
+    "plugin_version": "2.0.4",
+    "source_commit": "efb15fc1f8f9a699abb6c7ffc43e93b42b74b716",
+    "source_digest": "sha256:d323b6e5e32300e0fcc40129078b2d73932c93546e9965fb84a66192777255ec",
+    "source_inputs_digest": "sha256:f7f3aaa9a179ce96f2751a0ca45dbfbb3c4cca053bc6bbec9be75eb53124498f",
+    "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+    "wasm_digest": "sha256:6800a60e03d950c890908f80ae7935e213eb5b08f2fb73caa210d4e259d8942c"
+  },
+  "rpm_wasm_unchanged": true,
+  "original_rpm_tests_passed": 96,
+  "original_rpm_test_log_sha256": "ea2f5fbe403c714018f50cf35e0d727312cf01690978389be1db823eb4ff7185",
+  "online_store_modified": false,
+  "status": "PASSED",
+  "current_versions": 55,
+  "original_formal_manifests_preserved": 54,
+  "retired_local_versions": 50,
+  "local_state_sha256": "b570809155352b42fc2c085494982fb39490cf7e8904f69ccd54c7ca6710cdd7",
+  "catalog_sha256": "11fcf6b84c9d08eac80e6b66bd545692dfef606bb697d196286051a6cb6dd8cd",
+  "inventory_sha256": "fa6dd1f379926c1b26a977924914a5b261d6ea891442d7f70176093f0854214a",
+  "packaging_source_checks": {
+    "command": "make test PYTHON=.venv/bin/python",
+    "passed": 125,
+    "note": "Completed in the preceding source phase; packaging sources are unchanged and this is not a repeated execution."
+  },
+  "packaging_source_sha256": {
+    "scripts/package-plugins.py": "a9f0f82ec77b55a22f51fe13413b12904227937322e834af305ccfc02d5587dc",
+    "tests/test_source_release.py": "4fcb98588ccd71401848f1512da2ca8898811df9820572ba9df8774ee83889ff"
+  }
+}
