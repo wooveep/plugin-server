@@ -75,7 +75,7 @@ func authorizeManagedTools(ctx wrapper.HttpContext, s *managedExecutionState, bo
 			return
 		}
 	}
-	if err := s.config.redis.Command([]interface{}{"GET", p.PriceKey}, func(value resp.Value) {
+	if err := s.config.priceRedis.Command([]interface{}{"GET", p.PriceKey}, func(value resp.Value) {
 		if value.Error() != nil || value.IsNull() {
 			rejectManagedPreparation(ctx, s, 503, "tool_price_unavailable")
 			return

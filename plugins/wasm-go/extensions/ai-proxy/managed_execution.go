@@ -140,15 +140,16 @@ type managedRedisClient interface {
 }
 
 type managedExecutionConfig struct {
-	vendor   *supplier.ManagedAdapter
-	settings managedSettings
-	release  managedRelease
-	redis    managedRedisClient
-	outbox   *executionfacts.Outbox
-	profile  managedProtocolProfile
-	health   *managedHealthRuntime
-	targets  map[string]*managedExecutionConfig
-	mapper   json.RawMessage
+	vendor     *supplier.ManagedAdapter
+	settings   managedSettings
+	release    managedRelease
+	redis      managedRedisClient
+	priceRedis managedRedisClient
+	outbox     *executionfacts.Outbox
+	profile    managedProtocolProfile
+	health     *managedHealthRuntime
+	targets    map[string]*managedExecutionConfig
+	mapper     json.RawMessage
 }
 
 // configureManagedExecution is called for every global and rule parse. Clearing
@@ -226,6 +227,9 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 		return errors.New("managed execution Redis initialization failed")
 	}
 	parsed.redis = client
+	// Admission reads resume this HTTP request; durable event writes retain their
+	// existing plugin-owned dispatcher after the request has ended.
+	parsed.priceRedis = client.RedisClusterClient
 	parsed.outbox = executionfacts.NewOutbox()
 	wrapper.RegisterTickFunc(1000, parsed.outbox.Retry)
 	parsed.health, err = configureManagedHealth(&parsed)

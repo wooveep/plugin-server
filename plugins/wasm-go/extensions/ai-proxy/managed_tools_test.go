@@ -38,7 +38,7 @@ func TestManagedToolsUseOneSendAndOriginalV5Observation(t *testing.T) {
 	h := newManagedHost(t, fixture)
 	configuration := h.cfg.ManagedExecution.(*managedExecutionConfig)
 	originalRedis := configuration.redis
-	configuration.redis = managedMediaTestRedis{command: func(args []interface{}, callback wrapper.RedisResponseCallback) error {
+	configuration.priceRedis = managedMediaTestRedis{command: func(args []interface{}, callback wrapper.RedisResponseCallback) error {
 		if args[0] == "GET" {
 			callback(resp.StringValue("web_search,code_interpreter"))
 			return nil
@@ -72,6 +72,26 @@ func TestManagedToolsUseOneSendAndOriginalV5Observation(t *testing.T) {
 	delivery, err := executionfacts.DecodeToolDeliveryBridge(bridge)
 	if err != nil || delivery.Envelope().ToolUsage[fixedtools.WebSearch].Count != "2" {
 		t.Fatalf("delivery did not retain tools: %v", err)
+	}
+}
+
+func TestToolPriceAvailabilityReadRetainsOriginalHTTPContext(t *testing.T) {
+	fixture := managedConfigFixture()
+	fixture["provider"] = map[string]interface{}{"type": "deepseek", "apiTokens": []string{"controlled-upstream-key"}}
+	settings := fixture["managed_execution"].(managedSettings)
+	settings.InputProtocol, settings.UpstreamProtocol, settings.UpstreamPath = managedProtocolResponses, managedProtocolResponses, "/responses"
+	settings.ToolPolicy = &managedToolSettings{Allowed: []fixedtools.Tool{fixedtools.WebSearch}, Supported: []fixedtools.Tool{fixedtools.WebSearch}, Supplier: "deepseek", PriceKey: "modelfusion:tool-prices:asset-1"}
+	fixture["managed_execution"] = settings
+	h := newManagedHost(t, fixture)
+	original := []byte(`{"model":"public-model","input":"hello","tools":[{"type":"web_search"}]}`)
+	h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("upstream-model"), 1))
+	lookups := h.host.GetRedisCalloutAttributesFromContext(h.id)
+	if len(lookups) != 1 || len(h.host.GetCalloutAttributesFromContext(h.id)) != 0 {
+		t.Fatal("tool availability must read in the original HTTP context before the supplier send")
+	}
+	h.host.CallOnRedisCallResponse(lookups[0].CalloutID, 0, []byte("$10\r\nweb_search\r\n"))
+	if calls := h.host.GetCalloutAttributesFromContext(h.id); len(calls) != 1 {
+		t.Fatal("the price callback did not continue the original single supplier send")
 	}
 }
 
