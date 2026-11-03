@@ -2883,3 +2883,7 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 已登记客户向量路由仅按输入 Token 计量。合法上游输入用量优先，明确零保留；缺失或无效时按原文本／批量文本估算。估算用量会以 `usage.prompt_tokens`、`usage.total_tokens` 和 `usage.source=estimator` 返回，供客户、TPM 和统计使用；向量维度不计输出 Token。
 
 客户收费以成功发起上游调用为界：后续超时、连接失败也按可得输入量计算销售费及预计采购成本。此口径不表示供应商已经收到请求。发送前格式／授权／余额拒绝不收费，调用重试各记采购、客户销售仍按原请求结算一次。内部服务调用继续使用其已冻结的身份和事实契约。
+
+## Responses fallback fidelity regression
+
+Preserves text formats, explicit sampling and function constraints, reasoning effort, store and shared cache options. Non-streaming messages carry response-derived IDs. Unsupported state/background/summary/explicit-cache behavior is rejected. This isolated candidate uses the accepted 2.0.31 baseline and does not include the separate fixed-tool C batch.

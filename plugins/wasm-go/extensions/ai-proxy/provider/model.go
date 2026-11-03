@@ -154,6 +154,7 @@ type function struct {
 	Description string                 `json:"description,omitempty"`
 	Name        string                 `json:"name"`
 	Parameters  map[string]interface{} `json:"parameters,omitempty"`
+	Strict      *bool                  `json:"strict,omitempty"`
 }
 
 type toolChoice struct {

@@ -11,21 +11,56 @@ import (
 )
 
 type responsesRequest struct {
-	Model              string            `json:"model"`
-	Instructions       string            `json:"instructions,omitempty"`
-	Input              json.RawMessage   `json:"input"`
-	Stream             bool              `json:"stream,omitempty"`
-	Temperature        *float64          `json:"temperature,omitempty"`
-	TopP               *float64          `json:"top_p,omitempty"`
-	PresencePenalty    *float64          `json:"presence_penalty,omitempty"`
-	FrequencyPenalty   *float64          `json:"frequency_penalty,omitempty"`
-	MaxOutputTokens    int               `json:"max_output_tokens,omitempty"`
-	User               string            `json:"user,omitempty"`
-	Metadata           map[string]string `json:"metadata,omitempty"`
-	Tools              []responsesTool   `json:"tools,omitempty"`
-	ToolChoice         json.RawMessage   `json:"tool_choice,omitempty"`
-	PreviousResponseID string            `json:"previous_response_id,omitempty"`
-	Conversation       any               `json:"conversation,omitempty"`
+	Model                string              `json:"model"`
+	Instructions         string              `json:"instructions,omitempty"`
+	Input                json.RawMessage     `json:"input"`
+	Stream               bool                `json:"stream,omitempty"`
+	Temperature          *float64            `json:"temperature,omitempty"`
+	TopP                 *float64            `json:"top_p,omitempty"`
+	PresencePenalty      *float64            `json:"presence_penalty,omitempty"`
+	FrequencyPenalty     *float64            `json:"frequency_penalty,omitempty"`
+	MaxOutputTokens      int                 `json:"max_output_tokens,omitempty"`
+	User                 string              `json:"user,omitempty"`
+	Metadata             map[string]string   `json:"metadata,omitempty"`
+	Store                *bool               `json:"store,omitempty"`
+	Background           bool                `json:"background,omitempty"`
+	Reasoning            *responsesReasoning `json:"reasoning,omitempty"`
+	PromptCacheKey       string              `json:"prompt_cache_key,omitempty"`
+	PromptCacheRetention string              `json:"prompt_cache_retention,omitempty"`
+	PromptCacheOptions   json.RawMessage     `json:"prompt_cache_options,omitempty"`
+	Text                 *responsesText      `json:"text,omitempty"`
+	Tools                []responsesTool     `json:"tools,omitempty"`
+	ToolChoice           json.RawMessage     `json:"tool_choice,omitempty"`
+	ParallelToolCalls    *bool               `json:"parallel_tool_calls,omitempty"`
+	PreviousResponseID   string              `json:"previous_response_id,omitempty"`
+	Conversation         any                 `json:"conversation,omitempty"`
+}
+
+type responsesReasoning struct {
+	Effort          string  `json:"effort,omitempty"`
+	Summary         *string `json:"summary,omitempty"`
+	GenerateSummary *string `json:"generate_summary,omitempty"`
+}
+
+type responsesText struct {
+	Format *responsesTextFormat `json:"format,omitempty"`
+}
+
+type responsesTextFormat struct {
+	Type string `json:"type"`
+	responsesJSONSchema
+}
+
+type responsesJSONSchema struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Schema      json.RawMessage `json:"schema,omitempty"`
+	Strict      *bool           `json:"strict,omitempty"`
+}
+
+type responsesChatResponseFormat struct {
+	Type       string               `json:"type"`
+	JSONSchema *responsesJSONSchema `json:"json_schema,omitempty"`
 }
 
 type responsesTool struct {
@@ -33,6 +68,7 @@ type responsesTool struct {
 	Name        string                 `json:"name,omitempty"`
 	Description string                 `json:"description,omitempty"`
 	Parameters  map[string]interface{} `json:"parameters,omitempty"`
+	Strict      *bool                  `json:"strict,omitempty"`
 }
 
 type responsesMessageInput struct {
@@ -128,6 +164,15 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 	if err := json.Unmarshal(body, &request); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal responses request: %w", err)
 	}
+	if request.Background {
+		return nil, errors.New("background is unsupported in Responses fallback mode")
+	}
+	if options := bytes.TrimSpace(request.PromptCacheOptions); len(options) > 0 && !bytes.Equal(options, []byte("null")) {
+		return nil, errors.New("prompt_cache_options is unsupported in Responses fallback mode")
+	}
+	if request.Reasoning != nil && (request.Reasoning.Summary != nil || request.Reasoning.GenerateSummary != nil) {
+		return nil, errors.New("reasoning summary is unsupported in Responses fallback mode")
+	}
 
 	messages, err := convertResponsesInputToChatMessages(request.Input)
 	if err != nil {
@@ -141,28 +186,20 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 	}
 
 	chatRequest := chatCompletionRequest{
-		Model:      request.Model,
-		Messages:   messages,
-		Stream:     request.Stream,
-		User:       request.User,
-		Metadata:   request.Metadata,
-		ToolChoice: nil,
-		Tools:      nil,
+		Model:                request.Model,
+		Messages:             messages,
+		Stream:               request.Stream,
+		User:                 request.User,
+		Metadata:             request.Metadata,
+		ParallelToolCalls:    request.ParallelToolCalls,
+		PromptCacheKey:       request.PromptCacheKey,
+		PromptCacheRetention: request.PromptCacheRetention,
+	}
+	if request.Reasoning != nil {
+		chatRequest.ReasoningEffort = request.Reasoning.Effort
 	}
 	if request.Stream {
 		chatRequest.StreamOptions = &streamOptions{IncludeUsage: true}
-	}
-	if request.Temperature != nil {
-		chatRequest.Temperature = *request.Temperature
-	}
-	if request.TopP != nil {
-		chatRequest.TopP = *request.TopP
-	}
-	if request.PresencePenalty != nil {
-		chatRequest.PresencePenalty = *request.PresencePenalty
-	}
-	if request.FrequencyPenalty != nil {
-		chatRequest.FrequencyPenalty = *request.FrequencyPenalty
 	}
 	if request.MaxOutputTokens > 0 {
 		chatRequest.MaxCompletionTokens = request.MaxOutputTokens
@@ -177,7 +214,37 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 		return nil, err
 	}
 	chatRequest.ToolChoice = toolChoice
-	return json.Marshal(chatRequest)
+	var responseFormat *responsesChatResponseFormat
+	if request.Text != nil && request.Text.Format != nil {
+		format := request.Text.Format
+		switch format.Type {
+		case "text", "json_object":
+			responseFormat = &responsesChatResponseFormat{Type: format.Type}
+		case "json_schema":
+			responseFormat = &responsesChatResponseFormat{Type: format.Type, JSONSchema: &format.responsesJSONSchema}
+		default:
+			return nil, fmt.Errorf("text.format type %q is unsupported in Responses fallback mode", format.Type)
+		}
+	}
+	// Override the shared Chat scalar fields only at this conversion boundary so
+	// explicit zero values survive without changing other providers' defaults.
+	return json.Marshal(struct {
+		chatCompletionRequest
+		Temperature      *float64                     `json:"temperature,omitempty"`
+		TopP             *float64                     `json:"top_p,omitempty"`
+		PresencePenalty  *float64                     `json:"presence_penalty,omitempty"`
+		FrequencyPenalty *float64                     `json:"frequency_penalty,omitempty"`
+		ResponseFormat   *responsesChatResponseFormat `json:"response_format,omitempty"`
+		Store            *bool                        `json:"store,omitempty"`
+	}{
+		chatCompletionRequest: chatRequest,
+		Temperature:           request.Temperature,
+		TopP:                  request.TopP,
+		PresencePenalty:       request.PresencePenalty,
+		FrequencyPenalty:      request.FrequencyPenalty,
+		ResponseFormat:        responseFormat,
+		Store:                 request.Store,
+	})
 }
 
 func convertResponsesInputToChatMessages(input json.RawMessage) ([]chatMessage, error) {
@@ -244,6 +311,7 @@ func convertResponsesTools(tools []responsesTool) ([]tool, error) {
 				Name:        responsesTool.Name,
 				Description: responsesTool.Description,
 				Parameters:  responsesTool.Parameters,
+				Strict:      responsesTool.Strict,
 			},
 		})
 	}
@@ -326,6 +394,7 @@ func convertChatCompletionResponseToResponses(body []byte) ([]byte, error) {
 
 	output := convertChatCompletionMessageToResponsesOutput(choice.Message)
 	if output.Content != nil && len(*output.Content) > 0 {
+		output.ID = "msg_" + chatResponse.ID
 		response.Output = []responsesOutputItem{output}
 	}
 	for _, call := range choice.Message.ToolCalls {
