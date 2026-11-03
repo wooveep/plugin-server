@@ -37,7 +37,13 @@ func NewManagedAdapter(config ProviderConfig, apiName ApiName, upstreamPath stri
 	case providerTypeOpenAI, providerTypeGeneric:
 		return nil, nil
 	case providerTypeQwen:
-		if apiName == ApiNameAnthropicMessages || !config.qwenEnableCompatible && apiName != ApiNameChatCompletion && apiName != ApiNameEmbeddings {
+		// The frozen binding selects the wire protocol independently of the
+		// shared connection's historical compatible-mode default.
+		if apiName == ApiNameAnthropicMessages || apiName == ApiNameResponses || strings.HasPrefix(upstreamPath, "/compatible-mode/v1/") {
+			config.qwenEnableCompatible = true
+			config.providerBasePath = ""
+		}
+		if !config.qwenEnableCompatible && apiName != ApiNameChatCompletion && apiName != ApiNameEmbeddings {
 			return nil, errors.New("managed Qwen API is unsupported")
 		}
 	case providerTypeAzure:
@@ -140,6 +146,10 @@ func (a *ManagedAdapter) Prepare(ctx wrapper.HttpContext, body []byte, headers h
 	ctx.SetContext(ctxKeyIsStreaming, streaming)
 	if streaming {
 		headers.Set("accept", "text/event-stream")
+	}
+	if a.apiName == ApiNameAnthropicMessages && headers.Get("anthropic-version") == "" {
+		// Both registered Messages suppliers accept this protocol revision.
+		headers.Set("anthropic-version", "2023-06-01")
 	}
 	for _, name := range []string{"authorization", "x-api-key", "api-key"} {
 		headers.Del(name)

@@ -144,3 +144,38 @@ func TestManagedZhipuKeepsCodePlanAndConvertsReasoning(t *testing.T) {
 	require.False(t, gjson.GetBytes(body, "reasoning_effort").Exists())
 	require.Equal(t, "Bearer pool-b", headers.Get("authorization"))
 }
+
+func TestManagedQwenAndDeepSeekProtocolsCoexistWithoutConnectionMutation(t *testing.T) {
+	for _, supplier := range []string{"qwen", "deepseek"} {
+		t.Run(supplier, func(t *testing.T) {
+			var config ProviderConfig
+			config.FromJson(gjson.Parse(`{"type":"` + supplier + `","apiTokens":["supplier-key"],"qwenEnableCompatible":false,"modelMapping":{}}`))
+			require.NoError(t, config.Validate())
+			paths := []string{"/compatible-mode/v1/chat/completions", "/compatible-mode/v1/responses", "/apps/anthropic/v1/messages"}
+			if supplier == "deepseek" {
+				paths = []string{"/v1/chat/completions", "/responses", "/anthropic/v1/messages"}
+			}
+			for i, api := range []ApiName{ApiNameChatCompletion, ApiNameResponses, ApiNameAnthropicMessages} {
+				adapter, err := NewManagedAdapter(config, api, paths[i])
+				require.NoError(t, err)
+				headers := make(http.Header)
+				headers.Set("x-api-key", "client-key")
+				body := []byte(`{"model":"frozen-model","messages":[{"role":"user","content":[{"type":"text","text":"hello"}]}],"max_tokens":16}`)
+				if api == ApiNameResponses {
+					body = []byte(`{"model":"frozen-model","input":"hello","max_output_tokens":16}`)
+				}
+				prepared, err := adapter.Prepare(&managedAdapterContext{newMapCtx()}, body, headers, "frozen-model", "supplier-key", false)
+				require.NoError(t, err)
+				require.JSONEq(t, string(body), string(prepared))
+				require.Equal(t, paths[i], headers.Get(":path"))
+				require.Equal(t, "Bearer supplier-key", headers.Get("authorization"))
+				require.Empty(t, headers.Get("x-api-key"))
+				require.False(t, adapter.NativeQwen())
+				if api == ApiNameAnthropicMessages {
+					require.Equal(t, "2023-06-01", headers.Get("anthropic-version"))
+				}
+			}
+			require.False(t, config.qwenEnableCompatible)
+		})
+	}
+}

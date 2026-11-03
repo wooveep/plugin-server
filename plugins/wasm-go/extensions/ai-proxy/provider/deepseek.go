@@ -13,6 +13,7 @@ import (
 
 const (
 	deepseekDomain                = "api.deepseek.com"
+	deepseekResponsesPath         = "/responses"
 	deepseekAnthropicMessagesPath = "/anthropic/v1/messages"
 )
 
@@ -28,6 +29,7 @@ func (m *deepseekProviderInitializer) ValidateConfig(config *ProviderConfig) err
 func (m *deepseekProviderInitializer) DefaultCapabilities() map[string]string {
 	return map[string]string{
 		string(ApiNameChatCompletion):    PathOpenAIChatCompletions,
+		string(ApiNameResponses):         deepseekResponsesPath,
 		string(ApiNameModels):            PathOpenAIModels,
 		string(ApiNameAnthropicMessages): deepseekAnthropicMessagesPath,
 	}
