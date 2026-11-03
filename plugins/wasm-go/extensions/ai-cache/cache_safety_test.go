@@ -150,6 +150,44 @@ func TestCacheSafetyUsagePresence(t *testing.T) {
 	})
 }
 
+func TestFixedToolsBypassBothCacheReadAndWrite(t *testing.T) {
+	test.RunGoTest(t, func(t *testing.T) {
+		for _, tool := range []string{"web_search", "web_extractor", "code_interpreter", "image_search", "web_search_image"} {
+			t.Run(tool, func(t *testing.T) {
+				host, action := cacheSafetyRequest(t, "openai_responses", `{"model":"qwen-turbo","input":"hello","tools":[{"type":"`+tool+`"}]}`)
+				defer host.Reset()
+				require.Equal(t, types.ActionContinue, action)
+				require.Empty(t, host.GetRedisCalloutAttributes())
+				host.CallOnHttpResponseHeaders([][2]string{{":status", "200"}, {"content-type", "application/json"}})
+				host.CallOnHttpResponseBody([]byte(`{"status":"completed","output_text":"answer","usage":{"input_tokens":4,"output_tokens":2}}`))
+				require.Empty(t, host.GetRedisCalloutAttributes(), "tool output must not be cached")
+				require.Empty(t, host.GetHttpCalloutAttributes())
+			})
+		}
+		for _, enabled := range []bool{false, true} {
+			cfg, err := sjson.SetBytes(nativeCacheExecutionConfig(t, true), "fixed_tool_defaults", []string{"web_search"})
+			require.NoError(t, err)
+			host, status := test.NewTestHost(cfg)
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+			require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(nativeCacheExecutionHeaders(true)))
+			body := []byte(nativeCacheTestBody)
+			if !enabled {
+				body, err = sjson.SetBytes(body, "enable_search", false)
+				require.NoError(t, err)
+			}
+			action := host.CallOnHttpRequestBody(body)
+			if enabled {
+				require.Equal(t, types.ActionContinue, action)
+				require.Empty(t, host.GetRedisCalloutAttributes())
+			} else {
+				require.Equal(t, types.ActionPause, action)
+				require.True(t, len(host.GetRedisCalloutAttributes())+len(host.GetHttpCalloutAttributes()) > 0)
+			}
+			host.Reset()
+		}
+	})
+}
+
 func TestCacheSafetyRequestOutputBoundary(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
 		for _, tc := range []struct {

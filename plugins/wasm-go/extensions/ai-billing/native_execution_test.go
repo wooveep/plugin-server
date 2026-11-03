@@ -12,6 +12,7 @@ import (
 
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
+	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	wasmtest "github.com/higress-group/wasm-go/pkg/test"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -538,4 +539,34 @@ func TestNativeBillingPoolRejectsMixedIncompleteOrUnversionedDirectories(t *test
 	if err := configureNativeBilling(gjson.ParseBytes(raw), &cfg); err == nil || cfg.NativeExecution != nil {
 		t.Fatal("v1 accepted a pool field alongside its original scalar")
 	}
+}
+
+func TestNativeBillingConsumesV5ToolsWithoutRewritingOrDoubleAppending(t *testing.T) {
+	wasmtest.RunGoTest(t, func(t *testing.T) {
+		cfg, _ := nativeBillingConfigFixture(t)
+		redis := &nativeBillingTestRedis{}
+		cfg.redisClient = redis
+		ctx, state := nativeBillingRequestFixture(t, cfg)
+		envelope := nativeBillingDeliveryFixture(t, cfg).Envelope()
+		envelope.SchemaVersion = executionfacts.ToolSchemaVersion
+		envelope.PayloadDigest = ""
+		envelope.Usage = &executionfacts.Usage{Status: "reported", Source: "provider", Unit: "token", Quantities: map[string]string{"input": "10", "output": "2"}}
+		envelope.ToolUsage = map[fixedtools.Tool]executionfacts.ToolMeasurement{
+			fixedtools.WebSearch:    {Status: "reported", Count: "2", Source: "provider"},
+			fixedtools.WebExtractor: {Status: "missing", Source: "none", ReasonCode: "count_not_observed"},
+		}
+		snapshot, err := executionfacts.Freeze(envelope)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bridge, err := executionfacts.EncodeToolDeliveryBridge(snapshot)
+		if err != nil {
+			t.Fatal(err)
+		}
+		consumeNativeBillingBridge(ctx, cfg, state, bridge)
+		consumeNativeBillingBridge(ctx, cfg, state, bridge)
+		if len(redis.commands) != 1 || state.delivery == nil || !bytes.Equal([]byte(redis.commands[0][6].(string)), snapshot.Bytes()) {
+			t.Fatal("v5 tool delivery was rejected, rewritten or appended twice")
+		}
+	})
 }

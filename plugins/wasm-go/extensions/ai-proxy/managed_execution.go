@@ -26,6 +26,7 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
+	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
 	"github.com/higress-group/wasm-go/pkg/log"
@@ -116,6 +117,7 @@ type managedRedisSettings struct {
 }
 
 type managedSettings struct {
+	ToolPolicy         *managedToolSettings     `json:"tool_policy,omitempty"`
 	MediaDispatchMode  string                   `json:"media_dispatch_mode,omitempty"`
 	ProducerID         string                   `json:"producer_id"`
 	CallIdentitySource string                   `json:"call_identity_source"`
@@ -238,6 +240,9 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 }
 
 func (c *managedExecutionConfig) validate() error {
+	if err := validateManagedTools(c); err != nil {
+		return err
+	}
 	d := c.release.Descriptor
 	if c.settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission && c.settings.CallIdentitySource != executionfacts.CallIdentitySourceInternal {
 		return errors.New("managed execution requires the original admission call identity capability")
@@ -426,6 +431,7 @@ func managedUniformMember(count int) (int, error) {
 // All request state belongs to this ai-proxy Wasm context. It does not assume
 // that a context map, Go pointer or private envelope crosses a Wasm boundary.
 type managedExecutionState struct {
+	requestedTools, removedTools                               map[fixedtools.Tool]bool
 	config                                                     *managedExecutionConfig
 	sourceConfig                                               *managedExecutionConfig
 	credentialSelected                                         bool
@@ -605,7 +611,7 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if state.internal != nil {
 		checkManagedInternalCall(ctx, state, basis, managedOperation(managed), ready)
 	} else {
-		ready()
+		authorizeManagedTools(ctx, state, body, ready)
 	}
 	return types.ActionPause, true
 }
@@ -614,10 +620,35 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 // conversion installs its Authorization. No callback can choose another member.
 func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecutionState, body []byte) (managedProtocolRequest, bool) {
 	managed := state.config
+	body, err := prepareManagedTools(ctx, state, body)
+	if err != nil {
+		rejectManagedPreparation(ctx, state, 403, "tool_not_open_for_selected_target")
+		return managedProtocolRequest{}, false
+	}
 	request, err := managed.profile.PrepareRequest(body, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue)
 	if err != nil {
 		rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")
 		return managedProtocolRequest{}, false
+	}
+	if policy := managed.settings.ToolPolicy; policy != nil {
+		removed := make(map[fixedtools.Tool]bool, len(state.removedTools)+len(policy.Defaults))
+		for tool := range state.removedTools {
+			removed[tool] = true
+		}
+		for _, tool := range policy.Defaults {
+			if !state.requestedTools[tool] {
+				removed[tool] = true
+			}
+		}
+		if len(removed) > 0 {
+			// Directed text converters can omit supplier extension flags. Reapply
+			// the frozen removals before the supplier adapter reads its defaults.
+			request.Body, err = fixedtools.Filter(request.Body, managed.profile.UpstreamProtocol, nil, removed)
+			if err != nil {
+				rejectManagedPreparation(ctx, state, 400, "invalid_effective_tool_request")
+				return managedProtocolRequest{}, false
+			}
+		}
 	}
 	if managed.profile.InputProtocol == managedProtocolDashScopeText || managed.profile.InputProtocol == managedProtocolDashScopeMultimodal {
 		request.Streaming = state.streaming
@@ -749,6 +780,9 @@ func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot,
 		CredentialRef: s.config.release.CredentialRef, CredentialRevision: s.config.release.CredentialRevision,
 		SelectionDigest: digest, UpstreamModel: d.UpstreamModel, OutboundBodyDigest: managedBodyDigest(body),
 		SendTransport: "http_call", RecordingOwner: "ai_proxy", Mechanism: managedTextMechanism(s), ParentAttemptID: s.parentAttemptID,
+	}
+	if s.config.settings.ToolPolicy != nil {
+		s.original.SchemaVersion = executionfacts.ToolSchemaVersion
 	}
 	if err := setManagedOriginalCaller(s, &s.original); err != nil {
 		return err
@@ -992,10 +1026,14 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 	}
 
 	o.Usage = availableManagedUsage(s, o, body)
+	o.ToolUsage = managedToolUsage(s, body, o, headers)
 	return o
 }
 
 func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome) {
+	if s.config.settings.ToolPolicy != nil && outcome.ToolUsage == nil {
+		outcome.ToolUsage = managedToolUsage(s, nil, outcome, nil)
+	}
 	if s.text != nil && billableManagedSend(s, outcome) {
 		s.text.lastBillableOutcome = &outcome
 	}
@@ -1029,6 +1067,9 @@ func managedDeliverySnapshot(s *managedExecutionState, outcome executionfacts.At
 	if outcome.Usage == nil {
 		outcome.Usage = executionfacts.MissingTokenUsage("provider_usage_not_observed")
 	}
+	if s.config.settings.ToolPolicy != nil && outcome.ToolUsage == nil {
+		outcome.ToolUsage = managedToolUsage(s, nil, outcome, nil)
+	}
 	delivery := executionfacts.Envelope{
 		ProducerID: s.config.settings.ProducerID, Kind: "call_delivery", CallID: s.callID,
 		ReleaseID: s.original.ReleaseID, RouteID: s.original.RouteID, SalesAssetID: s.original.SalesAssetID,
@@ -1037,6 +1078,10 @@ func managedDeliverySnapshot(s *managedExecutionState, outcome executionfacts.At
 		OccurredAt: s.businessUTC, ObservedAt: outcome.ObservedAt, EvidenceRefs: outcome.EvidenceRefs,
 		DeliveryState: deliveryState, ServedFrom: "upstream", PublicModel: s.config.release.PublicModel,
 		ResponseModel: outcome.ResponseModel, Usage: outcome.Usage, ErrorClass: outcome.ErrorClass,
+		ToolUsage: outcome.ToolUsage,
+	}
+	if s.config.settings.ToolPolicy != nil {
+		delivery.SchemaVersion = executionfacts.ToolSchemaVersion
 	}
 	if outcome.SendState != "observed_sent" {
 		delivery.ServedFrom = "local"

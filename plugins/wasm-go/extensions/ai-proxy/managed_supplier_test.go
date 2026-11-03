@@ -13,6 +13,25 @@ import (
 
 const managedQwenFixtureProvider = `{"type":"qwen","protocol":"original","apiTokens":["controlled-upstream-key"],"qwenEnableCompatible":false,"qwenEnableSearch":true}`
 
+func TestManagedQwenCompatibleBindingOverridesPreviouslyInitializedNativeCapability(t *testing.T) {
+	fixture := managedConfigFixture()
+	fixture["provider"] = json.RawMessage(managedQwenFixtureProvider)
+	settings := fixture["managed_execution"].(managedSettings)
+	settings.InputProtocol, settings.UpstreamProtocol, settings.UpstreamPath = managedProtocolChat, managedProtocolChat, "/compatible-mode/v1/chat/completions"
+	fixture["managed_execution"] = settings
+	h := newManagedHost(t, fixture)
+	original := []byte(`{"model":"public-model","messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"https://example.com/image.png"}},{"type":"text","text":"describe"}]}],"stream":true}`)
+	h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("upstream-model"), 1))
+	calls := h.host.GetCalloutAttributesFromContext(h.id)
+	if len(calls) != 1 {
+		t.Fatal("expected exactly one actual business send")
+	}
+	path, _ := managedSingleHeader(calls[0].Headers, ":path")
+	if path != settings.UpstreamPath || !gjson.GetBytes(calls[0].Body, "messages").IsArray() || gjson.GetBytes(calls[0].Body, "input").Exists() {
+		t.Fatalf("frozen compatible binding was overwritten by an earlier provider default: path=%q", path)
+	}
+}
+
 func TestManagedQwenActualBodyAndOriginalUsageThroughOneSender(t *testing.T) {
 	for _, input := range []string{managedProtocolChat, managedProtocolResponses, managedProtocolMessages} {
 		for _, stream := range []bool{false, true} {

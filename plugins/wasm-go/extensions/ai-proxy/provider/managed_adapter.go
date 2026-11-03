@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/higress-group/wasm-go/pkg/wrapper"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 // ManagedAdapter reuses supplier conversions after the native executor has
@@ -42,6 +44,14 @@ func NewManagedAdapter(config ProviderConfig, apiName ApiName, upstreamPath stri
 		if apiName == ApiNameAnthropicMessages || apiName == ApiNameResponses || strings.HasPrefix(upstreamPath, "/compatible-mode/v1/") {
 			config.qwenEnableCompatible = true
 			config.providerBasePath = ""
+			// Complete() may already have populated the connection's native
+			// defaults. This binding owns its wire path and a private map copy.
+			capabilities := make(map[string]string, len(config.capabilities)+1)
+			for name, path := range config.capabilities {
+				capabilities[name] = path
+			}
+			capabilities[string(apiName)] = upstreamPath
+			config.capabilities = capabilities
 		}
 		if !config.qwenEnableCompatible && apiName != ApiNameChatCompletion && apiName != ApiNameEmbeddings {
 			return nil, errors.New("managed Qwen API is unsupported")
@@ -124,6 +134,7 @@ func (a *ManagedAdapter) NativeResponseFormat() string {
 // Prepare transforms the actual wire body and headers using the selected key.
 // The caller freezes these resulting bytes and path before its sole send.
 func (a *ManagedAdapter) Prepare(ctx wrapper.HttpContext, body []byte, headers http.Header, model, credential string, streaming bool) ([]byte, error) {
+	search := gjson.GetBytes(body, "enable_search")
 	headers.Set(":path", a.config.managedRequestPath)
 	if a.apiName == ApiNameDashScopeText || a.apiName == ApiNameDashScopeMultimodal {
 		headers.Del("x-api-key")
@@ -167,6 +178,13 @@ func (a *ManagedAdapter) Prepare(ctx wrapper.HttpContext, body []byte, headers h
 	}
 	if err != nil {
 		return nil, err
+	}
+	if a.NativeQwen() && search.Exists() {
+		// A request-level false overrides the connection's legacy default.
+		body, err = sjson.SetBytes(body, "parameters.enable_search", search.Bool())
+		if err != nil {
+			return nil, err
+		}
 	}
 	headers.Set(":path", a.config.applyProviderBasePath(headers.Get(":path")))
 	return body, nil

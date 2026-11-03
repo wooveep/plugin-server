@@ -4,6 +4,10 @@ keywords: [AI网关, AI代理]
 description: AI 代理插件配置参考
 ---
 
+## 固定工具与指定出口
+
+`2.0.32` 读取发布端冻结的 `managed_execution.tool_policy`：模型与客户协议的已定价工具、出口可承载工具、供应商默认值和当前售价可用性 Redis 键。缺价在发送前拒绝，显式 0 允许；Q6 只移除出口不支持的固定工具及悬空的强制选择，保留普通同名函数，重试不得恢复已移除项。供应商终态的可信累计数以 `billing-facts.v5.tool_usage` 上报；意图、流中断和缺数保持未知，只跳过该项工具费。原生与兼容 Qwen 绑定各自保留路径，不改写连接的共享能力表。
+
 ## 完整冻结凭据目录
 
 `2.0.5` 配置契约保留 `_modelfusion_execution` v1 的单一 `credential_ref`/`credential_revision`，并支持 `modelfusion-execution.v2` 的完整非空 `credentials` 数组。每项仅含这两个字段，ref 唯一、revision 为规范正十进制字符串；拒绝秘密及 scalar/array 混用。完整目录不代表本次已选凭据，实际 D0/FACT 仍保留唯一已选 tuple，billing/cache 不取目录首项作为执行凭据。

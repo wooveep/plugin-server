@@ -379,6 +379,9 @@ func consumeNativeBillingBridge(ctx executionFactContext, cfg BillingConfig, sta
 		snapshot, err = executionfacts.DecodeDeliveryBridge(value)
 	}
 	if err != nil {
+		snapshot, err = executionfacts.DecodeToolDeliveryBridge(value)
+	}
+	if err != nil {
 		nativeBillingGap(ctx, state, "delivery_bridge_invalid")
 		return
 	}

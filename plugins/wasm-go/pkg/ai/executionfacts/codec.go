@@ -60,12 +60,18 @@ func Freeze(input Envelope) (Snapshot, error) {
 	if input.SchemaVersion == ConnectionSchemaVersion {
 		version = ConnectionSchemaVersion
 	}
+	if input.SchemaVersion == ToolSchemaVersion {
+		version = ToolSchemaVersion
+	}
 	return freezeObservation(input, version, validateUsage, validateEnvelope)
 }
 
 // Both explicit wire versions retain the original IF03 projection and byte
 // budgets. Their operation/ownership/usage validators remain separate.
 func freezeObservation(input Envelope, version string, usage func(Usage) error, validate func(Envelope) error) (Snapshot, error) {
+	if input.ToolUsage != nil && input.SchemaVersion != ToolSchemaVersion {
+		return Snapshot{}, errors.New("tool observations require the registered v5 schema")
+	}
 	if input.Usage != nil {
 		if err := usage(*input.Usage); err != nil {
 			return Snapshot{}, err
@@ -77,6 +83,9 @@ func freezeObservation(input Envelope, version string, usage func(Usage) error, 
 	}
 	if e.SchemaVersion == "" {
 		e.SchemaVersion = version
+	}
+	if err := validateToolUsage(e); err != nil {
+		return Snapshot{}, err
 	}
 	if e.PayloadCanonicalization == "" {
 		e.PayloadCanonicalization = Canonicalization
@@ -146,6 +155,9 @@ func Correct(previous Snapshot, replacement Envelope) (Snapshot, error) {
 	version := SchemaVersion
 	if previous.envelope.SchemaVersion == ConnectionSchemaVersion {
 		version = ConnectionSchemaVersion
+	}
+	if previous.envelope.SchemaVersion == ToolSchemaVersion {
+		version = ToolSchemaVersion
 	}
 	return correctObservation(previous, replacement, version, Freeze)
 }
@@ -418,7 +430,7 @@ func validateAttemptIdentity(e Envelope) error {
 			return errors.New("missing original attempt selection")
 		}
 	}
-	if e.ProviderAccountID == "" && !one(e.SchemaVersion, ConnectionSchemaVersion, CustomerEmbeddingSchemaVersion) || e.ProviderAccountID != "" && !id(e.ProviderAccountID) {
+	if e.ProviderAccountID == "" && !one(e.SchemaVersion, ConnectionSchemaVersion, CustomerEmbeddingSchemaVersion, ToolSchemaVersion) || e.ProviderAccountID != "" && !id(e.ProviderAccountID) {
 		return errors.New("invalid retained supplier account metadata")
 	}
 	if !validDigest(e.SelectionDigest) {
@@ -448,7 +460,7 @@ func validateAttemptIdentity(e Envelope) error {
 	return nil
 }
 func validateEnvelope(e Envelope) error {
-	if (e.SchemaVersion != SchemaVersion && e.SchemaVersion != ConnectionSchemaVersion) || e.PayloadCanonicalization != Canonicalization {
+	if !one(e.SchemaVersion, SchemaVersion, ConnectionSchemaVersion, ToolSchemaVersion) || e.PayloadCanonicalization != Canonicalization {
 		return errors.New("unsupported fact schema or canonicalization")
 	}
 	if err := validateIdentity(e); err != nil {

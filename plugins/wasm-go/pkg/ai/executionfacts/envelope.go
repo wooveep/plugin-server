@@ -2,69 +2,74 @@
 // Encoding never authenticates a producer or creates historical execution proof.
 package executionfacts
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
+)
 
 // Envelope mirrors Console billing_facts::ObservationEnvelope, billing-facts.v1.
 // It is an input value. Freeze copies all referenced data before returning.
 // Counts and revisions are exact decimal strings, never floating-point values.
 type Envelope struct {
-	SchemaVersion           string     `json:"schema_version"`
-	ProducerID              string     `json:"producer_id"`
-	EventID                 string     `json:"event_id"`
-	SourceFactID            string     `json:"source_fact_id"`
-	SourceRevision          string     `json:"source_revision"`
-	SupersedesEventID       string     `json:"supersedes_event_id,omitempty"`
-	PayloadDigest           string     `json:"payload_digest"`
-	PayloadCanonicalization string     `json:"payload_canonicalization"`
-	Kind                    string     `json:"kind"`
-	CallID                  string     `json:"call_id"`
-	OperationID             string     `json:"operation_id,omitempty"`
-	AttemptID               string     `json:"attempt_id,omitempty"`
-	ReleaseID               string     `json:"release_id,omitempty"`
-	RouteID                 string     `json:"route_id,omitempty"`
-	SalesAssetID            string     `json:"sales_asset_id,omitempty"`
-	TenantID                string     `json:"tenant_id,omitempty"`
-	PrincipalID             string     `json:"principal_id,omitempty"`
-	AccountID               string     `json:"account_id,omitempty"`
-	PrincipalKind           string     `json:"principal_kind"`
-	BillingMode             string     `json:"billing_mode"`
-	CostOwner               *CostOwner `json:"cost_owner,omitempty"`
-	OperationKind           string     `json:"operation_kind"`
-	OccurredAt              string     `json:"occurred_at"`
-	ObservedAt              string     `json:"observed_at"`
-	RequestID               string     `json:"request_id,omitempty"`
-	TraceID                 string     `json:"trace_id,omitempty"`
-	EvidenceRefs            []string   `json:"evidence_refs"`
-	TargetID                string     `json:"target_id,omitempty"`
-	BindingID               string     `json:"binding_id,omitempty"`
-	ProviderID              string     `json:"provider_id,omitempty"`
-	ProviderAccountID       string     `json:"provider_account_id,omitempty"`
-	ParentAttemptID         string     `json:"parent_attempt_id,omitempty"`
-	CredentialRef           string     `json:"credential_ref,omitempty"`
-	CredentialRevision      string     `json:"credential_revision,omitempty"`
-	ProviderTaskID          string     `json:"provider_task_id,omitempty"`
-	DeliveryState           string     `json:"delivery_state,omitempty"`
-	ServedFrom              string     `json:"served_from,omitempty"`
-	PublicModel             string     `json:"public_model,omitempty"`
-	ResponseModel           string     `json:"response_model,omitempty"`
-	Usage                   *Usage     `json:"usage,omitempty"`
-	ErrorClass              string     `json:"error_class,omitempty"`
-	SelectionDigest         string     `json:"selection_digest,omitempty"`
-	SendTransport           string     `json:"send_transport,omitempty"`
-	RecordingOwner          string     `json:"recording_owner,omitempty"`
-	Mechanism               string     `json:"mechanism,omitempty"`
-	SendState               string     `json:"send_state,omitempty"`
-	Acceptance              string     `json:"acceptance,omitempty"`
-	ExecutionResult         string     `json:"execution_result,omitempty"`
-	HTTPStatus              *uint16    `json:"http_status,omitempty"`
-	HeadersComplete         *bool      `json:"headers_complete,omitempty"`
-	BodyComplete            *bool      `json:"body_complete,omitempty"`
-	TransportError          string     `json:"transport_error,omitempty"`
-	ProviderError           string     `json:"provider_error,omitempty"`
-	OutboundBodyDigest      string     `json:"outbound_body_digest,omitempty"`
-	ResponseBodyDigest      string     `json:"response_body_digest,omitempty"`
-	RetryAfter              string     `json:"retry_after,omitempty"`
-	UpstreamModel           string     `json:"upstream_model,omitempty"`
+	ToolUsage               map[fixedtools.Tool]ToolMeasurement `json:"tool_usage,omitempty"`
+	SchemaVersion           string                              `json:"schema_version"`
+	ProducerID              string                              `json:"producer_id"`
+	EventID                 string                              `json:"event_id"`
+	SourceFactID            string                              `json:"source_fact_id"`
+	SourceRevision          string                              `json:"source_revision"`
+	SupersedesEventID       string                              `json:"supersedes_event_id,omitempty"`
+	PayloadDigest           string                              `json:"payload_digest"`
+	PayloadCanonicalization string                              `json:"payload_canonicalization"`
+	Kind                    string                              `json:"kind"`
+	CallID                  string                              `json:"call_id"`
+	OperationID             string                              `json:"operation_id,omitempty"`
+	AttemptID               string                              `json:"attempt_id,omitempty"`
+	ReleaseID               string                              `json:"release_id,omitempty"`
+	RouteID                 string                              `json:"route_id,omitempty"`
+	SalesAssetID            string                              `json:"sales_asset_id,omitempty"`
+	TenantID                string                              `json:"tenant_id,omitempty"`
+	PrincipalID             string                              `json:"principal_id,omitempty"`
+	AccountID               string                              `json:"account_id,omitempty"`
+	PrincipalKind           string                              `json:"principal_kind"`
+	BillingMode             string                              `json:"billing_mode"`
+	CostOwner               *CostOwner                          `json:"cost_owner,omitempty"`
+	OperationKind           string                              `json:"operation_kind"`
+	OccurredAt              string                              `json:"occurred_at"`
+	ObservedAt              string                              `json:"observed_at"`
+	RequestID               string                              `json:"request_id,omitempty"`
+	TraceID                 string                              `json:"trace_id,omitempty"`
+	EvidenceRefs            []string                            `json:"evidence_refs"`
+	TargetID                string                              `json:"target_id,omitempty"`
+	BindingID               string                              `json:"binding_id,omitempty"`
+	ProviderID              string                              `json:"provider_id,omitempty"`
+	ProviderAccountID       string                              `json:"provider_account_id,omitempty"`
+	ParentAttemptID         string                              `json:"parent_attempt_id,omitempty"`
+	CredentialRef           string                              `json:"credential_ref,omitempty"`
+	CredentialRevision      string                              `json:"credential_revision,omitempty"`
+	ProviderTaskID          string                              `json:"provider_task_id,omitempty"`
+	DeliveryState           string                              `json:"delivery_state,omitempty"`
+	ServedFrom              string                              `json:"served_from,omitempty"`
+	PublicModel             string                              `json:"public_model,omitempty"`
+	ResponseModel           string                              `json:"response_model,omitempty"`
+	Usage                   *Usage                              `json:"usage,omitempty"`
+	ErrorClass              string                              `json:"error_class,omitempty"`
+	SelectionDigest         string                              `json:"selection_digest,omitempty"`
+	SendTransport           string                              `json:"send_transport,omitempty"`
+	RecordingOwner          string                              `json:"recording_owner,omitempty"`
+	Mechanism               string                              `json:"mechanism,omitempty"`
+	SendState               string                              `json:"send_state,omitempty"`
+	Acceptance              string                              `json:"acceptance,omitempty"`
+	ExecutionResult         string                              `json:"execution_result,omitempty"`
+	HTTPStatus              *uint16                             `json:"http_status,omitempty"`
+	HeadersComplete         *bool                               `json:"headers_complete,omitempty"`
+	BodyComplete            *bool                               `json:"body_complete,omitempty"`
+	TransportError          string                              `json:"transport_error,omitempty"`
+	ProviderError           string                              `json:"provider_error,omitempty"`
+	OutboundBodyDigest      string                              `json:"outbound_body_digest,omitempty"`
+	ResponseBodyDigest      string                              `json:"response_body_digest,omitempty"`
+	RetryAfter              string                              `json:"retry_after,omitempty"`
+	UpstreamModel           string                              `json:"upstream_model,omitempty"`
 }
 
 // CostOwner is an original registered internal job owner, not a customer wallet.
@@ -96,6 +101,7 @@ type Attempt struct{ original Envelope }
 // AttemptOutcome is supplied by the unique send observer, not inferred by codec.
 // HTTPStatus stays nil when no upstream status was actually observed.
 type AttemptOutcome struct {
+	ToolUsage          map[fixedtools.Tool]ToolMeasurement
 	ObservedAt         string
 	SendState          string
 	Acceptance         string
@@ -121,6 +127,9 @@ func NewAttempt(original Envelope) (Attempt, error) {
 	version := SchemaVersion
 	if original.ProviderAccountID == "" {
 		version = ConnectionSchemaVersion
+	}
+	if original.SchemaVersion == ToolSchemaVersion {
+		version = ToolSchemaVersion
 	}
 	if original.SchemaVersion != "" && original.SchemaVersion != version {
 		return Attempt{}, errorsForVersion()
@@ -161,6 +170,7 @@ func finishAttempt(original Envelope, outcome AttemptOutcome, freeze func(Envelo
 	e.HeadersComplete = &outcome.HeadersComplete
 	e.BodyComplete = &outcome.BodyComplete
 	e.Usage = outcome.Usage
+	e.ToolUsage = outcome.ToolUsage
 	if e.Usage == nil {
 		e.Usage = MissingTokenUsage("usage_not_observed")
 	}

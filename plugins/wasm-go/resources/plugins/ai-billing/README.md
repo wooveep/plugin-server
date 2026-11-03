@@ -4,6 +4,10 @@ keywords: [AI网关, AI账单, ai-billing]
 description: ai-billing 托管交付事实与兼容账单事件配置参考
 ---
 
+## 固定工具交付事实
+
+`1.0.6` 在保留原交付解码器的同时独立读取 `billing-facts.v5` 文本交付桥。按原始字节和原调用身份投递一次，不解析供应商正文，不计算费用。先升级数据库、Console 与本消费者，再允许新版代理生成 v5；原 v1 至 v4 均保留。
+
 ## 完整冻结凭据目录
 
 `0.1.11` 配置契约保留 `_modelfusion_execution` v1 的单一 `credential_ref`/`credential_revision`，并支持 `modelfusion-execution.v2` 的完整非空 `credentials` 数组。每项仅含这两个字段，ref 唯一、revision 为规范正十进制字符串；拒绝秘密及 scalar/array 混用。完整目录不代表本次已选凭据，实际 D0/FACT 仍保留唯一已选 tuple，billing/cache 不取目录首项作为执行凭据。

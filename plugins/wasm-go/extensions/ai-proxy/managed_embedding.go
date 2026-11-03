@@ -228,6 +228,9 @@ func managedSelectionDigest(configuration *managedExecutionConfig, raw []byte) (
 }
 
 func encodeManagedDeliveryBridge(snapshot executionfacts.Snapshot) (string, error) {
+	if snapshot.Envelope().SchemaVersion == executionfacts.ToolSchemaVersion {
+		return executionfacts.EncodeToolDeliveryBridge(snapshot)
+	}
 	if snapshot.Envelope().OperationKind == executionfacts.NativeEmbeddingOperation {
 		return executionfacts.EncodeEmbeddingDeliveryBridge(snapshot)
 	}

@@ -108,3 +108,28 @@ func DecodeEmbeddingDeliveryBridge(value string) (Snapshot, error) {
 	}
 	return decodeVersionedDeliveryBridge(raw, NativeEmbeddingSchemaVersion, FreezeEmbedding)
 }
+
+// EncodeToolDeliveryBridge preserves the independently registered v5 text delivery.
+func EncodeToolDeliveryBridge(snapshot Snapshot) (string, error) {
+	if snapshot.MessageType() != "observation" || snapshot.envelope.Kind != "call_delivery" {
+		return "", errors.New("tool bridge requires a frozen call delivery")
+	}
+	raw := snapshot.Bytes()
+	checked, err := decodeVersionedDeliveryBridge(raw, ToolSchemaVersion, Freeze)
+	if err != nil || !bytes.Equal(snapshot.BusinessBytes(), checked.BusinessBytes()) {
+		return "", errors.New("tool delivery bridge snapshot is invalid or oversized")
+	}
+	return base64.RawURLEncoding.EncodeToString(raw), nil
+}
+
+// DecodeToolDeliveryBridge accepts v5 only, preserving older strict decoders.
+func DecodeToolDeliveryBridge(value string) (Snapshot, error) {
+	if value == "" || len(value) > MaxDeliveryBridgeHeaderBytes {
+		return Snapshot{}, errors.New("tool bridge is empty or oversized")
+	}
+	raw, err := base64.RawURLEncoding.Strict().DecodeString(value)
+	if err != nil || base64.RawURLEncoding.EncodeToString(raw) != value {
+		return Snapshot{}, errors.New("tool bridge requires canonical unpadded base64url")
+	}
+	return decodeVersionedDeliveryBridge(raw, ToolSchemaVersion, Freeze)
+}

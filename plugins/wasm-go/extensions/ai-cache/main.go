@@ -8,6 +8,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/ai/memorycache"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/log"
@@ -264,6 +265,11 @@ func onThinHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body 
 		ctx.SetContext(CACHE_PATH_CONTEXT_KEY, path)
 	}
 	kind := c.ProtocolForPath(path)
+	if tools, err := fixedtools.Inspect(body, string(kind), c.FixedToolDefaults); err != nil || len(tools) > 0 {
+		markCacheGate(ctx, "fixed-tools")
+		ctx.DontReadResponseBody()
+		return types.ActionContinue
+	}
 	adapter, ok := thinProtocolAdapterForKind(kind)
 	if !ok {
 		markCacheGate(ctx, "unsupported-path")

@@ -190,6 +190,9 @@ func (p managedProtocolProfile) ObserveResponse(status uint16, headers [][2]stri
 				var prior *executionfacts.Usage
 				usageConflict := false
 				for _, event := range events {
+					if event.Name == "error" {
+						observation.ExecutionResult, observation.ProviderError = "failed", true
+					}
 					if bytes.Equal(event.Data, []byte("[DONE]")) {
 						continue
 					}
@@ -598,7 +601,7 @@ func managedMessagesStream(body []byte) managedProtocolObservation {
 						}
 						// Earlier progress is not proof of the final cumulative count.
 						finalOutput = reasonSeen
-					} else if prior, exists := usage[key]; exists && !bytes.Equal(prior, value) {
+					} else if prior, exists := usage[key]; key != "server_tool_use" && exists && !bytes.Equal(prior, value) {
 						return unknown
 					}
 					usage[key] = value

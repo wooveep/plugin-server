@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.31
+  version: 2.0.32
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -175,7 +175,9 @@ spec:
               - upstream_health
               properties:
                 call_identity_source:
-                  enum: [admission, internal_execution]
+                  enum:
+                  - admission
+                  - internal_execution
                 input_protocol:
                   const: openai_embeddings
                 upstream_protocol:
@@ -316,7 +318,7 @@ spec:
               type: integer
               minimum: 1024
               maximum: 4194304
-        managed_execution: &id003
+        managed_execution: &id004
           type: object
           additionalProperties: false
           required:
@@ -423,7 +425,7 @@ spec:
                   type: string
                   minLength: 1
                   maxLength: 256
-                  pattern: '^[^ /:@?#\[\]\x00-\x20]+$'
+                  pattern: ^[^ /:@?#\[\]\x00-\x20]+$
                 service_port:
                   type: integer
                   minimum: 1
@@ -436,7 +438,7 @@ spec:
                   type: string
                   minLength: 1
                   maxLength: 8192
-                  pattern: '^[!-~]+$'
+                  pattern: ^[!-~]+$
                   writeOnly: true
                 timeout_ms:
                   type: integer
@@ -719,6 +721,36 @@ spec:
                     not:
                       pattern: '[^!-~]'
                     writeOnly: true
+            tool_policy:
+              type: object
+              additionalProperties: false
+              required:
+              - allowed
+              - supported
+              - defaults
+              - supplier
+              - price_key
+              properties:
+                allowed: &id001
+                  type: array
+                  maxItems: 5
+                  uniqueItems: true
+                  items:
+                    type: string
+                    enum:
+                    - web_search
+                    - web_extractor
+                    - code_interpreter
+                    - image_search
+                    - web_search_image
+                supported: *id001
+                defaults: *id001
+                supplier:
+                  type: string
+                  minLength: 1
+                price_key:
+                  type: string
+                  pattern: ^modelfusion:tool-prices:.+$
           allOf:
           - if:
               required:
@@ -758,7 +790,9 @@ spec:
               - upstream_health
               properties:
                 call_identity_source:
-                  enum: [admission, internal_execution]
+                  enum:
+                  - admission
+                  - internal_execution
                 input_protocol:
                   const: openai_embeddings
                 upstream_protocol:
@@ -799,7 +833,7 @@ spec:
                   anyOf:
                   - required:
                     - target
-        _modelfusion_execution: &id002
+        _modelfusion_execution: &id003
           type: object
           readOnly: true
           additionalProperties: false
@@ -1319,9 +1353,10 @@ spec:
                         - max_attempts
                         - max_fallback_hops
                         additionalProperties: false
-                        description: OpenAI-compatible POST /v1/embeddings. The embedding classifier
-                          validates real data[].embedding and uses only actual provider-reported
-                          input token usage. No retries, fallback, queries or provider task lifecycle.
+                        description: OpenAI-compatible POST /v1/embeddings. The embedding
+                          classifier validates real data[].embedding and uses only
+                          actual provider-reported input token usage. No retries,
+                          fallback, queries or provider task lifecycle.
                     additionalProperties: false
                 required:
                 - release_id
@@ -1343,8 +1378,8 @@ spec:
                 - transport_contract
                 - capabilities
                 additionalProperties: false
-                description: Supplier connection using its actual endpoint and Key, without an asserted
-                  external procurement account.
+                description: Supplier connection using its actual endpoint and Key,
+                  without an asserted external procurement account.
             route_id:
               type: string
               minLength: 1
@@ -1472,12 +1507,12 @@ spec:
           x-description-i18n:
             en-US: Multi-provider configuration list. Global or route-level activeProviderId
               selects the active provider.
-          items: &id004
+          items: &id005
             type: object
             required:
             - type
             additionalProperties: true
-            properties: &id001
+            properties: &id002
               id:
                 type: string
                 title: Provider ID
@@ -2125,7 +2160,7 @@ spec:
           required:
           - type
           additionalProperties: true
-          properties: *id001
+          properties: *id002
           title: 单 Provider配置
           x-title-i18n:
             en-US: Single Provider Configuration
@@ -2158,7 +2193,7 @@ spec:
                 - mapper_config
                 - proxy_config
                 properties:
-                  execution: *id002
+                  execution: *id003
                   mapper_config:
                     type: object
                     additionalProperties: false
@@ -2180,7 +2215,7 @@ spec:
                     - path_scope
                     - managed_execution
                     properties:
-                      managed_execution: *id003
+                      managed_execution: *id004
                       path_scope:
                         type: string
                         const: bound_target
@@ -2214,13 +2249,13 @@ spec:
                       providers:
                         type: array
                         minItems: 1
-                        items: *id004
+                        items: *id005
                       provider:
                         type: object
                         required:
                         - type
                         additionalProperties: true
-                        properties: *id001
+                        properties: *id002
       example:
         protocol_mode: auto
         path_scope: legacy_suffixes
@@ -2350,7 +2385,9 @@ spec:
               - upstream_health
               properties:
                 call_identity_source:
-                  enum: [admission, internal_execution]
+                  enum:
+                  - admission
+                  - internal_execution
                 input_protocol:
                   const: openai_embeddings
                 upstream_protocol:
@@ -2494,7 +2531,7 @@ spec:
                   type: string
                   minLength: 1
                   maxLength: 256
-                  pattern: '^[^ /:@?#\[\]\x00-\x20]+$'
+                  pattern: ^[^ /:@?#\[\]\x00-\x20]+$
                 service_port:
                   type: integer
                   minimum: 1
@@ -2507,7 +2544,7 @@ spec:
                   type: string
                   minLength: 1
                   maxLength: 8192
-                  pattern: '^[!-~]+$'
+                  pattern: ^[!-~]+$
                   writeOnly: true
                 timeout_ms:
                   type: integer
@@ -2790,6 +2827,25 @@ spec:
                     not:
                       pattern: '[^!-~]'
                     writeOnly: true
+            tool_policy:
+              type: object
+              additionalProperties: false
+              required:
+              - allowed
+              - supported
+              - defaults
+              - supplier
+              - price_key
+              properties:
+                allowed: *id001
+                supported: *id001
+                defaults: *id001
+                supplier:
+                  type: string
+                  minLength: 1
+                price_key:
+                  type: string
+                  pattern: ^modelfusion:tool-prices:.+$
           allOf:
           - if:
               required:
@@ -2829,7 +2885,9 @@ spec:
               - upstream_health
               properties:
                 call_identity_source:
-                  enum: [admission, internal_execution]
+                  enum:
+                  - admission
+                  - internal_execution
                 input_protocol:
                   const: openai_embeddings
                 upstream_protocol:
@@ -3390,9 +3448,10 @@ spec:
                         - max_attempts
                         - max_fallback_hops
                         additionalProperties: false
-                        description: OpenAI-compatible POST /v1/embeddings. The embedding classifier
-                          validates real data[].embedding and uses only actual provider-reported
-                          input token usage. No retries, fallback, queries or provider task lifecycle.
+                        description: OpenAI-compatible POST /v1/embeddings. The embedding
+                          classifier validates real data[].embedding and uses only
+                          actual provider-reported input token usage. No retries,
+                          fallback, queries or provider task lifecycle.
                     additionalProperties: false
                 required:
                 - release_id
@@ -3414,8 +3473,8 @@ spec:
                 - transport_contract
                 - capabilities
                 additionalProperties: false
-                description: Supplier connection using its actual endpoint and Key, without an asserted
-                  external procurement account.
+                description: Supplier connection using its actual endpoint and Key,
+                  without an asserted external procurement account.
             route_id:
               type: string
               minLength: 1
@@ -3539,13 +3598,13 @@ spec:
           x-description-i18n:
             en-US: Route-level provider list override. Inherits global configuration
               when omitted.
-          items: *id004
+          items: *id005
         provider:
           type: object
           required:
           - type
           additionalProperties: true
-          properties: *id001
+          properties: *id002
           title: 单 Provider配置
           x-title-i18n:
             en-US: Single Provider Configuration
@@ -3578,7 +3637,7 @@ spec:
                 - mapper_config
                 - proxy_config
                 properties:
-                  execution: *id002
+                  execution: *id003
                   mapper_config:
                     type: object
                     additionalProperties: false
@@ -3600,7 +3659,7 @@ spec:
                     - path_scope
                     - managed_execution
                     properties:
-                      managed_execution: *id003
+                      managed_execution: *id004
                       path_scope:
                         type: string
                         const: bound_target
@@ -3634,13 +3693,13 @@ spec:
                       providers:
                         type: array
                         minItems: 1
-                        items: *id004
+                        items: *id005
                       provider:
                         type: object
                         required:
                         - type
                         additionalProperties: true
-                        properties: *id001
+                        properties: *id002
       example:
         activeProviderId: generic-fallback
         path_scope: bound_target

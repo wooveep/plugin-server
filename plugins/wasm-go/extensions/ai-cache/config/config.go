@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/ai/tenantpolicy"
 	"github.com/higress-group/wasm-go/pkg/log"
@@ -110,6 +111,7 @@ type NativeIdentityConfig struct {
 }
 
 type PluginConfig struct {
+	FixedToolDefaults []fixedtools.Tool
 	TenantPolicies    *tenantpolicy.Directory[PluginConfig]
 	materializedRedis wrapper.RedisClient
 	eventRedis        wrapper.RedisClient
@@ -139,6 +141,12 @@ type PluginConfig struct {
 
 func (c *PluginConfig) FromJson(json gjson.Result, _ log.Log) {
 	*c = PluginConfig{}
+	c.FixedToolDefaults = nil
+	for _, value := range json.Get("fixed_tool_defaults").Array() {
+		if tool := fixedtools.Tool(value.String()); fixedtools.Valid(tool) {
+			c.FixedToolDefaults = append(c.FixedToolDefaults, tool)
+		}
+	}
 	c.legacyConfig = containsLegacyOnlineCacheConfig(json)
 	c.parsePublishedProtocol(json)
 	c.parseNativeIdentity(json)
@@ -229,6 +237,14 @@ func (c *PluginConfig) FromJsonWithGlobal(json gjson.Result, global PluginConfig
 		return
 	}
 	*c = global
+	if json.Get("fixed_tool_defaults").Exists() {
+		c.FixedToolDefaults = nil
+		for _, value := range json.Get("fixed_tool_defaults").Array() {
+			if tool := fixedtools.Tool(value.String()); fixedtools.Valid(tool) {
+				c.FixedToolDefaults = append(c.FixedToolDefaults, tool)
+			}
+		}
+	}
 	c.legacyConfig = c.legacyConfig || containsLegacyOnlineCacheConfig(json)
 	c.parsePublishedProtocol(json)
 	c.parseNativeIdentity(json)
