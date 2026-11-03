@@ -68,10 +68,11 @@ func TestSharedRouteCacheUsesOnlyTheAdmittedTenantPolicy(t *testing.T) {
 					require.Empty(t, host.GetHttpCalloutAttributes())
 				} else {
 					require.Equal(t, types.ActionPause, action)
-					require.Len(t, host.GetRedisCalloutAttributes(), 1)
-					if tenant == secondTenant {
-						require.Contains(t, string(host.GetRedisCalloutAttributes()[0].Query), "tenant-b-cache:")
-					}
+					calls := host.GetHttpCalloutAttributes()
+					require.Len(t, calls, 1)
+					require.Empty(t, host.GetRedisCalloutAttributes())
+					require.Equal(t, tenant, gjson.GetBytes(calls[0].Body, "native_identity.caller.tenant_id").String())
+					require.Equal(t, tenant, gjson.GetBytes(calls[0].Body, "tenant").String())
 				}
 			})
 		})

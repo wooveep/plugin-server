@@ -11,6 +11,15 @@ import (
 )
 
 func CheckMaterializedCacheForKey(material ScopedCacheKeyMaterial, ctx wrapper.HttpContext, c config.PluginConfig, log logs.Log, stream bool) error {
+	// The authenticated lookup retains this admitted customer call even when no
+	// upstream attempt will exist. Its reply may still use the materialized Redis
+	// payload; a local hit must never bypass the sale's original registration.
+	if ctx.GetContext(nativeCacheDeliveryContext) != nil {
+		if !shouldUseConsoleLookup(c) {
+			return errors.New("native cache replay requires authenticated call registration")
+		}
+		return lookupMaterializedRecordFromConsole(material, ctx, c, log, stream)
+	}
 	redisClient := c.GetMaterializedRedisClient()
 	if redisClient == nil {
 		return errors.New("materialized Redis client is not configured")

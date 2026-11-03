@@ -51,8 +51,10 @@ func TestNativeCacheLookupAndEventRetainOriginalAdmissionParent(t *testing.T) {
 					require.NoError(t, proxywasm.RemoveHttpRequestHeader(name))
 				}
 				require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody([]byte(nativeCacheTestBody)))
-				require.Len(t, host.GetRedisCalloutAttributes(), 1)
-				host.CallOnRedisCall(0, test.CreateRedisRespNull())
+				if mode != "original" {
+					require.Len(t, host.GetRedisCalloutAttributes(), 1)
+					host.CallOnRedisCall(0, test.CreateRedisRespNull())
+				}
 				calls := host.GetHttpCalloutAttributes()
 				require.Len(t, calls, 1)
 				lookup := nativeCacheDecodeObject(t, calls[0].Body)

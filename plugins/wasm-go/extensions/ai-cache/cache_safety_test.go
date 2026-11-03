@@ -259,7 +259,7 @@ func TestCacheSafetyNativeCallerSnapshot(t *testing.T) {
 		}
 		body := []byte(nativeCacheTestBody)
 		require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody(body))
-		host.CallOnRedisCall(0, test.CreateRedisRespString(nativeCacheExecutionRecord(t, body, false)))
+		replyNativeRegisteredCacheLookup(t, host, body, false)
 		response := host.GetLocalResponse()
 		require.NotNil(t, response)
 		snapshot, err := executionfacts.DecodeDeliveryBridge(thinReplayPayloadHeader(response.Headers, executionfacts.DeliveryBridgeHeader))

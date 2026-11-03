@@ -46,6 +46,8 @@ func nativeCacheExecutionConfig(t *testing.T, capture bool) json.RawMessage {
 		"_modelfusion_execution": map[string]interface{}{"schema_version": "modelfusion-execution.v1", "descriptor": descriptor, "route_id": nativeCacheTestRoute,
 			"sales_asset_id": "88888888-8888-4888-8888-888888888888", "public_model": "public-alias", "credential_ref": "original-credential", "credential_revision": "1"},
 		"capture_body_basis": capture, "consume_body_basis": !capture,
+		"console_lookup":                     map[string]interface{}{"enabled": true, "service_name": thinConsoleService, "service_port": 8080, "path": thinConsolePath, "bearer_token": thinConsoleToken, "timeout": 500},
+		"route_policy.enable_console_lookup": true,
 	} {
 		raw, err = sjson.SetBytes(raw, path, value)
 		require.NoError(t, err)
@@ -87,6 +89,30 @@ func nativeCacheExecutionRecord(t *testing.T, body []byte, stream bool) string {
 	return string(raw)
 }
 
+// The real native path registers the original call through its authenticated
+// lookup before any Redis reply can bypass the upstream sender.
+func completeNativeCacheRegistration(t *testing.T, host test.TestHost) {
+	t.Helper()
+	calls := host.GetHttpCalloutAttributes()
+	require.Len(t, calls, 1)
+	require.Empty(t, host.GetRedisCalloutAttributes(), "native registration precedes Redis replay")
+	var request consoleLookupRequest
+	require.NoError(t, json.Unmarshal(calls[0].Body, &request))
+	require.Equal(t, nativeCacheOriginalCall, request.CallID)
+	require.NotNil(t, request.CallOrigin)
+	require.Equal(t, nativeCacheOriginalTime, request.CallOrigin.OccurredAt)
+	require.NotNil(t, request.NativeIdentity)
+	require.Equal(t, nativeCacheTestCaller(), request.NativeIdentity.Caller)
+	host.CallOnHttpCall([][2]string{{":status", "200"}, {"content-type", "application/json"}}, []byte(`{"data":{"decision":"hit","materialized_key":"cache:materialized:registered-native"}}`))
+	require.Len(t, host.GetRedisCalloutAttributes(), 1)
+}
+
+func replyNativeRegisteredCacheLookup(t *testing.T, host test.TestHost, body []byte, stream bool) {
+	t.Helper()
+	completeNativeCacheRegistration(t, host)
+	host.CallOnRedisCall(0, test.CreateRedisRespString(nativeCacheExecutionRecord(t, body, stream)))
+}
+
 func TestNativeCacheReplayBridgesOnlyTheOriginalCallDelivery(t *testing.T) {
 	test.RunTest(t, func(t *testing.T) {
 		for _, stream := range []bool{false, true} {
@@ -103,8 +129,7 @@ func TestNativeCacheReplayBridgesOnlyTheOriginalCallDelivery(t *testing.T) {
 				expected, err := bodybasis.Capture(body)
 				require.NoError(t, err)
 				require.Equal(t, expected, basis)
-				require.Len(t, host.GetRedisCalloutAttributes(), 1)
-				host.CallOnRedisCall(0, test.CreateRedisRespString(nativeCacheExecutionRecord(t, body, stream)))
+				replyNativeRegisteredCacheLookup(t, host, body, stream)
 				response := host.GetLocalResponse()
 				require.NotNil(t, response)
 				require.Equal(t, uint32(200), response.StatusCode)
@@ -171,8 +196,7 @@ func TestNativeCacheRedisAdmissionHasNoSyntheticExpiry(t *testing.T) {
 				require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(headers))
 				require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody(body))
 				require.Nil(t, host.GetLocalResponse(), "an admitted Redis call can reach cache lookup")
-				require.Len(t, host.GetRedisCalloutAttributes(), 1)
-				host.CallOnRedisCall(0, test.CreateRedisRespString(nativeCacheExecutionRecord(t, body, false)))
+				replyNativeRegisteredCacheLookup(t, host, body, false)
 				response := host.GetLocalResponse()
 				require.NotNil(t, response)
 				require.Equal(t, uint32(200), response.StatusCode)
@@ -307,8 +331,7 @@ func TestNativeCachePoolKeepsOriginalCallOwnershipAndNoUpstreamAttempt(t *testin
 		require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(nativeCacheExecutionHeaders(true)))
 		body := []byte(nativeCacheTestBody)
 		require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody(body))
-		require.Len(t, host.GetRedisCalloutAttributes(), 1)
-		host.CallOnRedisCall(0, test.CreateRedisRespString(nativeCacheExecutionRecord(t, body, false)))
+		replyNativeRegisteredCacheLookup(t, host, body, false)
 		response := host.GetLocalResponse()
 		require.NotNil(t, response)
 		require.Equal(t, uint32(200), response.StatusCode)

@@ -111,6 +111,7 @@ func TestCacheUsageDeltaNativeDeliveryEstimatesThisRequestAndCachedOutput(t *tes
 				}
 				raw, err := json.Marshal(record)
 				require.NoError(t, err)
+				completeNativeCacheRegistration(t, host)
 				host.CallOnRedisCall(0, test.CreateRedisRespString(string(raw)))
 				response := host.GetLocalResponse()
 				require.NotNil(t, response)
