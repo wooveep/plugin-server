@@ -18,6 +18,10 @@ func managedSupplierAPIName(profile managedProtocolProfile) supplier.ApiName {
 		return supplier.ApiNameResponses
 	case managedProtocolEmbeddings:
 		return supplier.ApiNameEmbeddings
+	case managedProtocolDashScopeText:
+		return supplier.ApiNameDashScopeText
+	case managedProtocolDashScopeMultimodal:
+		return supplier.ApiNameDashScopeMultimodal
 	default:
 		return supplier.ApiNameChatCompletion
 	}
@@ -105,6 +109,14 @@ func managedQwenObservation(protocol string, status uint16, headers [][2]string,
 	usageBytes, _ := json.Marshal(wireUsage)
 	observation.Usage = managedOpenAIUsage(map[string]json.RawMessage{"usage": usageBytes})
 	observation.ExecutionResult = managedChatTerminal(output)
+	if observation.ExecutionResult == "unknown" {
+		// DashScope result_format=text uses a top-level finish_reason rather
+		// than choices. A text field alone is never proof of completion.
+		if reason, exists := output["finish_reason"]; exists {
+			choice, _ := json.Marshal([]map[string]json.RawMessage{{"finish_reason": reason}})
+			observation.ExecutionResult = managedChatTerminal(map[string]json.RawMessage{"choices": choice})
+		}
+	}
 	if observation.ProviderError || status >= 400 {
 		observation.ExecutionResult = "failed"
 	}

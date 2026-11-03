@@ -16,9 +16,11 @@ import (
 )
 
 const (
-	managedProtocolChat      = "openai_chat"
-	managedProtocolResponses = "openai_responses"
-	managedProtocolMessages  = "anthropic_messages"
+	managedProtocolChat                = "openai_chat"
+	managedProtocolResponses           = "openai_responses"
+	managedProtocolMessages            = "anthropic_messages"
+	managedProtocolDashScopeText       = "dashscope_text"
+	managedProtocolDashScopeMultimodal = "dashscope_multimodal"
 )
 
 // Profiles are server configuration. Neither the URL nor a response's model
@@ -61,6 +63,9 @@ func newManagedProtocolProfile(input, upstream string) (managedProtocolProfile, 
 	if input == managedProtocolEmbeddings && upstream == managedProtocolEmbeddings {
 		return managedProtocolProfile{InputProtocol: input, UpstreamProtocol: upstream}, nil
 	}
+	if input == upstream && (input == managedProtocolDashScopeText || input == managedProtocolDashScopeMultimodal) {
+		return managedProtocolProfile{InputProtocol: input, UpstreamProtocol: upstream}, nil
+	}
 	valid := func(value string) bool {
 		return value == managedProtocolChat || value == managedProtocolResponses || value == managedProtocolMessages
 	}
@@ -83,6 +88,27 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 	var model string
 	if json.Unmarshal(object["model"], &model) != nil || model != frozenModel || !managedID(model) {
 		return managedProtocolRequest{}, errors.New("managed protocol model differs from frozen mapping")
+	}
+	if p.InputProtocol == managedProtocolDashScopeText || p.InputProtocol == managedProtocolDashScopeMultimodal {
+		var input map[string]json.RawMessage
+		var messages []json.RawMessage
+		if json.Unmarshal(object["input"], &input) != nil || json.Unmarshal(input["messages"], &messages) != nil || len(messages) == 0 {
+			return managedProtocolRequest{}, errors.New("DashScope text requires input.messages")
+		}
+		var parameters map[string]json.RawMessage
+		if raw, exists := object["parameters"]; exists && (json.Unmarshal(raw, &parameters) != nil || parameters == nil) {
+			return managedProtocolRequest{}, errors.New("invalid DashScope parameters")
+		}
+		// This registration authorizes text output only on a shared multimodal
+		// endpoint. Other operations and output modalities need their own release.
+		for _, field := range []string{"modalities", "output_modalities"} {
+			if raw, exists := parameters[field]; exists {
+				var modalities []string
+				if json.Unmarshal(raw, &modalities) != nil || len(modalities) != 1 || modalities[0] != "text" {
+					return managedProtocolRequest{}, errors.New("DashScope registration supports text output only")
+				}
+			}
+		}
 	}
 	streaming := false
 	if raw, exists := object["stream"]; exists {

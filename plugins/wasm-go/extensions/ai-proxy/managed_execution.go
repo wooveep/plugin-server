@@ -573,6 +573,18 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if err != nil {
 		return rejectManagedRequest(ctx, 400, "original_body_basis_missing"), true
 	}
+	if state.config.profile.InputProtocol == managedProtocolDashScopeText || state.config.profile.InputProtocol == managedProtocolDashScopeMultimodal {
+		state.streaming = false
+		seen := false
+		for _, header := range headers {
+			if strings.EqualFold(header[0], "x-dashscope-sse") {
+				if seen || !strings.EqualFold(header[1], "enable") {
+					return rejectManagedRequest(ctx, 400, "invalid_dashscope_sse_header"), true
+				}
+				seen, state.streaming = true, true
+			}
+		}
+	}
 	basis, err := bodybasis.Read(headers)
 	if err != nil || basis.PublicModel() != managed.release.PublicModel {
 		return rejectManagedRequest(ctx, 400, "original_body_basis_missing"), true
@@ -606,6 +618,9 @@ func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecut
 	if err != nil {
 		rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")
 		return managedProtocolRequest{}, false
+	}
+	if managed.profile.InputProtocol == managedProtocolDashScopeText || managed.profile.InputProtocol == managedProtocolDashScopeMultimodal {
+		request.Streaming = state.streaming
 	}
 	var outboundObject map[string]json.RawMessage
 	var model string

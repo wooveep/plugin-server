@@ -447,7 +447,9 @@ func continueManagedText(ctx wrapper.HttpContext, s *managedExecutionState, outc
 func newManagedTextAttempt(previous *managedExecutionState, configuration *managedExecutionConfig, mechanism string) *managedExecutionState {
 	// Qualification may select another member only in this new request copy.
 	copied := *configuration
+	// DashScope carries streaming intent in the original header rather than body.
 	state := &managedExecutionState{config: &copied, sourceConfig: configuration, identity: previous.identity, internal: previous.internal, callID: previous.callID, businessUTC: previous.businessUTC, admissionDeadline: previous.admissionDeadline, ledger: previous.ledger, deliveries: previous.deliveries, text: previous.text, mechanism: mechanism, parentAttemptID: previous.attemptID, selectionGeneration: uint32(len(previous.text.attempts) + 1)}
+	state.streaming = previous.streaming
 	return state
 }
 
