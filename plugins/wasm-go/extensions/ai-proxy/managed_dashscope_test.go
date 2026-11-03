@@ -48,6 +48,10 @@ func TestManagedDashScopePreservesNativeBodiesAndCumulativeUsage(t *testing.T) {
 				if (value == "enable") != stream {
 					t.Fatal("native header streaming intent was lost")
 				}
+				accept, _ := managedSingleHeader(calls[0].Headers, "accept")
+				if !stream && accept != "application/json" {
+					t.Fatal("native JSON request advertised SSE to the supplier")
+				}
 				body := []byte(`{"request_id":"native-receipt","output":{"text":"triangle","finish_reason":"stop"},"usage":{"input_tokens":37,"output_tokens":2,"total_tokens":39}}`)
 				responseHeaders := [][2]string{{":status", "200"}, {"content-type", "application/json"}}
 				if stream {

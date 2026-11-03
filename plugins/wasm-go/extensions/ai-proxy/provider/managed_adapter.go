@@ -126,6 +126,11 @@ func (a *ManagedAdapter) Prepare(ctx wrapper.HttpContext, body []byte, headers h
 		if streaming {
 			headers.Set("accept", "text/event-stream")
 			headers.Set("x-dashscope-sse", "enable")
+		} else {
+			// DashScope also negotiates SSE from Accept, independently of its
+			// control header. A JSON request must not advertise event streams.
+			headers.Set("accept", "application/json")
+			headers.Del("x-dashscope-sse")
 		}
 		return body, nil
 	}
