@@ -22,6 +22,17 @@ type ManagedAdapter struct {
 // name describes the prepared logical payload; the old provider protocol flag
 // cannot reinterpret that payload as an opaque original client request.
 func NewManagedAdapter(config ProviderConfig, apiName ApiName, upstreamPath string) (*ManagedAdapter, error) {
+	if apiName == ApiNameDashScopeText || apiName == ApiNameDashScopeMultimodal {
+		expected := "/api/v1/services/aigc/text-generation/generation"
+		if apiName == ApiNameDashScopeMultimodal {
+			expected = "/api/v1/services/aigc/multimodal-generation/generation"
+		}
+		if config.typ != providerTypeQwen || upstreamPath != expected || config.failover.enabled || config.retryOnFailure.enabled {
+			return nil, errors.New("managed DashScope requires its registered synchronous Qwen text path")
+		}
+		config.managedRequestPath = upstreamPath
+		return &ManagedAdapter{config: config, apiName: apiName}, nil
+	}
 	switch config.typ {
 	case providerTypeOpenAI, providerTypeGeneric:
 		return nil, nil
@@ -88,10 +99,13 @@ func NewManagedAdapter(config ProviderConfig, apiName ApiName, upstreamPath stri
 }
 
 func (a *ManagedAdapter) NativeQwen() bool {
-	return a.config.typ == providerTypeQwen && !a.config.qwenEnableCompatible
+	return a.config.typ == providerTypeQwen && (!a.config.qwenEnableCompatible || a.apiName == ApiNameDashScopeText || a.apiName == ApiNameDashScopeMultimodal)
 }
 
 func (a *ManagedAdapter) NativeResponseFormat() string {
+	if a.apiName == ApiNameDashScopeText || a.apiName == ApiNameDashScopeMultimodal {
+		return ""
+	}
 	if a.NativeQwen() {
 		return providerTypeQwen
 	}
@@ -105,6 +119,16 @@ func (a *ManagedAdapter) NativeResponseFormat() string {
 // The caller freezes these resulting bytes and path before its sole send.
 func (a *ManagedAdapter) Prepare(ctx wrapper.HttpContext, body []byte, headers http.Header, model, credential string, streaming bool) ([]byte, error) {
 	headers.Set(":path", a.config.managedRequestPath)
+	if a.apiName == ApiNameDashScopeText || a.apiName == ApiNameDashScopeMultimodal {
+		headers.Del("x-api-key")
+		headers.Del("api-key")
+		headers.Set("authorization", "Bearer "+credential)
+		if streaming {
+			headers.Set("accept", "text/event-stream")
+			headers.Set("x-dashscope-sse", "enable")
+		}
+		return body, nil
+	}
 	ctx.SetContext(a.config.failover.ctxApiTokenInUse, credential)
 	ctx.SetContext(ctxKeyOriginalRequestModel, model)
 	ctx.SetContext(ctxKeyFinalRequestModel, model)

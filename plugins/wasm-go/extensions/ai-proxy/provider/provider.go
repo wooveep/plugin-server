@@ -77,6 +77,8 @@ const (
 	ApiNameGeminiGenerateContent       ApiName = "gemini/v1beta/generatecontent"
 	ApiNameGeminiStreamGenerateContent ApiName = "gemini/v1beta/streamgeneratecontent"
 	ApiNameAnthropicMessages           ApiName = "anthropic/v1/messages"
+	ApiNameDashScopeText               ApiName = "dashscope/text-generation"
+	ApiNameDashScopeMultimodal         ApiName = "dashscope/multimodal-generation"
 	ApiNameAnthropicCountTokens        ApiName = "anthropic/v1/messages/count_tokens"
 	ApiNameAnthropicComplete           ApiName = "anthropic/v1/complete"
 	ApiNameVertexRaw                   ApiName = "vertex/raw"

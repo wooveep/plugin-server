@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.26
+  version: 2.0.27
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -446,6 +446,8 @@ spec:
               type: string
               enum:
               - openai_chat
+              - dashscope_text
+              - dashscope_multimodal
               - openai_responses
               - anthropic_messages
               - qwen_image20_pro_sync
@@ -459,6 +461,8 @@ spec:
               type: string
               enum:
               - openai_chat
+              - dashscope_text
+              - dashscope_multimodal
               - openai_responses
               - anthropic_messages
               - qwen_image20_pro_sync
