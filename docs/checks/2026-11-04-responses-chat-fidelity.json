@@ -1,6 +1,6 @@
 {
   "date": "2026-11-04",
-  "completed_at": "2026-11-03T23:26:09.424883+00:00",
+  "completed_at": "2026-11-03T23:34:05.437479+00:00",
   "status": "FIXED_AND_ISOLATED_K3S_ONLINE_REGRESSION_PASSED",
   "source": {
     "base_commit": "d7153c12",
@@ -1428,5 +1428,130 @@
     "patch_apply_check_target_commit": "d0541053f3eac0e331642df76703088f51c6a974",
     "patch_apply_check_passed": true,
     "target_working_tree_modified": false
+  },
+  "cleanup_followup": {
+    "reason": "Native business soft delete retains active publications; runtime resources reappeared after an initial deletion.",
+    "native_release_control": [
+      {
+        "release_id": "01a1a3ab-05a3-72c3-982c-d1650b8d2bca",
+        "command_key": "responses-fidelity-close-01a1a3ab-05a3-72c3-982c-d1650b8d2bca",
+        "http": 200,
+        "admission_state": "disabled",
+        "lifecycle": "active",
+        "status_revision": "4"
+      },
+      {
+        "release_id": "01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+        "command_key": "responses-fidelity-close-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+        "http": 200,
+        "admission_state": "disabled",
+        "lifecycle": "active",
+        "status_revision": "4"
+      },
+      {
+        "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+        "command_key": "responses-fidelity-close-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+        "http": 200,
+        "admission_state": "disabled",
+        "lifecycle": "active",
+        "status_revision": "4"
+      },
+      {
+        "release_id": "01a1a3b8-0e57-7a13-a60c-d401cd72f181",
+        "command_key": "responses-fidelity-close-01a1a3b8-0e57-7a13-a60c-d401cd72f181",
+        "http": 200,
+        "admission_state": "disabled",
+        "lifecycle": "active",
+        "status_revision": "4"
+      }
+    ],
+    "final_cleanup": {
+      "closures": [
+        {
+          "release_id": "01a1a3ab-05a3-72c3-982c-d1650b8d2bca",
+          "command_key": "responses-fidelity-close-01a1a3ab-05a3-72c3-982c-d1650b8d2bca",
+          "http": 200,
+          "admission_state": "disabled",
+          "lifecycle": "active",
+          "status_revision": "4"
+        },
+        {
+          "release_id": "01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+          "command_key": "responses-fidelity-close-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+          "http": 200,
+          "admission_state": "disabled",
+          "lifecycle": "active",
+          "status_revision": "4"
+        },
+        {
+          "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+          "command_key": "responses-fidelity-close-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+          "http": 200,
+          "admission_state": "disabled",
+          "lifecycle": "active",
+          "status_revision": "4"
+        },
+        {
+          "release_id": "01a1a3b8-0e57-7a13-a60c-d401cd72f181",
+          "command_key": "responses-fidelity-close-01a1a3b8-0e57-7a13-a60c-d401cd72f181",
+          "http": 200,
+          "admission_state": "disabled",
+          "lifecycle": "active",
+          "status_revision": "4"
+        }
+      ],
+      "runtime_cleanup": [
+        {
+          "kind": "ingresses",
+          "deleted": [
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-text",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-text",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-text",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-text"
+          ],
+          "remaining": []
+        },
+        {
+          "kind": "wasmplugins",
+          "deleted": [
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-billing",
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-proxy",
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-quota",
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-statistics",
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-model-mapper",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-billing",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-proxy",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-quota",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-statistics",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-model-mapper",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-billing",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-proxy",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-quota",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-statistics",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-model-mapper",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-billing",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-proxy",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-quota",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-statistics",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-model-mapper"
+          ],
+          "remaining": []
+        }
+      ],
+      "all_owned_runtime_remaining": 0,
+      "historical_release_records_preserved": true
+    },
+    "SQL_writes_or_unrelated_code_changes": false,
+    "delayed_stability_check": {
+      "delay_seconds": 35,
+      "started_at": "2026-11-03T23:32:39.645984+00:00",
+      "checked_at": "2026-11-03T23:33:16.295059+00:00",
+      "remaining": {
+        "ingresses": 0,
+        "wasmplugins": 0,
+        "artifact_resources": 0
+      },
+      "all_four_releases_still_disabled": true
+    }
   }
 }
