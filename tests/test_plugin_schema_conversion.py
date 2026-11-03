@@ -10,6 +10,34 @@ ROOT = Path(__file__).parent / "fixtures/schema-conversion"
 
 
 class SchemaConversionTests(unittest.TestCase):
+    def test_dashscope_native_text_configuration_is_publishable_in_both_scopes(self):
+        import json
+        from jsonschema import Draft202012Validator
+
+        source = Path(__file__).resolve().parents[1] / "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml"
+        converted = convert_spec(source.read_bytes())
+        for protocol, operation in (("dashscope_text", "text-generation"), ("dashscope_multimodal", "multimodal-generation")):
+            config = {
+                "path_scope": "bound_target", "activeProviderId": "owned-qwen",
+                "providers": [{"id": "owned-qwen", "type": "qwen", "apiTokens": ["owned-fixture-key"]}],
+                "managed_execution": {
+                    "producer_id": "owned-producer", "private_stream": "owned-stream",
+                    "upstream_path": "/api/v1/services/aigc/" + operation + "/generation",
+                    "authority": "qwen.example.invalid", "timeout_ms": 30000,
+                    "call_identity_source": "admission", "credential_value": "owned-fixture-key",
+                    "input_protocol": protocol, "upstream_protocol": protocol,
+                    "redis": {"service_name": "redis.example.invalid", "service_port": 6379,
+                              "username": "default", "database": 0, "timeout": 1000},
+                },
+            }
+            for name, encoded in converted["schemas"].items():
+                with self.subTest(protocol=protocol, scope=name):
+                    validator = Draft202012Validator(json.loads(encoded))
+                    validator.validate(config)
+                    config["managed_execution"]["input_protocol"] = "unregistered_native"
+                    self.assertFalse(validator.is_valid(config))
+                    config["managed_execution"]["input_protocol"] = protocol
+
     def test_real_key_auth_and_billing_preserve_complete_scope_metadata(self):
         for name in ("key-auth", "ai-billing"):
             raw = (ROOT / (name + ".yaml")).read_bytes()
