@@ -5,10 +5,13 @@ import "errors"
 // NativeEmbeddingSchemaVersion is the separately registered native:v2 wire.
 // The original v1 factory and decoder continue to reject this operation.
 const NativeEmbeddingSchemaVersion = "billing-facts.v2"
+
+// CustomerEmbeddingSchemaVersion adds wallet-backed input-only observations.
+const CustomerEmbeddingSchemaVersion = "billing-facts.v4"
+const CustomerEmbeddingRegistrationVersion = "execution-registration.v3"
 const NativeEmbeddingOperation = "text_embedding"
 
-// EmbeddingAttempt retains the original service/job selection before one send.
-// It cannot be constructed from a customer sale or a media/query attempt.
+// EmbeddingAttempt retains the original customer or service selection before one send.
 type EmbeddingAttempt struct{ original Envelope }
 
 func NewEmbeddingAttempt(original Envelope) (EmbeddingAttempt, error) {
@@ -16,6 +19,9 @@ func NewEmbeddingAttempt(original Envelope) (EmbeddingAttempt, error) {
 	version := NativeEmbeddingSchemaVersion
 	if original.ProviderAccountID == "" {
 		version = ConnectionSchemaVersion
+	}
+	if original.BillingMode == "customer" || original.SchemaVersion == CustomerEmbeddingSchemaVersion {
+		version = CustomerEmbeddingSchemaVersion
 	}
 	if original.SchemaVersion != "" && original.SchemaVersion != version ||
 		original.PayloadCanonicalization != "" && original.PayloadCanonicalization != Canonicalization {
@@ -46,7 +52,14 @@ func FreezeEmbedding(input Envelope) (Snapshot, error) {
 	if input.SchemaVersion == ConnectionSchemaVersion {
 		version = ConnectionSchemaVersion
 	}
-	return freezeObservation(input, version, validateEmbeddingUsage, validateEmbeddingEnvelope)
+	if input.BillingMode == "customer" || input.SchemaVersion == CustomerEmbeddingSchemaVersion {
+		version = CustomerEmbeddingSchemaVersion
+	}
+	usage := validateEmbeddingUsage
+	if version == CustomerEmbeddingSchemaVersion {
+		usage = validateCustomerEmbeddingUsage
+	}
+	return freezeObservation(input, version, usage, validateEmbeddingEnvelope)
 }
 
 func CorrectEmbedding(previous Snapshot, replacement Envelope) (Snapshot, error) {
@@ -54,27 +67,41 @@ func CorrectEmbedding(previous Snapshot, replacement Envelope) (Snapshot, error)
 	if previous.envelope.SchemaVersion == ConnectionSchemaVersion {
 		version = ConnectionSchemaVersion
 	}
+	if previous.envelope.SchemaVersion == CustomerEmbeddingSchemaVersion {
+		version = CustomerEmbeddingSchemaVersion
+	}
 	return correctObservation(previous, replacement, version, FreezeEmbedding)
 }
 
 func validateEmbeddingIdentity(e Envelope) error {
-	if e.OperationKind != NativeEmbeddingOperation || e.PrincipalKind != "service" || e.BillingMode != "internal_cost" || e.CostOwner == nil ||
-		e.AccountID != "" || e.SalesAssetID != "" || e.OperationID != "" || e.ProviderTaskID != "" || e.ParentAttemptID != "" {
-		return errors.New("embedding requires its original internal service call without sale or media identity")
+	if e.OperationKind != NativeEmbeddingOperation || e.OperationID != "" || e.ProviderTaskID != "" || e.ParentAttemptID != "" {
+		return errors.New("embedding requires its original synchronous call without media identity")
 	}
-	for _, value := range []string{e.ProducerID, e.CallID, e.PrincipalID, e.CostOwner.OwnerID, e.CostOwner.SourceJobID} {
+	for _, value := range []string{e.ProducerID, e.CallID, e.PrincipalID} {
 		if !id(value) {
-			return errors.New("embedding requires the original service job owner")
+			return errors.New("embedding requires its original caller identity")
 		}
 	}
-	if !one(e.CostOwner.Kind, "platform", "tenant") || !timestamp(e.OccurredAt) || (e.ReleaseID == "") != (e.RouteID == "") {
+	if e.BillingMode == "customer" && e.SchemaVersion == CustomerEmbeddingSchemaVersion {
+		if e.PrincipalKind != "user" || e.CostOwner != nil || !id(e.TenantID) || !id(e.AccountID) || !id(e.SalesAssetID) {
+			return errors.New("customer embedding requires its original user and sale wallet")
+		}
+	} else if e.BillingMode == "internal_cost" {
+		if e.PrincipalKind != "service" || e.CostOwner == nil || e.AccountID != "" || e.SalesAssetID != "" ||
+			!one(e.CostOwner.Kind, "platform", "tenant") || !id(e.CostOwner.OwnerID) || !id(e.CostOwner.SourceJobID) {
+			return errors.New("internal embedding requires its original service job owner")
+		}
+	} else {
+		return errors.New("embedding caller carrier does not match its registered version")
+	}
+	if !timestamp(e.OccurredAt) || (e.ReleaseID == "") != (e.RouteID == "") {
 		return errors.New("embedding has invalid original ownership or occurrence time")
 	}
 	return nil
 }
 
 func validateEmbeddingEnvelope(e Envelope) error {
-	if (e.SchemaVersion != NativeEmbeddingSchemaVersion && e.SchemaVersion != ConnectionSchemaVersion) || e.PayloadCanonicalization != Canonicalization {
+	if !one(e.SchemaVersion, NativeEmbeddingSchemaVersion, ConnectionSchemaVersion, CustomerEmbeddingSchemaVersion) || e.PayloadCanonicalization != Canonicalization {
 		return errorsForVersion()
 	}
 	if err := validateEmbeddingIdentity(e); err != nil {
@@ -83,7 +110,26 @@ func validateEmbeddingEnvelope(e Envelope) error {
 	if e.SendTransport != "" && e.SendTransport != "http_call" || e.RecordingOwner != "" && e.RecordingOwner != "ai_proxy" || e.Mechanism != "" && e.Mechanism != "router" {
 		return errors.New("embedding cannot declare another sender or retry mechanism")
 	}
-	return validateObservationFields(e, validateEmbeddingUsage)
+	usage := validateEmbeddingUsage
+	if e.SchemaVersion == CustomerEmbeddingSchemaVersion {
+		usage = validateCustomerEmbeddingUsage
+	}
+	return validateObservationFields(e, usage)
+}
+
+func validateCustomerEmbeddingUsage(u Usage) error {
+	if u.Status != "estimated" {
+		return validateEmbeddingUsage(u)
+	}
+	if u.Unit != "token" || u.Source != "estimator" || !id(u.EstimatorVersion) || len(u.Quantities) != 1 {
+		return errors.New("estimated embedding usage requires its input estimator")
+	}
+	value, exists := u.Quantities["input"]
+	if !exists {
+		return errors.New("embedding cannot invent output or cache quantities")
+	}
+	_, err := integer(value, 128)
+	return err
 }
 
 func validateEmbeddingUsage(u Usage) error {

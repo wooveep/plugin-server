@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
+	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
 )
 
 const managedProtocolEmbeddings = "openai_embeddings"
@@ -25,12 +26,12 @@ func managedOperation(configuration *managedExecutionConfig) string {
 func validateManagedEmbedding(configuration *managedExecutionConfig) error {
 	d := configuration.release.Descriptor
 	capability, exists := d.Capabilities[executionfacts.NativeEmbeddingOperation]
-	if !exists || len(d.Capabilities) != 1 || configuration.settings.CallIdentitySource != executionfacts.CallIdentitySourceInternal ||
+	if !exists || len(d.Capabilities) != 1 || (configuration.settings.CallIdentitySource != executionfacts.CallIdentitySourceInternal && configuration.settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission) ||
 		configuration.settings.InputProtocol != managedProtocolEmbeddings || configuration.settings.UpstreamProtocol != managedProtocolEmbeddings ||
 		configuration.settings.TextExecution != nil || configuration.settings.MediaDispatchMode == "managed_operation" || configuration.settings.UpstreamHealth == nil ||
 		d.AdapterRef != managedEmbeddingAdapter || d.Transport.PathAdapterRef != managedEmbeddingAdapter || capability.ResponseClassifierRef != managedEmbeddingClassifier ||
 		capability.SendMode != "single_send" || capability.MaxAttempts != 1 || capability.MaxFallbackHops != 0 || capability.QueryCapabilityRef != "" || capability.ProviderIdempotencyRef != "" {
-		return errors.New("embedding requires its registered internal single-send adapter and health capability")
+		return errors.New("embedding requires its registered single-send adapter and health capability")
 	}
 	return nil
 }
@@ -119,6 +120,45 @@ func managedEmbeddingUsage(object map[string]json.RawMessage) *executionfacts.Us
 		}
 	}
 	return &executionfacts.Usage{Status: "reported", Unit: "token", Source: "provider", Quantities: map[string]string{"input": input.String()}}
+}
+
+// Counts only the original embedding input when provider usage is unavailable.
+// Batch strings are counted separately; token ID inputs already state their size.
+func estimateManagedEmbeddingInput(model string, raw json.RawMessage) (*executionfacts.Usage, error) {
+	var text string
+	var count int64
+	if json.Unmarshal(raw, &text) == nil {
+		value, err := tokenestimate.Count(model, text)
+		if err != nil {
+			return nil, err
+		}
+		count = value
+	} else {
+		var batch []json.RawMessage
+		if err := json.Unmarshal(raw, &batch); err != nil {
+			return nil, err
+		}
+		for _, item := range batch {
+			if json.Unmarshal(item, &text) == nil {
+				value, err := tokenestimate.Count(model, text)
+				if err != nil {
+					return nil, err
+				}
+				count += value
+			} else if len(item) > 0 && item[0] == '[' {
+				var tokens []json.RawMessage
+				if err := json.Unmarshal(item, &tokens); err != nil {
+					return nil, err
+				}
+				count += int64(len(tokens))
+			} else {
+				count++
+			}
+		}
+	}
+	return &executionfacts.Usage{Status: "estimated", Unit: "token", Source: "estimator",
+		Quantities:       map[string]string{"input": strconv.FormatInt(count, 10)},
+		EstimatorVersion: "tiktoken-go.v0.7.0/" + string(tokenestimate.EncodingForModel(model)) + "/embedding-input.v1"}, nil
 }
 
 func managedEmbeddingObservation(status uint16, headers [][2]string, body []byte, complete bool, expected int) managedProtocolObservation {

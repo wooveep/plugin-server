@@ -12,10 +12,24 @@ import (
 // availableManagedUsage fills only unavailable text usage after an observed send.
 // A failed response still consumed its available input; absent output costs zero.
 func availableManagedUsage(s *managedExecutionState, outcome executionfacts.AttemptOutcome, body []byte) *executionfacts.Usage {
-	if outcome.SendState != "observed_sent" || managedOperation(s.config) != "text_generate" || outcome.Usage != nil && outcome.Usage.Status != "missing" {
+	if outcome.SendState != "observed_sent" || outcome.Usage != nil && outcome.Usage.Status != "missing" {
 		return outcome.Usage
 	}
 	model := s.config.release.Descriptor.UpstreamModel
+	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
+		// Frozen internal v2/v3 facts retain their provider-only contract.
+		if s.internal != nil {
+			return outcome.Usage
+		}
+		usage, err := estimateManagedEmbeddingInput(model, s.embeddingInput)
+		if err != nil {
+			return outcome.Usage
+		}
+		return usage
+	}
+	if managedOperation(s.config) != "text_generate" {
+		return outcome.Usage
+	}
 	input, err := tokenestimate.Count(model, s.requestText)
 	if err != nil {
 		return outcome.Usage

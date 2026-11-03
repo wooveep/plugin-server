@@ -433,6 +433,7 @@ type managedExecutionState struct {
 	callID, attemptID, businessUTC                             string
 	streaming                                                  bool
 	requestText                                                string
+	embeddingInput                                             json.RawMessage
 	prepared, dispatchStarted, handedOff, callbackSeen, closed bool
 	original                                                   executionfacts.Envelope
 	attempt                                                    executionfacts.Attempt
@@ -715,6 +716,9 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 
 func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot, body []byte) error {
 	s.requestText = tokenestimate.RequestText(body)
+	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
+		s.embeddingInput = json.RawMessage(gjson.GetBytes(body, "input").Raw)
+	}
 	selection := stateSelection(s, basis)
 	digest, err := managedSelectionDigest(s.config, selection)
 	if err != nil {

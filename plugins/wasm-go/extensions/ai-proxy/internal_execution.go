@@ -200,8 +200,13 @@ func managedRegistration(state *managedExecutionState, basis bodybasis.Snapshot)
 			BusinessOccurredAt: state.businessUTC, Selection: stateSelection(state, basis),
 		})
 	}
+	version := "execution-registration.v1"
+	if managedOperation(configuration) == executionfacts.NativeEmbeddingOperation {
+		version = executionfacts.CustomerEmbeddingRegistrationVersion
+	}
 	return executionfacts.FreezeRegistration(executionfacts.Registration{
-		ProducerID: configuration.settings.ProducerID, CallID: state.callID, AttemptID: state.attemptID,
+		SchemaVersion: version,
+		ProducerID:    configuration.settings.ProducerID, CallID: state.callID, AttemptID: state.attemptID,
 		ReleaseID: configuration.release.Descriptor.ReleaseID, RouteID: configuration.release.RouteID, TargetID: configuration.release.Descriptor.TargetID,
 		AccountID: state.identity.AccountID, APIKeyID: state.identity.APIKeyID, CredentialGeneration: state.identity.CredentialGeneration,
 		BusinessOccurredAt: state.businessUTC, Selection: stateSelection(state, basis),

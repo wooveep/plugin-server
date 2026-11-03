@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.25
+  version: 2.0.26
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -175,7 +175,7 @@ spec:
               - upstream_health
               properties:
                 call_identity_source:
-                  const: internal_execution
+                  enum: [admission, internal_execution]
                 input_protocol:
                   const: openai_embeddings
                 upstream_protocol:
@@ -754,7 +754,7 @@ spec:
               - upstream_health
               properties:
                 call_identity_source:
-                  const: internal_execution
+                  enum: [admission, internal_execution]
                 input_protocol:
                   const: openai_embeddings
                 upstream_protocol:
@@ -2346,7 +2346,7 @@ spec:
               - upstream_health
               properties:
                 call_identity_source:
-                  const: internal_execution
+                  enum: [admission, internal_execution]
                 input_protocol:
                   const: openai_embeddings
                 upstream_protocol:
@@ -2821,7 +2821,7 @@ spec:
               - upstream_health
               properties:
                 call_identity_source:
-                  const: internal_execution
+                  enum: [admission, internal_execution]
                 input_protocol:
                   const: openai_embeddings
                 upstream_protocol:

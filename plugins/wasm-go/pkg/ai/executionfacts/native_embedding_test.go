@@ -178,3 +178,64 @@ func TestNativeEmbeddingDeliveryBridgePreservesBytesAndRejectsV1Decoder(t *testi
 		t.Fatal("noncanonical bridge accepted")
 	}
 }
+
+func TestCustomerEmbeddingV4RetainsWalletAndOnlyInput(t *testing.T) {
+	original := attemptFixture()
+	original.SchemaVersion = CustomerEmbeddingSchemaVersion
+	original.OperationKind = NativeEmbeddingOperation
+	original.ProviderAccountID = ""
+	for _, usage := range []*Usage{
+		{Status: "reported", Unit: "token", Source: "provider", Quantities: map[string]string{"input": "0"}},
+		{Status: "estimated", Unit: "token", Source: "estimator", Quantities: map[string]string{"input": "25"}, EstimatorVersion: "tiktoken-go.v0.7.0/o200k_base/embedding-input.v1"},
+	} {
+		original.Usage = usage
+		snapshot, err := FreezeEmbedding(original)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fact := snapshot.Envelope()
+		if fact.AccountID != original.AccountID || fact.SalesAssetID != original.SalesAssetID || fact.SchemaVersion != CustomerEmbeddingSchemaVersion || len(fact.Usage.Quantities) != 1 {
+			t.Fatal("customer identity or input lost")
+		}
+		delivery := Envelope{Kind: "call_delivery", ProducerID: original.ProducerID, CallID: original.CallID,
+			ReleaseID: original.ReleaseID, RouteID: original.RouteID, TenantID: original.TenantID,
+			PrincipalID: original.PrincipalID, AccountID: original.AccountID, SalesAssetID: original.SalesAssetID,
+			PrincipalKind: "user", BillingMode: "customer", OperationKind: NativeEmbeddingOperation,
+			OccurredAt: original.OccurredAt, ObservedAt: original.ObservedAt, Usage: usage,
+			DeliveryState: "succeeded", ServedFrom: "upstream", PublicModel: "public-embedding"}
+		frozen, err := FreezeEmbedding(delivery)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bridge, err := EncodeEmbeddingDeliveryBridge(frozen)
+		if err != nil {
+			t.Fatal(err)
+		}
+		decoded, err := DecodeEmbeddingDeliveryBridge(bridge)
+		if err != nil || !bytes.Equal(decoded.Bytes(), frozen.Bytes()) {
+			t.Fatal("bridge changed input or ownership", err)
+		}
+		for _, version := range []string{NativeEmbeddingSchemaVersion, ConnectionSchemaVersion} {
+			older := original
+			older.SchemaVersion = version
+			if _, err := FreezeEmbedding(older); err == nil {
+				t.Fatal("older contract accepted a customer")
+			}
+		}
+		forged := original
+		forged.AccountID = ""
+		if _, err := FreezeEmbedding(forged); err == nil {
+			t.Fatal("customer lost its wallet")
+		}
+	}
+	registration := registrationFixture(t)
+	registration.SchemaVersion = CustomerEmbeddingRegistrationVersion
+	registration.Selection = embeddingSelectionFixture(t)
+	if _, err := FreezeRegistration(registration); err != nil {
+		t.Fatal(err)
+	}
+	registration.SchemaVersion = "execution-registration.v1"
+	if _, err := FreezeRegistration(registration); err == nil {
+		t.Fatal("v1 accepted embedding selection")
+	}
+}

@@ -76,3 +76,28 @@ func TestManagedEmbeddingResponseRequiresActualSynchronousVectors(t *testing.T) 
 		t.Fatal("embedding operation is aliased")
 	}
 }
+
+func TestCustomerEmbeddingAvailableUsageCountsOnlyOriginalInput(t *testing.T) {
+	state := &managedExecutionState{config: &managedExecutionConfig{}}
+	state.config.settings.InputProtocol = managedProtocolEmbeddings
+	state.config.release.Descriptor.UpstreamModel = "qwen3.7-text-embedding-flash"
+	for _, tc := range []struct{ input, want string }{
+		{`"hello"`, "1"}, {`["hello","world"]`, "2"}, {`[1,2,3]`, "3"}, {`[[1,2],[3,4,5]]`, "5"},
+	} {
+		state.embeddingInput = json.RawMessage(tc.input)
+		outcome := executionfacts.AttemptOutcome{SendState: "observed_sent", Usage: executionfacts.MissingTokenUsage("omitted")}
+		usage := availableManagedUsage(state, outcome, []byte(`{"data":[{"embedding":[1,2,3,4]}]}`))
+		if usage.Status != "estimated" || usage.Quantities["input"] != tc.want || len(usage.Quantities) != 1 || usage.EstimatorVersion == "" {
+			t.Fatalf("wrong input estimate: %+v", usage)
+		}
+		zero := &executionfacts.Usage{Status: "reported", Unit: "token", Source: "provider", Quantities: map[string]string{"input": "0"}}
+		outcome.Usage = zero
+		if availableManagedUsage(state, outcome, nil) != zero {
+			t.Fatal("provider zero overwritten")
+		}
+		outcome.SendState, outcome.Usage = "not_sent", executionfacts.MissingTokenUsage("not_sent")
+		if availableManagedUsage(state, outcome, nil).Status != "missing" {
+			t.Fatal("pre-send rejection became billable")
+		}
+	}
+}

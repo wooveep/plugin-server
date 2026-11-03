@@ -148,9 +148,6 @@ func configureNativeBilling(value gjson.Result, cfg *BillingConfig) error {
 		cfg.dormant = true
 		return nil
 	}
-	if operation == executionfacts.NativeEmbeddingOperation && settings.CallIdentitySource != executionfacts.CallIdentitySourceInternal {
-		return errors.New("embedding billing requires the original internal service call")
-	}
 	outbox := executionfacts.NewOutbox()
 	wrapper.RegisterTickFunc(1000, outbox.Retry)
 	cfg.NativeExecution = &nativeBillingConfig{producerID: settings.ProducerID, callIdentitySource: settings.CallIdentitySource, release: release, outbox: outbox}
@@ -415,7 +412,7 @@ func validateNativeBillingDelivery(state *nativeBillingState, snapshot execution
 			return err
 		}
 	} else {
-		if identity.Validate() != nil || identity.TenantID == "" || identity.PrincipalID == "" || snapshot.ProducerID() != state.config.producerID || fact.CallID != state.origin.CallID || fact.OccurredAt != state.origin.OccurredAt || fact.Kind != "call_delivery" || fact.PrincipalKind != "user" || fact.BillingMode != "customer" || fact.OperationKind != "text_generate" || fact.ReleaseID != release.Descriptor.ReleaseID || fact.RouteID != release.RouteID || fact.SalesAssetID != release.SalesAssetID || fact.PublicModel != release.PublicModel || fact.AccountID != identity.AccountID || fact.TenantID != identity.TenantID || fact.PrincipalID != identity.PrincipalID {
+		if identity.Validate() != nil || identity.TenantID == "" || identity.PrincipalID == "" || snapshot.ProducerID() != state.config.producerID || fact.CallID != state.origin.CallID || fact.OccurredAt != state.origin.OccurredAt || fact.Kind != "call_delivery" || fact.PrincipalKind != "user" || fact.BillingMode != "customer" || fact.OperationKind != nativeBillingOperation(release) || fact.ReleaseID != release.Descriptor.ReleaseID || fact.RouteID != release.RouteID || fact.SalesAssetID != release.SalesAssetID || fact.PublicModel != release.PublicModel || fact.AccountID != identity.AccountID || fact.TenantID != identity.TenantID || fact.PrincipalID != identity.PrincipalID {
 			return errors.New("delivery differs from original caller or released ownership")
 		}
 	}

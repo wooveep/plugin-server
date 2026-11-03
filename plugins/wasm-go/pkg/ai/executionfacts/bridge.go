@@ -68,7 +68,11 @@ func decodeVersionedDeliveryBridge(raw []byte, version string, freeze func(Envel
 	if err := decoder.Decode(new(interface{})); err != io.EOF {
 		return Snapshot{}, errors.New("delivery bridge has trailing observation bytes")
 	}
-	if envelope.Kind != "call_delivery" || envelope.SchemaVersion != version || envelope.PayloadCanonicalization != Canonicalization {
+	versionMatches := envelope.SchemaVersion == version
+	if version == NativeEmbeddingSchemaVersion {
+		versionMatches = one(envelope.SchemaVersion, NativeEmbeddingSchemaVersion, ConnectionSchemaVersion, CustomerEmbeddingSchemaVersion)
+	}
+	if envelope.Kind != "call_delivery" || !versionMatches || envelope.PayloadCanonicalization != Canonicalization {
 		return Snapshot{}, errors.New("delivery bridge has a different frozen observation kind or version")
 	}
 	snapshot, err := freeze(envelope)
