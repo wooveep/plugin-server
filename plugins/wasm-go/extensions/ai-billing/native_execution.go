@@ -476,8 +476,10 @@ func onNativeBillingStreamDone(ctx wrapper.HttpContext, cfg BillingConfig) {
 		// does not imply an append timeout; a later Redis failure remains visible.
 		return
 	}
-	if !state.gap {
-		nativeBillingGap(ctx, state, "delivery_bridge_missing")
+	if !state.gap && !state.bridgeSeen {
+		// A client can close before the finalizer receives the provider result.
+		// Its completion callback owns the eventual cancelled-delivery sale.
+		ctx.SetUserAttribute("billing_completion", "provider_result_pending")
 	}
 }
 

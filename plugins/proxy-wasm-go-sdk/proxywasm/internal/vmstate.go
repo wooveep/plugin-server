@@ -27,6 +27,7 @@ type (
 
 	httpCallbackAttribute struct {
 		callback        func(numHeaders, bodySize, numTrailers int)
+		completion      func(numHeaders, bodySize, numTrailers int, requestAlive bool)
 		callerContextID uint32
 	}
 
@@ -69,6 +70,12 @@ func GetHttpContext(contextID uint32) types.HttpContext {
 
 func RegisterHttpCallout(calloutID uint32, callback func(numHeaders, bodySize, numTrailers int)) {
 	currentState.registerHttpCallOut(calloutID, callback)
+}
+
+// RegisterHttpCalloutCompletion opts one immutable send into result retention.
+func RegisterHttpCalloutCompletion(calloutID uint32, callback func(int, int, int, bool)) {
+	root := currentState.pluginContexts[currentState.contextIDToRootID[currentState.activeContextID]]
+	root.httpCallbacks[calloutID] = &httpCallbackAttribute{completion: callback, callerContextID: currentState.activeContextID}
 }
 
 func RegisterRedisCallout(calloutID uint32, callback func(status, responseSize int)) {

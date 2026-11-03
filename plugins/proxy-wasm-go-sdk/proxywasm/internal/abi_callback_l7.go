@@ -115,19 +115,24 @@ func proxyOnHttpCallResponse(pluginContextID, calloutID uint32, numHeaders, body
 	}
 
 	ctxID := cb.callerContextID
-	currentState.setActiveContextID(ctxID)
 	delete(root.httpCallbacks, calloutID)
-
-	// Check if the context is already deleted.
-	// For example, if the connection expired before the call response arrival,
-	// proxy_on_http_call_response is called AFTER ProxyOnDelete is called for the context id.
-	// In that case, if the callback continues response or make local reply, then the subsequent
-	// callbacks (for example OnHttpResponseHeaders) would follow and result in calling callback
-	// for already-deleted context id. See https://github.com/higress-group/proxy-wasm-go-sdk/issues/261 for detail.
-	if _, ok := currentState.contextIDToRootID[ctxID]; ok {
-		ProxySetEffectiveContext(ctxID)
+	_, alive := currentState.contextIDToRootID[ctxID]
+	// Ordinary callbacks retain cancellation semantics. Accounting completion is
+	// explicitly opt-in and receives a root context after its request is deleted.
+	if !alive {
+		if cb.completion == nil {
+			return
+		}
+		ctxID = pluginContextID
+	}
+	currentState.setActiveContextID(ctxID)
+	ProxySetEffectiveContext(ctxID)
+	if cb.completion != nil {
+		cb.completion(int(numHeaders), int(bodySize), int(numTrailers), alive)
+	} else {
 		cb.callback(int(numHeaders), int(bodySize), int(numTrailers))
 	}
+
 }
 
 //go:wasmexport proxy_on_redis_call_response

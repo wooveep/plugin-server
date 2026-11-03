@@ -692,7 +692,13 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 	}
 	outbound := [][2]string{{":method", "POST"}, {":path", upstreamPath}, {":authority", managed.settings.Authority}, {managedCallHeader, state.callID}, {managedAttemptHeader, state.attemptID}}
 	outbound = append(outbound, request.Headers...)
-	_, err = proxywasm.DispatchHttpCall(managed.release.Descriptor.ClusterRef, outbound, body, nil, managed.settings.TimeoutMS, func(numHeaders, bodySize, numTrailers int) {
+	_, err = proxywasm.DispatchHttpCallWithCompletion(managed.release.Descriptor.ClusterRef, outbound, body, nil, managed.settings.TimeoutMS, func(numHeaders, bodySize, numTrailers int, requestAlive bool) {
+		if !requestAlive {
+			state.closed = true
+			if state.text != nil {
+				state.text.closed = true
+			}
+		}
 		onManagedHTTPResponse(ctx, state, numHeaders, bodySize)
 	})
 	if err != nil && !state.callbackSeen {
@@ -1088,7 +1094,7 @@ func onManagedStreamDone(ctx wrapper.HttpContext, cfg config.PluginConfig) {
 	}
 	s.closed = true
 	if s.prepared && s.dispatchStarted && !s.callbackSeen {
-		managedFactGap(ctx, "upstream_callback_missing")
+		ctx.SetUserAttribute("upstream_result", "pending_after_client_close")
 		outcome := executionfacts.AttemptOutcome{ObservedAt: managedNow(), SendState: "unknown", Acceptance: "unknown", ExecutionResult: "unknown", TransportError: "upstream_callback_missing", Usage: executionfacts.MissingTokenUsage("upstream_callback_missing")}
 		if s.handedOff {
 			outcome.SendState = "handed_off"

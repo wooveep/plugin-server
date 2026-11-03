@@ -377,13 +377,13 @@ func TestNativeBillingRejectsBridgeCallerReleaseAndProducerDrift(t *testing.T) {
 	})
 }
 
-func TestNativeBillingMissingBridgeOrRedisFailureRecordsQ41WithoutFabricatedFacts(t *testing.T) {
+func TestNativeBillingPendingResultOrRedisFailureDoesNotFabricateSuccess(t *testing.T) {
 	wasmtest.RunGoTest(t, func(t *testing.T) {
 		cfg, _ := nativeBillingConfigFixture(t)
 		ctx, state := nativeBillingRequestFixture(t, cfg)
 		onNativeBillingStreamDone(ctx, cfg)
-		if !state.gap || state.delivery != nil || ctx.attributes["execution_fact_gap_reason"] != "delivery_bridge_missing" {
-			t.Fatal("missing bridge fabricated a successful delivery")
+		if state.gap || state.delivery != nil || ctx.attributes["billing_completion"] != "provider_result_pending" {
+			t.Fatal("pending provider result fabricated a delivery or an accounting gap")
 		}
 		for _, dispatchError := range []error{nil, errors.New("sensitive redis endpoint failure")} {
 			redis := &nativeBillingTestRedis{err: dispatchError}
