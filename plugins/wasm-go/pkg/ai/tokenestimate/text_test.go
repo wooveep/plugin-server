@@ -41,3 +41,17 @@ func TestAvailableTextPreservesLargeInputBudget(t *testing.T) {
 		t.Fatal("large valid input not estimated", count, err)
 	}
 }
+
+func TestResponsesSSECountsAvailableOutputOnce(t *testing.T) {
+	for name, body := range map[string]string{
+		"delta":           "event: response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"hello world\"}\n\n",
+		"final":           "event: response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"output\":[{\"type\":\"message\",\"content\":[{\"type\":\"output_text\",\"text\":\"hello world\"}]}]}}\n\n",
+		"delta_and_final": "data: {\"type\":\"response.output_text.delta\",\"delta\":\"hello world\"}\n\ndata: {\"type\":\"response.output_text.done\",\"text\":\"hello world\"}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"output\":[{\"type\":\"message\",\"content\":[{\"type\":\"output_text\",\"text\":\"hello world\"}]}]}}\n\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := ResponseText([]byte(body)); got != "hello world" {
+				t.Fatalf("available output = %q", got)
+			}
+		})
+	}
+}

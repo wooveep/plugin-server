@@ -76,8 +76,23 @@ func Documents(body []byte) []gjson.Result {
 // ResponseText collects only available model content, never provider error text.
 func ResponseText(body []byte) string {
 	var parts []string
+	var responseDone []string
+	var responseFinal gjson.Result
 	for _, object := range Documents(body) {
 		if object.Get("error").Exists() {
+			continue
+		}
+		switch object.Get("type").String() {
+		case "response.output_text.delta", "response.function_call_arguments.delta":
+			appendText(&parts, object.Get("delta"))
+			continue
+		case "response.output_text.done":
+			appendText(&responseDone, object.Get("text"))
+			continue
+		case "response.completed", "response.incomplete", "response.failed":
+			if output := object.Get("response.output"); output.IsArray() && len(output.Array()) > 0 {
+				responseFinal = output
+			}
 			continue
 		}
 		for _, key := range []string{"output_text", "output", "content", "delta.text", "delta.content"} {
@@ -92,6 +107,13 @@ func ResponseText(body []byte) string {
 			})
 		}
 		object.Get("candidates").ForEach(func(_, candidate gjson.Result) bool { appendText(&parts, candidate.Get("content")); return true })
+	}
+	if len(parts) == 0 {
+		if responseFinal.Exists() {
+			appendText(&parts, responseFinal)
+		} else {
+			parts = responseDone
+		}
 	}
 	return strings.Join(parts, "")
 }

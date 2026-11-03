@@ -141,7 +141,16 @@ func replayMaterializedRecord(record MaterializedReplayRecord, stream bool, ctx 
 	if !ok {
 		return fmt.Errorf("unsupported protocol for materialized replay: %s", record.Protocol)
 	}
-	serialized, err := adapter.SerializeReplay(thinReplayPayload(record.Protocol, record, stream))
+	payload := thinReplayPayload(record.Protocol, record, stream)
+	var usage *executionfacts.Usage
+	if state, _ := ctx.GetContext(nativeCacheDeliveryContext).(*nativeCacheDeliveryState); state != nil {
+		var err error
+		usage, payload, err = estimateNativeCacheReplay(state, record, payload)
+		if err != nil {
+			return err
+		}
+	}
+	serialized, err := adapter.SerializeReplay(payload)
 	if err != nil {
 		return err
 	}
@@ -150,7 +159,7 @@ func replayMaterializedRecord(record MaterializedReplayRecord, stream bool, ctx 
 		statusCode = 200
 	}
 
-	bridge, send := nativeCacheBridge(ctx, record)
+	bridge, send := nativeCacheBridge(ctx, record, usage)
 	if !send {
 		return nil
 	}

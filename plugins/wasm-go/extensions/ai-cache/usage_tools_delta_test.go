@@ -72,17 +72,14 @@ func TestCacheUsageDeltaActualProtocolCapture(t *testing.T) {
 					require.NoError(t, json.Unmarshal([]byte(tc.usage), &original))
 					require.NoError(t, json.Unmarshal(event["usage"], &retained))
 					require.Equal(t, original, retained, "full original objects and exact nested integer lexemes must survive")
-					meter := nativeCacheReplayUsage(tc.kind, event["usage"])
-					require.Equal(t, "reported", meter.Status)
-					require.Equal(t, "meter", meter.Source)
-					require.Equal(t, map[string]string{"input": "17", "output": "5", "cache_hit": "17", "cache_miss": "0"}, meter.Quantities)
+
 				})
 			}
 		}
 	})
 }
 
-func TestCacheUsageDeltaNativeDeliveryUsesActualProviderMeter(t *testing.T) {
+func TestCacheUsageDeltaNativeDeliveryEstimatesThisRequestAndCachedOutput(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
 		for _, tc := range []struct {
 			published             string
@@ -122,51 +119,9 @@ func TestCacheUsageDeltaNativeDeliveryUsesActualProviderMeter(t *testing.T) {
 				fact := snapshot.Envelope()
 				require.Equal(t, "cache", fact.ServedFrom)
 				require.Equal(t, nativeCacheOriginalCall, fact.CallID)
-				require.Equal(t, "meter", fact.Usage.Source)
-				require.Equal(t, map[string]string{"input": "17", "output": "5", "cache_hit": "17", "cache_miss": "0"}, fact.Usage.Quantities)
+				require.Equal(t, "estimator", fact.Usage.Source)
+				require.Equal(t, map[string]string{"input": "1", "output": "1", "cache_hit": "0", "cache_miss": "1"}, fact.Usage.Quantities)
 				require.Empty(t, host.GetHttpCalloutAttributes())
-			})
-		}
-	})
-}
-
-func TestCacheUsageDeltaExactCountsAndMissing(t *testing.T) {
-	test.RunGoTest(t, func(t *testing.T) {
-		max := "340282366920938463463374607431768211455"
-		for _, tc := range []struct {
-			name     string
-			kind     protocol.ProtocolKind
-			raw      string
-			expected map[string]string
-		}{
-			{"messages_u128", protocol.ProtocolMessages, `{"input_tokens":0,"output_tokens":5,"cache_read_input_tokens":` + max + `,"cache_creation_input_tokens":0}`, map[string]string{"input": max, "output": "5", "cache_hit": max, "cache_miss": "0"}},
-			{"messages_sum_overflow", protocol.ProtocolMessages, `{"input_tokens":1,"output_tokens":5,"cache_read_input_tokens":` + max + `,"cache_creation_input_tokens":0}`, nil},
-			{"messages_creation_sum_overflow", protocol.ProtocolMessages, `{"input_tokens":1,"output_tokens":5,"cache_read_input_tokens":0,"cache_creation_input_tokens":` + max + `}`, nil},
-			{"messages_missing_creation", protocol.ProtocolMessages, `{"input_tokens":0,"output_tokens":5,"cache_read_input_tokens":17}`, nil},
-			{"messages_missing_output", protocol.ProtocolMessages, `{"input_tokens":0,"cache_read_input_tokens":17,"cache_creation_input_tokens":0}`, nil},
-			{"messages_creation_plus_input", protocol.ProtocolMessages, `{"input_tokens":3,"output_tokens":5,"cache_read_input_tokens":17,"cache_creation_input_tokens":2}`, map[string]string{"input": "22", "output": "5", "cache_hit": "17", "cache_miss": "5"}},
-			{"chat_nested_u128", protocol.ProtocolChatCompletions, `{"prompt_tokens":` + max + `,"completion_tokens":0,"prompt_tokens_details":{"cached_tokens":` + max + `}}`, map[string]string{"input": max, "output": "0", "cache_hit": max, "cache_miss": "0"}},
-			{"responses_nested_u128", protocol.ProtocolResponses, `{"input_tokens":` + max + `,"output_tokens":0,"input_tokens_details":{"cached_tokens":` + max + `}}`, map[string]string{"input": max, "output": "0", "cache_hit": max, "cache_miss": "0"}},
-			{"chat_nested_exceeds_input", protocol.ProtocolChatCompletions, `{"prompt_tokens":16,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":17}}`, nil},
-			{"chat_nested_string", protocol.ProtocolChatCompletions, `{"prompt_tokens":17,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":"17"}}`, nil},
-			{"responses_nested_fraction", protocol.ProtocolResponses, `{"input_tokens":17,"output_tokens":5,"input_tokens_details":{"cached_tokens":17.0}}`, nil},
-			{"responses_nested_overflow", protocol.ProtocolResponses, `{"input_tokens":17,"output_tokens":5,"input_tokens_details":{"cached_tokens":340282366920938463463374607431768211456}}`, nil},
-			{"chat_total_conflict", protocol.ProtocolChatCompletions, `{"prompt_tokens":17,"completion_tokens":5,"total_tokens":23,"prompt_tokens_details":{"cached_tokens":17}}`, nil},
-			{"chat_original_splits", protocol.ProtocolChatCompletions, `{"prompt_tokens":17,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":17},"prompt_cache_hit_tokens":17,"prompt_cache_miss_tokens":0}`, map[string]string{"input": "17", "output": "5", "cache_hit": "17", "cache_miss": "0"}},
-			{"chat_original_split_conflict", protocol.ProtocolChatCompletions, `{"prompt_tokens":17,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":17},"prompt_cache_hit_tokens":16,"prompt_cache_miss_tokens":1}`, nil},
-			{"explicit_zero_nested", protocol.ProtocolResponses, `{"input_tokens":0,"output_tokens":0,"input_tokens_details":{"cached_tokens":0}}`, map[string]string{"input": "0", "output": "0", "cache_hit": "0", "cache_miss": "0"}},
-			{"no_split_from_platform_cache", protocol.ProtocolChatCompletions, `{"prompt_tokens":17,"completion_tokens":5}`, map[string]string{"input": "17", "output": "5"}},
-		} {
-			t.Run(tc.name, func(t *testing.T) {
-				usage := nativeCacheReplayUsage(tc.kind, json.RawMessage(tc.raw))
-				if tc.expected == nil {
-					require.Equal(t, "missing", usage.Status)
-					require.Nil(t, usage.Quantities)
-					return
-				}
-				require.Equal(t, "reported", usage.Status)
-				require.Equal(t, "meter", usage.Source)
-				require.Equal(t, tc.expected, usage.Quantities)
 			})
 		}
 	})

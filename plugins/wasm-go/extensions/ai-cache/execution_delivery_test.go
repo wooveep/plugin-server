@@ -117,10 +117,10 @@ func TestNativeCacheReplayBridgesOnlyTheOriginalCallDelivery(t *testing.T) {
 				require.Equal(t, nativeCacheOriginalCall, fact.CallID)
 				require.Equal(t, nativeCacheOriginalTime, fact.OccurredAt)
 				require.Equal(t, "cache", fact.ServedFrom)
-				require.Equal(t, "meter", fact.Usage.Source)
-				require.Equal(t, "9007199254740993", fact.Usage.Quantities["input"])
-				require.Equal(t, "0", fact.Usage.Quantities["output"])
-				require.NotContains(t, fact.Usage.Quantities, "cache_hit")
+				require.Equal(t, "estimator", fact.Usage.Source)
+				require.Equal(t, "2", fact.Usage.Quantities["input"])
+				require.Equal(t, "2", fact.Usage.Quantities["output"])
+				require.Equal(t, "0", fact.Usage.Quantities["cache_hit"])
 				require.Empty(t, fact.AttemptID)
 				require.Empty(t, fact.TargetID)
 				require.Empty(t, fact.BindingID)
@@ -227,17 +227,6 @@ func TestNativeCacheRejectsMissingCurrentAdmissionBeforeLookup(t *testing.T) {
 			})
 		}
 	})
-}
-
-func TestNativeCacheReplayUsageKeepsMissingDistinctFromExplicitZero(t *testing.T) {
-	for _, raw := range []string{`{}`, `{"prompt_tokens":7}`, `{"prompt_tokens":7,"completion_tokens":null}`, `{"prompt_tokens":7.0,"completion_tokens":3}`, `{"prompt_tokens":7,"completion_tokens":3,"input_cache_hit_tokens":2}`, `{"prompt_tokens":7,"completion_tokens":3,"total_tokens":11}`} {
-		usage := nativeCacheReplayUsage(protocol.ProtocolChatCompletions, json.RawMessage(raw))
-		require.Equal(t, "missing", usage.Status)
-		require.Nil(t, usage.Quantities)
-	}
-	usage := nativeCacheReplayUsage(protocol.ProtocolChatCompletions, json.RawMessage(`{"prompt_tokens":0,"completion_tokens":0}`))
-	require.Equal(t, "reported", usage.Status)
-	require.Equal(t, map[string]string{"input": "0", "output": "0"}, usage.Quantities)
 }
 
 func TestNativeCacheDeliveryRejectsPartialOrChangedPublicationConfiguration(t *testing.T) {

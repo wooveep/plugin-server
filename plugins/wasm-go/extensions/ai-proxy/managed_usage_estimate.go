@@ -49,5 +49,5 @@ func availableManagedUsage(s *managedExecutionState, outcome executionfacts.Atte
 		}
 	}
 	return &executionfacts.Usage{Status: "estimated", Unit: "token", Source: "estimator", Quantities: quantities,
-		EstimatorVersion: "tiktoken-go.v0.7.0/" + string(tokenestimate.EncodingForModel(model)) + "/available-text.v1"}
+		EstimatorVersion: "tiktoken-go.v0.7.0/" + string(tokenestimate.EncodingForModel(model)) + "/available-text.v2"}
 }

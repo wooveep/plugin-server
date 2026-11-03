@@ -142,14 +142,7 @@ func TestCacheSafetyUsagePresence(t *testing.T) {
 						var retained map[string]json.RawMessage
 						require.NoError(t, json.Unmarshal(event["usage"], &retained))
 						require.Equal(t, usage, retained, "only actually reported fields survive; no synthesized total or zero")
-						interpreted := nativeCacheReplayUsage(p.kind, event["usage"])
-						if counts.input == "" {
-							require.Equal(t, "missing", interpreted.Status)
-						} else {
-							require.Equal(t, "reported", interpreted.Status)
-							require.Equal(t, counts.input, interpreted.Quantities["input"])
-							require.Equal(t, counts.output, interpreted.Quantities["output"])
-						}
+
 					})
 				}
 			}
@@ -243,7 +236,6 @@ func TestCacheSafetyMaterializedOutputAndMissingUsage(t *testing.T) {
 		material := ScopedCacheKeyMaterial{Tenant: "tenant-a", Consumer: "consumer-a", Route: "route-a", Model: "model-a", Protocol: protocol.ProtocolChatCompletions, CacheScope: "consumer", CachePolicyVersion: "1", RequestDigest: "digest"}
 		record := MaterializedReplayRecord{SchemaVersion: materializedRecordSchemaVersion, Tenant: material.Tenant, Consumer: material.Consumer, Route: material.Route, Model: material.Model, Protocol: material.Protocol, CacheScope: material.CacheScope, CachePolicyVersion: material.CachePolicyVersion, RequestDigest: material.RequestDigest, SoftExpiresAt: now + 60, HardExpiresAt: now + 600, FinishReason: "stop", Usage: json.RawMessage(`{}`), Response: json.RawMessage(`{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`)}
 		require.NoError(t, validateMaterializedRecord(record, material, false, now), "an empty usage object remains a legal missing-usage replay")
-		require.Equal(t, "missing", nativeCacheReplayUsage(record.Protocol, record.Usage).Status)
 		record.Response = json.RawMessage(`{"choices":[{"message":{"content":"answer","audio":{"data":"actual-audio"}},"finish_reason":"stop"}]}`)
 		require.Error(t, validateMaterializedRecord(record, material, false, now))
 		record.Response = json.RawMessage(`{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`)
