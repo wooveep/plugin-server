@@ -165,7 +165,7 @@ func managedToolUsage(s *managedExecutionState, body []byte, outcome executionfa
 	} else {
 		usage = gjson.GetBytes(body, "usage")
 	}
-	for _, tool := range p.Allowed {
+	for _, tool := range [5]fixedtools.Tool{fixedtools.WebSearch, fixedtools.WebExtractor, fixedtools.CodeInterpreter, fixedtools.ImageSearch, fixedtools.WebSearchImage} {
 		zero := executionfacts.ToolMeasurement{Status: "known_zero", Count: "0", Source: "protocol_zero", ReasonCode: "tool_not_requested"}
 		if s.removedTools[tool] {
 			zero.ReasonCode = "outlet_unsupported"

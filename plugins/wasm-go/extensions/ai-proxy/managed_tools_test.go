@@ -60,6 +60,9 @@ func TestManagedToolsUseOneSendAndOriginalV5Observation(t *testing.T) {
 		if fact.SchemaVersion != executionfacts.ToolSchemaVersion || fact.ToolUsage[fixedtools.WebSearch].Count != "2" || fact.ToolUsage[fixedtools.CodeInterpreter].ReasonCode != "outlet_unsupported" {
 			t.Fatalf("original tool evidence lost: %#v", fact.ToolUsage)
 		}
+		if len(fact.ToolUsage) != 5 || fact.ToolUsage[fixedtools.ImageSearch].Status != "known_zero" {
+			t.Fatal("unrequested tools must remain known zero across protocol-specific price rules")
+		}
 	}
 	response := h.host.GetSentLocalResponse(h.id)
 	bridge, err := managedSingleHeader(response.Headers, executionfacts.DeliveryBridgeHeader)
