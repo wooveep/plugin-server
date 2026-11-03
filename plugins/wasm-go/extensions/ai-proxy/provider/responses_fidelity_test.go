@@ -53,12 +53,40 @@ func TestResponsesFallbackAdvancedFields(t *testing.T) {
 	}
 	for _, tc := range []struct{ fields, want string }{
 		{`"background":true`, "background"},
-		{`"prompt_cache_options":{"mode":"explicit","ttl":"30m"}`, "prompt_cache_options"},
 		{`"reasoning":{"summary":"auto"}`, "reasoning summary"},
 		{`"reasoning":{"generate_summary":"concise"}`, "reasoning summary"},
 	} {
 		_, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello",` + tc.fields + `}`))
 		require.ErrorContains(t, err, tc.want)
+	}
+}
+
+func TestResponsesFallbackCacheOptionsAndBreakpoints(t *testing.T) {
+	for _, mode := range []string{"explicit", "implicit"} {
+		body := fmt.Sprintf(`{"model":"test","prompt_cache_options":{"mode":%q,"ttl":"30m"},"input":[{"role":"developer","content":"prefix","prompt_cache_breakpoint":{"mode":"explicit"}},{"role":"user","content":[{"type":"input_text","text":"first","prompt_cache_breakpoint":{"mode":"explicit","ttl":"30m"}},{"type":"input_text","text":"second"},{"type":"input_text","text":"third","prompt_cache_breakpoint":{"mode":"explicit","ttl":"12h"}}]}]}`, mode)
+		out, err := ConvertResponsesRequestToChatCompletion([]byte(body))
+		require.NoError(t, err)
+		require.JSONEq(t, fmt.Sprintf(`{"mode":%q,"ttl":"30m"}`, mode), gjson.GetBytes(out, "prompt_cache_options").Raw)
+		require.Equal(t, "explicit", gjson.GetBytes(out, "messages.0.prompt_cache_breakpoint.mode").String())
+		require.Equal(t, "prefix", gjson.GetBytes(out, "messages.0.content").String())
+		require.Equal(t, int64(3), gjson.GetBytes(out, "messages.1.content.#").Int())
+		for i, text := range []string{"first", "second", "third"} {
+			path := fmt.Sprintf("messages.1.content.%d", i)
+			require.Equal(t, "text", gjson.GetBytes(out, path+".type").String())
+			require.Equal(t, text, gjson.GetBytes(out, path+".text").String())
+		}
+		require.Equal(t, "30m", gjson.GetBytes(out, "messages.1.content.0.prompt_cache_breakpoint.ttl").String())
+		require.False(t, gjson.GetBytes(out, "messages.1.content.1.prompt_cache_breakpoint").Exists())
+		require.Equal(t, "12h", gjson.GetBytes(out, "messages.1.content.2.prompt_cache_breakpoint.ttl").String())
+	}
+	for _, option := range []string{``, `,"prompt_cache_options":null`, `,"prompt_cache_options":{}`} {
+		out, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello"` + option + `}`))
+		require.NoError(t, err)
+		if option == `,"prompt_cache_options":{}` {
+			require.Equal(t, "{}", gjson.GetBytes(out, "prompt_cache_options").Raw)
+		} else {
+			require.False(t, gjson.GetBytes(out, "prompt_cache_options").Exists())
+		}
 	}
 }
 

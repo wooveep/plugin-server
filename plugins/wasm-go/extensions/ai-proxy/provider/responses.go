@@ -11,35 +11,45 @@ import (
 )
 
 type responsesRequest struct {
-	Model                string              `json:"model"`
-	Instructions         string              `json:"instructions,omitempty"`
-	Input                json.RawMessage     `json:"input"`
-	Stream               bool                `json:"stream,omitempty"`
-	Temperature          *float64            `json:"temperature,omitempty"`
-	TopP                 *float64            `json:"top_p,omitempty"`
-	PresencePenalty      *float64            `json:"presence_penalty,omitempty"`
-	FrequencyPenalty     *float64            `json:"frequency_penalty,omitempty"`
-	MaxOutputTokens      int                 `json:"max_output_tokens,omitempty"`
-	User                 string              `json:"user,omitempty"`
-	Metadata             map[string]string   `json:"metadata,omitempty"`
-	Store                *bool               `json:"store,omitempty"`
-	Background           bool                `json:"background,omitempty"`
-	Reasoning            *responsesReasoning `json:"reasoning,omitempty"`
-	PromptCacheKey       string              `json:"prompt_cache_key,omitempty"`
-	PromptCacheRetention string              `json:"prompt_cache_retention,omitempty"`
-	PromptCacheOptions   json.RawMessage     `json:"prompt_cache_options,omitempty"`
-	Text                 *responsesText      `json:"text,omitempty"`
-	Tools                []responsesTool     `json:"tools,omitempty"`
-	ToolChoice           json.RawMessage     `json:"tool_choice,omitempty"`
-	ParallelToolCalls    *bool               `json:"parallel_tool_calls,omitempty"`
-	PreviousResponseID   string              `json:"previous_response_id,omitempty"`
-	Conversation         any                 `json:"conversation,omitempty"`
+	Model                string                       `json:"model"`
+	Instructions         string                       `json:"instructions,omitempty"`
+	Input                json.RawMessage              `json:"input"`
+	Stream               bool                         `json:"stream,omitempty"`
+	Temperature          *float64                     `json:"temperature,omitempty"`
+	TopP                 *float64                     `json:"top_p,omitempty"`
+	PresencePenalty      *float64                     `json:"presence_penalty,omitempty"`
+	FrequencyPenalty     *float64                     `json:"frequency_penalty,omitempty"`
+	MaxOutputTokens      int                          `json:"max_output_tokens,omitempty"`
+	User                 string                       `json:"user,omitempty"`
+	Metadata             map[string]string            `json:"metadata,omitempty"`
+	Store                *bool                        `json:"store,omitempty"`
+	Background           bool                         `json:"background,omitempty"`
+	Reasoning            *responsesReasoning          `json:"reasoning,omitempty"`
+	PromptCacheKey       string                       `json:"prompt_cache_key,omitempty"`
+	PromptCacheRetention string                       `json:"prompt_cache_retention,omitempty"`
+	PromptCacheOptions   *responsesPromptCacheOptions `json:"prompt_cache_options,omitempty"`
+	Text                 *responsesText               `json:"text,omitempty"`
+	Tools                []responsesTool              `json:"tools,omitempty"`
+	ToolChoice           json.RawMessage              `json:"tool_choice,omitempty"`
+	ParallelToolCalls    *bool                        `json:"parallel_tool_calls,omitempty"`
+	PreviousResponseID   string                       `json:"previous_response_id,omitempty"`
+	Conversation         any                          `json:"conversation,omitempty"`
 }
 
 type responsesReasoning struct {
 	Effort          string  `json:"effort,omitempty"`
 	Summary         *string `json:"summary,omitempty"`
 	GenerateSummary *string `json:"generate_summary,omitempty"`
+}
+
+type responsesPromptCacheOptions struct {
+	Mode string `json:"mode,omitempty"`
+	TTL  string `json:"ttl,omitempty"`
+}
+
+type responsesPromptCacheBreakpoint struct {
+	Mode string `json:"mode,omitempty"`
+	TTL  string `json:"ttl,omitempty"`
 }
 
 type responsesText struct {
@@ -72,13 +82,21 @@ type responsesTool struct {
 }
 
 type responsesMessageInput struct {
-	Role    string          `json:"role"`
-	Content json.RawMessage `json:"content"`
+	Role                  string                          `json:"role"`
+	Content               json.RawMessage                 `json:"content"`
+	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
 }
 
 type responsesContentPart struct {
-	Type string `json:"type"`
-	Text string `json:"text,omitempty"`
+	Type                  string                          `json:"type"`
+	Text                  string                          `json:"text,omitempty"`
+	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
+}
+
+type responsesChatTextPart struct {
+	Type                  string                          `json:"type"`
+	Text                  string                          `json:"text"`
+	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
 }
 
 type responsesResponse struct {
@@ -167,9 +185,6 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 	if request.Background {
 		return nil, errors.New("background is unsupported in Responses fallback mode")
 	}
-	if options := bytes.TrimSpace(request.PromptCacheOptions); len(options) > 0 && !bytes.Equal(options, []byte("null")) {
-		return nil, errors.New("prompt_cache_options is unsupported in Responses fallback mode")
-	}
 	if request.Reasoning != nil && (request.Reasoning.Summary != nil || request.Reasoning.GenerateSummary != nil) {
 		return nil, errors.New("reasoning summary is unsupported in Responses fallback mode")
 	}
@@ -230,12 +245,13 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 	// explicit zero values survive without changing other providers' defaults.
 	return json.Marshal(struct {
 		chatCompletionRequest
-		Temperature      *float64                     `json:"temperature,omitempty"`
-		TopP             *float64                     `json:"top_p,omitempty"`
-		PresencePenalty  *float64                     `json:"presence_penalty,omitempty"`
-		FrequencyPenalty *float64                     `json:"frequency_penalty,omitempty"`
-		ResponseFormat   *responsesChatResponseFormat `json:"response_format,omitempty"`
-		Store            *bool                        `json:"store,omitempty"`
+		Temperature        *float64                     `json:"temperature,omitempty"`
+		TopP               *float64                     `json:"top_p,omitempty"`
+		PresencePenalty    *float64                     `json:"presence_penalty,omitempty"`
+		FrequencyPenalty   *float64                     `json:"frequency_penalty,omitempty"`
+		ResponseFormat     *responsesChatResponseFormat `json:"response_format,omitempty"`
+		Store              *bool                        `json:"store,omitempty"`
+		PromptCacheOptions *responsesPromptCacheOptions `json:"prompt_cache_options,omitempty"`
 	}{
 		chatCompletionRequest: chatRequest,
 		Temperature:           request.Temperature,
@@ -244,6 +260,7 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 		FrequencyPenalty:      request.FrequencyPenalty,
 		ResponseFormat:        responseFormat,
 		Store:                 request.Store,
+		PromptCacheOptions:    request.PromptCacheOptions,
 	})
 }
 
@@ -267,33 +284,41 @@ func convertResponsesInputToChatMessages(input json.RawMessage) ([]chatMessage, 
 			return nil, err
 		}
 		messages = append(messages, chatMessage{
-			Role:    item.Role,
-			Content: content,
+			Role:                  item.Role,
+			Content:               content,
+			PromptCacheBreakpoint: item.PromptCacheBreakpoint,
 		})
 	}
 	return messages, nil
 }
 
-func convertResponsesMessageContent(content json.RawMessage) (string, error) {
+func convertResponsesMessageContent(content json.RawMessage) (json.RawMessage, error) {
 	var text string
 	if err := json.Unmarshal(content, &text); err == nil {
-		return text, nil
+		return json.Marshal(text)
 	}
 
 	var parts []responsesContentPart
 	if err := json.Unmarshal(content, &parts); err != nil {
-		return "", fmt.Errorf("unsupported responses message content: %w", err)
+		return nil, fmt.Errorf("unsupported responses message content: %w", err)
 	}
 	var builder bytes.Buffer
+	chatParts := make([]responsesChatTextPart, 0, len(parts))
+	hasBreakpoint := false
 	for _, part := range parts {
 		switch part.Type {
 		case "input_text", "output_text":
 			builder.WriteString(part.Text)
+			chatParts = append(chatParts, responsesChatTextPart{Type: "text", Text: part.Text, PromptCacheBreakpoint: part.PromptCacheBreakpoint})
+			hasBreakpoint = hasBreakpoint || part.PromptCacheBreakpoint != nil
 		default:
-			return "", fmt.Errorf("%s is unsupported in Responses fallback mode", part.Type)
+			return nil, fmt.Errorf("%s is unsupported in Responses fallback mode", part.Type)
 		}
 	}
-	return builder.String(), nil
+	if hasBreakpoint {
+		return json.Marshal(chatParts)
+	}
+	return json.Marshal(builder.String())
 }
 
 func convertResponsesTools(tools []responsesTool) ([]tool, error) {

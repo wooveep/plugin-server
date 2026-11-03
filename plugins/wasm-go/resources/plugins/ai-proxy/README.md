@@ -2886,4 +2886,4 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 
 ## Responses fallback fidelity regression
 
-Preserves text formats, explicit sampling and function constraints, reasoning effort, store and shared cache options. Non-streaming messages carry response-derived IDs. Unsupported state/background/summary/explicit-cache behavior is rejected. This isolated candidate uses the accepted 2.0.31 baseline and does not include the separate fixed-tool C batch.
+Preserves text formats, explicit sampling and function constraints, reasoning effort, store and request cache options and text/message breakpoints. Non-streaming messages carry response-derived IDs. Unsupported state/background/summary behavior is rejected. This isolated candidate uses the accepted 2.0.31 baseline and does not include the separate fixed-tool C batch.
