@@ -125,13 +125,19 @@ func TestResponsesFallbackRequestBodyConvertsToChatCompletions(t *testing.T) {
 		})
 		require.Equal(t, types.HeaderStopIteration, action)
 
-		action = host.CallOnHttpRequestBody([]byte(`{"model":"openai/gpt-4o-mini","input":"hello","max_output_tokens":32}`))
+		action = host.CallOnHttpRequestBody([]byte(`{"model":"openai/gpt-4o-mini","input":"hello","max_output_tokens":32,"temperature":0,"parallel_tool_calls":false,"tools":[{"type":"function","name":"lookup","parameters":{"type":"object"},"strict":true}],"text":{"format":{"type":"json_schema","name":"reply","schema":{"type":"object"},"strict":false}}}`))
 		require.Equal(t, types.ActionContinue, action)
 
 		body := host.GetRequestBody()
 		require.Equal(t, "user", gjson.GetBytes(body, "messages.0.role").String())
 		require.Equal(t, "hello", gjson.GetBytes(body, "messages.0.content").String())
 		require.Equal(t, int64(32), gjson.GetBytes(body, "max_completion_tokens").Int())
+		require.Equal(t, "0", gjson.GetBytes(body, "temperature").Raw)
+		require.Equal(t, "false", gjson.GetBytes(body, "parallel_tool_calls").Raw)
+		require.Equal(t, "true", gjson.GetBytes(body, "tools.0.function.strict").Raw)
+		require.Equal(t, "json_schema", gjson.GetBytes(body, "response_format.type").String())
+		require.Equal(t, "reply", gjson.GetBytes(body, "response_format.json_schema.name").String())
+		require.Equal(t, "false", gjson.GetBytes(body, "response_format.json_schema.strict").Raw)
 		require.False(t, gjson.GetBytes(body, "input").Exists(), string(body))
 	})
 }
@@ -177,6 +183,7 @@ func TestResponsesFallbackResponseBodyConvertsToResponses(t *testing.T) {
 		body := host.GetResponseBody()
 		require.Equal(t, "response", gjson.GetBytes(body, "object").String(), string(body))
 		require.Equal(t, "completed", gjson.GetBytes(body, "status").String())
+		require.Equal(t, "msg_chatcmpl_1", gjson.GetBytes(body, "output.0.id").String())
 		require.Equal(t, "output_text", gjson.GetBytes(body, "output.0.content.0.type").String())
 		require.Equal(t, "hello", gjson.GetBytes(body, "output.0.content.0.text").String())
 		require.Equal(t, int64(11), gjson.GetBytes(body, "usage.input_tokens").Int())
