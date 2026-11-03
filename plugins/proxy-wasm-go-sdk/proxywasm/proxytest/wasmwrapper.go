@@ -83,7 +83,9 @@ type vmContext struct {
 // Note: Currently only HTTP plugins are supported.
 func NewWasmVMContext(wasm []byte) (WasmVMContext, error) {
 	ctx := context.Background()
-	r := wazero.NewRuntime(ctx)
+	// Large Go WASI modules can stall wazero 1.7 JIT SSA optimization.
+	// ABI tests use the interpreter; production Envoy execution is unaffected.
+	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfigInterpreter())
 
 	_, err := wasi_snapshot_preview1.Instantiate(ctx, r)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
 	"net/http"
 	"strconv"
 	"strings"
@@ -2597,7 +2598,7 @@ func TestNonStreamingEstimatedUsageUsesUnknownModelFallback(t *testing.T) {
 
 	body := requireRedisBillingEventBody(t, host)
 
-	expected, ok := estimateTextTokenUsage(tokenusage.ModelUnknown, inputText, outputText)
+	expected, ok := tokenestimate.Text(tokenusage.ModelUnknown, inputText, outputText)
 	require.True(t, ok)
 
 	var event map[string]interface{}
@@ -2755,7 +2756,7 @@ func TestStreamingNormalEndWithoutProviderUsageIsEstimated(t *testing.T) {
 	action = host.CallOnHttpStreamingResponseBody([]byte("data: {\"choices\":[{\"delta\":{\"content\":\""+outputText+"\"}}]}\n\n"), true)
 	require.Equal(t, types.ActionContinue, action)
 
-	expected, ok := estimateTextTokenUsage("", inputText, outputText)
+	expected, ok := tokenestimate.Text("", inputText, outputText)
 	require.True(t, ok)
 
 	event := requireRedisBillingEventStruct(t, host)
@@ -2876,9 +2877,9 @@ func TestStreamDoneFallbackEstimatesOnlySentDeltas(t *testing.T) {
 
 	host.CompleteHttp()
 
-	sentUsage, ok := estimateTextTokenUsage("", requestText, sentText)
+	sentUsage, ok := tokenestimate.Text("", requestText, sentText)
 	require.True(t, ok)
-	unsentUsage, ok := estimateTextTokenUsage("", requestText, sentText+unsentText)
+	unsentUsage, ok := tokenestimate.Text("", requestText, sentText+unsentText)
 	require.True(t, ok)
 	require.Greater(t, unsentUsage.OutputToken, sentUsage.OutputToken)
 

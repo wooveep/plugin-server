@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -676,7 +677,7 @@ func recordUsage(ctx wrapper.HttpContext, body []byte) {
 	usage := normalizeProviderTokenUsage(tokenusage.GetTokenUsage(ctx, body))
 	usageSource := usageSourceProvider
 	if usage.InputToken <= 0 && len(usage.ProviderUsage) > 0 {
-		if estimated, ok := estimateTextTokenUsage(usage.Model, ctx.GetStringContext(ctxRequestText, ""), ""); ok {
+		if estimated, ok := tokenestimate.Text(usage.Model, ctx.GetStringContext(ctxRequestText, ""), ""); ok {
 			usage.InputToken = estimated.InputToken
 			usage.OutputToken = nonNegativeInt64(usage.OutputToken)
 			usage.TotalToken = usage.InputToken + usage.OutputToken
@@ -777,7 +778,7 @@ func recordStreamingEstimatedUsage(ctx wrapper.HttpContext) bool {
 }
 
 func recordEstimatedUsage(ctx wrapper.HttpContext, model, inputText, outputText string) bool {
-	usage, ok := estimateTextTokenUsage(model, inputText, outputText)
+	usage, ok := tokenestimate.Text(model, inputText, outputText)
 	if !ok {
 		return false
 	}

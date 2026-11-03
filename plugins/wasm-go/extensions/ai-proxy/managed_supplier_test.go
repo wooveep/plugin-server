@@ -111,8 +111,8 @@ func TestManagedNativeQwenMissingUsageNeverUsesConverterZeros(t *testing.T) {
 					continue
 				}
 				attempt := decodeManagedFact(t, record.raw)
-				if attempt.Usage.Status != "missing" || attempt.Usage.Quantities != nil {
-					t.Fatal("missing native counters became zero")
+				if attempt.Usage.Status != "estimated" || attempt.Usage.Source != "estimator" || attempt.Usage.Quantities["input"] == "0" {
+					t.Fatal("missing native counters were not estimated from real input")
 				}
 			}
 		})

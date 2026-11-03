@@ -36,7 +36,7 @@ func TestManagedACKSurvivesActualHTTPContextDeletion(t *testing.T) {
 				for _, delivery := range state.deliveries {
 					got := delivery.Status()
 					if got.EventID == state.lastAttempt.EventID() {
-						if failed && (got.State != "unknown" || h.ctx.GetUserAttribute("execution_fact_gap") != true) {
+						if failed && (got.State != "unknown" || state.config.outbox.Pending() == 0) {
 							t.Fatalf("real append failure was hidden: %#v", got)
 						}
 						if !failed && got.State != "acknowledged" {

@@ -27,6 +27,7 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
+	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -141,6 +142,7 @@ type managedExecutionConfig struct {
 	settings managedSettings
 	release  managedRelease
 	redis    managedRedisClient
+	outbox   *executionfacts.Outbox
 	profile  managedProtocolProfile
 	health   *managedHealthRuntime
 	targets  map[string]*managedExecutionConfig
@@ -222,6 +224,8 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 		return errors.New("managed execution Redis initialization failed")
 	}
 	parsed.redis = client
+	parsed.outbox = executionfacts.NewOutbox()
+	wrapper.RegisterTickFunc(1000, parsed.outbox.Retry)
 	parsed.health, err = configureManagedHealth(&parsed)
 	if err != nil {
 		return err
@@ -428,6 +432,7 @@ type managedExecutionState struct {
 	identity                                                   balanceidentity.Snapshot
 	callID, attemptID, businessUTC                             string
 	streaming                                                  bool
+	requestText                                                string
 	prepared, dispatchStarted, handedOff, callbackSeen, closed bool
 	original                                                   executionfacts.Envelope
 	attempt                                                    executionfacts.Attempt
@@ -459,12 +464,14 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 		return types.ActionContinue, false
 	}
 	beginManagedAccessLog(ctx, managed.release.Descriptor.ReleaseID)
+	ctx.SetContext(ctxSkipAIProxyLifecycle, true)
+	if managed.outbox != nil && !managed.outbox.Accepting() {
+		return rejectManagedRequest(ctx, 503, "accounting_delivery_unavailable"), true
+	}
 	if managed.settings.MediaDispatchMode == "managed_operation" {
-		ctx.SetContext(ctxSkipAIProxyLifecycle, true)
 		return rejectManagedRequest(ctx, 409, "media_operation_api_required"), true
 	}
 	ctx.DisableReroute()
-	ctx.SetContext(ctxSkipAIProxyLifecycle, true)
 	headers, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil {
 		return rejectManagedRequest(ctx, 403, "authenticated_identity_missing"), true
@@ -701,6 +708,7 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 }
 
 func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot, body []byte) error {
+	s.requestText = tokenestimate.RequestText(body)
 	selection := stateSelection(s, basis)
 	digest, err := managedSelectionDigest(s.config, selection)
 	if err != nil {
@@ -785,8 +793,17 @@ func onManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState, nu
 	}
 	recordManagedAttempt(ctx, s, outcome)
 	if managedTextStopped(s) {
-		// A late provider callback can correct the attempt. It cannot fabricate
-		// a final client delivery after this HTTP stream has already closed.
+		// A disconnected client still owes its one sale after a confirmed send.
+		// Only the chain's final attempt can supply this billing basis.
+		if s.closed && (s.text == nil || s.text.current == s) && s.lastDelivery == nil && outcome.SendState == "observed_sent" {
+			snapshot, err := managedDeliverySnapshot(s, outcome, "cancelled")
+			if err != nil {
+				managedFactGap(ctx, "delivery_fact_invalid")
+			} else {
+				s.lastDelivery = &snapshot
+				dispatchManagedSnapshot(ctx, s, snapshot)
+			}
+		}
 		return
 	}
 	finish := func() { finishManagedHTTPResponse(ctx, s, outcome, headers, body, bodyErr) }
@@ -883,6 +900,9 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 	}
 	if bodyErr != nil {
 		o.Usage = executionfacts.MissingTokenUsage("upstream_body_not_observed")
+		if *o.HTTPStatus < 500 {
+			o.Usage = availableManagedUsage(s, o, body)
+		}
 		return o
 	}
 	var observed managedProtocolObservation
@@ -929,10 +949,14 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 		o.EvidenceRefs = []string{"http-call:" + s.attemptID + ":unverified-status:" + statusText, "callback-body:" + managedBodyDigest(body)}
 	}
 
+	o.Usage = availableManagedUsage(s, o, body)
 	return o
 }
 
 func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome) {
+	if s.text != nil && outcome.SendState == "observed_sent" {
+		s.text.lastBillableOutcome = &outcome
+	}
 	var attempt executionfacts.Snapshot
 	var err error
 	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
@@ -956,6 +980,10 @@ func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, out
 }
 
 func managedDeliverySnapshot(s *managedExecutionState, outcome executionfacts.AttemptOutcome, deliveryState string) (executionfacts.Snapshot, error) {
+	// A final dispatch failure does not erase an earlier actual retry/fallback send.
+	if outcome.SendState != "observed_sent" && s.text != nil && s.text.lastBillableOutcome != nil {
+		outcome = *s.text.lastBillableOutcome
+	}
 	if outcome.Usage == nil {
 		outcome.Usage = executionfacts.MissingTokenUsage("provider_usage_not_observed")
 	}
@@ -967,6 +995,9 @@ func managedDeliverySnapshot(s *managedExecutionState, outcome executionfacts.At
 		OccurredAt: s.businessUTC, ObservedAt: outcome.ObservedAt, EvidenceRefs: outcome.EvidenceRefs,
 		DeliveryState: deliveryState, ServedFrom: "upstream", PublicModel: s.config.release.PublicModel,
 		ResponseModel: outcome.ResponseModel, Usage: outcome.Usage, ErrorClass: outcome.ErrorClass,
+	}
+	if outcome.SendState != "observed_sent" {
+		delivery.ServedFrom = "local"
 	}
 	if err := setManagedOriginalCaller(s, &delivery); err != nil {
 		return executionfacts.Snapshot{}, err
@@ -993,9 +1024,11 @@ func dispatchManagedSnapshot(ctx wrapper.HttpContext, s *managedExecutionState, 
 		s.deliveries[retained.EventID()] = delivery
 	}
 	var appendToStream executionfacts.AppendFunc
-	if s.config.redis != nil && s.config.settings.PrivateStream != "" {
+	client, stream, messageType := s.config.redis, s.config.settings.PrivateStream, retained.MessageType()
+	if client != nil && stream != "" {
+		// The retry queue must not retain the HTTP state or its large request body.
 		appendToStream = func(body []byte, complete func(executionfacts.AppendResult)) error {
-			return s.config.redis.Command([]interface{}{"XADD", s.config.settings.PrivateStream, "*", "message_type", retained.MessageType(), "event", string(body)}, func(response resp.Value) {
+			return client.Command([]interface{}{"XADD", stream, "*", "message_type", messageType, "event", string(body)}, func(response resp.Value) {
 				if response.Error() != nil {
 					complete(executionfacts.AppendResult{Err: errors.New("private stream response failed")})
 					return
@@ -1004,16 +1037,25 @@ func dispatchManagedSnapshot(ctx wrapper.HttpContext, s *managedExecutionState, 
 			})
 		}
 	}
-	if err := delivery.Dispatch(appendToStream, managedDeliveryObserver(ctx)); err != nil {
+	if s.config.outbox != nil {
+		delivery, err = s.config.outbox.Submit(retained, appendToStream, managedDeliveryObserver(s.callID, s.attemptID))
+		if delivery != nil {
+			s.deliveries[retained.EventID()] = delivery
+			ctx.SetUserAttribute("execution_fact_delivery", delivery.Status().State)
+		}
+	} else {
+		err = delivery.Dispatch(appendToStream, managedDeliveryObserver(s.callID, s.attemptID))
+	}
+	if err != nil {
 		managedFactGap(ctx, "fact_dispatch_failed")
 	}
 }
 
-func managedDeliveryObserver(ctx wrapper.HttpContext) func(executionfacts.DeliveryStatus) {
+func managedDeliveryObserver(callID, attemptID string) func(executionfacts.DeliveryStatus) {
 	return func(status executionfacts.DeliveryStatus) {
-		ctx.SetUserAttribute("execution_fact_delivery", status.State)
+		// Event callbacks survive HTTP deletion and must never touch its context.
 		if status.State == "gap" || status.State == "unknown" {
-			managedFactGap(ctx, status.Reason)
+			log.Warnf("ai-proxy managed execution fact gap retained for retry, call_id:%s attempt_id:%s event_id:%s reason:%s", callID, attemptID, status.EventID, status.Reason)
 		}
 	}
 }

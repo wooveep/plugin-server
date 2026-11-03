@@ -49,7 +49,20 @@ func dispatchExecutionFact(ctx executionFactContext, client executionRedisClient
 			})
 		}
 	}
-	err = delivery.Dispatch(appendToStream, observe)
+	if state.outbox != nil {
+		delivery, err = state.outbox.Submit(retained, appendToStream, func(status executionfacts.DeliveryStatus) {
+			// Root-owned callbacks cannot access an HTTP context after stream deletion.
+			if status.State == "gap" || status.State == "unknown" {
+				log.Warnf("ai-billing execution fact delivery gap retained for retry, event_id:%s reason:%s", status.EventID, status.Reason)
+			}
+		})
+		if delivery != nil {
+			state.deliveries[retained.EventID()] = delivery
+			ctx.SetContext(ExecutionFactDeliveryContextKey, delivery.Status())
+		}
+	} else {
+		err = delivery.Dispatch(appendToStream, observe)
+	}
 	return delivery, err
 }
 func executionDeliveryObserver(ctx executionFactContext) func(executionfacts.DeliveryStatus) {

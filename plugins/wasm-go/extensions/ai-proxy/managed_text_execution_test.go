@@ -419,9 +419,18 @@ func TestManagedTextClosedRetryKeepsLateEvidenceOnItsOwnAttempt(t *testing.T) {
 	onManagedStreamDone(h.ctx, h.cfg)
 	h.host.CallOnHttpCallResponse(second.CalloutID, [][2]string{{":status", "200"}, {"content-type", "application/json"}}, nil, []byte(managedSuccessfulBody))
 	var facts []executionfacts.Envelope
+	sales := 0
 	for _, record := range h.records(t) {
 		if record.messageType == "observation" {
-			facts = append(facts, decodeManagedFact(t, record.raw))
+			fact := decodeManagedFact(t, record.raw)
+			if fact.Kind == "call_delivery" {
+				sales++
+				if fact.DeliveryState != "cancelled" || fact.Usage.Quantities["input"] != "9007199254740993" {
+					t.Fatal("disconnected sale lost available provider usage")
+				}
+				continue
+			}
+			facts = append(facts, fact)
 		}
 	}
 	if len(facts) != 3 || facts[0].CredentialRef != "credential-1" || facts[1].CredentialRef != "credential-2" || facts[1].ExecutionResult != "unknown" || facts[2].AttemptID != facts[1].AttemptID || facts[2].SourceRevision != "2" || facts[2].SupersedesEventID != facts[1].EventID || facts[2].ParentAttemptID != facts[0].AttemptID || facts[0].Usage.Quantities["input"] != "7" {
@@ -429,6 +438,9 @@ func TestManagedTextClosedRetryKeepsLateEvidenceOnItsOwnAttempt(t *testing.T) {
 			t.Logf("attempt=%s credential=%s revision=%s result=%s supersedes=%s parent=%s", fact.AttemptID, fact.CredentialRef, fact.SourceRevision, fact.ExecutionResult, fact.SupersedesEventID, fact.ParentAttemptID)
 		}
 		t.Fatalf("late response changed another attempt or erased the original failed usage: %d facts", len(facts))
+	}
+	if sales != 1 {
+		t.Fatal("disconnected request did not record exactly one sale")
 	}
 	if h.host.GetSentLocalResponse(h.id) != nil || len(h.host.GetCalloutAttributesFromContext(h.id)) != 0 {
 		t.Fatal("late retry response fabricated delivery or dispatched again")

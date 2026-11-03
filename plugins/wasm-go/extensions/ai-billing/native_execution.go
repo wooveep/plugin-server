@@ -85,6 +85,7 @@ type nativeBillingCapability struct {
 }
 
 type nativeBillingConfig struct {
+	outbox             *executionfacts.Outbox
 	producerID         string
 	callIdentitySource string
 	release            nativeBillingRelease
@@ -150,7 +151,9 @@ func configureNativeBilling(value gjson.Result, cfg *BillingConfig) error {
 	if operation == executionfacts.NativeEmbeddingOperation && settings.CallIdentitySource != executionfacts.CallIdentitySourceInternal {
 		return errors.New("embedding billing requires the original internal service call")
 	}
-	cfg.NativeExecution = &nativeBillingConfig{producerID: settings.ProducerID, callIdentitySource: settings.CallIdentitySource, release: release}
+	outbox := executionfacts.NewOutbox()
+	wrapper.RegisterTickFunc(1000, outbox.Retry)
+	cfg.NativeExecution = &nativeBillingConfig{producerID: settings.ProducerID, callIdentitySource: settings.CallIdentitySource, release: release, outbox: outbox}
 	cfg.PathScope = PathScopeBoundTarget
 	cfg.EnableMethods = nil
 	cfg.EnablePathSuffixes = nil
@@ -276,6 +279,10 @@ func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (
 		nativeBillingGap(ctx, state, "native_request_reentry")
 		return types.ActionContinue, true
 	}
+	if configured.outbox != nil && !configured.outbox.Accepting() {
+		_ = proxywasm.SendHttpResponse(503, [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"accounting_delivery_unavailable","message":"Accounting temporarily unavailable"}}`), -1)
+		return types.ActionPause, true
+	}
 	state := &nativeBillingState{config: configured}
 	ctx.SetContext(nativeBillingContextKey, state)
 	headers, err := proxywasm.GetHttpRequestHeaders()
@@ -284,6 +291,12 @@ func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (
 		return types.ActionContinue, true
 	}
 	captureNativeBillingIdentity(ctx, state, headers)
+	if state.valid {
+		facts, err := executionState(ctx)
+		if err == nil {
+			facts.outbox = configured.outbox
+		}
+	}
 	return types.ActionContinue, true
 }
 

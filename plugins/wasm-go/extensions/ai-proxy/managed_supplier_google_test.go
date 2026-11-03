@@ -97,8 +97,8 @@ func TestManagedGeminiMissingUsageAndUnfinishedStreamStayUnknown(t *testing.T) {
 				t.Fatal("Gemini content conversion fabricated zero usage")
 			}
 			fact := decodeManagedFact(t, h.records(t)[1].raw)
-			if fact.Usage.Status != "missing" || fact.Usage.Quantities != nil {
-				t.Fatal("missing original counters became reported zero")
+			if fact.Usage.Status != "estimated" || fact.Usage.Source != "estimator" || fact.Usage.Quantities["input"] == "0" {
+				t.Fatal("missing original counters were not estimated from real input")
 			}
 		})
 	}

@@ -495,7 +495,7 @@ func TestManagedRedisFailureFailsOpenAndNeverResendsBusiness(t *testing.T) {
 	h.start(t, []byte(managedOriginalBody), []byte(managedMappedBody))
 	registration := h.records(t)[0]
 	h.host.CallOnRedisCallResponse(registration.calloutID, 0, []byte("-ERR unavailable\r\n"))
-	if h.ctx.GetUserAttribute("execution_fact_gap") != true || len(h.host.GetCalloutAttributesFromContext(h.id)) != 1 {
+	if h.cfg.ManagedExecution.(*managedExecutionConfig).outbox.Pending() == 0 || len(h.host.GetCalloutAttributesFromContext(h.id)) != 1 {
 		t.Fatal("registration failure blocked or retried the business send")
 	}
 	h.response(t, [][2]string{{":status", "200"}, {"content-type", "application/json"}}, []byte(managedSuccessfulBody))
@@ -505,8 +505,8 @@ func TestManagedRedisFailureFailsOpenAndNeverResendsBusiness(t *testing.T) {
 	for _, record := range h.records(t) {
 		h.host.CallOnRedisCallResponse(record.calloutID, 0, []byte("$5\r\n123-0\r\n"))
 	}
-	if h.ctx.GetUserAttribute("execution_fact_gap") != true {
-		t.Fatal("a later append ACK erased an earlier gap")
+	if h.cfg.ManagedExecution.(*managedExecutionConfig).outbox.Pending() == 0 {
+		t.Fatal("a later append ACK erased the retained failed event")
 	}
 	if len(h.host.GetCalloutAttributesFromContext(h.id)) != 0 {
 		t.Fatal("a Redis callback resent the business request")
@@ -672,7 +672,7 @@ func TestManagedStreamResponsePreservesAggregatedWireBytes(t *testing.T) {
 				t.Fatal("aggregate SSE response was changed")
 			}
 			delivery := h.bridge(t).Envelope()
-			if complete && delivery.Usage.Status != "reported" || !complete && (delivery.Usage.Status != "missing" || delivery.DeliveryState != "unknown") {
+			if complete && delivery.Usage.Status != "reported" || !complete && (delivery.Usage.Status != "estimated" || delivery.Usage.Source != "estimator" || delivery.DeliveryState != "unknown") {
 				t.Fatal("truncated stream claimed final usage or completion")
 			}
 			if h.ctx.GetUserAttribute("managed_execution_response_mode") != "buffered_http_call" {

@@ -13,7 +13,11 @@ require (
 	github.com/tidwall/gjson v1.18.0
 )
 
-require github.com/tetratelabs/wazero v1.7.2 // indirect
+require (
+	github.com/dlclark/regexp2 v1.11.5 // indirect
+	github.com/tetratelabs/wazero v1.7.2 // indirect
+	github.com/tiktoken-go/tokenizer v0.7.0 // indirect
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

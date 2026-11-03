@@ -17,6 +17,7 @@ type executionFactContext interface {
 	SetUserAttribute(key string, value interface{})
 }
 type executionFactState struct {
+	outbox     *executionfacts.Outbox
 	ledger     *executionfacts.Ledger
 	attempts   map[string]executionfacts.Attempt
 	deliveries map[string]*executionfacts.Delivery

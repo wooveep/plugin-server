@@ -50,9 +50,10 @@ type managedTextDirectoryEntry struct {
 // One HTTP invocation owns the chain. Attempts own separate immutable config,
 // selection and callbacks; sharing the ledger does not make them one purchase.
 type managedTextCall struct {
-	current  *managedExecutionState
-	attempts []*managedExecutionState
-	basis    bodybasis.Snapshot
+	lastBillableOutcome *executionfacts.AttemptOutcome
+	current             *managedExecutionState
+	attempts            []*managedExecutionState
+	basis               bodybasis.Snapshot
 	// Effective input after the original processors and before protocol conversion.
 	// Only its root model is restored/mapped, using the frozen mapper below.
 	publicBody                 []byte
