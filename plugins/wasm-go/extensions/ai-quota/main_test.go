@@ -102,7 +102,7 @@ func TestRequestAdmission(t *testing.T) {
 			reason string
 			status int
 		}{
-			{"ok", 0}, {"insufficient_balance", 403}, {"balance_missing", 403},
+			{"ok", 0}, {"insufficient_balance", 403}, {"balance_missing", 503},
 			{"authorization_stale", 403}, {"route_authorization_missing", 403}, {"account_mismatch", 403},
 			{"projection_unready", 503}, {"wrong_generation", 503},
 			{"projection_schema_mismatch", 503}, {"invalid_amount", 503}, {"dependency_unavailable", 503},

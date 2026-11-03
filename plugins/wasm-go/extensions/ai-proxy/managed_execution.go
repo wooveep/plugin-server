@@ -914,6 +914,20 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 	if *o.HTTPStatus >= 400 {
 		o.ErrorClass = "upstream_http_error"
 	}
+	// Envoy also invokes the success callback for locally generated HTTP errors.
+	// A generic 5xx without a recognized provider response cannot prove a send.
+	if *o.HTTPStatus >= 500 && o.Usage.Status != "reported" && !observed.ProviderError && o.Acceptance != "accepted" {
+		o.SendState = "handed_off"
+		o.Acceptance = "unknown"
+		o.ExecutionResult = "unknown"
+		o.HTTPStatus = nil
+		o.HeadersComplete = false
+		o.BodyComplete = false
+		o.ResponseBodyDigest = ""
+		o.TransportError = "upstream_response_unverified"
+		o.ErrorClass = "transport_error"
+		o.EvidenceRefs = []string{"http-call:" + s.attemptID + ":unverified-status:" + statusText, "callback-body:" + managedBodyDigest(body)}
+	}
 
 	return o
 }
