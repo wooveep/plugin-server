@@ -153,7 +153,14 @@ func managedSupplierConversionInput(body []byte, stream bool, usageField string)
 func convertManagedSupplierResponse(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome, headers [][2]string, body []byte) (managedProtocolClientResponse, error) {
 	profile := s.config.profile
 	if s.config.vendor == nil || s.config.vendor.NativeResponseFormat() == "" || *outcome.HTTPStatus >= 400 {
-		return profile.ConvertResponse(ctx, *outcome.HTTPStatus, headers, body)
+		response, err := profile.ConvertResponse(ctx, *outcome.HTTPStatus, headers, body)
+		if err == nil && s.internal == nil && managedOperation(s.config) == executionfacts.NativeEmbeddingOperation && outcome.Usage != nil && outcome.Usage.Status == "estimated" {
+			// Publish the same calculated input to the client, TPM and statistics.
+			// Keep its estimator source explicit; original facts remain unchanged.
+			response.Body, err = managedProtocolRestoreUsage(response.Body, false, managedProtocolEmbeddings, outcome.Usage)
+			response.Headers = managedProtocolConvertedHeaders(headers, false)
+		}
+		return response, err
 	}
 	if !outcome.BodyComplete || outcome.ExecutionResult != "succeeded" && outcome.ExecutionResult != "partial" {
 		return managedProtocolClientResponse{}, errors.New("native supplier terminal response is not verified")

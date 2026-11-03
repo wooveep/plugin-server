@@ -9,10 +9,17 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
 )
 
-// availableManagedUsage fills only unavailable text usage after an observed send.
-// A failed response still consumed its available input; absent output costs zero.
+// A successful dispatch is the customer's charging boundary, including a timeout
+// or later connection failure. This does not claim the provider received it.
+// Frozen internal observations keep their original confirmed-send semantics.
+func billableManagedSend(s *managedExecutionState, outcome executionfacts.AttemptOutcome) bool {
+	return outcome.SendState == "observed_sent" || outcome.SendState == "handed_off" && s.handedOff && s.internal == nil
+}
+
+// availableManagedUsage fills unavailable usage after a billable customer send.
+// A failed response still incurs its available input; absent output costs zero.
 func availableManagedUsage(s *managedExecutionState, outcome executionfacts.AttemptOutcome, body []byte) *executionfacts.Usage {
-	if outcome.SendState != "observed_sent" || outcome.Usage != nil && outcome.Usage.Status != "missing" {
+	if !billableManagedSend(s, outcome) || outcome.Usage != nil && outcome.Usage.Status != "missing" {
 		return outcome.Usage
 	}
 	model := s.config.release.Descriptor.UpstreamModel

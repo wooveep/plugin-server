@@ -28,8 +28,8 @@ func TestManagedGenericGatewayErrorsDoNotClaimProviderSend(t *testing.T) {
 						t.Fatal("recognized provider error lost its actual response", outcome)
 					}
 				} else {
-					if outcome.SendState != "handed_off" || outcome.Acceptance != "unknown" || outcome.ExecutionResult != "unknown" || outcome.HTTPStatus != nil || outcome.TransportError != "upstream_response_unverified" || outcome.Usage.Status != "missing" {
-						t.Fatal("generic gateway response became a supplier response or zero-cost fact", outcome)
+					if outcome.SendState != "handed_off" || outcome.Acceptance != "unknown" || outcome.ExecutionResult != "unknown" || outcome.HTTPStatus != nil || outcome.TransportError != "upstream_response_unverified" || outcome.Usage.Status != "estimated" || outcome.Usage.Source != "estimator" {
+						t.Fatal("generic gateway response lost its honest transport state or dispatch-based input charge", outcome)
 					}
 					if got := h.host.GetSentLocalResponse(h.id); got == nil || got.StatusCode != 502 {
 						t.Fatal("unknown transport did not return the explicit local gateway error")

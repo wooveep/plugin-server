@@ -468,7 +468,7 @@ func TestManagedCallbackPublishesAttemptAndBridgesOneDelivery(t *testing.T) {
 	}
 }
 
-func TestManagedMissingUpstreamStatusRemainsMissing(t *testing.T) {
+func TestManagedMissingUpstreamStatusRetainsInputChargeWithoutInventingStatus(t *testing.T) {
 	h := newManagedHost(t)
 	h.start(t, []byte(managedOriginalBody), []byte(managedMappedBody))
 	h.response(t, [][2]string{{"content-type", "application/json"}}, []byte(managedSuccessfulBody))
@@ -481,12 +481,12 @@ func TestManagedMissingUpstreamStatusRemainsMissing(t *testing.T) {
 			continue
 		}
 		fact := decodeManagedFact(t, record.raw)
-		if fact.HTTPStatus != nil || fact.HeadersComplete == nil || *fact.HeadersComplete || fact.Usage.Status != "missing" || bytes.Contains(record.raw, []byte(`"http_status":502`)) {
+		if fact.HTTPStatus != nil || fact.HeadersComplete == nil || *fact.HeadersComplete || fact.Usage.Status != "estimated" || fact.Usage.Source != "estimator" || bytes.Contains(record.raw, []byte(`"http_status":502`)) {
 			t.Fatal("local 502 became an upstream fact")
 		}
 	}
-	if delivery := h.bridge(t).Envelope(); delivery.DeliveryState != "failed" || delivery.Usage.Status != "missing" {
-		t.Fatal("delivery borrowed unverified provider usage")
+	if delivery := h.bridge(t).Envelope(); delivery.DeliveryState != "failed" || delivery.Usage.Status != "estimated" || delivery.Usage.Source != "estimator" {
+		t.Fatal("successful dispatch lost its estimated customer charge")
 	}
 }
 

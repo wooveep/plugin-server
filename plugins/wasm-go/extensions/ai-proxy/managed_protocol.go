@@ -714,7 +714,7 @@ func managedProtocolConversionInput(body []byte, stream bool) ([]byte, error) {
 }
 
 func managedProtocolWireUsage(protocol string, usage *executionfacts.Usage) json.RawMessage {
-	if usage == nil || usage.Status != "reported" {
+	if usage == nil || usage.Status != "reported" && !(protocol == managedProtocolEmbeddings && usage.Status == "estimated") {
 		return nil
 	}
 	quantities := usage.Quantities
@@ -725,6 +725,9 @@ func managedProtocolWireUsage(protocol string, usage *executionfacts.Usage) json
 	wire := map[string]json.RawMessage{}
 	if protocol == managedProtocolEmbeddings {
 		wire["prompt_tokens"], wire["total_tokens"] = json.RawMessage(input.String()), json.RawMessage(input.String())
+		if usage.Status == "estimated" {
+			wire["source"] = json.RawMessage(`"estimator"`)
+		}
 	} else {
 		output, outputOK := managedInteger(quantities["output"])
 		if !outputOK {

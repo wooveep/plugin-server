@@ -805,7 +805,7 @@ func onManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState, nu
 	if managedTextStopped(s) {
 		// A disconnected client still owes its one sale after a confirmed send.
 		// Only the chain's final attempt can supply this billing basis.
-		if s.closed && (s.text == nil || s.text.current == s) && s.lastDelivery == nil && outcome.SendState == "observed_sent" {
+		if s.closed && (s.text == nil || s.text.current == s) && s.lastDelivery == nil && billableManagedSend(s, outcome) {
 			snapshot, err := managedDeliverySnapshot(s, outcome, "cancelled")
 			if err != nil {
 				managedFactGap(ctx, "delivery_fact_invalid")
@@ -906,13 +906,12 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 	}
 	if o.HTTPStatus == nil {
 		o.Usage = executionfacts.MissingTokenUsage("upstream_status_not_observed")
+		o.Usage = availableManagedUsage(s, o, body)
 		return o
 	}
 	if bodyErr != nil {
 		o.Usage = executionfacts.MissingTokenUsage("upstream_body_not_observed")
-		if *o.HTTPStatus < 500 {
-			o.Usage = availableManagedUsage(s, o, body)
-		}
+		o.Usage = availableManagedUsage(s, o, body)
 		return o
 	}
 	var observed managedProtocolObservation
@@ -964,7 +963,7 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 }
 
 func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome) {
-	if s.text != nil && outcome.SendState == "observed_sent" {
+	if s.text != nil && billableManagedSend(s, outcome) {
 		s.text.lastBillableOutcome = &outcome
 	}
 	var attempt executionfacts.Snapshot
@@ -991,7 +990,7 @@ func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, out
 
 func managedDeliverySnapshot(s *managedExecutionState, outcome executionfacts.AttemptOutcome, deliveryState string) (executionfacts.Snapshot, error) {
 	// A final dispatch failure does not erase an earlier actual retry/fallback send.
-	if outcome.SendState != "observed_sent" && s.text != nil && s.text.lastBillableOutcome != nil {
+	if !billableManagedSend(s, outcome) && s.text != nil && s.text.lastBillableOutcome != nil {
 		outcome = *s.text.lastBillableOutcome
 	}
 	if outcome.Usage == nil {

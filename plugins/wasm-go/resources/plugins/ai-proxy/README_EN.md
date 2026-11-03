@@ -2654,3 +2654,10 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 Delivered health controls persist until an explicit update. `valid_until` is an observation freshness watermark, not a sending lease from Console. A Console outage does not expire an otherwise eligible target. Explicit credential disablement, permanent blocks, cooldowns, and revision conflicts still deny sends.
 
 Ordinary production retains the original Redis-admitted call identity and business time without a temporary Console permit deadline. Upload, send and retry keep their existing budgets. Explicit bounded validation/internal permits retain their expiry; no renewal or extension path is introduced.
+
+
+### Customer embedding usage and failed calls
+
+Registered customer embeddings meter input tokens only. Valid provider input counts take precedence, including explicit zero; absent or invalid usage is estimated from original text or batches. Estimated responses include `usage.prompt_tokens`, `usage.total_tokens`, and `usage.source=estimator`, so clients, TPM, and statistics use the same input count. Vector dimensions never become output tokens.
+
+Customer charges start when the gateway successfully initiates an upstream call. A later timeout or connection failure still incurs sales and expected procurement charges from available input. This does not assert provider receipt. Format, authorization, or balance rejection before dispatch remains uncharged. Each retry incurs its own expected procurement cost, while customer sales settle once per original request. Internal service calls retain their frozen identity and observation contracts.

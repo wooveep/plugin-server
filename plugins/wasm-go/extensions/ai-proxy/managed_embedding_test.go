@@ -101,3 +101,54 @@ func TestCustomerEmbeddingAvailableUsageCountsOnlyOriginalInput(t *testing.T) {
 		}
 	}
 }
+
+func TestCustomerEmbeddingSuccessfulHandoffUsesAvailableInput(t *testing.T) {
+	state := &managedExecutionState{config: &managedExecutionConfig{}, handedOff: true}
+	state.config.settings.InputProtocol = managedProtocolEmbeddings
+	state.config.release.Descriptor.UpstreamModel = "qwen3.7-text-embedding-flash"
+	state.embeddingInput = json.RawMessage(`"hello"`)
+	outcome := executionfacts.AttemptOutcome{SendState: "handed_off", Usage: executionfacts.MissingTokenUsage("upstream_response_unverified")}
+	usage := availableManagedUsage(state, outcome, nil)
+	if usage.Status != "estimated" || usage.Quantities["input"] != "1" {
+		t.Fatalf("successful dispatch did not retain its input charge: %+v", usage)
+	}
+	state.handedOff = false
+	if availableManagedUsage(state, outcome, nil).Status != "missing" {
+		t.Fatal("unsuccessful dispatch became billable")
+	}
+	state.handedOff = true
+	outcome.SendState = "not_sent"
+	if availableManagedUsage(state, outcome, nil).Status != "missing" {
+		t.Fatal("pre-send rejection became billable")
+	}
+}
+
+func TestCustomerEmbeddingEstimatedUsageReachesClientObservers(t *testing.T) {
+	state := &managedExecutionState{config: &managedExecutionConfig{}}
+	state.config.settings.InputProtocol = managedProtocolEmbeddings
+	profile, err := newManagedProtocolProfile(managedProtocolEmbeddings, managedProtocolEmbeddings)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state.config.profile = profile
+	status := uint16(200)
+	usage := &executionfacts.Usage{Status: "estimated", Unit: "token", Source: "estimator", EstimatorVersion: "input-estimator.v1", Quantities: map[string]string{"input": "3"}}
+	outcome := executionfacts.AttemptOutcome{HTTPStatus: &status, Usage: usage}
+	response, err := convertManagedSupplierResponse(nil, state, outcome, [][2]string{{"content-type", "application/json"}}, []byte(`{"object":"list","model":"model","data":[{"index":0,"embedding":[0.1,0.2]}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var object struct {
+		Usage struct {
+			Input  int    `json:"prompt_tokens"`
+			Total  int    `json:"total_tokens"`
+			Source string `json:"source"`
+		} `json:"usage"`
+		Data []struct {
+			Embedding []float64 `json:"embedding"`
+		} `json:"data"`
+	}
+	if json.Unmarshal(response.Body, &object) != nil || object.Usage.Input != 3 || object.Usage.Total != 3 || object.Usage.Source != "estimator" || len(object.Data) != 1 || len(object.Data[0].Embedding) != 2 {
+		t.Fatal("estimated input is absent from the response consumed by TPM and statistics")
+	}
+}
