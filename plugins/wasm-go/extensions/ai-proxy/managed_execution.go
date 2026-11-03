@@ -874,6 +874,24 @@ func sendManagedFinal(ctx wrapper.HttpContext, s *managedExecutionState, outcome
 	if !beginManagedTextFinal(s) {
 		return
 	}
+	if s.internal == nil && managedOperation(s.config) == executionfacts.NativeEmbeddingOperation && outcome.Usage != nil && outcome.Usage.Status == "estimated" {
+		// Every client response, including a local timeout error, exposes the same
+		// estimated input to TPM and statistics without changing original facts.
+		var object map[string]json.RawMessage
+		if decodeManagedJSON(body, &object, false) == nil && object != nil {
+			object["usage"] = managedProtocolWireUsage(managedProtocolEmbeddings, outcome.Usage)
+			if _, exists := object["model"]; !exists {
+				model, err := json.Marshal(s.config.release.PublicModel)
+				if err == nil {
+					object["model"] = model
+				}
+			}
+			if encoded, err := json.Marshal(object); err == nil {
+				body = encoded
+				headers = managedProtocolConvertedHeaders(headers, false)
+			}
+		}
+	}
 	responseHeaders := managedResponseHeaders(headers)
 	snapshot, err := managedDeliverySnapshot(s, outcome, deliveryState)
 	if err != nil {
