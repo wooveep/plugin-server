@@ -26,7 +26,8 @@ func validateManagedTools(c *managedExecutionConfig) error {
 	if p == nil {
 		return nil
 	}
-	if managedOperation(c) != "text_generate" || p.PriceKey != "modelfusion:tool-prices:"+c.release.SalesAssetID || !managedID(p.Supplier) {
+	_, text := c.release.Descriptor.Capabilities["text_generate"]
+	if !text || p.PriceKey != "modelfusion:tool-prices:"+c.release.SalesAssetID || !managedID(p.Supplier) {
 		return errors.New("invalid model tool policy identity")
 	}
 	for _, tools := range [][]fixedtools.Tool{p.Allowed, p.Supported, p.Defaults} {
@@ -195,7 +196,7 @@ func managedToolUsage(s *managedExecutionState, body []byte, outcome executionfa
 			if field != "" {
 				count = usage.Get("server_tool_use." + field)
 			}
-			if protocol == managedProtocolResponses && !usage.Get("server_tool_use").Exists() {
+			if protocol == managedProtocolResponses && !usage.Get("server_tool_use").Exists() && outcome.Usage != nil && outcome.Usage.Status == "reported" {
 				zero.Source, zero.ReasonCode = "provider", "complete_usage_reports_no_tools"
 				result[tool] = zero
 				continue

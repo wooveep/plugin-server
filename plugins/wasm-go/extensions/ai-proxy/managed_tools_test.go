@@ -87,9 +87,14 @@ func TestManagedToolMeteringUsesTerminalCountsAndKeepsUnknown(t *testing.T) {
 	}
 	state.config.settings.ToolPolicy.Supplier = "deepseek"
 	state.config.profile.UpstreamProtocol = managedProtocolResponses
+	outcome.Usage = &executionfacts.Usage{Status: "reported"}
 	usage = managedToolUsage(state, []byte(`{"usage":{"input_tokens":4,"output_tokens":2}}`), outcome, [][2]string{{"content-type", "application/json"}})
 	if usage[fixedtools.WebSearch].Count != "0" || usage[fixedtools.WebSearch].Status != "known_zero" {
 		t.Fatal("complete DeepSeek zero usage became unknown")
+	}
+	outcome.Usage = executionfacts.MissingTokenUsage("provider_usage_not_observed")
+	if managedToolUsage(state, []byte(`{"usage":{}}`), outcome, nil)[fixedtools.WebSearch].Status != "missing" {
+		t.Fatal("invalid or absent terminal token usage fabricated a zero tool count")
 	}
 	outcome.BodyComplete = false
 	if managedToolUsage(state, []byte(`{"usage":{"input_tokens":4}}`), outcome, nil)[fixedtools.WebSearch].Status != "missing" {
