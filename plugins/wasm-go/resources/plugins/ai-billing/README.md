@@ -12,7 +12,7 @@ description: ai-billing 托管交付事实与兼容账单事件配置参考
 
 `0.1.11` 配置契约保留 `_modelfusion_execution` v1 的单一 `credential_ref`/`credential_revision`，并支持 `modelfusion-execution.v2` 的完整非空 `credentials` 数组。每项仅含这两个字段，ref 唯一、revision 为规范正十进制字符串；拒绝秘密及 scalar/array 混用。完整目录不代表本次已选凭据，实际 D0/FACT 仍保留唯一已选 tuple，billing/cache 不取目录首项作为执行凭据。
 
-> 交付版本：`1.0.3`，以 [资源 schema](spec.yaml) 为准。
+> 交付版本：`1.0.7`，以 [资源 schema](spec.yaml) 为准。
 
 ## 功能说明
 
@@ -155,3 +155,9 @@ enable_methods:
 ## 无外部采购账户的供应商连接
 
 原生接收契约支持 `billing-facts.v3`，以实际 provider、binding、Key 版本及冻结执行 descriptor 归属采购，不补造外部采购账户。钱包与租户仍来自原认证链，销售和采购仍按原权威事实分别结算；保留原 v1/v2 事实读取。
+
+## 统一下游响应与内部计量
+
+插件版本 `1.0.7`。
+
+原生账务桥校验通过后，将当次原始交付用量发布到请求内 FilterState，供 TPM／统计观测；该载体不进入 HTTP。财务快照、计价、钱包应用和幂等键不变。

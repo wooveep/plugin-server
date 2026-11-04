@@ -450,6 +450,7 @@ func newManagedTextAttempt(previous *managedExecutionState, configuration *manag
 	// DashScope carries streaming intent in the original header rather than body.
 	state := &managedExecutionState{config: &copied, sourceConfig: configuration, identity: previous.identity, internal: previous.internal, callID: previous.callID, businessUTC: previous.businessUTC, admissionDeadline: previous.admissionDeadline, ledger: previous.ledger, deliveries: previous.deliveries, text: previous.text, mechanism: mechanism, parentAttemptID: previous.attemptID, selectionGeneration: uint32(len(previous.text.attempts) + 1)}
 	state.streaming = previous.streaming
+	state.publicRequest = previous.publicRequest
 	state.requestedTools, state.removedTools = previous.requestedTools, previous.removedTools
 	return state
 }

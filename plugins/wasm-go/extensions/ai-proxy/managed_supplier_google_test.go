@@ -28,6 +28,9 @@ func TestManagedGeminiOriginalCountersAndTerminalThroughTheSoleSender(t *testing
 				if input == managedProtocolResponses {
 					payload = `"input":"hello"`
 				}
+				if input == managedProtocolChat && stream {
+					payload += `,"stream_options":{"include_usage":true}`
+				}
 				original := []byte(fmt.Sprintf(`{"model":"public-model",%s,"stream":%t}`, payload, stream))
 				h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("upstream-model"), 1))
 				calls := h.host.GetCalloutAttributesFromContext(h.id)
@@ -122,7 +125,7 @@ func TestManagedMoonshotNestedStreamUsageUsesOriginalBytes(t *testing.T) {
 	fixture := managedConfigFixture()
 	fixture["provider"] = json.RawMessage(`{"type":"moonshot","apiTokens":["controlled-upstream-key"]}`)
 	h := newManagedHost(t, fixture)
-	original := []byte(`{"model":"public-model","messages":[{"role":"user","content":"hello"}],"stream":true}`)
+	original := []byte(`{"model":"public-model","messages":[{"role":"user","content":"hello"}],"stream":true,"stream_options":{"include_usage":true}}`)
 	h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("upstream-model"), 1))
 	calls := h.host.GetCalloutAttributesFromContext(h.id)
 	if len(calls) != 1 {
@@ -203,6 +206,9 @@ func TestManagedGeminiSeparateTerminalAndRealFunctionCallsAcrossClients(t *testi
 				payload := `"messages":[{"role":"user","content":"hello"}],"max_tokens":12`
 				if input == managedProtocolResponses {
 					payload = `"input":"hello"`
+				}
+				if input == managedProtocolChat && test.stream {
+					payload += `,"stream_options":{"include_usage":true}`
 				}
 				original := []byte(fmt.Sprintf(`{"model":"public-model",%s,"stream":%t}`, payload, test.stream))
 				h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("upstream-model"), 1))

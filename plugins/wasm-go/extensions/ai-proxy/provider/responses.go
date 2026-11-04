@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
 	"github.com/tidwall/gjson"
@@ -89,6 +90,8 @@ type responsesInputItem struct {
 	Name                  string                          `json:"name"`
 	Arguments             *string                         `json:"arguments"`
 	Output                json.RawMessage                 `json:"output"`
+	Summary               []json.RawMessage               `json:"summary,omitempty"`
+	EncryptedContent      json.RawMessage                 `json:"encrypted_content,omitempty"`
 	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
 }
 
@@ -116,6 +119,7 @@ type responsesChatInputMessage struct {
 	Content               json.RawMessage                 `json:"content,omitempty"`
 	ToolCalls             []responsesChatFunctionCall     `json:"tool_calls,omitempty"`
 	ToolCallID            string                          `json:"tool_call_id,omitempty"`
+	ReasoningContent      *string                         `json:"reasoning_content,omitempty"`
 	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
 }
 
@@ -147,6 +151,7 @@ type responsesOutputItem struct {
 	CallID    string                    `json:"call_id,omitempty"`
 	Name      string                    `json:"name,omitempty"`
 	Arguments *string                   `json:"arguments,omitempty"`
+	Summary   *[]responsesOutputContent `json:"summary,omitempty"`
 }
 
 // The stream envelope keeps required event metadata in one typed writer.
@@ -163,6 +168,7 @@ type responsesStreamEvent struct {
 	Delta          *string                 `json:"delta,omitempty"`
 	Arguments      *string                 `json:"arguments,omitempty"`
 	Text           *string                 `json:"text,omitempty"`
+	Refusal        *string                 `json:"refusal,omitempty"`
 }
 
 type responsesOutputContent struct {
@@ -197,6 +203,16 @@ func ConvertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 }
 
 func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(body, &fields); err != nil {
+		return nil, fmt.Errorf("invalid Responses fallback request: %w", err)
+	}
+	const supported = " model instructions input stream stream_options temperature top_p presence_penalty frequency_penalty max_output_tokens user metadata store background reasoning prompt_cache_key prompt_cache_retention prompt_cache_options text tools tool_choice parallel_tool_calls previous_response_id conversation enable_search search_options web_search_options "
+	for name := range fields {
+		if !strings.Contains(supported, " "+name+" ") {
+			return nil, fmt.Errorf("%s is unsupported in Responses fallback mode", name)
+		}
+	}
 	if gjson.GetBytes(body, "previous_response_id").Exists() {
 		return nil, errors.New("previous_response_id is unsupported in Responses fallback mode")
 	}
@@ -313,6 +329,30 @@ func convertResponsesInputToChatMessages(input json.RawMessage) ([]responsesChat
 	seen := make(map[string]struct{})
 	for _, item := range items {
 		switch item.Type {
+		case "reasoning":
+			if len(item.EncryptedContent) > 0 && !bytes.Equal(bytes.TrimSpace(item.EncryptedContent), []byte("null")) || len(item.Summary) > 0 {
+				return nil, errors.New("opaque or summary-only reasoning is unsupported in Responses fallback mode")
+			}
+			var parts []responsesContentPart
+			if json.Unmarshal(item.Content, &parts) != nil || len(parts) == 0 {
+				return nil, errors.New("reasoning requires plaintext reasoning_text content in Responses fallback mode")
+			}
+			var text strings.Builder
+			for _, part := range parts {
+				if part.Type != "reasoning_text" || part.Text == nil {
+					return nil, errors.New("reasoning content cannot be converted without loss")
+				}
+				text.WriteString(*part.Text)
+			}
+			if len(messages) == 0 || messages[len(messages)-1].Role != roleAssistant {
+				messages = append(messages, responsesChatInputMessage{Role: roleAssistant})
+			}
+			last := &messages[len(messages)-1]
+			value := text.String()
+			if last.ReasoningContent != nil {
+				value = *last.ReasoningContent + value
+			}
+			last.ReasoningContent = &value
 		case "", "message":
 			if len(pending) > 0 && (item.Role != roleAssistant || messages[len(messages)-1].Role != roleAssistant) {
 				return nil, errors.New("function_call_output is required before the next message in Responses fallback mode")
@@ -325,6 +365,13 @@ func convertResponsesInputToChatMessages(input json.RawMessage) ([]responsesChat
 			content, err := convertResponsesMessageContent(item.Content, item.Role)
 			if err != nil {
 				return nil, err
+			}
+			if item.Role == roleAssistant && len(messages) > 0 {
+				last := &messages[len(messages)-1]
+				if last.Role == roleAssistant && last.ReasoningContent != nil && last.Content == nil {
+					last.Content, last.PromptCacheBreakpoint = content, item.PromptCacheBreakpoint
+					continue
+				}
 			}
 			if len(pending) > 0 {
 				last := &messages[len(messages)-1]
@@ -562,13 +609,19 @@ func convertChatCompletionResponseToResponses(body []byte) ([]byte, error) {
 	}
 
 	output := convertChatCompletionMessageToResponsesOutput(choice.Message)
+	if choice.Message.ReasoningContent != "" {
+		response.Output = append(response.Output, reasoningOutput("rs_"+chatResponse.ID, choice.Message.ReasoningContent, response.Status))
+	}
+	if response.Status != "completed" {
+		output.Status = "incomplete"
+	}
 	if output.Content != nil && len(*output.Content) > 0 {
 		output.ID = "msg_" + chatResponse.ID
-		response.Output = []responsesOutputItem{output}
+		response.Output = append(response.Output, output)
 	}
 	for _, call := range choice.Message.ToolCalls {
 		response.Output = append(response.Output, responsesOutputItem{
-			Type: "function_call", ID: "fc_" + call.Id, Status: "completed", CallID: call.Id,
+			Type: "function_call", ID: "fc_" + call.Id, Status: output.Status, CallID: call.Id,
 			Name: call.Function.Name, Arguments: &call.Function.Arguments,
 		})
 	}
@@ -594,6 +647,9 @@ func applyResponsesFinishStatus(response *responsesResponse, finishReason string
 	case "content_filter":
 		response.Status = "incomplete"
 		response.IncompleteDetails = &responsesIncomplete{Reason: "content_filter"}
+	case "insufficient_system_resource", "aborted":
+		response.Status = "failed"
+		response.Error = json.RawMessage(`{"code":"server_error","message":"The upstream generation was interrupted."}`)
 	default:
 		response.Status = "completed"
 	}
@@ -608,7 +664,11 @@ func convertChatCompletionMessageToResponsesOutput(message *chatMessage) respons
 	if message.Refusal != "" {
 		content = append(content, responsesOutputContent{Type: "refusal", Refusal: message.Refusal})
 	} else if text, ok := chatCompletionContentText(message.Content); ok && text != "" {
-		content = append(content, responsesOutputContent{Type: "output_text", Text: &text, Annotations: util.Ptr(make([]json.RawMessage, 0))})
+		annotations := message.Annotations
+		if annotations == nil {
+			annotations = util.Ptr(make([]json.RawMessage, 0))
+		}
+		content = append(content, responsesOutputContent{Type: "output_text", Text: &text, Annotations: annotations})
 	}
 	return output
 }
@@ -638,6 +698,8 @@ type chatCompletionToResponsesStreamConverter struct {
 	toolIndexes    map[int]int
 	textIndex      int
 	sequenceNumber int
+	reasoningIndex *int
+	refusalIndex   *int
 }
 
 type ChatCompletionToResponsesStreamConverter = chatCompletionToResponsesStreamConverter
@@ -683,6 +745,40 @@ func (c *chatCompletionToResponsesStreamConverter) convert(chunk []byte, isLastC
 		}
 		choice := chatChunk.Choices[0]
 		if choice.Delta != nil {
+			if refusal := choice.Delta.Refusal; refusal != "" {
+				if c.refusalIndex == nil {
+					index := len(c.outputs)
+					c.refusalIndex = &index
+					content := []responsesOutputContent{{Type: "refusal"}}
+					c.outputs = append(c.outputs, responsesOutputItem{Type: "message", ID: fmt.Sprintf("msg_%s_%d", c.id, index), Role: roleAssistant, Status: "in_progress", Content: &content})
+					if err := c.writeEvent(&output, responsesStreamEvent{Type: "response.output_item.added", OutputIndex: &index, Item: &c.outputs[index]}); err != nil {
+						return nil, err
+					}
+					if err := c.writeEvent(&output, responsesStreamEvent{Type: "response.content_part.added", OutputIndex: &index, ContentIndex: util.Ptr(0), ItemID: c.outputs[index].ID, Part: &content[0]}); err != nil {
+						return nil, err
+					}
+				}
+				item := &c.outputs[*c.refusalIndex]
+				(*item.Content)[0].Refusal += refusal
+				if err := c.writeEvent(&output, responsesStreamEvent{Type: "response.refusal.delta", OutputIndex: c.refusalIndex, ContentIndex: util.Ptr(0), ItemID: item.ID, Delta: &refusal}); err != nil {
+					return nil, err
+				}
+			}
+			if text := choice.Delta.ReasoningContent; text != "" {
+				if c.reasoningIndex == nil {
+					index := len(c.outputs)
+					c.reasoningIndex = &index
+					c.outputs = append(c.outputs, reasoningOutput(fmt.Sprintf("rs_%s_%d", c.id, index), "", "in_progress"))
+					if err := c.writeEvent(&output, responsesStreamEvent{Type: "response.output_item.added", OutputIndex: c.reasoningIndex, Item: &c.outputs[index]}); err != nil {
+						return nil, err
+					}
+				}
+				item := &c.outputs[*c.reasoningIndex]
+				*(*item.Content)[0].Text += text
+				if err := c.writeEvent(&output, responsesStreamEvent{Type: "response.reasoning_text.delta", OutputIndex: c.reasoningIndex, ContentIndex: util.Ptr(0), ItemID: item.ID, Delta: &text}); err != nil {
+					return nil, err
+				}
+			}
 			if delta, ok := chatCompletionContentText(choice.Delta.Content); ok && delta != "" {
 				if !c.hasText {
 					c.textIndex = len(c.outputs)
@@ -745,7 +841,7 @@ func (c *chatCompletionToResponsesStreamConverter) convert(chunk []byte, isLastC
 			}
 		}
 	}
-	if isLastChunk && !c.completed && len(bytes.TrimSpace(c.buffer)) == 0 {
+	if isLastChunk && !c.completed && c.finishReason != "" && len(bytes.TrimSpace(c.buffer)) == 0 {
 		if err := c.writeCompletedEvent(&output); err != nil {
 			return nil, err
 		}
@@ -826,7 +922,7 @@ func (c *chatCompletionToResponsesStreamConverter) writeTextDoneEvent(output *by
 		return err
 	}
 	item.Status = "completed"
-	if c.finishReason == "length" || c.finishReason == "content_filter" {
+	if c.finishReason == "length" || c.finishReason == "content_filter" || c.finishReason == "insufficient_system_resource" || c.finishReason == "aborted" {
 		item.Status = "incomplete"
 	}
 	return c.writeEvent(output, responsesStreamEvent{Type: "response.output_item.done", OutputIndex: &c.textIndex, Item: item})
@@ -835,6 +931,9 @@ func (c *chatCompletionToResponsesStreamConverter) writeTextDoneEvent(output *by
 func (c *chatCompletionToResponsesStreamConverter) writeCompletedEvent(output *bytes.Buffer) error {
 	if c.completed {
 		return nil
+	}
+	if c.finishReason == "" {
+		return errors.New("chat stream ended without a terminal finish_reason")
 	}
 	if err := c.writeCreatedEvent(output); err != nil {
 		return err
@@ -848,11 +947,41 @@ func (c *chatCompletionToResponsesStreamConverter) writeCompletedEvent(output *b
 	}
 	for index := range c.outputs {
 		item := &c.outputs[index]
+		if c.refusalIndex != nil && index == *c.refusalIndex {
+			item.Status = "completed"
+			if response.Status != "completed" {
+				item.Status = "incomplete"
+			}
+			part := &(*item.Content)[0]
+			if err := c.writeEvent(output, responsesStreamEvent{Type: "response.refusal.done", OutputIndex: &index, ContentIndex: util.Ptr(0), ItemID: item.ID, Refusal: &part.Refusal}); err != nil {
+				return err
+			}
+			if err := c.writeEvent(output, responsesStreamEvent{Type: "response.content_part.done", OutputIndex: &index, ContentIndex: util.Ptr(0), ItemID: item.ID, Part: part}); err != nil {
+				return err
+			}
+			if err := c.writeEvent(output, responsesStreamEvent{Type: "response.output_item.done", OutputIndex: &index, Item: item}); err != nil {
+				return err
+			}
+			continue
+		}
+		if item.Type == "reasoning" {
+			item.Status = "completed"
+			if response.Status != "completed" {
+				item.Status = "incomplete"
+			}
+			if err := c.writeEvent(output, responsesStreamEvent{Type: "response.reasoning_text.done", OutputIndex: &index, ContentIndex: util.Ptr(0), ItemID: item.ID, Text: (*item.Content)[0].Text}); err != nil {
+				return err
+			}
+			if err := c.writeEvent(output, responsesStreamEvent{Type: "response.output_item.done", OutputIndex: &index, Item: item}); err != nil {
+				return err
+			}
+			continue
+		}
 		if item.Type != "function_call" {
 			continue
 		}
 		item.Status = "completed"
-		if response.Status == "incomplete" {
+		if response.Status != "completed" {
 			item.Status = "incomplete"
 		}
 		if err := c.writeEvent(output, responsesStreamEvent{Type: "response.function_call_arguments.done", OutputIndex: &index, ItemID: item.ID, Arguments: item.Arguments}); err != nil {
@@ -865,6 +994,16 @@ func (c *chatCompletionToResponsesStreamConverter) writeCompletedEvent(output *b
 	response.Output = c.outputs
 	c.completed = true
 	return c.writeEvent(output, responsesStreamEvent{Type: "response." + response.Status, Response: &response})
+}
+
+func reasoningOutput(id, text, status string) responsesOutputItem {
+	if status == "failed" || status == "cancelled" {
+		status = "incomplete"
+	}
+	if status != "in_progress" && status != "incomplete" {
+		status = "completed"
+	}
+	return responsesOutputItem{Type: "reasoning", ID: id, Status: status, Summary: util.Ptr(make([]responsesOutputContent, 0)), Content: util.Ptr([]responsesOutputContent{{Type: "reasoning_text", Text: &text}})}
 }
 
 func (c *chatCompletionToResponsesStreamConverter) writeEvent(output *bytes.Buffer, event responsesStreamEvent) error {

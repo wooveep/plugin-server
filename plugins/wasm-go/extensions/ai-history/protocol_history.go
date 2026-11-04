@@ -138,8 +138,8 @@ func (request historyRequest) inject(turns []historyTurn, count int, original []
 }
 
 // The shared adapter determines the actual text/terminal/tool-call facts. Raw
-// JSON output is retained when available; SSE text is collected by that adapter,
-// not by a second local SSE parser. Pending tools never become a fake answer.
+// JSON output is retained when available; after eligibility is verified, the
+// public codec retains native SSE continuation fields. Pending tools stay pending.
 func historyResponseOutput(kind protocol.ProtocolKind, status int, stream bool, chunks [][]byte) ([]json.RawMessage, string) {
 	if status < 200 || status >= 300 {
 		return nil, "upstream-http-error"
@@ -221,6 +221,9 @@ func historyResponseOutput(kind protocol.ProtocolKind, status int, stream bool, 
 				return items, ""
 			}
 		}
+	}
+	if stream {
+		return nativeStreamHistoryOutput(kind, chunks)
 	}
 	output, err := json.Marshal(struct {
 		Role    string `json:"role"`

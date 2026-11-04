@@ -428,8 +428,8 @@ func TestManagedCallbackPublishesAttemptAndBridgesOneDelivery(t *testing.T) {
 	h.start(t, []byte(managedOriginalBody), []byte(managedMappedBody))
 	h.response(t, [][2]string{{":status", "200"}, {"content-type", "application/json"}, {executionfacts.DeliveryBridgeHeader, "upstream-forgery"}, {executionfacts.DeliveryBridgeHeader, "another-forgery"}}, []byte(managedSuccessfulBody))
 	response := h.host.GetSentLocalResponse(h.id)
-	if response == nil || response.StatusCode != 200 || !bytes.Equal(response.Data, []byte(managedSuccessfulBody)) {
-		t.Fatal("billing changed the client response")
+	if response == nil || response.StatusCode != 200 || gjson.GetBytes(response.Data, "model").String() != "public-model" || gjson.GetBytes(response.Data, "usage.prompt_tokens").Raw != "9007199254740993" {
+		t.Fatal("public response changed content identity or exact usage")
 	}
 	bridge := h.bridge(t)
 	delivery := bridge.Envelope()
@@ -668,11 +668,16 @@ func TestManagedStreamResponsePreservesAggregatedWireBytes(t *testing.T) {
 				body = body[:len(body)-1]
 			}
 			h.response(t, [][2]string{{":status", "200"}, {"content-type", "text/event-stream"}}, body)
-			if response := h.host.GetSentLocalResponse(h.id); response.StatusCode != 200 || !bytes.Equal(response.Data, body) {
-				t.Fatal("aggregate SSE response was changed")
+			response := h.host.GetSentLocalResponse(h.id)
+			if complete {
+				if response == nil || response.StatusCode != 200 || !bytes.Contains(response.Data, []byte(`"model":"public-model"`)) || !bytes.HasSuffix(response.Data, []byte("data: [DONE]\n\n")) || bytes.Contains(response.Data, []byte(`"usage"`)) {
+					t.Fatal("public stream identity, terminal or requested usage changed")
+				}
+			} else if response == nil || response.StatusCode != 502 || bytes.Contains(response.Data, []byte("[DONE]")) {
+				t.Fatal("an unterminated event was made into a successful stream")
 			}
 			delivery := h.bridge(t).Envelope()
-			if complete && delivery.Usage.Status != "reported" || !complete && (delivery.Usage.Status != "estimated" || delivery.Usage.Source != "estimator" || delivery.DeliveryState != "unknown") {
+			if complete && delivery.Usage.Status != "reported" || !complete && (delivery.Usage.Status != "estimated" || delivery.Usage.Source != "estimator" || delivery.DeliveryState != "failed") {
 				t.Fatal("truncated stream claimed final usage or completion")
 			}
 			if h.ctx.GetUserAttribute("managed_execution_response_mode") != "buffered_http_call" {

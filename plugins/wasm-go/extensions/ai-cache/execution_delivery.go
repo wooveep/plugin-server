@@ -13,6 +13,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
@@ -34,6 +35,8 @@ type nativeCacheDeliveryState struct {
 	origin                               executionfacts.AdmittedCall
 	basis                                bodybasis.Snapshot
 	requestText                          string
+	includeUsage                         bool
+	publicFields                         map[string]json.RawMessage
 	bodyReady, replied, rejected, closed bool
 	snapshot                             executionfacts.Snapshot
 }
@@ -339,6 +342,8 @@ func prepareNativeCacheBody(ctx wrapper.HttpContext, cfg config.PluginConfig, bo
 		}
 	}
 	state.requestText = tokenestimate.RequestText(body)
+	state.includeUsage = gjson.GetBytes(body, "stream_options.include_usage").Bool()
+	state.publicFields = clientresponse.RequestFields(body)
 	state.bodyReady = true
 	return true
 }

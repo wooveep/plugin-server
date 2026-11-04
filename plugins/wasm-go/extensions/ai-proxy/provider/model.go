@@ -217,6 +217,7 @@ type chatMessage struct {
 	ToolCalls                []toolCall                      `json:"tool_calls,omitempty"`
 	FunctionCall             *functionCall                   `json:"function_call,omitempty"` // For legacy OpenAI format
 	Refusal                  string                          `json:"refusal,omitempty"`
+	Annotations              *[]json.RawMessage              `json:"annotations,omitempty"`
 	ToolCallId               string                          `json:"tool_call_id,omitempty"`
 	PromptCacheBreakpoint    *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
 }

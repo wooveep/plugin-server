@@ -10,7 +10,7 @@ The `2.0.5` configuration contract keeps `_modelfusion_execution` v1's scalar `c
 
 For v2, `managed_execution.credentials` contains the matching ref/revision/value triples and excludes scalar `credential_value`. HEALTH is required: `upstream_health.targets` retains every original operation/member TargetReference and excludes `target`. V1 retains its original scalar settings and optional HEALTH. The existing generic `legacy_suffixes`/`bound_target` and `auto`/`passthrough` capability starts at version 1.0.2; it is separate from the v2 pool contract.
 
-> Plugin version: `2.0.10`
+> Plugin version: `2.0.39`
 
 ## Function Description
 
@@ -2653,3 +2653,9 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 Delivered health controls persist until an explicit update. `valid_until` is an observation freshness watermark, not a sending lease from Console. A Console outage does not expire an otherwise eligible target. Explicit credential disablement, permanent blocks, cooldowns, and revision conflicts still deny sends.
 
 Ordinary production retains the original Redis-admitted call identity and business time without a temporary Console permit deadline. Upload, send and retry keep their existing budgets. Explicit bounded validation/internal permits retain their expiry; no renewal or extension path is introduced.
+
+## Public responses and internal metering
+
+Plugin version `2.0.39`.
+
+Managed text routes normalize public sales model names, fields, errors and usage in Chat, Responses and Messages JSON/SSE. Responses emits usage when coherent base input/output/total counts are available, omits unknown details, and emits null for incomplete base usage. Real reasoning, signatures and function context are preserved within registered conversions; unrepresentable context is rejected. Original upstream facts and the four financial token meters remain unchanged.

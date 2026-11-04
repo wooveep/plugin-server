@@ -4,7 +4,7 @@ keywords: [higress,ai cache]
 description: ai-cache 薄网关缓存插件配置参考
 ---
 
-> 配置契约版本：`2.0.5`
+> 配置契约版本：`2.0.14`
 
 ## 完整冻结凭据目录
 
@@ -232,3 +232,9 @@ OpenAI 响应体，用户请求或响应体中的同名字段也不能控制它�
 1.0.3 的 memory-aware 策略将基础策略、memory policy 和可信摘要组合后，以 `cache-v<整数>` 结尾；查询、Console lookup 和 CacheEvent 使用同一有效版本，保证 Console 解析及物化读写 key 一致。
 
 普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。
+
+## 统一下游响应与内部计量
+
+插件版本 `2.0.14`。
+
+原生缓存回放复用统一的 Chat／Responses／Messages 公开响应策略，使用当前销售模型和当前请求回显／usage 开关。命中仍按当次估算计量形成销售交付，不产生本次上游采购；不复用历史供应商用量。

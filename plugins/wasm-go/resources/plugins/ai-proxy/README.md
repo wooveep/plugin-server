@@ -14,7 +14,7 @@ description: AI 代理插件配置参考
 
 v2 的 `managed_execution.credentials` 保存逐项匹配的 ref/revision/value，与单一 `credential_value` 互斥；必须具备 HEALTH，`upstream_health.targets` 保留每个原操作/凭据成员的完整 TargetReference，与 `target` 互斥。v1 保留原单一配置及可省略的 HEALTH。既有 `legacy_suffixes`/`bound_target`、`auto`/`passthrough` 通用能力自 1.0.2 起提供，不以本次 v2 凭据池版本替代其起始版本。
 
-> 插件版本：`2.0.19`
+> 插件版本：`2.0.39`
 
 ## 功能说明
 
@@ -2903,3 +2903,9 @@ Responses→Chat回退支持用户消息的图像URL/Data URL，保留detail、�
 完整包的配置Schema携带 `x-modelfusion-native-text-routing/native-text-routing.v1` 声明，供正式发布编译器从本次锁定制品读取OpenAI、Qwen、DeepSeek及Claude的已实现文本协议。供应商明确的文本接入方式优先；其他供应商继续使用其已登记模型绑定协议及现有转换器，不推断新的原生API。
 
 客户文本路由的公共前缀可在一次发布中展开Chat、Responses、Messages的可执行入口，每个入口固定协议对和独立target，保留同一真实供应商、binding、销售模型、准入及计费身份。原生同协议优先，仅回退到已登记的Responses/Messages→Chat转换。缓存和历史按各入口的原下游协议配置；不通过额外供应商调用探测能力，也不更改既有聚合SSE边界。
+
+## 统一下游响应与内部计量
+
+插件版本 `2.0.39`。
+
+托管文本入口统一 Chat／Responses／Messages JSON 与 SSE 的销售模型名、公开字段、错误和用量。Responses 基础输入／输出／总量完整即返回 usage；未知明细省略，基础量不全返回 null。保留真实推理、签名和普通函数上下文；Responses→Chat 仅接受已登记子集，无法表达的上下文明确拒绝。原始上游事实和账务四类 token 计量保持。

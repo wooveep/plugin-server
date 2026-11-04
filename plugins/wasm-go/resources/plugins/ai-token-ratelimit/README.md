@@ -412,3 +412,9 @@ curl "http://qwen-test.com:18000/v1/chat/completions?apikey=123456" -H "Content-
 }'
 Too many requests  # 限流成功
 ```
+
+## 统一下游响应与内部计量
+
+插件版本 `2.0.4`。
+
+原生链优先使用经账务桥校验的当次交付 token，独立于公开 usage 是否为空／隐藏；保持既有规则和 EOS 单次累计。兼容链继续使用原响应解析。

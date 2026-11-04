@@ -160,3 +160,9 @@ Response Example:
 Returns three historical dialogues. If the `cnt` parameter is not provided, it will default to returning all cached historical dialogues.
 
 Native tenant history executes after quota (280) and billing (270), before cache (250) and model mapping (200). Tenant selection requires the admitted caller.
+
+## Public responses and internal metering
+
+Plugin version `2.0.7`.
+
+Eligible native streaming history preserves real reasoning, Messages thinking/signatures and Responses output items. Existing pending-tool, invalid and incomplete-output gates remain in force.

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strconv"
 
+	"github.com/higress-group/wasm-go/pkg/ai/observedusage"
 	"github.com/higress-group/wasm-go/pkg/tokenusage"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -20,6 +21,13 @@ type statisticsObservedUsage struct {
 // The shared parser intentionally derives/defaults counters for legacy callers.
 // Bound statistics keep only counters actually present in a valid response frame.
 func observeStatisticsUsage(ctx wrapper.HttpContext, config AIStatisticsConfig, body []byte, streaming bool) tokenusage.TokenUsage {
+	if usage, ok := observedusage.Read(); ok {
+		ctx.SetUserAttribute(tokenusage.CtxKeyModel, usage.Model)
+		ctx.SetUserAttribute(tokenusage.CtxKeyInputToken, usage.InputToken)
+		ctx.SetUserAttribute(tokenusage.CtxKeyOutputToken, usage.OutputToken)
+		ctx.SetUserAttribute(tokenusage.CtxKeyTotalToken, usage.TotalToken)
+		return usage
+	}
 	if config.pathScope != pathScopeBoundTarget {
 		return tokenusage.GetTokenUsage(ctx, body)
 	}

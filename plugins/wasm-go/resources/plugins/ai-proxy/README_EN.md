@@ -10,7 +10,7 @@ The `2.0.5` configuration contract keeps `_modelfusion_execution` v1's scalar `c
 
 For v2, `managed_execution.credentials` contains the matching ref/revision/value triples and excludes scalar `credential_value`. HEALTH is required: `upstream_health.targets` retains every original operation/member TargetReference and excludes `target`. V1 retains its original scalar settings and optional HEALTH. The existing generic `legacy_suffixes`/`bound_target` and `auto`/`passthrough` capability starts at version 1.0.2; it is separate from the v2 pool contract.
 
-> Plugin version: `2.0.10`
+> Plugin version: `2.0.39`
 
 ## Function Description
 
@@ -2661,3 +2661,9 @@ Ordinary production retains the original Redis-admitted call identity and busine
 Registered customer embeddings meter input tokens only. Valid provider input counts take precedence, including explicit zero; absent or invalid usage is estimated from original text or batches. Estimated responses include `usage.prompt_tokens`, `usage.total_tokens`, and `usage.source=estimator`, so clients, TPM, and statistics use the same input count. Vector dimensions never become output tokens.
 
 Customer charges start when the gateway successfully initiates an upstream call. A later timeout or connection failure still incurs sales and expected procurement charges from available input. This does not assert provider receipt. Format, authorization, or balance rejection before dispatch remains uncharged. Each retry incurs its own expected procurement cost, while customer sales settle once per original request. Internal service calls retain their frozen identity and observation contracts.
+
+## Public responses and internal metering
+
+Plugin version `2.0.39`.
+
+Managed text routes normalize public sales model names, fields, errors and usage in Chat, Responses and Messages JSON/SSE. Responses emits usage when coherent base input/output/total counts are available, omits unknown details, and emits null for incomplete base usage. Real reasoning, signatures and function context are preserved within registered conversions; unrepresentable context is rejected. Original upstream facts and the four financial token meters remain unchanged.

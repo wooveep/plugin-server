@@ -180,3 +180,9 @@ curl 'http://example.com/api/openai/v1/chat/completions/ai-history/query?cnt=3' 
 返回三个历史对话,如果未传入 cnt 默认返回所有缓存历史对话。
 
 Native tenant history executes after quota (280) and billing (270), before cache (250) and model mapping (200). Tenant selection requires the admitted caller.
+
+## 统一下游响应与内部计量
+
+插件版本 `2.0.7`。
+
+已通过原生终态及内容资格检查的流式历史保留推理正文、Messages thinking／signature 及 Responses 原始 output 项。工具待结果、非法／未完整输出继续按既有边界跳过。

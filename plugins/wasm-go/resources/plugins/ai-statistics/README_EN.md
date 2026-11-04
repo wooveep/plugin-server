@@ -4,7 +4,7 @@ keywords: [higress, AI, observability]
 description: AI Statistics plugin configuration reference
 ---
 
-> Plugin version: `2.0.4`
+> Plugin version: `2.0.5`
 
 ## Introduction
 
@@ -455,3 +455,9 @@ attributes:
     value: x-mse-consumer
     apply_to_log: true
 ```
+
+## Public responses and internal metering
+
+Plugin version `2.0.5`.
+
+Native flows prefer request-local delivery metering validated by the billing bridge, so null or hidden public usage does not erase known internal tokens. Legacy response parsing and financial facts remain unchanged.

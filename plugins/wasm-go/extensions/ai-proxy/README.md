@@ -10,7 +10,7 @@ description: AI 代理插件配置参考
 
 v2 的 `managed_execution.credentials` 保存逐项匹配的 ref/revision/value，与单一 `credential_value` 互斥；必须具备 HEALTH，`upstream_health.targets` 保留每个原操作/凭据成员的完整 TargetReference，与 `target` 互斥。v1 保留原单一配置及可省略的 HEALTH。既有 `legacy_suffixes`/`bound_target`、`auto`/`passthrough` 通用能力自 1.0.2 起提供，不以本次 v2 凭据池版本替代其起始版本。
 
-> 交付版本：`2.0.10`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。
+> 交付版本：`2.0.39`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。
 
 ## 托管原生执行
 
@@ -2917,3 +2917,9 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 已下发的健康控制保留到显式配置更新：`valid_until` 仅表示观测时效，不是 Console 的发送许可租约。Console 停止刷新时，完整且版本一致的健康目标继续服务；已禁用凭据、永久封禁、冷却期、旧版本与冲突仍按原状态拒绝。
 
 普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。
+
+## 统一下游响应与内部计量
+
+插件版本 `2.0.39`。
+
+托管文本入口统一 Chat／Responses／Messages JSON 与 SSE 的销售模型名、公开字段、错误和用量。Responses 基础输入／输出／总量完整即返回 usage；未知明细省略，基础量不全返回 null。保留真实推理、签名和普通函数上下文；Responses→Chat 仅接受已登记子集，无法表达的上下文明确拒绝。原始上游事实和账务四类 token 计量保持。

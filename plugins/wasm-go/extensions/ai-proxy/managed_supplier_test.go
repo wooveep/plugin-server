@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/tidwall/gjson"
 )
@@ -45,6 +46,9 @@ func TestManagedQwenActualBodyAndOriginalUsageThroughOneSender(t *testing.T) {
 				payload := `"messages":[{"role":"user","content":"hello"}],"max_tokens":12`
 				if input == managedProtocolResponses {
 					payload = `"input":"hello"`
+				}
+				if input == managedProtocolChat && stream {
+					payload += `,"stream_options":{"include_usage":true}`
 				}
 				original := []byte(fmt.Sprintf(`{"model":"public-model",%s,"stream":%t}`, payload, stream))
 				mapped := bytes.Replace(original, []byte("public-model"), []byte("upstream-model"), 1)
@@ -85,7 +89,12 @@ func TestManagedQwenActualBodyAndOriginalUsageThroughOneSender(t *testing.T) {
 					t.Fatal(err)
 				}
 				observed := native.ObserveResponse(200, response.Headers, response.Data, true)
-				if observed.Acceptance != "accepted" || observed.Usage.Quantities["input"] != "9007199254740993" || observed.Usage.Quantities["cache_miss"] != "9007199254740992" {
+				publicUsage := clientresponse.ReadUsage(response.Data, input, stream)
+				inputCount, expectedInput := publicUsage.Input, "9007199254740993"
+				if input == managedProtocolMessages {
+					inputCount, expectedInput = publicUsage.MessagesInput, "9007199254740992"
+				}
+				if observed.Acceptance != "accepted" || string(inputCount) != expectedInput || string(publicUsage.InputDetails["cached_tokens"]) != "1" {
 					t.Fatalf("client conversion lost exact usage: %#v", observed)
 				}
 				records := h.records(t)
@@ -202,8 +211,9 @@ func TestManagedSupplierHeadersAndBodyReachTheSoleBusinessSender(t *testing.T) {
 				body = []byte(`{"type":"message","model":"upstream-model","stop_reason":"end_turn","content":[{"type":"text","text":"hello"}],"usage":{"input_tokens":9007199254740993,"output_tokens":2}}`)
 			}
 			h.response(t, [][2]string{{":status", "200"}, {"content-type", "application/json"}}, body)
-			if response := h.host.GetSentLocalResponse(h.id); response == nil || response.StatusCode != 200 || !bytes.Equal(response.Data, body) {
-				t.Fatal("native client payload changed")
+			response := h.host.GetSentLocalResponse(h.id)
+			if response == nil || response.StatusCode != 200 || gjson.GetBytes(response.Data, "model").String() != "public-model" || !bytes.Contains(response.Data, []byte("hello")) || bytes.Contains(response.Data, []byte(`"model":"upstream-model"`)) {
+				t.Fatal("public identity or actual content changed")
 			}
 			records := h.records(t)
 			if len(records) != 2 {

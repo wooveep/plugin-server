@@ -27,6 +27,7 @@ import (
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/observedusage"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/tokenusage"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -246,6 +247,10 @@ func onHttpStreamingBody(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitCon
 }
 
 func onHttpResponseBody(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitConfig, body []byte) types.Action {
+	if usage, ok := observedusage.Read(); ok {
+		processTokenUsage(ctx, cfg, usage, true)
+		return types.ActionContinue
+	}
 	// A complete JSON response is one document; blank lines are not SSE boundaries.
 	usage := tokenusage.TokenUsage{
 		InputTokenDetails:  make(map[string]int64),
@@ -262,6 +267,10 @@ func onHttpResponseBody(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitConf
 }
 
 func processResponseBody(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitConfig, data []byte, endOfStream bool) []byte {
+	if usage, ok := observedusage.Read(); ok {
+		processTokenUsage(ctx, cfg, usage, endOfStream)
+		return data
+	}
 	processTokenUsage(ctx, cfg, tokenusage.GetTokenUsage(ctx, data), endOfStream)
 	return data
 }

@@ -4,7 +4,7 @@ keywords: [higress,ai cache]
 description: ai-cache thin gateway plugin configuration reference
 ---
 
-> Configuration version: `1.0.6`
+> Configuration version: `2.0.14`
 
 ## Frozen Credential Directory
 
@@ -198,3 +198,9 @@ response body, and user-supplied request or response body fields cannot control
 them.
 
 Ordinary production retains the original Redis-admitted call identity and business time without a temporary Console permit deadline. Upload, send and retry keep their existing budgets. Explicit bounded validation/internal permits retain their expiry; no renewal or extension path is introduced.
+
+## Public responses and internal metering
+
+Plugin version `2.0.14`.
+
+Native replay uses the shared Chat/Responses/Messages response policy with the current sales model, client echoes and usage preference. Each hit retains current estimated sale metering without a new procurement attempt; historical supplier usage is not reused.

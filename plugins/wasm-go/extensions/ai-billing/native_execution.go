@@ -17,6 +17,7 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
+	"github.com/higress-group/wasm-go/pkg/ai/observedusage"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
 )
@@ -260,6 +261,11 @@ func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (
 	if cfg.NativeExecution == nil {
 		return types.ActionContinue, false
 	}
+	if err := observedusage.Clear(); err != nil {
+		nativeBillingGap(ctx, nil, "internal_usage_state_unavailable")
+		_ = proxywasm.SendHttpResponse(503, [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"metering_unavailable","message":"Metering temporarily unavailable"}}`), -1)
+		return types.ActionPause, true
+	}
 	ctx.SetContext(ctxBillingEnabled, false)
 	ctx.DontReadRequestBody()
 	ctx.DontReadResponseBody()
@@ -388,6 +394,13 @@ func consumeNativeBillingBridge(ctx executionFactContext, cfg BillingConfig, sta
 	if err := validateNativeBillingDelivery(state, snapshot); err != nil {
 		nativeBillingGap(ctx, state, "delivery_bridge_identity_mismatch")
 		return
+	}
+	// This request-local value is independent of public usage projection and
+	// contains only the already authenticated delivery's original measurements.
+	if err := observedusage.Publish(snapshot.Envelope()); err != nil {
+		ctx.SetUserAttribute("internal_usage_status", "unavailable")
+	} else {
+		ctx.SetUserAttribute("internal_usage_status", "observed")
 	}
 	if state.delivery != nil {
 		if !bytes.Equal(state.snapshot.Bytes(), snapshot.Bytes()) {

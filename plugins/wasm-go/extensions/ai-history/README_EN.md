@@ -170,3 +170,9 @@ Native conversation items retain attachments, tool context, extension fields and
 A new exact ART package version, Console/SDK policy projection, trusted body-basis wiring, filter ordering and real publication verification remain shared integration work. Focused source/host checks are not Wasm build or deployment acceptance.
 
 Trusted publication assigns exactly one first-body capturer from the exact artifact phases and priorities within each phase. Set `capture_body_basis: true` only when history is that first rewriter. Capture clears client basis headers and completes before enabled/no-store/caller bypasses. The default false consumes a preceding trusted basis. Later memory uses false and model-mapper uses `consume_body_basis: true`; without preprocessors, mapper keeps `capture_body_basis: true`. Header presence never selects a mode. This module does not change filter metadata.
+
+## Public responses and internal metering
+
+Plugin version `2.0.7`.
+
+Eligible native streaming history preserves real reasoning, Messages thinking/signatures and Responses output items. Existing pending-tool, invalid and incomplete-output gates remain in force.

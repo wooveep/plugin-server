@@ -208,3 +208,9 @@ cacheTTL: 3600
 新精确 ART 版本、Console/SDK 策略投影、可信 body basis 接线、顺序及真实发布联测由共享 owner 统一完成。源码/host 定向检查不代表 Wasm 或实际部署验收。旧独立显式配置仍沿原身份头与查询语义。
 
 可信发布根据精确 ART 的 phase 与同阶段 priority 只指定一个首正文捕获者。History 是最早改写者时显式 `capture_body_basis: true`，会在 enabled/no-store/caller 旁路之前清除客户端 basis 保留头并等待完整原正文，捕获一次后再注入；默认 false 只消费前置可信 basis，不能因客户头存在而自选 capture/consume。后置 Memory 使用 false，mapper 使用 `consume_body_basis: true`；没有前置改写者时 mapper 保持 `capture_body_basis: true`。本叶不改 phase/priority，实际顺序必须由精确制品元数据确认。
+
+## 统一下游响应与内部计量
+
+插件版本 `2.0.7`。
+
+已通过原生终态及内容资格检查的流式历史保留推理正文、Messages thinking／signature 及 Responses 原始 output 项。工具待结果、非法／未完整输出继续按既有边界跳过。

@@ -4,7 +4,7 @@ keywords: [higress, AI, observability]
 description: AI可观测配置参考
 ---
 
-> 插件版本：`2.0.4`
+> 插件版本：`2.0.5`
 
 ## 介绍
 
@@ -687,3 +687,9 @@ attributes:
     value: x-mse-consumer
     apply_to_log: true
 ```
+
+## 统一下游响应与内部计量
+
+插件版本 `2.0.5`。
+
+原生链优先观测经账务桥校验的请求内交付用量，因此公开 usage=null 或 Chat 隐藏 usage 不会清掉内部已知 token。兼容链保留原响应解析行为；不改变计费事实。

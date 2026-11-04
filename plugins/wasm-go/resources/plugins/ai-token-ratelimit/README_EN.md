@@ -409,3 +409,9 @@ curl "http://qwen-test.com:18000/v1/chat/completions?apikey=123456" -H "Content-
 }'
 Too many requests  # Rate limiting successful
 ```
+
+## Public responses and internal metering
+
+Plugin version `2.0.4`.
+
+Native TPM accounting prefers validated current delivery tokens independently of null or hidden public usage. Existing rules and once-at-EOS accumulation remain unchanged; legacy response parsing is retained.

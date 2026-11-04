@@ -25,6 +25,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
@@ -443,6 +444,7 @@ type managedExecutionState struct {
 	callID, attemptID, businessUTC                             string
 	streaming                                                  bool
 	requestText                                                string
+	publicRequest                                              []byte
 	embeddingInput                                             json.RawMessage
 	prepared, dispatchStarted, handedOff, callbackSeen, closed bool
 	original                                                   executionfacts.Envelope
@@ -474,6 +476,7 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	if !ok || managed == nil {
 		return types.ActionContinue, false
 	}
+	ctx.SetContext(managedPublicProtocolKey, managed.profile.InputProtocol)
 	beginManagedAccessLog(ctx, managed.release.Descriptor.ReleaseID)
 	ctx.SetContext(ctxSkipAIProxyLifecycle, true)
 	if managed.outbox != nil && !managed.outbox.Accepting() {
@@ -570,6 +573,8 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if err := decodeManagedJSON(body, &object, false); err != nil || object == nil {
 		return rejectManagedRequest(ctx, 400, "invalid_json_body"), true
 	}
+	// Capture client stream preferences before the sender forces upstream usage.
+	state.publicRequest = append([]byte(nil), body...)
 	var model string
 	if json.Unmarshal(object["model"], &model) != nil || model != managed.release.Descriptor.UpstreamModel {
 		return rejectManagedRequest(ctx, 400, "mapped_model_differs_from_selection"), true
@@ -896,6 +901,9 @@ func finishManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState
 		}
 	}
 	clientResponse, err := convertManagedSupplierResponse(ctx, s, outcome, headers, body)
+	if err == nil && *outcome.HTTPStatus < 400 {
+		clientResponse, err = projectManagedResponse(s, headers, body, clientResponse)
+	}
 	if err != nil {
 		managedFactGap(ctx, "protocol_response_conversion_failed")
 		sendManagedFinal(ctx, s, outcome, "failed", 502, [][2]string{{"content-type", "application/json"}}, managedErrorBody("upstream_protocol_response_incomplete"))
@@ -929,6 +937,11 @@ func sendManagedFinal(ctx wrapper.HttpContext, s *managedExecutionState, outcome
 				headers = managedProtocolConvertedHeaders(headers, false)
 			}
 		}
+	}
+	if managedPublicText(s) && status >= 400 {
+		policy := managedPublicPolicy(s)
+		body = clientresponse.Error(policy, body)
+		headers = clientresponse.Headers(policy, headers, false)
 	}
 	responseHeaders := managedResponseHeaders(headers)
 	snapshot, err := managedDeliverySnapshot(s, outcome, deliveryState)
@@ -1194,7 +1207,7 @@ func onManagedStreamDone(ctx wrapper.HttpContext, cfg config.PluginConfig) {
 func rejectManagedRequest(ctx wrapper.HttpContext, status uint32, reason string) types.Action {
 	recordManagedAccessFailure(ctx, reason, false)
 	ctx.SetUserAttribute("managed_execution_rejection", reason)
-	_ = sendManagedError(status, reason)
+	_ = proxywasm.SendHttpResponseWithDetail(status, "ai-proxy.managed_execution", [][2]string{{"content-type", "application/json"}}, managedPublicError(ctx, reason), -1)
 	return types.ActionPause
 }
 

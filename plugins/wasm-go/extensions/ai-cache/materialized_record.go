@@ -154,6 +154,12 @@ func replayMaterializedRecord(record MaterializedReplayRecord, stream bool, ctx 
 	if err != nil {
 		return err
 	}
+	if state, _ := ctx.GetContext(nativeCacheDeliveryContext).(*nativeCacheDeliveryState); state != nil {
+		serialized.Body, err = projectNativeReplayBody(state, record.Protocol, serialized.Body, stream)
+		if err != nil {
+			return err
+		}
+	}
 	statusCode := serialized.StatusCode
 	if statusCode == 0 {
 		statusCode = 200
