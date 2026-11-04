@@ -10,6 +10,24 @@ ROOT = Path(__file__).parent / "fixtures/schema-conversion"
 
 
 class SchemaConversionTests(unittest.TestCase):
+    def test_native_text_routing_is_hashed_package_metadata_with_closed_protocols(self):
+        import copy
+        import json
+        import yaml
+        source = Path(__file__).resolve().parents[1] / "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml"
+        document = yaml.safe_load(source.read_bytes())
+        key = "x-modelfusion-native-text-routing"
+        expected = document["spec"]["configSchema"]["openAPIV3Schema"][key]
+        converted = convert_spec(source.read_bytes())
+        self.assertEqual(json.loads(converted["schemas"]["config.schema.json"])[key], expected)
+        for invalid in ({"schema_version":"unknown", "providers":{}},
+                        {"schema_version":"native-text-routing.v1", "providers":{"openai":["invented"]}},
+                        {"schema_version":"native-text-routing.v1", "providers":{"openai":["openai_chat", "openai_chat"]}}):
+            candidate = copy.deepcopy(document)
+            candidate["spec"]["configSchema"]["openAPIV3Schema"][key] = invalid
+            with self.subTest(declaration=invalid), self.assertRaises(ArtifactError):
+                convert_spec(yaml.safe_dump(candidate, sort_keys=False).encode())
+
     def test_dashscope_native_text_configuration_is_publishable_in_both_scopes(self):
         import json
         from jsonschema import Draft202012Validator

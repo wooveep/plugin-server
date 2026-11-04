@@ -52,7 +52,7 @@ SCHEMA_KEYWORDS = frozenset("""
     items minProperties maxProperties required properties patternProperties
     additionalProperties propertyNames dependentRequired dependentSchemas
     unevaluatedItems unevaluatedProperties allOf anyOf oneOf not if then else
-    contentEncoding contentMediaType contentSchema x-higress
+    contentEncoding contentMediaType contentSchema x-higress x-modelfusion-native-text-routing
 """.split())
 EXECUTABLE_SUFFIXES = frozenset((".sh", ".bash", ".py", ".js", ".mjs", ".exe", ".so", ".bat"))
 SECRET_KEYS = frozenset(("password", "api_key", "apikey", "api-key", "access_token",

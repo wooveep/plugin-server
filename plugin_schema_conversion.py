@@ -87,6 +87,19 @@ def _convert_schema(schema: Any, annotations: dict[str, Any], pointer: str = "")
         unsupported("unrecognized schema keyword: " + ",".join(sorted(set(schema) - SCHEMA_KEYWORDS - UI_KEYS - {"nullable", "example"})))
     if "x-higress" in schema or "$id" in schema or "$schema" in schema:
         unsupported("nested resource/dialect declaration in OpenAPI schema")
+    if "x-modelfusion-native-text-routing" in schema:
+        declaration = schema["x-modelfusion-native-text-routing"]
+        if (pointer or not isinstance(declaration, dict)
+                or set(declaration) != {"schema_version", "providers"}
+                or declaration["schema_version"] != "native-text-routing.v1"
+                or not isinstance(declaration["providers"], dict)
+                or not declaration["providers"]):
+            unsupported("invalid native text routing declaration")
+        for name, protocols in declaration["providers"].items():
+            if (not isinstance(name, str) or not name or not isinstance(protocols, list)
+                    or not protocols or any(protocol not in ("openai_chat", "openai_responses", "anthropic_messages") for protocol in protocols)
+                    or len(set(protocols)) != len(protocols)):
+                unsupported("unsupported native text routing protocols")
     property_path = pointer.rsplit("/", 2)
     named_secret = (len(property_path) == 3 and property_path[-2] == "properties"
                     and property_path[-1].replace("~1", "/").replace("~0", "~").lower() in SECRET_KEYS)
