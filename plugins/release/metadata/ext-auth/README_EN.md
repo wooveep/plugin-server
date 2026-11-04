@@ -82,13 +82,13 @@ http_service:
 
 Using the following request to the gateway, after enabling the `ext-auth` plugin:
 ```shell
-curl -X POST http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 -X GET -H "foo: bar" -H "Authorization: xxx"
+curl -X POST http://localhost:8082/users?apikey=YOUR_EXAMPLE_KEY_1 -X GET -H "foo: bar" -H "Authorization: xxx"
 ```
 
 **Successful request to the `ext-auth` service:**
 The `ext-auth` service will receive the following authentication request:
 ```
-POST /auth/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 HTTP/1.1
+POST /auth/users?apikey=YOUR_EXAMPLE_KEY_1 HTTP/1.1
 Host: ext-auth.backend.svc.cluster.local
 Authorization: xxx
 Content-Length: 0
@@ -132,12 +132,12 @@ http_service:
 
 Using the following request to the gateway after enabling the `ext-auth` plugin:
 ```shell
-curl -X POST http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 -X GET -H "foo: bar" -H "Authorization: xxx"
+curl -X POST http://localhost:8082/users?apikey=YOUR_EXAMPLE_KEY_1 -X GET -H "foo: bar" -H "Authorization: xxx"
 ```
 
 The `ext-auth` service will receive the following authentication request:
 ```
-POST /auth/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 HTTP/1.1
+POST /auth/users?apikey=YOUR_EXAMPLE_KEY_1 HTTP/1.1
 Host: my-domain.local
 Authorization: xxx
 X-Auth-Version: 1.0
@@ -162,7 +162,7 @@ http_service:
 
 Using the following request to the gateway after enabling the `ext-auth` plugin:
 ```shell
-curl -i http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 -X GET -H "foo: bar" -H "Authorization: xxx"
+curl -i http://localhost:8082/users?apikey=YOUR_EXAMPLE_KEY_1 -X GET -H "foo: bar" -H "Authorization: xxx"
 ```
 
 **Successful request to the `ext-auth` service:**
@@ -171,7 +171,7 @@ The `ext-auth` service will receive the following authentication request:
 POST /auth HTTP/1.1
 Host: ext-auth.backend.svc.cluster.local
 Authorization: xxx
-X-Original-Uri: /users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5
+X-Original-Uri: /users?apikey=YOUR_EXAMPLE_KEY_1
 X-Original-Method: GET
 Content-Length: 0
 ```
@@ -215,7 +215,7 @@ http_service:
 
 Using the following request to the gateway after enabling the `ext-auth` plugin:
 ```shell
-curl -i http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 -X GET -H "foo: bar" -H "Authorization: xxx" -H "X-Auth-Version: 1.0"
+curl -i http://localhost:8082/users?apikey=YOUR_EXAMPLE_KEY_1 -X GET -H "foo: bar" -H "Authorization: xxx" -H "X-Auth-Version: 1.0"
 ```
 
 The `ext-auth` service will receive the following authentication request:
@@ -223,7 +223,7 @@ The `ext-auth` service will receive the following authentication request:
 POST /auth HTTP/1.1
 Host: my-domain.local
 Authorization: xxx
-X-Original-Uri: /users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5
+X-Original-Uri: /users?apikey=YOUR_EXAMPLE_KEY_1
 X-Original-Method: GET
 X-Auth-Version: 1.0
 x-envoy-header: true

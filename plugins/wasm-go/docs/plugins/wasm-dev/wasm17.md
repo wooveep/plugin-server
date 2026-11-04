@@ -540,13 +540,13 @@ spec:
 ```shell
 kubectl exec <token-server-pod> -n higress-course -- curl -X POST http://127.0.0.1:9090/api/token/create -d '{"uid":100}' -H "content-type:application/json"
 
-{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVSUQiOjEwMCwiZXhwIjoxNzU0Mzg2MzQ4fQ.jncbLJqBern5DYCFvED3moiCvg6sUn5jdlllhneuHrY"}%   
+{"token":"YOUR_JWT"}%
 ```
 
 3. 请求验证
 
 ```shell
-curl  http://127.0.0.1/hello -X POST -d "{}" -H "host:foo.com"  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVSUQiOjEwMCwiZXhwIjoxNzU0Mzg2MzQ4fQ.jncbLJqBern5DYCFvED3moiCvg6sUn5jdlllhneuHrY" -H "content-type:application/json"
+curl  http://127.0.0.1/hello -X POST -d "{}" -H "host:foo.com"  -H "Authorization: Bearer YOUR_JWT" -H "content-type:application/json"
 
 {
  "path": "/hello",
@@ -558,7 +558,7 @@ curl  http://127.0.0.1/hello -X POST -d "{}" -H "host:foo.com"  -H "Authorizatio
    "*/*"
   ],
   "Authorization": [
-   "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVSUQiOjEwMCwiZXhwIjoxNzU0Mzg2MzQ4fQ.jncbLJqBern5DYCFvED3moiCvg6sUn5jdlllhneuHrY"
+   "Bearer YOUR_JWT"
   ],
   "Content-Length": [
    "2"

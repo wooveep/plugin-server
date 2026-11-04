@@ -117,12 +117,12 @@ Based on this configuration, the following requests will be allowed:
 Suppose the following request matches the route-a.
 **Setting the JWT in URL parameters**
 ```bash
-curl  'http://xxx.hello.com/test?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJhYmNkIiwic3ViIjoidGVzdCIsImlhdCI6MTY2NTY2MDUyNywiZXhwIjoxODY1NjczODE5fQ.-vBSV0bKeDwQcuS6eeSZN9dLTUnSnZVk8eVCXdooCQ4'
+curl  'http://xxx.hello.com/test?access_token=YOUR_JWT'
 ```
 
 **Setting the JWT in HTTP request headers**
 ```bash
-curl  http://xxx.hello.com/test -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJhYmNkIiwic3ViIjoidGVzdCIsImlhdCI6MTY2NTY2MDUyNywiZXhwIjoxODY1NjczODE5fQ.-vBSV0bKeDwQcuS6eeSZN9dLTUnSnZVk8eVCXdooCQ4'
+curl  http://xxx.hello.com/test -H 'Authorization: Bearer YOUR_JWT'
 ```
 
 After successful authentication and authorization, the request's header will include an `X-Mse-Consumer` field, in this example with the value `consumer1`, to identify the caller's name.
@@ -136,7 +136,7 @@ curl  http://xxx.hello.com/test
 **Caller matching from the provided JWT has no access permission, returning 403**
 ```bash
 # consumer1 is not in the allow list for *.example.com
-curl  'http://xxx.example.com/test' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJhYmNkIiwic3ViIjoidGVzdCIsImlhdCI6MTY2NTY2MDUyNywiZXhwIjoxODY1NjczODE5fQ.-vBSV0bKeDwQcuS6eeSZN9dLTUnSnZVk8eVCXdooCQ4'
+curl  'http://xxx.example.com/test' -H 'Authorization: Bearer YOUR_JWT'
 ```
 
 #### Enable at Gateway Instance Level
@@ -207,7 +207,7 @@ Throughout this process, the gateway utilizes the token authentication mechanism
 JSON Web Token (JWT) is an open standard (RFC7519) that defines a compact and self-contained way for securely transmitting information between parties as a JSON object. JWT can be used as a stand-alone authentication token, capable of containing user identity, user roles, permissions, and other information, aiding in resource retrieval from resource servers and adding any additional claims required by business logic, particularly suitable for login scenarios for distributed sites.
 
 ##### 1.3.2 JWT Structure
-`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ`  
+`YOUR_JWT`
 As shown above, JWT is a string composed of three parts:  
 - Header  
 - Payload  

@@ -154,6 +154,7 @@ type function struct {
 	Description string                 `json:"description,omitempty"`
 	Name        string                 `json:"name"`
 	Parameters  map[string]interface{} `json:"parameters,omitempty"`
+	Strict      *bool                  `json:"strict,omitempty"`
 }
 
 type toolChoice struct {
@@ -201,22 +202,23 @@ type completionTokensDetails struct {
 }
 
 type chatMessage struct {
-	Id                       string                     `json:"id,omitempty"`
-	Audio                    map[string]interface{}     `json:"audio,omitempty"`
-	Name                     string                     `json:"name,omitempty"`
-	Role                     string                     `json:"role,omitempty"`
-	Content                  any                        `json:"content,omitempty"`
-	ReasoningContent         string                     `json:"reasoning_content,omitempty"`
-	Reasoning                string                     `json:"reasoning,omitempty"` // For streaming responses
-	ReasoningSignature       string                     `json:"reasoning_signature,omitempty"`
-	ReasoningRedactedContent string                     `json:"reasoning_redacted_content,omitempty"`
-	ClaudeContentBlocks      []claudeChatMessageContent `json:"claude_content_blocks,omitempty"`
-	ClaudeContentBlockIndex  *int                       `json:"claude_content_block_index,omitempty"`
-	ClaudeContentBlockStop   *int                       `json:"claude_content_block_stop,omitempty"`
-	ToolCalls                []toolCall                 `json:"tool_calls,omitempty"`
-	FunctionCall             *functionCall              `json:"function_call,omitempty"` // For legacy OpenAI format
-	Refusal                  string                     `json:"refusal,omitempty"`
-	ToolCallId               string                     `json:"tool_call_id,omitempty"`
+	Id                       string                          `json:"id,omitempty"`
+	Audio                    map[string]interface{}          `json:"audio,omitempty"`
+	Name                     string                          `json:"name,omitempty"`
+	Role                     string                          `json:"role,omitempty"`
+	Content                  any                             `json:"content,omitempty"`
+	ReasoningContent         string                          `json:"reasoning_content,omitempty"`
+	Reasoning                string                          `json:"reasoning,omitempty"` // For streaming responses
+	ReasoningSignature       string                          `json:"reasoning_signature,omitempty"`
+	ReasoningRedactedContent string                          `json:"reasoning_redacted_content,omitempty"`
+	ClaudeContentBlocks      []claudeChatMessageContent      `json:"claude_content_blocks,omitempty"`
+	ClaudeContentBlockIndex  *int                            `json:"claude_content_block_index,omitempty"`
+	ClaudeContentBlockStop   *int                            `json:"claude_content_block_stop,omitempty"`
+	ToolCalls                []toolCall                      `json:"tool_calls,omitempty"`
+	FunctionCall             *functionCall                   `json:"function_call,omitempty"` // For legacy OpenAI format
+	Refusal                  string                          `json:"refusal,omitempty"`
+	ToolCallId               string                          `json:"tool_call_id,omitempty"`
+	PromptCacheBreakpoint    *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
 }
 
 func (m *chatMessage) handleNonStreamingReasoningContent(reasoningContentMode string) {

@@ -1976,7 +1976,7 @@ provider:
       "type": "service_account",
       "project_id": "your-project-id",
       "private_key_id": "your-private-key-id",
-      "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+      "private_key": "YOUR_SERVICE_ACCOUNT_PRIVATE_KEY",
       "client_email": "your-service-account@your-project.iam.gserviceaccount.com",
       "token_uri": "https://oauth2.googleapis.com/token"
     }
@@ -2089,7 +2089,7 @@ provider:
       "type": "service_account",
       "project_id": "your-project-id",
       "private_key_id": "your-private-key-id",
-      "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+      "private_key": "YOUR_SERVICE_ACCOUNT_PRIVATE_KEY",
       "client_email": "your-service-account@your-project.iam.gserviceaccount.com",
       "token_uri": "https://oauth2.googleapis.com/token"
     }

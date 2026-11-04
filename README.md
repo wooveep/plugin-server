@@ -77,3 +77,6 @@ python3 /opt/plugin-server/scripts/seed-registered-store.py \
 
 以下是历史设计入口，其阶段描述保留原文；当前进展以上述实施计划和验收回执为准。
 
+当前实施计划：[HTTP 插件制品可靠发布](docs/plans/2026-10-22-http-plugin-delivery-hardening.md)，覆盖版本映射、可靠上传、来源清单及镜像交付；保留 HTTP 分发，采用普通 Markdown 与 Git/PR 流程。计划尚未实施。
+
+首批实施入口：[P0/D0三张任务卡](docs/plans/2026-10-25-p0-d0-task-cards.md)，明确schema/摘要、完整包、提交与unknown语料的文件责任、离线验收及合入依赖；2026-10-25设计完成，全部待实施，不代表当前服务已具备新协议。

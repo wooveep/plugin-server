@@ -1,0 +1,982 @@
+{
+  "date": "2026-11-04",
+  "completed_at": "2026-11-03T22:46:11.710942+00:00",
+  "status": "LIVE_DOWNSTREAM_PROTOCOL_ANALYSIS_COMPLETE_WITH_IMPLEMENTATION_DIFFERENCES",
+  "scope": "AI-proxy2.0.31 independently validated while development003 C work remains in progress",
+  "runtime": {
+    "helm_before": 68,
+    "helm_after": 68,
+    "plugin_version": "2.0.31",
+    "source_commit": "d7153c12",
+    "wasm_sha256": "5c7b5d626f11c16b167aab61c4b6e4557502b289b0e6f53e9f74304adc7d4f69",
+    "audit_route_actual_loaded_wasm": [
+      {
+        "resource": "rel-01a1a38b-9bc0-7193-86f4-3b73658ef8ad-ai-proxy",
+        "wasm_sha256": "5c7b5d626f11c16b167aab61c4b6e4557502b289b0e6f53e9f74304adc7d4f69"
+      },
+      {
+        "resource": "rel-01a1a38b-6236-7083-9d25-43552a462ad1-ai-proxy",
+        "wasm_sha256": "5c7b5d626f11c16b167aab61c4b6e4557502b289b0e6f53e9f74304adc7d4f69"
+      }
+    ],
+    "no_image_or_business_source_deployment": true
+  },
+  "counts": {
+    "functional_gateway_cases": 14,
+    "http200_success_cases": 10,
+    "explicit_conversion_boundary_http400_cases": 4,
+    "real_supplier_gateway_calls": 5,
+    "controlled_synthetic_upstream_calls": 5,
+    "earlier_balance_admission_http403_retained": 11,
+    "total_gateway_requests_including_admission_failures": 25,
+    "accepted_facts_for_success_cases": 20,
+    "billing_applications_for_success_cases": 20,
+    "additional_official_OpenAI_direct_diagnostic_calls": 2,
+    "reused_existing_receipts": 5
+  },
+  "live_cases": [
+    {
+      "case": "native-chat-tool-call",
+      "route_id": "01a1a35a-3e96-7b61-b966-811ac963eaf4",
+      "kind": "chat",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "465a6e13884c85d09ce51e62a46c59e45888d3a7e3a65cb1faeb873678d959b1",
+      "response_sha256": "ca835ff12dea849d8734fa68d366a1ac8417d4d80f6583471544f08c10fdff52",
+      "first_byte_seconds": 0.704472,
+      "complete_seconds": 0.704772,
+      "new_call_ids": [
+        "97eaed90-6c3f-40be-b386-9e00ae736043"
+      ],
+      "object": "chat.completion",
+      "answer": "",
+      "terminal_marker": true,
+      "usage": {
+        "prompt_tokens": 297,
+        "completion_tokens": 37,
+        "total_tokens": 334,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 297
+      },
+      "call_id": "97eaed90-6c3f-40be-b386-9e00ae736043",
+      "attempt_id": "d6909754-fcac-4ea4-90ce-7367d4904b84",
+      "release_id": "01a1a35a-3ec9-7531-978c-5d0ad715cc32",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "297",
+          "input": "297",
+          "output": "37"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:465a6e13884c85d09ce51e62a46c59e45888d3a7e3a65cb1faeb873678d959b1",
+      "actual_upstream_response_digest": "sha256:ca835ff12dea849d8734fa68d366a1ac8417d4d80f6583471544f08c10fdff52",
+      "native_request_preserved_including_tools": true
+    },
+    {
+      "case": "native-chat-tool-result",
+      "route_id": "01a1a35a-3e96-7b61-b966-811ac963eaf4",
+      "kind": "chat",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "e4660fc6d276fffa5b5738e5663ae19de67ea98b92fa5b9e15b9e780c4f0fb9b",
+      "response_sha256": "4fb9985e5861301c8f376c9894cb4c30402a78f05601313cbe2a8659313c22ad",
+      "first_byte_seconds": 0.74825,
+      "complete_seconds": 0.748501,
+      "new_call_ids": [
+        "ae9fdeeb-fd5a-422a-9c21-91aa9ccc9c1a"
+      ],
+      "object": "chat.completion",
+      "answer": "The status for order `audit_42` is: **DELIVERED_AUDIT_42**",
+      "terminal_marker": true,
+      "usage": {
+        "prompt_tokens": 90,
+        "completion_tokens": 22,
+        "total_tokens": 112,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 90
+      },
+      "function_roundtrip_passed": true,
+      "call_id": "ae9fdeeb-fd5a-422a-9c21-91aa9ccc9c1a",
+      "attempt_id": "470e0b6a-d682-46e7-97e0-b37cb113b6a4",
+      "release_id": "01a1a35a-3ec9-7531-978c-5d0ad715cc32",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "90",
+          "input": "90",
+          "output": "22"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:e4660fc6d276fffa5b5738e5663ae19de67ea98b92fa5b9e15b9e780c4f0fb9b",
+      "actual_upstream_response_digest": "sha256:4fb9985e5861301c8f376c9894cb4c30402a78f05601313cbe2a8659313c22ad",
+      "native_request_preserved_including_tools": true
+    },
+    {
+      "case": "native-responses-tool-call@funded",
+      "route_id": "01a1a35a-7164-7b91-ab2c-4954f48950fe",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "03088125a6c5e92549ef9c0a81045b55eb0f3c1276bb89ef2aac5796a4be66bb",
+      "response_sha256": "ce65db4f559dd02eb3ca6310e774f709376c10996297894d8696c72cb2f66a33",
+      "first_byte_seconds": 0.602622,
+      "complete_seconds": 0.602688,
+      "new_call_ids": [
+        "aaddf8bb-3947-45ba-905f-c54b2ce114e4"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 297,
+        "input_tokens_details": {
+          "cached_tokens": 128
+        },
+        "output_tokens": 37,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 334
+      },
+      "event_types": [],
+      "call_id": "aaddf8bb-3947-45ba-905f-c54b2ce114e4",
+      "attempt_id": "413b5aa9-90f6-4376-b8d9-c5bd4a713bbb",
+      "release_id": "01a1a35a-7196-7a01-b799-0f958f8f48ef",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "128",
+          "cache_miss": "169",
+          "input": "297",
+          "output": "37"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:03088125a6c5e92549ef9c0a81045b55eb0f3c1276bb89ef2aac5796a4be66bb",
+      "actual_upstream_response_digest": "sha256:ce65db4f559dd02eb3ca6310e774f709376c10996297894d8696c72cb2f66a33",
+      "native_request_preserved_including_tools": true
+    },
+    {
+      "case": "native-responses-tool-result",
+      "route_id": "01a1a35a-7164-7b91-ab2c-4954f48950fe",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "698f4d21cdf4bffbd79dfce4190dcf22c98c3ad73b116fc27fd1da871e24b178",
+      "response_sha256": "91d8eea5141a82c77d1155a0704f26b55fdb71468610e1858463ee1e9596c589",
+      "first_byte_seconds": 0.720011,
+      "complete_seconds": 0.720089,
+      "new_call_ids": [
+        "8dd7535f-1992-4726-ac74-a402d4a73d97"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "The status is **DELIVERED_AUDIT_42**.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 90,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 13,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 103
+      },
+      "event_types": [],
+      "function_roundtrip_passed": true,
+      "call_id": "8dd7535f-1992-4726-ac74-a402d4a73d97",
+      "attempt_id": "bf78f53a-9e5e-4bc0-9be1-9a6b4f38c752",
+      "release_id": "01a1a35a-7196-7a01-b799-0f958f8f48ef",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "90",
+          "input": "90",
+          "output": "13"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:698f4d21cdf4bffbd79dfce4190dcf22c98c3ad73b116fc27fd1da871e24b178",
+      "actual_upstream_response_digest": "sha256:91d8eea5141a82c77d1155a0704f26b55fdb71468610e1858463ee1e9596c589",
+      "native_request_preserved_including_tools": true
+    },
+    {
+      "case": "native-chat-sse@funded",
+      "route_id": "01a1a35a-3e96-7b61-b966-811ac963eaf4",
+      "kind": "chat",
+      "stream": true,
+      "http": 200,
+      "content_type": "text/event-stream; charset=utf-8",
+      "request_sha256": "9cdbafff249dcf7e525e0092144499617707f4a6df6e1aa6ee7ad2e6d94e2c4f",
+      "response_sha256": "7c70718c0e492118287104a5cd29492eb4b39730db4be9bf1b4d7e3d428e44eb",
+      "first_byte_seconds": 0.524134,
+      "complete_seconds": 0.5242,
+      "new_call_ids": [
+        "822bbbb9-5719-4478-8b52-39d8edfdd3c4"
+      ],
+      "object": "chat.completion.chunk",
+      "answer": "2",
+      "terminal_marker": true,
+      "usage": {
+        "prompt_tokens": 12,
+        "completion_tokens": 1,
+        "total_tokens": 13,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 12
+      },
+      "call_id": "822bbbb9-5719-4478-8b52-39d8edfdd3c4",
+      "attempt_id": "a5599121-e377-4fb9-a2ec-58f56ed86be4",
+      "release_id": "01a1a35a-3ec9-7531-978c-5d0ad715cc32",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "12",
+          "input": "12",
+          "output": "1"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:9cdbafff249dcf7e525e0092144499617707f4a6df6e1aa6ee7ad2e6d94e2c4f",
+      "actual_upstream_response_digest": "sha256:7c70718c0e492118287104a5cd29492eb4b39730db4be9bf1b4d7e3d428e44eb",
+      "native_request_preserved_including_tools": true
+    },
+    {
+      "case": "converted-responses-json@funded",
+      "route_id": "01a1a38b-61fb-7be1-94a2-4061cdbc1c6f",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "d7de87b6e53aae58a65ef0ecd7213912f5b7c85f1e408553817835398b8f5515",
+      "response_sha256": "3b390de9b703f944cad4a95ff0824f381b78975165ece316c219a5d285b37b8b",
+      "first_byte_seconds": 0.053502,
+      "complete_seconds": 0.053563,
+      "new_call_ids": [
+        "e821ed6d-ea7c-4235-9dc4-e6c7d49df5e9"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 17,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "total_tokens": 22
+      },
+      "event_types": [],
+      "collector_receipt_id": "16ea690c-3b39-4adb-b05e-89f2563b46e2",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Downstream conversion converted-responses-json@funded"
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "max_completion_tokens": 64
+      },
+      "actual_upstream_request_sha256": "sha256:2d7bc0635d668edc7ad3ce2d5496e074c3d35eea9a0cbc7aa16b692b6e587ff5",
+      "call_id": "e821ed6d-ea7c-4235-9dc4-e6c7d49df5e9",
+      "attempt_id": "fcde676a-0918-4392-9bc5-da5ed3a19a53",
+      "release_id": "01a1a38b-6236-7083-9d25-43552a462ad1",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:2d7bc0635d668edc7ad3ce2d5496e074c3d35eea9a0cbc7aa16b692b6e587ff5",
+      "actual_upstream_response_digest": "sha256:71883719a215c27234b8bd0fd52a83ec6b2be4b2aec8ac4a8983ea07d50aa0cf"
+    },
+    {
+      "case": "converted-responses-sse@funded",
+      "route_id": "01a1a38b-61fb-7be1-94a2-4061cdbc1c6f",
+      "kind": "responses",
+      "stream": true,
+      "http": 200,
+      "content_type": "text/event-stream",
+      "request_sha256": "1c9ba79b2974ca9ec0f966356a609ed79db9cec3930584484e134eb510b989c4",
+      "response_sha256": "271bc815cc2b935d2044b8708c8a619a9ba62dacef1542a0497528b033b90b5b",
+      "first_byte_seconds": 0.047221,
+      "complete_seconds": 0.047285,
+      "new_call_ids": [
+        "9b27c350-3c1c-4579-ba00-e9b4f53162b8"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 17,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "total_tokens": 22
+      },
+      "event_types": [
+        "response.created",
+        "response.output_item.added",
+        "response.content_part.added",
+        "response.output_text.delta",
+        "response.output_text.done",
+        "response.content_part.done",
+        "response.output_item.done",
+        "response.completed"
+      ],
+      "collector_receipt_id": "31947805-1f3f-47cc-8269-33c1d9674f69",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Downstream conversion converted-responses-sse@funded"
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "max_completion_tokens": 64,
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        }
+      },
+      "actual_upstream_request_sha256": "sha256:c1f5fb00a7cd6a2b67aefe983bf9c6e4acc420f895695d24a810bcb4fa19d122",
+      "call_id": "9b27c350-3c1c-4579-ba00-e9b4f53162b8",
+      "attempt_id": "4fd8b5b4-55d3-4695-b16d-9264e66989fa",
+      "release_id": "01a1a38b-6236-7083-9d25-43552a462ad1",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:c1f5fb00a7cd6a2b67aefe983bf9c6e4acc420f895695d24a810bcb4fa19d122",
+      "actual_upstream_response_digest": "sha256:f1d1c2c62854a8e5b6d9e5a420cba03a031d8cd43eb7cef2a3956c2571ad0846"
+    },
+    {
+      "case": "converted-responses-field-fidelity@funded",
+      "route_id": "01a1a38b-61fb-7be1-94a2-4061cdbc1c6f",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "8053b1e6100b58e66544ae130d8200d6f7e2c4b685475e6429ab464e1bbee2e3",
+      "response_sha256": "8f064910a4bf55884131cacfc11264636438174a226a4ac5f01295de411ae0a8",
+      "first_byte_seconds": 0.049738,
+      "complete_seconds": 0.049782,
+      "new_call_ids": [
+        "4ec2d5c0-531f-4ddc-92e4-bd4b187e8fe5"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 17,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "total_tokens": 22
+      },
+      "event_types": [],
+      "collector_receipt_id": "489927cd-ea4e-4ccd-8b60-5522a0ff781d",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Conversion field fidelity audit"
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "max_completion_tokens": 64,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "description": "Return delivery status for an order.",
+              "name": "lookup_order",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "order_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "order_id"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        ],
+        "tool_choice": "none"
+      },
+      "actual_upstream_request_sha256": "sha256:3398e5999d20c6429334930df704df31f82544be43ae6c36af9c7201a021b424",
+      "call_id": "4ec2d5c0-531f-4ddc-92e4-bd4b187e8fe5",
+      "attempt_id": "0c148794-0800-412a-806c-929557971215",
+      "release_id": "01a1a38b-6236-7083-9d25-43552a462ad1",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:3398e5999d20c6429334930df704df31f82544be43ae6c36af9c7201a021b424",
+      "actual_upstream_response_digest": "sha256:344488f92359638bf61f0a904c3071b1dd082853c0494ec0290fa3d7086af05e"
+    },
+    {
+      "case": "responses-state-boundary@funded",
+      "route_id": "01a1a38b-61fb-7be1-94a2-4061cdbc1c6f",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "f4af5081fc391669dbd1f258e31d1063a459dbd6198978325b1bca9664d51951",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.023342,
+      "complete_seconds": 0.023358,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      }
+    },
+    {
+      "case": "responses-hosted-tool-boundary@funded",
+      "route_id": "01a1a38b-61fb-7be1-94a2-4061cdbc1c6f",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "53e23b72c85820f5147fe35cd1b75a32160de9872c597730ea6ae656272a4ed4",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.02224,
+      "complete_seconds": 0.022255,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      }
+    },
+    {
+      "case": "responses-vision-converter-boundary@funded",
+      "route_id": "01a1a38b-61fb-7be1-94a2-4061cdbc1c6f",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "c438896646a48335da6981abfe1ba1d03b1e832ca66f539b3162e06a7d84bd3c",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.021159,
+      "complete_seconds": 0.021176,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      }
+    },
+    {
+      "case": "responses-tool-result-converter-boundary@funded",
+      "route_id": "01a1a38b-61fb-7be1-94a2-4061cdbc1c6f",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "da16776f5039e8be97a451abb5a972d913f7ea7bf169caae46c2136283181da6",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.023133,
+      "complete_seconds": 0.023148,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      }
+    },
+    {
+      "case": "converted-messages-tool-history-json@funded",
+      "route_id": "01a1a38b-9b8c-7121-8b9f-43d37dea1ba3",
+      "kind": "messages",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "c044e8b223f8a27f4f3cd0cc021889e286c8b0bfb0264f5b15138f1fe706aede",
+      "response_sha256": "5184bb6de7612ed60f0a6154845325b680c9ee13a20e0cf90c9558bbc10e2c81",
+      "first_byte_seconds": 0.04981,
+      "complete_seconds": 0.049869,
+      "new_call_ids": [
+        "c5267af8-1e70-47cf-bcb0-80a01411ed9a"
+      ],
+      "object": "message",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "collector_receipt_id": "b3fce8c6-8ae7-4f28-b8c6-fa119f63bcea",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "lookup"
+          },
+          {
+            "role": "assistant",
+            "claude_content_blocks": [
+              {
+                "type": "tool_use",
+                "id": "call_conversion_audit",
+                "name": "lookup_order",
+                "input": {
+                  "order_id": "audit_42"
+                }
+              }
+            ],
+            "tool_calls": [
+              {
+                "index": 0,
+                "id": "call_conversion_audit",
+                "type": "function",
+                "function": {
+                  "name": "lookup_order",
+                  "arguments": "{\"order_id\":\"audit_42\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "content": "DELIVERED_AUDIT_42",
+            "claude_content_blocks": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "call_conversion_audit",
+                "content": "DELIVERED_AUDIT_42"
+              }
+            ],
+            "tool_call_id": "call_conversion_audit"
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "max_tokens": 64
+      },
+      "actual_upstream_request_sha256": "sha256:82cfadc9d1d3232c867cd7c98d95347230fda2e2e194280dfa1a908005556728",
+      "call_id": "c5267af8-1e70-47cf-bcb0-80a01411ed9a",
+      "attempt_id": "757223e3-f73f-48b8-975b-ff14782690d3",
+      "release_id": "01a1a38b-9bc0-7193-86f4-3b73658ef8ad",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:82cfadc9d1d3232c867cd7c98d95347230fda2e2e194280dfa1a908005556728",
+      "actual_upstream_response_digest": "sha256:8d275419ad8ab2702b2843e7e8065a08ce6502ca9cc6cb868924001668ef5091"
+    },
+    {
+      "case": "converted-messages-sse@funded",
+      "route_id": "01a1a38b-9b8c-7121-8b9f-43d37dea1ba3",
+      "kind": "messages",
+      "stream": true,
+      "http": 200,
+      "content_type": "text/event-stream",
+      "request_sha256": "fc4ee740accd0beddeb53d92ce1b56f25f5c6d211cfb0027fde06ee452a85ef2",
+      "response_sha256": "ef8682e6a44d8c2813868bf190f5db185e6cff8bdd088907d1bd8d78fb548afe",
+      "first_byte_seconds": 0.0499,
+      "complete_seconds": 0.049958,
+      "new_call_ids": [
+        "f248f562-2716-4fa9-a810-339d12f165bc"
+      ],
+      "object": "message_start",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "collector_receipt_id": "84cf169e-92d3-4181-bdab-8501a821e16b",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Downstream conversion audit"
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "max_tokens": 64,
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        }
+      },
+      "actual_upstream_request_sha256": "sha256:91e1ee09e14fcc969b066062eefd975c504129916b120a1410a6c79cadde40e3",
+      "call_id": "f248f562-2716-4fa9-a810-339d12f165bc",
+      "attempt_id": "d772d3c5-1ae7-4217-be7f-e574522ddbbd",
+      "release_id": "01a1a38b-9bc0-7193-86f4-3b73658ef8ad",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:91e1ee09e14fcc969b066062eefd975c504129916b120a1410a6c79cadde40e3",
+      "actual_upstream_response_digest": "sha256:f8871cc5497e8bfd147389967aca738bb3f27c1ad1a2585ef3ab0b2869237a6f"
+    }
+  ],
+  "reused_existing_receipts": [
+    {
+      "source_file": "modelfusion-deploy/.local/model-tools-bc-20261104/D1-verified.json",
+      "case": "D1",
+      "evidence": "existing_real_gateway_supplier_receipt",
+      "http": 200,
+      "protocol": "openai_chat",
+      "call_id": "c2d55fa3-1680-4a66-a5f7-09b305d812e9",
+      "answer": "2",
+      "response_sha256": "sha256:d2233bf8e1d7b2a9a343f1f9b7f5d8d1e69ec24f804710f1f2da4cc6cfa94417"
+    },
+    {
+      "source_file": "modelfusion-deploy/.local/model-tools-bc-20261104/D2-verified.json",
+      "case": "D2",
+      "evidence": "existing_real_gateway_supplier_receipt",
+      "http": 200,
+      "protocol": "openai_responses",
+      "call_id": "9dc54c88-e46e-4369-852a-4744517121e2",
+      "answer": "2",
+      "response_sha256": "sha256:67f3015d2061f858842245eec9cfc8151b547649246d37b1726fcee68f6fa77e"
+    },
+    {
+      "source_file": "modelfusion-deploy/.local/model-tools-bc-20261104/D3-verified.json",
+      "case": "D3",
+      "evidence": "existing_real_gateway_supplier_receipt",
+      "http": 200,
+      "protocol": "anthropic_messages",
+      "call_id": "ff19a44d-5d57-4293-9ff4-dd709e0f5f35",
+      "answer": "2",
+      "response_sha256": "sha256:6dddd9f3fcdf8e30110c104f9f36ce4937fdd7e23fd5c5950ef6b9da4e312bfb"
+    },
+    {
+      "source_file": "modelfusion-deploy/.local/model-tools-bc-20261104/M1@restored-verified.json",
+      "case": "M1@restored",
+      "evidence": "existing_real_gateway_supplier_receipt",
+      "http": 200,
+      "protocol": "anthropic_messages",
+      "call_id": "bb399cc9-317b-467c-b096-7c6b361b30de",
+      "answer": "2",
+      "response_sha256": "sha256:bfff32b4ada6caa19064e84ecdcf7490019cf62a26805272c528259295b500dd"
+    },
+    {
+      "case": "Qwen-Responses-vision",
+      "evidence": "reused_real_gateway_client_response",
+      "http": 200,
+      "object": "response",
+      "status": "completed",
+      "model": "qwen3.8-omni-flash",
+      "answer": "图片里有一个女人和一只狗。",
+      "usage": {
+        "input_tokens": 2598,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens": 422,
+        "output_tokens_details": {
+          "reasoning_tokens": 410
+        },
+        "total_tokens": 3020,
+        "x_details": [
+          {
+            "input_tokens": 2598,
+            "output_tokens": 422,
+            "total_tokens": 3020,
+            "input_tokens_details": {
+              "text_tokens": 95,
+              "image_tokens": 2503
+            },
+            "output_tokens_details": {
+              "text_tokens": 12,
+              "reasoning_tokens": 410
+            },
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "x_billing_type": "response_api"
+          }
+        ]
+      },
+      "response_sha256": "sha256:af12d98447e10c1e09cdabd747c20eb59d53aab336825cced774b2a295fb13e5",
+      "source_file": "modelfusion-deploy/.local/model-tools-bc-20261104/O2@public-image-response.private.json"
+    }
+  ],
+  "official_openai_direct_diagnostic": {
+    "purpose": "Vendor acceptance of observed nonstandard Messages-to-Chat fields, not a gateway test",
+    "model": "gpt-6-luna",
+    "results": [
+      {
+        "case": "openai-converted-fields",
+        "http": 200,
+        "error_type": null,
+        "error_code": null,
+        "error_param": null,
+        "usage": {
+          "prompt_tokens": 158,
+          "completion_tokens": 18,
+          "total_tokens": 176,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "answer": "I can’t look up an order right now. Please try again later."
+      },
+      {
+        "case": "openai-standard-control",
+        "http": 200,
+        "error_type": null,
+        "error_code": null,
+        "error_param": null,
+        "usage": {
+          "prompt_tokens": 158,
+          "completion_tokens": 10,
+          "total_tokens": 168,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "answer": "Order audit_42 was delivered."
+      }
+    ],
+    "conclusion": "Both request variants returned HTTP200. No vendor format-rejection defect is established by these extension fields; generated answer differences are not treated as deterministic proxy defects."
+  },
+  "stream_observation": {
+    "converted_responses_event_types": [
+      "response.created",
+      "response.output_item.added",
+      "response.content_part.added",
+      "response.output_text.delta",
+      "response.output_text.done",
+      "response.content_part.done",
+      "response.output_item.done",
+      "response.completed"
+    ],
+    "sequence_numbers": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "terminal": "response.completed",
+    "realtime_incremental_forwarding": false
+  },
+  "implementation_differences": [
+    {
+      "id": "responses_to_chat_field_omission",
+      "confirmed_at": "actual controlled upstream raw HTTP receipt",
+      "fields": [
+        "text.format",
+        "tools[].strict",
+        "temperature=0",
+        "parallel_tool_calls=false"
+      ],
+      "effect": "Client settings do not reach their equivalent Chat fields."
+    },
+    {
+      "id": "responses_nonstream_output_message_id_missing",
+      "confirmed_at": "gateway response and direct conversion of a valid real Chat response",
+      "valid_chat_created_at_preserved_in_offline_reproduction": true,
+      "effect": "Nonstream output message has no id; stream message does have an id.",
+      "reference": "https://developers.openai.com/api/reference/resources/responses/methods/create"
+    },
+    {
+      "id": "responses_function_result_input_not_mapped",
+      "classification": "current adapter coverage limit, not a protocol impossibility",
+      "observed_http": 400,
+      "counterpart": "Chat role=tool/tool_call_id"
+    }
+  ],
+  "protocol_or_model_boundaries": [
+    {
+      "request": "previous_response_id/conversation in stateless Chat fallback",
+      "classification": "No native equivalent in this fallback; explicit rejection is not a project defect."
+    },
+    {
+      "request": "Responses hosted web_search in generic Chat fallback",
+      "classification": "No equivalent hosted tool execution; explicit rejection is not a project defect."
+    },
+    {
+      "request": "input_image in Responses-to-Chat converter",
+      "classification": "Converter currently does not map it; Chat protocol can express vision, so this is not an intrinsic Chat limitation."
+    },
+    {
+      "request": "Qwen earlier image URL error",
+      "classification": "Supplier error retained; a later Responses vision result is successful. No gateway defect is inferred solely from that supplier error."
+    }
+  ],
+  "environment_notes": {
+    "balance_rejection": "Original 11 HTTP403 requests were rejected before supplier send and are excluded from protocol availability judgments.",
+    "test_credit_cny": "0.02",
+    "test_credit_via_native_wallet_command": true,
+    "test_credit_sync": "delivered",
+    "env_platform_admin_login_http": 200,
+    "env_tenant_admin_login": "not successful; retained same-tenant test administrator credentials used without resetting credentials"
+  },
+  "cleanup": {
+    "native_route_delete_http": 200,
+    "native_route_get_after_delete_http": 404,
+    "native_delete_left_owned_runtime_objects": true,
+    "owned_runtime_cleanup": [
+      {
+        "kind": "ingresses",
+        "owned_resources_removed": [],
+        "remaining": []
+      },
+      {
+        "kind": "wasmplugins",
+        "owned_resources_removed": [
+          "rel-01a1a38b-6236-7083-9d25-43552a462ad1-ai-billing",
+          "rel-01a1a38b-6236-7083-9d25-43552a462ad1-ai-proxy",
+          "rel-01a1a38b-6236-7083-9d25-43552a462ad1-ai-quota",
+          "rel-01a1a38b-6236-7083-9d25-43552a462ad1-ai-statistics",
+          "rel-01a1a38b-6236-7083-9d25-43552a462ad1-model-mapper",
+          "rel-01a1a38b-9bc0-7193-86f4-3b73658ef8ad-ai-billing",
+          "rel-01a1a38b-9bc0-7193-86f4-3b73658ef8ad-ai-proxy",
+          "rel-01a1a38b-9bc0-7193-86f4-3b73658ef8ad-ai-quota",
+          "rel-01a1a38b-9bc0-7193-86f4-3b73658ef8ad-ai-statistics",
+          "rel-01a1a38b-9bc0-7193-86f4-3b73658ef8ad-model-mapper"
+        ],
+        "remaining": []
+      }
+    ],
+    "ingresses_removed_in_previous_cleanup_step": 2,
+    "scope": "Only resources with the two audit release UUID prefixes; existing shared resources were excluded.",
+    "helm_after": [
+      {
+        "name": "higress",
+        "revision": "68",
+        "status": "deployed"
+      }
+    ],
+    "business_code_or_deployment_changes": false
+  },
+  "not_online_verified_in_this_batch": [
+    "Audio Speech/STT/translation",
+    "Images generation/edit/variation",
+    "Realtime/WebSocket/WebRTC",
+    "Vector Stores and complete platform resource lifecycles",
+    "Responses-to-Chat full function-result roundtrip, which is explicitly rejected by current converter"
+  ],
+  "private_evidence_directory": "/home/cloudyi/CodeWorkspace/modelfusionproject/modelfusion-deploy/.local/openai-downstream-20261104",
+  "credentials_in_public_evidence": false,
+  "provider_access_configuration_delivery": {
+    "status": "passed",
+    "report": "../../../modelfusion-deploy/docs/checks/2026-11-04-provider-api-access.md",
+    "helm_revision": 118,
+    "ai_proxy": "2.0.38",
+    "api_source": "39f418d4cd73375dbc4f5589aacd00ca6f55182b",
+    "admin_source": "0b56aba8d0fb88fe5677f41d6802b6031cc883aa",
+    "online": {
+      "status": "passed",
+      "gateway_samples": 26,
+      "http200": 22,
+      "expected_rejected_before_upstream": 4,
+      "real_text_supplier_calls": 7,
+      "controlled_upstream_calls": 14,
+      "cache_hits_without_upstream": 1,
+      "ordinary_function_roundtrips": 1,
+      "full_function_history_verified": true,
+      "non_stream_message_id_verified": true,
+      "parameter_mapping_verified": true,
+      "history_preserved_and_protocol_isolated": true,
+      "qwen_per_entry_encoding_verified": true,
+      "accepted_facts": 43,
+      "sales_applications": 22,
+      "procurement_applications": 21,
+      "wallet_debit_units": 8230000,
+      "wallet_final_units": 99991770000,
+      "wallet_scale": 10000000000,
+      "wallet_version": 23,
+      "rates_are_test_only": true,
+      "visual_model_enabled": false,
+      "visual_requests": 0
+    },
+    "visual_models_enabled": false,
+    "remaining_paid_requests": 0
+  }
+}

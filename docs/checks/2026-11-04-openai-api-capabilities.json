@@ -1,0 +1,1077 @@
+{
+  "date": "2026-11-04",
+  "status": "LIVE_DOWNSTREAM_PROTOCOL_ANALYSIS_COMPLETE_WITH_IMPLEMENTATION_DIFFERENCES",
+  "scope": "downstream same-protocol forwarding and registered protocol conversion; model/protocol intrinsic limitations are not project defects",
+  "main_checkout": {
+    "commit": "4695ad612d9d9aa95568be84939e2cd745ebb013",
+    "plugin_version": "2.0.26"
+  },
+  "tested_checkout": {
+    "path": "/home/cloudyi/CodeWorkspace/modelfusionproject/.local/worktrees/model-tools-native-plugin-20261103",
+    "commit": "d7153c124df28f8ab316cb511fa41161d9e93a10",
+    "plugin_version": "2.0.31"
+  },
+  "previous_deployment_evidence": {
+    "helm_revision": 63,
+    "plugin_version": "2.0.30",
+    "plugin_source_commit": "812a0849",
+    "path": "../../../modelfusion-deploy/docs/checks/2026-11-03-embedding-edge-gateway-acceptance.md",
+    "live_rechecked_this_turn": false
+  },
+  "checks": [
+    {
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "./provider",
+        "./config",
+        "./util",
+        "-count=1"
+      ],
+      "started_at": "2026-11-03T21:43:03.087825+00:00",
+      "completed_at": "2026-11-03T21:43:03.493545+00:00",
+      "exit_code": 0,
+      "passed_top_level": 182,
+      "passed_including_subcases": 720,
+      "failed": [],
+      "skipped": [],
+      "log": "/tmp/openai-capability-audit-20261104/check-1.jsonl",
+      "log_sha256": "35199f09c36d0bd469dd99a30ee3cb69232f7409a0e0ce056ff16a03fbd4fe6c",
+      "evidence_level": "native_go_and_emulated_wasm_host_calls_not_compiled_wasm_or_live_gateway"
+    },
+    {
+      "command": [
+        "go",
+        "test",
+        "-json",
+        ".",
+        "-run",
+        "^Test(Managed|Internal|_getApiName|_isSupportedRequestContentType)",
+        "-count=1"
+      ],
+      "started_at": "2026-11-03T21:43:03.493672+00:00",
+      "completed_at": "2026-11-03T21:43:04.633631+00:00",
+      "exit_code": 0,
+      "passed_top_level": 82,
+      "passed_including_subcases": 314,
+      "failed": [],
+      "skipped": [],
+      "log": "/tmp/openai-capability-audit-20261104/check-2.jsonl",
+      "log_sha256": "107192df0405b09b5655a9d886d20b9edd457fc2d3fec69fe98be9c79e8afb8f",
+      "evidence_level": "native_go_and_emulated_wasm_host_calls_not_compiled_wasm_or_live_gateway"
+    }
+  ],
+  "totals": {
+    "passed_top_level": 264,
+    "passed_including_subcases": 1034,
+    "failed": 0,
+    "skipped": 0
+  },
+  "converter_probes": [
+    {
+      "case": "structured-output",
+      "input": {
+        "model": "probe",
+        "input": "hello",
+        "text": {
+          "format": {
+            "type": "json_schema",
+            "name": "answer",
+            "schema": {
+              "type": "object"
+            },
+            "strict": true
+          }
+        }
+      },
+      "output": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "hello"
+          }
+        ],
+        "model": "probe"
+      }
+    },
+    {
+      "case": "reasoning-background-store",
+      "input": {
+        "model": "probe",
+        "input": "hello",
+        "reasoning": {
+          "effort": "high"
+        },
+        "background": true,
+        "store": true,
+        "parallel_tool_calls": false
+      },
+      "output": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "hello"
+          }
+        ],
+        "model": "probe"
+      }
+    },
+    {
+      "case": "strict-function",
+      "input": {
+        "model": "probe",
+        "input": "hello",
+        "tools": [
+          {
+            "type": "function",
+            "name": "f",
+            "parameters": {
+              "type": "object"
+            },
+            "strict": true
+          }
+        ]
+      },
+      "output": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "hello"
+          }
+        ],
+        "model": "probe",
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "f",
+              "parameters": {
+                "type": "object"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "explicit-zero-temperature",
+      "input": {
+        "model": "probe",
+        "input": "hello",
+        "temperature": 0
+      },
+      "output": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "hello"
+          }
+        ],
+        "model": "probe"
+      }
+    },
+    {
+      "case": "function-output-input",
+      "error": "unsupported responses message content: unexpected end of JSON input",
+      "input": {
+        "model": "probe",
+        "input": [
+          {
+            "type": "function_call_output",
+            "call_id": "call_probe",
+            "output": "ok"
+          }
+        ]
+      }
+    }
+  ],
+  "source_files": [
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/provider/responses.go",
+      "commit": "d7153c12",
+      "sha256": "1d790d0462856a3f706982e7ecfd8529eb8f704c5c348fc688ff4024969eeaf9",
+      "same_as_main_directory": true
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/provider/model.go",
+      "commit": "d7153c12",
+      "sha256": "d86f3f63106466df42954ee9f6812a93ba46afd2cdd500c89c82c3e60ac9c403",
+      "same_as_main_directory": true
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/main.go",
+      "commit": "d7153c12",
+      "sha256": "be133b2f938cdd3f06e184b4f2dd1226f20f834aa560a48ae82ec9892b54f347",
+      "same_as_main_directory": true
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/managed_protocol.go",
+      "commit": "d7153c12",
+      "sha256": "03f66093946cde9a21a15691e68e9145eb1677dd51627922ea3875033d7ce91a",
+      "same_as_main_directory": false
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/managed_embedding.go",
+      "commit": "d7153c12",
+      "sha256": "42d34a97f3aa6825c9cfdb4cb9de4e81afc30a8c7bb41aa05472265fa3215443",
+      "same_as_main_directory": true
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/managed_execution.go",
+      "commit": "d7153c12",
+      "sha256": "2708fd1c6697c50f95baffe228c6e2fd92dc0dd27ca66f007fbe7d7d4751b5ba",
+      "same_as_main_directory": false
+    },
+    {
+      "path": "plugins/wasm-go/extensions/ai-proxy/managed_usage_estimate.go",
+      "commit": "d7153c12",
+      "sha256": "63e9bbbf191184d29e62050421af5a36f63bfbf7b3876abed62d012024ad56a9",
+      "same_as_main_directory": false
+    }
+  ],
+  "live_validation": {
+    "status": "COMPLETED_WITH_IMPLEMENTATION_DIFFERENCES",
+    "dependency_thread_id": "01a1a1ec-a310-7022-9205-260d1fb9a2ea",
+    "host_id": "local",
+    "env_path": "ocloudmodelfusion/scripts/local-e2e/.env.local",
+    "api_key_values_logged": false,
+    "paid_api_calls_this_audit": 7,
+    "runtime_mutations_this_audit": {
+      "temporary_routes_created_and_deleted": 2,
+      "native_test_wallet_transfer_cny": "0.02",
+      "owned_runtime_artifacts_cleaned": true
+    },
+    "followup": {
+      "automation_id": "003-openai",
+      "status": "NOT_PRESENT",
+      "stop_after_validation": true
+    },
+    "last_dependency_snapshot": {
+      "thread_id": "01a1a1ec-a310-7022-9205-260d1fb9a2ea",
+      "status": "C_IN_PROGRESS_B_PLUGIN_ALREADY_DEPLOYED"
+    },
+    "dependency_policy": "User authorized validation of deployed AI-proxy independently from unfinished C work.",
+    "online_evidence_file": "2026-11-04-openai-downstream-live.json"
+  },
+  "limitations": [
+    "Live results must use development003 final active version; this snapshot does not freeze that other ongoing task.",
+    "Protocol/model exclusions are tracked separately from conversion implementation differences.",
+    "No deployment or product-code edits were performed by this audit."
+  ],
+  "followup_offline_conversion": {
+    "checked_at": "2026-11-03T22:21:31.836381+00:00",
+    "evidence_level": "direct_exported_converter_calls_not_entire_outbound_chain",
+    "source_commit_for_unchanged_converter_files": "d7153c12",
+    "worktree_has_ongoing_unrelated_development003_changes": true,
+    "command": [
+      "go",
+      "run",
+      "/tmp/openai-capability-audit-20261104/followup_probe.go"
+    ],
+    "probe_program_sha256": "cc3a625af17df9baef8e0a2c42d052851466f56c26e27c146d4a3dff7db7e6a1",
+    "network_or_supplier_calls": 0,
+    "paid_api_calls": 0,
+    "cases": 14,
+    "converted": 11,
+    "explicitly_rejected": 3,
+    "assertions": [
+      {
+        "name": "messages-base64-preserved",
+        "matched_observation": true
+      },
+      {
+        "name": "messages-url-preserved",
+        "matched_observation": true
+      },
+      {
+        "name": "messages-tool-roundtrip-ids-arguments",
+        "matched_observation": true
+      },
+      {
+        "name": "messages-tool-text-array",
+        "matched_observation": true
+      },
+      {
+        "name": "messages-required-and-serial-preserved",
+        "matched_observation": true
+      },
+      {
+        "name": "responses-image-explicit-rejection",
+        "matched_observation": true
+      },
+      {
+        "name": "responses-state-explicit-rejection",
+        "matched_observation": true
+      },
+      {
+        "name": "responses-hosted-tool-explicit-rejection",
+        "matched_observation": true
+      },
+      {
+        "name": "responses-max-output-token-map",
+        "matched_observation": true
+      },
+      {
+        "name": "responses-cache-options-observed-omission",
+        "matched_observation": true
+      },
+      {
+        "name": "chat-function-output-id-arguments-and-usage",
+        "matched_observation": true
+      },
+      {
+        "name": "chat-length-incomplete",
+        "matched_observation": true
+      },
+      {
+        "name": "chat-refusal-preserved",
+        "matched_observation": true
+      },
+      {
+        "name": "chat-error-preserved",
+        "matched_observation": true
+      }
+    ],
+    "source_files": [
+      {
+        "path": "plugins/wasm-go/extensions/ai-proxy/provider/responses.go",
+        "sha256": "1d790d0462856a3f706982e7ecfd8529eb8f704c5c348fc688ff4024969eeaf9",
+        "identical_to_commit": "d7153c12"
+      },
+      {
+        "path": "plugins/wasm-go/extensions/ai-proxy/provider/claude_to_openai.go",
+        "sha256": "ba6fa16c61751aa7bc50bc6d06bbea44feeecc8f062741cb68c5f4b5f475bc63",
+        "identical_to_commit": "d7153c12"
+      },
+      {
+        "path": "plugins/wasm-go/extensions/ai-proxy/provider/model.go",
+        "sha256": "d86f3f63106466df42954ee9f6812a93ba46afd2cdd500c89c82c3e60ac9c403",
+        "identical_to_commit": "d7153c12"
+      }
+    ],
+    "probes": [
+      {
+        "name": "messages-vision-base64",
+        "direction": "messages-to-chat",
+        "input": {
+          "model": "probe",
+          "max_tokens": 128,
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "describe"
+                },
+                {
+                  "type": "image",
+                  "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6QAAAABJRU5ErkJggg=="
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "output": {
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "describe"
+                },
+                {
+                  "type": "image_url",
+                  "text": "",
+                  "image_url": {
+                    "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6QAAAABJRU5ErkJggg=="
+                  }
+                }
+              ]
+            }
+          ],
+          "model": "probe",
+          "max_tokens": 128
+        }
+      },
+      {
+        "name": "messages-vision-url",
+        "direction": "messages-to-chat",
+        "input": {
+          "model": "probe",
+          "max_tokens": 128,
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "describe"
+                },
+                {
+                  "type": "image",
+                  "source": {
+                    "type": "url",
+                    "url": "https://example.invalid/vision.png"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "output": {
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "describe"
+                },
+                {
+                  "type": "image_url",
+                  "text": "",
+                  "image_url": {
+                    "url": "https://example.invalid/vision.png"
+                  }
+                }
+              ]
+            }
+          ],
+          "model": "probe",
+          "max_tokens": 128
+        }
+      },
+      {
+        "name": "messages-function-roundtrip-input",
+        "direction": "messages-to-chat",
+        "input": {
+          "model": "probe",
+          "max_tokens": 128,
+          "messages": [
+            {
+              "role": "user",
+              "content": "lookup"
+            },
+            {
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "tool_use",
+                  "id": "call_probe",
+                  "name": "lookup",
+                  "input": {
+                    "city": "Paris"
+                  }
+                }
+              ]
+            },
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "tool_result",
+                  "tool_use_id": "call_probe",
+                  "content": "sunny"
+                }
+              ]
+            }
+          ],
+          "tools": [
+            {
+              "name": "lookup",
+              "input_schema": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "output": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "lookup"
+            },
+            {
+              "role": "assistant",
+              "claude_content_blocks": [
+                {
+                  "type": "tool_use",
+                  "id": "call_probe",
+                  "name": "lookup",
+                  "input": {
+                    "city": "Paris"
+                  }
+                }
+              ],
+              "tool_calls": [
+                {
+                  "index": 0,
+                  "id": "call_probe",
+                  "type": "function",
+                  "function": {
+                    "name": "lookup",
+                    "arguments": "{\"city\":\"Paris\"}"
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "content": "sunny",
+              "claude_content_blocks": [
+                {
+                  "type": "tool_result",
+                  "tool_use_id": "call_probe",
+                  "content": "sunny"
+                }
+              ],
+              "tool_call_id": "call_probe"
+            }
+          ],
+          "model": "probe",
+          "max_tokens": 128,
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "lookup",
+                "parameters": {
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "messages-function-results-text-array",
+        "direction": "messages-to-chat",
+        "input": {
+          "model": "probe",
+          "max_tokens": 128,
+          "messages": [
+            {
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "tool_use",
+                  "id": "call_probe",
+                  "name": "lookup",
+                  "input": {}
+                }
+              ]
+            },
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "tool_result",
+                  "tool_use_id": "call_probe",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "first"
+                    },
+                    {
+                      "type": "text",
+                      "text": "second"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "output": {
+          "messages": [
+            {
+              "role": "assistant",
+              "claude_content_blocks": [
+                {
+                  "type": "tool_use",
+                  "id": "call_probe",
+                  "name": "lookup",
+                  "input": {}
+                }
+              ],
+              "tool_calls": [
+                {
+                  "index": 0,
+                  "id": "call_probe",
+                  "type": "function",
+                  "function": {
+                    "name": "lookup",
+                    "arguments": "{}"
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "content": "first\nsecond",
+              "claude_content_blocks": [
+                {
+                  "type": "tool_result",
+                  "tool_use_id": "call_probe",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "first"
+                    },
+                    {
+                      "type": "text",
+                      "text": "second"
+                    }
+                  ]
+                }
+              ],
+              "tool_call_id": "call_probe"
+            }
+          ],
+          "model": "probe",
+          "max_tokens": 128
+        }
+      },
+      {
+        "name": "messages-required-serial-tools",
+        "direction": "messages-to-chat",
+        "input": {
+          "model": "probe",
+          "max_tokens": 128,
+          "messages": [
+            {
+              "role": "user",
+              "content": "lookup"
+            }
+          ],
+          "tools": [
+            {
+              "name": "lookup",
+              "input_schema": {
+                "type": "object"
+              }
+            }
+          ],
+          "tool_choice": {
+            "type": "any",
+            "disable_parallel_tool_use": true
+          }
+        },
+        "output": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "lookup"
+            }
+          ],
+          "model": "probe",
+          "max_tokens": 128,
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "lookup",
+                "parameters": {
+                  "type": "object"
+                }
+              }
+            }
+          ],
+          "tool_choice": "required",
+          "parallel_tool_calls": false
+        }
+      },
+      {
+        "name": "responses-vision-rejection",
+        "direction": "responses-to-chat",
+        "input": {
+          "model": "probe",
+          "input": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "input_image",
+                  "image_url": "https://example.invalid/vision.png"
+                }
+              ]
+            }
+          ]
+        },
+        "error": "input_image is unsupported in Responses fallback mode"
+      },
+      {
+        "name": "responses-native-state-rejection",
+        "direction": "responses-to-chat",
+        "input": {
+          "model": "probe",
+          "input": "next",
+          "previous_response_id": "resp_probe"
+        },
+        "error": "previous_response_id is unsupported in Responses fallback mode"
+      },
+      {
+        "name": "responses-hosted-tool-rejection",
+        "direction": "responses-to-chat",
+        "input": {
+          "model": "probe",
+          "input": "search",
+          "tools": [
+            {
+              "type": "web_search"
+            }
+          ]
+        },
+        "error": "web_search is unsupported in Responses fallback mode"
+      },
+      {
+        "name": "responses-max-output-token-mapping",
+        "direction": "responses-to-chat",
+        "input": {
+          "model": "probe",
+          "input": "brief",
+          "max_output_tokens": 32,
+          "temperature": 0.25
+        },
+        "output": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "brief"
+            }
+          ],
+          "model": "probe",
+          "max_completion_tokens": 32,
+          "temperature": 0.25
+        }
+      },
+      {
+        "name": "responses-new-cache-request-options",
+        "direction": "responses-to-chat",
+        "input": {
+          "model": "probe",
+          "input": "cache example",
+          "prompt_cache_options": {
+            "mode": "explicit",
+            "ttl": "30m"
+          },
+          "prompt_cache_key": "probe-cache"
+        },
+        "output": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "cache example"
+            }
+          ],
+          "model": "probe"
+        }
+      },
+      {
+        "name": "chat-to-responses-function-output",
+        "direction": "chat-to-responses",
+        "input": {
+          "id": "chat_probe",
+          "object": "chat.completion",
+          "created": 1,
+          "model": "probe",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": null,
+                "tool_calls": [
+                  {
+                    "id": "call_probe",
+                    "type": "function",
+                    "function": {
+                      "name": "lookup",
+                      "arguments": "{\"city\":\"Paris\"}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "tool_calls"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 12,
+            "completion_tokens": 3,
+            "total_tokens": 15
+          }
+        },
+        "output": {
+          "id": "chat_probe",
+          "object": "response",
+          "created_at": 1,
+          "status": "completed",
+          "model": "probe",
+          "output": [
+            {
+              "type": "function_call",
+              "id": "fc_call_probe",
+              "status": "completed",
+              "call_id": "call_probe",
+              "name": "lookup",
+              "arguments": "{\"city\":\"Paris\"}"
+            }
+          ],
+          "usage": {
+            "input_tokens": 12,
+            "output_tokens": 3,
+            "total_tokens": 15
+          }
+        }
+      },
+      {
+        "name": "chat-to-responses-incomplete",
+        "direction": "chat-to-responses",
+        "input": {
+          "id": "chat_probe",
+          "created": 1,
+          "model": "probe",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "partial"
+              },
+              "finish_reason": "length"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 12,
+            "completion_tokens": 3,
+            "total_tokens": 15
+          }
+        },
+        "output": {
+          "id": "chat_probe",
+          "object": "response",
+          "created_at": 1,
+          "status": "incomplete",
+          "model": "probe",
+          "output": [
+            {
+              "type": "message",
+              "status": "completed",
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "output_text",
+                  "text": "partial",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "usage": {
+            "input_tokens": 12,
+            "output_tokens": 3,
+            "total_tokens": 15
+          },
+          "incomplete_details": {
+            "reason": "max_output_tokens"
+          }
+        }
+      },
+      {
+        "name": "chat-to-responses-refusal",
+        "direction": "chat-to-responses",
+        "input": {
+          "id": "chat_probe",
+          "created": 1,
+          "model": "probe",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": null,
+                "refusal": "cannot comply"
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 12,
+            "completion_tokens": 3,
+            "total_tokens": 15
+          }
+        },
+        "output": {
+          "id": "chat_probe",
+          "object": "response",
+          "created_at": 1,
+          "status": "completed",
+          "model": "probe",
+          "output": [
+            {
+              "type": "message",
+              "status": "completed",
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "refusal",
+                  "refusal": "cannot comply"
+                }
+              ]
+            }
+          ],
+          "usage": {
+            "input_tokens": 12,
+            "output_tokens": 3,
+            "total_tokens": 15
+          }
+        }
+      },
+      {
+        "name": "chat-to-responses-error",
+        "direction": "chat-to-responses",
+        "input": {
+          "error": {
+            "message": "not available",
+            "type": "provider_error",
+            "code": "example"
+          }
+        },
+        "output": {
+          "object": "response",
+          "status": "failed",
+          "output": [],
+          "error": {
+            "message": "not available",
+            "type": "provider_error",
+            "code": "example"
+          }
+        }
+      }
+    ],
+    "limitations": [
+      "These probes exercise exported conversion functions; downstream header policies, internal-field stripping, actual HTTP status and vendor acceptance require full gateway validation.",
+      "Expected rejections and observed omissions are classifications, not an assertion that every probed capability is supported."
+    ]
+  },
+  "followup_repair": {
+    "status": "FIXED_AND_ISOLATED_K3S_ONLINE_REGRESSION_PASSED",
+    "source_commit": "a61ef5330793fb16065136ad3833e93153b7c3bc",
+    "candidate_version": "2.0.31-responses.2",
+    "report": "2026-11-04-responses-chat-fidelity.md",
+    "receipt": "2026-11-04-responses-chat-fidelity.json",
+    "formal_business_routes_switched": false
+  },
+  "formal_deployment": {
+    "status": "completed",
+    "date": "2026-11-04",
+    "plugin_version": "2.0.35",
+    "source_commit": "caa6eb4e300a7531c039b34c8535403caf6637d9",
+    "latest_baseline": "e3c55b591dfbe6acda63cef8a6ec5f719d4e06f3",
+    "business_routes_switched": 43,
+    "actual_ecds_and_wasm_verified": 43,
+    "offline_passes_including_subtests": 1112,
+    "functional_samples": 11,
+    "http200": 8,
+    "expected_local_http400": 3,
+    "real_model_calls": 6,
+    "accepted_facts": 16,
+    "accounting_applications": 16,
+    "temporary_runtime_remaining": 0,
+    "report": "../../../modelfusion-deploy/docs/checks/2026-11-04-responses-chat-repair-deployed.md",
+    "receipt": "../../../modelfusion-deploy/docs/checks/2026-11-04-responses-chat-repair-deployed.json",
+    "receipt_sha256": "14e222a142dafe41f1f9f54a0838b45152aac7b999a8c304702a3a1b98e87413",
+    "protocol_model_supplier_limits_separate": true,
+    "RC06_adapter_coverage_remaining": true
+  },
+  "history_vision_deployment": {
+    "status": "implementation_and_protocol_delivery_completed_with_generation_observations",
+    "date": "2026-11-04",
+    "plugin_version": "2.0.36",
+    "source_commit": "309461edc3be961afdb401fbae7ab8f3f404fd6a",
+    "baseline_commit": "0fa1be35e99ce7c63c5e9dc9b3ce8900758adeb0",
+    "business_routes_switched": 44,
+    "actual_wasm_sha256": "97c7ea9bb86434ff03ec6a5b0e10d6d747fe326344481537ea73eaa59e594cde",
+    "offline_passes_including_subtests": 1153,
+    "functional_samples": 15,
+    "additional_controlled_wire_diagnostic": 1,
+    "real_model_calls_including_direct_diagnostic": 8,
+    "accepted_facts": 20,
+    "accounting_applications": 20,
+    "generation_observations": 2,
+    "all_model_answer_semantics_passed": false,
+    "new_request_field_or_function_association_loss_reproduced": false,
+    "temporary_runtime_remaining": 0,
+    "report": "../../../modelfusion-deploy/docs/checks/2026-11-04-responses-chat-history-vision-deployed.md",
+    "receipt": "../../../modelfusion-deploy/docs/checks/2026-11-04-responses-chat-history-vision-deployed.json",
+    "receipt_sha256": "0426f5f64694cbe9d3bb267572c98776d62b49f0d80bcdd74c866d73db77ef6c",
+    "limits_separated": true
+  },
+  "provider_access_configuration_delivery": {
+    "status": "passed",
+    "report": "../../../modelfusion-deploy/docs/checks/2026-11-04-provider-api-access.md",
+    "helm_revision": 118,
+    "ai_proxy": "2.0.38",
+    "api_source": "39f418d4cd73375dbc4f5589aacd00ca6f55182b",
+    "admin_source": "0b56aba8d0fb88fe5677f41d6802b6031cc883aa",
+    "online": {
+      "status": "passed",
+      "gateway_samples": 26,
+      "http200": 22,
+      "expected_rejected_before_upstream": 4,
+      "real_text_supplier_calls": 7,
+      "controlled_upstream_calls": 14,
+      "cache_hits_without_upstream": 1,
+      "ordinary_function_roundtrips": 1,
+      "full_function_history_verified": true,
+      "non_stream_message_id_verified": true,
+      "parameter_mapping_verified": true,
+      "history_preserved_and_protocol_isolated": true,
+      "qwen_per_entry_encoding_verified": true,
+      "accepted_facts": 43,
+      "sales_applications": 22,
+      "procurement_applications": 21,
+      "wallet_debit_units": 8230000,
+      "wallet_final_units": 99991770000,
+      "wallet_scale": 10000000000,
+      "wallet_version": 23,
+      "rates_are_test_only": true,
+      "visual_model_enabled": false,
+      "visual_requests": 0
+    },
+    "visual_models_enabled": false,
+    "remaining_paid_requests": 0
+  },
+  "downstream_response_contract_delivery": {
+    "date": "2026-11-05",
+    "status": "verified_with_documented_boundaries",
+    "helm_revision": 132,
+    "proxy_version": "2.0.42",
+    "cache_version": "2.0.16",
+    "gateway_cases": 87,
+    "real_supplier_calls": 8,
+    "accepted_facts": 154,
+    "context_payload_redis_storage_added": false,
+    "visual_enabled": false,
+    "report": "../../../modelfusion-deploy/docs/checks/2026-11-05-downstream-response-contract.md",
+    "receipt": "../../../modelfusion-deploy/docs/checks/2026-11-05-downstream-response-contract.json",
+    "lifecycle_followup": "../../../ocloudmodelfusion/docs/bugs/2026-11-05-ai-route-delete-frozen-runtime.md"
+  }
+}

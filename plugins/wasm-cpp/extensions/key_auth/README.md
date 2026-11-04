@@ -54,9 +54,9 @@ description: Key 认证插件配置参考
 ```yaml
 global_auth: false
 consumers:
-- credential: 2bda943c-ba2b-11ec-ba07-00163e1250b5
+- credential: YOUR_EXAMPLE_CREDENTIAL_1
   name: consumer1
-- credential: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+- credential: YOUR_EXAMPLE_CREDENTIAL_2
   name: consumer2
 keys:
 - apikey
@@ -89,11 +89,11 @@ allow:
 n
 **将 API Key 设置在 url 参数中**
 ```bash
-curl  http://xxx.hello.com/test?apikey=2bda943c-ba2b-11ec-ba07-00163e1250b5
+curl  http://xxx.hello.com/test?apikey=YOUR_EXAMPLE_CREDENTIAL_1
 ```
 **将 API Key 设置在 http 请求头中**
 ```bash
-curl  http://xxx.hello.com/test -H 'x-api-key: 2bda943c-ba2b-11ec-ba07-00163e1250b5'
+curl  http://xxx.hello.com/test -H 'x-api-key: YOUR_EXAMPLE_CREDENTIAL_1'
 ```
 
 认证鉴权通过后，请求的header中会被添加一个`X-Mse-Consumer`字段，在此例中其值为`consumer1`，用以标识调用方的名称
@@ -106,13 +106,13 @@ curl  http://xxx.hello.com/test
 ```
 **请求提供的 API Key 无权访问，返回401**
 ```bash
-curl  http://xxx.hello.com/test?apikey=926d90ac-ba2e-11ec-ab68-00163e1250b5
+curl  http://xxx.hello.com/test?apikey=YOUR_OTHER_CREDENTIAL
 ```
 
 **根据请求提供的 API Key匹配到的调用者无访问权限，返回403**
 ```bash
 # consumer2不在route-a的allow列表里
-curl  http://xxx.hello.com/test?apikey=c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+curl  http://xxx.hello.com/test?apikey=YOUR_EXAMPLE_CREDENTIAL_2
 ```
 
 ### 网关实例级别开启
@@ -122,9 +122,9 @@ curl  http://xxx.hello.com/test?apikey=c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
 ```yaml
 global_auth: true
 consumers:
-- credential: 2bda943c-ba2b-11ec-ba07-00163e1250b5
+- credential: YOUR_EXAMPLE_CREDENTIAL_1
   name: consumer1
-- credential: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+- credential: YOUR_EXAMPLE_CREDENTIAL_2
   name: consumer2
 keys:
 - apikey
