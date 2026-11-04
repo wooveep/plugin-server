@@ -164,25 +164,48 @@ func replayMaterializedRecord(record MaterializedReplayRecord, stream bool, ctx 
 	if statusCode == 0 {
 		statusCode = 200
 	}
-
-	bridge, send := nativeCacheBridge(ctx, record, usage)
-	if !send {
+	send := func() {
+		bridge, send := nativeCacheBridge(ctx, record, usage)
+		if !send {
+			return
+		}
+		ctx.SetContext(CACHE_LOCAL_REPLAY_KEY, true)
+		ctx.SetUserAttribute("cache_status", "hit")
+		ctx.SetUserAttribute("upstream_invoked", false)
+		ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
+		headers := [][2]string{{"content-type", serialized.ContentType}}
+		if bridge != "" {
+			headers = append(headers, [2]string{executionfacts.DeliveryBridgeHeader, bridge})
+		}
+		if err := proxywasm.SendHttpResponseWithDetail(uint32(statusCode), memorycache.CacheHitResponseDetail, headers, serialized.Body, -1); err != nil {
+			nativeCacheFactGap(ctx, "cache_local_response_outcome_unknown")
+			// The local handoff may already have happened. Never resume into a new
+			// upstream send after its result becomes unknown.
+			return
+		}
+	}
+	if state, _ := ctx.GetContext(nativeCacheDeliveryContext).(*nativeCacheDeliveryState); state != nil && record.Protocol == protocol.ProtocolResponses && state.publicAliases != nil {
+		if state.resourcesInFlight || state.replied || state.rejected || state.closed {
+			return nil
+		}
+		state.resourcesInFlight = true
+		reissueNativeCacheResources(ctx, state, func(ok bool) {
+			state.resourcesInFlight = false
+			if state.closed || state.rejected || state.replied {
+				return
+			}
+			if !ok {
+				// No delivery bridge/sale was created. An expired/cross-scope
+				// cached reference follows the existing cache-miss path.
+				ctx.SetUserAttribute("cache_status", "miss")
+				proxywasm.ResumeHttpRequest()
+				return
+			}
+			send()
+		})
 		return nil
 	}
-	ctx.SetContext(CACHE_LOCAL_REPLAY_KEY, true)
-	ctx.SetUserAttribute("cache_status", "hit")
-	ctx.SetUserAttribute("upstream_invoked", false)
-	ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
-	headers := [][2]string{{"content-type", serialized.ContentType}}
-	if bridge != "" {
-		headers = append(headers, [2]string{executionfacts.DeliveryBridgeHeader, bridge})
-	}
-	if err := proxywasm.SendHttpResponseWithDetail(uint32(statusCode), memorycache.CacheHitResponseDetail, headers, serialized.Body, -1); err != nil {
-		nativeCacheFactGap(ctx, "cache_local_response_outcome_unknown")
-		// The local handoff may already have happened. Never resume into a new
-		// upstream send after its result becomes unknown.
-		return nil
-	}
+	send()
 	return nil
 }
 

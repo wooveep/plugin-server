@@ -167,6 +167,18 @@ func (h *managedHost) records(t *testing.T) []managedStreamRecord {
 
 func (h *managedHost) response(t *testing.T, headers [][2]string, body []byte) {
 	t.Helper()
+	h.rawResponse(t, headers, body)
+	// Most content tests exercise an available Redis. Resource lifecycle tests
+	// use rawResponse to control ACK, timeout and isolation explicitly.
+	for _, call := range h.host.GetRedisCalloutAttributesFromContext(h.id) {
+		if bytes.Contains(call.Query, []byte("modelfusion-public-resource-write.v1")) {
+			h.host.CallOnRedisCallResponse(call.CalloutID, 0, []byte(":1\r\n"))
+		}
+	}
+}
+
+func (h *managedHost) rawResponse(t *testing.T, headers [][2]string, body []byte) {
+	t.Helper()
 	callouts := h.host.GetCalloutAttributesFromContext(h.id)
 	if len(callouts) != 1 {
 		t.Fatalf("business send count before callback: %d", len(callouts))
@@ -673,8 +685,8 @@ func TestManagedStreamResponsePreservesAggregatedWireBytes(t *testing.T) {
 				if response == nil || response.StatusCode != 200 || !bytes.Contains(response.Data, []byte(`"model":"public-model"`)) || !bytes.HasSuffix(response.Data, []byte("data: [DONE]\n\n")) || bytes.Contains(response.Data, []byte(`"usage"`)) {
 					t.Fatal("public stream identity, terminal or requested usage changed")
 				}
-			} else if response == nil || response.StatusCode != 502 || bytes.Contains(response.Data, []byte("[DONE]")) {
-				t.Fatal("an unterminated event was made into a successful stream")
+			} else if response == nil || response.StatusCode != 200 || bytes.Contains(response.Data, []byte("[DONE]")) || !bytes.Contains(response.Data, []byte(`"code":"response_incomplete"`)) {
+				t.Fatal("an unterminated event lost its partial content or failure terminal")
 			}
 			delivery := h.bridge(t).Envelope()
 			if complete && delivery.Usage.Status != "reported" || !complete && (delivery.Usage.Status != "estimated" || delivery.Usage.Source != "estimator" || delivery.DeliveryState != "failed") {

@@ -11,8 +11,11 @@ import (
 const managedPublicProtocolKey = "ai-proxy.public-client-protocol"
 
 func managedPublicPolicy(s *managedExecutionState) clientresponse.Policy {
+	if s.publicAliases == nil {
+		s.publicAliases = &clientresponse.ResourceAliases{}
+	}
 	created, _ := time.Parse(time.RFC3339Nano, s.businessUTC)
-	return clientresponse.Policy{Protocol: s.config.profile.InputProtocol, PublicModel: s.config.release.PublicModel, UpstreamModel: s.config.release.Descriptor.UpstreamModel, RequestID: s.callID, CreatedAt: created.Unix(), IncludeUsage: gjson.GetBytes(s.publicRequest, "stream_options.include_usage").Bool(), ExposeServiceTier: gjson.GetBytes(s.publicRequest, "service_tier").String() != "", RequestFields: clientresponse.RequestFields(s.publicRequest)}
+	return clientresponse.Policy{Protocol: s.config.profile.InputProtocol, PublicModel: s.config.release.PublicModel, UpstreamModel: s.config.release.Descriptor.UpstreamModel, RequestID: s.callID, CreatedAt: created.Unix(), IncludeUsage: gjson.GetBytes(s.publicRequest, "stream_options.include_usage").Bool(), ExposeServiceTier: gjson.GetBytes(s.publicRequest, "service_tier").String() != "", RequestFields: clientresponse.RequestFields(s.publicRequest), Aliases: s.publicAliases}
 }
 
 func managedPublicText(s *managedExecutionState) bool {
@@ -47,7 +50,20 @@ func projectManagedResponse(s *managedExecutionState, originalHeaders [][2]strin
 	if err != nil {
 		return managedProtocolClientResponse{}, err
 	}
-	return managedProtocolClientResponse{Body: body, Headers: clientresponse.Headers(policy, response.Headers, stream)}, nil
+	publicHeaders := clientresponse.Headers(policy, response.Headers, stream)
+	if stream {
+		if events, e := clientresponse.Events(original); e == nil {
+			for _, event := range events {
+				kind := gjson.GetBytes(event.Data, "type").String()
+				if event.Name == "error" || kind == "error" || kind == "response.failed" {
+					failure := clientresponse.ClassifyFailure(clientresponse.FailureInput{Format: format, Client: policy.Protocol, Body: event.Data, Request: s.publicRequest})
+					publicHeaders = failure.Headers(policy, response.Headers, true, true)
+					break
+				}
+			}
+		}
+	}
+	return managedProtocolClientResponse{Body: body, Headers: publicHeaders}, nil
 }
 
 func managedPublicError(ctx wrapper.HttpContext, reason string) []byte {

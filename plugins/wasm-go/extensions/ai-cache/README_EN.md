@@ -4,7 +4,7 @@ keywords: [higress,ai cache]
 description: ai-cache thin gateway plugin configuration reference
 ---
 
-> Configuration version: `2.0.14`
+> Configuration version: `2.0.15`
 
 ## Frozen Credential Directory
 
@@ -250,6 +250,11 @@ Ordinary production retains the original Redis-admitted call identity and busine
 
 ## Public responses and internal metering
 
-Plugin version `2.0.14`.
+Plugin version `2.0.15`.
 
 Native replay uses the shared Chat/Responses/Messages response policy with the current sales model, client echoes and usage preference. Each hit retains current estimated sale metering without a new procurement attempt; historical supplier usage is not reused.
+
+
+## 2026-11-05 public responses and native references
+
+This release normalizes sales model identity, random platform resource IDs, equivalent empty optional fields, errors and interrupted results. Registered content blocks hide supplier diagnostics while retaining real reasoning, signatures, function associations and reported measurements. Native Responses references use the existing Redis with tenant/principal/sales-asset isolation and a default 30-day ID mapping. Records contain IDs and execution ownership only: no conversation, signature, encrypted payload or opaque-context provenance index is stored. Platform context injection is deferred to ai-history. Native references never cross account ownership; ordinary stateless retry/fallback policies remain. Cache replay issues fresh public IDs with the original resource provenance. Original financial observations remain independent of public projection. Visual capabilities are not enabled or validated in this change.

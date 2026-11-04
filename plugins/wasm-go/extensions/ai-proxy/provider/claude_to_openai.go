@@ -1031,6 +1031,8 @@ func (c *ClaudeToOpenAIConverter) buildClaudeStreamResponse(ctx wrapper.HttpCont
 // openAIFinishReasonToClaude converts OpenAI finish reason to Claude format
 func openAIFinishReasonToClaude(reason string) string {
 	switch reason {
+	case "content_filter":
+		return "refusal"
 	case finishReasonStop:
 		return "end_turn"
 	case finishReasonLength:

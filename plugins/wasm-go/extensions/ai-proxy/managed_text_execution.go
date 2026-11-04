@@ -10,6 +10,7 @@ import (
 
 	supplier "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -38,8 +39,14 @@ type managedTextTarget struct {
 	Weight   uint32 `json:"weight"`
 }
 type managedTextDirectory struct {
-	SchemaVersion string                      `json:"schema_version"`
-	Targets       []managedTextDirectoryEntry `json:"targets"`
+	SchemaVersion   string                        `json:"schema_version"`
+	Targets         []managedTextDirectoryEntry   `json:"targets"`
+	ResourceAliases *managedResourceAliasSettings `json:"resource_aliases,omitempty"`
+}
+
+type managedResourceAliasSettings struct {
+	SchemaVersion    string `json:"schema_version"`
+	RetentionSeconds uint32 `json:"retention_seconds"`
 }
 type managedTextDirectoryEntry struct {
 	Execution json.RawMessage `json:"execution"`
@@ -152,10 +159,7 @@ func configureManagedTextDirectory(value gjson.Result, origin *managedExecutionC
 		return err
 	}
 	directory := value.Get(managedTextDirectoryField)
-	if origin.settings.TextExecution == nil {
-		if directory.Exists() {
-			return errors.New("managed text directory requires its explicit execution policy")
-		}
+	if origin.settings.TextExecution == nil && !directory.Exists() {
 		return nil
 	}
 	if !directory.IsObject() || !managedRequiredFields(directory, "schema_version targets") {
@@ -164,6 +168,15 @@ func configureManagedTextDirectory(value gjson.Result, origin *managedExecutionC
 	var raw managedTextDirectory
 	if decodeManagedJSON([]byte(directory.Raw), &raw, true) != nil || raw.SchemaVersion != "modelfusion-execution-targets.v1" || len(raw.Targets) == 0 {
 		return errors.New("invalid managed text target directory")
+	}
+	if raw.ResourceAliases != nil && (raw.ResourceAliases.SchemaVersion != "modelfusion-public-resources.v1" || raw.ResourceAliases.RetentionSeconds != 2592000) {
+		return errors.New("invalid public resource reference contract")
+	}
+	if raw.ResourceAliases != nil && (managedOperation(origin) != "text_generate" || origin.profile.InputProtocol != clientresponse.Chat && origin.profile.InputProtocol != clientresponse.Responses && origin.profile.InputProtocol != clientresponse.Messages) {
+		return errors.New("public resource references require a published text protocol")
+	}
+	if origin.settings.TextExecution == nil && raw.ResourceAliases == nil {
+		return errors.New("managed text directory requires an explicit recovery or resource contract")
 	}
 	targets := make(map[string]*managedExecutionConfig, len(raw.Targets))
 	for _, item := range raw.Targets {
@@ -204,7 +217,9 @@ func configureManagedTextDirectory(value gjson.Result, origin *managedExecutionC
 		if err != nil || validateManagedTextProvider(proxy, peer) != nil {
 			return errors.New("unsupported managed fallback provider configuration")
 		}
-		peer.profile, peer.mapper, peer.redis = profile, append([]byte(nil), item.Mapper...), origin.redis
+		peer.profile, peer.mapper, peer.redis, peer.priceRedis = profile, append([]byte(nil), item.Mapper...), origin.redis, origin.priceRedis
+		peer.referenceRedis = origin.referenceRedis
+		peer.outbox = origin.outbox
 		if _, err := managedTextMappedModel(peer); err != nil {
 			return err
 		}
@@ -429,6 +444,12 @@ func continueManagedText(ctx wrapper.HttpContext, s *managedExecutionState, outc
 	if policy == nil {
 		return false
 	}
+	// A documented content-policy rejection is not a transient outage. Preserve
+	// the published policy everywhere else; never use fallback to bypass it.
+	classified := clientresponse.ClassifyFailure(clientresponse.FailureInput{Status: *outcome.HTTPStatus, Body: body, Client: s.config.profile.InputProtocol, Request: s.publicRequest})
+	if classified.Kind == clientresponse.FailurePolicy {
+		return false
+	}
 	fallback := func() { tryManagedTextFallback(ctx, s, *outcome.HTTPStatus, finish) }
 	target := s.config.release.Descriptor.TargetID
 	if retry := policy.Retry; retry != nil && call.targetAttempts[target] <= retry.MaxRetries && managedTextStatusMatches(*outcome.HTTPStatus, retry.RetryOnStatus) {
@@ -451,6 +472,7 @@ func newManagedTextAttempt(previous *managedExecutionState, configuration *manag
 	state := &managedExecutionState{config: &copied, sourceConfig: configuration, identity: previous.identity, internal: previous.internal, callID: previous.callID, businessUTC: previous.businessUTC, admissionDeadline: previous.admissionDeadline, ledger: previous.ledger, deliveries: previous.deliveries, text: previous.text, mechanism: mechanism, parentAttemptID: previous.attemptID, selectionGeneration: uint32(len(previous.text.attempts) + 1)}
 	state.streaming = previous.streaming
 	state.publicRequest = previous.publicRequest
+	state.resourceOwner = previous.resourceOwner
 	state.requestedTools, state.removedTools = previous.requestedTools, previous.removedTools
 	return state
 }
@@ -496,6 +518,12 @@ func tryManagedTextFallback(ctx wrapper.HttpContext, previous *managedExecutionS
 	}
 	candidates := make([]managedTextTarget, 0, len(policy.Fallback.Targets))
 	for _, target := range policy.Fallback.Targets {
+		if previous.resourceOwner != nil {
+			peer := previous.config.targets[target.TargetID]
+			if peer == nil || !managedNativeResponses(peer) || managedResourceOwner(peer) != *previous.resourceOwner {
+				continue
+			}
+		}
 		if !call.visited[target.TargetID] {
 			candidates = append(candidates, target)
 		}

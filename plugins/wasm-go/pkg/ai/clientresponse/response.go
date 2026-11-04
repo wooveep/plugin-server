@@ -21,6 +21,7 @@ type Policy struct {
 	IncludeUsage, ExposeServiceTier                 bool
 	CreatedAt                                       int64
 	RequestFields                                   map[string]json.RawMessage
+	Aliases                                         *ResourceAliases
 }
 
 // RequestFields keeps only client-owned response echoes, never supplier settings.
@@ -49,8 +50,15 @@ func Project(policy Policy, body []byte, streaming bool, usage Usage) ([]byte, e
 	if policy.PublicModel == "" || policy.Protocol != Chat && policy.Protocol != Responses && policy.Protocol != Messages {
 		return nil, errors.New("public response requires its frozen model and protocol")
 	}
+	if policy.Aliases == nil {
+		policy.Aliases = &ResourceAliases{}
+	}
 	if !streaming {
-		return projectObject(policy, body, usage, false)
+		encoded, err := projectObject(policy, body, usage, false)
+		if err != nil {
+			return nil, err
+		}
+		return policy.Aliases.rewrite(policy.Protocol, encoded, false)
 	}
 	events, err := Events(body)
 	if err != nil {
@@ -77,6 +85,10 @@ func Project(policy Policy, body []byte, streaming bool, usage Usage) ([]byte, e
 		if err != nil {
 			return nil, err
 		}
+		raw, err = policy.Aliases.rewrite(policy.Protocol, raw, true)
+		if err != nil {
+			return nil, err
+		}
 		if policy.Protocol == Chat {
 			var frame map[string]json.RawMessage
 			_ = json.Unmarshal(raw, &frame)
@@ -87,6 +99,18 @@ func Project(policy Policy, body []byte, streaming bool, usage Usage) ([]byte, e
 				if len(choices) == 0 {
 					continue
 				}
+			} else {
+				if policy.IncludeUsage && lastChat != nil {
+					if wire := usage.wire(Chat); wire != nil {
+						lastChat["choices"], lastChat["usage"] = json.RawMessage("[]"), wire
+						counts, e := json.Marshal(lastChat)
+						if e != nil {
+							return nil, e
+						}
+						AppendEvent(&output, Event{Data: counts})
+					}
+				}
+				lastChat = nil
 			}
 		}
 		AppendEvent(&output, Event{Name: event.Name, Data: raw})
@@ -120,7 +144,9 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 		}
 		var sanitized map[string]json.RawMessage
 		_ = json.Unmarshal(Error(policy, body), &sanitized)
-		object["error"] = sanitized["error"]
+		var fields map[string]json.RawMessage
+		_ = json.Unmarshal(sanitized["error"], &fields)
+		object["error"], _ = json.Marshal(retain(fields, "code message"))
 	}
 	model, _ := json.Marshal(policy.PublicModel)
 	if stream && policy.Protocol != Chat {
@@ -158,7 +184,31 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 			}
 			object = retain(object, "type index message content_block delta usage error")
 		} else {
-			object = retain(object, "type sequence_number response output_index content_index summary_index item_id item part delta text refusal arguments annotation annotation_index obfuscation logprobs")
+			object = retain(object, "type sequence_number response output_index content_index summary_index item_id item part delta text refusal arguments annotation annotation_index logprobs")
+		}
+		for _, key := range []string{"item", "part", "content_block", "delta"} {
+			if raw, ok := object[key]; ok && len(raw) > 0 && raw[0] == '{' {
+				if key == "delta" && kind == "message_delta" {
+					var delta map[string]json.RawMessage
+					if json.Unmarshal(raw, &delta) != nil {
+						return nil, errors.New("invalid public message delta")
+					}
+					object[key], _ = json.Marshal(retain(delta, "stop_reason stop_sequence"))
+					continue
+				}
+				projected, err := projectBlock(raw)
+				if err != nil {
+					return nil, err
+				}
+				object[key] = projected
+			}
+		}
+		if raw, ok := object["annotation"]; ok {
+			var annotation map[string]json.RawMessage
+			if json.Unmarshal(raw, &annotation) != nil || annotation == nil {
+				return nil, errors.New("invalid public annotation")
+			}
+			object["annotation"], _ = json.Marshal(projectCitation(annotation))
 		}
 		return json.Marshal(object)
 	}
@@ -175,12 +225,19 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 		if json.Unmarshal(object["choices"], &choices) == nil {
 			for i, choice := range choices {
 				choices[i] = retain(choice, "index message delta finish_reason logprobs")
+				if raw := choices[i]["logprobs"]; len(raw) == 0 || bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+					delete(choices[i], "logprobs")
+				}
 				for _, key := range []string{"message", "delta"} {
 					var message map[string]json.RawMessage
 					if json.Unmarshal(choice[key], &message) == nil && message != nil {
 						// Real reasoning and opaque continuation fields are content,
 						// not supplier diagnostic metadata.
-						choices[i][key], _ = json.Marshal(retain(message, "id role content refusal annotations tool_calls function_call audio reasoning_content reasoning reasoning_signature reasoning_redacted_content claude_content_blocks"))
+						var err error
+						choices[i][key], err = projectChatMessage(message)
+						if err != nil {
+							return nil, err
+						}
 					}
 				}
 			}
@@ -210,6 +267,13 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 			}
 		}
 		result["object"] = json.RawMessage(`"response"`)
+		if output, ok := result["output"]; ok {
+			var err error
+			result["output"], err = projectBlockList(output)
+			if err != nil {
+				return nil, err
+			}
+		}
 		result["usage"] = json.RawMessage("null")
 		if wire := usage.wire(Responses); wire != nil {
 			result["usage"] = wire
@@ -217,6 +281,13 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 	case Messages:
 		result = retain(object, "id type role model content stop_reason stop_sequence usage container")
 		result["type"] = json.RawMessage(`"message"`)
+		if content, ok := result["content"]; ok {
+			var err error
+			result["content"], err = projectBlockList(content)
+			if err != nil {
+				return nil, err
+			}
+		}
 		if wire := usage.wire(Messages); wire != nil {
 			result["usage"] = wire
 		}
@@ -240,60 +311,7 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 
 // Error preserves a client-protocol error shape without exposing raw diagnostics.
 func Error(policy Policy, body []byte) []byte {
-	var object map[string]json.RawMessage
-	_ = json.Unmarshal(body, &object)
-	var source map[string]json.RawMessage
-	_ = json.Unmarshal(object["error"], &source)
-	if source == nil {
-		source = object
-	}
-	message := "The upstream request could not be completed."
-	if raw := source["message"]; len(raw) > 0 {
-		_ = json.Unmarshal(raw, &message)
-	}
-	if policy.UpstreamModel != "" && policy.UpstreamModel != policy.PublicModel {
-		message = strings.ReplaceAll(message, policy.UpstreamModel, policy.PublicModel)
-	}
-	// Unknown upstream messages may contain URLs, account data or echoed bodies.
-	// Keep a stable public description; fixed error codes retain diagnostics.
-	if len(message) > 512 || strings.Contains(message, "://") || strings.Contains(strings.ToLower(message), "api key") || strings.Contains(message, "Bearer ") {
-		message = "The upstream request could not be completed."
-	}
-	errorObject := map[string]json.RawMessage{}
-	for _, key := range []string{"type", "code", "param"} {
-		if bytes.Equal(source[key], []byte("null")) {
-			errorObject[key] = source[key]
-			continue
-		}
-		var value string
-		if json.Unmarshal(source[key], &value) != nil || len(value) > 128 {
-			continue
-		}
-		valid := true
-		for _, r := range value {
-			if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("_.-/[]", r)) {
-				valid = false
-				break
-			}
-		}
-		if valid {
-			if policy.UpstreamModel != "" && policy.UpstreamModel != policy.PublicModel {
-				value = strings.ReplaceAll(value, policy.UpstreamModel, policy.PublicModel)
-			}
-			errorObject[key], _ = json.Marshal(value)
-		}
-	}
-	errorObject["message"], _ = json.Marshal(message)
-	if _, ok := errorObject["type"]; !ok {
-		errorObject["type"] = json.RawMessage(`"api_error"`)
-	}
-	result := map[string]json.RawMessage{}
-	result["error"], _ = json.Marshal(errorObject)
-	if policy.Protocol == Messages {
-		result["type"] = json.RawMessage(`"error"`)
-	}
-	raw, _ := json.Marshal(result)
-	return raw
+	return ClassifyFailure(FailureInput{Body: body, Client: policy.Protocol}).Body(policy)
 }
 
 // Headers emits public transport metadata. The billing bridge is installed later
@@ -302,7 +320,7 @@ func Headers(policy Policy, headers [][2]string, streaming bool) [][2]string {
 	result := make([][2]string, 0, 5)
 	for _, h := range headers {
 		switch strings.ToLower(h[0]) {
-		case "cache-control", "retry-after", "content-language":
+		case "cache-control", "content-language":
 			result = append(result, h)
 		}
 	}

@@ -16,6 +16,7 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
+	"github.com/higress-group/wasm-go/pkg/ai/resourceref"
 	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
 	logs "github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -39,6 +40,9 @@ type nativeCacheDeliveryState struct {
 	publicFields                         map[string]json.RawMessage
 	bodyReady, replied, rejected, closed bool
 	snapshot                             executionfacts.Snapshot
+	publicAliases                        *clientresponse.ResourceAliases
+	references                           resourceref.Client
+	resourcesInFlight                    bool
 }
 
 // The SDK supplies the original complete envelope after hashing semantic config.
@@ -258,7 +262,7 @@ func prepareNativeCacheHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig)
 	if !ok || parsed == nil || ctx.GetContext(nativeCacheDeliveryContext) != nil {
 		return rejectNativeCache(ctx, nil, 409, "original_call_missing")
 	}
-	state := &nativeCacheDeliveryState{config: parsed}
+	state := &nativeCacheDeliveryState{config: parsed, references: cfg.GetMaterializedRedisClient()}
 	ctx.SetContext(nativeCacheDeliveryContext, state)
 	headers, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil {

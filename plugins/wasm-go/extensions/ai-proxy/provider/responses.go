@@ -716,6 +716,30 @@ func (c *chatCompletionToResponsesStreamConverter) Convert(chunk []byte, isLastC
 	return c.convert(chunk, isLastChunk)
 }
 
+// Fail encodes only the content observed so far. It never closes partial tool
+// arguments as executable or invents a successful completion after an error.
+func (c *chatCompletionToResponsesStreamConverter) Fail(reason json.RawMessage) ([]byte, error) {
+	if c.completed {
+		return nil, errors.New("cannot fail an already completed response")
+	}
+	var output bytes.Buffer
+	if err := c.writeCreatedEvent(&output); err != nil {
+		return nil, err
+	}
+	for index := range c.outputs {
+		c.outputs[index].Status = "incomplete"
+	}
+	response := responsesResponse{ID: c.id, Object: "response", CreatedAt: c.createdAt, Status: "failed", Model: c.model, Output: c.outputs, Error: reason, Usage: c.usage}
+	if response.Output == nil {
+		response.Output = make([]responsesOutputItem, 0)
+	}
+	c.completed = true
+	if err := c.writeEvent(&output, responsesStreamEvent{Type: "response.failed", Response: &response}); err != nil {
+		return nil, err
+	}
+	return output.Bytes(), nil
+}
+
 func (c *chatCompletionToResponsesStreamConverter) convert(chunk []byte, isLastChunk bool) ([]byte, error) {
 	payloads := c.extractSSEPayloads(chunk, isLastChunk)
 	var output bytes.Buffer

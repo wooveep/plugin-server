@@ -29,6 +29,7 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
+	"github.com/higress-group/wasm-go/pkg/ai/resourceref"
 	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -141,16 +142,17 @@ type managedRedisClient interface {
 }
 
 type managedExecutionConfig struct {
-	vendor     *supplier.ManagedAdapter
-	settings   managedSettings
-	release    managedRelease
-	redis      managedRedisClient
-	priceRedis managedRedisClient
-	outbox     *executionfacts.Outbox
-	profile    managedProtocolProfile
-	health     *managedHealthRuntime
-	targets    map[string]*managedExecutionConfig
-	mapper     json.RawMessage
+	vendor         *supplier.ManagedAdapter
+	settings       managedSettings
+	release        managedRelease
+	redis          managedRedisClient
+	priceRedis     managedRedisClient
+	referenceRedis managedRedisClient
+	outbox         *executionfacts.Outbox
+	profile        managedProtocolProfile
+	health         *managedHealthRuntime
+	targets        map[string]*managedExecutionConfig
+	mapper         json.RawMessage
 }
 
 // configureManagedExecution is called for every global and rule parse. Clearing
@@ -231,6 +233,7 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 	// Admission reads resume this HTTP request; durable event writes retain their
 	// existing plugin-owned dispatcher after the request has ended.
 	parsed.priceRedis = client.RedisClusterClient
+	parsed.referenceRedis = client.RedisClusterClient
 	parsed.outbox = executionfacts.NewOutbox()
 	wrapper.RegisterTickFunc(1000, parsed.outbox.Retry)
 	parsed.health, err = configureManagedHealth(&parsed)
@@ -445,6 +448,11 @@ type managedExecutionState struct {
 	streaming                                                  bool
 	requestText                                                string
 	publicRequest                                              []byte
+	publicPartial                                              json.RawMessage
+	publicAliases                                              *clientresponse.ResourceAliases
+	resourceOwner                                              *resourceref.Owner
+	resourcesSaving, resourcesSaved, resourcesRestoring        bool
+	resourcePendingOutcome                                     *executionfacts.AttemptOutcome
 	embeddingInput                                             json.RawMessage
 	prepared, dispatchStarted, handedOff, callbackSeen, closed bool
 	original                                                   executionfacts.Envelope
@@ -557,7 +565,7 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if !ok || state == nil || state.sourceConfig != managed {
 		return rejectManagedRequest(ctx, 409, "original_execution_missing"), true
 	}
-	if state.dispatchStarted || state.closed || state.healthInFlight {
+	if state.dispatchStarted || state.closed || state.healthInFlight || state.resourcesRestoring {
 		return types.ActionPause, true
 	}
 	if state.internal != nil && state.internal.checkStarted {
@@ -604,24 +612,28 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if err != nil || basis.PublicModel() != managed.release.PublicModel {
 		return rejectManagedRequest(ctx, 400, "original_body_basis_missing"), true
 	}
-	if err := retainManagedTextBody(state, basis, body); err != nil {
-		return rejectManagedRequest(ctx, 400, "text_execution_body_invalid"), true
-	}
 	// The RPC callback owns these original mapped bytes. It does not trust an
 	// internal-cost header, allocate another call or reread a mutable body.
 	body = append([]byte(nil), body...)
-	ready := func() {
-		if managed.health != nil {
-			authorizeManagedHealth(ctx, state, basis, body)
-		} else if request, ok := prepareManagedSelectedRequest(ctx, state, body); ok {
-			dispatchManagedPreparedRequest(ctx, state, basis, request)
+	resume := func(effective []byte) {
+		if err := retainManagedTextBody(state, basis, effective); err != nil {
+			rejectManagedPreparation(ctx, state, 400, "text_execution_body_invalid")
+			return
+		}
+		ready := func() {
+			if state.config.health != nil {
+				authorizeManagedHealth(ctx, state, basis, effective)
+			} else if request, ok := prepareManagedSelectedRequest(ctx, state, effective); ok {
+				dispatchManagedPreparedRequest(ctx, state, basis, request)
+			}
+		}
+		if state.internal != nil {
+			checkManagedInternalCall(ctx, state, basis, managedOperation(managed), ready)
+		} else {
+			authorizeManagedTools(ctx, state, effective, ready)
 		}
 	}
-	if state.internal != nil {
-		checkManagedInternalCall(ctx, state, basis, managedOperation(managed), ready)
-	} else {
-		authorizeManagedTools(ctx, state, body, ready)
-	}
+	restoreManagedResourceReferences(ctx, state, body, resume)
 	return types.ActionPause, true
 }
 
@@ -863,14 +875,8 @@ func onManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState, nu
 	if managedTextStopped(s) {
 		// A disconnected client still owes its one sale after a confirmed send.
 		// Only the chain's final attempt can supply this billing basis.
-		if s.closed && (s.text == nil || s.text.current == s) && s.lastDelivery == nil && billableManagedSend(s, outcome) {
-			snapshot, err := managedDeliverySnapshot(s, outcome, "cancelled")
-			if err != nil {
-				managedFactGap(ctx, "delivery_fact_invalid")
-			} else {
-				s.lastDelivery = &snapshot
-				dispatchManagedSnapshot(ctx, s, snapshot)
-			}
+		if s.closed && (s.text == nil || s.text.current == s) {
+			recordManagedCancelledSale(ctx, s, outcome)
 		}
 		return
 	}
@@ -900,6 +906,13 @@ func finishManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState
 			deliveryState = "unknown"
 		}
 	}
+	if *outcome.HTTPStatus >= 200 && *outcome.HTTPStatus < 300 {
+		partial, status, handled, err := publicPartialResponse(ctx, s, headers, body)
+		if handled && err == nil {
+			sendManagedFinal(ctx, s, outcome, "failed", status, partial.Headers, partial.Body)
+			return
+		}
+	}
 	clientResponse, err := convertManagedSupplierResponse(ctx, s, outcome, headers, body)
 	if err == nil && *outcome.HTTPStatus < 400 {
 		clientResponse, err = projectManagedResponse(s, headers, body, clientResponse)
@@ -917,6 +930,19 @@ func finishManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState
 // against its own release/caller configuration, and appends those same bytes.
 // An upstream carrier is always removed, including when local encoding fails.
 func sendManagedFinal(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome, deliveryState string, status uint32, headers [][2]string, body []byte) {
+	if status < 400 {
+		s.resourcePendingOutcome = &outcome
+	}
+	if status < 400 && persistManagedResourceAliases(ctx, s, func(err error) {
+		if err != nil {
+			sendManagedFinal(ctx, s, outcome, "failed", 503, nil, managedErrorBody("resource_mapping_unavailable"))
+		} else {
+			sendManagedFinal(ctx, s, outcome, deliveryState, status, headers, body)
+		}
+	}) {
+		return
+	}
+	s.resourcePendingOutcome = nil
 	if !beginManagedTextFinal(s) {
 		return
 	}
@@ -940,8 +966,20 @@ func sendManagedFinal(ctx wrapper.HttpContext, s *managedExecutionState, outcome
 	}
 	if managedPublicText(s) && status >= 400 {
 		policy := managedPublicPolicy(s)
-		body = clientresponse.Error(policy, body)
-		headers = clientresponse.Headers(policy, headers, false)
+		format := s.config.profile.UpstreamProtocol
+		if s.config.vendor != nil && s.config.vendor.NativeResponseFormat() != "" {
+			format = s.config.vendor.NativeResponseFormat()
+		}
+		failure := clientresponse.ClassifyFailure(clientresponse.FailureInput{Status: uint16(status), Format: format, Client: policy.Protocol, Body: body, Request: s.publicRequest})
+		status = uint32(failure.Status(policy.Protocol))
+		body = failure.Body(policy)
+		if len(s.publicPartial) != 0 {
+			var envelope map[string]json.RawMessage
+			_ = json.Unmarshal(body, &envelope)
+			envelope["partial_response"] = s.publicPartial
+			body, _ = json.Marshal(envelope)
+		}
+		headers = failure.Headers(policy, headers, false, false)
 	}
 	responseHeaders := managedResponseHeaders(headers)
 	snapshot, err := managedDeliverySnapshot(s, outcome, deliveryState)
@@ -1191,6 +1229,10 @@ func onManagedStreamDone(ctx wrapper.HttpContext, cfg config.PluginConfig) {
 		s = s.text.current
 	}
 	s.closed = true
+	if s.resourcePendingOutcome != nil {
+		recordManagedCancelledSale(ctx, s, *s.resourcePendingOutcome)
+		s.resourcePendingOutcome = nil
+	}
 	if s.prepared && s.dispatchStarted && !s.callbackSeen {
 		ctx.SetUserAttribute("upstream_result", "pending_after_client_close")
 		outcome := executionfacts.AttemptOutcome{ObservedAt: managedNow(), SendState: "unknown", Acceptance: "unknown", ExecutionResult: "unknown", TransportError: "upstream_callback_missing", Usage: executionfacts.MissingTokenUsage("upstream_callback_missing")}
@@ -1202,6 +1244,19 @@ func onManagedStreamDone(ctx wrapper.HttpContext, cfg config.PluginConfig) {
 	// Event ACKs belong to the plugin context and may arrive after this HTTP
 	// context is deleted. Only the Redis result/timeout decides delivery failure;
 	// completing the business response is not an ACK deadline.
+}
+
+func recordManagedCancelledSale(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome) {
+	if s.lastDelivery != nil || !billableManagedSend(s, outcome) {
+		return
+	}
+	snapshot, err := managedDeliverySnapshot(s, outcome, "cancelled")
+	if err != nil {
+		managedFactGap(ctx, "delivery_fact_invalid")
+		return
+	}
+	s.lastDelivery = &snapshot
+	dispatchManagedSnapshot(ctx, s, snapshot)
 }
 
 func rejectManagedRequest(ctx wrapper.HttpContext, status uint32, reason string) types.Action {

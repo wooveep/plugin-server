@@ -10,7 +10,7 @@ description: AI 代理插件配置参考
 
 v2 的 `managed_execution.credentials` 保存逐项匹配的 ref/revision/value，与单一 `credential_value` 互斥；必须具备 HEALTH，`upstream_health.targets` 保留每个原操作/凭据成员的完整 TargetReference，与 `target` 互斥。v1 保留原单一配置及可省略的 HEALTH。既有 `legacy_suffixes`/`bound_target`、`auto`/`passthrough` 通用能力自 1.0.2 起提供，不以本次 v2 凭据池版本替代其起始版本。
 
-> 交付版本：`2.0.39`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。
+> 交付版本：`2.0.40`，以 [资源 schema](../../resources/plugins/ai-proxy/spec.yaml) 为准。
 
 ## 托管原生执行
 
@@ -2920,6 +2920,11 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 
 ## 统一下游响应与内部计量
 
-插件版本 `2.0.39`。
+插件版本 `2.0.40`。
 
 托管文本入口统一 Chat／Responses／Messages JSON 与 SSE 的销售模型名、公开字段、错误和用量。Responses 基础输入／输出／总量完整即返回 usage；未知明细省略，基础量不全返回 null。保留真实推理、签名和普通函数上下文；Responses→Chat 仅接受已登记子集，无法表达的上下文明确拒绝。原始上游事实和账务四类 token 计量保持。
+
+
+## 2026-11-05 公开响应与原生引用
+
+本版本统一销售模型、平台随机资源 ID、等价可选空字段和错误／中断编码，过滤已登记内容块中的供应商诊断扩展，保留真实推理、签名、函数关联与已报告用量。Responses 原生资源引用使用按租户、用户、销售模型隔离的现有 Redis ID 映射，默认 30 天；只保留 ID 与执行归属，不保存上下文正文、签名、加密载荷或其归属索引。上下文平台注入留给后续 ai-history。原资源不发往另一账号；普通无状态重试／切换策略保持。缓存回放生成新公开 ID 并保留原资源归属。原始采购、销售计量和财务事实不从公开字段反推。视觉能力不在本次启用或验证范围。

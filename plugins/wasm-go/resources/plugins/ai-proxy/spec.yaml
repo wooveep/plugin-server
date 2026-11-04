@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.39
+  version: 2.0.40
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -2222,6 +2222,15 @@ spec:
             schema_version:
               type: string
               const: modelfusion-execution-targets.v1
+            resource_aliases:
+              type: object
+              additionalProperties: false
+              required: [schema_version, retention_seconds]
+              properties:
+                schema_version:
+                  const: modelfusion-public-resources.v1
+                retention_seconds:
+                  const: 2592000
             targets:
               type: array
               minItems: 1
@@ -3666,6 +3675,15 @@ spec:
             schema_version:
               type: string
               const: modelfusion-execution-targets.v1
+            resource_aliases:
+              type: object
+              additionalProperties: false
+              required: [schema_version, retention_seconds]
+              properties:
+                schema_version:
+                  const: modelfusion-public-resources.v1
+                retention_seconds:
+                  const: 2592000
             targets:
               type: array
               minItems: 1
