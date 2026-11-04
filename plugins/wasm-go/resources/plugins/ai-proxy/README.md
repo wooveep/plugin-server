@@ -2897,3 +2897,9 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 Responses→Chat回退支持用户消息的图像URL/Data URL，保留detail、图文顺序及缓存断点。普通函数的完整多轮/并行历史映射到assistant.tool_calls及tool/tool_call_id，参数原字符串、空结果、文本结果数组和各个关联ID保留；可直接回放转换器的Responses输出。函数批次中的assistant文本项归并时保留各自缓存前缀位置。
 
 图像file_id解析、工具结果中的图像/文件、加密推理/引用项，以及服务端状态/后台执行/托管工具等无等价执行环境的内容明确拒绝。未知项、无匹配结果、重复关联及不完整函数批次在发送前拒绝；图像/参数是否被接受仍取决于上游模型及供应商。既有字段保真修复和聚合后SSE交付方式保持。
+
+### 正式业务路由多协议入口声明（2.0.37）
+
+完整包的配置Schema携带 `x-modelfusion-native-text-routing/native-text-routing.v1` 声明，供正式发布编译器从本次锁定制品读取OpenAI、Qwen、DeepSeek及Claude的已实现文本协议。供应商明确的文本接入方式优先；其他供应商继续使用其已登记模型绑定协议及现有转换器，不推断新的原生API。
+
+客户文本路由的公共前缀可在一次发布中展开Chat、Responses、Messages的可执行入口，每个入口固定协议对和独立target，保留同一真实供应商、binding、销售模型、准入及计费身份。原生同协议优先，仅回退到已登记的Responses/Messages→Chat转换。缓存和历史按各入口的原下游协议配置；不通过额外供应商调用探测能力，也不更改既有聚合SSE边界。

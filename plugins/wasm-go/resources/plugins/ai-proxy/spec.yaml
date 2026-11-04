@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.36
+  version: 2.0.37
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -76,6 +76,13 @@ spec:
       portPath: managed_media.redis.service_port
       projectedNamePath: managed_media.redis.service_name
     openAPIV3Schema:
+      x-modelfusion-native-text-routing:
+        schema_version: native-text-routing.v1
+        providers:
+          openai: [openai_chat, openai_responses]
+          qwen: [openai_chat, openai_responses, anthropic_messages]
+          deepseek: [openai_chat, openai_responses, anthropic_messages]
+          claude: [anthropic_messages]
       type: object
       allOf:
       - if:
