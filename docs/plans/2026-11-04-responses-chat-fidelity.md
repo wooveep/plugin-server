@@ -82,3 +82,7 @@
 每阶段重新读取Helm revision和完整values，server dry-run只允许本轮服务器/正式目录相关变化。保留并行API/Web/TLS改动、PVC、Secret与Gateway身份。协议、模型和供应商限制继续单列，不为覆盖率创建无关收费任务。
 
 正式结果见[唯一部署验收](../../../modelfusion-deploy/docs/checks/2026-11-04-responses-chat-repair-deployed.md)及[机器回执](../../../modelfusion-deploy/docs/checks/2026-11-04-responses-chat-repair-deployed.json)。本轮部署阶段Helm78/80，回归完成现场已因并行API部署至84；业务实际加载2.0.35。RC-06和托管SSE聚合交付不在本次扩展范围；本计划没有剩余待部署任务。
+
+## RC-06后续交付（2.0.36）
+
+用户追加授权的[图像与普通函数完整历史计划](2026-11-04-responses-chat-history-vision.md)已交付2.0.36 / 309461ed，44条业务正式切换，见[后续权威验收](../../../modelfusion-deploy/docs/checks/2026-11-04-responses-chat-history-vision-deployed.md)。URL/Data URL与多轮/并行函数映射已补齐；资源file_id解析、工具结果图像/文件等边界仍明确拒绝。二轮两次生成观察如实保留，不宣称全部模型回答正确。上文2.0.35阶段的“RC-06后续”作为当时检查点保留。
