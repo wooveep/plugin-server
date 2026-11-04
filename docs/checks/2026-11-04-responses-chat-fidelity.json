@@ -1,0 +1,1557 @@
+{
+  "date": "2026-11-04",
+  "completed_at": "2026-11-03T23:34:05.437479+00:00",
+  "status": "FIXED_AND_ISOLATED_K3S_ONLINE_REGRESSION_PASSED",
+  "source": {
+    "base_commit": "d7153c12",
+    "fix_commit": "a61ef5330793fb16065136ad3833e93153b7c3bc",
+    "candidate_version": "2.0.31-responses.2",
+    "source_directory": "/home/cloudyi/CodeWorkspace/modelfusionproject/modelfusion-deploy/.local/responses-chat-fix-20261104/src",
+    "unrelated_C_batch_included": false
+  },
+  "artifact": {
+    "plugin_name": "ai-proxy",
+    "plugin_version": "2.0.31-responses.2",
+    "source_commit": "a61ef5330793fb16065136ad3833e93153b7c3bc",
+    "wasm_digest": "sha256:d75059ff79dd39d53336b7f497d0048fcf54fcd7f4676293b4bde77aade58d87",
+    "content_digest": "sha256:b65c86e420b29bf49906457cf81e8ff0329f6ed0b421f904d7344718ab68c033",
+    "archive_digest": "sha256:f0134fba9ba1cfa99bef8bd8ea4d334d6fb6ea2f3ec6b322e6c168a2c8dded51"
+  },
+  "artifact_http_files_verified": 6,
+  "tests": {
+    "provider": {
+      "top_level_passed": 188,
+      "passed_including_subtests": 741,
+      "failed": 0,
+      "skipped": 0
+    },
+    "gateway": {
+      "top_level_passed": 44,
+      "passed_including_subtests": 156,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "runtime": {
+    "controlled": {
+      "wasm_resource": "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-proxy",
+      "gateway_pod": "higress-gateway-6f975499f5-cq997",
+      "local_wasm_sha256": "d75059ff79dd39d53336b7f497d0048fcf54fcd7f4676293b4bde77aade58d87",
+      "matches_candidate": true
+    },
+    "openai": {
+      "wasm_resource": "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-proxy",
+      "gateway_pod": "higress-gateway-6f975499f5-cq997",
+      "local_wasm_sha256": "d75059ff79dd39d53336b7f497d0048fcf54fcd7f4676293b4bde77aade58d87",
+      "matches_candidate": true
+    }
+  },
+  "candidate_binding": {
+    "method": "Temporary K3S WasmPlugin URL override on two newly-created audit routes only",
+    "native_publication_original_plugin_url": "http://higress-plugin-server.higress-system.svc:80/plugins/ai-proxy/2.0.31/plugin.wasm",
+    "candidate_actual_bytes_version": "2.0.31-responses.2",
+    "formal_business_rollout": false,
+    "global_helm_rollout_by_this_task": false
+  },
+  "counts": {
+    "current_candidate_gateway_cases": 17,
+    "current_candidate_http200": 8,
+    "current_candidate_local_http400": 8,
+    "current_candidate_supplier_http400": 1,
+    "controlled_upstream_successes": 7,
+    "current_candidate_successful_real_OpenAI_calls": 1,
+    "current_candidate_real_OpenAI_attempts": 2,
+    "reused_earlier_repair_real_cases": 3,
+    "combined_evidence_cases": 20,
+    "combined_http200": 11,
+    "combined_http400": 9,
+    "successful_current_candidate_accepted_facts": 16,
+    "successful_current_candidate_billing_applications": 16,
+    "total_actual_real_supplier_attempts_across_both_repair_candidates": 5,
+    "successful_real_supplier_attempts_across_both_candidates": 4,
+    "total_gateway_requests_across_both_candidates": 35
+  },
+  "fixed": [
+    "text.format mapping",
+    "function strict and parallel_tool_calls including false",
+    "explicit zero sampling values",
+    "nonstream output message ID",
+    "reasoning.effort and explicit store",
+    "prompt_cache_key/retention/options and message/text cache breakpoint locations"
+  ],
+  "explicit_local_boundaries": [
+    "previous_response_id/conversation",
+    "hosted tools",
+    "background=true",
+    "reasoning summaries"
+  ],
+  "remaining_adapter_coverage": [
+    "image/file input mapping",
+    "function_call/function_call_output history mapping"
+  ],
+  "streaming_transport_limit": "Managed SSE buffers until upstream completion; validates event shape and terminal state, not real-time token delivery.",
+  "current_candidate_cases": [
+    {
+      "case": "control-schema-zero",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "5dc940f5038f181105900d0344bb4d0ae9318e5e51f91dbf0fc8f603b66ba183",
+      "response_sha256": "12298f113e656869dfd35e71c50f486f841fc660a3fc97c0dae3eae813d6de99",
+      "first_byte_seconds": 0.075003,
+      "complete_seconds": 0.075089,
+      "new_call_ids": [
+        "7c922918-63c7-4fd9-921d-f01f7b940266"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 17,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "total_tokens": 22
+      },
+      "event_types": [],
+      "message_ids": [
+        "msg_chatcmpl-d7996490-a29b-4215-9258-d4ab519f33e5"
+      ],
+      "initial_history_snapshot_new_call_ids": [
+        "7c922918-63c7-4fd9-921d-f01f7b940266"
+      ],
+      "call_id_attribution": "Independent HTTP collector receipt; history projection was asynchronous.",
+      "call_id": "7c922918-63c7-4fd9-921d-f01f7b940266",
+      "attempt_id": "1725a11e-ca99-46e7-a1df-97d88b2a6de0",
+      "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:099df03856675c1ed1bf0e8927f91ad9544957f6e45e8c7abb8a95a3b631da59",
+      "actual_upstream_response_digest": "sha256:0486d2d5489dae394ab863eb27ac4cae2ceb12a69f641b40b3ed5e1f6127f749",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Responses field fidelity fix 20261104-v2 control-schema-zero"
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "reasoning_effort": "none",
+        "max_completion_tokens": 128,
+        "prompt_cache_retention": "24h",
+        "prompt_cache_key": "fidelity-audit-key",
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "description": "Lookup an order",
+              "name": "lookup",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "order_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "order_id"
+                ],
+                "type": "object"
+              },
+              "strict": true
+            }
+          }
+        ],
+        "tool_choice": "none",
+        "parallel_tool_calls": false,
+        "temperature": 0,
+        "top_p": 0,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "audit_reply",
+            "description": "Audit JSON response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ok": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ok"
+              ],
+              "additionalProperties": false
+            },
+            "strict": true
+          }
+        },
+        "store": false,
+        "prompt_cache_options": {
+          "mode": "implicit",
+          "ttl": "30m"
+        }
+      },
+      "collector_receipt_id": "d7996490-a29b-4215-9258-d4ab519f33e5",
+      "classification": "passed_controlled_wire",
+      "candidate_version": "2.0.31-responses.2",
+      "actual_upstream_model": "fresh-upstream-chat",
+      "upstream_response_model": "fresh-upstream-chat",
+      "upstream_http_status": 200,
+      "send_transport": "http_call"
+    },
+    {
+      "case": "control-schema-false",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "bee1afd98fc250a8777485e587ab81e0fd65f54e204b1dfc12901825ba69e8f0",
+      "response_sha256": "0358b7c5b94be075877037d917426556a5f486efc751a37abf691dc4b8240139",
+      "first_byte_seconds": 0.071536,
+      "complete_seconds": 0.071627,
+      "new_call_ids": [
+        "7333ebf4-e65f-4284-acb1-39362399562f"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 17,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "total_tokens": 22
+      },
+      "event_types": [],
+      "message_ids": [
+        "msg_chatcmpl-22d33a9f-51b3-46c5-90d5-ba671aeca092"
+      ],
+      "initial_history_snapshot_new_call_ids": [],
+      "call_id_attribution": "Independent HTTP collector receipt; history projection was asynchronous.",
+      "call_id": "7333ebf4-e65f-4284-acb1-39362399562f",
+      "attempt_id": "1c7b5277-7b72-4d55-bdf7-fac2f19cd29f",
+      "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:f6d4b916f367ee982d0d75bb1bad44d3161ce4bd54b9a3a36e3f9b237d6453da",
+      "actual_upstream_response_digest": "sha256:50e72d3a74556e9a6f6d8432155b7dd335984a9363e681dd12de3784a7c43e24",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Responses field fidelity fix 20261104-v2 control-schema-false"
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "reasoning_effort": "none",
+        "max_completion_tokens": 128,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "description": "Lookup an order",
+              "name": "lookup",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "order_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "order_id"
+                ],
+                "type": "object"
+              },
+              "strict": false
+            }
+          }
+        ],
+        "tool_choice": "none",
+        "parallel_tool_calls": true,
+        "temperature": 0.7,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "audit_reply",
+            "description": "Audit JSON response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ok": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ok"
+              ],
+              "additionalProperties": false
+            },
+            "strict": false
+          }
+        },
+        "store": true
+      },
+      "collector_receipt_id": "22d33a9f-51b3-46c5-90d5-ba671aeca092",
+      "classification": "passed_controlled_wire",
+      "candidate_version": "2.0.31-responses.2",
+      "actual_upstream_model": "fresh-upstream-chat",
+      "upstream_response_model": "fresh-upstream-chat",
+      "upstream_http_status": 200,
+      "send_transport": "http_call"
+    },
+    {
+      "case": "control-json-object",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "9af35b734f5fbf7b1b4c66f3d87c742885beab11402a7587107feb9f07c8ffb5",
+      "response_sha256": "4952d13bffba6573673571697a7a76520e7b44f6d190016063fb916d9e1f0e26",
+      "first_byte_seconds": 0.047747,
+      "complete_seconds": 0.047811,
+      "new_call_ids": [
+        "258b3760-28d3-45ac-9d62-286e2d0a7921"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 17,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "total_tokens": 22
+      },
+      "event_types": [],
+      "message_ids": [
+        "msg_chatcmpl-4a8607f1-d01f-49c4-a792-901458b67d7c"
+      ],
+      "initial_history_snapshot_new_call_ids": [],
+      "call_id_attribution": "Independent HTTP collector receipt; history projection was asynchronous.",
+      "call_id": "258b3760-28d3-45ac-9d62-286e2d0a7921",
+      "attempt_id": "a9a7286f-21b2-4a9c-a2e0-9b922ee52377",
+      "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:9804f0e3179af9952191f8e2108411c02a9d352331172ec0e137f5c89d2c1491",
+      "actual_upstream_response_digest": "sha256:73a6a9cb7425e81a24dc2fd15c93e1577d8ea5cb1a8102b022f52cf52776ddc0",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Responses field fidelity fix 20261104-v2 control-json-object"
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "response_format": {
+          "type": "json_object"
+        }
+      },
+      "collector_receipt_id": "4a8607f1-d01f-49c4-a792-901458b67d7c",
+      "classification": "passed_controlled_wire",
+      "candidate_version": "2.0.31-responses.2",
+      "actual_upstream_model": "fresh-upstream-chat",
+      "upstream_response_model": "fresh-upstream-chat",
+      "upstream_http_status": 200,
+      "send_transport": "http_call"
+    },
+    {
+      "case": "control-text",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "b713d46c229ca736fca94df2f84fb71accad23e4dcf9edcf4d73828072f2404d",
+      "response_sha256": "f83e98d399990bce886eafb34160bb87dfde6c86300023906b2c10f50924101d",
+      "first_byte_seconds": 0.041426,
+      "complete_seconds": 0.041485,
+      "new_call_ids": [
+        "938fafa6-d54e-4ed2-9922-38670633251f"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 17,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "total_tokens": 22
+      },
+      "event_types": [],
+      "message_ids": [
+        "msg_chatcmpl-d15ca377-aaf9-4517-8953-a92822fa7b63"
+      ],
+      "initial_history_snapshot_new_call_ids": [
+        "258b3760-28d3-45ac-9d62-286e2d0a7921",
+        "938fafa6-d54e-4ed2-9922-38670633251f"
+      ],
+      "call_id_attribution": "Independent HTTP collector receipt; history projection was asynchronous.",
+      "call_id": "938fafa6-d54e-4ed2-9922-38670633251f",
+      "attempt_id": "4bba40ae-4fa6-42df-8d30-d9e652e7dd16",
+      "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:7b0586db74b8a03a0ae6cc55bf0378eaba970880c71abf31c84603168eaeb2ee",
+      "actual_upstream_response_digest": "sha256:514f89a3caafb4dcb0074b546a1e9582e225e0cb7e3f3c6f0667db4edaa7a0af",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Responses field fidelity fix 20261104-v2 control-text"
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "response_format": {
+          "type": "text"
+        }
+      },
+      "collector_receipt_id": "d15ca377-aaf9-4517-8953-a92822fa7b63",
+      "classification": "passed_controlled_wire",
+      "candidate_version": "2.0.31-responses.2",
+      "actual_upstream_model": "fresh-upstream-chat",
+      "upstream_response_model": "fresh-upstream-chat",
+      "upstream_http_status": 200,
+      "send_transport": "http_call"
+    },
+    {
+      "case": "control-sse",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": true,
+      "http": 200,
+      "content_type": "text/event-stream",
+      "request_sha256": "9c5e2699eec268ed65a310ed6e1f871fd4957d8e1ea84a55550ca5a2cb82859c",
+      "response_sha256": "02c4df3671876f1cd24527de856b79770161733f522e38b7a990d002a59dc823",
+      "first_byte_seconds": 0.042619,
+      "complete_seconds": 0.042675,
+      "new_call_ids": [
+        "f4e55df6-8aac-4e61-9366-c1762f394685"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 17,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "total_tokens": 22
+      },
+      "event_types": [
+        "response.created",
+        "response.output_item.added",
+        "response.content_part.added",
+        "response.output_text.delta",
+        "response.output_text.done",
+        "response.content_part.done",
+        "response.output_item.done",
+        "response.completed"
+      ],
+      "message_ids": [
+        "msg_0"
+      ],
+      "initial_history_snapshot_new_call_ids": [],
+      "call_id_attribution": "Independent HTTP collector receipt; history projection was asynchronous.",
+      "call_id": "f4e55df6-8aac-4e61-9366-c1762f394685",
+      "attempt_id": "1d6f8307-528b-4808-aca8-7d08ffeb54c1",
+      "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:3f74a7f876c55f5b0cc46ac5755acf729fb63da0fca49fefd4484afb617376d6",
+      "actual_upstream_response_digest": "sha256:adaa6550d6b4524018470851e45eaed1b6aec89ce197def6ba8042fe443d980b",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Responses field fidelity fix 20261104-v2 control-sse"
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "reasoning_effort": "none",
+        "max_completion_tokens": 128,
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "description": "Lookup an order",
+              "name": "lookup",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "order_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "order_id"
+                ],
+                "type": "object"
+              },
+              "strict": true
+            }
+          }
+        ],
+        "tool_choice": "none",
+        "parallel_tool_calls": false,
+        "temperature": 0,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "audit_reply",
+            "description": "Audit JSON response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ok": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ok"
+              ],
+              "additionalProperties": false
+            },
+            "strict": true
+          }
+        },
+        "store": false
+      },
+      "collector_receipt_id": "26e06b10-b30c-4562-989a-36fe56140424",
+      "classification": "passed_controlled_wire",
+      "candidate_version": "2.0.31-responses.2",
+      "actual_upstream_model": "fresh-upstream-chat",
+      "upstream_response_model": "fresh-upstream-chat",
+      "upstream_http_status": 200,
+      "send_transport": "http_call"
+    },
+    {
+      "case": "control-defaults",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "8ee84badcfc48e08900a3d22ce88c7737527ff9c9b6fb7a2d09e10fec48d7203",
+      "response_sha256": "931b2bbcf08710f6e79dceb009d2a7ee1ac0cc30434f5026f3eebee9e4766538",
+      "first_byte_seconds": 0.048374,
+      "complete_seconds": 0.048449,
+      "new_call_ids": [
+        "a8b0d8b8-3ab8-47fb-b488-934f41cd4c21"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 17,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "total_tokens": 22
+      },
+      "event_types": [],
+      "message_ids": [
+        "msg_chatcmpl-cc895259-d79d-4e52-81c4-14933bfb9121"
+      ],
+      "initial_history_snapshot_new_call_ids": [],
+      "call_id_attribution": "Independent HTTP collector receipt; history projection was asynchronous.",
+      "call_id": "a8b0d8b8-3ab8-47fb-b488-934f41cd4c21",
+      "attempt_id": "82bf9f0b-2e3a-4a28-9e05-5902050c23ae",
+      "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:fce0aa449ca34c49ed81cb6a0d4d2425c8b3387570d91ecc57c3b229de243f98",
+      "actual_upstream_response_digest": "sha256:7fccc058d6b14ee0e8a371988ab8a1e167849d10b7fcf27a1ac6c38084040ca0",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Responses field fidelity fix 20261104-v2 control-defaults"
+          }
+        ],
+        "model": "fresh-upstream-chat"
+      },
+      "collector_receipt_id": "cc895259-d79d-4e52-81c4-14933bfb9121",
+      "classification": "passed_controlled_wire",
+      "candidate_version": "2.0.31-responses.2",
+      "actual_upstream_model": "fresh-upstream-chat",
+      "upstream_response_model": "fresh-upstream-chat",
+      "upstream_http_status": 200,
+      "send_transport": "http_call"
+    },
+    {
+      "case": "control-cache-breakpoints",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "9efb65e2231e6d6afafd56137a007aa455ffb159dec27bf8a422c1bbb12b971b",
+      "response_sha256": "a154421cf71f2874e21d059f1ef667b2274fc9fb46c19f4da92e88a91d7f937f",
+      "first_byte_seconds": 0.040444,
+      "complete_seconds": 0.040513,
+      "new_call_ids": [
+        "d6a38a26-d563-46c9-8992-d35b644286fb"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "Controlled E1 response; synthetic usage.",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 17,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "total_tokens": 22
+      },
+      "event_types": [],
+      "message_ids": [
+        "msg_chatcmpl-b7936f70-79f1-4ca6-b27b-8146a879710c"
+      ],
+      "initial_history_snapshot_new_call_ids": [],
+      "call_id_attribution": "Independent HTTP collector receipt; history projection was asynchronous.",
+      "call_id": "d6a38a26-d563-46c9-8992-d35b644286fb",
+      "attempt_id": "15f4f4a1-147a-4a21-99b6-b017b719c27a",
+      "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "17",
+          "input": "17",
+          "output": "5"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:a4effe11f93a69dbb733af735fcf6ceaaea4fc57bdbd64b33564239e71c0090b",
+      "actual_upstream_response_digest": "sha256:cb80fc71f3a867fd552e9e5586d6301816e4366ff7d6a73c1fced31507b727ea",
+      "actual_upstream_request": {
+        "messages": [
+          {
+            "role": "developer",
+            "content": "Responses field fidelity fix 20261104-v2 control-cache-breakpoints prefix",
+            "prompt_cache_breakpoint": {
+              "mode": "explicit"
+            }
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "first",
+                "prompt_cache_breakpoint": {
+                  "mode": "explicit",
+                  "ttl": "30m"
+                }
+              },
+              {
+                "type": "text",
+                "text": "second"
+              },
+              {
+                "type": "text",
+                "text": "third",
+                "prompt_cache_breakpoint": {
+                  "mode": "explicit",
+                  "ttl": "12h"
+                }
+              }
+            ]
+          }
+        ],
+        "model": "fresh-upstream-chat",
+        "reasoning_effort": "none",
+        "max_completion_tokens": 128,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "description": "Lookup an order",
+              "name": "lookup",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "order_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "order_id"
+                ],
+                "type": "object"
+              },
+              "strict": true
+            }
+          }
+        ],
+        "tool_choice": "none",
+        "parallel_tool_calls": false,
+        "temperature": 0,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "audit_reply",
+            "description": "Audit JSON response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ok": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ok"
+              ],
+              "additionalProperties": false
+            },
+            "strict": true
+          }
+        },
+        "store": false,
+        "prompt_cache_options": {
+          "mode": "explicit",
+          "ttl": "30m"
+        }
+      },
+      "collector_receipt_id": "b7936f70-79f1-4ca6-b27b-8146a879710c",
+      "classification": "passed_controlled_wire",
+      "candidate_version": "2.0.31-responses.2",
+      "actual_upstream_model": "fresh-upstream-chat",
+      "upstream_response_model": "fresh-upstream-chat",
+      "upstream_http_status": 200,
+      "send_transport": "http_call"
+    },
+    {
+      "case": "reject-previous",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "ddffd76af59228bed52433fda88ad4bd7d9c7288adbe15c2245e4d125bf9d0a1",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.02385,
+      "complete_seconds": 0.023866,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      },
+      "classification": "stateless_chat_capability_boundary",
+      "candidate_version": "2.0.31-responses.2"
+    },
+    {
+      "case": "reject-hosted-search",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "7458eb277b68445a81a7b72ca344d6909b73b9a325756361e2181bfb4d692112",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.028439,
+      "complete_seconds": 0.028454,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      },
+      "classification": "stateless_chat_capability_boundary",
+      "candidate_version": "2.0.31-responses.2"
+    },
+    {
+      "case": "reject-image",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "54e2ca5bf224dc803b6b6c72a3b6c5632fd8f23f5c05f17f1717461832cad697",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.122733,
+      "complete_seconds": 0.122749,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      },
+      "classification": "adapter_input_coverage",
+      "candidate_version": "2.0.31-responses.2"
+    },
+    {
+      "case": "reject-function-history",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "dd7f0ec38e86ad3d8a7a7cf3185724435aa8a8cd9e9e743c3b100708716fbb10",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.020877,
+      "complete_seconds": 0.020896,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      },
+      "classification": "adapter_input_coverage",
+      "candidate_version": "2.0.31-responses.2"
+    },
+    {
+      "case": "reject-background",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "71dbf8c708f017d857970aaa40242e088bc2002d88a8aaa3d66f93725207a4b1",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.02724,
+      "complete_seconds": 0.027257,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      },
+      "classification": "stateless_chat_capability_boundary",
+      "candidate_version": "2.0.31-responses.2"
+    },
+    {
+      "case": "reject-summary",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "a2c582c5d709138ae4c8442416dce6f6bf1d13b8ba394dbf9ff5e1befceb2a3b",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.021455,
+      "complete_seconds": 0.021474,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      },
+      "classification": "stateless_chat_capability_boundary",
+      "candidate_version": "2.0.31-responses.2"
+    },
+    {
+      "case": "reject-conversation",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "d0e37ed54d9de8a273273b393f9861d2203aa306a76eb145fd6a18ca653c29a4",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.02347,
+      "complete_seconds": 0.023487,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      },
+      "classification": "stateless_chat_capability_boundary",
+      "candidate_version": "2.0.31-responses.2"
+    },
+    {
+      "case": "invalid-text-format",
+      "route_id": "01a1a3b7-5cf8-7710-8176-d88447160274",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "695690d8d527ff0c042cf379b4b45f1a802973d1687866e968d5d4f6c848566c",
+      "response_sha256": "a9cf23b5abab8b47c2198d6d49390c5511c3697d802d74d6783a5e42e463a37e",
+      "first_byte_seconds": 0.027681,
+      "complete_seconds": 0.027701,
+      "new_call_ids": [],
+      "error": {
+        "code": "unsupported_or_invalid_protocol_request",
+        "type": "managed_execution_error"
+      },
+      "classification": "invalid_request",
+      "candidate_version": "2.0.31-responses.2"
+    },
+    {
+      "case": "real-json-schema-cache",
+      "route_id": "01a1a3b8-0e0e-7473-9aea-b8f6459a33dd",
+      "kind": "responses",
+      "stream": false,
+      "http": 400,
+      "content_type": "application/json",
+      "request_sha256": "fc1a8d3448d99d5dd42a1e095236f37ca8b88c42c9bbe182ac49d28e7d7d1fa2",
+      "response_sha256": "8bbf61b6c36eeba08d2cdda6d57e14ebf10c8e1c158fc33db1dfe5c8a519814f",
+      "first_byte_seconds": 2.235025,
+      "complete_seconds": 2.235048,
+      "new_call_ids": [
+        "d3000579-afa1-40d7-aa95-c9f79456ca4c"
+      ],
+      "error": {
+        "message": "Unknown parameter: 'messages[0].content[0].prompt_cache_breakpoint.ttl'.",
+        "type": "invalid_request_error",
+        "param": "messages[0].content[0].prompt_cache_breakpoint.ttl",
+        "code": "unknown_parameter"
+      },
+      "supplier_parameter_limit": true,
+      "classification": "supplier_parameter_limit",
+      "call_id": "d3000579-afa1-40d7-aa95-c9f79456ca4c",
+      "attempt_id": "b59d1d22-ee60-45dd-8fef-36164abe1d47",
+      "release_id": "01a1a3b8-0e57-7a13-a60c-d401cd72f181",
+      "actual_upstream_body_digest": "sha256:0de471df92f75de7c3956b8f5a4e825aae2e94e5a836cf984294dd0d1a10d16d",
+      "actual_upstream_response_digest": "sha256:8bbf61b6c36eeba08d2cdda6d57e14ebf10c8e1c158fc33db1dfe5c8a519814f",
+      "upstream_http_status": 400,
+      "actual_upstream_model": "gpt-6-luna",
+      "send_transport": "http_call",
+      "candidate_version": "2.0.31-responses.2"
+    },
+    {
+      "case": "real-json-schema-cache-inherited",
+      "route_id": "01a1a3b8-0e0e-7473-9aea-b8f6459a33dd",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "e92ac26c20e6008a523edfc121bb0d973109c965d27a9b010934b6dd39265840",
+      "response_sha256": "22ada74654e36bab34c440688d7e1bd3ea7ee69a8cd3f2cc9d29ebae90d7be0b",
+      "first_byte_seconds": 1.804896,
+      "complete_seconds": 1.804961,
+      "new_call_ids": [
+        "8cba5821-1ee0-479c-8947-0bef4be8bdff"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "{\"ok\":true}",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 164,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 12,
+        "total_tokens": 176
+      },
+      "event_types": [],
+      "message_ids": [
+        "msg_chatcmpl-EgI93LiX3LR8qVtVOkVB6PxHu4U9s"
+      ],
+      "call_id": "8cba5821-1ee0-479c-8947-0bef4be8bdff",
+      "attempt_id": "d9af8fb3-738f-4b5a-aa22-4a5d368ac51f",
+      "release_id": "01a1a3b8-0e57-7a13-a60c-d401cd72f181",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "164",
+          "input": "164",
+          "output": "12"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:aa4f5e240c0cea83d624cbb30a1a4c6231636b4aa6b151a206502f532170a8a9",
+      "actual_upstream_response_digest": "sha256:70843c72381ff91e98b3b7c95e6e14bd6d8f3ce0dbf30283654c84d88354a4c5",
+      "supplier": "OpenAI official api.openai.com",
+      "native_supplier_response_retained_privately": true,
+      "classification": "passed_real_supplier",
+      "candidate_version": "2.0.31-responses.2",
+      "actual_upstream_model": "gpt-6-luna",
+      "upstream_response_model": "gpt-6-luna",
+      "upstream_http_status": 200,
+      "send_transport": "http_call"
+    }
+  ],
+  "reused_earlier_repair_real_cases": [
+    {
+      "case": "real-json-schema",
+      "route_id": "01a1a3ac-f5a9-7e21-9886-f22f4be2a85c",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "9f4b849ac8f2c2b4a9a8b9466b1caafbc90d19df77b20686f7f2275180cacf25",
+      "response_sha256": "3b633412ebf7a7f3f6d4f6dc45efad5a284a71b26511efccfe3f6f34691c158d",
+      "first_byte_seconds": 2.544265,
+      "complete_seconds": 2.544461,
+      "new_call_ids": [
+        "1535e25c-6b97-4067-a652-b4df6799f047"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "{\"ok\":true}",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 160,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 12,
+        "total_tokens": 172
+      },
+      "event_types": [],
+      "message_ids": [
+        "msg_chatcmpl-EgHxfeSv3yDg7u9gcDxSsCHFiLla2"
+      ],
+      "call_id": "1535e25c-6b97-4067-a652-b4df6799f047",
+      "attempt_id": "9cf9e99a-834e-470c-8b49-b5a9ddcb1dc1",
+      "release_id": "01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "160",
+          "input": "160",
+          "output": "12"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:00ea410a8b34e81a872ac787f0b2a250993aa174a275b821e16248b34a91e98a",
+      "actual_upstream_response_digest": "sha256:d67552f63753863c1f06618c47430c6b761f8bf653d44e75b091f849e59fa7e7",
+      "supplier": "OpenAI official api.openai.com",
+      "native_supplier_response_retained_privately": true,
+      "classification": "passed_real_supplier",
+      "candidate_version": "2.0.31-responses.1",
+      "source_commit": "03e07988c5c022baab4707163a2405a1eb8629f9",
+      "wasm_sha256": "5e1a29b54754ae77f98062435c626f0dfe1498b6ddbb789669f881bd4acd3262",
+      "evidence_use": "Reused from the earlier repair candidate; schema/SSE/function logic unchanged; not represented as a fresh call on .2."
+    },
+    {
+      "case": "real-json-schema-sse",
+      "route_id": "01a1a3ac-f5a9-7e21-9886-f22f4be2a85c",
+      "kind": "responses",
+      "stream": true,
+      "http": 200,
+      "content_type": "text/event-stream",
+      "request_sha256": "6b3a0f01043958f0fe9d877406c0c259026653dc7f2cfffa07921841993ca941",
+      "response_sha256": "eee204d8a3c3442f766dbee3efcfb69d61fbd205d33768487b76e72d8213acf5",
+      "first_byte_seconds": 1.594345,
+      "complete_seconds": 1.594427,
+      "new_call_ids": [
+        "6dc7915d-552b-4a72-a75a-0d577a95ec33"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "{\"ok\":true}",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 160,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 12,
+        "total_tokens": 172
+      },
+      "event_types": [
+        "response.created",
+        "response.output_item.added",
+        "response.content_part.added",
+        "response.output_text.delta",
+        "response.output_text.delta",
+        "response.output_text.delta",
+        "response.output_text.delta",
+        "response.output_text.delta",
+        "response.output_text.done",
+        "response.content_part.done",
+        "response.output_item.done",
+        "response.completed"
+      ],
+      "message_ids": [
+        "msg_0"
+      ],
+      "call_id": "6dc7915d-552b-4a72-a75a-0d577a95ec33",
+      "attempt_id": "370545b8-343a-43e8-8e33-f57463f961fe",
+      "release_id": "01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "160",
+          "input": "160",
+          "output": "12"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:c2ac22936aa677338cf34a325e661acdc30fcc92751c4f386e90fa3b89a7aa5a",
+      "actual_upstream_response_digest": "sha256:26ded94bb31deea6b1fb5129529bd2a054b312b25c96dd2411a9556095d18edf",
+      "supplier": "OpenAI official api.openai.com",
+      "native_supplier_response_retained_privately": true,
+      "classification": "passed_real_supplier",
+      "candidate_version": "2.0.31-responses.1",
+      "source_commit": "03e07988c5c022baab4707163a2405a1eb8629f9",
+      "wasm_sha256": "5e1a29b54754ae77f98062435c626f0dfe1498b6ddbb789669f881bd4acd3262",
+      "evidence_use": "Reused from the earlier repair candidate; schema/SSE/function logic unchanged; not represented as a fresh call on .2."
+    },
+    {
+      "case": "real-function-strict",
+      "route_id": "01a1a3ac-f5a9-7e21-9886-f22f4be2a85c",
+      "kind": "responses",
+      "stream": false,
+      "http": 200,
+      "content_type": "application/json",
+      "request_sha256": "1a1f414953f209aacc5e179d81147cc047abfd8ebd11b07ff0533ab8fea12fc2",
+      "response_sha256": "044f31d700b0b12087ce747c6aad47b22d7c7024e2ddc76e9065be912af4bdd1",
+      "first_byte_seconds": 1.33535,
+      "complete_seconds": 1.335429,
+      "new_call_ids": [
+        "830fd9ed-0f30-4e7d-90b1-26539c6eff9c"
+      ],
+      "object": "response",
+      "status": "completed",
+      "answer": "",
+      "terminal_marker": true,
+      "usage": {
+        "input_tokens": 136,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 19,
+        "total_tokens": 155
+      },
+      "event_types": [],
+      "message_ids": [],
+      "function_call": {
+        "id": "fc_call_lzFxKY7vtbmOpiq6suvbauNu",
+        "call_id": "call_lzFxKY7vtbmOpiq6suvbauNu",
+        "name": "lookup",
+        "arguments": "{\"order_id\":\"fix_42\"}"
+      },
+      "call_id": "830fd9ed-0f30-4e7d-90b1-26539c6eff9c",
+      "attempt_id": "6522b972-2c29-46fc-a61d-a4376e66f97d",
+      "release_id": "01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+      "provider_usage": {
+        "quantities": {
+          "cache_hit": "0",
+          "cache_miss": "136",
+          "input": "136",
+          "output": "19"
+        },
+        "source": "provider",
+        "status": "reported",
+        "unit": "token"
+      },
+      "facts_accepted": true,
+      "actual_upstream_body_digest": "sha256:ead7319f85d74962d32628ca6e073c5a2a302cf7334b3a7c9825bc991964c6d7",
+      "actual_upstream_response_digest": "sha256:4729c573d342dd8160a2f30ed45c3965d848f70838115ed4f1b3df22c6bf378e",
+      "supplier": "OpenAI official api.openai.com",
+      "native_supplier_response_retained_privately": true,
+      "classification": "passed_real_supplier",
+      "candidate_version": "2.0.31-responses.1",
+      "source_commit": "03e07988c5c022baab4707163a2405a1eb8629f9",
+      "wasm_sha256": "5e1a29b54754ae77f98062435c626f0dfe1498b6ddbb789669f881bd4acd3262",
+      "evidence_use": "Reused from the earlier repair candidate; schema/SSE/function logic unchanged; not represented as a fresh call on .2."
+    }
+  ],
+  "supplier_parameter_limit": {
+    "supplier": "OpenAI api.openai.com",
+    "model": "gpt-6-luna",
+    "request_feature": "content-part prompt_cache_breakpoint.ttl=30m",
+    "http": 400,
+    "code": "unknown_parameter",
+    "param": "messages[0].content[0].prompt_cache_breakpoint.ttl",
+    "native_error_body_digest_preserved": true,
+    "classification": "Supplier runtime/API schema mismatch; not a project implementation defect",
+    "supported_followup": "Remove only the block TTL and inherit request prompt_cache_options.ttl=30m; HTTP200 with valid schema response",
+    "official_reference": "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create"
+  },
+  "environment_notes": {
+    "existing_price_books_edited": false,
+    "fixture_prices_are_official_supplier_rates": false,
+    "new_wallet_funding_required": false,
+    "C_batch_changes_included": false,
+    "shared_deployments_changed_by_this_task": false,
+    "parallel_environment_progress": "Global Helm advanced from 68 to 70 by other work; this task only created and cleaned isolated fixtures.",
+    "cache_hit_or_actual_cache_write_charges_verified": false,
+    "history_projection_attribution": "Independent HTTP receipt call IDs and outbound digests supersede asynchronous history snapshots."
+  },
+  "cleanup": {
+    "product_deletions": [
+      {
+        "resource": "route-controlled",
+        "delete_http": 200,
+        "get_after_delete_http": 404,
+        "retained_disabled_for_history": false,
+        "absent_from_collection": false
+      },
+      {
+        "resource": "route-openai",
+        "delete_http": 200,
+        "get_after_delete_http": 404,
+        "retained_disabled_for_history": false,
+        "absent_from_collection": false
+      },
+      {
+        "resource": "binding",
+        "delete_http": 200,
+        "get_after_delete_http": 200,
+        "retained_disabled_for_history": true,
+        "absent_from_collection": false
+      },
+      {
+        "resource": "asset",
+        "delete_http": 200,
+        "get_after_delete_http": 200,
+        "retained_disabled_for_history": true,
+        "absent_from_collection": false
+      },
+      {
+        "resource": "provider",
+        "delete_http": 200,
+        "get_after_delete_http": 400,
+        "retained_disabled_for_history": true,
+        "absent_from_collection": true
+      }
+    ],
+    "runtime_cleanup": [
+      {
+        "kind": "ingresses",
+        "deleted": [
+          "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-text",
+          "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-text"
+        ],
+        "remaining": []
+      },
+      {
+        "kind": "wasmplugins",
+        "deleted": [
+          "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-billing",
+          "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-proxy",
+          "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-quota",
+          "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-statistics",
+          "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-model-mapper",
+          "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-billing",
+          "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-proxy",
+          "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-quota",
+          "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-statistics",
+          "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-model-mapper"
+        ],
+        "remaining": []
+      }
+    ],
+    "scope": "Only resources created for responses-chat-fix-20261104; existing asset/provider/binding/price documents were not edited.",
+    "artifact_fixture_deleted": [
+      "pod/openai-responses-fix-20261104-v2",
+      "service/openai-responses-fix-20261104-v2",
+      "configmap/openai-responses-fix-20261104-v2"
+    ],
+    "helm_after": [
+      {
+        "name": "higress",
+        "revision": "70",
+        "status": "deployed"
+      }
+    ],
+    "formal_business_routes_switched": false,
+    "shared_deployment_rollout_by_this_task": false
+  },
+  "prior_candidate_cleanup": {
+    "product_deletions": [
+      {
+        "resource": "route-controlled",
+        "delete_http": 200,
+        "get_after_delete_http": 404,
+        "retained_disabled_for_history": false,
+        "absent_from_collection": false
+      },
+      {
+        "resource": "route-openai",
+        "delete_http": 200,
+        "get_after_delete_http": 404,
+        "retained_disabled_for_history": false,
+        "absent_from_collection": false
+      },
+      {
+        "resource": "binding",
+        "delete_http": 200,
+        "get_after_delete_http": 400,
+        "retained_disabled_for_history": true,
+        "absent_from_collection": false
+      },
+      {
+        "resource": "asset",
+        "delete_http": 200,
+        "get_after_delete_http": 200,
+        "retained_disabled_for_history": true,
+        "absent_from_collection": false
+      },
+      {
+        "resource": "provider",
+        "delete_http": 200,
+        "get_after_delete_http": 400,
+        "retained_disabled_for_history": true,
+        "absent_from_collection": true
+      }
+    ],
+    "runtime_cleanup": [
+      {
+        "kind": "ingresses",
+        "deleted": [
+          "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-text",
+          "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-text"
+        ],
+        "remaining": []
+      },
+      {
+        "kind": "wasmplugins",
+        "deleted": [
+          "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-billing",
+          "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-proxy",
+          "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-quota",
+          "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-statistics",
+          "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-model-mapper",
+          "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-billing",
+          "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-proxy",
+          "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-quota",
+          "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-statistics",
+          "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-model-mapper"
+        ],
+        "remaining": []
+      }
+    ],
+    "scope": "Only resources created for responses-chat-fix-20261104; existing asset/provider/binding/price documents were not edited.",
+    "artifact_fixture_deleted": [
+      "pod/openai-responses-fix-20261104",
+      "service/openai-responses-fix-20261104",
+      "configmap/openai-responses-fix-20261104"
+    ],
+    "helm_after": [
+      {
+        "name": "higress",
+        "revision": "68",
+        "status": "deployed"
+      }
+    ],
+    "formal_business_routes_switched": false,
+    "shared_deployment_rollout_by_this_task": false
+  },
+  "private_evidence_directories": [
+    "modelfusion-deploy/.local/responses-chat-fix-20261104/",
+    "modelfusion-deploy/.local/responses-chat-fix-20261104-v2/"
+  ],
+  "credentials_in_public_evidence": false,
+  "integration": {
+    "local_branch": "codex/responses-chat-fidelity-20261104",
+    "code_only_patch": "2026-11-04-responses-chat-fidelity.patch",
+    "patch_apply_check_target_commit": "d0541053f3eac0e331642df76703088f51c6a974",
+    "patch_apply_check_passed": true,
+    "target_working_tree_modified": false
+  },
+  "cleanup_followup": {
+    "reason": "Native business soft delete retains active publications; runtime resources reappeared after an initial deletion.",
+    "native_release_control": [
+      {
+        "release_id": "01a1a3ab-05a3-72c3-982c-d1650b8d2bca",
+        "command_key": "responses-fidelity-close-01a1a3ab-05a3-72c3-982c-d1650b8d2bca",
+        "http": 200,
+        "admission_state": "disabled",
+        "lifecycle": "active",
+        "status_revision": "4"
+      },
+      {
+        "release_id": "01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+        "command_key": "responses-fidelity-close-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+        "http": 200,
+        "admission_state": "disabled",
+        "lifecycle": "active",
+        "status_revision": "4"
+      },
+      {
+        "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+        "command_key": "responses-fidelity-close-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+        "http": 200,
+        "admission_state": "disabled",
+        "lifecycle": "active",
+        "status_revision": "4"
+      },
+      {
+        "release_id": "01a1a3b8-0e57-7a13-a60c-d401cd72f181",
+        "command_key": "responses-fidelity-close-01a1a3b8-0e57-7a13-a60c-d401cd72f181",
+        "http": 200,
+        "admission_state": "disabled",
+        "lifecycle": "active",
+        "status_revision": "4"
+      }
+    ],
+    "final_cleanup": {
+      "closures": [
+        {
+          "release_id": "01a1a3ab-05a3-72c3-982c-d1650b8d2bca",
+          "command_key": "responses-fidelity-close-01a1a3ab-05a3-72c3-982c-d1650b8d2bca",
+          "http": 200,
+          "admission_state": "disabled",
+          "lifecycle": "active",
+          "status_revision": "4"
+        },
+        {
+          "release_id": "01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+          "command_key": "responses-fidelity-close-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b",
+          "http": 200,
+          "admission_state": "disabled",
+          "lifecycle": "active",
+          "status_revision": "4"
+        },
+        {
+          "release_id": "01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+          "command_key": "responses-fidelity-close-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16",
+          "http": 200,
+          "admission_state": "disabled",
+          "lifecycle": "active",
+          "status_revision": "4"
+        },
+        {
+          "release_id": "01a1a3b8-0e57-7a13-a60c-d401cd72f181",
+          "command_key": "responses-fidelity-close-01a1a3b8-0e57-7a13-a60c-d401cd72f181",
+          "http": 200,
+          "admission_state": "disabled",
+          "lifecycle": "active",
+          "status_revision": "4"
+        }
+      ],
+      "runtime_cleanup": [
+        {
+          "kind": "ingresses",
+          "deleted": [
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-text",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-text",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-text",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-text"
+          ],
+          "remaining": []
+        },
+        {
+          "kind": "wasmplugins",
+          "deleted": [
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-billing",
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-proxy",
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-quota",
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-ai-statistics",
+            "rel-01a1a3ab-05a3-72c3-982c-d1650b8d2bca-model-mapper",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-billing",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-proxy",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-quota",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-ai-statistics",
+            "rel-01a1a3ac-f5e5-7133-9fb1-a64ce1b4b75b-model-mapper",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-billing",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-proxy",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-quota",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-ai-statistics",
+            "rel-01a1a3b7-5d40-7bf2-bdb5-a3be50959b16-model-mapper",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-billing",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-proxy",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-quota",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-ai-statistics",
+            "rel-01a1a3b8-0e57-7a13-a60c-d401cd72f181-model-mapper"
+          ],
+          "remaining": []
+        }
+      ],
+      "all_owned_runtime_remaining": 0,
+      "historical_release_records_preserved": true
+    },
+    "SQL_writes_or_unrelated_code_changes": false,
+    "delayed_stability_check": {
+      "delay_seconds": 35,
+      "started_at": "2026-11-03T23:32:39.645984+00:00",
+      "checked_at": "2026-11-03T23:33:16.295059+00:00",
+      "remaining": {
+        "ingresses": 0,
+        "wasmplugins": 0,
+        "artifact_resources": 0
+      },
+      "all_four_releases_still_disabled": true
+    }
+  }
+}

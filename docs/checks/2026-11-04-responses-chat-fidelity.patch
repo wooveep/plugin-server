@@ -1,0 +1,546 @@
+diff --git a/plugins/wasm-go/extensions/ai-proxy/provider/model.go b/plugins/wasm-go/extensions/ai-proxy/provider/model.go
+index b85e635f..e8e051f4 100644
+--- a/plugins/wasm-go/extensions/ai-proxy/provider/model.go
++++ b/plugins/wasm-go/extensions/ai-proxy/provider/model.go
+@@ -154,6 +154,7 @@ type function struct {
+ 	Description string                 `json:"description,omitempty"`
+ 	Name        string                 `json:"name"`
+ 	Parameters  map[string]interface{} `json:"parameters,omitempty"`
++	Strict      *bool                  `json:"strict,omitempty"`
+ }
+ 
+ type toolChoice struct {
+@@ -201,22 +202,23 @@ type completionTokensDetails struct {
+ }
+ 
+ type chatMessage struct {
+-	Id                       string                     `json:"id,omitempty"`
+-	Audio                    map[string]interface{}     `json:"audio,omitempty"`
+-	Name                     string                     `json:"name,omitempty"`
+-	Role                     string                     `json:"role,omitempty"`
+-	Content                  any                        `json:"content,omitempty"`
+-	ReasoningContent         string                     `json:"reasoning_content,omitempty"`
+-	Reasoning                string                     `json:"reasoning,omitempty"` // For streaming responses
+-	ReasoningSignature       string                     `json:"reasoning_signature,omitempty"`
+-	ReasoningRedactedContent string                     `json:"reasoning_redacted_content,omitempty"`
+-	ClaudeContentBlocks      []claudeChatMessageContent `json:"claude_content_blocks,omitempty"`
+-	ClaudeContentBlockIndex  *int                       `json:"claude_content_block_index,omitempty"`
+-	ClaudeContentBlockStop   *int                       `json:"claude_content_block_stop,omitempty"`
+-	ToolCalls                []toolCall                 `json:"tool_calls,omitempty"`
+-	FunctionCall             *functionCall              `json:"function_call,omitempty"` // For legacy OpenAI format
+-	Refusal                  string                     `json:"refusal,omitempty"`
+-	ToolCallId               string                     `json:"tool_call_id,omitempty"`
++	Id                       string                          `json:"id,omitempty"`
++	Audio                    map[string]interface{}          `json:"audio,omitempty"`
++	Name                     string                          `json:"name,omitempty"`
++	Role                     string                          `json:"role,omitempty"`
++	Content                  any                             `json:"content,omitempty"`
++	ReasoningContent         string                          `json:"reasoning_content,omitempty"`
++	Reasoning                string                          `json:"reasoning,omitempty"` // For streaming responses
++	ReasoningSignature       string                          `json:"reasoning_signature,omitempty"`
++	ReasoningRedactedContent string                          `json:"reasoning_redacted_content,omitempty"`
++	ClaudeContentBlocks      []claudeChatMessageContent      `json:"claude_content_blocks,omitempty"`
++	ClaudeContentBlockIndex  *int                            `json:"claude_content_block_index,omitempty"`
++	ClaudeContentBlockStop   *int                            `json:"claude_content_block_stop,omitempty"`
++	ToolCalls                []toolCall                      `json:"tool_calls,omitempty"`
++	FunctionCall             *functionCall                   `json:"function_call,omitempty"` // For legacy OpenAI format
++	Refusal                  string                          `json:"refusal,omitempty"`
++	ToolCallId               string                          `json:"tool_call_id,omitempty"`
++	PromptCacheBreakpoint    *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
+ }
+ 
+ func (m *chatMessage) handleNonStreamingReasoningContent(reasoningContentMode string) {
+diff --git a/plugins/wasm-go/extensions/ai-proxy/provider/responses.go b/plugins/wasm-go/extensions/ai-proxy/provider/responses.go
+index 822ed4fc..f1c41cf5 100644
+--- a/plugins/wasm-go/extensions/ai-proxy/provider/responses.go
++++ b/plugins/wasm-go/extensions/ai-proxy/provider/responses.go
+@@ -11,21 +11,66 @@ import (
+ )
+ 
+ type responsesRequest struct {
+-	Model              string            `json:"model"`
+-	Instructions       string            `json:"instructions,omitempty"`
+-	Input              json.RawMessage   `json:"input"`
+-	Stream             bool              `json:"stream,omitempty"`
+-	Temperature        *float64          `json:"temperature,omitempty"`
+-	TopP               *float64          `json:"top_p,omitempty"`
+-	PresencePenalty    *float64          `json:"presence_penalty,omitempty"`
+-	FrequencyPenalty   *float64          `json:"frequency_penalty,omitempty"`
+-	MaxOutputTokens    int               `json:"max_output_tokens,omitempty"`
+-	User               string            `json:"user,omitempty"`
+-	Metadata           map[string]string `json:"metadata,omitempty"`
+-	Tools              []responsesTool   `json:"tools,omitempty"`
+-	ToolChoice         json.RawMessage   `json:"tool_choice,omitempty"`
+-	PreviousResponseID string            `json:"previous_response_id,omitempty"`
+-	Conversation       any               `json:"conversation,omitempty"`
++	Model                string                       `json:"model"`
++	Instructions         string                       `json:"instructions,omitempty"`
++	Input                json.RawMessage              `json:"input"`
++	Stream               bool                         `json:"stream,omitempty"`
++	Temperature          *float64                     `json:"temperature,omitempty"`
++	TopP                 *float64                     `json:"top_p,omitempty"`
++	PresencePenalty      *float64                     `json:"presence_penalty,omitempty"`
++	FrequencyPenalty     *float64                     `json:"frequency_penalty,omitempty"`
++	MaxOutputTokens      int                          `json:"max_output_tokens,omitempty"`
++	User                 string                       `json:"user,omitempty"`
++	Metadata             map[string]string            `json:"metadata,omitempty"`
++	Store                *bool                        `json:"store,omitempty"`
++	Background           bool                         `json:"background,omitempty"`
++	Reasoning            *responsesReasoning          `json:"reasoning,omitempty"`
++	PromptCacheKey       string                       `json:"prompt_cache_key,omitempty"`
++	PromptCacheRetention string                       `json:"prompt_cache_retention,omitempty"`
++	PromptCacheOptions   *responsesPromptCacheOptions `json:"prompt_cache_options,omitempty"`
++	Text                 *responsesText               `json:"text,omitempty"`
++	Tools                []responsesTool              `json:"tools,omitempty"`
++	ToolChoice           json.RawMessage              `json:"tool_choice,omitempty"`
++	ParallelToolCalls    *bool                        `json:"parallel_tool_calls,omitempty"`
++	PreviousResponseID   string                       `json:"previous_response_id,omitempty"`
++	Conversation         any                          `json:"conversation,omitempty"`
++}
++
++type responsesReasoning struct {
++	Effort          string  `json:"effort,omitempty"`
++	Summary         *string `json:"summary,omitempty"`
++	GenerateSummary *string `json:"generate_summary,omitempty"`
++}
++
++type responsesPromptCacheOptions struct {
++	Mode string `json:"mode,omitempty"`
++	TTL  string `json:"ttl,omitempty"`
++}
++
++type responsesPromptCacheBreakpoint struct {
++	Mode string `json:"mode,omitempty"`
++	TTL  string `json:"ttl,omitempty"`
++}
++
++type responsesText struct {
++	Format *responsesTextFormat `json:"format,omitempty"`
++}
++
++type responsesTextFormat struct {
++	Type string `json:"type"`
++	responsesJSONSchema
++}
++
++type responsesJSONSchema struct {
++	Name        string          `json:"name"`
++	Description string          `json:"description,omitempty"`
++	Schema      json.RawMessage `json:"schema,omitempty"`
++	Strict      *bool           `json:"strict,omitempty"`
++}
++
++type responsesChatResponseFormat struct {
++	Type       string               `json:"type"`
++	JSONSchema *responsesJSONSchema `json:"json_schema,omitempty"`
+ }
+ 
+ type responsesTool struct {
+@@ -33,16 +78,25 @@ type responsesTool struct {
+ 	Name        string                 `json:"name,omitempty"`
+ 	Description string                 `json:"description,omitempty"`
+ 	Parameters  map[string]interface{} `json:"parameters,omitempty"`
++	Strict      *bool                  `json:"strict,omitempty"`
+ }
+ 
+ type responsesMessageInput struct {
+-	Role    string          `json:"role"`
+-	Content json.RawMessage `json:"content"`
++	Role                  string                          `json:"role"`
++	Content               json.RawMessage                 `json:"content"`
++	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
+ }
+ 
+ type responsesContentPart struct {
+-	Type string `json:"type"`
+-	Text string `json:"text,omitempty"`
++	Type                  string                          `json:"type"`
++	Text                  string                          `json:"text,omitempty"`
++	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
++}
++
++type responsesChatTextPart struct {
++	Type                  string                          `json:"type"`
++	Text                  string                          `json:"text"`
++	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
+ }
+ 
+ type responsesResponse struct {
+@@ -128,6 +182,12 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
+ 	if err := json.Unmarshal(body, &request); err != nil {
+ 		return nil, fmt.Errorf("unable to unmarshal responses request: %w", err)
+ 	}
++	if request.Background {
++		return nil, errors.New("background is unsupported in Responses fallback mode")
++	}
++	if request.Reasoning != nil && (request.Reasoning.Summary != nil || request.Reasoning.GenerateSummary != nil) {
++		return nil, errors.New("reasoning summary is unsupported in Responses fallback mode")
++	}
+ 
+ 	messages, err := convertResponsesInputToChatMessages(request.Input)
+ 	if err != nil {
+@@ -141,29 +201,21 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
+ 	}
+ 
+ 	chatRequest := chatCompletionRequest{
+-		Model:      request.Model,
+-		Messages:   messages,
+-		Stream:     request.Stream,
+-		User:       request.User,
+-		Metadata:   request.Metadata,
+-		ToolChoice: nil,
+-		Tools:      nil,
++		Model:                request.Model,
++		Messages:             messages,
++		Stream:               request.Stream,
++		User:                 request.User,
++		Metadata:             request.Metadata,
++		ParallelToolCalls:    request.ParallelToolCalls,
++		PromptCacheKey:       request.PromptCacheKey,
++		PromptCacheRetention: request.PromptCacheRetention,
++	}
++	if request.Reasoning != nil {
++		chatRequest.ReasoningEffort = request.Reasoning.Effort
+ 	}
+ 	if request.Stream {
+ 		chatRequest.StreamOptions = &streamOptions{IncludeUsage: true}
+ 	}
+-	if request.Temperature != nil {
+-		chatRequest.Temperature = *request.Temperature
+-	}
+-	if request.TopP != nil {
+-		chatRequest.TopP = *request.TopP
+-	}
+-	if request.PresencePenalty != nil {
+-		chatRequest.PresencePenalty = *request.PresencePenalty
+-	}
+-	if request.FrequencyPenalty != nil {
+-		chatRequest.FrequencyPenalty = *request.FrequencyPenalty
+-	}
+ 	if request.MaxOutputTokens > 0 {
+ 		chatRequest.MaxCompletionTokens = request.MaxOutputTokens
+ 	}
+@@ -177,7 +229,39 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
+ 		return nil, err
+ 	}
+ 	chatRequest.ToolChoice = toolChoice
+-	return json.Marshal(chatRequest)
++	var responseFormat *responsesChatResponseFormat
++	if request.Text != nil && request.Text.Format != nil {
++		format := request.Text.Format
++		switch format.Type {
++		case "text", "json_object":
++			responseFormat = &responsesChatResponseFormat{Type: format.Type}
++		case "json_schema":
++			responseFormat = &responsesChatResponseFormat{Type: format.Type, JSONSchema: &format.responsesJSONSchema}
++		default:
++			return nil, fmt.Errorf("text.format type %q is unsupported in Responses fallback mode", format.Type)
++		}
++	}
++	// Override the shared Chat scalar fields only at this conversion boundary so
++	// explicit zero values survive without changing other providers' defaults.
++	return json.Marshal(struct {
++		chatCompletionRequest
++		Temperature        *float64                     `json:"temperature,omitempty"`
++		TopP               *float64                     `json:"top_p,omitempty"`
++		PresencePenalty    *float64                     `json:"presence_penalty,omitempty"`
++		FrequencyPenalty   *float64                     `json:"frequency_penalty,omitempty"`
++		ResponseFormat     *responsesChatResponseFormat `json:"response_format,omitempty"`
++		Store              *bool                        `json:"store,omitempty"`
++		PromptCacheOptions *responsesPromptCacheOptions `json:"prompt_cache_options,omitempty"`
++	}{
++		chatCompletionRequest: chatRequest,
++		Temperature:           request.Temperature,
++		TopP:                  request.TopP,
++		PresencePenalty:       request.PresencePenalty,
++		FrequencyPenalty:      request.FrequencyPenalty,
++		ResponseFormat:        responseFormat,
++		Store:                 request.Store,
++		PromptCacheOptions:    request.PromptCacheOptions,
++	})
+ }
+ 
+ func convertResponsesInputToChatMessages(input json.RawMessage) ([]chatMessage, error) {
+@@ -200,33 +284,41 @@ func convertResponsesInputToChatMessages(input json.RawMessage) ([]chatMessage,
+ 			return nil, err
+ 		}
+ 		messages = append(messages, chatMessage{
+-			Role:    item.Role,
+-			Content: content,
++			Role:                  item.Role,
++			Content:               content,
++			PromptCacheBreakpoint: item.PromptCacheBreakpoint,
+ 		})
+ 	}
+ 	return messages, nil
+ }
+ 
+-func convertResponsesMessageContent(content json.RawMessage) (string, error) {
++func convertResponsesMessageContent(content json.RawMessage) (json.RawMessage, error) {
+ 	var text string
+ 	if err := json.Unmarshal(content, &text); err == nil {
+-		return text, nil
++		return json.Marshal(text)
+ 	}
+ 
+ 	var parts []responsesContentPart
+ 	if err := json.Unmarshal(content, &parts); err != nil {
+-		return "", fmt.Errorf("unsupported responses message content: %w", err)
++		return nil, fmt.Errorf("unsupported responses message content: %w", err)
+ 	}
+ 	var builder bytes.Buffer
++	chatParts := make([]responsesChatTextPart, 0, len(parts))
++	hasBreakpoint := false
+ 	for _, part := range parts {
+ 		switch part.Type {
+ 		case "input_text", "output_text":
+ 			builder.WriteString(part.Text)
++			chatParts = append(chatParts, responsesChatTextPart{Type: "text", Text: part.Text, PromptCacheBreakpoint: part.PromptCacheBreakpoint})
++			hasBreakpoint = hasBreakpoint || part.PromptCacheBreakpoint != nil
+ 		default:
+-			return "", fmt.Errorf("%s is unsupported in Responses fallback mode", part.Type)
++			return nil, fmt.Errorf("%s is unsupported in Responses fallback mode", part.Type)
+ 		}
+ 	}
+-	return builder.String(), nil
++	if hasBreakpoint {
++		return json.Marshal(chatParts)
++	}
++	return json.Marshal(builder.String())
+ }
+ 
+ func convertResponsesTools(tools []responsesTool) ([]tool, error) {
+@@ -244,6 +336,7 @@ func convertResponsesTools(tools []responsesTool) ([]tool, error) {
+ 				Name:        responsesTool.Name,
+ 				Description: responsesTool.Description,
+ 				Parameters:  responsesTool.Parameters,
++				Strict:      responsesTool.Strict,
+ 			},
+ 		})
+ 	}
+@@ -326,6 +419,7 @@ func convertChatCompletionResponseToResponses(body []byte) ([]byte, error) {
+ 
+ 	output := convertChatCompletionMessageToResponsesOutput(choice.Message)
+ 	if output.Content != nil && len(*output.Content) > 0 {
++		output.ID = "msg_" + chatResponse.ID
+ 		response.Output = []responsesOutputItem{output}
+ 	}
+ 	for _, call := range choice.Message.ToolCalls {
+diff --git a/plugins/wasm-go/extensions/ai-proxy/provider/responses_fidelity_test.go b/plugins/wasm-go/extensions/ai-proxy/provider/responses_fidelity_test.go
+new file mode 100644
+index 00000000..4abf5290
+--- /dev/null
++++ b/plugins/wasm-go/extensions/ai-proxy/provider/responses_fidelity_test.go
+@@ -0,0 +1,179 @@
++package provider
++
++import (
++	"fmt"
++	"testing"
++
++	"github.com/stretchr/testify/require"
++	"github.com/tidwall/gjson"
++)
++
++func TestResponsesFallbackPreservesExplicitSamplingValues(t *testing.T) {
++	for _, tc := range []struct {
++		name    string
++		values  string
++		present bool
++	}{
++		{name: "omitted"},
++		{name: "null", values: `,"temperature":null,"top_p":null,"presence_penalty":null,"frequency_penalty":null`},
++		{name: "explicit_zero", values: `,"temperature":0,"top_p":0,"presence_penalty":0,"frequency_penalty":0`, present: true},
++	} {
++		t.Run(tc.name, func(t *testing.T) {
++			out, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello"` + tc.values + `}`))
++			require.NoError(t, err)
++			for _, field := range []string{"temperature", "top_p", "presence_penalty", "frequency_penalty"} {
++				value := gjson.GetBytes(out, field)
++				if !tc.present {
++					require.False(t, value.Exists(), string(out))
++				} else {
++					require.True(t, value.Exists(), string(out))
++					require.Equal(t, gjson.Number, value.Type)
++					require.Zero(t, value.Float())
++				}
++			}
++		})
++	}
++}
++
++func TestResponsesFallbackAdvancedFields(t *testing.T) {
++	for _, value := range []string{"true", "false"} {
++		out, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello","store":` + value + `,"background":false,"reasoning":{"effort":"none"},"prompt_cache_key":"cache-audit","prompt_cache_retention":"24h"}`))
++		require.NoError(t, err)
++		require.Equal(t, value, gjson.GetBytes(out, "store").Raw)
++		require.Equal(t, "none", gjson.GetBytes(out, "reasoning_effort").String())
++		require.Equal(t, "cache-audit", gjson.GetBytes(out, "prompt_cache_key").String())
++		require.Equal(t, "24h", gjson.GetBytes(out, "prompt_cache_retention").String())
++		require.False(t, gjson.GetBytes(out, "background").Exists())
++		require.False(t, gjson.GetBytes(out, "reasoning").Exists())
++	}
++	out, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello"}`))
++	require.NoError(t, err)
++	for _, field := range []string{"store", "reasoning_effort", "prompt_cache_key", "prompt_cache_retention"} {
++		require.False(t, gjson.GetBytes(out, field).Exists(), field)
++	}
++	for _, tc := range []struct{ fields, want string }{
++		{`"background":true`, "background"},
++		{`"reasoning":{"summary":"auto"}`, "reasoning summary"},
++		{`"reasoning":{"generate_summary":"concise"}`, "reasoning summary"},
++	} {
++		_, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello",` + tc.fields + `}`))
++		require.ErrorContains(t, err, tc.want)
++	}
++}
++
++func TestResponsesFallbackCacheOptionsAndBreakpoints(t *testing.T) {
++	for _, mode := range []string{"explicit", "implicit"} {
++		body := fmt.Sprintf(`{"model":"test","prompt_cache_options":{"mode":%q,"ttl":"30m"},"input":[{"role":"developer","content":"prefix","prompt_cache_breakpoint":{"mode":"explicit"}},{"role":"user","content":[{"type":"input_text","text":"first","prompt_cache_breakpoint":{"mode":"explicit","ttl":"30m"}},{"type":"input_text","text":"second"},{"type":"input_text","text":"third","prompt_cache_breakpoint":{"mode":"explicit","ttl":"12h"}}]}]}`, mode)
++		out, err := ConvertResponsesRequestToChatCompletion([]byte(body))
++		require.NoError(t, err)
++		require.JSONEq(t, fmt.Sprintf(`{"mode":%q,"ttl":"30m"}`, mode), gjson.GetBytes(out, "prompt_cache_options").Raw)
++		require.Equal(t, "explicit", gjson.GetBytes(out, "messages.0.prompt_cache_breakpoint.mode").String())
++		require.Equal(t, "prefix", gjson.GetBytes(out, "messages.0.content").String())
++		require.Equal(t, int64(3), gjson.GetBytes(out, "messages.1.content.#").Int())
++		for i, text := range []string{"first", "second", "third"} {
++			path := fmt.Sprintf("messages.1.content.%d", i)
++			require.Equal(t, "text", gjson.GetBytes(out, path+".type").String())
++			require.Equal(t, text, gjson.GetBytes(out, path+".text").String())
++		}
++		require.Equal(t, "30m", gjson.GetBytes(out, "messages.1.content.0.prompt_cache_breakpoint.ttl").String())
++		require.False(t, gjson.GetBytes(out, "messages.1.content.1.prompt_cache_breakpoint").Exists())
++		require.Equal(t, "12h", gjson.GetBytes(out, "messages.1.content.2.prompt_cache_breakpoint.ttl").String())
++	}
++	for _, option := range []string{``, `,"prompt_cache_options":null`, `,"prompt_cache_options":{}`} {
++		out, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello"` + option + `}`))
++		require.NoError(t, err)
++		if option == `,"prompt_cache_options":{}` {
++			require.Equal(t, "{}", gjson.GetBytes(out, "prompt_cache_options").Raw)
++		} else {
++			require.False(t, gjson.GetBytes(out, "prompt_cache_options").Exists())
++		}
++	}
++}
++
++func TestResponsesFallbackPreservesFunctionConstraints(t *testing.T) {
++	for _, value := range []string{"true", "false", "null", ""} {
++		t.Run(value, func(t *testing.T) {
++			constraint := ""
++			if value != "" {
++				constraint = `,"strict":` + value
++			}
++			body := `{"model":"test","input":"hello","tools":[{"type":"function","name":"lookup","parameters":{"type":"object"}` + constraint + `}],"tool_choice":{"type":"function","name":"lookup"}`
++			if value != "" {
++				body += `,"parallel_tool_calls":` + value
++			}
++			out, err := ConvertResponsesRequestToChatCompletion([]byte(body + `}`))
++			require.NoError(t, err)
++			for _, field := range []string{"tools.0.function.strict", "parallel_tool_calls"} {
++				got := gjson.GetBytes(out, field)
++				if value == "" || value == "null" {
++					require.False(t, got.Exists(), string(out))
++				} else {
++					require.Equal(t, value, got.Raw, string(out))
++				}
++			}
++			require.Equal(t, "lookup", gjson.GetBytes(out, "tool_choice.function.name").String())
++		})
++	}
++}
++
++func TestResponsesFallbackMapsTextFormat(t *testing.T) {
++	for _, format := range []string{
++		`{"type":"text"}`,
++		`{"type":"json_object"}`,
++		`{"type":"json_schema","name":"audit","description":"Audit schema","schema":{"type":"object","properties":{"value":{"const":9007199254740993}},"required":["value"],"additionalProperties":false},"strict":true}`,
++		`{"type":"json_schema","name":"audit","schema":{"type":"object"},"strict":false}`,
++		`{"type":"json_schema","name":"audit","schema":{"type":"object"}}`,
++	} {
++		t.Run(format, func(t *testing.T) {
++			out, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"Return JSON","text":{"format":` + format + `}}`))
++			require.NoError(t, err)
++			want := gjson.Parse(format)
++			got := gjson.GetBytes(out, "response_format")
++			require.Equal(t, want.Get("type").String(), got.Get("type").String(), string(out))
++			if want.Get("type").String() == "json_schema" {
++				for _, field := range []string{"name", "description", "schema", "strict"} {
++					require.Equal(t, want.Get(field).Raw, got.Get("json_schema."+field).Raw, field)
++				}
++				require.False(t, got.Get("schema").Exists(), string(out))
++			} else {
++				require.False(t, got.Get("json_schema").Exists(), string(out))
++			}
++			require.False(t, gjson.GetBytes(out, "text").Exists(), string(out))
++		})
++	}
++	for _, text := range []string{``, `,"text":{}`, `,"text":{"format":null}`} {
++		out, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello"` + text + `}`))
++		require.NoError(t, err)
++		require.False(t, gjson.GetBytes(out, "response_format").Exists(), string(out))
++	}
++	_, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello","text":{"format":{"type":"unknown_format"}}}`))
++	require.ErrorContains(t, err, "text.format")
++}
++
++func TestResponsesFallbackMessageIDs(t *testing.T) {
++	for _, message := range []string{
++		`{"role":"assistant","content":"hello"}`,
++		`{"role":"assistant","refusal":"Cannot comply"}`,
++		`{"role":"assistant","content":"partial","tool_calls":[{"id":"call_42","type":"function","function":{"name":"lookup","arguments":"{}"}}]}`,
++	} {
++		t.Run(message, func(t *testing.T) {
++			ids := make(map[string]bool)
++			for _, responseID := range []string{"chatcmpl_first", "chatcmpl_second"} {
++				body := []byte(fmt.Sprintf(`{"id":%q,"created":123,"model":"test","choices":[{"index":0,"message":%s,"finish_reason":"length"}]}`, responseID, message))
++				out, err := ConvertChatCompletionResponseToResponses(body)
++				require.NoError(t, err)
++				id := gjson.GetBytes(out, "output.0.id").String()
++				require.NotEmpty(t, id, string(out))
++				require.Contains(t, id, responseID)
++				require.NotEqual(t, responseID, id)
++				require.False(t, ids[id], "different responses must have different message IDs")
++				ids[id] = true
++				require.Equal(t, "incomplete", gjson.GetBytes(out, "status").String())
++				if gjson.Parse(message).Get("tool_calls").Exists() {
++					require.Equal(t, "call_42", gjson.GetBytes(out, "output.1.call_id").String())
++					require.Equal(t, "{}", gjson.GetBytes(out, "output.1.arguments").String())
++				}
++			}
++		})
++	}
++}
+diff --git a/plugins/wasm-go/extensions/ai-proxy/responses_fallback_test.go b/plugins/wasm-go/extensions/ai-proxy/responses_fallback_test.go
+index 50c05a38..01990218 100644
+--- a/plugins/wasm-go/extensions/ai-proxy/responses_fallback_test.go
++++ b/plugins/wasm-go/extensions/ai-proxy/responses_fallback_test.go
+@@ -125,13 +125,19 @@ func TestResponsesFallbackRequestBodyConvertsToChatCompletions(t *testing.T) {
+ 		})
+ 		require.Equal(t, types.HeaderStopIteration, action)
+ 
+-		action = host.CallOnHttpRequestBody([]byte(`{"model":"openai/gpt-4o-mini","input":"hello","max_output_tokens":32}`))
++		action = host.CallOnHttpRequestBody([]byte(`{"model":"openai/gpt-4o-mini","input":"hello","max_output_tokens":32,"temperature":0,"parallel_tool_calls":false,"tools":[{"type":"function","name":"lookup","parameters":{"type":"object"},"strict":true}],"text":{"format":{"type":"json_schema","name":"reply","schema":{"type":"object"},"strict":false}}}`))
+ 		require.Equal(t, types.ActionContinue, action)
+ 
+ 		body := host.GetRequestBody()
+ 		require.Equal(t, "user", gjson.GetBytes(body, "messages.0.role").String())
+ 		require.Equal(t, "hello", gjson.GetBytes(body, "messages.0.content").String())
+ 		require.Equal(t, int64(32), gjson.GetBytes(body, "max_completion_tokens").Int())
++		require.Equal(t, "0", gjson.GetBytes(body, "temperature").Raw)
++		require.Equal(t, "false", gjson.GetBytes(body, "parallel_tool_calls").Raw)
++		require.Equal(t, "true", gjson.GetBytes(body, "tools.0.function.strict").Raw)
++		require.Equal(t, "json_schema", gjson.GetBytes(body, "response_format.type").String())
++		require.Equal(t, "reply", gjson.GetBytes(body, "response_format.json_schema.name").String())
++		require.Equal(t, "false", gjson.GetBytes(body, "response_format.json_schema.strict").Raw)
+ 		require.False(t, gjson.GetBytes(body, "input").Exists(), string(body))
+ 	})
+ }
+@@ -177,6 +183,7 @@ func TestResponsesFallbackResponseBodyConvertsToResponses(t *testing.T) {
+ 		body := host.GetResponseBody()
+ 		require.Equal(t, "response", gjson.GetBytes(body, "object").String(), string(body))
+ 		require.Equal(t, "completed", gjson.GetBytes(body, "status").String())
++		require.Equal(t, "msg_chatcmpl_1", gjson.GetBytes(body, "output.0.id").String())
+ 		require.Equal(t, "output_text", gjson.GetBytes(body, "output.0.content.0.type").String())
+ 		require.Equal(t, "hello", gjson.GetBytes(body, "output.0.content.0.text").String())
+ 		require.Equal(t, int64(11), gjson.GetBytes(body, "usage.input_tokens").Int())
