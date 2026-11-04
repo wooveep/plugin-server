@@ -78,6 +78,34 @@ def validate_extension(value: Any) -> None:
     check_shape(value, schema, registry, "unsupported_schema_conversion")
 
 
+def _validate_provider_interfaces(declaration: Any, pointer: str) -> None:
+    protocols = {"openai_chat", "openai_responses", "anthropic_messages", "openai_embeddings",
+                 "dashscope_text", "dashscope_multimodal"}
+    if (pointer or not isinstance(declaration, dict)
+            or set(declaration) - {"schema_version", "providers", "wire_protocols"}
+            or declaration.get("schema_version") != "provider-interfaces.v1"
+            or not isinstance(declaration.get("providers"), dict)
+            or not 1 <= len(declaration["providers"]) <= 64):
+        unsupported("invalid provider interface declaration")
+    providers = declaration["providers"]
+    for name, enabled in providers.items():
+        if (not isinstance(name, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", name)
+                or not isinstance(enabled, list) or not 1 <= len(enabled) <= len(protocols)
+                or any(not isinstance(value, str) or value not in protocols for value in enabled)
+                or len(set(enabled)) != len(enabled)):
+            unsupported("unsupported provider interfaces")
+    wire = declaration.get("wire_protocols", {})
+    if not isinstance(wire, dict):
+        unsupported("invalid provider wire protocol declaration")
+    for name, mappings in wire.items():
+        if name not in providers or not isinstance(mappings, dict):
+            unsupported("unknown provider wire protocol declaration")
+        for logical, encoding in mappings.items():
+            if (logical not in providers[name] or not isinstance(encoding, str)
+                    or not re.fullmatch(r"[a-zA-Z0-9._-]{1,128}", encoding)):
+                unsupported("unknown or invalid provider wire protocol")
+
+
 def _convert_schema(schema: Any, annotations: dict[str, Any], pointer: str = "") -> Any:
     if isinstance(schema, bool):
         return schema
@@ -87,6 +115,8 @@ def _convert_schema(schema: Any, annotations: dict[str, Any], pointer: str = "")
         unsupported("unrecognized schema keyword: " + ",".join(sorted(set(schema) - SCHEMA_KEYWORDS - UI_KEYS - {"nullable", "example"})))
     if "x-higress" in schema or "$id" in schema or "$schema" in schema:
         unsupported("nested resource/dialect declaration in OpenAPI schema")
+    if "x-modelfusion-provider-interfaces" in schema:
+        _validate_provider_interfaces(schema["x-modelfusion-provider-interfaces"], pointer)
     if "x-modelfusion-native-text-routing" in schema:
         declaration = schema["x-modelfusion-native-text-routing"]
         if (pointer or not isinstance(declaration, dict)

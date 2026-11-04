@@ -28,6 +28,29 @@ class SchemaConversionTests(unittest.TestCase):
             with self.subTest(declaration=invalid), self.assertRaises(ArtifactError):
                 convert_spec(yaml.safe_dump(candidate, sort_keys=False).encode())
 
+    def test_provider_interfaces_are_preserved_as_closed_package_metadata(self):
+        import copy
+        import json
+        import yaml
+        source = Path(__file__).resolve().parents[1] / "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml"
+        document = yaml.safe_load(source.read_bytes())
+        key = "x-modelfusion-provider-interfaces"
+        expected = document["spec"]["configSchema"]["openAPIV3Schema"][key]
+        converted = convert_spec(source.read_bytes())
+        self.assertEqual(json.loads(converted["schemas"]["config.schema.json"])[key], expected)
+        for invalid in [
+            {"schema_version": "unknown", "providers": {"qwen": ["openai_chat"]}},
+            {"schema_version": "provider-interfaces.v1", "providers": {}},
+            {"schema_version": "provider-interfaces.v1", "providers": {"qwen": ["invented"]}},
+            {"schema_version": "provider-interfaces.v1", "providers": {"qwen": ["openai_chat", "openai_chat"]}},
+            {"schema_version": "provider-interfaces.v1", "providers": {"gemini": ["openai_chat"]}, "wire_protocols": {"gemini": {"openai_responses": "gemini_generate_content"}}},
+            {"schema_version": "provider-interfaces.v1", "providers": {"gemini": ["openai_chat"]}, "wire_protocols": {"gemini": {"openai_chat": "invalid encoding"}}},
+        ]:
+            candidate = copy.deepcopy(document)
+            candidate["spec"]["configSchema"]["openAPIV3Schema"][key] = invalid
+            with self.subTest(declaration=invalid), self.assertRaises(ArtifactError):
+                convert_spec(yaml.safe_dump(candidate, sort_keys=False).encode())
+
     def test_dashscope_native_text_configuration_is_publishable_in_both_scopes(self):
         import json
         from jsonschema import Draft202012Validator
