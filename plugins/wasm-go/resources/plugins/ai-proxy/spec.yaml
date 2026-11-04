@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.37
+  version: 2.0.38
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -76,6 +76,40 @@ spec:
       portPath: managed_media.redis.service_port
       projectedNamePath: managed_media.redis.service_name
     openAPIV3Schema:
+      x-modelfusion-provider-interfaces:
+        schema_version: provider-interfaces.v1
+        wire_protocols:
+          gemini:
+            openai_chat: gemini_generate_content
+            openai_embeddings: gemini_embeddings
+        providers:
+          ai360: [openai_chat, openai_embeddings]
+          azure: [openai_chat, openai_responses, openai_embeddings]
+          baichuan: [openai_chat, openai_embeddings]
+          baidu: [openai_chat, openai_embeddings]
+          claude: [anthropic_messages]
+          cloudflare: [openai_chat]
+          deepseek: [openai_chat, openai_responses, anthropic_messages]
+          doubao: [openai_chat, openai_responses, openai_embeddings]
+          fireworks: [openai_chat]
+          gemini: [openai_chat, openai_embeddings]
+          github: [openai_chat, openai_embeddings]
+          grok: [openai_chat]
+          groq: [openai_chat, openai_responses]
+          hunyuan: [openai_chat, openai_embeddings]
+          longcat: [openai_chat, openai_embeddings]
+          minimax: [openai_chat]
+          mistral: [openai_chat, openai_embeddings]
+          moonshot: [openai_chat]
+          ollama: [openai_chat, openai_embeddings]
+          openai: [openai_chat, openai_responses, openai_embeddings]
+          openrouter: [openai_chat]
+          qwen: [openai_chat, openai_responses, anthropic_messages, openai_embeddings, dashscope_text, dashscope_multimodal]
+          stepfun: [openai_chat]
+          together-ai: [openai_chat]
+          vllm: [openai_chat, openai_responses, anthropic_messages, openai_embeddings]
+          yi: [openai_chat]
+          zhipuai: [openai_chat, openai_embeddings]
       x-modelfusion-native-text-routing:
         schema_version: native-text-routing.v1
         providers:
