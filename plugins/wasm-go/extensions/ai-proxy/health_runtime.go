@@ -11,6 +11,7 @@ import (
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/upstreamhealth"
 	"github.com/higress-group/wasm-go/pkg/log"
@@ -388,7 +389,14 @@ func rejectManagedHealth(ctx wrapper.HttpContext, state *managedExecutionState, 
 	if retryAfter != nil {
 		headers = append(headers, [2]string{"retry-after", strconv.FormatUint(*retryAfter, 10)})
 	}
-	_ = proxywasm.SendHttpResponseWithDetail(503, "ai-proxy.managed_execution", headers, managedErrorBody(reason), -1)
+	body := managedErrorBody(reason)
+	if managedPublicText(state) {
+		policy := managedPublicPolicy(state)
+		failure := clientresponse.Failure{Kind: clientresponse.FailureConfiguration, Retryable: retryAfter != nil}
+		body = failure.Body(policy)
+		headers = failure.Headers(policy, headers, false, false)
+	}
+	_ = proxywasm.SendHttpResponseWithDetail(503, "ai-proxy.managed_execution", headers, body, -1)
 }
 
 func reportManagedHealthOutcome(state *managedExecutionState, snapshot executionfacts.Snapshot) {
