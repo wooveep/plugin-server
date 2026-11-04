@@ -109,21 +109,21 @@ server:
   - id: MyBasicAuth
     type: http
     scheme: basic
-    defaultCredential: "admin:secretpassword" # Default username and password
+    defaultCredential: "YOUR_USERNAME:YOUR_PASSWORD" # Default username and password
   - id: MyBearerToken
     type: http
     scheme: bearer
-    defaultCredential: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." # Default Bearer Token
+    defaultCredential: "YOUR_BEARER_TOKEN" # Default Bearer Token
   - id: MyApiKeyInHeader
     type: apiKey
     in: header
     name: X-Custom-API-Key # API Key in a header named X-Custom-API-Key
-    defaultCredential: "abcdef123456" # Default API Key
+    defaultCredential: "YOUR_API_KEY" # Default API Key
   - id: MyApiKeyInQuery
     type: apiKey
     in: query
     name: "api_token" # API Key in a query parameter named api_token
-    defaultCredential: "uvwxyz789012"
+    defaultCredential: "YOUR_API_KEY"
 ```
 
 ### Applying Security Schemes in Tools
@@ -188,7 +188,7 @@ server:
     type: apiKey
     in: header
     name: X-API-Key
-    # defaultCredential: "optional_default_backend_key"
+    # defaultCredential: "YOUR_API_KEY"
 
 tools:
 - name: get-product-securely

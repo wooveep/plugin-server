@@ -62,10 +62,10 @@ global_auth: false
 consumers:
 - name: consumer1
   access_key: consumer1-key
-  secret_key: 2bda943c-ba2b-11ec-ba07-00163e1250b5
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_1
 - name: consumer2
   access_key: consumer2-key
-  secret_key: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_2
 ```
 
 **路由级配置**（适用于 route-a 和 route-b）：
@@ -112,7 +112,7 @@ type SignedHeader struct {
 func main() {
 	// 配置参数
 	keyID := "consumer1-key"                            // key id
-	secretKey := "2bda943c-ba2b-11ec-ba07-00163e1250b5" // secret key
+	secretKey := "YOUR_EXAMPLE_CREDENTIAL_1" // secret key
 	requestMethod := "POST"                             // HTTP method
 	requestPath := "/foo"                               // Route URI
 	algorithm := "hmac-sha256"                          // algorithm
@@ -281,10 +281,10 @@ global_auth: false
 consumers:
 - name: consumer1
   access_key: consumer1-key
-  secret_key: 2bda943c-ba2b-11ec-ba07-00163e1250b5
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_1
 - name: consumer2
   access_key: consumer2-key
-  secret_key: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_2
 signed_headers:  # 需要纳入签名的自定义请求头
 - X-Custom-Header-A
 - X-Custom-Header-B
@@ -344,10 +344,10 @@ global_auth: true  # 开启全局认证
 consumers:
 - name: consumer1
   access_key: consumer1-key
-  secret_key: 2bda943c-ba2b-11ec-ba07-00163e1250b5
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_1
 - name: consumer2
   access_key: consumer2-key
-  secret_key: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_2
 ```
 
 **说明**：当 `global_auth: true` 时，所有访问网关的请求都需要携带有效的认证信息，未认证的请求将被直接拒绝

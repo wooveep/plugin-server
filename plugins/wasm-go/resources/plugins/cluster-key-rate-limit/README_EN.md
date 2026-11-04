@@ -97,9 +97,9 @@ rule_name: routeA-request-param-limit-rule
 rule_items:
   - limit_by_param: apikey
     limit_keys:
-      - key: 9a342114-ba8a-11ec-b1bf-00163e1250b5
+      - key: YOUR_EXAMPLE_KEY_1
         query_per_minute: 10
-      - key: a6a6d7f2-ba8a-11ec-bec2-00163e1250b5
+      - key: YOUR_EXAMPLE_KEY_2
         query_per_hour: 100
   - limit_by_per_param: apikey
     limit_keys:

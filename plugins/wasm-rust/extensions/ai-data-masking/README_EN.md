@@ -88,13 +88,13 @@ replace_roles:
   Please change `curl http://172.20.5.14/api/openai/v1/chat/completions -H "Authorization: sk-12345" -H "Auth: test@gmail.com"` to POST method
 
 ### Processed Request Large Model Content
-  `curl http://***.***.***.***/api/openai/v1/chat/completions -H "Authorization: 48a7e98a91d93896d8dac522c5853948" -H "Auth: ****@gmail.com"` change to POST method
+  `curl http://***.***.***.***/api/openai/v1/chat/completions -H "Authorization: YOUR_API_KEY" -H "Auth: ****@gmail.com"` change to POST method
 
 ### Large Model Returned Content
   You want to convert a `curl` GET request to a POST request, and this request is sending data to a specific API. Below is the modified `curl` command to send as POST:
 ```sh
 curl -X POST \
-     -H "Authorization: 48a7e98a91d93896d8dac522c5853948" \
+     -H "Authorization: YOUR_API_KEY" \
      -H "Auth: ****@gmail.com" \
      -H "Content-Type: application/json" \
      -d '{"key":"value"}' \

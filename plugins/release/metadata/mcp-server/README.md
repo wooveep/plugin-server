@@ -109,21 +109,21 @@ server:
   - id: MyBasicAuth
     type: http
     scheme: basic
-    defaultCredential: "admin:secretpassword" # 默认的用户名和密码
+    defaultCredential: "YOUR_USERNAME:YOUR_PASSWORD" # 默认的用户名和密码
   - id: MyBearerToken
     type: http
     scheme: bearer
-    defaultCredential: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." # 默认的Bearer Token
+    defaultCredential: "YOUR_BEARER_TOKEN" # 默认的Bearer Token
   - id: MyApiKeyInHeader
     type: apiKey
     in: header
     name: X-Custom-API-Key # API Key 在名为 X-Custom-API-Key 的 Header 中
-    defaultCredential: "abcdef123456" # 默认的 API Key
+    defaultCredential: "YOUR_API_KEY" # 默认的 API Key
   - id: MyApiKeyInQuery
     type: apiKey
     in: query
     name: "api_token" # API Key 在名为 api_token 的查询参数中
-    defaultCredential: "uvwxyz789012"
+    defaultCredential: "YOUR_API_KEY"
 ```
 
 ### 在工具中应用认证方案
@@ -188,7 +188,7 @@ server:
     type: apiKey
     in: header
     name: X-API-Key
-    # defaultCredential: "optional_default_backend_key"
+    # defaultCredential: "YOUR_API_KEY"
 
 tools:
 - name: get-product-securely

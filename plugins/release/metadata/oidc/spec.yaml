@@ -173,9 +173,9 @@ spec:
           title: OIDC 签发者 URL
           x-title-i18n:
             en-US: OIDC Issuer URL
-          description: OpenID Connect 签发者 URL，例如 "https://dev-o43xb1mz7ya7ach4.us.auth0.com"
+          description: OpenID Connect 签发者 URL，例如 "https://YOUR_AUTH0_DOMAIN"
           x-description-i18n:
-            en-US: The OpenID Connect issuer URL, e.g. "https://dev-o43xb1mz7ya7ach4.us.auth0.com"
+            en-US: The OpenID Connect issuer URL, e.g. "https://YOUR_AUTH0_DOMAIN"
         oidc_verifier_request_timeout:
           type: integer
           title: OIDC 验证请求超时
@@ -271,11 +271,11 @@ spec:
                   en-US: Match rule type can be exact or prefix or regex
       example:
         redirect_url: http://foo.bar.com/oauth2/callback
-        oidc_issuer_url: https://dev-o43xb1mz7ya7ach4.us.auth0.com/
-        client_id: XXXXXXXXXXXXXXXX
-        client_secret: XXXXXXXXXXXXXXXX
+        oidc_issuer_url: https://YOUR_AUTH0_DOMAIN/
+        client_id: YOUR_CLIENT_ID
+        client_secret: YOUR_CLIENT_SECRET
         scope: openid email offline_access
-        cookie_secret: nqavJrGvRmQxWwGNptLdyUVKcBNZ2b18Guc1n_8DCfY=
+        cookie_secret: YOUR_BASE64_COOKIE_SECRET
         service_name: auth.dns
         service_port: 443
         match_type: whitelist
@@ -435,9 +435,9 @@ spec:
           title: OIDC 签发者 URL
           x-title-i18n:
             en-US: OIDC Issuer URL
-          description: OpenID Connect 签发者 URL，例如 "https://dev-o43xb1mz7ya7ach4.us.auth0.com"
+          description: OpenID Connect 签发者 URL，例如 "https://YOUR_AUTH0_DOMAIN"
           x-description-i18n:
-            en-US: The OpenID Connect issuer URL, e.g. "https://dev-o43xb1mz7ya7ach4.us.auth0.com"
+            en-US: The OpenID Connect issuer URL, e.g. "https://YOUR_AUTH0_DOMAIN"
         oidc_verifier_request_timeout:
           type: integer
           title: OIDC 验证请求超时
@@ -533,11 +533,11 @@ spec:
                   en-US: Match rule type can be exact or prefix or regex
       example:
         redirect_url: http://foo.bar.com/oauth2/callback
-        oidc_issuer_url: https://dev-o43xb1mz7ya7ach4.us.auth0.com/
-        client_id: XXXXXXXXXXXXXXXX
-        client_secret: XXXXXXXXXXXXXXXX
+        oidc_issuer_url: https://YOUR_AUTH0_DOMAIN/
+        client_id: YOUR_CLIENT_ID
+        client_secret: YOUR_CLIENT_SECRET
         scope: openid email offline_access
-        cookie_secret: nqavJrGvRmQxWwGNptLdyUVKcBNZ2b18Guc1n_8DCfY=
+        cookie_secret: YOUR_BASE64_COOKIE_SECRET
         service_name: auth.dns
         service_port: 443
         match_type: whitelist

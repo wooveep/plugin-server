@@ -74,10 +74,10 @@ global_auth: false
 consumers:
 - name: consumer1
   access_key: consumer1-key
-  secret_key: 2bda943c-ba2b-11ec-ba07-00163e1250b5
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_1
 - name: consumer2
   access_key: consumer2-key
-  secret_key: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_2
 ```  
 
 **Route-Level Configuration** (applicable to `route-a` and `route-b`):
@@ -126,7 +126,7 @@ type SignedHeader struct {
 func main() {
 	// Configuration parameters
 	keyID := "consumer1-key"                            // Key ID
-	secretKey := "2bda943c-ba2b-11ec-ba07-00163e1250b5" // Secret key
+	secretKey := "YOUR_EXAMPLE_CREDENTIAL_1" // Secret key
 	requestMethod := "POST"                             // HTTP method
 	requestPath := "/foo"                               // Route URI
 	algorithm := "hmac-sha256"                          // Algorithm
@@ -300,10 +300,10 @@ global_auth: false
 consumers:
 - name: consumer1
   access_key: consumer1-key
-  secret_key: 2bda943c-ba2b-11ec-ba07-00163e1250b5
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_1
 - name: consumer2
   access_key: consumer2-key
-  secret_key: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_2
 signed_headers:  # Custom request headers to be included in the signature
 - X-Custom-Header-A
 - X-Custom-Header-B
@@ -365,10 +365,10 @@ global_auth: true  # Enable global authentication
 consumers:
 - name: consumer1
   access_key: consumer1-key
-  secret_key: 2bda943c-ba2b-11ec-ba07-00163e1250b5
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_1
 - name: consumer2
   access_key: consumer2-key
-  secret_key: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+  secret_key: YOUR_EXAMPLE_CREDENTIAL_2
 ```  
 
 **Description**: When `global_auth: true`, all requests to the gateway must carry valid authentication information. Unauthenticated requests will be rejected directly.

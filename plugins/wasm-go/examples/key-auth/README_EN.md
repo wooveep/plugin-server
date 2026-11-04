@@ -47,9 +47,9 @@ At the instance level, do the following plugin configuration:
 ```yaml
 global_auth: false
 consumers:
-- credential: 2bda943c-ba2b-11ec-ba07-00163e1250b5
+- credential: YOUR_EXAMPLE_CREDENTIAL_1
   name: consumer1
-- credential: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+- credential: YOUR_EXAMPLE_CREDENTIAL_2
   name: consumer2
 keys:
 - apikey
@@ -78,12 +78,12 @@ Based on this configuration, the following requests will be allowed:
 Assuming the following request matches route-a:
 **Setting API Key in URL Parameters**
 ```bash
-curl  http://xxx.hello.com/test?apikey=2bda943c-ba2b-11ec-ba07-00163e1250b5
+curl  http://xxx.hello.com/test?apikey=YOUR_EXAMPLE_CREDENTIAL_1
 ```
 
 **Setting API Key in HTTP Request Headers**
 ```bash
-curl  http://xxx.hello.com/test -H 'x-api-key: 2bda943c-ba2b-11ec-ba07-00163e1250b5'
+curl  http://xxx.hello.com/test -H 'x-api-key: YOUR_EXAMPLE_CREDENTIAL_1'
 ```
 
 After successful authentication and authorization, the request's header will have an added `X-Mse-Consumer` field with the value `consumer1`, to identify the name of the caller.
@@ -96,13 +96,13 @@ curl  http://xxx.hello.com/test
 
 **Request with an invalid API Key returns 401**
 ```bash
-curl  http://xxx.hello.com/test?apikey=926d90ac-ba2e-11ec-ab68-00163e1250b5
+curl  http://xxx.hello.com/test?apikey=YOUR_OTHER_CREDENTIAL
 ```
 
 **Caller matched with provided API Key has no access rights, returns 403**
 ```bash
 # consumer2 is not in the allow list of route-a
-curl  http://xxx.hello.com/test?apikey=c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+curl  http://xxx.hello.com/test?apikey=YOUR_EXAMPLE_CREDENTIAL_2
 ```
 
 ### Enabling at the Instance Level
@@ -111,9 +111,9 @@ The following configuration will enable Basic Auth authentication at the instanc
 ```yaml
 global_auth: true
 consumers:
-- credential: 2bda943c-ba2b-11ec-ba07-00163e1250b5
+- credential: YOUR_EXAMPLE_CREDENTIAL_1
   name: consumer1
-- credential: c8c8e9ca-558e-4a2d-bb62-e700dcc40e35
+- credential: YOUR_EXAMPLE_CREDENTIAL_2
   name: consumer2
 keys:
 - apikey

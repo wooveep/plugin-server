@@ -98,7 +98,7 @@ replace_roles:
 
 ### 处理后请求大模型内容
 
-  `curl http://***.***.***.***/api/openai/v1/chat/completions -H "Authorization: 48a7e98a91d93896d8dac522c5853948" -H "Auth: ****@gmail.com"` 改成post方式
+  `curl http://***.***.***.***/api/openai/v1/chat/completions -H "Authorization: YOUR_API_KEY" -H "Auth: ****@gmail.com"` 改成post方式
 
 ### 大模型返回内容
 
@@ -106,7 +106,7 @@ replace_roles:
 
 ```sh
 curl -X POST \
-     -H "Authorization: 48a7e98a91d93896d8dac522c5853948" \
+     -H "Authorization: YOUR_API_KEY" \
      -H "Auth: ****@gmail.com" \
      -H "Content-Type: application/json" \
      -d '{"key":"value"}' \

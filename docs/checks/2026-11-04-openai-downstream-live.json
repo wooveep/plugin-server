@@ -943,5 +943,40 @@
     "Responses-to-Chat full function-result roundtrip, which is explicitly rejected by current converter"
   ],
   "private_evidence_directory": "/home/cloudyi/CodeWorkspace/modelfusionproject/modelfusion-deploy/.local/openai-downstream-20261104",
-  "credentials_in_public_evidence": false
+  "credentials_in_public_evidence": false,
+  "provider_access_configuration_delivery": {
+    "status": "passed",
+    "report": "../../../modelfusion-deploy/docs/checks/2026-11-04-provider-api-access.md",
+    "helm_revision": 118,
+    "ai_proxy": "2.0.38",
+    "api_source": "39f418d4cd73375dbc4f5589aacd00ca6f55182b",
+    "admin_source": "0b56aba8d0fb88fe5677f41d6802b6031cc883aa",
+    "online": {
+      "status": "passed",
+      "gateway_samples": 26,
+      "http200": 22,
+      "expected_rejected_before_upstream": 4,
+      "real_text_supplier_calls": 7,
+      "controlled_upstream_calls": 14,
+      "cache_hits_without_upstream": 1,
+      "ordinary_function_roundtrips": 1,
+      "full_function_history_verified": true,
+      "non_stream_message_id_verified": true,
+      "parameter_mapping_verified": true,
+      "history_preserved_and_protocol_isolated": true,
+      "qwen_per_entry_encoding_verified": true,
+      "accepted_facts": 43,
+      "sales_applications": 22,
+      "procurement_applications": 21,
+      "wallet_debit_units": 8230000,
+      "wallet_final_units": 99991770000,
+      "wallet_scale": 10000000000,
+      "wallet_version": 23,
+      "rates_are_test_only": true,
+      "visual_model_enabled": false,
+      "visual_requests": 0
+    },
+    "visual_models_enabled": false,
+    "remaining_paid_requests": 0
+  }
 }

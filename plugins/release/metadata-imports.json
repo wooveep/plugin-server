@@ -1271,6 +1271,111 @@
       "before_sha256": "ddd8238173de8e11fa27e40a2d4a741afbe77d203906985b9712b967f7d9f3eb",
       "after_sha256": "3ee2309c4c60a54f9680eb80c83869c038cbb24000073f3d741311c1eb33bd2b",
       "reason": "align metadata samples and defaults with declared/runtime types; mapper requires exact mappings in native roles while retaining standalone identity mapping"
+    },
+    {
+      "plugin": "ai-data-masking",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/ai-data-masking/README.md",
+      "original_sha256": "64e7a4feee5adc6afaef665526728d346914c5aca38862f896e5cc9d775a365f",
+      "new_sha256": "71635c3dc4d9546c71d05cf0114483e59ff77028e4d3d014dabb94ace73120b0"
+    },
+    {
+      "plugin": "ai-data-masking",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/ai-data-masking/README_EN.md",
+      "original_sha256": "2521550ffde81a65a15854d5fd7c55cd0b0242d489b4084c247165b93eba7da3",
+      "new_sha256": "c1623f90ea2bb69618b358734f71eb6ba0f7215e3038c12c6c6a1db8a711d89b"
+    },
+    {
+      "plugin": "ext-auth",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/ext-auth/README.md",
+      "original_sha256": "12b972cc3e9efbfdae096ec0e8d959ae226531ad390d9abae69f6602062091e1",
+      "new_sha256": "b909f6e5b923fb7b2b2ec9aaf11dcbc0601b6e57ba2317a733de91d70ae06e88"
+    },
+    {
+      "plugin": "ext-auth",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/ext-auth/README_EN.md",
+      "original_sha256": "3026082686454067aa06b8bf4b286b8dded881863092ba26cc58cc66cc7d2c87",
+      "new_sha256": "876158d54a0f485dbfc3643aa57bd4fef8ff49f399be6abd55c2f32f3e455de9"
+    },
+    {
+      "plugin": "jwt-auth",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/jwt-auth/README.md",
+      "original_sha256": "b512f940bdff916427f52efa624e91c27f7fb688b14d8bc08ccfd27b0d0942ca",
+      "new_sha256": "300c77564112d52273f5b5e675c480f4bd58f53a55a57f619e3cd813f3407de7"
+    },
+    {
+      "plugin": "jwt-auth",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/jwt-auth/README_EN.md",
+      "original_sha256": "46e1cf8aaf6fd8f35255b6fabc3916bb0d91e9d26895710705d81a2b91dcf1f7",
+      "new_sha256": "2ecfc529eee198a1644b63f6fd634003361bc40788f74e1bc452a2dfe1853b89"
+    },
+    {
+      "plugin": "key-rate-limit",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/key-rate-limit/README.md",
+      "original_sha256": "3bf4dc0357da8064a93ce16f0f0b30f5fd2d7e1ba616a4caf6e5cb5988622e09",
+      "new_sha256": "ca8bda9b42252d28bd8f3cb48ec7bb4758d3174f29b57d63a29c76e4f5a05910"
+    },
+    {
+      "plugin": "key-rate-limit",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/key-rate-limit/README_EN.md",
+      "original_sha256": "7e7809a0cbfa63520ff002ccd86e5a0a038e89a4ccb675ba54cb8c4d49ddd69b",
+      "new_sha256": "75fbdea526e9b4c3f1bfd7daa6f8104798326e77c3ed3a9818c86d8a739f363d"
+    },
+    {
+      "plugin": "mcp-server",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/mcp-server/README.md",
+      "original_sha256": "9b5226a877d174ec3e735050e189d6ff669f16f95ca6d490f945095ac6d440c7",
+      "new_sha256": "e27b71bdf19bca9dfa2f2e158022f5d6e1a2690c5a30d6f0319d2507febf3a63"
+    },
+    {
+      "plugin": "mcp-server",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/mcp-server/README_EN.md",
+      "original_sha256": "33c89610906161e2f525aa824ca3c0212bdb225519efb4eb9c1d3fc55599062b",
+      "new_sha256": "9cabea6237bf3b605077b27bdda0ca09fcf134ee6e48c1c1288df1da91efe3c3"
+    },
+    {
+      "plugin": "oauth",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/oauth/README.md",
+      "original_sha256": "a80f7b94ed24af24b3249d0bb683b3ad74394c2fe4f4bde8ebff058e643450e2",
+      "new_sha256": "29293515f0162ea6e519a18111a211dc5de0bf7cc10f1e26f891a43965ea7baf"
+    },
+    {
+      "plugin": "oauth",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/oauth/README_EN.md",
+      "original_sha256": "01c14a34ff0644fd68be896e9eefb6a7759c2fc09ad0671a92b4e7da05f6d621",
+      "new_sha256": "7531757d42f1a07f6f1f66f8ad731e83304a1f3b956173fdea8e817e62528856"
+    },
+    {
+      "plugin": "oidc",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/oidc/README.md",
+      "original_sha256": "fa5e298187b14cbffcbed4ae3016b759985064ef61e6e9286f08b0a114e3fd55",
+      "new_sha256": "124ac55c75cab823438def34e2079a7ff6e6cdd085c9870c0ac1962345069c4e"
+    },
+    {
+      "plugin": "oidc",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/oidc/README_EN.md",
+      "original_sha256": "df85a5c0211d9457b9d0b33db0c38bf60d84656c13b37cc824c8f839a10d5c5e",
+      "new_sha256": "3c4155592c4f49ffedf372f8ed95cd122d983f76ae42e46fe05a308d27362ac7"
+    },
+    {
+      "plugin": "oidc",
+      "operation": "replace example credentials with placeholders",
+      "destination": "plugins/release/metadata/oidc/spec.yaml",
+      "original_sha256": "ea5b5e42988adb8f3118ffcf31eef96239c9cc6a6cdd610325955ea48398e6f6",
+      "new_sha256": "9df041567c6c9268459490220373cb39cbf2045ef51e7f43fb36d1891b48f834"
     }
   ],
   "final_spec_sha256": {

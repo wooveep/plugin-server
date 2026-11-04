@@ -154,11 +154,11 @@ allow:
 
 **将 JWT 设置在 url 参数中**
 ```bash
-curl  'http://xxx.hello.com/test?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJhYmNkIiwic3ViIjoidGVzdCIsImlhdCI6MTY2NTY2MDUyNywiZXhwIjoxODY1NjczODE5fQ.-vBSV0bKeDwQcuS6eeSZN9dLTUnSnZVk8eVCXdooCQ4'
+curl  'http://xxx.hello.com/test?access_token=YOUR_JWT'
 ```
 **将 JWT 设置在 http 请求头中**
 ```bash
-curl  http://xxx.hello.com/test -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJhYmNkIiwic3ViIjoidGVzdCIsImlhdCI6MTY2NTY2MDUyNywiZXhwIjoxODY1NjczODE5fQ.-vBSV0bKeDwQcuS6eeSZN9dLTUnSnZVk8eVCXdooCQ4'
+curl  http://xxx.hello.com/test -H 'Authorization: Bearer YOUR_JWT'
 ```
 
 认证鉴权通过后，请求的header中会被添加一个`X-Mse-Consumer`字段，在此例中其值为`consumer1`，用以标识调用方的名称
@@ -173,7 +173,7 @@ curl  http://xxx.hello.com/test
 **根据请求提供的JWT匹配到的调用者无访问权限，返回403**
 ```bash
 # consumer1不在*.example.com的allow列表里
-curl  'http://xxx.example.com/test' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyMyJ9.eyJpc3MiOiJhYmNkIiwic3ViIjoidGVzdCIsImlhdCI6MTY2NTY2MDUyNywiZXhwIjoxODY1NjczODE5fQ.-vBSV0bKeDwQcuS6eeSZN9dLTUnSnZVk8eVCXdooCQ4'
+curl  'http://xxx.example.com/test' -H 'Authorization: Bearer YOUR_JWT'
 ```
 
 ### 使用远程 JWKS（仅 wasm-go 实现）
@@ -282,7 +282,7 @@ Json Web Toke（JWT），是为了在网络应用环境间传递声明而执行�
 
 ##### 1.3.2 JWT的构成
 
-`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ`
+`YOUR_JWT`
 
 如上面的例子所示，JWT就是一个字符串，由三部分构成：
 

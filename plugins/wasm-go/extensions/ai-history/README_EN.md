@@ -45,7 +45,7 @@ First Round Request:
  curl 'http://example.com/api/openai/v1/chat/completions?fill_history_cnt=3' \
   -H 'Accept: application/json, text/event-stream' \
   -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer sk-Nzf7RtkdS4s0zFyn5575124129254d9bAf9473A5D7D06dD3'
+  -H 'Authorization: Bearer YOUR_API_KEY'
   --data-raw '{"model":"qwen-long","frequency_penalty":0,"max_tokens":800,"stream":false,"messages":[
         {
             "role": "user",
@@ -86,7 +86,7 @@ Second Round Request:
  curl 'http://example.com/api/openai/v1/chat/completions?fill_history_cnt=3' \
   -H 'Accept: application/json, text/event-stream' \
   -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer sk-Nzf7RtkdS4s0zFyn5575124129254d9bAf9473A5D7D06dD3'
+  -H 'Authorization: Bearer YOUR_API_KEY'
   --data-raw '{"model":"qwen-long","frequency_penalty":0,"max_tokens":800,"stream":false,"messages":[
         {
             "role": "user",
@@ -100,7 +100,7 @@ After Request Fill:
  curl 'http://example.com/api/openai/v1/chat/completions?fill_history_cnt=3' \
   -H 'Accept: application/json, text/event-stream' \
   -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer sk-Nzf7RtkdS4s0zFyn5575124129254d9bAf9473A5D7D06dD3'
+  -H 'Authorization: Bearer YOUR_API_KEY'
   --data-raw '{"model":"qwen-long","frequency_penalty":0,"max_tokens":800,"stream":false,"messages":[
          {
             "role": "user",
@@ -124,7 +124,7 @@ Each round of requests only needs to include the current question and the number
 curl 'http://example.com/api/openai/v1/chat/completions/ai-history/query?cnt=3' \
   -H 'Accept: application/json, text/event-stream' \
   -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer sk-Nzf7RtkdS4s0zFyn5575124129254d9bAf9473A5D7D06dD3'
+  -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 
 Response Example:

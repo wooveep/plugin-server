@@ -100,7 +100,7 @@ http_service:
 使用如下请求网关，当开启 `ext-auth` 插件后：
 
 ```shell
-curl -X POST http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 -X GET -H "foo: bar" -H "Authorization: xxx"
+curl -X POST http://localhost:8082/users?apikey=YOUR_EXAMPLE_KEY_1 -X GET -H "foo: bar" -H "Authorization: xxx"
 ```
 
 **请求 `ext-auth` 服务成功：**
@@ -108,7 +108,7 @@ curl -X POST http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e12
 `ext-auth` 服务将接收到如下的鉴权请求：
 
 ```
-POST /auth/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 HTTP/1.1
+POST /auth/users?apikey=YOUR_EXAMPLE_KEY_1 HTTP/1.1
 Host: ext-auth.backend.svc.cluster.local
 Authorization: xxx
 Content-Length: 0
@@ -160,13 +160,13 @@ http_service:
 使用如下请求网关，当开启 `ext-auth` 插件后：
 
 ```shell
-curl -X POST http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 -X GET -H "foo: bar" -H "Authorization: xxx"
+curl -X POST http://localhost:8082/users?apikey=YOUR_EXAMPLE_KEY_1 -X GET -H "foo: bar" -H "Authorization: xxx"
 ```
 
 `ext-auth` 服务将接收到如下的鉴权请求：
 
 ```
-POST /auth/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 HTTP/1.1
+POST /auth/users?apikey=YOUR_EXAMPLE_KEY_1 HTTP/1.1
 Host: my-domain.local
 Authorization: xxx
 X-Auth-Version: 1.0
@@ -198,7 +198,7 @@ http_service:
 使用如下请求网关，当开启 `ext-auth` 插件后：
 
 ```shell
-curl -i http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 -X GET -H "foo: bar" -H "Authorization: xxx"
+curl -i http://localhost:8082/users?apikey=YOUR_EXAMPLE_KEY_1 -X GET -H "foo: bar" -H "Authorization: xxx"
 ```
 
 **请求 `ext-auth` 服务成功：**
@@ -209,7 +209,7 @@ curl -i http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 
 POST /auth HTTP/1.1
 Host: ext-auth.backend.svc.cluster.local
 Authorization: xxx
-X-Original-Uri: /users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5
+X-Original-Uri: /users?apikey=YOUR_EXAMPLE_KEY_1
 X-Original-Method: GET
 Content-Length: 0
 ```
@@ -261,7 +261,7 @@ http_service:
 使用如下请求网关，当开启 `ext-auth` 插件后：
 
 ```shell
-curl -i http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 -X GET -H "foo: bar" -H "Authorization: xxx" -H "X-Auth-Version: 1.0"
+curl -i http://localhost:8082/users?apikey=YOUR_EXAMPLE_KEY_1 -X GET -H "foo: bar" -H "Authorization: xxx" -H "X-Auth-Version: 1.0"
 ```
 
 `ext-auth` 服务将接收到如下的鉴权请求：
@@ -270,7 +270,7 @@ curl -i http://localhost:8082/users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5 
 POST /auth HTTP/1.1
 Host: my-domain.local
 Authorization: xxx
-X-Original-Uri: /users?apikey=9a342114-ba8a-11ec-b1bf-00163e1250b5
+X-Original-Uri: /users?apikey=YOUR_EXAMPLE_KEY_1
 X-Original-Method: GET
 X-Auth-Version: 1.0
 x-envoy-header: true

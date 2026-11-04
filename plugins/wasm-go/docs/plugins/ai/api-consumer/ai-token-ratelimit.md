@@ -92,9 +92,9 @@ rule_name: default_rule
 rule_items:
   - limit_by_param: apikey
     limit_keys:
-      - key: 9a342114-ba8a-11ec-b1bf-00163e1250b5
+      - key: YOUR_EXAMPLE_KEY_1
         token_per_minute: 10
-      - key: a6a6d7f2-ba8a-11ec-bec2-00163e1250b5
+      - key: YOUR_EXAMPLE_KEY_2
         token_per_hour: 100
   - limit_by_per_param: apikey
     limit_keys:
