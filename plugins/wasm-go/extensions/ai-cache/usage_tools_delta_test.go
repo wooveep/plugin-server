@@ -109,6 +109,11 @@ func TestCacheUsageDeltaNativeDeliveryEstimatesThisRequestAndCachedOutput(t *tes
 					SoftExpiresAt: time.Now().Unix() + 60, HardExpiresAt: time.Now().Unix() + 3600, FinishReason: "stop",
 					Usage: json.RawMessage(tc.usage), Response: json.RawMessage(tc.response),
 				}
+				if tc.kind == protocol.ProtocolResponses {
+					record.FinishReason = "completed"
+				} else if tc.kind == protocol.ProtocolMessages {
+					record.FinishReason = "end_turn"
+				}
 				raw, err := json.Marshal(record)
 				require.NoError(t, err)
 				completeNativeCacheRegistration(t, host)

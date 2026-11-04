@@ -87,6 +87,11 @@ func TestPublishedCacheCustomPathReplayAndCapture(t *testing.T) {
 							Response: json.RawMessage(tc.response), Usage: json.RawMessage(`{"input_tokens":7,"output_tokens":3}`),
 							FinishReason: "stop", StreamReplayable: stream,
 						}
+						if tc.kind == protocol.ProtocolResponses {
+							record.FinishReason = "completed"
+						} else if tc.kind == protocol.ProtocolMessages {
+							record.FinishReason = "end_turn"
+						}
 						if stream {
 							record.StreamChunks = []json.RawMessage{json.RawMessage(tc.streamChunk)}
 						}

@@ -23,6 +23,14 @@ func thinRequestOutputGate(kind protocol.ProtocolKind, request gjson.Result) str
 		}
 	}
 	if kind == protocol.ProtocolResponses {
+		if request.Get("store").Bool() || request.Get("previous_response_id").String() != "" || request.Get("conversation").Exists() && request.Get("conversation").Raw != "null" {
+			return "non-replayable-context"
+		}
+		for _, item := range request.Get("input").Array() {
+			if item.Get("type").String() == "item_reference" {
+				return "non-replayable-context"
+			}
+		}
 		background := request.Get("background")
 		if background.Exists() && background.Raw != "null" {
 			if background.Type != gjson.True && background.Type != gjson.False {
@@ -43,6 +51,70 @@ type thinOutputFacts struct {
 	blockedReason     string
 }
 
+func cacheableTextTerminal(kind protocol.ProtocolKind, finish string) bool {
+	switch kind {
+	case protocol.ProtocolResponses:
+		return finish == "completed"
+	case protocol.ProtocolMessages:
+		return finish == "end_turn" || finish == "stop_sequence" || finish == "max_tokens" || finish == "refusal"
+	case protocol.ProtocolChatCompletions:
+		return finish == "stop" || finish == "length" || finish == "content_filter"
+	}
+	return false
+}
+
+// The current materializer rebuilds assistant text, not signed/reasoning state.
+// Keep those real outputs on the original response path instead of flattening
+// them into a cache entry or adding retained context to the Redis event stream.
+func hasNonReplayableContext(kind protocol.ProtocolKind, raw []byte) bool {
+	doc := gjson.ParseBytes(raw)
+	if kind == protocol.ProtocolChatCompletions {
+		for _, choice := range doc.Get("choices").Array() {
+			for _, key := range []string{"message.reasoning_content", "delta.reasoning_content", "message.reasoning", "delta.reasoning"} {
+				if choice.Get(key).String() != "" {
+					return true
+				}
+			}
+		}
+	}
+	if kind == protocol.ProtocolMessages {
+		blocks := doc.Get("content").Array()
+		if block := doc.Get("content_block"); block.Exists() {
+			blocks = append(blocks, block)
+		}
+		for _, block := range blocks {
+			if (block.Get("type").String() == "thinking" || block.Get("type").String() == "redacted_thinking") && (block.Get("thinking").String() != "" || block.Get("signature").String() != "" || block.Get("data").String() != "") {
+				return true
+			}
+		}
+		delta := doc.Get("delta")
+		if delta.Get("type").String() == "thinking_delta" && delta.Get("thinking").String() != "" || delta.Get("type").String() == "signature_delta" && delta.Get("signature").String() != "" {
+			return true
+		}
+	}
+	if kind == protocol.ProtocolResponses {
+		for _, object := range []gjson.Result{doc, doc.Get("response")} {
+			if object.Get("store").Bool() || object.Get("previous_response_id").String() != "" || object.Get("conversation").Exists() && object.Get("conversation").Raw != "null" {
+				return true
+			}
+			items := object.Get("output").Array()
+			if item := object.Get("item"); item.Exists() {
+				items = append(items, item)
+			}
+			for _, item := range items {
+				if item.Get("type").String() == "reasoning" && (item.Get("encrypted_content").String() != "" || len(item.Get("content").Array()) != 0 || len(item.Get("summary").Array()) != 0) {
+					return true
+				}
+			}
+		}
+		kind := doc.Get("type").String()
+		if (strings.HasPrefix(kind, "response.reasoning_text.") || strings.HasPrefix(kind, "response.reasoning_summary")) && (doc.Get("delta").String() != "" || doc.Get("text").String() != "" || doc.Get("part.text").String() != "") {
+			return true
+		}
+	}
+	return false
+}
+
 func thinReplayOutputGate(kind protocol.ProtocolKind, replay protocol.ReplayPayload) thinOutputFacts {
 	if len(replay.Body) > 0 {
 		return thinOutputGate(kind, replay.Body)
@@ -61,6 +133,9 @@ func thinReplayOutputGate(kind protocol.ProtocolKind, replay protocol.ReplayPayl
 // Classify only actual protocol output and the existing protocol tool metadata.
 // This never rejects an image/audio/file attachment in a request.
 func thinOutputGate(kind protocol.ProtocolKind, raw []byte) thinOutputFacts {
+	if hasNonReplayableContext(kind, raw) {
+		return thinOutputFacts{blockedReason: "non-replayable-context"}
+	}
 	var facts thinOutputFacts
 	type block struct {
 		Type string `json:"type"`
@@ -74,6 +149,8 @@ func thinOutputGate(kind protocol.ProtocolKind, raw []byte) thinOutputFacts {
 	}
 	var object struct {
 		Type       string          `json:"type"`
+		Status     string          `json:"status"`
+		Error      json.RawMessage `json:"error"`
 		Content    []block         `json:"content"`
 		Output     []message       `json:"output"`
 		Item       *message        `json:"item"`
@@ -87,11 +164,19 @@ func thinOutputGate(kind protocol.ProtocolKind, raw []byte) thinOutputFacts {
 			Delta        message `json:"delta"`
 		} `json:"choices"`
 		Response struct {
-			Output []message `json:"output"`
+			Output []message       `json:"output"`
+			Status string          `json:"status"`
+			Error  json.RawMessage `json:"error"`
 		} `json:"response"`
 	}
 	if err := json.Unmarshal(raw, &object); err != nil {
 		return thinOutputFacts{blockedReason: "response-parse-failed"}
+	}
+	if object.Type == "error" || object.Type == "response.failed" || object.Type == "response.incomplete" ||
+		object.Status == "failed" || object.Status == "incomplete" || object.Status == "cancelled" ||
+		object.Response.Status == "failed" || object.Response.Status == "incomplete" || object.Response.Status == "cancelled" ||
+		len(object.Error) != 0 && string(object.Error) != "null" || len(object.Response.Error) != 0 && string(object.Response.Error) != "null" {
+		return thinOutputFacts{blockedReason: "incomplete-response"}
 	}
 	var blocks []block
 	switch kind {

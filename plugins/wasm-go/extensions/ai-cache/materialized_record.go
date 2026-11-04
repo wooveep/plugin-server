@@ -119,6 +119,9 @@ func validateReplayRecordScopeAndPayload(record MaterializedReplayRecord, materi
 				return errors.New("materialized record contains tool calls")
 			}
 		}
+		if !cacheableTextTerminal(record.Protocol, record.FinishReason) {
+			return errors.New("materialized record has no replayable completed terminal")
+		}
 		return nil
 	}
 	if err := requireJSONObject(record.Response, "response"); err != nil {
@@ -130,6 +133,9 @@ func validateReplayRecordScopeAndPayload(record MaterializedReplayRecord, materi
 	}
 	if output.containsToolCalls {
 		return errors.New("materialized record contains tool calls")
+	}
+	if !cacheableTextTerminal(record.Protocol, record.FinishReason) {
+		return errors.New("materialized record has no replayable completed terminal")
 	}
 	return nil
 }
@@ -174,6 +180,9 @@ func replayMaterializedRecord(record MaterializedReplayRecord, stream bool, ctx 
 		ctx.SetUserAttribute("upstream_invoked", false)
 		ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
 		headers := [][2]string{{"content-type", serialized.ContentType}}
+		if state, _ := ctx.GetContext(nativeCacheDeliveryContext).(*nativeCacheDeliveryState); state != nil {
+			headers = append(headers, [2]string{"x-request-id", state.origin.CallID})
+		}
 		if bridge != "" {
 			headers = append(headers, [2]string{executionfacts.DeliveryBridgeHeader, bridge})
 		}

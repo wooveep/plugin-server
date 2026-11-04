@@ -219,7 +219,7 @@ func buildThinCacheEvent(ctx wrapper.HttpContext, c config.PluginConfig, kind pr
 	statusCode := thinIntContext(ctx, CACHE_RESPONSE_STATUS_KEY, 0)
 	noStore := ctx.GetBoolContext(CACHE_RESPONSE_NOSTORE_KEY, false)
 	sensitive := ctx.GetBoolContext(CACHE_SENSITIVE_KEY, false)
-	gated := facts.parseFailed || statusCode < 200 || statusCode >= 300 || noStore || sensitive || facts.containsToolCalls
+	gated := facts.parseFailed || statusCode < 200 || statusCode >= 300 || noStore || sensitive || facts.containsToolCalls || !cacheableTextTerminal(kind, facts.finishReason)
 
 	event := ThinCacheEvent{
 		EventEnvelope: sessionctx.NewEventEnvelope(sessionctx.EventEnvelopeInput{
