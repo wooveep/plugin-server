@@ -20,7 +20,7 @@ description: AI 历史对话插件配置参考
 ## 运行属性
 
 插件执行阶段：`默认阶段`
-插件执行优先级：`650`
+插件执行优先级：`260`
 
 
 ## 配置字段
@@ -178,3 +178,5 @@ curl 'http://example.com/api/openai/v1/chat/completions/ai-history/query?cnt=3' 
 ```
 
 返回三个历史对话,如果未传入 cnt 默认返回所有缓存历史对话。
+
+Native tenant history executes after quota (280) and billing (270), before cache (250) and model mapping (200). Tenant selection requires the admitted caller.

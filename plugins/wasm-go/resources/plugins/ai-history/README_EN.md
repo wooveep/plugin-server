@@ -12,7 +12,7 @@ description: AI History Dialogue Plugin Configuration Reference
 
 ## Runtime Properties
 Plugin Execution Phase: `Default Phase`
-Plugin Execution Priority: `650`
+Plugin Execution Priority: `260`
 
 ## Configuration Fields
 | Name              | Data Type | Required | Default Value         | Description                                                                                             |
@@ -158,3 +158,5 @@ Response Example:
 ```
 
 Returns three historical dialogues. If the `cnt` parameter is not provided, it will default to returning all cached historical dialogues.
+
+Native tenant history executes after quota (280) and billing (270), before cache (250) and model mapping (200). Tenant selection requires the admitted caller.

@@ -1573,7 +1573,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-history",
-      "declaredVersion": "2.0.5"
+      "declaredVersion": "2.0.6"
     },
     {
       "logicalId": "ai-image-reader",
