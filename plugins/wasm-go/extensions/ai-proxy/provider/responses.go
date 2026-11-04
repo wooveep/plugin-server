@@ -81,22 +81,48 @@ type responsesTool struct {
 	Strict      *bool                  `json:"strict,omitempty"`
 }
 
-type responsesMessageInput struct {
+type responsesInputItem struct {
+	Type                  string                          `json:"type"`
 	Role                  string                          `json:"role"`
 	Content               json.RawMessage                 `json:"content"`
+	CallID                string                          `json:"call_id"`
+	Name                  string                          `json:"name"`
+	Arguments             *string                         `json:"arguments"`
+	Output                json.RawMessage                 `json:"output"`
 	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
 }
 
 type responsesContentPart struct {
 	Type                  string                          `json:"type"`
-	Text                  string                          `json:"text,omitempty"`
+	Text                  *string                         `json:"text,omitempty"`
+	ImageURL              string                          `json:"image_url,omitempty"`
+	FileID                string                          `json:"file_id,omitempty"`
+	Detail                string                          `json:"detail,omitempty"`
+	Refusal               *string                         `json:"refusal,omitempty"`
 	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
 }
 
-type responsesChatTextPart struct {
+type responsesChatContentPart struct {
 	Type                  string                          `json:"type"`
-	Text                  string                          `json:"text"`
+	Text                  *string                         `json:"text,omitempty"`
+	ImageURL              *chatMessageContentImageUrl     `json:"image_url,omitempty"`
+	Refusal               *string                         `json:"refusal,omitempty"`
 	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
+}
+
+// Request history has no streaming tool indexes or provider-specific message fields.
+type responsesChatInputMessage struct {
+	Role                  string                          `json:"role"`
+	Content               json.RawMessage                 `json:"content,omitempty"`
+	ToolCalls             []responsesChatFunctionCall     `json:"tool_calls,omitempty"`
+	ToolCallID            string                          `json:"tool_call_id,omitempty"`
+	PromptCacheBreakpoint *responsesPromptCacheBreakpoint `json:"prompt_cache_breakpoint,omitempty"`
+}
+
+type responsesChatFunctionCall struct {
+	ID       string       `json:"id"`
+	Type     string       `json:"type"`
+	Function functionCall `json:"function"`
 }
 
 type responsesResponse struct {
@@ -194,15 +220,18 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 		return nil, err
 	}
 	if request.Instructions != "" {
-		messages = append([]chatMessage{{
+		content, err := json.Marshal(request.Instructions)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal responses instructions: %w", err)
+		}
+		messages = append([]responsesChatInputMessage{{
 			Role:    roleDeveloper,
-			Content: request.Instructions,
+			Content: content,
 		}}, messages...)
 	}
 
 	chatRequest := chatCompletionRequest{
 		Model:                request.Model,
-		Messages:             messages,
 		Stream:               request.Stream,
 		User:                 request.User,
 		Metadata:             request.Metadata,
@@ -245,6 +274,7 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 	// explicit zero values survive without changing other providers' defaults.
 	return json.Marshal(struct {
 		chatCompletionRequest
+		Messages           []responsesChatInputMessage  `json:"messages"`
 		Temperature        *float64                     `json:"temperature,omitempty"`
 		TopP               *float64                     `json:"top_p,omitempty"`
 		PresencePenalty    *float64                     `json:"presence_penalty,omitempty"`
@@ -254,6 +284,7 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 		PromptCacheOptions *responsesPromptCacheOptions `json:"prompt_cache_options,omitempty"`
 	}{
 		chatCompletionRequest: chatRequest,
+		Messages:              messages,
 		Temperature:           request.Temperature,
 		TopP:                  request.TopP,
 		PresencePenalty:       request.PresencePenalty,
@@ -264,35 +295,119 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 	})
 }
 
-func convertResponsesInputToChatMessages(input json.RawMessage) ([]chatMessage, error) {
-	if len(bytes.TrimSpace(input)) == 0 {
+func convertResponsesInputToChatMessages(input json.RawMessage) ([]responsesChatInputMessage, error) {
+	if len(bytes.TrimSpace(input)) == 0 || bytes.Equal(bytes.TrimSpace(input), []byte("null")) {
 		return nil, errors.New("input is required for Responses fallback mode")
 	}
 	var text string
 	if err := json.Unmarshal(input, &text); err == nil {
-		return []chatMessage{{Role: roleUser, Content: text}}, nil
+		return []responsesChatInputMessage{{Role: roleUser, Content: input}}, nil
 	}
 
-	var items []responsesMessageInput
+	var items []responsesInputItem
 	if err := json.Unmarshal(input, &items); err != nil {
 		return nil, fmt.Errorf("unsupported responses input: %w", err)
 	}
-	messages := make([]chatMessage, 0, len(items))
+	messages := make([]responsesChatInputMessage, 0, len(items))
+	pending := make(map[string]struct{})
+	seen := make(map[string]struct{})
 	for _, item := range items {
-		content, err := convertResponsesMessageContent(item.Content)
-		if err != nil {
-			return nil, err
+		switch item.Type {
+		case "", "message":
+			if len(pending) > 0 && (item.Role != roleAssistant || messages[len(messages)-1].Role != roleAssistant) {
+				return nil, errors.New("function_call_output is required before the next message in Responses fallback mode")
+			}
+			switch item.Role {
+			case roleUser, roleAssistant, roleDeveloper, roleSystem:
+			default:
+				return nil, fmt.Errorf("message role %q is unsupported in Responses fallback mode", item.Role)
+			}
+			content, err := convertResponsesMessageContent(item.Content, item.Role)
+			if err != nil {
+				return nil, err
+			}
+			if len(pending) > 0 {
+				last := &messages[len(messages)-1]
+				if last.Content == nil {
+					last.Content = content
+					last.PromptCacheBreakpoint = item.PromptCacheBreakpoint
+					continue
+				}
+				// Responses can split one assistant turn around parallel calls. Chat
+				// needs one assistant message; keep each original cache boundary on
+				// its final content part when consolidating those segments.
+				var merged []responsesChatContentPart
+				for _, segment := range []responsesChatInputMessage{*last, {Content: content, PromptCacheBreakpoint: item.PromptCacheBreakpoint}} {
+					var parts []responsesChatContentPart
+					var text string
+					if err := json.Unmarshal(segment.Content, &text); err == nil {
+						parts = []responsesChatContentPart{{Type: "text", Text: &text}}
+					} else if err := json.Unmarshal(segment.Content, &parts); err != nil {
+						return nil, fmt.Errorf("unable to combine assistant history: %w", err)
+					}
+					for _, part := range parts {
+						if part.Type == "refusal" {
+							return nil, errors.New("Chat cannot combine refusal and other assistant content parts in Responses fallback mode")
+						}
+					}
+					if segment.PromptCacheBreakpoint != nil {
+						end := &parts[len(parts)-1]
+						if end.PromptCacheBreakpoint != nil && *end.PromptCacheBreakpoint != *segment.PromptCacheBreakpoint {
+							return nil, errors.New("conflicting cache breakpoints at one assistant content boundary in Responses fallback mode")
+						}
+						end.PromptCacheBreakpoint = segment.PromptCacheBreakpoint
+					}
+					merged = append(merged, parts...)
+				}
+				last.Content, err = json.Marshal(merged)
+				if err != nil {
+					return nil, fmt.Errorf("unable to marshal combined assistant history: %w", err)
+				}
+				last.PromptCacheBreakpoint = nil
+				continue
+			}
+			messages = append(messages, responsesChatInputMessage{Role: item.Role, Content: content, PromptCacheBreakpoint: item.PromptCacheBreakpoint})
+		case "function_call":
+			if item.CallID == "" || item.Name == "" || item.Arguments == nil {
+				return nil, errors.New("function_call requires call_id, name and string arguments in Responses fallback mode")
+			}
+			if _, exists := seen[item.CallID]; exists {
+				return nil, fmt.Errorf("duplicate function_call call_id %q in Responses fallback mode", item.CallID)
+			}
+			if len(pending) > 0 && messages[len(messages)-1].Role != roleAssistant {
+				return nil, errors.New("all function_call_output items must precede the next function_call in Responses fallback mode")
+			}
+			if len(messages) == 0 || messages[len(messages)-1].Role != roleAssistant {
+				messages = append(messages, responsesChatInputMessage{Role: roleAssistant})
+			}
+			last := &messages[len(messages)-1]
+			last.ToolCalls = append(last.ToolCalls, responsesChatFunctionCall{ID: item.CallID, Type: "function", Function: functionCall{Name: item.Name, Arguments: *item.Arguments}})
+			pending[item.CallID] = struct{}{}
+			seen[item.CallID] = struct{}{}
+		case "function_call_output":
+			if _, exists := pending[item.CallID]; !exists {
+				return nil, fmt.Errorf("function_call_output call_id %q has no matching pending function_call in Responses fallback mode", item.CallID)
+			}
+			content, err := convertResponsesMessageContent(item.Output, roleTool)
+			if err != nil {
+				return nil, err
+			}
+			messages = append(messages, responsesChatInputMessage{Role: roleTool, Content: content, ToolCallID: item.CallID})
+			delete(pending, item.CallID)
+		default:
+			return nil, fmt.Errorf("input item type %q is unsupported in Responses fallback mode", item.Type)
 		}
-		messages = append(messages, chatMessage{
-			Role:                  item.Role,
-			Content:               content,
-			PromptCacheBreakpoint: item.PromptCacheBreakpoint,
-		})
+	}
+	if len(pending) > 0 {
+		return nil, errors.New("function_call_output is required for every function_call in Responses fallback mode")
 	}
 	return messages, nil
 }
 
-func convertResponsesMessageContent(content json.RawMessage) (json.RawMessage, error) {
+func convertResponsesMessageContent(content json.RawMessage, role string) (json.RawMessage, error) {
+	if len(bytes.TrimSpace(content)) == 0 || bytes.Equal(bytes.TrimSpace(content), []byte("null")) {
+		return nil, errors.New("message or function output content is required in Responses fallback mode")
+	}
 	var text string
 	if err := json.Unmarshal(content, &text); err == nil {
 		return json.Marshal(text)
@@ -302,20 +417,49 @@ func convertResponsesMessageContent(content json.RawMessage) (json.RawMessage, e
 	if err := json.Unmarshal(content, &parts); err != nil {
 		return nil, fmt.Errorf("unsupported responses message content: %w", err)
 	}
+	if len(parts) == 0 {
+		return nil, errors.New("message or function output content must not be empty in Responses fallback mode")
+	}
 	var builder bytes.Buffer
-	chatParts := make([]responsesChatTextPart, 0, len(parts))
-	hasBreakpoint := false
+	chatParts := make([]responsesChatContentPart, 0, len(parts))
+	preserveParts := role == roleTool
 	for _, part := range parts {
 		switch part.Type {
 		case "input_text", "output_text":
-			builder.WriteString(part.Text)
-			chatParts = append(chatParts, responsesChatTextPart{Type: "text", Text: part.Text, PromptCacheBreakpoint: part.PromptCacheBreakpoint})
-			hasBreakpoint = hasBreakpoint || part.PromptCacheBreakpoint != nil
+			if part.Text == nil {
+				return nil, errors.New("text content requires a string text field in Responses fallback mode")
+			}
+			builder.WriteString(*part.Text)
+			chatParts = append(chatParts, responsesChatContentPart{Type: "text", Text: part.Text, PromptCacheBreakpoint: part.PromptCacheBreakpoint})
+			preserveParts = preserveParts || part.PromptCacheBreakpoint != nil
+		case "input_image":
+			if role != roleUser {
+				return nil, errors.New("input_image is supported only on user messages; Chat tool outputs support text only in Responses fallback mode")
+			}
+			if part.FileID != "" {
+				return nil, errors.New("input_image file_id cannot be resolved to image_url in Responses fallback mode")
+			}
+			if part.ImageURL == "" {
+				return nil, errors.New("input_image requires image_url in Responses fallback mode")
+			}
+			switch part.Detail {
+			case "", "auto", "low", "high", "original":
+			default:
+				return nil, fmt.Errorf("image detail %q is unsupported in Responses fallback mode", part.Detail)
+			}
+			chatParts = append(chatParts, responsesChatContentPart{Type: "image_url", ImageURL: &chatMessageContentImageUrl{Url: part.ImageURL, Detail: part.Detail}, PromptCacheBreakpoint: part.PromptCacheBreakpoint})
+			preserveParts = true
+		case "refusal":
+			if role != roleAssistant || part.Refusal == nil || len(parts) != 1 {
+				return nil, errors.New("refusal requires a single assistant refusal content part in Responses fallback mode")
+			}
+			chatParts = append(chatParts, responsesChatContentPart{Type: "refusal", Refusal: part.Refusal})
+			preserveParts = true
 		default:
 			return nil, fmt.Errorf("%s is unsupported in Responses fallback mode", part.Type)
 		}
 	}
-	if hasBreakpoint {
+	if preserveParts {
 		return json.Marshal(chatParts)
 	}
 	return json.Marshal(builder.String())

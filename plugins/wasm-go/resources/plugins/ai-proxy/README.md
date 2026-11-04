@@ -2891,3 +2891,9 @@ curl "http://localhost:10000/v1/chat/completions"  -H "Content-Type: application
 ### Responses fallback 字段保真（2.0.35）
 
 在2.0.34工具准入及v5事实基线上保留结构化输出、函数strict、并行约束、显式零采样值、reasoning.effort、store及缓存选项/断点；非流式message具有响应派生ID。不支持的后台执行与推理摘要明确拒绝。图像和函数结果历史转换范围保持既有边界，供应商参数限制单列。
+
+### Responses 图像与函数历史（2.0.36）
+
+Responses→Chat回退支持用户消息的图像URL/Data URL，保留detail、图文顺序及缓存断点。普通函数的完整多轮/并行历史映射到assistant.tool_calls及tool/tool_call_id，参数原字符串、空结果、文本结果数组和各个关联ID保留；可直接回放转换器的Responses输出。函数批次中的assistant文本项归并时保留各自缓存前缀位置。
+
+图像file_id解析、工具结果中的图像/文件、加密推理/引用项，以及服务端状态/后台执行/托管工具等无等价执行环境的内容明确拒绝。未知项、无匹配结果、重复关联及不完整函数批次在发送前拒绝；图像/参数是否被接受仍取决于上游模型及供应商。既有字段保真修复和聚合后SSE交付方式保持。

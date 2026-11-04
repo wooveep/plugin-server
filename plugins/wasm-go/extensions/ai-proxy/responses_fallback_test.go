@@ -191,6 +191,25 @@ func TestResponsesFallbackResponseBodyConvertsToResponses(t *testing.T) {
 	})
 }
 
+func TestResponsesFallbackImageAndFunctionHistoryOnRequestPath(t *testing.T) {
+	for _, tc := range []struct{ name, input, path, want string }{
+		{"image", `[{"role":"user","content":[{"type":"input_text","text":"Describe"},{"type":"input_image","image_url":"data:image/png;base64,AAAA","detail":"low"}]}]`, "messages.0.content.1.image_url.url", "data:image/png;base64,AAAA"},
+		{"history", `[{"role":"user","content":"lookup"},{"type":"function_call","call_id":"call_path","name":"lookup","arguments":"{}"},{"type":"function_call_output","call_id":"call_path","output":"delivered"}]`, "messages.2.tool_call_id", "call_path"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			wasmhost.RunTest(t, func(t *testing.T) {
+				host, status := wasmhost.NewTestHost(responsesFallbackOpenRouterConfig)
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+				require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders([][2]string{{":authority", "example.com"}, {":path", "/v1/responses"}, {":method", "POST"}, {"Content-Type", "application/json"}}))
+				require.Equal(t, types.ActionContinue, host.CallOnHttpRequestBody([]byte(`{"model":"test","input":`+tc.input+`}`)))
+				require.Equal(t, tc.want, gjson.GetBytes(host.GetRequestBody(), tc.path).String())
+				require.False(t, gjson.GetBytes(host.GetRequestBody(), "input").Exists())
+			})
+		})
+	}
+}
+
 func TestQwenResponsesFallbackConvertsNonStreamingRequestAndResponse(t *testing.T) {
 	wasmhost.RunTest(t, func(t *testing.T) {
 		host, status := wasmhost.NewTestHost(responsesFallbackQwenConfig)

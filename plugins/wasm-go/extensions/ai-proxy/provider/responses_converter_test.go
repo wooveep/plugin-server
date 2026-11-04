@@ -92,9 +92,9 @@ func TestConvertResponsesRequestToChatCompletion_UnsupportedFallbackFields(t *te
 			want: "web_search_preview",
 		},
 		{
-			name: "unmappable_multimodal_input",
-			body: `{"model":"gpt-4o-mini","input":[{"role":"user","content":[{"type":"input_image","image_url":"https://example.test/a.png"}]}]}`,
-			want: "input_image",
+			name: "unresolved_image_file",
+			body: `{"model":"gpt-4o-mini","input":[{"role":"user","content":[{"type":"input_image","file_id":"file_1"}]}]}`,
+			want: "file_id",
 		},
 	}
 
