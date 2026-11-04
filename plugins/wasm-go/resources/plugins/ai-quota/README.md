@@ -4,7 +4,7 @@
 
 ## 配置作用域
 
-每份独立生效的余额配置必须有 `balance_scope_id`、`cache_generation`、`projection_schema: balance.v1` 和完整 `redis`。字段以 [资源 schema](spec.yaml) 为准；两个 UUID 必须来自 Console 本次受控发布，不能使用示例值代表真实生效配置。`missing_balance_policy` 只接受 `deny`。旧用户名余额 key、`balance_key_template`、`tenant_header`、`consumer_header`、`quota_scope` 和 `provider` 配置已退役；旧裸整数 GET 不会作为新协议后备。
+每份独立生效的余额配置必须有 `balance_scope_id`、`cache_generation`、`projection_schema: balance.v1` 和完整 `redis`。字段以 [资源 schema](../../resources/plugins/ai-quota/spec.yaml) 为准；两个 UUID 必须来自 Console 本次受控发布，不能使用示例值代表真实生效配置。`missing_balance_policy` 只接受 `deny`。旧用户名余额 key、`balance_key_template`、`tenant_header`、`consumer_header`、`quota_scope` 和 `provider` 配置已退役；旧裸整数 GET 不会作为新协议后备。
 
 支持两种配置形态：
 
