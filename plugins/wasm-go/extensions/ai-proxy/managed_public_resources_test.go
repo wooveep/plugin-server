@@ -23,6 +23,50 @@ func nativeResourceFixture() map[string]interface{} {
 	return fixture
 }
 
+func TestNativeResourceWithoutOptionalAccountUsesSelectedCredentialBoundary(t *testing.T) {
+	fixture := nativeResourceFixture()
+	release := fixture["_modelfusion_execution"].(managedRelease)
+	release.Descriptor.ProviderAccountID = ""
+	var descriptor map[string]interface{}
+	raw, err := json.Marshal(release.Descriptor)
+	require.NoError(t, err)
+	require.NoError(t, json.Unmarshal(raw, &descriptor))
+	release.Descriptor.DescriptorDigest, err = managedDescriptorDigest(managedFixtureJSON(t, descriptor))
+	require.NoError(t, err)
+	fixture["_modelfusion_execution"] = release
+	h := newManagedHost(t, fixture)
+	original := []byte(`{"model":"public-model","input":"a"}`)
+	h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("upstream-model"), 1))
+	h.rawResponse(t, [][2]string{{":status", "200"}, {"content-type", "application/json"}}, []byte(`{"id":"native-no-account","object":"response","model":"upstream-model","status":"completed","output":[],"usage":{"input_tokens":1,"output_tokens":1,"total_tokens":2}}`))
+	require.Nil(t, h.host.GetSentLocalResponse(h.id))
+	lookups := h.host.GetRedisCalloutAttributesFromContext(h.id)
+	require.Len(t, lookups, 1, "a valid descriptor must persist its alias before delivery")
+	require.Contains(t, string(lookups[0].Query), "credential:credential-1")
+	require.NotContains(t, string(lookups[0].Query), "controlled-upstream-key")
+	h.host.CallOnRedisCallResponse(lookups[0].CalloutID, 0, []byte(":1\r\n"))
+	require.EqualValues(t, 200, h.host.GetSentLocalResponse(h.id).StatusCode)
+}
+
+func TestResourceCredentialBoundaryFiltersPoolWithoutChangingOrdinarySelection(t *testing.T) {
+	c, err := decodeManagedPoolFixture(t, managedPoolFixture(t))
+	require.NoError(t, err)
+	c.release.Descriptor.ProviderAccountID = ""
+	c.profile, err = newManagedProtocolProfile(managedProtocolResponses, managedProtocolResponses)
+	require.NoError(t, err)
+	members := []managedHealthMember{{credential: c.settings.Credentials[0]}, {credential: c.settings.Credentials[1]}}
+	state := &managedExecutionState{config: c}
+	require.Len(t, managedTextUntried(state, members), 2)
+	owner := managedResourceOwner(c)
+	owner.Account = "credential:credential-1"
+	state.resourceOwner = &owner
+	require.NoError(t, selectManagedResourceOwner(state, owner))
+	eligible := managedTextUntried(state, members)
+	require.Len(t, eligible, 1)
+	require.Equal(t, "credential-1", eligible[0].credential.CredentialRef)
+	owner.Account = "credential:foreign"
+	require.Error(t, selectManagedResourceOwner(state, owner))
+}
+
 func responseResourceDirectoryFixture(t *testing.T, initial int, recovery bool) map[string]interface{} {
 	t.Helper()
 	fixture := managedTextFixture(t, true)

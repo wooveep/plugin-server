@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/resourceref"
@@ -17,7 +18,38 @@ func managedResourceScope(s *managedExecutionState) resourceref.Scope {
 
 func managedResourceOwner(c *managedExecutionConfig) resourceref.Owner {
 	d := c.release.Descriptor
-	return resourceref.Owner{Provider: d.ProviderID, Account: d.ProviderAccountID, Region: d.RegionEndpointRef, Model: d.UpstreamModel, Protocol: c.profile.UpstreamProtocol}
+	account := d.ProviderAccountID
+	if account == "" && c.release.CredentialRef != "" {
+		// Account identity is optional in a valid execution descriptor. A
+		// selected credential reference is an exact, narrower boundary; its
+		// secret and generation do not belong in the resource mapping.
+		account = "credential:" + c.release.CredentialRef
+	}
+	return resourceref.Owner{Provider: d.ProviderID, Account: account, Region: d.RegionEndpointRef, Model: d.UpstreamModel, Protocol: c.profile.UpstreamProtocol}
+}
+
+func managedResourceConfigMatches(c *managedExecutionConfig, owner resourceref.Owner) bool {
+	if managedResourceOwner(c) == owner {
+		return true
+	}
+	if c.release.Descriptor.ProviderAccountID != "" || !strings.HasPrefix(owner.Account, "credential:") {
+		return false
+	}
+	ref := strings.TrimPrefix(owner.Account, "credential:")
+	// A not-yet-selected v2 pool retains its complete verified reference
+	// directory. Checking a copy here does not select or consume a member.
+	for _, member := range c.release.Credentials {
+		if member.CredentialRef == ref {
+			copy := *c
+			copy.release.CredentialRef = ref
+			return managedResourceOwner(&copy) == owner
+		}
+	}
+	return false
+}
+
+func managedResourceCredentialAllowed(s *managedExecutionState, ref string) bool {
+	return s.resourceOwner == nil || !strings.HasPrefix(s.resourceOwner.Account, "credential:") || s.resourceOwner.Account == "credential:"+ref
 }
 
 func managedNativeResponses(c *managedExecutionConfig) bool {
@@ -156,12 +188,12 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 // The only selectable peers are the SDK's verified original operation members.
 // This happens before any send and never consumes a retry/fallback attempt.
 func selectManagedResourceOwner(s *managedExecutionState, owner resourceref.Owner) error {
-	if managedResourceOwner(s.config) == owner && managedNativeResponses(s.config) {
+	if managedResourceConfigMatches(s.config, owner) && managedNativeResponses(s.config) {
 		return nil
 	}
 	var candidate *managedExecutionConfig
 	for _, peer := range s.config.targets {
-		if managedResourceOwner(peer) == owner && managedNativeResponses(peer) {
+		if managedResourceConfigMatches(peer, owner) && managedNativeResponses(peer) {
 			if candidate == nil || peer.release.Descriptor.TargetID < candidate.release.Descriptor.TargetID {
 				candidate = peer
 			}

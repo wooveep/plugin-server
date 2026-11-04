@@ -14,7 +14,7 @@ description: AI 代理插件配置参考
 
 v2 的 `managed_execution.credentials` 保存逐项匹配的 ref/revision/value，与单一 `credential_value` 互斥；必须具备 HEALTH，`upstream_health.targets` 保留每个原操作/凭据成员的完整 TargetReference，与 `target` 互斥。v1 保留原单一配置及可省略的 HEALTH。既有 `legacy_suffixes`/`bound_target`、`auto`/`passthrough` 通用能力自 1.0.2 起提供，不以本次 v2 凭据池版本替代其起始版本。
 
-> 插件版本：`2.0.40`
+> 插件版本：`2.0.41`
 
 ## 功能说明
 
@@ -2906,7 +2906,7 @@ Responses→Chat回退支持用户消息的图像URL/Data URL，保留detail、�
 
 ## 统一下游响应与内部计量
 
-插件版本 `2.0.40`。
+插件版本 `2.0.41`。
 
 托管文本入口统一 Chat／Responses／Messages JSON 与 SSE 的销售模型名、公开字段、错误和用量。Responses 基础输入／输出／总量完整即返回 usage；未知明细省略，基础量不全返回 null。保留真实推理、签名和普通函数上下文；Responses→Chat 仅接受已登记子集，无法表达的上下文明确拒绝。原始上游事实和账务四类 token 计量保持。
 

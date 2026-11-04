@@ -420,12 +420,12 @@ func markManagedTextAttempt(s *managedExecutionState) {
 	s.text.targetAttempts[target]++
 }
 func managedTextUntried(s *managedExecutionState, members []managedHealthMember) []managedHealthMember {
-	if s.text == nil {
+	if s.text == nil && s.resourceOwner == nil {
 		return members
 	}
 	result := make([]managedHealthMember, 0, len(members))
 	for _, member := range members {
-		if !s.text.tried[[2]string{member.target.TargetID, member.credential.CredentialRef}] {
+		if managedResourceCredentialAllowed(s, member.credential.CredentialRef) && (s.text == nil || !s.text.tried[[2]string{member.target.TargetID, member.credential.CredentialRef}]) {
 			result = append(result, member)
 		}
 	}
@@ -520,7 +520,7 @@ func tryManagedTextFallback(ctx wrapper.HttpContext, previous *managedExecutionS
 	for _, target := range policy.Fallback.Targets {
 		if previous.resourceOwner != nil {
 			peer := previous.config.targets[target.TargetID]
-			if peer == nil || !managedNativeResponses(peer) || managedResourceOwner(peer) != *previous.resourceOwner {
+			if peer == nil || !managedNativeResponses(peer) || !managedResourceConfigMatches(peer, *previous.resourceOwner) {
 				continue
 			}
 		}
