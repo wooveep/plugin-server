@@ -1,6 +1,6 @@
 # 完全透传异常响应导致运行资源保留
 
-日期：2026-11-05。状态：源码回归通过，完整制品交付与空卷复测待完成。来源：用户要求对最新 dev 再次清理部署、验证 2.2.1；范围仍为单 VM／单节点、全新安装。
+日期：2026-11-05。状态：源码回归、完整制品交付和修复版空卷运行复测通过。来源：用户要求对最新 dev 再次清理部署、验证 2.2.1；范围仍为单 VM／单节点、全新安装。
 
 ## 现象与证据
 
@@ -27,3 +27,9 @@ ai-proxy 2.0.47 将两项含义分别处理：已返回的HTTP错误、2xx原生
 固定main `974e4694` 至首个修复 `3ad46687` 的双轴复核另定位两项：非origin目录候选在组装后丢失supplier，使OpenAI Messages→Chat的max_completion_tokens以及Qwen Messages终态输入修订失效；AI Cache边界将非法protocol_mode或null／非字符串profile静默当缺省。
 
 增加真实目录fallback用例，先分别复现OpenAI参数错误、Qwen用量退为unknown，再在provider校验边界保留完整profile；不再用未填supplier的局部profile覆盖。新增14个配置负例，在原生解析入口拒绝非法类型及枚举，缺省和已登记值保持。两组回归先失败后通过，代理／缓存完整包测试通过；缓存版本升为2.0.20，同名同版本不覆盖。
+
+## 修复版空卷复测
+
+来源 `4cb49b1a` 的 ai-proxy 2.0.47／ai-cache 2.0.20 已独立核对完整包并部署。真实网关 6 组原始异常交付均接受终态 failed；500／503 的供应商 execution_result=unknown、send_state=handed_off、HTTP 状态为空保持原样。14 条测试路由的原生资源全部自然清完，再次 API 重建后没有复活；17 份冻结计划及账本保留。完整结果见[清理部署验收](../../../modelfusion-deploy/docs/checks/2026-11-05-dev-clean-redeploy.md)。
+
+同轮双轴复审还修复真实候补供应商丢失 supplier profile、缓存配置边界静默接受无效值的问题，分别增加2个实际 fallback 回归和14个无效配置回归。Standards、Spec 剩余均0项，代理与缓存完整 Go 包、插件服务131项检查通过。
