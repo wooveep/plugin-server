@@ -105,8 +105,11 @@ class SchemaConversionTests(unittest.TestCase):
                         config.pop("response_profile", None)
                     else:
                         config["response_profile"] = profile
-                with self.subTest(protocol=protocol, mode=mode, profile=profile):
-                    validator.validate(candidate)
+                single = copy.deepcopy(next(iter(candidate["tenant_policies"].values())))
+                single["_modelfusion_execution"] = candidate["_modelfusion_execution"]
+                for tenant_directory, config in ((True, candidate), (False, single)):
+                    with self.subTest(protocol=protocol, mode=mode, profile=profile, tenant_directory=tenant_directory):
+                        validator.validate(config)
         for field in ("response_profile", "protocol_mode"):
             candidate = copy.deepcopy(base)
             candidate[field] = "unknown"
