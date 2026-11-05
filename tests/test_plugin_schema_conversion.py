@@ -51,6 +51,39 @@ class SchemaConversionTests(unittest.TestCase):
             with self.subTest(declaration=invalid), self.assertRaises(ArtifactError):
                 convert_spec(yaml.safe_dump(candidate, sort_keys=False).encode())
 
+    def test_response_profiles_are_publishable_in_both_exact_proxy_scopes(self):
+        import copy
+        import json
+        from jsonschema import Draft202012Validator
+
+        source = Path(__file__).resolve().parents[1] / "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml"
+        schemas = convert_spec(source.read_bytes())["schemas"]
+        config = {
+            "path_scope": "bound_target", "protocol_mode": "auto",
+            "activeProviderId": "fixture", "providers": [{"id": "fixture", "type": "deepseek", "apiTokens": ["fixture-key"]}],
+            "managed_execution": {
+                "producer_id": "fixture", "call_identity_source": "admission", "private_stream": "fixture",
+                "redis": {"service_name": "redis.dns"}, "upstream_path": "/responses", "authority": "fixture.invalid",
+                "input_protocol": "openai_responses", "upstream_protocol": "openai_responses", "credential_value": "fixture-key",
+            },
+        }
+        for name, encoded in schemas.items():
+            validator = Draft202012Validator(json.loads(encoded))
+            for protocol, profiles in (("openai_chat", ("deepseek", "qwen", "openai")),
+                                       ("openai_responses", ("deepseek", "qwen", "openai")),
+                                       ("anthropic_messages", ("deepseek", "qwen"))):
+                for profile in profiles:
+                    candidate = copy.deepcopy(config)
+                    candidate["managed_execution"].update(input_protocol=protocol, response_profile=profile)
+                    with self.subTest(scope=name, protocol=protocol, profile=profile):
+                        validator.validate(candidate)
+            candidate = copy.deepcopy(config)
+            candidate["managed_execution"]["response_profile"] = "unknown"
+            self.assertFalse(validator.is_valid(candidate))
+            candidate = copy.deepcopy(config)
+            candidate["protocol_mode"] = "passthrough"
+            validator.validate(candidate)
+
     def test_dashscope_native_text_configuration_is_publishable_in_both_scopes(self):
         import json
         from jsonschema import Draft202012Validator
