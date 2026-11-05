@@ -573,6 +573,7 @@ func managedMessagesStream(body []byte, terminalInput bool) managedProtocolObser
 			}
 			started = true
 		case "message_delta":
+			terminalDelta := false
 			if !started {
 				return unknown
 			}
@@ -585,7 +586,7 @@ func managedMessagesStream(body []byte, terminalInput bool) managedProtocolObser
 				if reasonSeen || next == "unknown" {
 					return unknown
 				}
-				reasonSeen, result = true, next
+				reasonSeen, result, terminalDelta = true, next, true
 			}
 			if raw, exists := object["usage"]; exists {
 				if json.Unmarshal(raw, &update) != nil || update == nil {
@@ -602,7 +603,7 @@ func managedMessagesStream(body []byte, terminalInput bool) managedProtocolObser
 						}
 						// Earlier progress is not proof of the final cumulative count.
 						finalOutput = reasonSeen
-					} else if key == "input_tokens" && terminalInput && reasonSeen {
+					} else if key == "input_tokens" && terminalInput && terminalDelta {
 						// Qwen reports provisional input at message_start and
 						// the final cumulative input with its terminal delta.
 						next, valid := managedCount(value)

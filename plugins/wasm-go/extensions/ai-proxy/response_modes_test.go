@@ -255,6 +255,10 @@ func TestQwenMessagesTerminalInputPreservesReportedMeasurement(t *testing.T) {
 			if p.ObserveResponse(200, [][2]string{{"content-type", "text/event-stream"}}, decreasing, true).BodyComplete {
 				t.Fatal("decreasing Qwen input accepted")
 			}
+			afterTerminal := bytes.Replace(body, []byte("event: message_stop"), []byte("event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{},\"usage\":{\"input_tokens\":999,\"output_tokens\":26}}\n\nevent: message_stop"), 1)
+			if p.ObserveResponse(200, [][2]string{{"content-type", "text/event-stream"}}, afterTerminal, true).BodyComplete {
+				t.Fatal("post-terminal Qwen input amendment accepted")
+			}
 		} else if observation.BodyComplete || observation.Usage.Status == "reported" {
 			t.Fatal("other Messages supplier accepted contradictory input")
 		}
