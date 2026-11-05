@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
- "github.com/higress-group/wasm-go/pkg/ai/executionfacts"
+	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
 )
 
 const managedPublicProtocolKey = "ai-proxy.public-client-protocol"
+const managedPublicProfileKey = "ai-proxy.public-response-profile"
 
 func managedPublicPolicy(s *managedExecutionState) clientresponse.Policy {
 	if s.publicAliases == nil {
@@ -69,7 +70,7 @@ func projectManagedResponse(s *managedExecutionState, originalHeaders [][2]strin
 }
 
 func managedPublicError(ctx wrapper.HttpContext, reason string) []byte {
-	return clientresponse.Error(clientresponse.Policy{Protocol: ctx.GetStringContext(managedPublicProtocolKey, "")}, managedErrorBody(reason))
+	return clientresponse.Error(clientresponse.Policy{Protocol: ctx.GetStringContext(managedPublicProtocolKey, ""), Profile: clientresponse.Profile(ctx.GetStringContext(managedPublicProfileKey, ""))}, managedErrorBody(reason))
 }
 
 // configureManagedResponse validates the only response branch for this target.

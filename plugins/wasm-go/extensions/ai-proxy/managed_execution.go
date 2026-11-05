@@ -490,6 +490,7 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 		return types.ActionContinue, false
 	}
 	ctx.SetContext(managedPublicProtocolKey, managed.profile.InputProtocol)
+	ctx.SetContext(managedPublicProfileKey, string(managed.settings.ResponseProfile))
 	beginManagedAccessLog(ctx, managed.release.Descriptor.ReleaseID)
 	ctx.SetContext(ctxSkipAIProxyLifecycle, true)
 	if managed.outbox != nil && !managed.outbox.Accepting() {

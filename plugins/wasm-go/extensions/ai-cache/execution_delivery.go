@@ -461,7 +461,7 @@ func rejectNativeCache(ctx wrapper.HttpContext, state *nativeCacheDeliveryState,
 		state.rejected = true
 	}
 	ctx.SetUserAttribute("execution_cache_rejection", reason)
-	_ = proxywasm.SendHttpResponseWithDetail(status, "ai-cache.execution_delivery", [][2]string{{"content-type", "application/json"}}, []byte(`{"error":"native cache request unavailable"}`), -1)
+	_ = proxywasm.SendHttpResponseWithDetail(status, "ai-cache.execution_delivery."+reason, [][2]string{{"content-type", "application/json"}}, []byte(`{"error":"native cache request unavailable"}`), -1)
 	return false
 }
 func nativeCacheFactGap(ctx wrapper.HttpContext, reason string) {
