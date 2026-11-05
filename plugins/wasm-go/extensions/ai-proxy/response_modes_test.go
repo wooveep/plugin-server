@@ -214,3 +214,49 @@ func TestPassthroughResourceOwnershipRestoresOriginalID(t *testing.T) {
 		t.Fatal("native reference lost its original owner or ID", calls)
 	}
 }
+
+func TestManagedMessagesChatLimitUsesFrozenSupplier(t *testing.T) {
+	for _, supplier := range []string{"openai", "qwen", "deepseek"} {
+		t.Run(supplier, func(t *testing.T) {
+			p, err := newManagedProtocolProfile(managedProtocolMessages, managedProtocolChat)
+			if err != nil {
+				t.Fatal(err)
+			}
+			p.supplier = supplier
+			request, err := p.PrepareRequest([]byte(`{"model":"frozen","max_tokens":128,"messages":[{"role":"user","content":"OK"}]}`), "frozen", "fixture-key")
+			if err != nil {
+				t.Fatal(err)
+			}
+			field, absent := "max_tokens", "max_completion_tokens"
+			if supplier == "openai" {
+				field, absent = absent, field
+			}
+			if gjson.GetBytes(request.Body, field).Int() != 128 || gjson.GetBytes(request.Body, absent).Exists() {
+				t.Fatal("wrong frozen supplier limit", string(request.Body))
+			}
+		})
+	}
+}
+
+func TestQwenMessagesTerminalInputPreservesReportedMeasurement(t *testing.T) {
+	body := []byte("event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"native\",\"model\":\"qwen\",\"role\":\"assistant\",\"content\":[],\"usage\":{\"input_tokens\":4,\"output_tokens\":0}}}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"input_tokens\":65,\"output_tokens\":26,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
+	for _, supplier := range []string{"qwen", "deepseek"} {
+		p, err := newManagedProtocolProfile(managedProtocolMessages, managedProtocolMessages)
+		if err != nil {
+			t.Fatal(err)
+		}
+		p.supplier = supplier
+		observation := p.ObserveResponse(200, [][2]string{{"content-type", "text/event-stream"}}, body, true)
+		if supplier == "qwen" {
+			if !observation.BodyComplete || observation.Usage.Status != "reported" || observation.Usage.Quantities["input"] != "65" || observation.Usage.Quantities["output"] != "26" {
+				t.Fatalf("final Qwen counts lost: %#v", observation)
+			}
+			decreasing := bytes.Replace(body, []byte(`"input_tokens":65`), []byte(`"input_tokens":3`), 1)
+			if p.ObserveResponse(200, [][2]string{{"content-type", "text/event-stream"}}, decreasing, true).BodyComplete {
+				t.Fatal("decreasing Qwen input accepted")
+			}
+		} else if observation.BodyComplete || observation.Usage.Status == "reported" {
+			t.Fatal("other Messages supplier accepted contradictory input")
+		}
+	}
+}

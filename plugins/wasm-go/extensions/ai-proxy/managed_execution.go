@@ -221,6 +221,7 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 	if err != nil {
 		return errors.New("unsupported managed execution protocol profile")
 	}
+	profile.supplier = providerConfig.GetType()
 	parsed.profile = profile
 	parsed.vendor, err = supplier.NewManagedAdapter(*providerConfig, managedSupplierAPIName(profile), parsed.settings.UpstreamPath)
 	if err != nil {

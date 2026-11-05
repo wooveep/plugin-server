@@ -28,6 +28,7 @@ const (
 type managedProtocolProfile struct {
 	InputProtocol    string
 	UpstreamProtocol string
+	supplier         string
 }
 
 type managedProtocolRequest struct {
@@ -131,7 +132,7 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 		case managedProtocolResponses:
 			actual, err = provider.ConvertResponsesRequestToChatCompletion(body)
 		case managedProtocolMessages:
-			actual, err = (&provider.ClaudeToOpenAIConverter{}).ConvertClaudeRequestToOpenAI(body)
+			actual, err = (&provider.ClaudeToOpenAIConverter{}).ConvertClaudeRequestToOpenAIWithOptions(body, provider.ClaudeToOpenAIConvertOptions{UseMaxCompletionTokens: p.supplier == "openai"})
 		default:
 			err = errors.New("unsupported managed protocol request conversion")
 		}
@@ -224,7 +225,7 @@ func (p managedProtocolProfile) ObserveResponse(status uint16, headers [][2]stri
 		case managedProtocolResponses:
 			observation = managedResponsesStream(body)
 		case managedProtocolMessages:
-			observation = managedMessagesStream(body)
+			observation = managedMessagesStream(body, p.supplier == "qwen")
 		}
 		if observation.ExecutionResult == "unknown" {
 			observation.BodyComplete = false
@@ -543,7 +544,7 @@ func managedResponsesStream(body []byte) managedProtocolObservation {
 	return observation
 }
 
-func managedMessagesStream(body []byte) managedProtocolObservation {
+func managedMessagesStream(body []byte, terminalInput bool) managedProtocolObservation {
 	unknown := managedProtocolStreamUnknown("stream_terminal_not_observed")
 	events, err := managedProtocolEvents(body)
 	if err != nil {
@@ -601,6 +602,16 @@ func managedMessagesStream(body []byte) managedProtocolObservation {
 						}
 						// Earlier progress is not proof of the final cumulative count.
 						finalOutput = reasonSeen
+					} else if key == "input_tokens" && terminalInput && reasonSeen {
+						// Qwen reports provisional input at message_start and
+						// the final cumulative input with its terminal delta.
+						next, valid := managedCount(value)
+						if !valid {
+							return unknown
+						}
+						if prior, valid := managedCount(usage[key]); valid && next.Cmp(prior) < 0 {
+							return unknown
+						}
 					} else if prior, exists := usage[key]; key != "server_tool_use" && exists && !bytes.Equal(prior, value) {
 						return unknown
 					}

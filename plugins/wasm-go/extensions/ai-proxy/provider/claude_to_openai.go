@@ -132,6 +132,8 @@ type contentConversionResult struct {
 }
 
 type ClaudeToOpenAIConvertOptions struct {
+	// UseMaxCompletionTokens selects the current official Chat token-limit field.
+	UseMaxCompletionTokens bool
 	// PreserveMessageReasoningContent enables the non-standard message-level
 	// reasoning_content field for providers that explicitly support it.
 	PreserveMessageReasoningContent bool
@@ -179,6 +181,10 @@ func (c *ClaudeToOpenAIConverter) ConvertClaudeRequestToOpenAIWithOptions(body [
 		Stop:        claudeRequest.StopSequences,
 	}
 
+	if options.UseMaxCompletionTokens {
+		openaiRequest.MaxCompletionTokens = openaiRequest.MaxTokens
+		openaiRequest.MaxTokens = 0
+	}
 	if openaiRequest.Stream {
 		openaiRequest.StreamOptions = &streamOptions{
 			IncludeUsage: true,
