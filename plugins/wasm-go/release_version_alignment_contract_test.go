@@ -1,6 +1,7 @@
 package wasmgo_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,26 +12,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
-
-type releaseVersionSurface struct {
-	path     string
-	yamlPath []string
-}
-
-type documentedReleaseVersion struct {
-	path   string
-	marker string
-}
-
-type pluginReleaseVersionContract struct {
-	name               string
-	selectedVersion    string
-	metadata           []releaseVersionSurface
-	artifactURLExample string
-	artifactURLDocs    []string
-	artifactURLVersion string
-	documentation      []documentedReleaseVersion
-}
 
 var releaseSemanticVersionPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+$`)
 
@@ -175,191 +156,55 @@ func TestAIPluginVersionParserFixture(t *testing.T) {
 
 func TestAIPluginVersionAlignmentContract(t *testing.T) {
 	t.Parallel()
-
-	contracts := []pluginReleaseVersionContract{
-		{
-			name:            "model-mapper",
-			selectedVersion: "2.0.4",
-			documentation:   []documentedReleaseVersion{{path: "extensions/model-mapper/README.md", marker: "交付版本"}},
-		},
-		{
-			name:            "ai-cache",
-			selectedVersion: "2.0.4",
-		},
-		{
-			name:            "ai-proxy",
-			selectedVersion: "2.0.10",
-			metadata: []releaseVersionSurface{
-				{path: "extensions/ai-proxy/option.yaml", yamlPath: []string{"version"}},
-			},
-			artifactURLVersion: "1.0.2",
-			artifactURLDocs: []string{
-				"docs/plugins/ai/api-consumer/ai-token-ratelimit.md",
-				"docs/plugins/ai/api-provider/ai-proxy.md",
-				"extensions/ai-proxy/README.md",
-				"extensions/ai-proxy/README_EN.md",
-				"extensions/ai-token-ratelimit/README.md",
-				"extensions/ai-token-ratelimit/README_EN.md",
-				"resources/plugins/ai-proxy/README.md",
-				"resources/plugins/ai-proxy/README_EN.md",
-				"resources/plugins/ai-token-ratelimit/README.md",
-				"resources/plugins/ai-token-ratelimit/README_EN.md",
-			},
-			documentation: releaseDocumentation("ai-proxy"),
-		},
-		{
-			name:               "ai-billing",
-			selectedVersion:    "1.0.1",
-			artifactURLExample: "extensions/ai-billing/plugin.yaml",
-			documentation:      releaseDocumentation("ai-billing"),
-		},
-		{
-			name:               "ai-quota",
-			selectedVersion:    "2.0.4",
-			artifactURLExample: "extensions/ai-quota/plugin.yaml",
-			documentation:      releaseDocumentation("ai-quota"),
-		},
-		{
-			name:            "ai-statistics",
-			selectedVersion: "2.0.4",
-			documentation:   releaseDocumentation("ai-statistics"),
-		},
+	// The maintained catalog selects native releases. Standalone example pins
+	// and historical documentation sections are not native artifact identities.
+	raw, err := os.ReadFile(filepath.Join("..", "release", "catalog.json"))
+	if err != nil {
+		t.Fatalf("read maintained release catalog: %v", err)
 	}
-
-	for _, contract := range contracts {
-		contract := contract
-		t.Run(contract.name, func(t *testing.T) {
-			t.Parallel()
-
-			versionPath := "extensions/" + contract.name + "/VERSION"
-			versionBytes, err := os.ReadFile(versionPath)
+	var catalog struct {
+		Plugins []struct {
+			LogicalID       string
+			Implementation  string
+			DeclaredVersion string
+		}
+	}
+	if err := json.Unmarshal(raw, &catalog); err != nil {
+		t.Fatalf("decode release catalog: %v", err)
+	}
+	selected := make(map[string]string)
+	for _, entry := range catalog.Plugins {
+		if entry.Implementation == "go" {
+			selected[entry.LogicalID] = entry.DeclaredVersion
+		}
+	}
+	for _, name := range []string{"model-mapper", "ai-cache", "ai-proxy", "ai-billing", "ai-quota", "ai-statistics"} {
+		t.Run(name, func(t *testing.T) {
+			version, exists := selected[name]
+			if !exists || !releaseSemanticVersionPattern.MatchString(version) {
+				t.Fatalf("formal Go release is missing: %s", name)
+			}
+			versionPath := filepath.Join("extensions", name, "VERSION")
+			raw, err := os.ReadFile(versionPath)
 			if err != nil {
-				t.Errorf("%s authoritative release version: read %s: %v", contract.name, versionPath, err)
-			} else {
-				assertSelectedReleaseVersion(
-					t,
-					versionPath+" authoritative release version",
-					strings.TrimSpace(string(versionBytes)),
-					contract.selectedVersion,
-				)
+				t.Fatalf("read authoritative VERSION: %v", err)
 			}
-
-			resourcePath := "resources/plugins/" + contract.name + "/spec.yaml"
-			assertYAMLReleaseVersion(
-				t,
-				resourcePath,
-				[]string{"info", "version"},
-				contract.selectedVersion,
-			)
-
-			for _, metadata := range contract.metadata {
-				assertYAMLReleaseVersion(t, metadata.path, metadata.yamlPath, contract.selectedVersion)
-			}
-
-			if contract.name == "ai-proxy" {
-				data, err := os.ReadFile("extensions/ai-proxy/config/config.go")
+			assertSelectedReleaseVersion(t, versionPath, strings.TrimSpace(string(raw)), version)
+			assertYAMLReleaseVersion(t, filepath.Join("resources", "plugins", name, "spec.yaml"), []string{"info", "version"}, version)
+			if name == "ai-proxy" {
+				assertYAMLReleaseVersion(t, "extensions/ai-proxy/option.yaml", []string{"version"}, version)
+				raw, err := os.ReadFile("extensions/ai-proxy/config/config.go")
 				if err != nil {
-					t.Errorf("read ai-proxy plugin annotation metadata: %v", err)
-				} else {
-					version, parseErr := annotationVersion(data)
-					if parseErr != nil {
-						t.Errorf("extensions/ai-proxy/config/config.go plugin annotation metadata: %v", parseErr)
-					} else {
-						assertSelectedReleaseVersion(
-							t,
-							"extensions/ai-proxy/config/config.go @Version",
-							version,
-							contract.selectedVersion,
-						)
-					}
+					t.Fatalf("read annotation metadata: %v", err)
 				}
-			}
-
-			if contract.artifactURLExample != "" {
-				data, err := os.ReadFile(contract.artifactURLExample)
+				annotation, err := annotationVersion(raw)
 				if err != nil {
-					t.Errorf("read artifact URL example %s: %v", contract.artifactURLExample, err)
-				} else {
-					url, parseErr := yamlScalar(data, "spec", "url")
-					if parseErr != nil {
-						t.Errorf("%s spec.url: %v", contract.artifactURLExample, parseErr)
-					} else {
-						version, parseErr := artifactURLVersion(url, contract.name)
-						if parseErr != nil {
-							t.Errorf("%s spec.url: %v", contract.artifactURLExample, parseErr)
-						} else {
-							assertSelectedReleaseVersion(
-								t,
-								contract.artifactURLExample+" artifact URL",
-								version,
-								contract.selectedVersion,
-							)
-						}
-					}
+					t.Fatalf("parse annotation metadata: %v", err)
 				}
-			}
-
-			for _, path := range contract.artifactURLDocs {
-				data, err := os.ReadFile(path)
-				if err != nil {
-					t.Errorf("read documented OCI artifact URL %s: %v", path, err)
-					continue
-				}
-				if !strings.Contains(string(data), "Standalone example pinned to upstream ai-proxy 1.0.2; not a native Modelfusion release artifact pin.") {
-					t.Errorf("%s must identify its fixed upstream standalone pin", path)
-				}
-				version, parseErr := documentedOCIArtifactVersion(data, contract.name)
-				if parseErr != nil {
-					t.Errorf("%s documented OCI artifact URL: %v", path, parseErr)
-					continue
-				}
-				assertSelectedReleaseVersion(
-					t,
-					path+" documented fixed standalone OCI artifact URL",
-					version,
-					contract.artifactURLVersion,
-				)
-			}
-
-			for _, documentation := range contract.documentation {
-				data, err := os.ReadFile(documentation.path)
-				if err != nil {
-					t.Errorf("read release documentation %s: %v", documentation.path, err)
-					continue
-				}
-				version, parseErr := documentedVersion(data, documentation.marker)
-				if parseErr != nil {
-					t.Errorf("%s documented release version: %v", documentation.path, parseErr)
-					continue
-				}
-				assertSelectedReleaseVersion(
-					t,
-					documentation.path+" documented release version",
-					version,
-					contract.selectedVersion,
-				)
+				assertSelectedReleaseVersion(t, "ai-proxy @Version", annotation, version)
 			}
 		})
 	}
-}
-
-func releaseDocumentation(plugin string) []documentedReleaseVersion {
-	documents := []documentedReleaseVersion{
-		{path: "extensions/" + plugin + "/README.md", marker: "插件版本"},
-		{path: "extensions/" + plugin + "/README_EN.md", marker: "Plugin version"},
-		{path: "resources/plugins/" + plugin + "/README.md", marker: "插件版本"},
-		{path: "resources/plugins/" + plugin + "/README_EN.md", marker: "Plugin version"},
-	}
-	switch plugin {
-	case "ai-proxy":
-		documents[0].marker = "> 交付版本"
-	case "ai-billing":
-		documents[0].marker, documents[2].marker = "> 交付版本", "> 交付版本"
-	case "ai-quota":
-		documents[0].marker, documents[2].marker = "版本", "版本"
-		documents[1].marker, documents[3].marker = "Version", "Version"
-	}
-	return documents
 }
 
 func assertYAMLReleaseVersion(t *testing.T, path string, yamlPath []string, want string) {

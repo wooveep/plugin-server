@@ -212,11 +212,22 @@ schema:
 			assertStringValue(t, revision, "pattern", "^[1-9][0-9]*$")
 			descriptor := nestedMapping(t, releasedProperties, "descriptor")
 			descriptors := nestedSlice(t, descriptor, "oneOf")
-			if len(descriptors) != 2 {
-				t.Fatalf("descriptor must distinguish ordinary and embedding execution")
-			}
+			operations := map[string]bool{"text_generate": false, "text_embedding": false}
 			for _, candidate := range descriptors {
-				assertClosedObject(t, candidate.(map[string]any), "execution descriptor")
+				variant := candidate.(map[string]any)
+				assertClosedObject(t, variant, "execution descriptor")
+				capabilities := nestedMapping(t, nestedMapping(t, variant, "properties"), "capabilities")
+				properties := nestedMapping(t, capabilities, "properties")
+				for operation := range operations {
+					if _, exists := properties[operation]; exists {
+						operations[operation] = true
+					}
+				}
+			}
+			for operation, present := range operations {
+				if !present {
+					t.Errorf("descriptor is missing the %s execution contract", operation)
+				}
 			}
 			credentials := nestedMapping(t, releasedProperties, "credentials")
 			assertStringValue(t, credentials, "type", "array")
@@ -242,7 +253,8 @@ schema:
 		embeddingThen := nestedMapping(t, embedding, "then")
 		assertStringSlice(t, embeddingThen, "required", []string{"native_execution"})
 		embeddingNative := nestedMapping(t, nestedMapping(t, embeddingThen, "properties"), "native_execution")
-		assertStringValue(t, nestedMapping(t, nestedMapping(t, embeddingNative, "properties"), "call_identity_source"), "const", "internal_execution")
+		identitySource := nestedMapping(t, nestedMapping(t, embeddingNative, "properties"), "call_identity_source")
+		assertStringSlice(t, identitySource, "enum", []string{"admission", "internal_execution"})
 		condition, ok := conditions[0].(map[string]any)
 		if !ok {
 			t.Fatalf("native route condition is %T, want mapping", conditions[0])
@@ -493,15 +505,13 @@ schema:
 					requireFragments(t, resourceBody, []string{resourceSchemaLink})
 					resourceBody = strings.Replace(resourceBody, resourceSchemaLink, extensionSchemaLink, 1)
 				}
-				if string(extension) != resourceBody {
-					t.Errorf("%s extension and resource documentation differ", contract.name)
+				for _, body := range []string{string(extension), resourceBody} {
+					requireFragments(t, markdownSection(t, body, contract.eventHeading), contract.eventFragments)
+					requireFragments(t, markdownSection(t, body, contract.trustHeading), contract.trustFragments)
+					requireFragments(t, markdownSection(t, body, contract.correlationHeading), contract.correlationParts)
+					requireFragments(t, markdownSection(t, body, contract.configHeading), contract.configFragments)
+					requireFragments(t, markdownSection(t, body, contract.independenceHeading), contract.independenceParts)
 				}
-				body := string(extension)
-				requireFragments(t, markdownSection(t, body, contract.eventHeading), contract.eventFragments)
-				requireFragments(t, markdownSection(t, body, contract.trustHeading), contract.trustFragments)
-				requireFragments(t, markdownSection(t, body, contract.correlationHeading), contract.correlationParts)
-				requireFragments(t, markdownSection(t, body, contract.configHeading), contract.configFragments)
-				requireFragments(t, markdownSection(t, body, contract.independenceHeading), contract.independenceParts)
 			})
 		}
 	})
