@@ -21,3 +21,9 @@ ai-proxy 2.0.47 将两项含义分别处理：已返回的HTTP错误、2xx原生
 待完成：固定工具链编译、独立来源与完整包核对、55项镜像；部署新目录后复测异常事实、原生删除及API／VM恢复。本次负例的原账本与冻结计划先备份，使用全新业务存储复测，不手改旧事实或冻结计划。
 
 本轮私有审计：`/home/cloudyi/.local/state/modelfusion-release/2026-11-05-2.2.1-dev-clean-redeploy-1917/`。原始配置、凭据和完整dump不进入Git。
+
+## main基线双轴复核补充
+
+固定main `974e4694` 至首个修复 `3ad46687` 的双轴复核另定位两项：非origin目录候选在组装后丢失supplier，使OpenAI Messages→Chat的max_completion_tokens以及Qwen Messages终态输入修订失效；AI Cache边界将非法protocol_mode或null／非字符串profile静默当缺省。
+
+增加真实目录fallback用例，先分别复现OpenAI参数错误、Qwen用量退为unknown，再在provider校验边界保留完整profile；不再用未填supplier的局部profile覆盖。新增14个配置负例，在原生解析入口拒绝非法类型及枚举，缺省和已登记值保持。两组回归先失败后通过，代理／缓存完整包测试通过；缓存版本升为2.0.20，同名同版本不覆盖。

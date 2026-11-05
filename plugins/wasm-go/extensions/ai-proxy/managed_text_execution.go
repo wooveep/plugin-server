@@ -223,7 +223,7 @@ func configureManagedTextDirectory(value gjson.Result, origin *managedExecutionC
 		if peer.settings.ProtocolMode != origin.settings.ProtocolMode || peer.settings.ResponseProfile != origin.settings.ResponseProfile {
 			return errors.New("managed target changes the published response policy")
 		}
-		peer.profile, peer.mapper, peer.redis, peer.priceRedis = profile, append([]byte(nil), item.Mapper...), origin.redis, origin.priceRedis
+		peer.mapper, peer.redis, peer.priceRedis = append([]byte(nil), item.Mapper...), origin.redis, origin.priceRedis
 		peer.referenceRedis = origin.referenceRedis
 		peer.outbox = origin.outbox
 		if _, err := managedTextMappedModel(peer); err != nil {
@@ -325,6 +325,7 @@ func validateManagedTextProvider(proxy gjson.Result, c *managedExecutionConfig) 
 		return err
 	}
 	c.vendor = adapter
+	c.profile.supplier = parsed.GetType()
 	return nil
 }
 

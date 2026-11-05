@@ -23,6 +23,22 @@ import (
 const nativeCacheOriginalCall = "77777777-7777-4777-8777-777777777777"
 const nativeCacheOriginalTime = "2026-10-28T01:02:03.123456000Z"
 
+func TestNativeCacheRejectsInvalidFrozenResponsePolicy(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		for _, field := range []string{"protocol_mode", "response_profile"} {
+			for _, value := range []string{`null`, `false`, `17`, `[]`, `{}`, `""`, `"typo"`} {
+				t.Run(field+"/"+value, func(t *testing.T) {
+					raw, err := sjson.SetRawBytes(nativeCacheExecutionConfig(t, true), field, []byte(value))
+					require.NoError(t, err)
+					host, status := test.NewTestHost(raw)
+					defer host.Reset()
+					require.Equal(t, types.OnPluginStartStatusFailed, status, "invalid frozen policy must fail configuration")
+				})
+			}
+		}
+	})
+}
+
 func nativeCacheExecutionConfig(t *testing.T, capture bool) json.RawMessage {
 	t.Helper()
 	descriptor := map[string]interface{}{

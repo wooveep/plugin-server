@@ -176,13 +176,21 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 		targetID: nativeCacheString(descriptor["target_id"]), routeID: nativeCacheString(envelope["route_id"]),
 		salesAssetID: nativeCacheString(envelope["sales_asset_id"]), publicModel: nativeCacheString(envelope["public_model"]), tokenizerModel: nativeCacheString(descriptor["upstream_model"]), capture: captures,
 	}
-	out.passthrough = value.Get("protocol_mode").String() == "passthrough"
+	mode := value.Get("protocol_mode")
+	if mode.Exists() && (mode.Type != gjson.String || (mode.Str != "auto" && mode.Str != "passthrough")) {
+		return errors.New("native cache protocol mode must be auto or passthrough")
+	}
+	out.passthrough = mode.Str == "passthrough"
 	if out.passthrough {
 		if value.Get("response_profile").Exists() {
 			return errors.New("passthrough cache cannot activate a response profile")
 		}
 	} else {
-		out.responseProfile, err = clientresponse.ParseProfile(value.Get("response_profile").String(), value.Get("client_protocol").String())
+		profile := value.Get("response_profile")
+		if profile.Exists() && (profile.Type != gjson.String || profile.Str == "") {
+			return errors.New("native cache response profile must be a registered string")
+		}
+		out.responseProfile, err = clientresponse.ParseProfile(profile.Str, value.Get("client_protocol").String())
 		if err != nil {
 			return err
 		}

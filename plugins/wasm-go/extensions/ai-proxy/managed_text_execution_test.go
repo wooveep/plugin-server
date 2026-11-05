@@ -21,10 +21,15 @@ import (
 )
 
 func managedTextFixture(t *testing.T, fallback bool, fallbackProviderType ...string) map[string]interface{} {
+	return managedTextProtocolFixture(t, fallback, managedProtocolProfile{InputProtocol: managedProtocolChat, UpstreamProtocol: managedProtocolChat, supplier: "openai"}, fallbackProviderType...)
+}
+
+func managedTextProtocolFixture(t *testing.T, fallback bool, origin managedProtocolProfile, fallbackProviderType ...string) map[string]interface{} {
 	t.Helper()
 	initial := managedPoolFixture(t)
 	makeEntry := func(value map[string]interface{}, second bool) managedTextDirectoryEntry {
 		native := value["managed_execution"].(map[string]interface{})
+		native["input_protocol"], native["upstream_protocol"] = origin.InputProtocol, origin.UpstreamProtocol
 		execution := value["_modelfusion_execution"].(map[string]interface{})
 		descriptor := execution["descriptor"].(map[string]interface{})
 		model := "upstream-model"
@@ -54,7 +59,7 @@ func managedTextFixture(t *testing.T, fallback bool, fallbackProviderType ...str
 		delete(value, "provider")
 		value["activeProviderId"] = "runtime-provider-slug"
 		value["retryOnFailure"] = map[string]bool{"enabled": false}
-		providerType := "openai"
+		providerType := origin.supplier
 		if second && len(fallbackProviderType) != 0 {
 			providerType = fallbackProviderType[0]
 		}
@@ -94,6 +99,42 @@ func managedTextFixture(t *testing.T, fallback bool, fallbackProviderType ...str
 	}
 	initial[managedTextDirectoryField] = managedTextDirectory{SchemaVersion: "modelfusion-execution-targets.v1", Targets: entries}
 	return initial
+}
+
+func TestManagedTextFallbackPreservesFrozenSupplierProtocols(t *testing.T) {
+	for _, target := range []struct{ supplier, upstream string }{{"openai", managedProtocolChat}, {"qwen", managedProtocolMessages}} {
+		t.Run(target.supplier, func(t *testing.T) {
+			fixture := managedTextProtocolFixture(t, true, managedProtocolProfile{InputProtocol: managedProtocolMessages, UpstreamProtocol: target.upstream, supplier: "deepseek"}, target.supplier)
+			h := newManagedTextHost(t, fixture)
+			original := []byte(`{"model":"public-model","max_tokens":128,"stream":true,"messages":[{"role":"user","content":"hello"}]}`)
+			h.start(t, original, bytes.ReplaceAll(original, []byte("public-model"), []byte("upstream-model")))
+			respondManagedTextHealth(t, h, map[string]bool{"credential-1": true})
+			first := h.host.GetCalloutAttributesFromContext(h.id)[0]
+			h.host.CallOnHttpCallResponse(first.CalloutID, [][2]string{{":status", "503"}, {"content-type", "application/json"}}, nil, []byte(`{"error":{"message":"controlled unavailable"}}`))
+			respondManagedTextHealth(t, h, map[string]bool{"second-credential": true})
+			respondManagedTextHealth(t, h, map[string]bool{"second-credential": true})
+			calls := h.host.GetCalloutAttributesFromContext(h.id)
+			if len(calls) != 1 {
+				t.Fatalf("fallback send count = %d", len(calls))
+			}
+			call := calls[0]
+			if target.supplier == "openai" {
+				if gjson.GetBytes(call.Body, "max_completion_tokens").Int() != 128 || gjson.GetBytes(call.Body, "max_tokens").Exists() {
+					t.Fatal("fallback lost its OpenAI request contract", string(call.Body))
+				}
+			} else {
+				body := responseModePayload(managedProtocolMessages, true)
+				body = bytes.ReplaceAll(body, []byte("upstream-model"), []byte("second-upstream-model"))
+				body = bytes.Replace(body, []byte(`"input_tokens":17`), []byte(`"input_tokens":4`), 1)
+				body = bytes.Replace(body, []byte(`"usage":{"output_tokens":5}`), []byte(`"usage":{"input_tokens":65,"output_tokens":5}`), 1)
+				h.host.CallOnHttpCallResponse(call.CalloutID, [][2]string{{":status", "200"}, {"content-type", "text/event-stream"}}, nil, body)
+				fact := h.bridge(t).Envelope()
+				if fact.DeliveryState != "succeeded" || fact.Usage.Status != "reported" || fact.Usage.Quantities["input"] != "65" || fact.Usage.Quantities["output"] != "5" {
+					t.Fatalf("fallback lost reported Qwen terminal usage: %#v", fact)
+				}
+			}
+		})
+	}
 }
 
 func newManagedTextHost(t *testing.T, fixture map[string]interface{}) *managedHost {

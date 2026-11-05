@@ -1470,7 +1470,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-cache",
-      "declaredVersion": "2.0.19"
+      "declaredVersion": "2.0.20"
     },
     {
       "logicalId": "ai-context-limit",
