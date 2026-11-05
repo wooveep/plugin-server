@@ -14,7 +14,7 @@
 
 保持 HTTP GET/PUT 的路径和上传 Token 鉴权；补齐版本映射、完整性、并发发布及来源可追溯。沿用已有批量同步的 staging/失败恢复、旧版本保留和本地自有插件输入。OCI 作为构建时可选输入，运行时继续提供 HTTP 文件。
 
-本文件是 plugin-server 详细任务的权威来源，使用普通 Markdown/Git/PR，不使用 Superpowers 或 OpenSpec。依据：[研究第 9/10 节](../../../ocloudmodelfusion/docs/higress-console-upstream-2026-10-22-research.md)、[历史上传计划](../superpowers/plans/2026-05-13-plugin-upload-api-cli.md)。历史任务状态不作为本期验收结果。
+本文件是 plugin-server 详细任务的权威来源，使用普通 Markdown/Git/PR，不使用 Superpowers 或 OpenSpec。依据：[研究第 9/10 节](../../../ocloudmodelfusion/docs/higress-console-upstream-2026-10-22-research.md)、[当前完整包交付入口](../../README.md)。历史任务状态不作为本期验收结果。
 
 ## 代码与项目接口
 

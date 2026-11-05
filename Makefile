@@ -1,6 +1,6 @@
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 IMAGE ?= plugin-server
-VERSION ?= 1.0.0
+VERSION ?= $(shell tr -d '[:space:]' < $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/VERSION)
 TAG ?= $(IMAGE):$(VERSION)
 REGISTRY ?= registry.lc.wooveep.com:9980/modelfusion
 REMOTE_TAG ?= $(REGISTRY)/$(IMAGE):$(VERSION)

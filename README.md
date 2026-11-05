@@ -1,12 +1,12 @@
 # Higress Plugin Server
 
-本仓库统一维护 Higress 插件源码、固定工具链编译、完整制品入库和 HTTP 分发。日常源码位于 `plugins/`；编译中间文件位于 `build/`；已验证的不可变交付库位于 `dist/plugins/`。原独立 Go 插件/SDK 目录仅保留历史，`higress/` 保留上游参考。
+本仓库统一维护 Higress 插件源码、固定工具链编译、完整制品入库和 HTTP 分发。日常源码位于 `plugins/`；编译中间文件位于 `build/`；已验证的不可变交付库位于 `dist/plugins/`。应用版本见 [VERSION](VERSION)，当前为 2.2.1。外部 `higress/` 与 `higress-console/` 只作兼容参考。
 
-需求、计划和验收使用普通 Markdown 与 Git/PR；本项目不使用 Superpowers 或 OpenSpec，历史资料中的执行指令不再生效。当前实施及验收以[统一源码与交付计划](docs/plans/2026-10-31-unified-plugin-source-and-delivery.md)为准；[原生媒体交付记录](docs/checks/2026-10-31-native-media-plugin-contract.md)单独维护实际版本和下载证据。
+需求、计划和验收使用普通 Markdown 与 Git/PR。当前实施及验收以[统一源码与交付计划](docs/plans/2026-10-31-unified-plugin-source-and-delivery.md)为准；[原生媒体交付记录](docs/checks/2026-10-31-native-media-plugin-contract.md)单独维护实际版本和下载证据。
 
 ## 源码和默认集合
 
-[来源锁定记录](plugins/upstream-lock.json)保留上游提交、原始树及 Git 跟踪分支；[定制整合记录](plugins/release/custom-integration.json)说明逐插件取舍和合入。后续上游快照沿既有跟踪分支形成父链，通过 `git merge -s ort -Xsubtree=plugins <新快照提交>` 三方合并，保留本地定制。
+[来源锁定记录](plugins/upstream-lock.json)保留上游提交、原始树及 Git 跟踪分支；[定制整合记录](plugins/release/custom-integration.json)说明逐插件取舍和合入。上游来源由锁定记录与 Git 历史追溯；后续源码更新在 dev 进行，保留本地定制。
 
 [唯一发行清单](plugins/release/catalog.json)列出 72 个源码实现，按真实 `VERSION` 的 SemVer 选择 55 个正式 Wasm 插件。无版本旧实现、示例、废弃插件和原生 `.so` 单独分类；不生成伪造旧版本别名。查看当前版本：
 
@@ -75,8 +75,4 @@ python3 /opt/plugin-server/scripts/seed-registered-store.py \
 
 `make test` 统一运行 Python 契约、存储、发布清单和入口测试。各语言编译和 Go/编译后 Wasm 回归记录由实施计划链接；本地测试通过不代表真实 Envoy 或供应商调用已验收。
 
-以下是历史设计入口，其阶段描述保留原文；当前进展以上述实施计划和验收回执为准。
-
-当前实施计划：[HTTP 插件制品可靠发布](docs/plans/2026-10-22-http-plugin-delivery-hardening.md)，覆盖版本映射、可靠上传、来源清单及镜像交付；保留 HTTP 分发，采用普通 Markdown 与 Git/PR 流程。计划尚未实施。
-
-首批实施入口：[P0/D0三张任务卡](docs/plans/2026-10-25-p0-d0-task-cards.md)，明确schema/摘要、完整包、提交与unknown语料的文件责任、离线验收及合入依赖；2026-10-25设计完成，全部待实施，不代表当前服务已具备新协议。
+正式发布镜像可执行 `make docker-build TAG=plugin-server:2.2.1 TRUSTED_POLICY=/absolute/path/to/reviewed-policy.json`。需要先独立核对来源和完整包策略；源码版本、插件版本与已登记不可变内容分别校验。
