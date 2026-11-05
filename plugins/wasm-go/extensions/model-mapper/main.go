@@ -271,7 +271,7 @@ func reject(ctx wrapper.HttpContext, status uint32, code string) types.Action {
 	ctx.SetContext(rejectedContextKey, true)
 	ctx.DontReadRequestBody()
 	response := []byte(`{"error":{"code":"` + code + `","type":"model_mapper_error"}}`)
-	if err := proxywasm.SendHttpResponse(status, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
+	if err := proxywasm.SendHttpResponseWithDetail(status, "modelfusion.local.model-mapper."+code, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
 		proxywasm.LogCritical("model-mapper could not send local rejection")
 	}
 	return types.ActionPause

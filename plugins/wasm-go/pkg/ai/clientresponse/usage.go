@@ -13,6 +13,9 @@ type Usage struct {
 	InputDetails         map[string]json.RawMessage
 	OutputDetails        map[string]json.RawMessage
 	ServerTools          json.RawMessage
+	QwenInputDetails     map[string]json.RawMessage
+	QwenOutputDetails    map[string]json.RawMessage
+	QwenDetails          json.RawMessage
 }
 
 func number(raw json.RawMessage) (*big.Int, bool) {
@@ -134,7 +137,76 @@ func readUsageObject(raw json.RawMessage, format string) Usage {
 	if _, ok := number(u.InputDetails["cache_write_tokens"]); !ok {
 		delete(u.InputDetails, "cache_write_tokens_details")
 	}
+	u.QwenInputDetails = readQwenInput(o["prompt_tokens_details"], u.Input)
+	if format == "qwen" {
+		u.QwenOutputDetails = readBoundedDetails(o["output_tokens_details"], "text_tokens", u.Output)
+	}
+	if format == Responses {
+		var rows []json.RawMessage
+		_ = json.Unmarshal(o["x_details"], &rows)
+		var clean []map[string]json.RawMessage
+		for _, raw := range rows {
+			var row map[string]json.RawMessage
+			if json.Unmarshal(raw, &row) != nil {
+				continue
+			}
+			i, iOK := number(row["input_tokens"])
+			o, oOK := number(row["output_tokens"])
+			t, tOK := number(row["total_tokens"])
+			if !iOK || !oOK || !tOK || new(big.Int).Add(i, o).Cmp(t) != 0 {
+				continue
+			}
+			result := retain(row, "input_tokens output_tokens total_tokens")
+			if details := readQwenInput(row["input_tokens_details"], row["input_tokens"]); len(details) > 0 {
+				result["input_tokens_details"], _ = json.Marshal(details)
+			}
+			if details := readBoundedDetails(row["output_tokens_details"], "text_tokens reasoning_tokens", row["output_tokens"]); len(details) > 0 {
+				result["output_tokens_details"], _ = json.Marshal(details)
+			}
+			clean = append(clean, result)
+		}
+		if len(clean) > 0 {
+			u.QwenDetails, _ = json.Marshal(clean)
+		}
+	}
 	return u
+}
+
+func readBoundedDetails(raw json.RawMessage, keys string, total json.RawMessage) map[string]json.RawMessage {
+	result := readDetails(raw, keys)
+	limit, ok := number(total)
+	for key, raw := range result {
+		value, _ := number(raw)
+		if !ok || value.Cmp(limit) > 0 {
+			delete(result, key)
+		}
+	}
+	return result
+}
+
+// readQwenInput keeps only documented display measurements, never billing data.
+func readQwenInput(raw, total json.RawMessage) map[string]json.RawMessage {
+	result := readBoundedDetails(raw, "text_tokens cached_tokens cache_creation_input_tokens", total)
+	var source map[string]json.RawMessage
+	_ = json.Unmarshal(raw, &source)
+	read, readOK := number(result["cached_tokens"])
+	created, createdOK := number(result["cache_creation_input_tokens"])
+	if readOK && createdOK {
+		limit, _ := number(total)
+		if new(big.Int).Add(read, created).Cmp(limit) > 0 {
+			delete(result, "cache_creation_input_tokens")
+			createdOK = false
+		}
+	}
+	if createdOK {
+		if details := readBoundedDetails(source["cache_creation"], "ephemeral_5m_input_tokens", result["cache_creation_input_tokens"]); len(details) > 0 {
+			result["cache_creation"], _ = json.Marshal(details)
+		}
+	}
+	if bytes.Equal(source["cache_type"], []byte(`"ephemeral"`)) {
+		result["cache_type"] = source["cache_type"]
+	}
+	return result
 }
 
 // ReadUsage reads the final original supplier measurement, never sums cumulative
@@ -262,5 +334,43 @@ func (u Usage) wire(protocol string) json.RawMessage {
 		result["server_tool_use"] = u.ServerTools
 	}
 	raw, _ := json.Marshal(result)
+	return raw
+}
+
+func (u Usage) wireProfile(protocol string, profile Profile) json.RawMessage {
+	raw := u.wire(protocol)
+	if profile != Qwen || len(raw) == 0 {
+		return raw
+	}
+	var result map[string]json.RawMessage
+	_ = json.Unmarshal(raw, &result)
+	if protocol == Chat {
+		var input, output map[string]json.RawMessage
+		_ = json.Unmarshal(result["prompt_tokens_details"], &input)
+		_ = json.Unmarshal(result["completion_tokens_details"], &output)
+		if input == nil {
+			input = map[string]json.RawMessage{}
+		}
+		if output == nil {
+			output = map[string]json.RawMessage{}
+		}
+		for _, key := range []string{"cache_creation_input_tokens", "cache_creation", "cache_type"} {
+			if raw, ok := u.QwenInputDetails[key]; ok {
+				input[key] = raw
+			}
+		}
+		for key, raw := range u.QwenOutputDetails {
+			output[key] = raw
+		}
+		if len(input) > 0 {
+			result["prompt_tokens_details"], _ = json.Marshal(input)
+		}
+		if len(output) > 0 {
+			result["completion_tokens_details"], _ = json.Marshal(output)
+		}
+	} else if protocol == Responses && len(u.QwenDetails) > 0 {
+		result["x_details"] = u.QwenDetails
+	}
+	raw, _ = json.Marshal(result)
 	return raw
 }

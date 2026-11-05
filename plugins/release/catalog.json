@@ -1442,7 +1442,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-agent",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ai-cache",
@@ -1470,7 +1470,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-cache",
-      "declaredVersion": "2.0.16"
+      "declaredVersion": "2.0.17"
     },
     {
       "logicalId": "ai-context-limit",
@@ -1494,7 +1494,7 @@
         }
       },
       "metadataDir": "plugins/release/console/ai-context-limit",
-      "declaredVersion": "1.0.0"
+      "declaredVersion": "1.0.1"
     },
     {
       "logicalId": "ai-data-masking",
@@ -1545,7 +1545,7 @@
         }
       },
       "metadataDir": "plugins/release/console/ai-endpoint-picker",
-      "declaredVersion": "2.0.2"
+      "declaredVersion": "2.0.3"
     },
     {
       "logicalId": "ai-history",
@@ -1573,7 +1573,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-history",
-      "declaredVersion": "2.0.7"
+      "declaredVersion": "2.0.8"
     },
     {
       "logicalId": "ai-image-reader",
@@ -1613,7 +1613,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-intent",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ai-json-resp",
@@ -1641,7 +1641,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-json-resp",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ai-load-balancer",
@@ -1669,7 +1669,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-load-balancer",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ai-prompt-decorator",
@@ -1697,7 +1697,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-prompt-decorator",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ai-prompt-template",
@@ -1725,7 +1725,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-prompt-template",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ai-proxy",
@@ -1753,7 +1753,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-proxy",
-      "declaredVersion": "2.0.42"
+      "declaredVersion": "2.0.43"
     },
     {
       "logicalId": "ai-quota",
@@ -1781,7 +1781,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-quota",
-      "declaredVersion": "2.0.7"
+      "declaredVersion": "2.0.8"
     },
     {
       "logicalId": "ai-rag",
@@ -1809,7 +1809,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-rag",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ai-search",
@@ -1837,7 +1837,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-search",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ai-security-guard",
@@ -1865,7 +1865,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-security-guard",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ai-statistics",
@@ -1893,7 +1893,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-statistics",
-      "declaredVersion": "2.0.5"
+      "declaredVersion": "2.0.6"
     },
     {
       "logicalId": "ai-token-ratelimit",
@@ -1921,7 +1921,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-token-ratelimit",
-      "declaredVersion": "2.0.4"
+      "declaredVersion": "2.0.5"
     },
     {
       "logicalId": "ai-transformer",
@@ -1949,7 +1949,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-transformer",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "api-workflow",
@@ -1989,7 +1989,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/cache-control",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "chatgpt-proxy",
@@ -2029,7 +2029,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/cluster-key-rate-limit",
-      "declaredVersion": "2.0.4"
+      "declaredVersion": "2.0.5"
     },
     {
       "logicalId": "cors",
@@ -2057,7 +2057,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/cors",
-      "declaredVersion": "2.0.4"
+      "declaredVersion": "2.0.5"
     },
     {
       "logicalId": "de-graphql",
@@ -2085,7 +2085,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/de-graphql",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ext-auth",
@@ -2113,7 +2113,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ext-auth",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "frontend-gray",
@@ -2141,7 +2141,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/frontend-gray",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "gc-test",
@@ -2181,7 +2181,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/geo-ip",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "gw-error-format",
@@ -2205,7 +2205,7 @@
         }
       },
       "metadataDir": "plugins/release/console/gw-error-format",
-      "declaredVersion": "1.0.2"
+      "declaredVersion": "1.0.3"
     },
     {
       "logicalId": "hello-world",
@@ -2241,7 +2241,7 @@
         }
       },
       "metadataDir": "plugins/release/console/hmac-auth-apisix",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "http-call",
@@ -2281,7 +2281,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ip-restriction",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "json-converter",
@@ -2312,7 +2312,7 @@
         }
       },
       "metadataDir": "plugins/release/console/json-converter",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "log-request-response",
@@ -2336,7 +2336,7 @@
         }
       },
       "metadataDir": "plugins/release/console/log-request-response",
-      "declaredVersion": "1.0.0"
+      "declaredVersion": "1.0.1"
     },
     {
       "logicalId": "mcp-router",
@@ -2361,7 +2361,7 @@
         }
       },
       "metadataDir": "plugins/release/console/mcp-router",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "mcp-server",
@@ -2390,7 +2390,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/mcp-server",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "model-mapper",
@@ -2418,7 +2418,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/model-mapper",
-      "declaredVersion": "2.0.4"
+      "declaredVersion": "2.0.5"
     },
     {
       "logicalId": "model-router",
@@ -2446,7 +2446,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/model-router",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "nginx-rewrite-compatible",
@@ -2470,7 +2470,7 @@
         }
       },
       "metadataDir": "plugins/release/console/nginx-rewrite-compatible",
-      "declaredVersion": "1.0.0"
+      "declaredVersion": "1.0.1"
     },
     {
       "logicalId": "oidc",
@@ -2498,7 +2498,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/oidc",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "opa",
@@ -2526,7 +2526,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/opa",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "qwen3guard",
@@ -2556,7 +2556,7 @@
       ],
       "metadataDir": "plugins/release/metadata/replay-protection",
       "releaseChannel": "prerelease",
-      "declaredVersion": "1.0.0-alpha"
+      "declaredVersion": "1.0.1-alpha"
     },
     {
       "logicalId": "request-validation",
@@ -2584,7 +2584,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/request-validation",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "response-cache",
@@ -2608,7 +2608,7 @@
         }
       },
       "metadataDir": "plugins/release/console/response-cache",
-      "declaredVersion": "1.0.3"
+      "declaredVersion": "1.0.4"
     },
     {
       "logicalId": "streaming-body-example",
@@ -2672,7 +2672,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/traffic-tag",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "transformer",
@@ -2700,7 +2700,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/transformer",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "waf",
@@ -2728,7 +2728,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/waf",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "basic-auth",
@@ -3092,7 +3092,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "1.0.7"
+      "declaredVersion": "1.0.8"
     },
     {
       "logicalId": "ai-memory",
@@ -3120,7 +3120,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "0.1.11"
+      "declaredVersion": "0.1.12"
     },
     {
       "logicalId": "key-auth",
@@ -3148,7 +3148,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "1.2.1"
+      "declaredVersion": "1.2.2"
     },
     {
       "logicalId": "custom-response",

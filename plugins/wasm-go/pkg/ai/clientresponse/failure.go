@@ -182,6 +182,9 @@ func (f Failure) ResourceError(protocol string) json.RawMessage {
 
 func (f Failure) Body(policy Policy) []byte {
 	public := f.public(policy.Protocol)
+	if f.Kind == FailureOverloaded && policy.Profile == OpenAI && policy.Protocol != Messages {
+		public.errorType = "service_unavailable_error"
+	}
 	fields := map[string]string{"type": public.errorType, "code": public.code, "message": public.text}
 	if f.Param != "" {
 		fields["param"] = f.Param

@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-cache/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-cache/README_EN.md
-  version: 2.0.16
+  version: 2.0.17
   contact:
     name: johnlanni
   gatewayMinVersion: 2.0.0
@@ -763,6 +763,12 @@ spec:
               type: integer
               minimum: 1
               maximum: 9223372036854775807
+        response_profile:
+          type: string
+          enum: [deepseek, qwen, openai]
+        protocol_mode:
+          type: string
+          enum: [auto, passthrough]
         client_protocol:
           type: string
           minLength: 1
@@ -1812,6 +1818,12 @@ spec:
               type: integer
               minimum: 1
               maximum: 9223372036854775807
+        response_profile:
+          type: string
+          enum: [deepseek, qwen, openai]
+        protocol_mode:
+          type: string
+          enum: [auto, passthrough]
         client_protocol: &id006
           type: string
           minLength: 1
@@ -2221,6 +2233,12 @@ spec:
               capture_body_basis: *id003
               consume_body_basis: *id004
               native_identity: *id005
+              response_profile:
+                type: string
+                enum: [deepseek, qwen, openai]
+              protocol_mode:
+                type: string
+                enum: [auto, passthrough]
               client_protocol: *id006
               operation_kind: *id007
               materialized_lookup: *id008

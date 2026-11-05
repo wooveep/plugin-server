@@ -341,7 +341,7 @@ func rejectMemoryBodyBasis(ctx wrapper.HttpContext, status uint32, code string) 
 	markMemoryGate(ctx, "body-basis-"+code)
 	ctx.DontReadRequestBody()
 	response := []byte(`{"error":{"code":"` + code + `","type":"memory_body_basis_error"}}`)
-	if err := proxywasm.SendHttpResponse(status, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
+	if err := proxywasm.SendHttpResponseWithDetail(status, "modelfusion.local.ai-memory."+code, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
 		proxywasm.LogCritical("ai-memory could not send body-basis rejection")
 	}
 	return types.ActionPause

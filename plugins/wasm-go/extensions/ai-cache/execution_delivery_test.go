@@ -174,6 +174,38 @@ func TestNativeCacheCaptureStillRunsForAUserRequestedBypass(t *testing.T) {
 	})
 }
 
+func TestNativeCachePassthroughRetainsBodyBasisAndBypassesResponseCache(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		raw := nativeCacheExecutionConfig(t, true)
+		var err error
+		raw, err = sjson.SetBytes(raw, "protocol_mode", "passthrough")
+		require.NoError(t, err)
+		raw, err = sjson.SetBytes(raw, "_modelfusion_execution.descriptor.upstream_model", "public-alias")
+		require.NoError(t, err)
+		descriptor, err := sjson.DeleteBytes([]byte(gjson.GetBytes(raw, "_modelfusion_execution.descriptor").Raw), "descriptor_digest")
+		require.NoError(t, err)
+		digest, err := mfjson.Digest(descriptor)
+		require.NoError(t, err)
+		raw, err = sjson.SetBytes(raw, "_modelfusion_execution.descriptor.descriptor_digest", digest)
+		require.NoError(t, err)
+		host, status := test.NewTestHost(raw)
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		defer host.Reset()
+		require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(nativeCacheExecutionHeaders(true)))
+		require.Equal(t, types.ActionContinue, host.CallOnHttpRequestBody([]byte(nativeCacheTestBody)))
+		basis, err := bodybasis.Read(host.GetRequestHeaders())
+		require.NoError(t, err)
+		require.Equal(t, "public-alias", basis.PublicModel())
+		require.Empty(t, host.GetRedisCalloutAttributes())
+		require.Empty(t, host.GetHttpCalloutAttributes())
+		original := []byte("  opaque upstream payload\n")
+		host.CallOnHttpResponseHeaders([][2]string{{":status", "200"}, {"content-type", "text/plain"}})
+		host.CallOnHttpResponseBody(original)
+		require.Equal(t, original, host.GetResponseBody())
+		require.Empty(t, host.GetRedisCalloutAttributes())
+	})
+}
+
 func TestNativeCacheRedisAdmissionHasNoSyntheticExpiry(t *testing.T) {
 	test.RunTest(t, func(t *testing.T) {
 		for _, capture := range []bool{true, false} {

@@ -105,6 +105,9 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 		if !prepareNativeCacheHeaders(ctx, c) {
 			return types.ActionPause
 		}
+		if native, ok := c.NativeExecution.(*nativeCacheDeliveryConfig); ok && native.passthrough {
+			markCacheGate(ctx, "passthrough")
+		}
 		// Even a user-requested cache bypass must retain the SDK-selected body
 		// basis stage. Later mapper/proxy must not receive client basis headers.
 		defer func() {

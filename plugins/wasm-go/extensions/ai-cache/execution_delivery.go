@@ -28,6 +28,8 @@ const nativeCacheDeliveryContext = "ai-cache.execution-delivery.v1"
 type nativeCacheDeliveryConfig struct {
 	producerID, releaseID, targetID, routeID, salesAssetID, publicModel, tokenizerModel string
 	capture                                                                             bool
+	passthrough                                                                         bool
+	responseProfile                                                                     clientresponse.Profile
 }
 
 type nativeCacheDeliveryState struct {
@@ -173,6 +175,17 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 		producerID: nativeCacheString(parsed["producer_id"]), releaseID: nativeCacheString(descriptor["release_id"]),
 		targetID: nativeCacheString(descriptor["target_id"]), routeID: nativeCacheString(envelope["route_id"]),
 		salesAssetID: nativeCacheString(envelope["sales_asset_id"]), publicModel: nativeCacheString(envelope["public_model"]), tokenizerModel: nativeCacheString(descriptor["upstream_model"]), capture: captures,
+	}
+	out.passthrough = value.Get("protocol_mode").String() == "passthrough"
+	if out.passthrough {
+		if value.Get("response_profile").Exists() {
+			return errors.New("passthrough cache cannot activate a response profile")
+		}
+	} else {
+		out.responseProfile, err = clientresponse.ParseProfile(value.Get("response_profile").String(), value.Get("client_protocol").String())
+		if err != nil {
+			return err
+		}
 	}
 	if !balanceidentity.ValidID(out.routeID) || !balanceidentity.ValidID(out.salesAssetID) {
 		return errors.New("native cache requires its original route and sales asset")

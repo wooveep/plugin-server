@@ -18,6 +18,7 @@ const (
 
 type Policy struct {
 	Protocol, PublicModel, UpstreamModel, RequestID string
+	Profile                                         Profile
 	IncludeUsage, ExposeServiceTier                 bool
 	CreatedAt                                       int64
 	RequestFields                                   map[string]json.RawMessage
@@ -69,7 +70,7 @@ func Project(policy Policy, body []byte, streaming bool, usage Usage) ([]byte, e
 	for _, event := range events {
 		if bytes.Equal(event.Data, []byte("[DONE]")) {
 			if policy.Protocol == Chat && policy.IncludeUsage && lastChat != nil {
-				if wire := usage.wire(Chat); wire != nil {
+				if wire := usage.wireProfile(Chat, policy.Profile); wire != nil {
 					lastChat["choices"], lastChat["usage"] = json.RawMessage("[]"), wire
 					raw, err := json.Marshal(lastChat)
 					if err != nil {
@@ -101,7 +102,7 @@ func Project(policy Policy, body []byte, streaming bool, usage Usage) ([]byte, e
 				}
 			} else {
 				if policy.IncludeUsage && lastChat != nil {
-					if wire := usage.wire(Chat); wire != nil {
+					if wire := usage.wireProfile(Chat, policy.Profile); wire != nil {
 						lastChat["choices"], lastChat["usage"] = json.RawMessage("[]"), wire
 						counts, e := json.Marshal(lastChat)
 						if e != nil {
@@ -123,12 +124,16 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 	if json.Unmarshal(body, &object) != nil || object == nil {
 		return nil, errors.New("invalid public response JSON")
 	}
+	errorPolicy := policy
+	if stream {
+		errorPolicy.Profile = DeepSeek
+	}
 	if stream && bytes.Equal(object["type"], []byte(`"error"`)) {
 		if policy.Protocol == Messages {
-			return Error(policy, body), nil
+			return Error(errorPolicy, body), nil
 		}
 		var sanitized map[string]json.RawMessage
-		_ = json.Unmarshal(Error(policy, body), &sanitized)
+		_ = json.Unmarshal(Error(errorPolicy, body), &sanitized)
 		var fields map[string]json.RawMessage
 		_ = json.Unmarshal(sanitized["error"], &fields)
 		for _, key := range []string{"type", "sequence_number"} {
@@ -140,10 +145,10 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 	}
 	if raw, exists := object["error"]; exists && !bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
 		if policy.Protocol != Responses || !bytes.Equal(object["object"], []byte(`"response"`)) {
-			return Error(policy, body), nil
+			return Error(errorPolicy, body), nil
 		}
 		var sanitized map[string]json.RawMessage
-		_ = json.Unmarshal(Error(policy, body), &sanitized)
+		_ = json.Unmarshal(Error(errorPolicy, body), &sanitized)
 		var fields map[string]json.RawMessage
 		_ = json.Unmarshal(sanitized["error"], &fields)
 		object["error"], _ = json.Marshal(retain(fields, "code message"))
@@ -165,6 +170,14 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 				if err != nil {
 					return nil, err
 				}
+				if kind == "message_start" && policy.Profile == Qwen {
+					var message, counts map[string]json.RawMessage
+					_ = json.Unmarshal(projected, &message)
+					if json.Unmarshal(message["usage"], &counts) == nil && counts != nil {
+						message["usage"], _ = json.Marshal(retain(counts, "input_tokens output_tokens"))
+						projected, _ = json.Marshal(message)
+					}
+				}
 				object[nested] = projected
 			}
 		}
@@ -176,7 +189,7 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 				if _, valid := number(fields["output_tokens"]); valid {
 					current.Output, current.Total = fields["output_tokens"], nil
 				}
-				if wire := current.wire(Messages); wire != nil {
+				if wire := current.wireProfile(Messages, policy.Profile); wire != nil {
 					object["usage"] = wire
 				} else {
 					delete(object, "usage")
@@ -248,7 +261,7 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 			if policy.IncludeUsage {
 				result["usage"] = json.RawMessage("null")
 			}
-		} else if wire := usage.wire(Chat); wire != nil {
+		} else if wire := usage.wireProfile(Chat, policy.Profile); wire != nil {
 			result["usage"] = wire
 		} else {
 			delete(result, "usage")
@@ -275,7 +288,7 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 			}
 		}
 		result["usage"] = json.RawMessage("null")
-		if wire := usage.wire(Responses); wire != nil {
+		if wire := usage.wireProfile(Responses, policy.Profile); wire != nil {
 			result["usage"] = wire
 		}
 	case Messages:
@@ -288,7 +301,7 @@ func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte
 				return nil, err
 			}
 		}
-		if wire := usage.wire(Messages); wire != nil {
+		if wire := usage.wireProfile(Messages, policy.Profile); wire != nil {
 			result["usage"] = wire
 		}
 	}

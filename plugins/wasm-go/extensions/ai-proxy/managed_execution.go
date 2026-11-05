@@ -119,6 +119,8 @@ type managedRedisSettings struct {
 }
 
 type managedSettings struct {
+	ProtocolMode       string                   `json:"-"`
+	ResponseProfile    clientresponse.Profile   `json:"response_profile,omitempty"`
 	ToolPolicy         *managedToolSettings     `json:"tool_policy,omitempty"`
 	MediaDispatchMode  string                   `json:"media_dispatch_mode,omitempty"`
 	ProducerID         string                   `json:"producer_id"`
@@ -223,6 +225,9 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 	parsed.vendor, err = supplier.NewManagedAdapter(*providerConfig, managedSupplierAPIName(profile), parsed.settings.UpstreamPath)
 	if err != nil {
 		return errors.New("managed execution supplier does not support its frozen protocol profile")
+	}
+	if err := configureManagedResponse(&parsed, value); err != nil {
+		return err
 	}
 	redis := parsed.settings.Redis
 	client := wrapper.NewRedisEventClient(wrapper.FQDNCluster{FQDN: redis.ServiceName, Port: int64(redis.ServicePort)}, proxywasm.DispatchRedisCallInBackground)
@@ -891,6 +896,33 @@ func finishManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState
 	if managedTextStopped(s) {
 		return
 	}
+	if s.config.settings.ProtocolMode == "passthrough" && bodyErr == nil {
+		statusText, headerErr := managedSingleHeader(headers, ":status")
+		status, statusErr := strconv.ParseUint(statusText, 10, 16)
+		if headerErr == nil && statusErr == nil && status >= 100 && status <= 599 && strconv.FormatUint(status, 10) == statusText {
+			deliveryState := outcome.ExecutionResult
+			if deliveryState != "succeeded" && deliveryState != "partial" && deliveryState != "failed" {
+				deliveryState = "unknown"
+			}
+			if outcome.HTTPStatus != nil && *outcome.HTTPStatus >= 400 {
+				deliveryState = "failed"
+			}
+			// Callback bytes are a transport result. Unverified procurement evidence
+			// remains unknown in the original attempt and delivery facts.
+
+			if status < 400 && s.config.profile.InputProtocol == clientresponse.Responses {
+				stream, err := managedProtocolContentType(headers)
+				if err == nil {
+					s.publicAliases, err = clientresponse.ObserveNativeResources(s.config.profile.InputProtocol, body, stream)
+				}
+				if err != nil {
+					managedFactGap(ctx, "native_resource_observation_failed")
+				}
+			}
+			sendManagedFinal(ctx, s, outcome, deliveryState, uint32(status), headers, body)
+			return
+		}
+	}
 	if outcome.HTTPStatus == nil || bodyErr != nil {
 		// The local 502 is a response policy, never a fabricated upstream status.
 		sendManagedFinal(ctx, s, outcome, "failed", 502, [][2]string{{"content-type", "application/json"}}, managedErrorBody("upstream_response_unavailable"))
@@ -964,7 +996,7 @@ func sendManagedFinal(ctx wrapper.HttpContext, s *managedExecutionState, outcome
 			}
 		}
 	}
-	if managedPublicText(s) && status >= 400 {
+	if managedPublicText(s) && s.config.settings.ProtocolMode != "passthrough" && status >= 400 {
 		policy := managedPublicPolicy(s)
 		format := s.config.profile.UpstreamProtocol
 		if s.config.vendor != nil && s.config.vendor.NativeResponseFormat() != "" {

@@ -263,7 +263,7 @@ func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (
 	}
 	if err := observedusage.Clear(); err != nil {
 		nativeBillingGap(ctx, nil, "internal_usage_state_unavailable")
-		_ = proxywasm.SendHttpResponse(503, [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"metering_unavailable","message":"Metering temporarily unavailable"}}`), -1)
+		_ = proxywasm.SendHttpResponseWithDetail(503, "modelfusion.local.accounting_unavailable", [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"metering_unavailable","message":"Metering temporarily unavailable"}}`), -1)
 		return types.ActionPause, true
 	}
 	ctx.SetContext(ctxBillingEnabled, false)
@@ -283,7 +283,7 @@ func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (
 		return types.ActionContinue, true
 	}
 	if configured.outbox != nil && !configured.outbox.Accepting() {
-		_ = proxywasm.SendHttpResponse(503, [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"accounting_delivery_unavailable","message":"Accounting temporarily unavailable"}}`), -1)
+		_ = proxywasm.SendHttpResponseWithDetail(503, "modelfusion.local.accounting_unavailable", [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"accounting_delivery_unavailable","message":"Accounting temporarily unavailable"}}`), -1)
 		return types.ActionPause, true
 	}
 	state := &nativeBillingState{config: configured}

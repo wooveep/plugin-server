@@ -88,7 +88,7 @@ func rejectHistoryBodyBasis(ctx wrapper.HttpContext, status uint32, code string)
 	ctx.DontReadRequestBody()
 	ctx.DontReadResponseBody()
 	body := []byte(`{"error":{"code":"` + code + `","type":"history_body_basis_error"}}`)
-	if proxywasm.SendHttpResponse(status, [][2]string{{"content-type", "application/json"}}, body, -1) != nil {
+	if proxywasm.SendHttpResponseWithDetail(status, "modelfusion.local.ai-history."+code, [][2]string{{"content-type", "application/json"}}, body, -1) != nil {
 		proxywasm.LogCritical("ai-history could not send body-basis rejection")
 	}
 	return types.ActionPause

@@ -13,7 +13,7 @@ import (
 )
 
 func managedResourceScope(s *managedExecutionState) resourceref.Scope {
-	return resourceref.Scope{Tenant: s.identity.TenantID, Principal: s.identity.PrincipalID, SalesAsset: s.config.release.SalesAssetID}
+	return resourceref.Scope{Tenant: s.identity.TenantID, Principal: s.identity.PrincipalID, SalesAsset: s.config.release.SalesAssetID, Passthrough: s.config.settings.ProtocolMode == "passthrough"}
 }
 
 func managedResourceOwner(c *managedExecutionConfig) resourceref.Owner {
@@ -75,7 +75,9 @@ func persistManagedResourceAliases(ctx wrapper.HttpContext, s *managedExecutionS
 		if alias.Original == "" || alias.Original == s.callID {
 			continue
 		}
-		records = append(records, resourceref.NewRecord(alias, owner, managedNativeResponses(s.config)))
+		record := resourceref.NewRecord(alias, owner, managedNativeResponses(s.config))
+		record.Passthrough = s.config.settings.ProtocolMode == "passthrough"
+		records = append(records, record)
 	}
 	if len(records) == 0 {
 		return false
@@ -108,7 +110,7 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 		if !value.Exists() || value.Type == gjson.Null {
 			return true
 		}
-		if !resourceref.IsAlias(kind, value.String()) {
+		if s.config.settings.ProtocolMode != "passthrough" && !resourceref.IsAlias(kind, value.String()) {
 			return !reference
 		}
 		inputs = append(inputs, managedResourceInput{path, clientresponse.ResourceAlias{Kind: kind, Public: value.String()}, reference})

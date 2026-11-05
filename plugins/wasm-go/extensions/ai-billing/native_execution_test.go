@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
 	"strings"
 	"testing"
 	"time"
@@ -138,6 +139,14 @@ func nativeBillingAdmittedHeaders(cfg BillingConfig, callID string) [][2]string 
 		[2]string{executionfacts.AdmissionReleaseHeader, release.Descriptor.ReleaseID},
 		[2]string{executionfacts.AdmissionDeadlineHeader, time.Now().UTC().Add(5 * time.Second).Format(time.RFC3339Nano)},
 		[2]string{executionfacts.AdmissionOccurredHeader, "2026-10-27T10:00:00Z"})
+}
+
+// One host belongs to a test; request-fixture loops share that host.
+func nativeBillingHost(t *testing.T) {
+	t.Helper()
+	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption())
+	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
+	t.Cleanup(reset)
 }
 
 func nativeBillingRequestFixture(t *testing.T, cfg BillingConfig) (*nativeBillingTestContext, *nativeBillingState) {
@@ -302,6 +311,7 @@ func TestNativeBillingDescriptorDigestPreservesRawFieldsBeforeRemovingSelf(t *te
 
 func TestNativeBillingBridgePublishesExactlyOriginalBytesAndSameACKLedger(t *testing.T) {
 	wasmtest.RunGoTest(t, func(t *testing.T) {
+		nativeBillingHost(t)
 		cfg, _ := nativeBillingConfigFixture(t)
 		redis := &nativeBillingTestRedis{}
 		cfg.redisClient = redis
@@ -345,6 +355,7 @@ func TestNativeBillingBridgePublishesExactlyOriginalBytesAndSameACKLedger(t *tes
 
 func TestNativeBillingRejectsBridgeCallerReleaseAndProducerDrift(t *testing.T) {
 	wasmtest.RunGoTest(t, func(t *testing.T) {
+		nativeBillingHost(t)
 		cfg, _ := nativeBillingConfigFixture(t)
 		changes := []func(*executionfacts.Envelope){
 			func(e *executionfacts.Envelope) { e.ProducerID = "another-configured-producer" },
@@ -380,6 +391,7 @@ func TestNativeBillingRejectsBridgeCallerReleaseAndProducerDrift(t *testing.T) {
 
 func TestNativeBillingPendingResultOrRedisFailureDoesNotFabricateSuccess(t *testing.T) {
 	wasmtest.RunGoTest(t, func(t *testing.T) {
+		nativeBillingHost(t)
 		cfg, _ := nativeBillingConfigFixture(t)
 		ctx, state := nativeBillingRequestFixture(t, cfg)
 		onNativeBillingStreamDone(ctx, cfg)
@@ -454,6 +466,7 @@ func nativeBillingPoolConfigFixture(t *testing.T) (BillingConfig, map[string]int
 
 func TestNativeBillingPoolRetainsOriginalCallDeliveryWithoutASelectedCredential(t *testing.T) {
 	wasmtest.RunGoTest(t, func(t *testing.T) {
+		nativeBillingHost(t)
 		original, _ := nativeBillingConfigFixture(t)
 		snapshot := nativeBillingDeliveryFixture(t, original)
 		cfg, _ := nativeBillingPoolConfigFixture(t)
@@ -543,6 +556,7 @@ func TestNativeBillingPoolRejectsMixedIncompleteOrUnversionedDirectories(t *test
 
 func TestNativeBillingConsumesV5ToolsWithoutRewritingOrDoubleAppending(t *testing.T) {
 	wasmtest.RunGoTest(t, func(t *testing.T) {
+		nativeBillingHost(t)
 		cfg, _ := nativeBillingConfigFixture(t)
 		redis := &nativeBillingTestRedis{}
 		cfg.redisClient = redis

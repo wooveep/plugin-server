@@ -21,7 +21,10 @@ const schema = "modelfusion-public-resources.v1"
 // response ID. Full histories must not be truncated at the tool count itself.
 const maxReferences = 4096
 
-type Scope struct{ Tenant, Principal, SalesAsset string }
+type Scope struct {
+	Tenant, Principal, SalesAsset string
+	Passthrough                   bool
+}
 
 // Owner is a native resource boundary, independent of a publication revision.
 // It deliberately contains no credential or credential generation.
@@ -34,10 +37,11 @@ type Owner struct {
 }
 
 type Record struct {
-	Schema string                       `json:"schema"`
-	Alias  clientresponse.ResourceAlias `json:"alias"`
-	Owner  Owner                        `json:"owner"`
-	Native bool                         `json:"native"`
+	Schema      string                       `json:"schema"`
+	Alias       clientresponse.ResourceAlias `json:"alias"`
+	Owner       Owner                        `json:"owner"`
+	Native      bool                         `json:"native"`
+	Passthrough bool                         `json:"passthrough,omitempty"`
 }
 
 func NewRecord(alias clientresponse.ResourceAlias, owner Owner, native bool) Record {
@@ -58,17 +62,33 @@ func IsAlias(kind, value string) bool {
 }
 
 func key(scope Scope, alias clientresponse.ResourceAlias) (string, error) {
-	if scope.Tenant == "" || scope.Principal == "" || scope.SalesAsset == "" || !IsAlias(alias.Kind, alias.Public) {
+	validID := IsAlias(alias.Kind, alias.Public)
+	if scope.Passthrough {
+		validID = nativeID(alias.Kind, alias.Public)
+	}
+	if scope.Tenant == "" || scope.Principal == "" || scope.SalesAsset == "" || !validID {
 		return "", errors.New("invalid resource reference scope")
 	}
 	raw, _ := json.Marshal([]string{scope.Tenant, scope.Principal, scope.SalesAsset})
 	digest := sha256.Sum256(raw)
+	if scope.Passthrough {
+		id := sha256.Sum256([]byte(alias.Kind + ":" + alias.Public))
+		return "modelfusion:native-resources:v1:{" + hex.EncodeToString(digest[:]) + "}:" + hex.EncodeToString(id[:]), nil
+	}
 	return "modelfusion:public-resources:v1:{" + hex.EncodeToString(digest[:]) + "}:" + alias.Public, nil
 }
 
 func valid(record Record) bool {
 	o := record.Owner
-	return record.Schema == schema && IsAlias(record.Alias.Kind, record.Alias.Public) && record.Alias.Original != "" && len(record.Alias.Original) <= 4096 && o.Provider != "" && o.Account != "" && o.Region != "" && o.Model != "" && o.Protocol != ""
+	validID := IsAlias(record.Alias.Kind, record.Alias.Public)
+	if record.Passthrough {
+		validID = record.Native && record.Alias.Public == record.Alias.Original && nativeID(record.Alias.Kind, record.Alias.Public)
+	}
+	return record.Schema == schema && validID && record.Alias.Original != "" && len(record.Alias.Original) <= 4096 && o.Provider != "" && o.Account != "" && o.Region != "" && o.Model != "" && o.Protocol != ""
+}
+
+func nativeID(kind, value string) bool {
+	return (kind == "response" || kind == "item" || kind == "call" || kind == "conversation") && value != "" && len(value) <= 4096
 }
 
 // Save is atomic and acknowledged before delivery. A random collision never
@@ -83,14 +103,14 @@ func Save(client Client, scope Scope, records []Record, done func(error)) {
 		return
 	}
 	const script = `-- modelfusion-public-resource-write.v1
-for i,k in ipairs(KEYS) do if redis.call('EXISTS',k) ~= 0 then return 0 end end
+for i,k in ipairs(KEYS) do local old=redis.call('GET',k); if old and (ARGV[#KEYS+2] ~= 'native' or old ~= ARGV[i+1]) then return 0 end end
 for i,k in ipairs(KEYS) do redis.call('SET',k,ARGV[i+1],'EX',ARGV[1]) end
 return 1`
 	command := []interface{}{"EVAL", script, len(records)}
 	values := []interface{}{RetentionSeconds}
 	for _, record := range records {
 		k, err := key(scope, record.Alias)
-		if err != nil || !valid(record) {
+		if err != nil || !valid(record) || record.Passthrough != scope.Passthrough {
 			done(errors.New("invalid resource mapping"))
 			return
 		}
@@ -98,6 +118,11 @@ return 1`
 		command = append(command, k)
 		values = append(values, string(raw))
 	}
+	mode := "public"
+	if scope.Passthrough {
+		mode = "native"
+	}
+	values = append(values, mode)
 	command = append(command, values...)
 	if err := client.Command(command, func(value resp.Value) {
 		if value.Type() != resp.Integer || value.Integer() != 1 {
@@ -132,7 +157,7 @@ func Lookup(client Client, scope Scope, aliases []clientresponse.ResourceAlias, 
 		}
 		result := make([]Record, len(aliases))
 		for i, raw := range value.Array() {
-			if raw.IsNull() || len(raw.String()) > 16384 || json.Unmarshal([]byte(raw.String()), &result[i]) != nil || !valid(result[i]) || result[i].Alias.Kind != aliases[i].Kind || result[i].Alias.Public != aliases[i].Public {
+			if raw.IsNull() || len(raw.String()) > 16384 || json.Unmarshal([]byte(raw.String()), &result[i]) != nil || !valid(result[i]) || result[i].Passthrough != scope.Passthrough || result[i].Alias.Kind != aliases[i].Kind || result[i].Alias.Public != aliases[i].Public {
 				done(nil, errors.New("resource reference unavailable"))
 				return
 			}

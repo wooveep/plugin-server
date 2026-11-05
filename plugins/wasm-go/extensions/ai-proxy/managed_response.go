@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"time"
 
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
+ "github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
 )
@@ -15,7 +17,7 @@ func managedPublicPolicy(s *managedExecutionState) clientresponse.Policy {
 		s.publicAliases = &clientresponse.ResourceAliases{}
 	}
 	created, _ := time.Parse(time.RFC3339Nano, s.businessUTC)
-	return clientresponse.Policy{Protocol: s.config.profile.InputProtocol, PublicModel: s.config.release.PublicModel, UpstreamModel: s.config.release.Descriptor.UpstreamModel, RequestID: s.callID, CreatedAt: created.Unix(), IncludeUsage: gjson.GetBytes(s.publicRequest, "stream_options.include_usage").Bool(), ExposeServiceTier: gjson.GetBytes(s.publicRequest, "service_tier").String() != "", RequestFields: clientresponse.RequestFields(s.publicRequest), Aliases: s.publicAliases}
+	return clientresponse.Policy{Protocol: s.config.profile.InputProtocol, Profile: s.config.settings.ResponseProfile, PublicModel: s.config.release.PublicModel, UpstreamModel: s.config.release.Descriptor.UpstreamModel, RequestID: s.callID, CreatedAt: created.Unix(), IncludeUsage: gjson.GetBytes(s.publicRequest, "stream_options.include_usage").Bool(), ExposeServiceTier: gjson.GetBytes(s.publicRequest, "service_tier").String() != "", RequestFields: clientresponse.RequestFields(s.publicRequest), Aliases: s.publicAliases}
 }
 
 func managedPublicText(s *managedExecutionState) bool {
@@ -68,4 +70,33 @@ func projectManagedResponse(s *managedExecutionState, originalHeaders [][2]strin
 
 func managedPublicError(ctx wrapper.HttpContext, reason string) []byte {
 	return clientresponse.Error(clientresponse.Policy{Protocol: ctx.GetStringContext(managedPublicProtocolKey, "")}, managedErrorBody(reason))
+}
+
+// configureManagedResponse validates the only response branch for this target.
+func configureManagedResponse(c *managedExecutionConfig, value gjson.Result) error {
+	c.settings.ProtocolMode = value.Get("protocol_mode").String()
+	if c.settings.ProtocolMode == "" {
+		c.settings.ProtocolMode = "auto"
+	}
+	if c.settings.ProtocolMode == "passthrough" {
+		if c.settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission || (c.profile.InputProtocol != clientresponse.Chat && c.profile.InputProtocol != clientresponse.Responses && c.profile.InputProtocol != clientresponse.Messages) || c.release.PublicModel != c.release.Descriptor.UpstreamModel || c.profile.InputProtocol != c.profile.UpstreamProtocol || (c.vendor != nil && c.vendor.NativeResponseFormat() != "") || c.settings.ResponseProfile != "" {
+			return errors.New("passthrough requires the exact model and native wire protocol without a response profile")
+		}
+		return nil
+	}
+	if c.settings.ProtocolMode != "auto" {
+		return errors.New("unsupported managed response mode")
+	}
+	if c.profile.InputProtocol != clientresponse.Chat && c.profile.InputProtocol != clientresponse.Responses && c.profile.InputProtocol != clientresponse.Messages {
+		if c.settings.ResponseProfile != "" {
+			return errors.New("response profiles are only available for public text protocols")
+		}
+		return nil
+	}
+	profile, err := clientresponse.ParseProfile(string(c.settings.ResponseProfile), c.profile.InputProtocol)
+	if err != nil {
+		return err
+	}
+	c.settings.ResponseProfile = profile
+	return nil
 }

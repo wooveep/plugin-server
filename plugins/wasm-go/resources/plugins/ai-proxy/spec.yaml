@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.42
+  version: 2.0.43
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -370,6 +370,9 @@ spec:
           - upstream_path
           - authority
           properties:
+            response_profile:
+              type: string
+              enum: [deepseek, qwen, openai]
             text_execution:
               type: object
               additionalProperties: false

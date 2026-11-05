@@ -6,7 +6,7 @@ info:
   name: model-mapper
   image: platform_wasm/model-mapper
   title: Model Mapper
-  version: 2.0.4
+  version: 2.0.5
   description: Maps standalone model names and preserves exact original-body correlation
     for native publication.
 spec:

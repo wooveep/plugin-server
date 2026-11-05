@@ -19,6 +19,29 @@ type ResourceAlias struct {
 type ResourceAliases struct {
 	values  map[[2]string]string
 	records []ResourceAlias
+	native  bool
+}
+
+// ObserveNativeResources records ownership without changing delivered bytes.
+func ObserveNativeResources(protocol string, body []byte, stream bool) (*ResourceAliases, error) {
+	aliases := &ResourceAliases{native: true}
+	if !stream {
+		_, err := aliases.rewrite(protocol, body, false)
+		return aliases, err
+	}
+	events, err := Events(body)
+	if err != nil {
+		return nil, err
+	}
+	for _, event := range events {
+		if string(event.Data) == "[DONE]" {
+			continue
+		}
+		if _, err := aliases.rewrite(protocol, event.Data, true); err != nil {
+			return nil, err
+		}
+	}
+	return aliases, nil
 }
 
 func (a *ResourceAliases) Records() []ResourceAlias {
@@ -42,6 +65,14 @@ func (a *ResourceAliases) alias(kind string, raw json.RawMessage) (json.RawMessa
 	}
 	key := [2]string{kind, original}
 	public, exists := a.values[key]
+	if a.native && !exists {
+		public = original
+		a.values[key] = public
+		if original != "" {
+			a.records = append(a.records, ResourceAlias{Kind: kind, Public: public, Original: original})
+		}
+		exists = true
+	}
 	if !exists {
 		var random [16]byte
 		if _, err := rand.Read(random[:]); err != nil {
