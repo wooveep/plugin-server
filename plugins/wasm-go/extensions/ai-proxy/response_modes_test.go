@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -132,6 +133,61 @@ func TestPassthroughKeepsOpaqueErrorsWithoutInventingProcurementEvidence(t *test
 						if fact.HTTPStatus != nil || fact.SendState == "observed_sent" {
 							t.Fatal("raw presentation fabricated send evidence")
 						}
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestPassthroughDeliveryFinalityKeepsUnknownProcurement(t *testing.T) {
+	var compressed bytes.Buffer
+	writer := gzip.NewWriter(&compressed)
+	if _, err := writer.Write(responseModePayload(clientresponse.Chat, false)); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		name, protocol, status, contentType, encoding, delivery string
+		stream                                                  bool
+		body                                                    []byte
+	}{
+		{"opaque-success", clientresponse.Chat, "200", "text/plain", "", "failed", false, []byte("opaque supplier body")},
+		{"opaque-error", clientresponse.Chat, "500", "text/plain", "", "failed", false, []byte("opaque supplier error")},
+		{"opaque-unavailable", clientresponse.Chat, "503", "text/plain", "", "failed", false, []byte("opaque supplier unavailable")},
+		{"closed-incomplete-sse", clientresponse.Chat, "200", "text/event-stream", "", "failed", true, []byte("data: {\"id\":\"native-chat\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"partial\"}}]}\n\n")},
+		{"encoded-json-stays-unresolved", clientresponse.Chat, "200", "application/json", "gzip", "unknown", false, compressed.Bytes()},
+		{"background-response-stays-unresolved", clientresponse.Responses, "200", "application/json", "", "unknown", false, []byte(`{"id":"resp_pending","object":"response","model":"upstream-model","status":"in_progress","output":[]}`)},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			h := newManagedHost(t, responseModeFixture("openai", test.protocol, test.protocol, "passthrough", ""))
+			request := responseModeRequest(test.protocol, "upstream-model", test.stream)
+			h.start(t, request, request)
+			headers := [][2]string{{":status", test.status}, {"content-type", test.contentType}, {"x-supplier-business", "one"}, {"x-supplier-business", "two"}}
+			if test.encoding != "" {
+				headers = append(headers, [2]string{"content-encoding", test.encoding})
+			}
+			h.response(t, headers, test.body)
+			reply := h.host.GetSentLocalResponse(h.id)
+			if reply == nil || fmt.Sprint(reply.StatusCode) != test.status || !bytes.Equal(reply.Data, test.body) {
+				t.Fatal("delivery classification changed the original response", reply)
+			}
+			if got := h.bridge(t).Envelope().DeliveryState; got != test.delivery {
+				t.Fatalf("delivery state = %s, want %s", got, test.delivery)
+			}
+			for _, record := range h.records(t) {
+				if record.messageType != "observation" {
+					continue
+				}
+				fact := decodeManagedFact(t, record.raw)
+				if fact.ExecutionResult != "unknown" {
+					t.Fatal("client failure fabricated an upstream terminal result", fact.ExecutionResult)
+				}
+				if test.status == "500" || test.status == "503" {
+					if fact.HTTPStatus != nil || fact.SendState == "observed_sent" {
+						t.Fatal("client failure fabricated procurement send evidence")
 					}
 				}
 			}

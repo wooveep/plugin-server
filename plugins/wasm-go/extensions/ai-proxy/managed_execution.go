@@ -906,11 +906,20 @@ func finishManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState
 			if deliveryState != "succeeded" && deliveryState != "partial" && deliveryState != "failed" {
 				deliveryState = "unknown"
 			}
-			if outcome.HTTPStatus != nil && *outcome.HTTPStatus >= 400 {
+			if status >= 400 {
 				deliveryState = "failed"
+			} else if status >= 200 && status < 300 && deliveryState == "unknown" {
+				contentType, typeErr := managedSingleHeader(headers, "content-type")
+				mediaType, _, parseErr := mime.ParseMediaType(contentType)
+				if typeErr != nil || parseErr != nil ||
+					(mediaType != "application/json" && mediaType != "text/event-stream") ||
+					(mediaType == "text/event-stream" && !outcome.BodyComplete) {
+					deliveryState = "failed"
+				}
 			}
-			// Callback bytes are a transport result. Unverified procurement evidence
-			// remains unknown in the original attempt and delivery facts.
+			// A returned error or invalid native response closes this delivery.
+			// It does not prove supplier execution: the original attempt keeps
+			// its unknown transport result and the response bytes remain intact.
 
 			if status < 400 && s.config.profile.InputProtocol == clientresponse.Responses {
 				stream, err := managedProtocolContentType(headers)
