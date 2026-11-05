@@ -76,3 +76,5 @@ python3 /opt/plugin-server/scripts/seed-registered-store.py \
 `make test` 统一运行 Python 契约、存储、发布清单和入口测试。各语言编译和 Go/编译后 Wasm 回归记录由实施计划链接；本地测试通过不代表真实 Envoy 或供应商调用已验收。
 
 正式发布镜像可执行 `make docker-build TAG=plugin-server:2.2.1 TRUSTED_POLICY=/absolute/path/to/reviewed-policy.json`。需要先独立核对来源和完整包策略；源码版本、插件版本与已登记不可变内容分别校验。
+
+2.2.1 正式交付见[发布说明](docs/releases/2.2.1.md)。
