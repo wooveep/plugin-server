@@ -1,0 +1,120 @@
+{
+  "client_protocol": "openai_chat",
+  "operation_kind": "text_generate",
+  "response_profile": "qwen",
+  "protocol_mode": "auto",
+  "native_execution": {
+    "producer_id": "fixture",
+    "call_identity_source": "admission"
+  },
+  "capture_body_basis": true,
+  "consume_body_basis": false,
+  "path_scope": "bound_target",
+  "public_model": "fixture",
+  "native_route": {
+    "release_id": "fixture",
+    "target_id": "fixture",
+    "route_id": "11111111-1111-4111-8111-111111111111"
+  },
+  "tenant_policies": {
+    "11111111-1111-4111-8111-111111111111": {
+      "client_protocol": "openai_chat",
+      "operation_kind": "text_generate",
+      "response_profile": "qwen",
+      "protocol_mode": "auto",
+      "native_execution": {
+        "producer_id": "fixture",
+        "call_identity_source": "admission"
+      },
+      "capture_body_basis": true,
+      "consume_body_basis": false,
+      "native_identity": {
+        "release_id": "fixture",
+        "target_id": "fixture",
+        "route_id": "11111111-1111-4111-8111-111111111111",
+        "policy_id": "11111111-1111-4111-8111-111111111111",
+        "policy_version": 1
+      },
+      "materialized_lookup": {
+        "redis": {
+          "enabled": true,
+          "service_name": "fixture.dns"
+        }
+      },
+      "console_lookup": {
+        "enabled": true,
+        "service_name": "fixture.dns",
+        "path": "/internal/cache/lookup",
+        "bearer_token": "fixture",
+        "timeout": 100
+      },
+      "redis_stream": {
+        "enabled": true,
+        "service_name": "fixture.dns",
+        "stream": "cache:events",
+        "field": "event"
+      },
+      "route_policy": {
+        "enable_redis_lookup": true,
+        "enable_console_lookup": true,
+        "enable_replay": true,
+        "enable_bypass": false,
+        "enabled_path_suffixes": [],
+        "memory": {
+          "enabled": false,
+          "cache_mode": "policy_digest",
+          "policy_version": ""
+        }
+      },
+      "tenant_header": "x-modelfusion-tenant-id",
+      "consumer_header": "x-modelfusion-principal-id",
+      "session_header": "x-openclaw-session-key",
+      "cache_scope": "tenant",
+      "cache_policy_version": "1",
+      "fail_policy": "open"
+    }
+  },
+  "_modelfusion_execution": {
+    "credentials": [
+      {
+        "credential_ref": "fixture",
+        "credential_revision": "1"
+      }
+    ],
+    "descriptor": {
+      "adapter_ref": "fixture",
+      "adapter_revision": "1",
+      "binding_id": "11111111-1111-4111-8111-111111111111",
+      "capabilities": {
+        "text_generate": {
+          "max_attempts": 1,
+          "max_fallback_hops": 0,
+          "response_classifier_ref": "ai-proxy.native-text.v1",
+          "send_mode": "single_send"
+        }
+      },
+      "cluster_ref": "fixture",
+      "config_canonicalization": "mf-json.v1",
+      "credential_pool_ref": "fixture",
+      "credential_pool_revision": "1",
+      "descriptor_digest": "sha256:22f85d59d5baa2f1305d5ea181629a68ce9985c5fe76ee9e872a908ce76f9585",
+      "mapper_digest": "sha256:434b91cabcf401612fd6c1bf2e335bd3df5a6c68b2932bbb61e6ba1c39fcc25f",
+      "provider_id": "11111111-1111-4111-8111-111111111111",
+      "proxy_digest": "sha256:1760b9d512a99e3c6c218bea15d5ffa609c23ddeedd3a98f0ab0c62d05d361e2",
+      "region_endpoint_ref": "fixture",
+      "release_id": "11111111-1111-4111-8111-111111111111",
+      "service_ref": "fixture",
+      "target_id": "fixture",
+      "transport_contract": {
+        "host": "fixture.invalid",
+        "sni": "",
+        "path_adapter_ref": "fixture"
+      },
+      "upstream_model": "fixture"
+    },
+    "public_model": "fixture",
+    "route_id": "11111111-1111-4111-8111-111111111111",
+    "sales_asset_id": "11111111-1111-4111-8111-111111111111",
+    "schema_version": "modelfusion-execution.v2"
+  }
+}

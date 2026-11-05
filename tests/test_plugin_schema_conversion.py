@@ -84,6 +84,34 @@ class SchemaConversionTests(unittest.TestCase):
             candidate["protocol_mode"] = "passthrough"
             validator.validate(candidate)
 
+    def test_tenant_cache_response_profiles_survive_complete_route_schema(self):
+        import copy
+        import json
+        from artifact_contract import contract_registry
+        from jsonschema import Draft202012Validator
+
+        source = Path(__file__).resolve().parents[1] / "plugins/wasm-go/resources/plugins/ai-cache/spec.yaml"
+        schema = json.loads(convert_spec(source.read_bytes())["schemas"]["route.schema.json"])
+        validator = Draft202012Validator(schema, registry=contract_registry()[1])
+        base = json.loads((ROOT / "native-cache-tenant.json").read_bytes())
+        for protocol, profiles in (("openai_chat", ("deepseek", "qwen", "openai")),
+                                   ("openai_responses", ("deepseek", "qwen", "openai")),
+                                   ("anthropic_messages", ("deepseek", "qwen"))):
+            for mode, profile in [("auto", value) for value in profiles] + [("passthrough", None)]:
+                candidate = copy.deepcopy(base)
+                for config in [candidate, *candidate["tenant_policies"].values()]:
+                    config.update(client_protocol=protocol, protocol_mode=mode)
+                    if profile is None:
+                        config.pop("response_profile", None)
+                    else:
+                        config["response_profile"] = profile
+                with self.subTest(protocol=protocol, mode=mode, profile=profile):
+                    validator.validate(candidate)
+        for field in ("response_profile", "protocol_mode"):
+            candidate = copy.deepcopy(base)
+            candidate[field] = "unknown"
+            self.assertFalse(validator.is_valid(candidate))
+
     def test_dashscope_native_text_configuration_is_publishable_in_both_scopes(self):
         import json
         from jsonschema import Draft202012Validator

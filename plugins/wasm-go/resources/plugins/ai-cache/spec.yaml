@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-cache/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-cache/README_EN.md
-  version: 2.0.17
+  version: 2.0.18
   contact:
     name: johnlanni
   gatewayMinVersion: 2.0.0
@@ -2313,6 +2313,8 @@ spec:
           - _modelfusion_execution
           propertyNames:
             enum:
+            - protocol_mode
+            - response_profile
             - path_scope
             - client_protocol
             - operation_kind
