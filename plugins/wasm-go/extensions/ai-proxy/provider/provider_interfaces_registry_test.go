@@ -51,7 +51,12 @@ func implementedManagedInterfaces() map[string][]string {
 			result[kind] = append(result[kind], entry.protocol)
 		}
 		if kind == "qwen" {
-			result[kind] = append(result[kind], "dashscope_text", "dashscope_multimodal")
+			result[kind] = append(result[kind], "dashscope_text", "dashscope_multimodal",
+				"dashscope_multimodal_embedding", "dashscope_rerank", "bailian_rerank")
+		}
+		config := ProviderConfig{typ: kind, failover: &failover{}, retryOnFailure: &retryOnFailure{}}
+		if _, err := NewManagedAdapter(config, ApiNameCompletion, deepseekFIMPath); err == nil {
+			result[kind] = append(result[kind], "openai_completions")
 		}
 	}
 	return result

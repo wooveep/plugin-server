@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-cache/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-cache/README_EN.md
-  version: 2.0.20
+  version: 2.0.22
   contact:
     name: johnlanni
   gatewayMinVersion: 2.0.0
@@ -118,6 +118,10 @@ spec:
             call_identity_source:
               type: string
               const: admission
+            router_miss:
+              type: boolean
+              const: true
+              description: Router misses use bounded SSE capture and require the protocol terminal before cache materialization.
         capture_body_basis:
           type: boolean
           description: 由 SDK 按真实发布顺序选定，清除客户端基线头并在任何改写前固定原正文；与 consume_body_basis 互斥，无默认值。
@@ -1173,6 +1177,10 @@ spec:
             call_identity_source:
               type: string
               const: admission
+            router_miss:
+              type: boolean
+              const: true
+              description: Router misses use bounded SSE capture and require the protocol terminal before cache materialization.
         capture_body_basis: &id003
           type: boolean
           description: 由 SDK 按真实发布顺序选定，清除客户端基线头并在任何改写前固定原正文；与 consume_body_basis 互斥，无默认值。

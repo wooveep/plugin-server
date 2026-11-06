@@ -38,7 +38,11 @@ v2 的 `managed_execution.credentials` 保存逐项匹配的 ref/revision/value�
 | `openai_responses` | `openai_responses` 或 `openai_chat` |
 | `anthropic_messages` | `anthropic_messages` 或 `openai_chat` |
 
-托管分支使用实际 `DispatchHttpCall` 执行一次业务发送，不再进入兼容 router 的第二次转发；每次发送建立独立 attempt。当前单次 callout 聚合响应，SSE 在完整收齐后处理，并非逐 chunk 透传。dispatch 成功只说明已交接，不能自行证明上游已接收；用量来自原始上游响应，协议转换产生的默认值或合成事件不作为用量证据。缺失/不完整用量明确保持 missing，不能据此免费或估算结算。
+托管 HTTP callout 使用 `DispatchHttpCall` 执行一次业务发送，每次发送建立独立 attempt。callout 聚合上游响应后处理 SSE。dispatch 成功记录交接，上游是否接收以执行观测为准。计量优先使用原始上游用量，协议转换产生的默认值和合成事件均排除在用量证据外。
+
+已发送的托管文本请求在 JSON 或 SSE 中缺少可用的终态用量时，按实际出站输入和已取得的输出文本补足。百炼 Chat、DashScope 和 Anthropic Messages 从最终出站请求识别显式缓存标记。确认启用显式缓存并进入估算时，全部输入计为缓存写入，命中计为零。其他请求的缓存缺项按零处理。
+
+估算保留数量来源。输出思考模式、已知命中量的读模式或写入 TTL 未知时，Console 在当前价表内选取该分项的最高适用价。销售与采购各按自己的价表计算。上游的有效报告优先采用。先升级 Console 接收端，再启用发送新版估算事实的代理。
 
 发送方向私有 Stream 分别投递 `execution_registration` 登记和 `observation` attempt 事实。最终 `call_delivery` 冻结成规范 Snapshot，通过内部 `x-modelfusion-delivery-observation` 响应桥交给 ai-billing；proxy 先清除上游所有同名值，再安装本次桥。billing 核对原身份及发布归属后投递同一字节、同 event/source/revision 的 delivery，避免兼容 BillingEvent 与原生事实并发生成。响应桥不向客户端提供事实写入权限。
 

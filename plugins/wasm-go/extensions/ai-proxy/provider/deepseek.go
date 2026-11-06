@@ -13,6 +13,7 @@ import (
 
 const (
 	deepseekDomain                = "api.deepseek.com"
+	deepseekFIMPath               = "/beta/completions"
 	deepseekResponsesPath         = "/responses"
 	deepseekAnthropicMessagesPath = "/anthropic/v1/messages"
 )

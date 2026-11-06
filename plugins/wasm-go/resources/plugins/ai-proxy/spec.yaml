@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.47
+  version: 2.0.58
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -89,7 +89,7 @@ spec:
           baidu: [openai_chat, openai_embeddings]
           claude: [anthropic_messages]
           cloudflare: [openai_chat]
-          deepseek: [openai_chat, openai_responses, anthropic_messages]
+          deepseek: [openai_chat, openai_responses, anthropic_messages, openai_completions]
           doubao: [openai_chat, openai_responses, openai_embeddings]
           fireworks: [openai_chat]
           gemini: [openai_chat, openai_embeddings]
@@ -104,7 +104,7 @@ spec:
           ollama: [openai_chat, openai_embeddings]
           openai: [openai_chat, openai_responses, openai_embeddings]
           openrouter: [openai_chat]
-          qwen: [openai_chat, openai_responses, anthropic_messages, openai_embeddings, dashscope_text, dashscope_multimodal]
+          qwen: [openai_chat, openai_responses, anthropic_messages, openai_embeddings, dashscope_text, dashscope_multimodal, dashscope_multimodal_embedding, dashscope_rerank, bailian_rerank]
           stepfun: [openai_chat]
           together-ai: [openai_chat]
           vllm: [openai_chat, openai_responses, anthropic_messages, openai_embeddings]
@@ -370,6 +370,15 @@ spec:
           - upstream_path
           - authority
           properties:
+            send_transport:
+              type: string
+              const: router
+            stream_projection:
+              type: boolean
+              const: true
+            stream_protocol:
+              type: string
+              enum: [openai_responses, anthropic_messages, dashscope_text, dashscope_multimodal, openai_completions]
             response_profile:
               type: string
               enum: [deepseek, qwen, openai]
@@ -492,6 +501,7 @@ spec:
               type: string
               enum:
               - openai_chat
+              - openai_completions
               - dashscope_text
               - dashscope_multimodal
               - openai_responses
@@ -503,10 +513,14 @@ spec:
               - wan30_text
               - wan30_first_frame
               - openai_embeddings
+              - dashscope_multimodal_embedding
+              - dashscope_rerank
+              - bailian_rerank
             upstream_protocol:
               type: string
               enum:
               - openai_chat
+              - openai_completions
               - dashscope_text
               - dashscope_multimodal
               - openai_responses
@@ -518,6 +532,9 @@ spec:
               - wan30_text
               - wan30_first_frame
               - openai_embeddings
+              - dashscope_multimodal_embedding
+              - dashscope_rerank
+              - bailian_rerank
             media_dispatch_mode:
               type: string
               enum:
@@ -599,6 +616,8 @@ spec:
                       - video_generate
                       - task_query
                       - text_embedding
+                      - multimodal_embedding
+                      - rerank
                     credential_ref:
                       type: string
                       minLength: 1
@@ -660,6 +679,8 @@ spec:
                         - video_generate
                         - task_query
                         - text_embedding
+                        - multimodal_embedding
+                        - rerank
                       credential_ref:
                         type: string
                         minLength: 1
@@ -1401,6 +1422,40 @@ spec:
                           classifier validates real data[].embedding and uses only
                           actual provider-reported input token usage. No retries,
                           fallback, queries or provider task lifecycle.
+                      multimodal_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-retrieval.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      rerank:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-retrieval.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
                     additionalProperties: false
                 required:
                 - release_id
@@ -2488,6 +2543,15 @@ spec:
           - upstream_path
           - authority
           properties:
+            send_transport:
+              type: string
+              const: router
+            stream_projection:
+              type: boolean
+              const: true
+            stream_protocol:
+              type: string
+              enum: [openai_responses, anthropic_messages, dashscope_text, dashscope_multimodal, openai_completions]
             response_profile:
               type: string
               enum: [deepseek, qwen, openai]
@@ -2610,6 +2674,7 @@ spec:
               type: string
               enum:
               - openai_chat
+              - openai_completions
               - dashscope_text
               - dashscope_multimodal
               - openai_responses
@@ -2621,10 +2686,14 @@ spec:
               - wan30_text
               - wan30_first_frame
               - openai_embeddings
+              - dashscope_multimodal_embedding
+              - dashscope_rerank
+              - bailian_rerank
             upstream_protocol:
               type: string
               enum:
               - openai_chat
+              - openai_completions
               - dashscope_text
               - dashscope_multimodal
               - openai_responses
@@ -2636,6 +2705,9 @@ spec:
               - wan30_text
               - wan30_first_frame
               - openai_embeddings
+              - dashscope_multimodal_embedding
+              - dashscope_rerank
+              - bailian_rerank
             media_dispatch_mode:
               type: string
               enum:
@@ -2717,6 +2789,8 @@ spec:
                       - video_generate
                       - task_query
                       - text_embedding
+                      - multimodal_embedding
+                      - rerank
                     credential_ref:
                       type: string
                       minLength: 1
@@ -2778,6 +2852,8 @@ spec:
                         - video_generate
                         - task_query
                         - text_embedding
+                        - multimodal_embedding
+                        - rerank
                       credential_ref:
                         type: string
                         minLength: 1
@@ -3508,6 +3584,40 @@ spec:
                           classifier validates real data[].embedding and uses only
                           actual provider-reported input token usage. No retries,
                           fallback, queries or provider task lifecycle.
+                      multimodal_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-retrieval.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      rerank:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-retrieval.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
                     additionalProperties: false
                 required:
                 - release_id

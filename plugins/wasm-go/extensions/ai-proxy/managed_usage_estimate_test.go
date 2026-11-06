@@ -34,3 +34,21 @@ func TestManagedReportedUsageStaysExact(t *testing.T) {
 		t.Fatal("exact reported usage was replaced")
 	}
 }
+
+func TestExplicitMessagesEstimateUsesTotalInput(t *testing.T) {
+	state := &managedExecutionState{
+		config: &managedExecutionConfig{profile: managedProtocolProfile{
+			UpstreamProtocol: managedProtocolMessages,
+		}},
+		cacheMode:   managedCacheExplicit,
+		requestText: "one two three",
+	}
+	outcome := executionfacts.AttemptOutcome{
+		SendState: "observed_sent",
+		Usage:     executionfacts.MissingTokenUsage("omitted"),
+	}
+	usage := availableManagedUsage(state, outcome, []byte(`{"usage":{"input_tokens":1,"cache_read_input_tokens":2}}`))
+	if usage.Quantities["input"] != "3" || usage.Quantities["cache_write"] != "3" || usage.Quantities["cache_hit"] != "0" {
+		t.Fatal("partial uncached input replaced the full explicit-cache estimate", usage)
+	}
+}

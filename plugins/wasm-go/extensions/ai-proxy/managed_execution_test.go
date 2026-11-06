@@ -96,6 +96,9 @@ func newManagedHost(t *testing.T, fixtures ...map[string]interface{}) *managedHo
 			}
 			return action
 		}),
+		wrapper.ProcessResponseHeaders(onHttpResponseHeaders),
+		wrapper.ProcessStreamingResponseBody(onStreamingResponseBody),
+		wrapper.ProcessResponseBody(onHttpResponseBody),
 		wrapper.ProcessStreamDone(onManagedStreamDone),
 	)
 	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration(managedFixtureJSON(t, fixture)))

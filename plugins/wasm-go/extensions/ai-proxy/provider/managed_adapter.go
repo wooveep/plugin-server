@@ -24,6 +24,14 @@ type ManagedAdapter struct {
 // name describes the prepared logical payload; the old provider protocol flag
 // cannot reinterpret that payload as an opaque original client request.
 func NewManagedAdapter(config ProviderConfig, apiName ApiName, upstreamPath string) (*ManagedAdapter, error) {
+	if apiName == ApiNameCompletion {
+		if config.typ != providerTypeDeepSeek || upstreamPath != deepseekFIMPath ||
+			config.failover.enabled || config.retryOnFailure.enabled {
+			return nil, errors.New("managed Completions requires the registered DeepSeek FIM path")
+		}
+		// The managed sender already owns the frozen path, Bearer key and body.
+		return nil, nil
+	}
 	if apiName == ApiNameDashScopeText || apiName == ApiNameDashScopeMultimodal {
 		expected := "/api/v1/services/aigc/text-generation/generation"
 		if apiName == ApiNameDashScopeMultimodal {

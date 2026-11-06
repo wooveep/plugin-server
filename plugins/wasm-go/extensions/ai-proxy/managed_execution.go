@@ -120,6 +120,9 @@ type managedRedisSettings struct {
 
 type managedSettings struct {
 	ProtocolMode       string                   `json:"-"`
+	SendTransport      string                   `json:"send_transport,omitempty"`
+	StreamProjection   bool                     `json:"stream_projection,omitempty"`
+	StreamProtocol     string                   `json:"stream_protocol,omitempty"`
 	ResponseProfile    clientresponse.Profile   `json:"response_profile,omitempty"`
 	ToolPolicy         *managedToolSettings     `json:"tool_policy,omitempty"`
 	MediaDispatchMode  string                   `json:"media_dispatch_mode,omitempty"`
@@ -211,6 +214,9 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 		return errors.New("managed execution target descriptor digest differs")
 	}
 	if parsed.settings.MediaDispatchMode == "managed_operation" {
+		if parsed.settings.SendTransport != "" || parsed.settings.StreamProtocol != "" || parsed.settings.StreamProjection {
+			return errors.New("managed media requires its callout transport")
+		}
 		if err := validateManagedMediaRelease(&parsed, value, cfg); err != nil {
 			return err
 		}
@@ -223,11 +229,20 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 	}
 	profile.supplier = providerConfig.GetType()
 	parsed.profile = profile
-	parsed.vendor, err = supplier.NewManagedAdapter(*providerConfig, managedSupplierAPIName(profile), parsed.settings.UpstreamPath)
-	if err != nil {
-		return errors.New("managed execution supplier does not support its frozen protocol profile")
+	if executionfacts.IsRetrieval(managedOperation(&parsed)) {
+		if profile.supplier != "qwen" {
+			return errors.New("retrieval protocol requires a Bailian supplier")
+		}
+	} else {
+		parsed.vendor, err = supplier.NewManagedAdapter(*providerConfig, managedSupplierAPIName(profile), parsed.settings.UpstreamPath)
+		if err != nil {
+			return errors.New("managed execution supplier does not support its frozen protocol profile")
+		}
 	}
 	if err := configureManagedResponse(&parsed, value); err != nil {
+		return err
+	}
+	if err := validateManagedRouterProfile(&parsed); err != nil {
 		return err
 	}
 	redis := parsed.settings.Redis
@@ -314,7 +329,11 @@ func (c *managedExecutionConfig) validate() error {
 	} else if c.settings.InternalAuthority != nil {
 		return errors.New("original job authority is only valid for internal execution")
 	}
-	if managedOperation(c) == executionfacts.NativeEmbeddingOperation {
+	if executionfacts.IsRetrieval(managedOperation(c)) {
+		if err := validateManagedRetrieval(c); err != nil {
+			return err
+		}
+	} else if managedOperation(c) == executionfacts.NativeEmbeddingOperation {
 		if err := validateManagedEmbedding(c); err != nil {
 			return err
 		}
@@ -325,7 +344,7 @@ func (c *managedExecutionConfig) validate() error {
 		}
 	}
 	for operation, capability := range d.Capabilities {
-		if operation != "text_generate" && operation != "image_generate" && operation != "video_generate" && operation != "task_query" && (operation != executionfacts.NativeEmbeddingOperation || managedOperation(c) != executionfacts.NativeEmbeddingOperation) {
+		if operation != "text_generate" && operation != "image_generate" && operation != "video_generate" && operation != "task_query" && (!executionfacts.IsInputOnly(operation) || managedOperation(c) != operation) {
 			return errors.New("managed execution descriptor has an undeclared capability")
 		}
 		if !managedID(capability.ResponseClassifierRef) || capability.MaxAttempts < 1 || (capability.SendMode != "single_send" && capability.SendMode != "observable_retry") {
@@ -445,10 +464,12 @@ func managedUniformMember(count int) (int, error) {
 // All request state belongs to this ai-proxy Wasm context. It does not assume
 // that a context map, Go pointer or private envelope crosses a Wasm boundary.
 type managedExecutionState struct {
+	router                                                     *managedRouterResponse
 	requestedTools, removedTools                               map[fixedtools.Tool]bool
 	config                                                     *managedExecutionConfig
 	sourceConfig                                               *managedExecutionConfig
 	credentialSelected                                         bool
+	cacheMode                                                  managedCacheMode
 	identity                                                   balanceidentity.Snapshot
 	callID, attemptID, businessUTC                             string
 	streaming                                                  bool
@@ -595,7 +616,7 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 		return rejectManagedRequest(ctx, 400, "mapped_model_differs_from_selection"), true
 	}
 	if stream, exists := object["stream"]; exists {
-		if json.Unmarshal(stream, &state.streaming) != nil || bytes.Equal(bytes.TrimSpace(stream), []byte("null")) {
+		if json.Unmarshal(stream, &state.streaming) != nil || managed.profile.InputProtocol != managedProtocolCompletions && managedProtocolNull(stream) {
 			return rejectManagedRequest(ctx, 400, "invalid_stream_flag"), true
 		}
 	}
@@ -756,7 +777,12 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 		dispatchManagedSnapshot(ctx, state, registration)
 	}
 
-	// This is the only business send. Redis callbacks never resume the router or
+	if managed.settings.SendTransport == "router" {
+		dispatchManagedRouter(ctx, state, request)
+		return
+	}
+
+	// This is the only business send on the callout transport. Redis callbacks never resume the router or
 	// invoke it again. A DispatchHttpCall return is handoff, not wire proof.
 	state.dispatchStarted = true
 	markManagedTextAttempt(state)
@@ -790,6 +816,18 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 
 func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot, body []byte) error {
 	s.requestText = tokenestimate.RequestText(body)
+	profile := s.config.profile
+	qwenCache := profile.supplier == "qwen" && (profile.UpstreamProtocol == managedProtocolChat ||
+		profile.UpstreamProtocol == managedProtocolDashScopeText || profile.UpstreamProtocol == managedProtocolDashScopeMultimodal)
+	if qwenCache || profile.UpstreamProtocol == managedProtocolMessages {
+		// Check the final bytes after any protocol conversion.
+		switch {
+		case hasManagedCacheControl(gjson.ParseBytes(body), profile.UpstreamProtocol):
+			s.cacheMode = managedCacheExplicit
+		case qwenCache:
+			s.cacheMode = managedCacheImplicit
+		}
+	}
 	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
 		s.embeddingInput = json.RawMessage(gjson.GetBytes(body, "input").Raw)
 	}
@@ -809,13 +847,16 @@ func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot,
 		SelectionDigest: digest, UpstreamModel: d.UpstreamModel, OutboundBodyDigest: managedBodyDigest(body),
 		SendTransport: "http_call", RecordingOwner: "ai_proxy", Mechanism: managedTextMechanism(s), ParentAttemptID: s.parentAttemptID,
 	}
+	if s.config.settings.SendTransport == "router" {
+		s.original.SendTransport, s.original.RecordingOwner = "router", "router_observer"
+	}
 	if s.config.settings.ToolPolicy != nil {
 		s.original.SchemaVersion = executionfacts.ToolSchemaVersion
 	}
 	if err := setManagedOriginalCaller(s, &s.original); err != nil {
 		return err
 	}
-	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
+	if executionfacts.IsInputOnly(managedOperation(s.config)) {
 		s.embeddingAttempt, err = executionfacts.NewEmbeddingAttempt(s.original)
 	} else {
 		s.attempt, err = executionfacts.NewAttempt(s.original)
@@ -841,6 +882,9 @@ func stateSelection(s *managedExecutionState, basis bodybasis.Snapshot) []byte {
 	}
 	if d.ProviderAccountID == "" {
 		delete(selection, "provider_account_id")
+	}
+	if s.config.settings.SendTransport == "router" {
+		selection["send_transport"], selection["recording_owner"] = "router", "router_observer"
 	}
 	if s.selectionGeneration != 0 {
 		selection["selection_generation"] = strconv.FormatUint(uint64(s.selectionGeneration), 10)
@@ -1051,7 +1095,11 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 		o.HTTPStatus = &actual
 		o.HeadersComplete = true
 		o.SendState = "observed_sent"
-		o.EvidenceRefs = append(o.EvidenceRefs, "http-call:"+s.attemptID+":status:"+statusText)
+		source := "http-call"
+		if s.original.SendTransport == "router" {
+			source = "router"
+		}
+		o.EvidenceRefs = append(o.EvidenceRefs, source+":"+s.attemptID+":status:"+statusText)
 	} else {
 		o.TransportError = "upstream_status_not_observed"
 	}
@@ -1080,7 +1128,9 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 		return o
 	}
 	var observed managedProtocolObservation
-	if s.config.vendor != nil && s.config.vendor.NativeQwen() {
+	if executionfacts.IsRetrieval(managedOperation(s.config)) {
+		observed = managedRetrievalObservation(s.config.profile.UpstreamProtocol, s.config.release.Descriptor.UpstreamModel, *o.HTTPStatus, headers, body, o.BodyComplete)
+	} else if s.config.vendor != nil && s.config.vendor.NativeQwen() {
 		observed = managedQwenObservation(s.config.profile.UpstreamProtocol, *o.HTTPStatus, headers, body, o.BodyComplete, s.expectedEmbeddings)
 	} else if s.config.vendor != nil && s.config.vendor.NativeResponseFormat() == "gemini" {
 		observed = managedGoogleObservation(s.config.profile.UpstreamProtocol, *o.HTTPStatus, headers, body, o.BodyComplete, s.expectedEmbeddings)
@@ -1123,6 +1173,7 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 		o.EvidenceRefs = []string{"http-call:" + s.attemptID + ":unverified-status:" + statusText, "callback-body:" + managedBodyDigest(body)}
 	}
 
+	recordManagedQwenThinking(s, o.Usage, headers, body, o.BodyComplete && o.Acceptance == "accepted")
 	o.Usage = availableManagedUsage(s, o, body)
 	o.ToolUsage = managedToolUsage(s, body, o, headers)
 	return o
@@ -1137,7 +1188,7 @@ func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, out
 	}
 	var attempt executionfacts.Snapshot
 	var err error
-	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
+	if executionfacts.IsInputOnly(managedOperation(s.config)) {
 		attempt, err = s.embeddingAttempt.Finish(outcome)
 		if err == nil && s.lastAttempt != nil {
 			attempt, err = executionfacts.CorrectEmbedding(*s.lastAttempt, attempt.Envelope())
@@ -1187,7 +1238,7 @@ func managedDeliverySnapshot(s *managedExecutionState, outcome executionfacts.At
 	if err := setManagedOriginalCaller(s, &delivery); err != nil {
 		return executionfacts.Snapshot{}, err
 	}
-	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
+	if executionfacts.IsInputOnly(managedOperation(s.config)) {
 		return executionfacts.FreezeEmbedding(delivery)
 	}
 	return executionfacts.Freeze(delivery)
@@ -1210,6 +1261,10 @@ func dispatchManagedSnapshot(ctx wrapper.HttpContext, s *managedExecutionState, 
 	}
 	var appendToStream executionfacts.AppendFunc
 	client, stream, messageType := s.config.redis, s.config.settings.PrivateStream, retained.MessageType()
+	if s.original.SendTransport == "router" &&
+		(messageType == "execution_registration" || retained.Envelope().Kind == "upstream_attempt") {
+		messageType = "router_" + messageType
+	}
 	if client != nil && stream != "" {
 		// The retry queue must not retain the HTTP state or its large request body.
 		appendToStream = func(body []byte, complete func(executionfacts.AppendResult)) error {
@@ -1262,6 +1317,13 @@ func onManagedStreamDone(ctx wrapper.HttpContext, cfg config.PluginConfig) {
 	defer closeManagedAccessLog(ctx)
 	s, ok := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
 	if !ok || s == nil || s.closed {
+		return
+	}
+	if s.router != nil {
+		if !s.router.injectingTerminal {
+			finishManagedRouter(ctx, s, false)
+		}
+		s.closed = true
 		return
 	}
 	if s.text != nil {
@@ -1474,6 +1536,21 @@ func managedOpenAIUsage(object map[string]json.RawMessage) *executionfacts.Usage
 		}
 		quantities["cache_hit"], quantities["cache_miss"] = hit.String(), miss.String()
 	}
+	if write, present := managedCacheWriteCount(details); present {
+		if write == nil {
+			return executionfacts.MissingTokenUsage(managedCacheWriteConflict)
+		}
+		managedCacheWrite(quantities, write, details["cache_creation"], details["cache_write_tokens_details"])
+	}
+	if string(details["cache_type"]) == `"ephemeral"` && quantities["cache_hit"] != "" {
+		quantities["cache_read_mode"] = "1"
+	}
+	var outputDetails map[string]json.RawMessage
+	if json.Unmarshal(usage["completion_tokens_details"], &outputDetails) == nil {
+		if reasoning, ok := managedCount(outputDetails["reasoning_tokens"]); ok && reasoning.Cmp(output) <= 0 {
+			quantities["reasoning_tokens"] = reasoning.String()
+		}
+	}
 	return &executionfacts.Usage{Status: "reported", Unit: "token", Source: "provider", Quantities: quantities}
 }
 
@@ -1485,140 +1562,9 @@ func managedCount(raw json.RawMessage) (*big.Int, bool) {
 // This parses an aggregated HTTP-call response, not real-time frame delivery.
 // A final usage frame alone does not prove an intact SSE terminal boundary.
 func managedSSEObservation(body []byte) (*executionfacts.Usage, string, bool) {
-	missing := executionfacts.MissingTokenUsage("stream_terminal_not_observed")
-	if !utf8.Valid(body) {
-		return missing, "unknown", false
-	}
-	body = bytes.TrimPrefix(body, []byte{0xef, 0xbb, 0xbf})
-	var data []byte
-	var eventName string
-	hasData, done, invalid, providerError, partial := false, false, false, false, false
-	finished := map[string]bool{}
-	var finalUsage *executionfacts.Usage
-	allFinished := func() bool {
-		if len(finished) == 0 {
-			return false
-		}
-		for _, ended := range finished {
-			if !ended {
-				return false
-			}
-		}
-		return true
-	}
-	consume := func() {
-		if !hasData {
-			eventName = ""
-			return
-		}
-		defer func() { data = nil; hasData = false; eventName = "" }()
-		if done {
-			invalid = true
-			return
-		}
-		if bytes.Equal(bytes.TrimSpace(data), []byte("[DONE]")) {
-			done = true
-			return
-		}
-		var object map[string]json.RawMessage
-		if decodeManagedJSON(data, &object, false) != nil || object == nil {
-			invalid = true
-			return
-		}
-		if value, exists := object["error"]; eventName == "error" || exists && !bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
-			providerError = true
-		}
-		var choices []map[string]json.RawMessage
-		if raw, exists := object["choices"]; exists {
-			if json.Unmarshal(raw, &choices) != nil {
-				invalid = true
-				return
-			}
-			for _, choice := range choices {
-				index, ok := managedCount(choice["index"])
-				if !ok || index.BitLen() > 32 {
-					invalid = true
-					return
-				}
-				key := index.String()
-				if finished[key] {
-					invalid = true
-					return
-				}
-				finished[key] = false
-				if raw, exists := choice["finish_reason"]; exists && !bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
-					var reason string
-					if json.Unmarshal(raw, &reason) != nil || reason == "" {
-						invalid = true
-						return
-					}
-					finished[key] = true
-					if reason == "length" || reason == "content_filter" {
-						partial = true
-					}
-				}
-			}
-		}
-		if raw, exists := object["usage"]; exists && !bytes.Equal(bytes.TrimSpace(raw), []byte("null")) && allFinished() {
-			finalUsage = managedOpenAIUsage(object)
-		}
-	}
-	for start := 0; start < len(body); {
-		end := start
-		for end < len(body) && body[end] != '\r' && body[end] != '\n' {
-			end++
-		}
-		if end == len(body) {
-			invalid = true
-			break
-		}
-		line := body[start:end]
-		start = end + 1
-		if body[end] == '\r' && start < len(body) && body[start] == '\n' {
-			start++
-		}
-		if len(line) == 0 {
-			consume()
-			continue
-		}
-		if line[0] == ':' {
-			continue
-		}
-		field, value, hasColon := bytes.Cut(line, []byte(":"))
-		if !hasColon {
-			value = nil
-		}
-		if len(value) > 0 && value[0] == ' ' {
-			value = value[1:]
-		}
-		switch string(field) {
-		case "data":
-			if len(data)+len(value)+1 > executionfacts.MaxEnvelopeBytes {
-				invalid = true
-				continue
-			}
-			if hasData {
-				data = append(data, '\n')
-			}
-			data = append(data, value...)
-			hasData = true
-		case "event":
-			eventName = string(value)
-		}
-	}
-	if hasData || invalid || !done || !allFinished() {
-		return missing, "unknown", providerError
-	}
-	if providerError {
-		return executionfacts.MissingTokenUsage("stream_provider_error"), "failed", true
-	}
-	if finalUsage == nil {
-		finalUsage = executionfacts.MissingTokenUsage("stream_usage_not_observed")
-	}
-	if partial {
-		return finalUsage, "partial", false
-	}
-	return finalUsage, "succeeded", false
+	var stream managedChatStream
+	stream.push(body)
+	return stream.result()
 }
 
 func decodeManagedJSON(raw []byte, target interface{}, strict bool) error {

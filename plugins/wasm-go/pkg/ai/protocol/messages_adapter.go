@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 )
 
@@ -80,6 +81,9 @@ func (MessagesAdapter) CaptureStream(input ResponseStreamInput) (NormalizedExcha
 			}
 			chunks = append(chunks, streamChunk)
 		}
+	}
+	if input.RequireTerminal && !parser.hasTerminal("message_stop") {
+		return NormalizedExchange{}, errors.New("Messages stream has no complete terminal event")
 	}
 	return NormalizedExchange{
 		Request: RequestFacts{

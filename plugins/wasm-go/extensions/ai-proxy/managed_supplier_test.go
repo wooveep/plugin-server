@@ -33,6 +33,23 @@ func TestManagedQwenCompatibleBindingOverridesPreviouslyInitializedNativeCapabil
 	}
 }
 
+func TestManagedQwenChatForwardsPartialModeToNativeMessages(t *testing.T) {
+	fixture := managedConfigFixture()
+	fixture["provider"] = json.RawMessage(managedQwenFixtureProvider)
+	h := newManagedHost(t, fixture)
+	original := []byte(`{"model":"public-model","messages":[{"role":"user","content":"Complete this function"},{"role":"assistant","content":"def add(a,b):\n    ","partial":true}]}`)
+	h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("upstream-model"), 1))
+	calls := h.host.GetCalloutAttributesFromContext(h.id)
+	if len(calls) != 1 {
+		t.Fatalf("expected one business send, got %d", len(calls))
+	}
+	messages := gjson.GetBytes(calls[0].Body, "input.messages")
+	if messages.Get("0.partial").Exists() || messages.Get("1.partial").Type != gjson.True ||
+		messages.Get("1.role").String() != "assistant" || messages.Get("1.content").String() != "def add(a,b):\n    " {
+		t.Fatalf("Partial Mode request lost its final prefix: %s", calls[0].Body)
+	}
+}
+
 func TestManagedQwenActualBodyAndOriginalUsageThroughOneSender(t *testing.T) {
 	for _, input := range []string{managedProtocolChat, managedProtocolResponses, managedProtocolMessages} {
 		for _, stream := range []bool{false, true} {

@@ -430,7 +430,7 @@ func validateAttemptIdentity(e Envelope) error {
 			return errors.New("missing original attempt selection")
 		}
 	}
-	if e.ProviderAccountID == "" && !one(e.SchemaVersion, ConnectionSchemaVersion, CustomerEmbeddingSchemaVersion, ToolSchemaVersion) || e.ProviderAccountID != "" && !id(e.ProviderAccountID) {
+	if e.ProviderAccountID == "" && !one(e.SchemaVersion, ConnectionSchemaVersion, CustomerEmbeddingSchemaVersion, ToolSchemaVersion, RetrievalSchemaVersion) || e.ProviderAccountID != "" && !id(e.ProviderAccountID) {
 		return errors.New("invalid retained supplier account metadata")
 	}
 	if !validDigest(e.SelectionDigest) {
@@ -697,7 +697,7 @@ func FreezeRegistration(input Registration) (Snapshot, error) {
 	if r.SchemaVersion == "" {
 		r.SchemaVersion = "execution-registration.v1"
 	}
-	if !one(r.SchemaVersion, "execution-registration.v1", CustomerEmbeddingRegistrationVersion) {
+	if !one(r.SchemaVersion, "execution-registration.v1", CustomerEmbeddingRegistrationVersion, RetrievalRegistrationVersion) {
 		return Snapshot{}, errors.New("unsupported execution registration schema")
 	}
 	for _, v := range []string{r.ProducerID, r.CallID, r.AttemptID, r.ReleaseID, r.RouteID, r.TargetID, r.AccountID, r.APIKeyID} {
@@ -713,8 +713,11 @@ func FreezeRegistration(input Registration) (Snapshot, error) {
 		return Snapshot{}, errors.New("invalid original registration timestamp")
 	}
 	decode, selectionDigest := decodeSelection, SelectionDigest
-	if r.SchemaVersion == CustomerEmbeddingRegistrationVersion {
+	switch r.SchemaVersion {
+	case CustomerEmbeddingRegistrationVersion:
 		decode, selectionDigest = decodeEmbeddingSelection, EmbeddingSelectionDigest
+	case RetrievalRegistrationVersion:
+		decode, selectionDigest = decodeRetrievalSelection, RetrievalSelectionDigest
 	}
 	selection, err := decode(r.Selection)
 	if err != nil {

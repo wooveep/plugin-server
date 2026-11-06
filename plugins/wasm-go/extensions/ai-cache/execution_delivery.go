@@ -29,6 +29,7 @@ type nativeCacheDeliveryConfig struct {
 	producerID, releaseID, targetID, routeID, salesAssetID, publicModel, tokenizerModel string
 	capture                                                                             bool
 	passthrough                                                                         bool
+	routerMiss                                                                          bool
 	responseProfile                                                                     clientresponse.Profile
 }
 
@@ -67,14 +68,22 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 	if _, err := mfjson.Canonicalize([]byte(value.Raw)); err != nil {
 		return errors.New("native cache delivery configuration is ambiguous or oversized")
 	}
-	parsed, err := nativeCacheObject([]byte(settings.Raw), "producer_id call_identity_source")
+	fields := "producer_id call_identity_source"
+	routerMiss := settings.Get("router_miss")
+	if routerMiss.Exists() {
+		if routerMiss.Type != gjson.True {
+			return errors.New("native cache Router miss capability must be true")
+		}
+		fields += " router_miss"
+	}
+	parsed, err := nativeCacheObject([]byte(settings.Raw), fields)
 	if err != nil || !nativeCacheText(parsed["producer_id"]) {
 		return errors.New("native cache delivery requires the configured producer")
 	}
 	if nativeCacheString(parsed["call_identity_source"]) != executionfacts.CallIdentitySourceAdmission {
 		return errors.New("native cache delivery requires the original admission call identity capability")
 	}
-	fields := "schema_version descriptor route_id sales_asset_id public_model credential_ref credential_revision"
+	fields = "schema_version descriptor route_id sales_asset_id public_model credential_ref credential_revision"
 	if release.Get("schema_version").String() == "modelfusion-execution.v2" {
 		fields = "schema_version descriptor route_id sales_asset_id public_model credentials"
 	}
@@ -175,6 +184,7 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 		producerID: nativeCacheString(parsed["producer_id"]), releaseID: nativeCacheString(descriptor["release_id"]),
 		targetID: nativeCacheString(descriptor["target_id"]), routeID: nativeCacheString(envelope["route_id"]),
 		salesAssetID: nativeCacheString(envelope["sales_asset_id"]), publicModel: nativeCacheString(envelope["public_model"]), tokenizerModel: nativeCacheString(descriptor["upstream_model"]), capture: captures,
+		routerMiss: routerMiss.Type == gjson.True,
 	}
 	mode := value.Get("protocol_mode")
 	if mode.Exists() && (mode.Type != gjson.String || (mode.Str != "auto" && mode.Str != "passthrough")) {
@@ -182,6 +192,9 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 	}
 	out.passthrough = mode.Str == "passthrough"
 	if out.passthrough {
+		if out.routerMiss {
+			return errors.New("native cache Router miss requires the standard response profile")
+		}
 		if value.Get("response_profile").Exists() {
 			return errors.New("passthrough cache cannot activate a response profile")
 		}

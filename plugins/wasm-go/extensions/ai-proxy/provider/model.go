@@ -207,6 +207,7 @@ type chatMessage struct {
 	Name                     string                          `json:"name,omitempty"`
 	Role                     string                          `json:"role,omitempty"`
 	Content                  any                             `json:"content,omitempty"`
+	Partial                  *bool                           `json:"partial,omitempty"`
 	ReasoningContent         string                          `json:"reasoning_content,omitempty"`
 	Reasoning                string                          `json:"reasoning,omitempty"` // For streaming responses
 	ReasoningSignature       string                          `json:"reasoning_signature,omitempty"`

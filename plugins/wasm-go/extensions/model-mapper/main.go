@@ -219,9 +219,13 @@ func onHttpRequestBody(ctx wrapper.HttpContext, config Config, body []byte) type
 	if !found {
 		return reject(ctx, 422, "model_mapping_missing")
 	}
-	rewritten, err := sjson.SetBytes(body, "model", target)
-	if err != nil {
-		return reject(ctx, 500, "model_rewrite_failed")
+	rewritten := body
+	if target != basis.PublicModel() {
+		var err error
+		rewritten, err = sjson.SetBytes(body, "model", target)
+		if err != nil {
+			return reject(ctx, 500, "model_rewrite_failed")
+		}
 	}
 	headers, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil {

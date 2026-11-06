@@ -43,8 +43,17 @@ func publicFailureProbe(t *testing.T, client, upstream, supplier string, status 
 		require.NotNil(t, fact.HTTPStatus)
 		require.Equal(t, uint16(status), *fact.HTTPStatus, "public policy must not rewrite original procurement HTTP")
 		require.Equal(t, managedBodyDigest([]byte(body)), fact.ResponseBodyDigest)
+		meters := []string{"input", "output", "cache_hit", "cache_miss"}
+		if fact.Usage.Status == "estimated" {
+			require.Equal(t, "0", fact.Usage.Quantities["cache_write"])
+			meters = append(meters, "cache_write")
+			if upstream == managedProtocolChat && gjson.Get(supplier, "type").String() == "qwen" {
+				require.Equal(t, "0", fact.Usage.Quantities["cache_read_mode"])
+				meters = append(meters, "cache_read_mode")
+			}
+		}
 		for meter := range fact.Usage.Quantities {
-			require.Contains(t, []string{"input", "output", "cache_hit", "cache_miss"}, meter)
+			require.Contains(t, meters, meter)
 		}
 	}
 	return h

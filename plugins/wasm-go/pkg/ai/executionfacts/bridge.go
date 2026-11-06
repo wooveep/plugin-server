@@ -70,7 +70,7 @@ func decodeVersionedDeliveryBridge(raw []byte, version string, freeze func(Envel
 	}
 	versionMatches := envelope.SchemaVersion == version
 	if version == NativeEmbeddingSchemaVersion {
-		versionMatches = one(envelope.SchemaVersion, NativeEmbeddingSchemaVersion, ConnectionSchemaVersion, CustomerEmbeddingSchemaVersion)
+		versionMatches = one(envelope.SchemaVersion, NativeEmbeddingSchemaVersion, ConnectionSchemaVersion, CustomerEmbeddingSchemaVersion, RetrievalSchemaVersion)
 	}
 	if envelope.Kind != "call_delivery" || !versionMatches || envelope.PayloadCanonicalization != Canonicalization {
 		return Snapshot{}, errors.New("delivery bridge has a different frozen observation kind or version")

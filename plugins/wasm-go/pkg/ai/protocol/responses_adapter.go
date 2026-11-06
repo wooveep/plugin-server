@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 )
 
@@ -102,6 +103,9 @@ func (ResponsesAdapter) CaptureStream(input ResponseStreamInput) (NormalizedExch
 			}
 			chunks = append(chunks, streamChunk)
 		}
+	}
+	if input.RequireTerminal && !parser.hasTerminal("response.completed") {
+		return NormalizedExchange{}, errors.New("Responses stream has no complete success event")
 	}
 	return NormalizedExchange{
 		Request: RequestFacts{

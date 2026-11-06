@@ -287,6 +287,15 @@ func TestManagedProtocolFallbackResponseReusesConverterAndPreservesExactUsage(t 
 		// exact input/output and the cache partition must round-trip together.
 		native := managedProtocolFixture(t, input, input)
 		roundTrip := native.ObserveResponse(200, converted.Headers, converted.Body, true)
+		if input == managedProtocolMessages {
+			// The existing wire converter emits a paired zero with the cached read.
+			// It never changes the provider evidence retained by the sender.
+			if roundTrip.Usage.Quantities["cache_write"] != "0" {
+				t.Fatalf("legacy Messages cache shape changed: %s", converted.Body)
+			}
+			delete(roundTrip.Usage.Quantities, "cache_write")
+			delete(roundTrip.Usage.Quantities, "cache_read_mode")
+		}
 		if !managedProtocolSameUsage(observed.Usage, roundTrip.Usage) || roundTrip.ExecutionResult != "succeeded" {
 			t.Fatalf("exact usage was truncated or cache split changed: %s => %#v", converted.Body, roundTrip)
 		}

@@ -869,6 +869,7 @@ type qwenMessage struct {
 	Name             string     `json:"name,omitempty"`
 	Role             string     `json:"role"`
 	Content          any        `json:"content"`
+	Partial          *bool      `json:"partial,omitempty"`
 	ReasoningContent string     `json:"reasoning_content,omitempty"`
 	ToolCalls        []toolCall `json:"tool_calls,omitempty"`
 }
@@ -988,6 +989,7 @@ func chatMessage2QwenMessage(chatMessage chatMessage) qwenMessage {
 			Name:             chatMessage.Name,
 			Role:             chatMessage.Role,
 			Content:          chatMessage.StringContent(),
+			Partial:          chatMessage.Partial,
 			ReasoningContent: chatMessage.ReasoningContent,
 			ToolCalls:        chatMessage.ToolCalls,
 		}
@@ -1007,6 +1009,7 @@ func chatMessage2QwenMessage(chatMessage chatMessage) qwenMessage {
 			Name:             chatMessage.Name,
 			Role:             chatMessage.Role,
 			Content:          contents,
+			Partial:          chatMessage.Partial,
 			ReasoningContent: chatMessage.ReasoningContent,
 			ToolCalls:        chatMessage.ToolCalls,
 		}

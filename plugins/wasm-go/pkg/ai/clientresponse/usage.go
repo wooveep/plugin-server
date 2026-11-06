@@ -8,14 +8,15 @@ import (
 
 // Usage is presentation data. It never extends the financial meter vocabulary.
 type Usage struct {
-	Input, Output, Total json.RawMessage
-	MessagesInput        json.RawMessage
-	InputDetails         map[string]json.RawMessage
-	OutputDetails        map[string]json.RawMessage
-	ServerTools          json.RawMessage
-	QwenInputDetails     map[string]json.RawMessage
-	QwenOutputDetails    map[string]json.RawMessage
-	QwenDetails          json.RawMessage
+	Input, Output, Total  json.RawMessage
+	MessagesInput         json.RawMessage
+	InputDetails          map[string]json.RawMessage
+	OutputDetails         map[string]json.RawMessage
+	ServerTools           json.RawMessage
+	MessagesCacheCreation json.RawMessage
+	QwenInputDetails      map[string]json.RawMessage
+	QwenOutputDetails     map[string]json.RawMessage
+	QwenDetails           json.RawMessage
 }
 
 func number(raw json.RawMessage) (*big.Int, bool) {
@@ -41,6 +42,11 @@ func readDetails(raw json.RawMessage, keys string) map[string]json.RawMessage {
 		}
 	}
 	return result
+}
+
+// ReadUsageObject reads one original usage object, including cumulative counters.
+func ReadUsageObject(raw json.RawMessage, format string) Usage {
+	return readUsageObject(raw, format)
 }
 
 func readUsageObject(raw json.RawMessage, format string) Usage {
@@ -87,6 +93,17 @@ func readUsageObject(raw json.RawMessage, format string) Usage {
 					}
 				} else {
 					completeCache = false
+				}
+			}
+			if total, ok := number(u.InputDetails["cache_write_tokens"]); ok {
+				details := readDetails(o["cache_creation"], "ephemeral_5m_input_tokens ephemeral_1h_input_tokens")
+				sum := new(big.Int)
+				for _, raw := range details {
+					value, _ := number(raw)
+					sum.Add(sum, value)
+				}
+				if len(details) > 0 && sum.Cmp(total) == 0 {
+					u.MessagesCacheCreation, _ = json.Marshal(details)
 				}
 			}
 			if inputOK && completeCache && input.BitLen() <= 128 {
@@ -267,6 +284,9 @@ func (u Usage) wire(protocol string) json.RawMessage {
 		if len(u.ServerTools) > 0 {
 			result["server_tool_use"] = u.ServerTools
 		}
+		if len(u.MessagesCacheCreation) > 0 {
+			result["cache_creation"] = u.MessagesCacheCreation
+		}
 		raw, _ := json.Marshal(result)
 		return raw
 	}
@@ -338,6 +358,17 @@ func (u Usage) wire(protocol string) json.RawMessage {
 }
 
 func (u Usage) wireProfile(protocol string, profile Profile) json.RawMessage {
+	if (profile != Qwen || protocol != Chat) && u.InputDetails["cache_write_tokens"] == nil {
+		if write := u.QwenInputDetails["cache_creation_input_tokens"]; write != nil {
+			// The original Qwen write quantity is a subset of total input.
+			details := make(map[string]json.RawMessage, len(u.InputDetails)+1)
+			for key, value := range u.InputDetails {
+				details[key] = value
+			}
+			details["cache_write_tokens"] = write
+			u.InputDetails = details
+		}
+	}
 	raw := u.wire(protocol)
 	if profile != Qwen || len(raw) == 0 {
 		return raw

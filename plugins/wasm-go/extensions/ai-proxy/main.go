@@ -475,6 +475,9 @@ func failTransparentRequestAuthentication() types.Action {
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
+	if s, _ := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState); s != nil && s.router != nil {
+		return observeManagedRouterHeaders(ctx, s)
+	}
 	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
 		return types.ActionContinue
 	}
@@ -559,6 +562,9 @@ func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginCo
 }
 
 func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, chunk []byte, isLastChunk bool) []byte {
+	if s, _ := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState); s != nil && s.router != nil {
+		return observeManagedRouterChunk(ctx, s, chunk, isLastChunk)
+	}
 	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
 		return chunk
 	}
@@ -672,6 +678,9 @@ func onStreamingResponseBody(ctx wrapper.HttpContext, pluginConfig config.Plugin
 }
 
 func onHttpResponseBody(ctx wrapper.HttpContext, pluginConfig config.PluginConfig, body []byte) types.Action {
+	if s, _ := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState); s != nil && s.router != nil {
+		return observeManagedRouterBody(ctx, s, body)
+	}
 	if ctx.GetBoolContext(ctxSkipAIProxyLifecycle, false) {
 		return types.ActionContinue
 	}

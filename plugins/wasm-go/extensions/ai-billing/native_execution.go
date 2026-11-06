@@ -27,6 +27,7 @@ const nativeBillingContextKey = "ai-billing-native-execution.v1"
 type nativeBillingSettings struct {
 	ProducerID         string `json:"producer_id"`
 	CallIdentitySource string `json:"call_identity_source"`
+	RouterDelivery     bool   `json:"router_delivery,omitempty"`
 }
 
 // The SDK supplies this complete reserved object after verifying the released
@@ -89,6 +90,7 @@ type nativeBillingConfig struct {
 	outbox             *executionfacts.Outbox
 	producerID         string
 	callIdentitySource string
+	routerDelivery     bool
 	release            nativeBillingRelease
 }
 
@@ -139,6 +141,9 @@ func configureNativeBilling(value gjson.Result, cfg *BillingConfig) error {
 		return err
 	}
 	operation := nativeBillingOperation(release)
+	if settings.RouterDelivery && (operation != "text_generate" || settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission) {
+		return errors.New("router delivery requires a customer text route")
+	}
 	if operation == "image_generate" || operation == "video_generate" {
 		// Native media facts belong to the ai-proxy http_call worker and the
 		// Console media operation. A valid media binding must not install a
@@ -151,7 +156,7 @@ func configureNativeBilling(value gjson.Result, cfg *BillingConfig) error {
 	}
 	outbox := executionfacts.NewOutbox()
 	wrapper.RegisterTickFunc(1000, outbox.Retry)
-	cfg.NativeExecution = &nativeBillingConfig{producerID: settings.ProducerID, callIdentitySource: settings.CallIdentitySource, release: release, outbox: outbox}
+	cfg.NativeExecution = &nativeBillingConfig{producerID: settings.ProducerID, callIdentitySource: settings.CallIdentitySource, routerDelivery: settings.RouterDelivery, release: release, outbox: outbox}
 	cfg.PathScope = PathScopeBoundTarget
 	cfg.EnableMethods = nil
 	cfg.EnablePathSuffixes = nil
@@ -199,7 +204,7 @@ func validateNativeBillingRelease(value gjson.Result, release nativeBillingRelea
 		return errors.New("native billing requires a supported released operation")
 	}
 	for operationName, capability := range capabilities.Map() {
-		if operationName != "text_generate" && operationName != "image_generate" && operationName != "video_generate" && operationName != "task_query" && operationName != executionfacts.NativeEmbeddingOperation {
+		if operationName != "text_generate" && operationName != "image_generate" && operationName != "video_generate" && operationName != "task_query" && !executionfacts.IsInputOnly(operationName) {
 			return errors.New("native billing has an undeclared released operation")
 		}
 		parsed := release.Descriptor.Capabilities[operationName]
@@ -217,9 +222,23 @@ func validateNativeBillingRelease(value gjson.Result, release nativeBillingRelea
 			}
 		}
 	}
-	if operation == executionfacts.NativeEmbeddingOperation {
-		capability := release.Descriptor.Capabilities[executionfacts.NativeEmbeddingOperation]
-		if len(release.Descriptor.Capabilities) != 1 || release.Descriptor.AdapterRef != "openai-embeddings.v1" || release.Descriptor.Transport.PathAdapterRef != "openai-embeddings.v1" || capability.ResponseClassifierRef != "ai-proxy.native-embedding.v1" || capability.SendMode != "single_send" || capability.MaxAttempts != 1 || capability.MaxFallbackHops != 0 || capability.QueryCapabilityRef != "" || capability.ProviderIdempotencyRef != "" {
+	if executionfacts.IsInputOnly(operation) {
+		capability := release.Descriptor.Capabilities[operation]
+		classifier := "ai-proxy.native-embedding.v1"
+		adapters := []string{"openai-embeddings.v1"}
+		if executionfacts.IsRetrieval(operation) {
+			classifier, adapters = executionfacts.RetrievalClassifier, nil
+			for _, protocol := range []string{"dashscope_multimodal_embedding", "dashscope_rerank", "bailian_rerank"} {
+				if actual, _, adapter := executionfacts.RetrievalProtocol(protocol); actual == operation {
+					adapters = append(adapters, adapter)
+				}
+			}
+		}
+		adapterMatched := false
+		for _, adapter := range adapters {
+			adapterMatched = adapterMatched || release.Descriptor.AdapterRef == adapter
+		}
+		if len(release.Descriptor.Capabilities) != 1 || !adapterMatched || release.Descriptor.Transport.PathAdapterRef != release.Descriptor.AdapterRef || capability.ResponseClassifierRef != classifier || capability.SendMode != "single_send" || capability.MaxAttempts != 1 || capability.MaxFallbackHops != 0 || capability.QueryCapabilityRef != "" || capability.ProviderIdempotencyRef != "" {
 			return errors.New("native embedding billing requires its exact registered single-send capability")
 		}
 	}
@@ -345,6 +364,12 @@ func onNativeBillingResponseHeaders(ctx wrapper.HttpContext, cfg BillingConfig) 
 		}
 	}
 	state, _ := ctx.GetContext(nativeBillingContextKey).(*nativeBillingState)
+	if state != nil && state.valid && state.config.routerDelivery {
+		if call, err := proxywasm.GetProperty([]string{observedusage.RouterDeliveryProperty}); err == nil && string(call) == state.origin.CallID {
+			state.bridgeSeen = true
+			return types.ActionContinue, true
+		}
+	}
 	if bridgeErr != nil || !found {
 		nativeBillingGap(ctx, state, "delivery_bridge_missing_or_duplicate")
 		return types.ActionContinue, true
@@ -379,7 +404,7 @@ func consumeNativeBillingBridge(ctx executionFactContext, cfg BillingConfig, sta
 	state.bridgeSeen = true
 	var snapshot executionfacts.Snapshot
 	var err error
-	if nativeBillingOperation(configured.release) == executionfacts.NativeEmbeddingOperation {
+	if executionfacts.IsInputOnly(nativeBillingOperation(configured.release)) {
 		snapshot, err = executionfacts.DecodeEmbeddingDeliveryBridge(value)
 	} else {
 		snapshot, err = executionfacts.DecodeDeliveryBridge(value)
@@ -441,8 +466,10 @@ func validateNativeBillingDelivery(state *nativeBillingState, snapshot execution
 }
 
 func nativeBillingOperation(release nativeBillingRelease) string {
-	if _, exists := release.Descriptor.Capabilities[executionfacts.NativeEmbeddingOperation]; exists {
-		return executionfacts.NativeEmbeddingOperation
+	for _, candidate := range []string{executionfacts.NativeEmbeddingOperation, executionfacts.MultimodalEmbeddingOperation, executionfacts.RerankOperation} {
+		if _, exists := release.Descriptor.Capabilities[candidate]; exists {
+			return candidate
+		}
 	}
 	if _, exists := release.Descriptor.Capabilities["text_generate"]; exists {
 		return "text_generate"

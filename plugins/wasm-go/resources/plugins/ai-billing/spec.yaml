@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-billing/README_EN.md
-  version: 1.0.8
+  version: 1.0.11
   contact:
     name: 2456868764
 spec:
@@ -78,6 +78,8 @@ spec:
               enum:
               - admission
               - internal_execution
+            router_delivery:
+              type: boolean
             producer_id:
               type: string
               minLength: 1
@@ -604,6 +606,40 @@ spec:
                         description: OpenAI-compatible POST /v1/embeddings. The embedding classifier
                           validates real data[].embedding and uses only actual provider-reported
                           input token usage. No retries, fallback, queries or provider task lifecycle.
+                      multimodal_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-retrieval.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      rerank:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-retrieval.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
                     additionalProperties: false
                 required:
                 - release_id
@@ -954,6 +990,8 @@ spec:
               enum:
               - admission
               - internal_execution
+            router_delivery:
+              type: boolean
             producer_id:
               type: string
               minLength: 1
@@ -1480,6 +1518,40 @@ spec:
                         description: OpenAI-compatible POST /v1/embeddings. The embedding classifier
                           validates real data[].embedding and uses only actual provider-reported
                           input token usage. No retries, fallback, queries or provider task lifecycle.
+                      multimodal_embedding:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-retrieval.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
+                      rerank:
+                        type: object
+                        properties:
+                          send_mode:
+                            const: single_send
+                          response_classifier_ref:
+                            const: ai-proxy.native-retrieval.v1
+                          max_attempts:
+                            const: 1
+                          max_fallback_hops:
+                            const: 0
+                        required:
+                        - send_mode
+                        - response_classifier_ref
+                        - max_attempts
+                        - max_fallback_hops
+                        additionalProperties: false
                     additionalProperties: false
                 required:
                 - release_id

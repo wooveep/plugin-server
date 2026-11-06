@@ -22,6 +22,9 @@ func availableManagedUsage(s *managedExecutionState, outcome executionfacts.Atte
 	if !billableManagedSend(s, outcome) || outcome.Usage != nil && outcome.Usage.Status != "missing" {
 		return outcome.Usage
 	}
+	if outcome.Usage != nil && outcome.Usage.ReasonCode == managedCacheWriteConflict {
+		return outcome.Usage
+	}
 	model := s.config.release.Descriptor.UpstreamModel
 	if managedOperation(s.config) == executionfacts.NativeEmbeddingOperation {
 		// Frozen internal v2/v3 facts retain their provider-only contract.
@@ -34,7 +37,9 @@ func availableManagedUsage(s *managedExecutionState, outcome executionfacts.Atte
 		}
 		return usage
 	}
-	if managedOperation(s.config) != "text_generate" {
+	// FIM has a provider-specific prefix/suffix tokenization and can echo the
+	// input in choices.text. Its price uses the original reported counters.
+	if managedOperation(s.config) != "text_generate" || s.config.profile.UpstreamProtocol == managedProtocolCompletions {
 		return outcome.Usage
 	}
 	input, err := tokenestimate.Count(model, s.requestText)
@@ -45,7 +50,9 @@ func availableManagedUsage(s *managedExecutionState, outcome executionfacts.Atte
 	if err != nil {
 		return outcome.Usage
 	}
-	quantities := map[string]string{"input": strconv.FormatInt(input, 10), "output": strconv.FormatInt(output, 10)}
+	quantities := map[string]string{
+		"input": strconv.FormatInt(input, 10), "output": strconv.FormatInt(output, 10), "cache_write": "0",
+	}
 	for _, document := range tokenestimate.Documents(body) {
 		for meter, paths := range map[string][]string{
 			"input":     {"usage.prompt_tokens", "usage.input_tokens", "message.usage.input_tokens", "usageMetadata.promptTokenCount"},
@@ -60,7 +67,16 @@ func availableManagedUsage(s *managedExecutionState, outcome executionfacts.Atte
 			}
 		}
 	}
-	if hit, ok := quantities["cache_hit"]; ok {
+	if s.cacheMode == managedCacheExplicit {
+		if s.config.profile.UpstreamProtocol == managedProtocolMessages {
+			// Partial Messages input_tokens may only include the uncached input.
+			quantities["input"] = strconv.FormatInt(input, 10)
+		}
+		// Classify the available input as writes when the request opted in.
+		quantities["cache_write"] = quantities["input"]
+		quantities["cache_hit"] = "0"
+		quantities["cache_miss"] = quantities["input"]
+	} else if hit, ok := quantities["cache_hit"]; ok {
 		inputCount, _ := new(big.Int).SetString(quantities["input"], 10)
 		hitCount, _ := new(big.Int).SetString(hit, 10)
 		if hitCount.Cmp(inputCount) <= 0 {
@@ -69,6 +85,9 @@ func availableManagedUsage(s *managedExecutionState, outcome executionfacts.Atte
 			delete(quantities, "cache_hit")
 		}
 	}
+	if s.cacheMode != "" {
+		quantities["cache_read_mode"] = string(s.cacheMode)
+	}
 	return &executionfacts.Usage{Status: "estimated", Unit: "token", Source: "estimator", Quantities: quantities,
-		EstimatorVersion: "tiktoken-go.v0.7.0/" + string(tokenestimate.EncodingForModel(model)) + "/available-text.v2"}
+		EstimatorVersion: "tiktoken-go.v0.7.0/" + string(tokenestimate.EncodingForModel(model)) + "/available-text.v3"}
 }

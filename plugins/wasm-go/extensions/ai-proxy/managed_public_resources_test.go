@@ -260,3 +260,15 @@ func TestClosingWhileResourceMappingIsPendingKeepsOneOriginalSale(t *testing.T) 
 	require.Nil(t, h.host.GetSentLocalResponse(h.id))
 	require.Empty(t, h.host.GetCalloutAttributesFromContext(h.id))
 }
+
+func TestRouterStreamDoneDuringTerminalInjectionDefersFinalization(t *testing.T) {
+	h := newManagedHost(t, nativeResourceFixture())
+	original := []byte(`{"model":"public-model","input":"hello"}`)
+	h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("upstream-model"), 1))
+	state := h.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
+	state.router = &managedRouterResponse{transportEnded: true, injectingTerminal: true}
+	onManagedStreamDone(h.ctx, h.cfg)
+	require.True(t, state.closed)
+	require.False(t, state.router.ended)
+	require.Nil(t, state.lastDelivery)
+}

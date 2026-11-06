@@ -20,6 +20,9 @@ func managedOperation(configuration *managedExecutionConfig) string {
 	if configuration.settings.InputProtocol == managedProtocolEmbeddings {
 		return executionfacts.NativeEmbeddingOperation
 	}
+	if operation, _, _ := executionfacts.RetrievalProtocol(configuration.settings.InputProtocol); operation != "" {
+		return operation
+	}
 	return "text_generate"
 }
 
@@ -221,7 +224,10 @@ func managedEmbeddingVector(raw json.RawMessage) bool {
 }
 
 func managedSelectionDigest(configuration *managedExecutionConfig, raw []byte) (string, error) {
-	if managedOperation(configuration) == executionfacts.NativeEmbeddingOperation {
+	switch operation := managedOperation(configuration); {
+	case executionfacts.IsRetrieval(operation):
+		return executionfacts.RetrievalSelectionDigest(raw)
+	case operation == executionfacts.NativeEmbeddingOperation:
 		return executionfacts.EmbeddingSelectionDigest(raw)
 	}
 	return executionfacts.SelectionDigest(raw)
@@ -231,7 +237,7 @@ func encodeManagedDeliveryBridge(snapshot executionfacts.Snapshot) (string, erro
 	if snapshot.Envelope().SchemaVersion == executionfacts.ToolSchemaVersion {
 		return executionfacts.EncodeToolDeliveryBridge(snapshot)
 	}
-	if snapshot.Envelope().OperationKind == executionfacts.NativeEmbeddingOperation {
+	if executionfacts.IsInputOnly(snapshot.Envelope().OperationKind) {
 		return executionfacts.EncodeEmbeddingDeliveryBridge(snapshot)
 	}
 	return executionfacts.EncodeDeliveryBridge(snapshot)

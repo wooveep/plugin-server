@@ -81,9 +81,12 @@ type thinResponseFacts struct {
 }
 
 type thinStreamCapture struct {
-	chunks      [][]byte
-	parseFailed bool
+	body       []byte
+	overBudget bool
 }
+
+// Bound the cache's copy independently from response delivery and metering.
+const maxRouterCacheStreamBytes = 1 << 20
 
 func captureThinResponseHeaders(ctx wrapper.HttpContext, log logs.Log) {
 	statusHeader, _ := proxywasm.GetHttpResponseHeader(":status")
@@ -111,15 +114,29 @@ func handleThinResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chun
 	statusCode := thinIntContext(ctx, CACHE_RESPONSE_STATUS_KEY, 0)
 	stream := ctx.GetContext(STREAM_CONTEXT_KEY) != nil
 	if stream {
+		native, _ := c.NativeExecution.(*nativeCacheDeliveryConfig)
+		routerMiss := native != nil && native.routerMiss
 		capture := getThinStreamCapture(ctx)
-		capture.appendChunk(unifySSEChunk(chunk))
+		if capture.overBudget {
+			return
+		}
+		if routerMiss && len(chunk) > maxRouterCacheStreamBytes-len(capture.body) {
+			capture.body = nil
+			capture.overBudget = true
+			markCacheGate(ctx, "stream-capture-too-large")
+			return
+		}
+		capture.body = append(capture.body, chunk...)
 		if !isLastChunk {
 			return
 		}
+		// Normalize after reassembly so CRLF split across callbacks stays one line ending.
 		exchange, err := adapter.CaptureStream(protocol.ResponseStreamInput{
-			StatusCode: statusCode,
-			Chunks:     capture.chunks,
+			StatusCode:      statusCode,
+			Chunks:          [][]byte{unifySSEChunk(capture.body)},
+			RequireTerminal: routerMiss,
 		})
+		capture.body = nil
 		if err != nil {
 			log.Warnf("[%s] [handleThinResponseBody] parse streaming response chunk failed: %v", PLUGIN_NAME, err)
 			emitThinCacheEvent(ctx, c, kind, thinResponseFacts{parseFailed: true}, true, log)
@@ -132,7 +149,6 @@ func handleThinResponseBody(ctx wrapper.HttpContext, c config.PluginConfig, chun
 		}
 		facts := thinResponseFactsFromExchange(kind, exchange)
 		facts.containsToolCalls = facts.containsToolCalls || output.containsToolCalls
-		facts.parseFailed = facts.parseFailed || capture.parseFailed
 		emitThinCacheEvent(ctx, c, kind, facts, true, log)
 		return
 	}
@@ -174,10 +190,6 @@ func getThinStreamCapture(ctx wrapper.HttpContext) *thinStreamCapture {
 	capture := &thinStreamCapture{}
 	ctx.SetContext(CACHE_STREAM_CAPTURE_KEY, capture)
 	return capture
-}
-
-func (c *thinStreamCapture) appendChunk(chunk []byte) {
-	c.chunks = append(c.chunks, append([]byte(nil), chunk...))
 }
 
 func emitThinCacheEvent(ctx wrapper.HttpContext, c config.PluginConfig, kind protocol.ProtocolKind, facts thinResponseFacts, stream bool, log logs.Log) {

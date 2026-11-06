@@ -12,6 +12,8 @@ import (
 
 func managedSupplierAPIName(profile managedProtocolProfile) supplier.ApiName {
 	switch profile.UpstreamProtocol {
+	case managedProtocolCompletions:
+		return supplier.ApiNameCompletion
 	case managedProtocolMessages:
 		return supplier.ApiNameAnthropicMessages
 	case managedProtocolResponses:
@@ -56,8 +58,16 @@ func managedQwenObservation(protocol string, status uint16, headers [][2]string,
 			streamError = streamError || event.Name == "error"
 		}
 	}
+	return managedQwenDocumentObservation(protocol, status, headers, last, stream, streamError, expectedEmbeddings)
+}
+
+func managedQwenDocumentObservation(protocol string, status uint16, headers [][2]string, body []byte, stream, streamError bool, expectedEmbeddings int) managedProtocolObservation {
+	observation := managedProtocolObservation{Usage: executionfacts.MissingTokenUsage("provider_usage_not_observed"), ExecutionResult: "unknown", Acceptance: "unknown", BodyComplete: true}
+	if status >= 400 {
+		observation.ExecutionResult = "failed"
+	}
 	var object, output, usage map[string]json.RawMessage
-	if decodeManagedJSON(last, &object, false) != nil || object == nil {
+	if decodeManagedJSON(body, &object, false) != nil || object == nil {
 		return observation
 	}
 	if raw, exists := object["output"]; exists {
@@ -75,7 +85,7 @@ func managedQwenObservation(protocol string, status uint16, headers [][2]string,
 	observation.ProviderError = streamError || code != "" && code != "200"
 	managedProtocolMergeModel(&observation.ResponseModel, object["model"])
 	wireUsage := make(map[string]json.RawMessage)
-	for source, destination := range map[string]string{"input_tokens": "prompt_tokens", "output_tokens": "completion_tokens", "total_tokens": "total_tokens", "prompt_tokens_details": "prompt_tokens_details"} {
+	for source, destination := range map[string]string{"input_tokens": "prompt_tokens", "output_tokens": "completion_tokens", "total_tokens": "total_tokens", "prompt_tokens_details": "prompt_tokens_details", "output_tokens_details": "completion_tokens_details"} {
 		if value, exists := usage[source]; exists {
 			wireUsage[destination] = value
 		}
@@ -99,7 +109,7 @@ func managedQwenObservation(protocol string, status uint16, headers [][2]string,
 		usageBytes, _ := json.Marshal(wireUsage)
 		dataBytes, _ := json.Marshal(data)
 		view, _ := json.Marshal(map[string]json.RawMessage{"usage": usageBytes, "data": dataBytes})
-		observed := managedEmbeddingObservation(status, headers, view, complete, expectedEmbeddings)
+		observed := managedEmbeddingObservation(status, headers, view, true, expectedEmbeddings)
 		observed.ResponseModel = observation.ResponseModel
 		if observation.ProviderError {
 			observed.ProviderError, observed.ExecutionResult, observed.Acceptance = true, "failed", "unknown"

@@ -34,8 +34,9 @@ type ResponseCaptureInput struct {
 }
 
 type ResponseStreamInput struct {
-	StatusCode int
-	Chunks     [][]byte
+	StatusCode      int
+	Chunks          [][]byte
+	RequireTerminal bool
 }
 
 type CacheDigestResult struct {
@@ -110,6 +111,9 @@ func (ChatCompletionsAdapter) CaptureStream(input ResponseStreamInput) (Normaliz
 			}
 			streamChunks = append(streamChunks, streamChunk)
 		}
+	}
+	if input.RequireTerminal && !parser.hasTerminal("[DONE]") {
+		return NormalizedExchange{}, errors.New("Chat stream has no complete terminal event")
 	}
 	return NormalizedExchange{
 		Request: RequestFacts{
@@ -322,6 +326,7 @@ type sseFrame struct {
 
 type sseFrameParser struct {
 	buffer string
+	last   sseFrame
 }
 
 func newSSEFrameParser() *sseFrameParser {
@@ -340,9 +345,24 @@ func (p *sseFrameParser) Append(chunk []byte) ([]sseFrame, error) {
 		p.buffer = p.buffer[index+2:]
 		frame := parseSSEFrame(rawFrame)
 		if frame.Data != "" {
+			p.last = frame
 			frames = append(frames, frame)
 		}
 	}
+}
+
+func (p *sseFrameParser) hasTerminal(kind string) bool {
+	if strings.TrimSpace(p.buffer) != "" || p.last.Event == "error" {
+		return false
+	}
+	if kind == "[DONE]" {
+		return p.last.Data == kind
+	}
+	var event struct {
+		Type string `json:"type"`
+	}
+	return json.Unmarshal([]byte(p.last.Data), &event) == nil &&
+		(event.Type == kind || event.Type == "" && p.last.Event == kind)
 }
 
 func parseSSEFrame(rawFrame string) sseFrame {

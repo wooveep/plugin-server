@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"mime"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
@@ -17,6 +16,7 @@ import (
 
 const (
 	managedProtocolChat                = "openai_chat"
+	managedProtocolCompletions         = "openai_completions"
 	managedProtocolResponses           = "openai_responses"
 	managedProtocolMessages            = "anthropic_messages"
 	managedProtocolDashScopeText       = "dashscope_text"
@@ -61,7 +61,10 @@ func newManagedProtocolProfile(input, upstream string) (managedProtocolProfile, 
 	if upstream == "" {
 		upstream = managedProtocolChat
 	}
-	if input == managedProtocolEmbeddings && upstream == managedProtocolEmbeddings {
+	if input == upstream && (input == managedProtocolEmbeddings || input == managedProtocolCompletions) {
+		return managedProtocolProfile{InputProtocol: input, UpstreamProtocol: upstream}, nil
+	}
+	if operation, _, _ := executionfacts.RetrievalProtocol(input); operation != "" && input == upstream {
 		return managedProtocolProfile{InputProtocol: input, UpstreamProtocol: upstream}, nil
 	}
 	if input == upstream && (input == managedProtocolDashScopeText || input == managedProtocolDashScopeMultimodal) {
@@ -82,6 +85,9 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 	if p.InputProtocol == managedProtocolEmbeddings && p.UpstreamProtocol == managedProtocolEmbeddings {
 		return prepareManagedEmbeddingRequest(body, frozenModel, credential)
 	}
+	if operation, _, _ := executionfacts.RetrievalProtocol(p.UpstreamProtocol); operation != "" {
+		return prepareManagedRetrievalRequest(body, frozenModel, credential)
+	}
 	var object map[string]json.RawMessage
 	if err := decodeManagedJSON(body, &object, false); err != nil || object == nil {
 		return managedProtocolRequest{}, errors.New("invalid managed protocol request")
@@ -89,6 +95,12 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 	var model string
 	if json.Unmarshal(object["model"], &model) != nil || model != frozenModel || !managedID(model) {
 		return managedProtocolRequest{}, errors.New("managed protocol model differs from frozen mapping")
+	}
+	if p.InputProtocol == managedProtocolCompletions {
+		var prompt string
+		if managedProtocolNull(object["prompt"]) || json.Unmarshal(object["prompt"], &prompt) != nil {
+			return managedProtocolRequest{}, errors.New("Completions requires a string prompt")
+		}
 	}
 	if p.InputProtocol == managedProtocolDashScopeText || p.InputProtocol == managedProtocolDashScopeMultimodal {
 		var input map[string]json.RawMessage
@@ -113,7 +125,7 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 	}
 	streaming := false
 	if raw, exists := object["stream"]; exists {
-		if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) || json.Unmarshal(raw, &streaming) != nil {
+		if json.Unmarshal(raw, &streaming) != nil || p.InputProtocol != managedProtocolCompletions && managedProtocolNull(raw) {
 			return managedProtocolRequest{}, errors.New("invalid managed protocol stream flag")
 		}
 	}
@@ -185,43 +197,10 @@ func (p managedProtocolProfile) ObserveResponse(status uint16, headers [][2]stri
 	}
 	if stream {
 		switch p.UpstreamProtocol {
-		case managedProtocolChat:
-			observation.Usage, observation.ExecutionResult, observation.ProviderError = managedSSEObservation(body)
-			if events, err := managedProtocolEvents(body); err == nil {
-				var prior *executionfacts.Usage
-				usageConflict := false
-				for _, event := range events {
-					if event.Name == "error" {
-						observation.ExecutionResult, observation.ProviderError = "failed", true
-					}
-					if bytes.Equal(event.Data, []byte("[DONE]")) {
-						continue
-					}
-					var object map[string]json.RawMessage
-					if decodeManagedJSON(event.Data, &object, false) != nil {
-						continue
-					}
-					if !managedProtocolMergeModel(&observation.ResponseModel, object["model"]) {
-						observation.ExecutionResult = "unknown"
-						observation.Usage = executionfacts.MissingTokenUsage("stream_model_conflict")
-						break
-					}
-					if raw, exists := object["usage"]; exists && !managedProtocolNull(raw) {
-						current := managedOpenAIUsage(object)
-						if prior != nil && !managedProtocolSameUsage(prior, current) {
-							observation.Usage = executionfacts.MissingTokenUsage("stream_usage_conflict")
-							usageConflict = true
-							break
-						}
-						prior = current
-					}
-				}
-				if !usageConflict && observation.ExecutionResult == "failed" && observation.ProviderError && prior != nil && prior.Status == "reported" {
-					// The chat parser only proves failure after all choices and DONE.
-					// Complete explicit usage remains actual provider cost on errors.
-					observation.Usage = prior
-				}
-			}
+		case managedProtocolChat, managedProtocolCompletions:
+			chat := managedChatStream{completions: p.UpstreamProtocol == managedProtocolCompletions}
+			chat.push(body)
+			observation = chat.observation()
 		case managedProtocolResponses:
 			observation = managedResponsesStream(body)
 		case managedProtocolMessages:
@@ -240,6 +219,16 @@ func (p managedProtocolProfile) ObserveResponse(status uint16, headers [][2]stri
 		case managedProtocolChat:
 			observation.Usage = managedOpenAIUsage(object)
 			observation.ExecutionResult = managedChatTerminal(object)
+		case managedProtocolCompletions:
+			var choices []map[string]json.RawMessage
+			if string(object["object"]) == `"text_completion"` &&
+				json.Unmarshal(object["choices"], &choices) == nil && len(choices) == 1 &&
+				!managedProtocolNull(choices[0]["finish_reason"]) {
+				observation.ExecutionResult = managedCompletionChoice(choices[0])
+				if observation.ExecutionResult != "unknown" {
+					observation.Usage = managedOpenAIUsage(object)
+				}
+			}
 		case managedProtocolResponses:
 			observation.Usage = managedResponsesUsage(object["usage"])
 			observation.ExecutionResult = managedResponsesTerminal(object)
@@ -334,6 +323,28 @@ func managedChatTerminal(object map[string]json.RawMessage) string {
 	return result
 }
 
+// DeepSeek emits the same choice shape for JSON and SSE.
+func managedCompletionChoice(choice map[string]json.RawMessage) string {
+	var content, reason string
+	if managedProtocolNull(choice["text"]) || json.Unmarshal(choice["text"], &content) != nil {
+		return "unknown"
+	}
+	if managedProtocolNull(choice["finish_reason"]) {
+		return ""
+	}
+	if json.Unmarshal(choice["finish_reason"], &reason) != nil {
+		return "unknown"
+	}
+	switch reason {
+	case "stop":
+		return "succeeded"
+	case "length", "content_filter", "insufficient_system_resource", "aborted":
+		return "partial"
+	default:
+		return "unknown"
+	}
+}
+
 func managedResponsesTerminal(object map[string]json.RawMessage) string {
 	var status string
 	if json.Unmarshal(object["status"], &status) != nil {
@@ -380,6 +391,9 @@ func managedResponsesUsage(raw json.RawMessage) *executionfacts.Usage {
 	if details, exists := usage["input_tokens_details"]; exists {
 		chat["prompt_tokens_details"] = details
 	}
+	if details, exists := usage["output_tokens_details"]; exists {
+		chat["completion_tokens_details"] = details
+	}
 	encoded, _ := json.Marshal(chat)
 	return managedOpenAIUsage(map[string]json.RawMessage{"usage": encoded})
 }
@@ -399,11 +413,13 @@ func managedMessagesUsage(raw json.RawMessage) *executionfacts.Usage {
 	}
 	quantities := map[string]string{"input": input.String(), "output": output.String()}
 	readRaw, hasRead := usage["cache_read_input_tokens"]
-	writeRaw, hasWrite := usage["cache_creation_input_tokens"]
+	write, hasWrite := managedCacheWriteCount(usage)
+	if hasWrite && write == nil {
+		return executionfacts.MissingTokenUsage(managedCacheWriteConflict)
+	}
 	if hasRead || hasWrite {
 		read, readOK := managedCount(readRaw)
-		write, writeOK := managedCount(writeRaw)
-		if !hasRead || !hasWrite || !readOK || !writeOK {
+		if !readOK || write == nil {
 			return missing()
 		}
 		miss := new(big.Int).Add(input, write)
@@ -412,6 +428,8 @@ func managedMessagesUsage(raw json.RawMessage) *executionfacts.Usage {
 			return missing()
 		}
 		quantities["input"], quantities["cache_hit"], quantities["cache_miss"] = total.String(), read.String(), miss.String()
+		managedCacheWrite(quantities, write, usage["cache_creation"], usage["cache_write_tokens_details"])
+		quantities["cache_read_mode"] = "1"
 	}
 	return &executionfacts.Usage{Status: "reported", Unit: "token", Source: "provider", Quantities: quantities}
 }
@@ -421,65 +439,18 @@ type managedProtocolEvent struct {
 	Data []byte
 }
 
-// HTTP callouts deliver a single bounded buffer. Require complete SSE event
-// delimiters; this is not an incremental parser or a streaming transport.
 func managedProtocolEvents(body []byte) ([]managedProtocolEvent, error) {
-	if len(body) == 0 || len(body) > int(defaultMaxBodyBytes) || !utf8.Valid(body) {
-		return nil, errors.New("invalid managed SSE body")
+	if len(body) > int(defaultMaxBodyBytes) {
+		return nil, errors.New("managed SSE body budget exceeded")
 	}
-	body = bytes.TrimPrefix(body, []byte{0xef, 0xbb, 0xbf})
 	var events []managedProtocolEvent
-	var data []byte
-	var name string
-	hasData := false
-	for start := 0; start < len(body); {
-		end := start
-		for end < len(body) && body[end] != '\r' && body[end] != '\n' {
-			end++
-		}
-		if end == len(body) {
-			return nil, errors.New("unterminated managed SSE line")
-		}
-		line := body[start:end]
-		start = end + 1
-		if body[end] == '\r' && start < len(body) && body[start] == '\n' {
-			start++
-		}
-		if len(line) == 0 {
-			if hasData {
-				if len(events) >= 65536 {
-					return nil, errors.New("managed SSE event budget exceeded")
-				}
-				events = append(events, managedProtocolEvent{Name: name, Data: bytes.Clone(data)})
-			}
-			data, name, hasData = nil, "", false
-			continue
-		}
-		if line[0] == ':' {
-			continue
-		}
-		field, value, _ := bytes.Cut(line, []byte(":"))
-		if len(value) > 0 && value[0] == ' ' {
-			value = value[1:]
-		}
-		switch string(field) {
-		case "event":
-			name = string(value)
-		case "data":
-			if len(data)+len(value)+1 > executionfacts.MaxEnvelopeBytes {
-				return nil, errors.New("managed SSE payload budget exceeded")
-			}
-			if hasData {
-				data = append(data, '\n')
-			}
-			data = append(data, value...)
-			hasData = true
-		}
+	var decoder managedSSEDecoder
+	if err := decoder.push(body, func(event managedProtocolEvent) {
+		events = append(events, event)
+	}); err != nil {
+		return nil, err
 	}
-	if hasData || name != "" {
-		return nil, errors.New("unterminated managed SSE event")
-	}
-	return events, nil
+	return events, decoder.finish()
 }
 
 func managedProtocolStreamUnknown(reason string) managedProtocolObservation {
@@ -496,152 +467,15 @@ func managedProtocolEventObject(event managedProtocolEvent) (map[string]json.Raw
 }
 
 func managedResponsesStream(body []byte) managedProtocolObservation {
-	unknown := managedProtocolStreamUnknown("stream_terminal_not_observed")
-	events, err := managedProtocolEvents(body)
-	if err != nil {
-		return unknown
-	}
-	observation := unknown
-	terminal := false
-	for _, event := range events {
-		if bytes.Equal(event.Data, []byte("[DONE]")) && terminal {
-			continue
-		}
-		object, kind, err := managedProtocolEventObject(event)
-		if err != nil || terminal {
-			return unknown
-		}
-		if kind == "error" {
-			observation.ProviderError, observation.ExecutionResult, observation.BodyComplete = true, "failed", true
-			observation.Usage = executionfacts.MissingTokenUsage("stream_provider_error")
-			terminal = true
-			continue
-		}
-		var response map[string]json.RawMessage
-		if raw, exists := object["response"]; exists {
-			if json.Unmarshal(raw, &response) != nil || response == nil || !managedProtocolMergeModel(&observation.ResponseModel, response["model"]) {
-				return unknown
-			}
-		}
-		switch kind {
-		case "response.completed", "response.incomplete", "response.failed":
-			result := managedResponsesTerminal(response)
-			expected := map[string]string{"response.completed": "succeeded", "response.incomplete": "partial", "response.failed": "failed"}[kind]
-			if result != expected {
-				return unknown
-			}
-			observation.Usage = managedResponsesUsage(response["usage"])
-			observation.ExecutionResult, observation.BodyComplete = result, true
-			if result == "failed" || !managedProtocolNull(response["error"]) {
-				observation.ProviderError, observation.ExecutionResult = true, "failed"
-			}
-			terminal = true
-		}
-	}
-	if !terminal {
-		return unknown
-	}
-	return observation
+	stream := newManagedNativeStream(managedProtocolResponses, false, false)
+	stream.push(body, nil)
+	return stream.observation()
 }
 
 func managedMessagesStream(body []byte, terminalInput bool) managedProtocolObservation {
-	unknown := managedProtocolStreamUnknown("stream_terminal_not_observed")
-	events, err := managedProtocolEvents(body)
-	if err != nil {
-		return unknown
-	}
-	observation := unknown
-	usage := map[string]json.RawMessage{}
-	started, stopped, reasonSeen, finalOutput := false, false, false, false
-	result := "unknown"
-	for _, event := range events {
-		object, kind, err := managedProtocolEventObject(event)
-		if err != nil || stopped {
-			return unknown
-		}
-		switch kind {
-		case "ping":
-			continue
-		case "error":
-			observation.ExecutionResult, observation.ProviderError, observation.BodyComplete = "failed", true, true
-			observation.Usage = executionfacts.MissingTokenUsage("stream_provider_error")
-			return observation
-		case "message_start":
-			var message map[string]json.RawMessage
-			if started || json.Unmarshal(object["message"], &message) != nil || message == nil || !managedProtocolMergeModel(&observation.ResponseModel, message["model"]) || json.Unmarshal(message["usage"], &usage) != nil || usage == nil {
-				return unknown
-			}
-			started = true
-		case "message_delta":
-			terminalDelta := false
-			if !started {
-				return unknown
-			}
-			var delta, update map[string]json.RawMessage
-			if json.Unmarshal(object["delta"], &delta) != nil || delta == nil {
-				return unknown
-			}
-			if raw, exists := delta["stop_reason"]; exists && !managedProtocolNull(raw) {
-				next := managedMessagesTerminal(map[string]json.RawMessage{"stop_reason": raw})
-				if reasonSeen || next == "unknown" {
-					return unknown
-				}
-				reasonSeen, result, terminalDelta = true, next, true
-			}
-			if raw, exists := object["usage"]; exists {
-				if json.Unmarshal(raw, &update) != nil || update == nil {
-					return unknown
-				}
-				for key, value := range update {
-					if key == "output_tokens" {
-						next, valid := managedCount(value)
-						if !valid {
-							return unknown
-						}
-						if previous, valid := managedCount(usage[key]); valid && next.Cmp(previous) < 0 {
-							return unknown
-						}
-						// Earlier progress is not proof of the final cumulative count.
-						finalOutput = reasonSeen
-					} else if key == "input_tokens" && terminalInput && terminalDelta {
-						// Qwen reports provisional input at message_start and
-						// the final cumulative input with its terminal delta.
-						next, valid := managedCount(value)
-						if !valid {
-							return unknown
-						}
-						if prior, valid := managedCount(usage[key]); valid && next.Cmp(prior) < 0 {
-							return unknown
-						}
-					} else if prior, exists := usage[key]; key != "server_tool_use" && exists && !bytes.Equal(prior, value) {
-						return unknown
-					}
-					usage[key] = value
-				}
-			}
-		case "message_stop":
-			if !started || !reasonSeen {
-				return unknown
-			}
-			stopped = true
-		case "content_block_start", "content_block_delta", "content_block_stop":
-			if !started || reasonSeen {
-				return unknown
-			}
-		default:
-			return unknown
-		}
-	}
-	if !stopped {
-		return unknown
-	}
-	encoded, _ := json.Marshal(usage)
-	observation.Usage = managedMessagesUsage(encoded)
-	if !finalOutput {
-		observation.Usage = executionfacts.MissingTokenUsage("stream_usage_not_observed")
-	}
-	observation.ExecutionResult, observation.BodyComplete = result, true
-	return observation
+	stream := newManagedNativeStream(managedProtocolMessages, terminalInput, false)
+	stream.push(body, nil)
+	return stream.observation()
 }
 
 // ConvertResponse is called only after ObserveResponse has been persisted in
@@ -707,34 +541,35 @@ func managedProtocolConvertedHeaders(headers [][2]string, stream bool) [][2]stri
 	return result
 }
 
-func managedProtocolConversionInput(body []byte, stream bool) ([]byte, error) {
-	convert := func(raw []byte) ([]byte, error) {
-		var object map[string]json.RawMessage
-		if decodeManagedJSON(raw, &object, false) != nil || object == nil {
-			return nil, errors.New("invalid managed conversion input")
-		}
-		var choices []map[string]json.RawMessage
-		if json.Unmarshal(object["choices"], &choices) != nil || len(choices) > 1 {
-			return nil, errors.New("managed fallback requires a single response choice")
-		}
-		if !stream && len(choices) != 1 {
-			return nil, errors.New("managed fallback response choice missing")
-		}
-		if !stream {
-			var message map[string]json.RawMessage
-			if json.Unmarshal(choices[0]["message"], &message) != nil || message == nil {
-				return nil, errors.New("managed fallback assistant message missing")
-			}
-		}
-		if raw, exists := object["usage"]; exists && !managedProtocolNull(raw) {
-			// A bounded placeholder triggers the existing converter's usage event.
-			// It is replaced before any converted bytes leave this function chain.
-			object["usage"] = json.RawMessage(`{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}`)
-		}
-		return json.Marshal(object)
+func managedProtocolConversionObject(raw []byte, stream bool) ([]byte, error) {
+	var object map[string]json.RawMessage
+	if decodeManagedJSON(raw, &object, false) != nil || object == nil {
+		return nil, errors.New("invalid managed conversion input")
+	}
+	var choices []map[string]json.RawMessage
+	if json.Unmarshal(object["choices"], &choices) != nil || len(choices) > 1 {
+		return nil, errors.New("managed fallback requires a single response choice")
+	}
+	if !stream && len(choices) != 1 {
+		return nil, errors.New("managed fallback response choice missing")
 	}
 	if !stream {
-		return convert(body)
+		var message map[string]json.RawMessage
+		if json.Unmarshal(choices[0]["message"], &message) != nil || message == nil {
+			return nil, errors.New("managed fallback assistant message missing")
+		}
+	}
+	if raw, exists := object["usage"]; exists && !managedProtocolNull(raw) {
+		// A bounded placeholder triggers the existing converter's usage event.
+		// It is replaced before any converted bytes leave this function chain.
+		object["usage"] = json.RawMessage(`{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}`)
+	}
+	return json.Marshal(object)
+}
+
+func managedProtocolConversionInput(body []byte, stream bool) ([]byte, error) {
+	if !stream {
+		return managedProtocolConversionObject(body, false)
 	}
 	events, err := managedProtocolEvents(body)
 	if err != nil {
@@ -744,7 +579,7 @@ func managedProtocolConversionInput(body []byte, stream bool) ([]byte, error) {
 	for _, event := range events {
 		data := event.Data
 		if !bytes.Equal(data, []byte("[DONE]")) {
-			data, err = convert(data)
+			data, err = managedProtocolConversionObject(data, true)
 			if err != nil {
 				return nil, err
 			}
@@ -781,20 +616,42 @@ func managedProtocolWireUsage(protocol string, usage *executionfacts.Usage) json
 			}
 			wire["total_tokens"] = json.RawMessage(total.String())
 		}
-		if protocol == managedProtocolChat {
-			wire["prompt_tokens"], wire["completion_tokens"] = json.RawMessage(input.String()), json.RawMessage(output.String())
-			if hit, exists := quantities["cache_hit"]; exists {
-				wire["prompt_tokens_details"], _ = json.Marshal(map[string]json.Number{"cached_tokens": json.Number(hit)})
-			}
-		} else {
+		if protocol == managedProtocolMessages {
 			wire["input_tokens"], wire["output_tokens"] = json.RawMessage(input.String()), json.RawMessage(output.String())
 			if hit, exists := quantities["cache_hit"]; exists {
-				if protocol == managedProtocolResponses {
-					wire["input_tokens_details"], _ = json.Marshal(map[string]json.Number{"cached_tokens": json.Number(hit)})
-				} else {
-					wire["input_tokens"] = json.RawMessage(quantities["cache_miss"])
-					wire["cache_read_input_tokens"], wire["cache_creation_input_tokens"] = json.RawMessage(hit), json.RawMessage("0")
+				miss, valid := managedInteger(quantities["cache_miss"])
+				if !valid {
+					return nil
 				}
+				if write, ok := managedInteger(quantities["cache_write"]); ok {
+					miss.Sub(miss, write)
+					wire["cache_creation_input_tokens"] = json.RawMessage(write.String())
+				} else {
+					// Retain the existing converter's paired cache counters.
+					// The public projection still reads the original report.
+					wire["cache_creation_input_tokens"] = json.RawMessage("0")
+				}
+				wire["input_tokens"], wire["cache_read_input_tokens"] = json.RawMessage(miss.String()), json.RawMessage(hit)
+			}
+		} else {
+			inputKey, outputKey := "input_tokens", "output_tokens"
+			inputDetailsKey, outputDetailsKey := "input_tokens_details", "output_tokens_details"
+			if protocol == managedProtocolChat {
+				inputKey, outputKey = "prompt_tokens", "completion_tokens"
+				inputDetailsKey, outputDetailsKey = "prompt_tokens_details", "completion_tokens_details"
+			}
+			wire[inputKey], wire[outputKey] = json.RawMessage(input.String()), json.RawMessage(output.String())
+			details := make(map[string]json.Number, 2)
+			for meter, field := range map[string]string{"cache_hit": "cached_tokens", "cache_write": "cache_write_tokens"} {
+				if value, exists := quantities[meter]; exists {
+					details[field] = json.Number(value)
+				}
+			}
+			if len(details) > 0 {
+				wire[inputDetailsKey], _ = json.Marshal(details)
+			}
+			if reasoning, exists := quantities["reasoning_tokens"]; exists {
+				wire[outputDetailsKey], _ = json.Marshal(map[string]json.Number{"reasoning_tokens": json.Number(reasoning)})
 			}
 		}
 	}

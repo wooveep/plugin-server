@@ -66,57 +66,83 @@ func Project(policy Policy, body []byte, streaming bool, usage Usage) ([]byte, e
 		return nil, err
 	}
 	var output bytes.Buffer
-	var lastChat map[string]json.RawMessage
+	projection := NewStreamProjection(policy)
 	for _, event := range events {
-		if bytes.Equal(event.Data, []byte("[DONE]")) {
-			if policy.Protocol == Chat && policy.IncludeUsage && lastChat != nil {
-				if wire := usage.wireProfile(Chat, policy.Profile); wire != nil {
-					lastChat["choices"], lastChat["usage"] = json.RawMessage("[]"), wire
-					raw, err := json.Marshal(lastChat)
-					if err != nil {
-						return nil, err
-					}
-					AppendEvent(&output, Event{Data: raw})
-				}
-			}
-			AppendEvent(&output, event)
-			continue
-		}
-		raw, err := projectObject(policy, event.Data, usage, true)
-		if err != nil {
+		if err := projection.Append(&output, event, usage); err != nil {
 			return nil, err
 		}
-		raw, err = policy.Aliases.rewrite(policy.Protocol, raw, true)
-		if err != nil {
-			return nil, err
-		}
-		if policy.Protocol == Chat {
-			var frame map[string]json.RawMessage
-			_ = json.Unmarshal(raw, &frame)
-			if _, failed := frame["error"]; !failed {
-				lastChat = frame
-				var choices []json.RawMessage
-				_ = json.Unmarshal(frame["choices"], &choices)
-				if len(choices) == 0 {
-					continue
-				}
-			} else {
-				if policy.IncludeUsage && lastChat != nil {
-					if wire := usage.wireProfile(Chat, policy.Profile); wire != nil {
-						lastChat["choices"], lastChat["usage"] = json.RawMessage("[]"), wire
-						counts, e := json.Marshal(lastChat)
-						if e != nil {
-							return nil, e
-						}
-						AppendEvent(&output, Event{Data: counts})
-					}
-				}
-				lastChat = nil
-			}
-		}
-		AppendEvent(&output, Event{Name: event.Name, Data: raw})
 	}
 	return output.Bytes(), nil
+}
+
+// StreamProjection keeps the public identity and Chat usage-frame template
+// across complete events of one response. It never waits for another event.
+type StreamProjection struct {
+	policy   Policy
+	lastChat map[string]json.RawMessage
+}
+
+func NewStreamProjection(policy Policy) *StreamProjection {
+	if policy.Aliases == nil {
+		policy.Aliases = &ResourceAliases{}
+	}
+	return &StreamProjection{policy: policy}
+}
+
+// Append emits the current event with the provider usage available so far.
+func (s *StreamProjection) Append(output *bytes.Buffer, event Event, usage Usage) error {
+	policy := s.policy
+	if bytes.Equal(event.Data, []byte("[DONE]")) {
+		if err := s.appendChatUsage(output, usage); err != nil {
+			return err
+		}
+		AppendEvent(output, event)
+		return nil
+	}
+	raw, err := projectObject(policy, event.Data, usage, true)
+	if err != nil {
+		return err
+	}
+	raw, err = policy.Aliases.rewrite(policy.Protocol, raw, true)
+	if err != nil {
+		return err
+	}
+	if policy.Protocol == Chat {
+		var frame map[string]json.RawMessage
+		_ = json.Unmarshal(raw, &frame)
+		if _, failed := frame["error"]; !failed {
+			s.lastChat = frame
+			var choices []json.RawMessage
+			_ = json.Unmarshal(frame["choices"], &choices)
+			if len(choices) == 0 {
+				return nil
+			}
+		} else {
+			if err := s.appendChatUsage(output, usage); err != nil {
+				return err
+			}
+			s.lastChat = nil
+		}
+	}
+	AppendEvent(output, Event{Name: event.Name, Data: raw})
+	return nil
+}
+
+func (s *StreamProjection) appendChatUsage(output *bytes.Buffer, usage Usage) error {
+	if s.policy.Protocol != Chat || !s.policy.IncludeUsage || s.lastChat == nil {
+		return nil
+	}
+	wire := usage.wireProfile(Chat, s.policy.Profile)
+	if wire == nil {
+		return nil
+	}
+	s.lastChat["choices"], s.lastChat["usage"] = json.RawMessage("[]"), wire
+	raw, err := json.Marshal(s.lastChat)
+	if err != nil {
+		return err
+	}
+	AppendEvent(output, Event{Data: raw})
+	return nil
 }
 
 func projectObject(policy Policy, body []byte, usage Usage, stream bool) ([]byte, error) {

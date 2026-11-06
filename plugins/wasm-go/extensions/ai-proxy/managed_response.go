@@ -80,12 +80,19 @@ func configureManagedResponse(c *managedExecutionConfig, value gjson.Result) err
 		c.settings.ProtocolMode = "auto"
 	}
 	if c.settings.ProtocolMode == "passthrough" {
-		if c.settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission || (c.profile.InputProtocol != clientresponse.Chat && c.profile.InputProtocol != clientresponse.Responses && c.profile.InputProtocol != clientresponse.Messages) || c.release.PublicModel != c.release.Descriptor.UpstreamModel || c.profile.InputProtocol != c.profile.UpstreamProtocol || (c.vendor != nil && c.vendor.NativeResponseFormat() != "") || c.settings.ResponseProfile != "" {
+		switch c.profile.InputProtocol {
+		case clientresponse.Chat, clientresponse.Responses, clientresponse.Messages, managedProtocolCompletions:
+		default:
+			if !executionfacts.IsRetrieval(managedOperation(c)) {
+				return errors.New("passthrough requires a registered native wire protocol")
+			}
+		}
+		if c.settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission || c.release.PublicModel != c.release.Descriptor.UpstreamModel || c.profile.InputProtocol != c.profile.UpstreamProtocol || (c.vendor != nil && c.vendor.NativeResponseFormat() != "") || c.settings.ResponseProfile != "" {
 			return errors.New("passthrough requires the exact model and native wire protocol without a response profile")
 		}
 		return nil
 	}
-	if c.settings.ProtocolMode != "auto" {
+	if c.settings.ProtocolMode != "auto" || c.profile.InputProtocol == managedProtocolCompletions || executionfacts.IsRetrieval(managedOperation(c)) {
 		return errors.New("unsupported managed response mode")
 	}
 	if c.profile.InputProtocol != clientresponse.Chat && c.profile.InputProtocol != clientresponse.Responses && c.profile.InputProtocol != clientresponse.Messages {

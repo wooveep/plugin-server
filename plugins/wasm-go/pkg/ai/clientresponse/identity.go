@@ -22,9 +22,21 @@ type ResourceAliases struct {
 	native  bool
 }
 
+// NewNativeResourceAliases records the provider identifiers verbatim.
+func NewNativeResourceAliases() *ResourceAliases { return &ResourceAliases{native: true} }
+
+// ObserveEvent records references from one complete event without projecting it.
+func (a *ResourceAliases) ObserveEvent(protocol string, event Event) error {
+	if string(event.Data) == "[DONE]" {
+		return nil
+	}
+	_, err := a.rewrite(protocol, event.Data, true)
+	return err
+}
+
 // ObserveNativeResources records ownership without changing delivered bytes.
 func ObserveNativeResources(protocol string, body []byte, stream bool) (*ResourceAliases, error) {
-	aliases := &ResourceAliases{native: true}
+	aliases := NewNativeResourceAliases()
 	if !stream {
 		_, err := aliases.rewrite(protocol, body, false)
 		return aliases, err
@@ -34,10 +46,7 @@ func ObserveNativeResources(protocol string, body []byte, stream bool) (*Resourc
 		return nil, err
 	}
 	for _, event := range events {
-		if string(event.Data) == "[DONE]" {
-			continue
-		}
-		if _, err := aliases.rewrite(protocol, event.Data, true); err != nil {
+		if err := aliases.ObserveEvent(protocol, event); err != nil {
 			return nil, err
 		}
 	}

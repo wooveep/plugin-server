@@ -79,8 +79,9 @@ def validate_extension(value: Any) -> None:
 
 
 def _validate_provider_interfaces(declaration: Any, pointer: str) -> None:
-    protocols = {"openai_chat", "openai_responses", "anthropic_messages", "openai_embeddings",
-                 "dashscope_text", "dashscope_multimodal"}
+    protocols = {"openai_chat", "openai_completions", "openai_responses", "anthropic_messages",
+                 "openai_embeddings", "dashscope_text", "dashscope_multimodal",
+                 "dashscope_multimodal_embedding", "dashscope_rerank", "bailian_rerank"}
     if (pointer or not isinstance(declaration, dict)
             or set(declaration) - {"schema_version", "providers", "wire_protocols"}
             or declaration.get("schema_version") != "provider-interfaces.v1"

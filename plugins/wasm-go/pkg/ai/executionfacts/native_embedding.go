@@ -11,6 +11,34 @@ const CustomerEmbeddingSchemaVersion = "billing-facts.v4"
 const CustomerEmbeddingRegistrationVersion = "execution-registration.v3"
 const NativeEmbeddingOperation = "text_embedding"
 
+const RetrievalSchemaVersion = "billing-facts.v6"
+const RetrievalRegistrationVersion = "execution-registration.v4"
+const MultimodalEmbeddingOperation = "multimodal_embedding"
+const RerankOperation = "rerank"
+const RetrievalClassifier = "ai-proxy.native-retrieval.v1"
+
+// RetrievalProtocol identifies one registered, unconverted supplier wire API.
+func RetrievalProtocol(protocol string) (operation, path, adapter string) {
+	switch protocol {
+	case "dashscope_multimodal_embedding":
+		return MultimodalEmbeddingOperation, "/api/v1/services/embeddings/multimodal-embedding/multimodal-embedding", "dashscope-multimodal-embedding.v1"
+	case "dashscope_rerank":
+		return RerankOperation, "/api/v1/services/rerank/text-rerank/text-rerank", "dashscope-rerank.v1"
+	case "bailian_rerank":
+		return RerankOperation, "/compatible-api/v1/reranks", "bailian-rerank.v1"
+	default:
+		return "", "", ""
+	}
+}
+
+func IsRetrieval(operation string) bool {
+	return one(operation, MultimodalEmbeddingOperation, RerankOperation)
+}
+
+func IsInputOnly(operation string) bool {
+	return operation == NativeEmbeddingOperation || IsRetrieval(operation)
+}
+
 // EmbeddingAttempt retains the original customer or service selection before one send.
 type EmbeddingAttempt struct{ original Envelope }
 
@@ -22,6 +50,9 @@ func NewEmbeddingAttempt(original Envelope) (EmbeddingAttempt, error) {
 	}
 	if original.BillingMode == "customer" || original.SchemaVersion == CustomerEmbeddingSchemaVersion {
 		version = CustomerEmbeddingSchemaVersion
+	}
+	if IsRetrieval(original.OperationKind) {
+		version = RetrievalSchemaVersion
 	}
 	if original.SchemaVersion != "" && original.SchemaVersion != version ||
 		original.PayloadCanonicalization != "" && original.PayloadCanonicalization != Canonicalization {
@@ -59,6 +90,10 @@ func FreezeEmbedding(input Envelope) (Snapshot, error) {
 	if version == CustomerEmbeddingSchemaVersion {
 		usage = validateCustomerEmbeddingUsage
 	}
+	if IsRetrieval(input.OperationKind) {
+		version = RetrievalSchemaVersion
+		usage = func(u Usage) error { return validateRetrievalUsage(input.OperationKind, u) }
+	}
 	return freezeObservation(input, version, usage, validateEmbeddingEnvelope)
 }
 
@@ -67,14 +102,18 @@ func CorrectEmbedding(previous Snapshot, replacement Envelope) (Snapshot, error)
 	if previous.envelope.SchemaVersion == ConnectionSchemaVersion {
 		version = ConnectionSchemaVersion
 	}
-	if previous.envelope.SchemaVersion == CustomerEmbeddingSchemaVersion {
-		version = CustomerEmbeddingSchemaVersion
+	if one(previous.envelope.SchemaVersion, CustomerEmbeddingSchemaVersion, RetrievalSchemaVersion) {
+		version = previous.envelope.SchemaVersion
 	}
 	return correctObservation(previous, replacement, version, FreezeEmbedding)
 }
 
 func validateEmbeddingIdentity(e Envelope) error {
-	if e.OperationKind != NativeEmbeddingOperation || e.OperationID != "" || e.ProviderTaskID != "" || e.ParentAttemptID != "" {
+	validOperation := e.OperationKind == NativeEmbeddingOperation
+	if e.SchemaVersion == RetrievalSchemaVersion {
+		validOperation = IsRetrieval(e.OperationKind) && e.BillingMode == "customer"
+	}
+	if !validOperation || e.OperationID != "" || e.ProviderTaskID != "" || e.ParentAttemptID != "" {
 		return errors.New("embedding requires its original synchronous call without media identity")
 	}
 	for _, value := range []string{e.ProducerID, e.CallID, e.PrincipalID} {
@@ -82,7 +121,7 @@ func validateEmbeddingIdentity(e Envelope) error {
 			return errors.New("embedding requires its original caller identity")
 		}
 	}
-	if e.BillingMode == "customer" && e.SchemaVersion == CustomerEmbeddingSchemaVersion {
+	if e.BillingMode == "customer" && one(e.SchemaVersion, CustomerEmbeddingSchemaVersion, RetrievalSchemaVersion) {
 		if e.PrincipalKind != "user" || e.CostOwner != nil || !id(e.TenantID) || !id(e.AccountID) || !id(e.SalesAssetID) {
 			return errors.New("customer embedding requires its original user and sale wallet")
 		}
@@ -101,7 +140,7 @@ func validateEmbeddingIdentity(e Envelope) error {
 }
 
 func validateEmbeddingEnvelope(e Envelope) error {
-	if !one(e.SchemaVersion, NativeEmbeddingSchemaVersion, ConnectionSchemaVersion, CustomerEmbeddingSchemaVersion) || e.PayloadCanonicalization != Canonicalization {
+	if !one(e.SchemaVersion, NativeEmbeddingSchemaVersion, ConnectionSchemaVersion, CustomerEmbeddingSchemaVersion, RetrievalSchemaVersion) || e.PayloadCanonicalization != Canonicalization {
 		return errorsForVersion()
 	}
 	if err := validateEmbeddingIdentity(e); err != nil {
@@ -113,6 +152,9 @@ func validateEmbeddingEnvelope(e Envelope) error {
 	usage := validateEmbeddingUsage
 	if e.SchemaVersion == CustomerEmbeddingSchemaVersion {
 		usage = validateCustomerEmbeddingUsage
+	}
+	if e.SchemaVersion == RetrievalSchemaVersion {
+		usage = func(u Usage) error { return validateRetrievalUsage(e.OperationKind, u) }
 	}
 	return validateObservationFields(e, usage)
 }
@@ -157,16 +199,41 @@ func validateEmbeddingUsage(u Usage) error {
 	}
 }
 
-func decodeEmbeddingSelection(raw []byte) (map[string]interface{}, error) {
+func validateRetrievalUsage(operation string, u Usage) error {
+	if u.Status == "reported" && operation == MultimodalEmbeddingOperation && len(u.Quantities) == 2 {
+		input, inputErr := integer(u.Quantities["input"], 128)
+		visual, visualErr := integer(u.Quantities["visual_input"], 128)
+		if u.Unit != "token" || u.Source != "provider" || u.EstimatorVersion != "" || inputErr != nil || visualErr != nil || visual.Cmp(input) > 0 {
+			return errors.New("multimodal usage requires provider input and its visual subset")
+		}
+		return nil
+	}
+	return validateEmbeddingUsage(u)
+}
+
+func decodeInputOnlySelection(raw []byte, retrieval bool) (map[string]interface{}, error) {
 	object, err := decodeSelectionFields(raw, "invocation_id gateway_boot_id context_generation recovery_claim_refs")
 	if err != nil {
 		return nil, err
 	}
-	if object["selection_canonicalization"] != "selection-json.v1" || object["operation_kind"] != NativeEmbeddingOperation ||
+	operation, _ := object["operation_kind"].(string)
+	if object["selection_canonicalization"] != "selection-json.v1" || (!retrieval && operation != NativeEmbeddingOperation || retrieval && !IsRetrieval(operation)) ||
 		object["mechanism"] != "router" || object["send_transport"] != "http_call" || object["recording_owner"] != "ai_proxy" {
 		return nil, errors.New("native:v2 embedding selection requires its original single HTTP sender")
 	}
 	return object, nil
+}
+
+func decodeEmbeddingSelection(raw []byte) (map[string]interface{}, error) {
+	return decodeInputOnlySelection(raw, false)
+}
+
+func decodeRetrievalSelection(raw []byte) (map[string]interface{}, error) {
+	return decodeInputOnlySelection(raw, true)
+}
+
+func RetrievalSelectionDigest(raw []byte) (string, error) {
+	return selectionDigest(raw, decodeRetrievalSelection)
 }
 
 // EmbeddingSelectionDigest uses the same mf-json selection projection under the

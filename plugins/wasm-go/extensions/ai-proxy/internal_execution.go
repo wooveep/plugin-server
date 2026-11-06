@@ -201,7 +201,10 @@ func managedRegistration(state *managedExecutionState, basis bodybasis.Snapshot)
 		})
 	}
 	version := "execution-registration.v1"
-	if managedOperation(configuration) == executionfacts.NativeEmbeddingOperation {
+	switch operation := managedOperation(configuration); {
+	case executionfacts.IsRetrieval(operation):
+		version = executionfacts.RetrievalRegistrationVersion
+	case operation == executionfacts.NativeEmbeddingOperation:
 		version = executionfacts.CustomerEmbeddingRegistrationVersion
 	}
 	return executionfacts.FreezeRegistration(executionfacts.Registration{

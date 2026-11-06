@@ -1470,7 +1470,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-cache",
-      "declaredVersion": "2.0.20"
+      "declaredVersion": "2.0.22"
     },
     {
       "logicalId": "ai-context-limit",
@@ -1521,7 +1521,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-data-masking",
-      "declaredVersion": "2.0.3"
+      "declaredVersion": "2.0.4"
     },
     {
       "logicalId": "ai-endpoint-picker",
@@ -1573,7 +1573,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-history",
-      "declaredVersion": "2.0.8"
+      "declaredVersion": "2.0.9"
     },
     {
       "logicalId": "ai-image-reader",
@@ -1753,7 +1753,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-proxy",
-      "declaredVersion": "2.0.47"
+      "declaredVersion": "2.0.58"
     },
     {
       "logicalId": "ai-quota",
@@ -1781,7 +1781,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-quota",
-      "declaredVersion": "2.0.8"
+      "declaredVersion": "2.0.9"
     },
     {
       "logicalId": "ai-rag",
@@ -1893,7 +1893,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-statistics",
-      "declaredVersion": "2.0.6"
+      "declaredVersion": "2.0.7"
     },
     {
       "logicalId": "ai-token-ratelimit",
@@ -1921,7 +1921,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-token-ratelimit",
-      "declaredVersion": "2.0.5"
+      "declaredVersion": "2.0.6"
     },
     {
       "logicalId": "ai-transformer",
@@ -2418,7 +2418,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/model-mapper",
-      "declaredVersion": "2.0.5"
+      "declaredVersion": "2.0.6"
     },
     {
       "logicalId": "model-router",
@@ -2888,7 +2888,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/jwt-auth",
-      "declaredVersion": "2.0.1"
+      "declaredVersion": "2.0.2"
     },
     {
       "logicalId": "key-auth",
@@ -2950,7 +2950,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/key-rate-limit",
-      "declaredVersion": "2.0.1"
+      "declaredVersion": "2.0.2"
     },
     {
       "logicalId": "oauth",
@@ -2982,7 +2982,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/oauth",
-      "declaredVersion": "2.0.1"
+      "declaredVersion": "2.0.2"
     },
     {
       "logicalId": "request-block",
@@ -3092,7 +3092,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "1.0.8"
+      "declaredVersion": "1.0.11"
     },
     {
       "logicalId": "ai-memory",
@@ -3120,7 +3120,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "0.1.12"
+      "declaredVersion": "0.1.13"
     },
     {
       "logicalId": "key-auth",

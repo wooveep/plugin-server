@@ -16,6 +16,10 @@ import (
 
 // Property is request-local FilterState, shared by filters and never sent on HTTP.
 const Property = "modelfusion.delivery.usage.v1"
+
+// RouterDeliveryProperty identifies a call whose final delivery is submitted
+// by the upstream stream observer after the response headers have been sent.
+const RouterDeliveryProperty = "modelfusion.delivery.router-call.v1"
 const maxBytes = 2048 // A bounded identity and four decimal counters, without secrets.
 
 type observation struct {
@@ -42,7 +46,7 @@ func Publish(delivery executionfacts.Envelope) error {
 		return errors.New("usage observation requires its original delivery identity")
 	}
 	o := observation{Version: "1", CallID: delivery.CallID, Model: delivery.PublicModel, Source: u.Source, Input: u.Quantities["input"], Output: u.Quantities["output"], Cached: u.Quantities["cache_hit"]}
-	if delivery.OperationKind == executionfacts.NativeEmbeddingOperation && o.Output == "" {
+	if executionfacts.IsInputOnly(delivery.OperationKind) && o.Output == "" {
 		o.Output = "0"
 	}
 	// Financial quantities retain their exact original strings. Consumers retain

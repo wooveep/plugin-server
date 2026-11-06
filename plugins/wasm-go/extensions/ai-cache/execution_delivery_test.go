@@ -129,6 +129,46 @@ func replyNativeRegisteredCacheLookup(t *testing.T, host test.TestHost, body []b
 	host.CallOnRedisCall(0, test.CreateRedisRespString(nativeCacheExecutionRecord(t, body, stream)))
 }
 
+func TestNativeRouterMissCapturesOnlyCompleteBoundedStreams(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		finished := `data: {"choices":[{"delta":{"content":"answer"},"finish_reason":"stop"}]}` + "\r\n\r"
+		for _, sample := range []struct {
+			name, first, last string
+			cached, oversized bool
+		}{
+			{"complete", finished, "\ndata: [DONE]\r\n\r\n", true, false},
+			{"missing-terminal", finished, "\n", false, false},
+			{"oversized", strings.Repeat("x", maxRouterCacheStreamBytes+1), "data: [DONE]\n\n", false, true},
+		} {
+			t.Run(sample.name, func(t *testing.T) {
+				cfg, err := sjson.SetBytes(nativeCacheExecutionConfig(t, true), "native_execution.router_miss", true)
+				require.NoError(t, err)
+				host, status := test.NewTestHost(cfg)
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+				require.Equal(t, types.HeaderStopIteration, host.CallOnHttpRequestHeaders(nativeCacheExecutionHeaders(true)))
+				body, err := sjson.SetBytes([]byte(nativeCacheTestBody), "stream", true)
+				require.NoError(t, err)
+				require.Equal(t, types.ActionPause, host.CallOnHttpRequestBody(body))
+				host.CallOnHttpCall([][2]string{{":status", "200"}}, []byte(`{"data":{"decision":"miss"}}`))
+				host.CallOnHttpResponseHeaders([][2]string{{":status", "200"}, {"content-type", "text/event-stream"}})
+				callThinResponseStreamChunks(t, host, sample.first, sample.last)
+				if sample.oversized {
+					require.Empty(t, host.GetRedisCalloutAttributes())
+				} else {
+					event, found := thinResponseCaptureEvent(t, host)
+					require.True(t, found)
+					if sample.cached {
+						require.Equal(t, "answer", event["assistant_content"])
+					} else {
+						require.Empty(t, event["assistant_content"])
+					}
+				}
+			})
+		}
+	})
+}
+
 func TestNativeCacheReplayBridgesOnlyTheOriginalCallDelivery(t *testing.T) {
 	test.RunTest(t, func(t *testing.T) {
 		for _, stream := range []bool{false, true} {
