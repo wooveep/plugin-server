@@ -65,21 +65,22 @@ const (
 	MultiKeyRequestPhaseScript = `
 		local results = {}
 		for i = 1, #KEYS do
-			local threshold = tonumber(ARGV[2*i - 1])
+			-- Keep token counts as bulk strings for the 32-bit Wasm RESP decoder.
+			local threshold = ARGV[2*i - 1]
 			local window    = tonumber(ARGV[2*i])
 			local current = redis.call('get', KEYS[i])
 			local ttl = redis.call('ttl', KEYS[i])
 
 			-- 键不存在时，返回初始状态（计数0，窗口时间为过期时间）
 			if not current then
-				table.insert(results, {threshold, 0, window})
+				table.insert(results, {threshold, "0", window})
 			else
 				-- 修复异常过期时间（确保窗口有效）
 				if ttl < 0 then
 					ttl = window
 				end
 				-- 返回窗口状态：阈值、当前计数、剩余时间
-				table.insert(results, {threshold, tonumber(current), ttl})
+				table.insert(results, {threshold, current, ttl})
 			end
 		end
 		return results
@@ -115,12 +116,6 @@ const (
 
 	TokenRateLimitCount = "token_ratelimit_count" // metric name
 )
-
-type LimitContext struct {
-	count     int
-	remaining int
-	reset     int
-}
 
 // MatchedRule 表示请求阶段命中的单条限流规则（global 或 rule_item）
 type MatchedRule struct {
@@ -185,8 +180,6 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitCo
 		}
 
 		// 单次遍历：触发即 return；未触发则放行。
-		// ai-token-ratelimit 不对外暴露 LimitContext（与 cluster-key-ratelimit 不同，
-		// 后者通过 X-RateLimit-* 头可观测 tightest 选择），因此此处不再写入 Context。
 		for i, ruleResult := range arr {
 			ruleState := ruleResult.Array()
 			if len(ruleState) != 3 {
@@ -194,7 +187,14 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitCo
 				_ = proxywasm.ResumeHttpRequest()
 				return
 			}
-			threshold, current, ttl := ruleState[0].Integer(), ruleState[1].Integer(), ruleState[2].Integer()
+			threshold, thresholdErr := strconv.ParseInt(ruleState[0].String(), 10, 64)
+			current, currentErr := strconv.ParseInt(ruleState[1].String(), 10, 64)
+			if thresholdErr != nil || currentErr != nil {
+				log.Errorf("invalid Redis token counts for rule[%d]", i)
+				_ = proxywasm.ResumeHttpRequest()
+				return
+			}
+			ttl := ruleState[2].Integer()
 			log.Debugf("ai-token-ratelimit:   eval rule[%d] key=%s threshold=%d current=%d ttl=%ds",
 				i, matched[i].key, threshold, current, ttl)
 
@@ -204,11 +204,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitCo
 					i, matched[i].key, current, threshold, cfg.RejectedCode)
 				ctx.SetUserAttribute("token_ratelimit_status", "limited")
 				_ = ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
-				rejected(cfg, LimitContext{
-					count:     threshold,
-					remaining: threshold - current,
-					reset:     ttl,
-				})
+				rejected(cfg, ttl)
 				return
 			}
 		}
@@ -475,9 +471,9 @@ func generateMetricName(route, cluster, model, consumer, metricName string) stri
 	return fmt.Sprintf("route.%s.upstream.%s.model.%s.consumer.%s.metric.%s", route, cluster, model, consumer, metricName)
 }
 
-func rejected(cfg config.AiTokenRateLimitConfig, context LimitContext) {
+func rejected(cfg config.AiTokenRateLimitConfig, reset int) {
 	headers := make(map[string][]string)
-	headers[RateLimitResetHeader] = []string{strconv.Itoa(context.reset)}
+	headers[RateLimitResetHeader] = []string{strconv.Itoa(reset)}
 	_ = proxywasm.SendHttpResponseWithDetail(
 		cfg.RejectedCode, "ai-token-ratelimit.rejected", util.ReconvertHeaders(headers), []byte(cfg.RejectedMsg), -1)
 

@@ -1921,7 +1921,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-token-ratelimit",
-      "declaredVersion": "2.0.7"
+      "declaredVersion": "2.0.8"
     },
     {
       "logicalId": "ai-transformer",

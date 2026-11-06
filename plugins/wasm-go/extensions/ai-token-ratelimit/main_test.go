@@ -884,6 +884,49 @@ func TestCompleteFlow(t *testing.T) {
 	})
 }
 
+func TestRequestPhaseSupportsWideTokenCounts(t *testing.T) {
+	config := json.RawMessage(`{
+		"rule_name": "wide-tpm",
+		"global_threshold": {"token_per_minute": 2500000000},
+		"redis": {"service_name": "redis.static", "service_port": 6379}
+	}`)
+	for _, tc := range []struct {
+		current string
+		limited bool
+	}{
+		{current: "0", limited: false},
+		{current: "2500000000", limited: false},
+		{current: "2500000001", limited: true},
+	} {
+		t.Run(tc.current, func(t *testing.T) {
+			host, status := test.NewTestHost(config)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+			action := host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "example.com"},
+				{":path", "/api/test"},
+				{":method", "POST"},
+			})
+			require.Equal(t, types.HeaderStopAllIterationAndWatermark, action)
+			response := resp.ArrayValue([]resp.Value{resp.ArrayValue([]resp.Value{
+				resp.StringValue("2500000000"),
+				resp.StringValue(tc.current),
+				resp.IntegerValue(60),
+			})})
+			wire, err := response.MarshalRESP()
+			require.NoError(t, err)
+			host.CallOnRedisCall(0, wire)
+			if tc.limited {
+				require.NotNil(t, host.GetLocalResponse())
+				require.Equal(t, uint32(429), host.GetLocalResponse().StatusCode)
+			} else {
+				require.Nil(t, host.GetLocalResponse())
+			}
+			host.CompleteHttp()
+		})
+	}
+}
+
 // multiRuleResp 构建多规则嵌套 Redis 响应（RESP wire format）。
 // test.CreateRedisRespArray 不支持嵌套数组，因此直接用 resp.Writer 构造。
 // 每个 [3]int 元组为 {threshold, current, ttl}。
