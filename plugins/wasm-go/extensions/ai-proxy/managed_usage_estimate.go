@@ -50,9 +50,7 @@ func availableManagedUsage(s *managedExecutionState, outcome executionfacts.Atte
 	if err != nil {
 		return outcome.Usage
 	}
-	quantities := map[string]string{
-		"input": strconv.FormatInt(input, 10), "output": strconv.FormatInt(output, 10), "cache_write": "0",
-	}
+	quantities := map[string]string{"input": strconv.FormatInt(input, 10), "output": strconv.FormatInt(output, 10)}
 	for _, document := range tokenestimate.Documents(body) {
 		for meter, paths := range map[string][]string{
 			"input":     {"usage.prompt_tokens", "usage.input_tokens", "message.usage.input_tokens", "usageMetadata.promptTokenCount"},
@@ -67,16 +65,11 @@ func availableManagedUsage(s *managedExecutionState, outcome executionfacts.Atte
 			}
 		}
 	}
-	if s.cacheMode == managedCacheExplicit {
-		if s.config.profile.UpstreamProtocol == managedProtocolMessages {
-			// Partial Messages input_tokens may only include the uncached input.
-			quantities["input"] = strconv.FormatInt(input, 10)
-		}
-		// Classify the available input as writes when the request opted in.
-		quantities["cache_write"] = quantities["input"]
-		quantities["cache_hit"] = "0"
-		quantities["cache_miss"] = quantities["input"]
-	} else if hit, ok := quantities["cache_hit"]; ok {
+	if s.cacheMode == managedCacheExplicit && s.config.profile.UpstreamProtocol == managedProtocolMessages {
+		// Partial Messages input_tokens may only include the uncached input.
+		quantities["input"] = strconv.FormatInt(input, 10)
+	}
+	if hit, ok := quantities["cache_hit"]; ok {
 		inputCount, _ := new(big.Int).SetString(quantities["input"], 10)
 		hitCount, _ := new(big.Int).SetString(hit, 10)
 		if hitCount.Cmp(inputCount) <= 0 {
@@ -85,9 +78,6 @@ func availableManagedUsage(s *managedExecutionState, outcome executionfacts.Atte
 			delete(quantities, "cache_hit")
 		}
 	}
-	if s.cacheMode != "" {
-		quantities["cache_read_mode"] = string(s.cacheMode)
-	}
 	return &executionfacts.Usage{Status: "estimated", Unit: "token", Source: "estimator", Quantities: quantities,
-		EstimatorVersion: "tiktoken-go.v0.7.0/" + string(tokenestimate.EncodingForModel(model)) + "/available-text.v3"}
+		EstimatorVersion: "tiktoken-go.v0.7.0/" + string(tokenestimate.EncodingForModel(model)) + "/available-text.v4"}
 }

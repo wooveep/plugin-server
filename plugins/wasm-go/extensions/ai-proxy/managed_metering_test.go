@@ -72,6 +72,23 @@ func TestN02N03NormalizeProviderCacheWritesAndTTL(t *testing.T) {
 	require.True(t, hasManagedCacheControl(gjson.Parse(`{"cache_control":{"type":"ephemeral"}}`), managedProtocolMessages))
 }
 
+func TestCacheWriteWithoutReadCounter(t *testing.T) {
+	for _, usage := range []*executionfacts.Usage{
+		managedOpenAIUsage(map[string]json.RawMessage{"usage": json.RawMessage(`{"prompt_tokens":1000,"completion_tokens":100,"prompt_tokens_details":{"cache_creation_input_tokens":300}}`)}),
+		managedResponsesUsage(json.RawMessage(`{"input_tokens":1000,"output_tokens":100,"input_tokens_details":{"cache_write_tokens":300}}`)),
+		managedMessagesUsage(json.RawMessage(`{"input_tokens":700,"output_tokens":100,"cache_creation_input_tokens":300}`)),
+	} {
+		require.Equal(t, "reported", usage.Status)
+		require.Equal(t, "1000", usage.Quantities["input"])
+		require.Equal(t, "300", usage.Quantities["cache_write"])
+	}
+	readOnly := managedMessagesUsage(json.RawMessage(`{"input_tokens":700,"output_tokens":100,"cache_read_input_tokens":300}`))
+	require.Equal(t, "reported", readOnly.Status)
+	require.Equal(t, "1000", readOnly.Quantities["input"])
+	require.Equal(t, "300", readOnly.Quantities["cache_hit"])
+	require.NotContains(t, readOnly.Quantities, "cache_write")
+}
+
 func TestCacheWriteAliasesUseOneObservedQuantity(t *testing.T) {
 	for _, tc := range []struct{ name, detail, write, short, long string }{
 		{"same nonzero", `"cache_creation_input_tokens":300,"cache_write_tokens":300,"cache_creation":{"ttl_30m_tokens":100},"cache_write_tokens_details":{"ttl_30m_tokens":100,"ttl_12h_tokens":200}`, "300", "100", "200"},

@@ -67,10 +67,14 @@ func managedCacheWriteCount(fields map[string]json.RawMessage) (count *big.Int, 
 	return count, true
 }
 
-// A write is a subset of the legacy cache-miss counter. Keep that counter
-// intact for existing prices and carry the observed split separately.
+// A write is a subset of the legacy cache-miss counter, which defaults to
+// the full input when the supplier omits its read counter.
 func managedCacheWrite(quantities map[string]string, write *big.Int, creation, writeDetails json.RawMessage) {
-	miss, valid := managedInteger(quantities["cache_miss"])
+	input := quantities["cache_miss"]
+	if input == "" {
+		input = quantities["input"]
+	}
+	miss, valid := managedInteger(input)
 	if !valid || write.Cmp(miss) > 0 {
 		return
 	}

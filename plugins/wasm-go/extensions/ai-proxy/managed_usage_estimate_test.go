@@ -48,7 +48,12 @@ func TestExplicitMessagesEstimateUsesTotalInput(t *testing.T) {
 		Usage:     executionfacts.MissingTokenUsage("omitted"),
 	}
 	usage := availableManagedUsage(state, outcome, []byte(`{"usage":{"input_tokens":1,"cache_read_input_tokens":2}}`))
-	if usage.Quantities["input"] != "3" || usage.Quantities["cache_write"] != "3" || usage.Quantities["cache_hit"] != "0" {
-		t.Fatal("partial uncached input replaced the full explicit-cache estimate", usage)
+	if usage.Quantities["input"] != "3" || usage.Quantities["cache_hit"] != "2" || usage.Quantities["cache_miss"] != "1" {
+		t.Fatal("estimate did not retain the total input and reported hit", usage)
+	}
+	for _, key := range []string{"cache_write", "cache_read_mode", "thinking_mode"} {
+		if _, exists := usage.Quantities[key]; exists {
+			t.Fatal("estimate invented a conditional meter", key, usage)
+		}
 	}
 }

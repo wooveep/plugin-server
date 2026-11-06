@@ -418,17 +418,26 @@ func managedMessagesUsage(raw json.RawMessage) *executionfacts.Usage {
 		return executionfacts.MissingTokenUsage(managedCacheWriteConflict)
 	}
 	if hasRead || hasWrite {
-		read, readOK := managedCount(readRaw)
-		if !readOK || write == nil {
-			return missing()
+		read := new(big.Int)
+		if hasRead {
+			var ok bool
+			read, ok = managedCount(readRaw)
+			if !ok {
+				return missing()
+			}
 		}
-		miss := new(big.Int).Add(input, write)
+		miss := new(big.Int).Set(input)
+		if hasWrite {
+			miss.Add(miss, write)
+		}
 		total := new(big.Int).Add(new(big.Int).Set(miss), read)
 		if total.BitLen() > 128 {
 			return missing()
 		}
 		quantities["input"], quantities["cache_hit"], quantities["cache_miss"] = total.String(), read.String(), miss.String()
-		managedCacheWrite(quantities, write, usage["cache_creation"], usage["cache_write_tokens_details"])
+		if hasWrite {
+			managedCacheWrite(quantities, write, usage["cache_creation"], usage["cache_write_tokens_details"])
+		}
 		quantities["cache_read_mode"] = "1"
 	}
 	return &executionfacts.Usage{Status: "reported", Unit: "token", Source: "provider", Quantities: quantities}
