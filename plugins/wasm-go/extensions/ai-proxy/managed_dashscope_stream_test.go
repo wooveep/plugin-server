@@ -51,12 +51,10 @@ func TestRouterDashScopeStreamKeepsCumulativeTextOnceForEstimation(t *testing.T)
 	require.Equal(t, "Hello world", tokenestimate.ResponseText(stream.estimateBody()))
 }
 
-func TestInterruptedDashScopeUsageEstimatesCacheWrites(t *testing.T) {
-	for _, tc := range []struct {
-		name, marker, mode, write string
-	}{
-		{name: "implicit", mode: "0", write: "0"},
-		{name: "explicit", marker: `,"cache_control":{"type":"ephemeral"}`, mode: "1", write: "3"},
+func TestInterruptedDashScopeUsageEstimatesOnlyBaseTokens(t *testing.T) {
+	for _, tc := range []struct{ name, marker string }{
+		{name: "implicit"},
+		{name: "explicit", marker: `,"cache_control":{"type":"ephemeral"}`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			fixture := managedConfigFixture()
@@ -91,15 +89,7 @@ func TestInterruptedDashScopeUsageEstimatesCacheWrites(t *testing.T) {
 			require.Equal(t, "estimated", usage.Status)
 			require.Equal(t, "3", usage.Quantities["input"])
 			require.Equal(t, "2", usage.Quantities["output"])
-			require.Equal(t, tc.write, usage.Quantities["cache_write"])
-			require.Equal(t, tc.mode, usage.Quantities["cache_read_mode"])
-			if tc.mode == "1" {
-				require.Equal(t, "0", usage.Quantities["cache_hit"])
-				require.Equal(t, "3", usage.Quantities["cache_miss"])
-			} else {
-				require.NotContains(t, usage.Quantities, "cache_hit")
-			}
-			require.NotContains(t, usage.Quantities, "cache_write_inapplicable")
+			require.Equal(t, map[string]string{"input": "3", "output": "2"}, usage.Quantities)
 		})
 	}
 }

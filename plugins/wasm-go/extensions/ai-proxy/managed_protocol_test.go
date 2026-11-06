@@ -189,10 +189,10 @@ func TestManagedProtocolMissingInvalidAndExplicitZeroUsageStayDistinct(t *testin
 		t.Fatal("explicit observed zero was treated as missing")
 	}
 	messages := managedProtocolFixture(t, managedProtocolMessages, managedProtocolMessages)
-	for _, raw := range []string{`{"input_tokens":1,"output_tokens":0,"cache_read_input_tokens":1}`, `{"input_tokens":340282366920938463463374607431768211455,"output_tokens":0,"cache_read_input_tokens":1,"cache_creation_input_tokens":0}`} {
+	for _, raw := range []string{`{"input_tokens":1,"output_tokens":0,"cache_read_input_tokens":-1}`, `{"input_tokens":340282366920938463463374607431768211455,"output_tokens":0,"cache_read_input_tokens":1,"cache_creation_input_tokens":0}`} {
 		observed := messages.ObserveResponse(200, managedProtocolJSONHeaders, []byte(`{"stop_reason":"end_turn","usage":`+raw+`}`), true)
 		if observed.Usage.Status != "missing" || observed.Usage.Quantities != nil {
-			t.Fatal("incomplete/overflowing Messages cache usage became a billable number")
+			t.Fatal("invalid or overflowing Messages cache usage became a billable number")
 		}
 	}
 }
