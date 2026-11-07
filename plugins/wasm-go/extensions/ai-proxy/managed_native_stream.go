@@ -55,7 +55,7 @@ func (s *managedNativeStream) push(chunk []byte, after func(managedProtocolEvent
 		if s.collectText && !s.textLimited && (kind == "response.output_text.delta" ||
 			kind == "response.function_call_arguments.delta" || kind == "content_block_delta") {
 			text := tokenestimate.ResponseText(event.Data)
-			if s.text.Len()+len(text) <= int(defaultMaxBodyBytes) {
+			if s.text.Len()+len(text) <= managedEstimateTextBytes {
 				s.text.WriteString(text)
 			} else {
 				s.textLimited = true

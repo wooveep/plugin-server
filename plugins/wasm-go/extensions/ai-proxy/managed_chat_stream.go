@@ -9,6 +9,10 @@ import (
 	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
 )
 
+// Token estimation must not retain an entire long stream. Crossing this limit
+// disables the local estimate, while forwarding and provider usage continue.
+const managedEstimateTextBytes = 1024 * 1024
+
 type managedChatStream struct {
 	completions   bool
 	decoder       managedSSEDecoder
@@ -79,7 +83,7 @@ func (s *managedChatStream) observeEvent(event managedProtocolEvent) {
 		s.thinking = s.thinking || managedQwenReasoning(event.Data)
 		if !s.textLimited {
 			text := tokenestimate.ResponseText(event.Data)
-			if s.text.Len()+len(text) <= int(defaultMaxBodyBytes) {
+			if s.text.Len()+len(text) <= managedEstimateTextBytes {
 				s.text.WriteString(text)
 			} else {
 				s.textLimited = true

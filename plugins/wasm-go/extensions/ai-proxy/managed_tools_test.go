@@ -5,12 +5,55 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
+	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/resp"
 )
+
+func TestManagedRouterToolPolicyStreamsChatBeforeTerminalUsage(t *testing.T) {
+	fixture := managedConfigFixture()
+	fixture["provider"] = map[string]interface{}{
+		"type": "qwen", "apiTokens": []string{"controlled-upstream-key"}, "qwenEnableCompatible": true,
+	}
+	settings := fixture["managed_execution"].(managedSettings)
+	settings.InputProtocol, settings.UpstreamProtocol = managedProtocolChat, managedProtocolChat
+	settings.UpstreamPath = "/compatible-mode/v1/chat/completions"
+	settings.SendTransport, settings.StreamProjection, settings.RouterToolUsage = "router", true, true
+	settings.ToolPolicy = &managedToolSettings{Supplier: "qwen", PriceKey: "modelfusion:tool-prices:asset-1"}
+	fixture["managed_execution"] = settings
+	h := newManagedHost(t, fixture)
+	release := fixture["_modelfusion_execution"].(managedRelease)
+	require.NoError(t, h.host.SetProperty([]string{"cluster_name"}, []byte(release.Descriptor.ClusterRef)))
+	request := []byte(`{"model":"public-model","stream":true,"enable_search":false,"messages":[{"role":"user","content":"hello"}]}`)
+	h.start(t, request, bytes.Replace(request, []byte("public-model"), []byte("upstream-model"), 1))
+	require.Nil(t, h.host.GetSentLocalResponse(h.id))
+	require.Empty(t, h.host.GetCalloutAttributesFromContext(h.id))
+	require.NoError(t, h.host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
+	require.Equal(t, types.ActionContinue, h.host.CallOnResponseHeaders(h.id,
+		[][2]string{{":status", "200"}, {"content-type", "text/event-stream"}}, false))
+	head := []byte("data: {\"id\":\"chat-1\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"first\"}}]}\n\n")
+	require.Equal(t, types.ActionContinue, h.host.CallOnResponseBody(h.id, head, false))
+	require.Contains(t, string(h.host.GetCurrentResponseBody(h.id)), "first")
+	require.Len(t, h.records(t), 1)
+
+	tail := []byte("data: {\"choices\":[{\"index\":0,\"finish_reason\":\"stop\"}]}\n\ndata: {\"choices\":[],\"usage\":{\"prompt_tokens\":219,\"completion_tokens\":2119}}\n\ndata: [DONE]\n\n")
+	require.Equal(t, types.ActionContinue, h.host.CallOnResponseBody(h.id, tail, true))
+	records := h.records(t)
+	require.Len(t, records, 3)
+	attempt := decodeManagedFact(t, records[1].raw)
+	delivery := decodeManagedFact(t, records[2].raw)
+	require.Equal(t, executionfacts.ToolSchemaVersion, attempt.SchemaVersion)
+	require.Equal(t, "router", attempt.SendTransport)
+	require.Equal(t, "reported", attempt.Usage.Status)
+	require.Equal(t, "2119", attempt.Usage.Quantities["output"])
+	require.Equal(t, "known_zero", attempt.ToolUsage[fixedtools.WebSearch].Status)
+	require.Equal(t, attempt.Usage, delivery.Usage)
+	require.Equal(t, attempt.ToolUsage, delivery.ToolUsage)
+}
 
 func TestDirectedConversionCannotRestoreDefaultSearchAfterExplicitOff(t *testing.T) {
 	fixture := managedConfigFixture()

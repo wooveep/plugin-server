@@ -18,7 +18,7 @@ type managedSSEDecoder struct {
 	hasData   bool
 	firstLine bool
 	skipLF    bool
-	count     int
+	onComment func()
 }
 
 func (d *managedSSEDecoder) push(chunk []byte, event func(managedProtocolEvent)) error {
@@ -57,13 +57,17 @@ func (d *managedSSEDecoder) push(chunk []byte, event func(managedProtocolEvent))
 		}
 		if len(line) == 0 {
 			if d.hasData {
-				if d.count == 65536 {
-					return errors.New("managed SSE event budget exceeded")
-				}
-				d.count++
 				event(managedProtocolEvent{Name: d.name, Data: d.data})
 			}
 			d.data, d.name, d.hasData = nil, "", false
+			continue
+		}
+		// Comments carry liveness, not provider data. Notify as soon as a
+		// complete comment line arrives, independently of a following event.
+		if line[0] == ':' {
+			if d.onComment != nil {
+				d.onComment()
+			}
 			continue
 		}
 		field, value, _ := bytes.Cut(line, []byte(":"))

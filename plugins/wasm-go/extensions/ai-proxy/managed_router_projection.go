@@ -14,7 +14,7 @@ import (
 
 func validateManagedRouterProfile(c *managedExecutionConfig) error {
 	settings, profile := c.settings, c.profile
-	if settings.SendTransport == "" && !settings.StreamProjection && settings.StreamProtocol == "" {
+	if settings.SendTransport == "" && !settings.StreamProjection && settings.StreamProtocol == "" && !settings.RouterToolUsage {
 		return nil
 	}
 	protocol := profile.InputProtocol
@@ -41,7 +41,8 @@ func validateManagedRouterProfile(c *managedExecutionConfig) error {
 		return errors.New("unsupported managed Router stream protocol")
 	}
 	if settings.SendTransport != "router" || settings.StreamProjection != (settings.ProtocolMode == "auto" && !dashScope) ||
-		settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission || settings.TextExecution != nil || settings.ToolPolicy != nil ||
+		settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission || settings.TextExecution != nil ||
+		settings.RouterToolUsage != (settings.ToolPolicy != nil) || settings.RouterToolUsage && dashScope ||
 		!dashScope && c.vendor != nil && c.vendor.NativeResponseFormat() != "" {
 		return errors.New("unsupported managed Router response profile")
 	}
@@ -88,6 +89,10 @@ func projectManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 		}
 		r.appendProjection(&output, clientresponse.Event{Name: event.Name, Data: event.Data})
 		r.projectedError = isError
+	}, func() {
+		if !r.projectionFailed && !r.projectedError {
+			output.WriteString(": keep-alive\n\n")
+		}
 	})
 	if !end || r.projectedError {
 		return output.Bytes()

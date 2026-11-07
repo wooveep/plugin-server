@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
@@ -10,6 +12,65 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
+
+func TestRouterUsesOnlyExplicitBindingTotalTimeout(t *testing.T) {
+	for _, timeout := range []uint32{0, 1500, 90000} {
+		t.Run(strconv.FormatUint(uint64(timeout), 10), func(t *testing.T) {
+			fixture := managedConfigFixture()
+			settings := fixture["managed_execution"].(managedSettings)
+			settings.SendTransport, settings.StreamProjection = "router", true
+			settings.TimeoutMS = 30000
+			if timeout != 0 {
+				settings.RouterTimeoutMS = &timeout
+			}
+			fixture["managed_execution"] = settings
+			h := newManagedHost(t, fixture)
+			release := fixture["_modelfusion_execution"].(managedRelease)
+			require.NoError(t, h.host.SetProperty([]string{"cluster_name"}, []byte(release.Descriptor.ClusterRef)))
+			h.start(t, []byte(managedOriginalBody), []byte(managedMappedBody))
+			require.Nil(t, h.host.GetSentLocalResponse(h.id))
+			require.Empty(t, h.host.GetCalloutAttributesFromContext(h.id))
+			value, err := managedSingleHeader(h.host.GetCurrentRequestHeaders(h.id), "x-envoy-upstream-rq-timeout-ms")
+			require.NoError(t, err)
+			require.Equal(t, strconv.FormatUint(uint64(timeout), 10), value)
+		})
+	}
+}
+
+func TestRouterProjectionForwardsFragmentedCommentActivityImmediately(t *testing.T) {
+	for _, protocol := range []string{clientresponse.Chat, clientresponse.Responses, clientresponse.Messages} {
+		t.Run(protocol, func(t *testing.T) {
+			r := &managedRouterResponse{projection: clientresponse.NewStreamProjection(clientresponse.Policy{Protocol: protocol, Profile: clientresponse.Qwen})}
+			if protocol == clientresponse.Chat {
+				r.chat = &managedChatStream{}
+			} else {
+				r.native = newManagedNativeStream(protocol, true, true)
+			}
+			s := &managedExecutionState{router: r}
+			for _, value := range []byte(": private-upstream heartbeat") {
+				require.Empty(t, projectManagedRouterChunk(nil, s, []byte{value}, false))
+			}
+			// No blank line, terminal or usage is needed to forward liveness.
+			require.Equal(t, ": keep-alive\n\n", string(projectManagedRouterChunk(nil, s, []byte("\r"), false)))
+			require.Empty(t, projectManagedRouterChunk(nil, s, []byte("\n\r\n"), false))
+		})
+	}
+}
+
+func TestRouterEstimateLimitDoesNotStopForwardingOrLoseReportedUsage(t *testing.T) {
+	r := &managedRouterResponse{chat: &managedChatStream{collectText: true}, projection: clientresponse.NewStreamProjection(clientresponse.Policy{Protocol: clientresponse.Chat, Profile: clientresponse.Qwen})}
+	s := &managedExecutionState{router: r}
+	event := []byte(`data: {"choices":[{"index":0,"delta":{"content":"` + strings.Repeat("x", 64*1024) + `"}}]}` + "\n\n")
+	for range 17 {
+		require.Contains(t, string(projectManagedRouterChunk(nil, s, event, false)), strings.Repeat("x", 256))
+	}
+	require.True(t, r.chat.textLimited)
+	require.Zero(t, r.chat.text.Len())
+	tail := []byte("data: {\"choices\":[{\"index\":0,\"finish_reason\":\"stop\"}]}\n\ndata: {\"choices\":[],\"usage\":{\"prompt_tokens\":3,\"completion_tokens\":17,\"total_tokens\":20}}\n\ndata: [DONE]\n\n")
+	require.Contains(t, string(projectManagedRouterChunk(nil, s, tail, true)), "[DONE]")
+	require.Equal(t, "reported", r.streamObservation().Usage.Status)
+	require.Equal(t, "17", r.streamObservation().Usage.Quantities["output"])
+}
 
 func TestRouterConvertedStreamUsesOnlyVerifiedChatTerminal(t *testing.T) {
 	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption())

@@ -23,6 +23,8 @@ type managedRouterResponse struct {
 	chat               *managedChatStream
 	native             *managedNativeStream
 	dashScope          *managedDashScopeStream
+	toolProtocol       string
+	toolUsage          gjson.Result
 	digest             hash.Hash
 	jsonOutcome        *executionfacts.AttemptOutcome
 	transportEnded     bool
@@ -42,14 +44,29 @@ type managedRouterResponse struct {
 	rawAliasesInvalid  bool
 }
 
-func (r *managedRouterResponse) pushStream(chunk []byte, after func(managedProtocolEvent)) {
+func (r *managedRouterResponse) pushStream(chunk []byte, after func(managedProtocolEvent), comment func()) {
+	if r.toolProtocol != "" {
+		forward := after
+		after = func(event managedProtocolEvent) {
+			r.toolUsage = managedToolEventUsage(r.toolProtocol, event.Data, r.toolUsage)
+			if forward != nil {
+				forward(event)
+			}
+		}
+	}
 	switch {
 	case r.chat != nil:
+		r.chat.decoder.onComment = comment
 		r.chat.pushEvents(chunk, after)
+		r.chat.decoder.onComment = nil
 	case r.dashScope != nil:
+		r.dashScope.decoder.onComment = comment
 		r.dashScope.push(chunk)
+		r.dashScope.decoder.onComment = nil
 	default:
+		r.native.decoder.onComment = comment
 		r.native.push(chunk, after)
+		r.native.decoder.onComment = nil
 	}
 }
 
@@ -86,6 +103,13 @@ func dispatchManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, re
 		{managedCallHeader, s.callID}, {managedAttemptHeader, s.attemptID},
 	}
 	headers = append(headers, request.Headers...)
+	// Rebuilt headers exclude caller-owned Envoy controls. The legacy callout
+	// default must not impose a total deadline on an active Router stream.
+	var timeout uint32
+	if s.config.settings.RouterTimeoutMS != nil {
+		timeout = *s.config.settings.RouterTimeoutMS
+	}
+	headers = append(headers, [2]string{"x-envoy-upstream-rq-timeout-ms", strconv.FormatUint(uint64(timeout), 10)})
 	if proxywasm.ReplaceHttpRequestBody(request.Body) != nil ||
 		proxywasm.ReplaceHttpRequestHeaders(headers) != nil ||
 		proxywasm.SetProperty([]string{observedusage.RouterDeliveryProperty}, []byte(s.callID)) != nil {
@@ -138,6 +162,9 @@ func observeManagedRouterHeaders(ctx wrapper.HttpContext, s *managedExecutionSta
 	stream, err := managedProtocolContentType(headers)
 	if err == nil && stream {
 		profile := s.config.profile
+		if s.config.settings.RouterToolUsage && len(s.requestedTools) > 0 {
+			r.toolProtocol = profile.UpstreamProtocol
+		}
 		switch profile.UpstreamProtocol {
 		case managedProtocolChat:
 			r.chat = &managedChatStream{collectText: true}
@@ -201,7 +228,7 @@ func observeManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 				err := s.publicAliases.ObserveEvent(clientresponse.Responses, clientresponse.Event{Name: event.Name, Data: event.Data})
 				r.rawAliasesInvalid = err != nil
 			}
-		})
+		}, nil)
 		if r.native.terminal {
 			if r.native.invalid || r.rawAliasesInvalid || len(r.heldRaw)+len(chunk) > int(defaultMaxBodyBytes) {
 				chunk = append(r.heldRaw, chunk...)
@@ -215,7 +242,7 @@ func observeManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 			}
 		}
 	} else {
-		r.pushStream(chunk, nil)
+		r.pushStream(chunk, nil, nil)
 	}
 	if !end {
 		return chunk
@@ -331,6 +358,7 @@ func finishManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, end 
 			ResponseModel: observed.ResponseModel,
 			EvidenceRefs:  []string{"router:" + s.attemptID + ":upstream-response"},
 		}
+		outcome.EvidenceRefs = appendManagedBailianEvidence(s, r.headers, outcome.EvidenceRefs)
 		if *r.status >= 400 {
 			outcome.ExecutionResult, outcome.ErrorClass = "failed", "upstream_http_error"
 		} else if r.transportEnded && *r.status >= 200 && *r.status < 300 &&
@@ -362,6 +390,7 @@ func finishManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, end 
 				outcome.Usage = availableManagedUsage(s, outcome, r.dashScope.estimateBody())
 			}
 		}
+		outcome.ToolUsage = managedToolMeasurements(s, r.toolUsage, outcome)
 	} else if r.jsonOutcome != nil {
 		outcome = *r.jsonOutcome
 	} else {

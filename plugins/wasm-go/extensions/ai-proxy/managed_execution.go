@@ -121,6 +121,7 @@ type managedRedisSettings struct {
 type managedSettings struct {
 	ProtocolMode       string                   `json:"-"`
 	SendTransport      string                   `json:"send_transport,omitempty"`
+	RouterToolUsage    bool                     `json:"router_tool_usage,omitempty"`
 	StreamProjection   bool                     `json:"stream_projection,omitempty"`
 	StreamProtocol     string                   `json:"stream_protocol,omitempty"`
 	ResponseProfile    clientresponse.Profile   `json:"response_profile,omitempty"`
@@ -135,6 +136,7 @@ type managedSettings struct {
 	CredentialValue    string                   `json:"credential_value,omitempty"`
 	Credentials        []managedCredential      `json:"credentials,omitempty"`
 	TimeoutMS          uint32                   `json:"timeout_ms,omitempty"`
+	RouterTimeoutMS    *uint32                  `json:"router_timeout_ms,omitempty"`
 	InputProtocol      string                   `json:"input_protocol,omitempty"`
 	UpstreamProtocol   string                   `json:"upstream_protocol,omitempty"`
 	UpstreamHealth     *managedHealthSettings   `json:"upstream_health,omitempty"`
@@ -214,7 +216,7 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 		return errors.New("managed execution target descriptor digest differs")
 	}
 	if parsed.settings.MediaDispatchMode == "managed_operation" {
-		if parsed.settings.SendTransport != "" || parsed.settings.StreamProtocol != "" || parsed.settings.StreamProjection {
+		if parsed.settings.SendTransport != "" || parsed.settings.StreamProtocol != "" || parsed.settings.StreamProjection || parsed.settings.RouterToolUsage {
 			return errors.New("managed media requires its callout transport")
 		}
 		if err := validateManagedMediaRelease(&parsed, value, cfg); err != nil {
@@ -359,6 +361,10 @@ func (c *managedExecutionConfig) validate() error {
 	}
 	if c.settings.TimeoutMS > 10*60*1000 {
 		return errors.New("managed execution timeout exceeds the supported callout boundary")
+	}
+	if timeout := c.settings.RouterTimeoutMS; timeout != nil &&
+		(c.settings.SendTransport != "router" || *timeout == 0 || *timeout > 10*60*1000) {
+		return errors.New("invalid explicit managed Router timeout")
 	}
 	r := &c.settings.Redis
 	if !managedID(r.ServiceName) || strings.IndexAny(r.ServiceName, " /:@?#[]") >= 0 || r.Database < 0 || r.Timeout < 0 {
@@ -1100,6 +1106,7 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 			source = "router"
 		}
 		o.EvidenceRefs = append(o.EvidenceRefs, source+":"+s.attemptID+":status:"+statusText)
+		o.EvidenceRefs = appendManagedBailianEvidence(s, headers, o.EvidenceRefs)
 	} else {
 		o.TransportError = "upstream_status_not_observed"
 	}
@@ -1177,6 +1184,37 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 	o.Usage = availableManagedUsage(s, o, body)
 	o.ToolUsage = managedToolUsage(s, body, o, headers)
 	return o
+}
+
+func appendManagedBailianEvidence(s *managedExecutionState, headers [][2]string, evidence []string) []string {
+	if s.config.profile.supplier != "qwen" {
+		return evidence
+	}
+	upstream, err := url.Parse("https://" + s.config.settings.Authority)
+	if err != nil {
+		return evidence
+	}
+	host := strings.ToLower(upstream.Hostname())
+	if host != "dashscope.aliyuncs.com" && host != "dashscope-intl.aliyuncs.com" &&
+		host != "dashscope-us.aliyuncs.com" && !strings.HasSuffix(host, ".maas.aliyuncs.com") {
+		return evidence
+	}
+	value, err := managedSingleHeader(headers, "x-request-id")
+	if err != nil {
+		return evidence
+	}
+	id, err := uuid.Parse(value)
+	if err != nil || id == uuid.Nil || id.String() != strings.ToLower(value) {
+		return evidence
+	}
+	evidence = append(evidence, "bailian-request:"+id.String(), "bailian-attempt:"+s.attemptID)
+	switch s.cacheMode {
+	case managedCacheImplicit:
+		evidence = append(evidence, "bailian-cache:implicit")
+	case managedCacheExplicit:
+		evidence = append(evidence, "bailian-cache:explicit")
+	}
+	return evidence
 }
 
 func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome) {

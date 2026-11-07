@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -129,42 +128,44 @@ func prepareManagedTools(ctx wrapper.HttpContext, s *managedExecutionState, body
 
 // Tool counts come from the original terminal usage, never output item counts.
 func managedToolUsage(s *managedExecutionState, body []byte, outcome executionfacts.AttemptOutcome, headers [][2]string) map[fixedtools.Tool]executionfacts.ToolMeasurement {
+	if s.config.settings.ToolPolicy == nil {
+		return nil
+	}
+	usage := gjson.Result{}
+	if stream, err := managedProtocolContentType(headers); err == nil && stream {
+		if events, err := managedProtocolEvents(body); err == nil {
+			for _, event := range events {
+				usage = managedToolEventUsage(s.config.profile.UpstreamProtocol, event.Data, usage)
+			}
+		}
+	} else {
+		usage = gjson.GetBytes(body, "usage")
+	}
+	return managedToolMeasurements(s, usage, outcome)
+}
+
+func managedToolEventUsage(protocol string, data []byte, previous gjson.Result) gjson.Result {
+	object := gjson.ParseBytes(data)
+	kind := object.Get("type").String()
+	if protocol == managedProtocolResponses {
+		if kind == "response.completed" || kind == "response.incomplete" || kind == "response.failed" {
+			return object.Get("response.usage")
+		}
+		return previous
+	}
+	if usage := object.Get("usage"); usage.IsObject() && (protocol != managedProtocolMessages || kind == "message_delta") {
+		return usage
+	}
+	return previous
+}
+
+func managedToolMeasurements(s *managedExecutionState, usage gjson.Result, outcome executionfacts.AttemptOutcome) map[fixedtools.Tool]executionfacts.ToolMeasurement {
 	p := s.config.settings.ToolPolicy
 	if p == nil {
 		return nil
 	}
 	result := map[fixedtools.Tool]executionfacts.ToolMeasurement{}
-	usage := gjson.Result{}
 	complete := outcome.BodyComplete && outcome.ExecutionResult != "unknown"
-	if stream, err := managedProtocolContentType(headers); err == nil && stream {
-		if events, err := managedProtocolEvents(body); err == nil {
-			for _, event := range events {
-				if bytes.Equal(event.Data, []byte("[DONE]")) {
-					continue
-				}
-				object := gjson.ParseBytes(event.Data)
-				kind := object.Get("type").String()
-				switch s.config.profile.UpstreamProtocol {
-				case managedProtocolResponses:
-					if kind == "response.completed" || kind == "response.incomplete" || kind == "response.failed" {
-						usage = object.Get("response.usage")
-					}
-				case managedProtocolMessages:
-					if kind == "message_delta" && object.Get("usage").IsObject() {
-						usage = object.Get("usage")
-					}
-				default:
-					if object.Get("usage").IsObject() {
-						usage = object.Get("usage")
-					}
-				}
-			}
-		} else {
-			complete = false
-		}
-	} else {
-		usage = gjson.GetBytes(body, "usage")
-	}
 	for _, tool := range [5]fixedtools.Tool{fixedtools.WebSearch, fixedtools.WebExtractor, fixedtools.CodeInterpreter, fixedtools.ImageSearch, fixedtools.WebSearchImage} {
 		zero := executionfacts.ToolMeasurement{Status: "known_zero", Count: "0", Source: "protocol_zero", ReasonCode: "tool_not_requested"}
 		if s.removedTools[tool] {

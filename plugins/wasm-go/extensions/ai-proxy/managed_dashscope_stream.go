@@ -43,7 +43,7 @@ func (s *managedDashScopeStream) push(chunk []byte) {
 		if !s.incremental {
 			s.text.Reset()
 		}
-		if s.text.Len()+len(text) > int(defaultMaxBodyBytes) {
+		if s.text.Len()+len(text) > managedEstimateTextBytes {
 			s.textLimited = true
 			s.text.Reset()
 			return
