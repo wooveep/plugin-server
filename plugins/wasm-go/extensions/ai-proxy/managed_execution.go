@@ -1208,6 +1208,15 @@ func appendManagedBailianEvidence(s *managedExecutionState, headers [][2]string,
 		return evidence
 	}
 	evidence = append(evidence, "bailian-request:"+id.String(), "bailian-attempt:"+s.attemptID)
+	thinkingPath := "enable_thinking"
+	if s.config.profile.UpstreamProtocol == managedProtocolDashScopeText || s.config.profile.UpstreamProtocol == managedProtocolDashScopeMultimodal {
+		thinkingPath = "parameters.enable_thinking"
+	}
+	if mode := gjson.GetBytes(s.publicRequest, thinkingPath); mode.Type == gjson.True {
+		evidence = append(evidence, "bailian-thinking:enabled")
+	} else if mode.Type == gjson.False {
+		evidence = append(evidence, "bailian-thinking:disabled")
+	}
 	switch s.cacheMode {
 	case managedCacheImplicit:
 		evidence = append(evidence, "bailian-cache:implicit")

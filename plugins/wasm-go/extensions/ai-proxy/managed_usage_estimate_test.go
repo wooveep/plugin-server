@@ -1,10 +1,28 @@
 package main
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 )
+
+func TestBailianThinkingEvidenceRetainsOnlyExplicitRequestModes(t *testing.T) {
+	for _, tc := range []struct{ protocol, body, want string }{
+		{managedProtocolChat, `{}`, ""},
+		{managedProtocolChat, `{"enable_thinking":false}`, "bailian-thinking:disabled"},
+		{managedProtocolChat, `{"enable_thinking":true}`, "bailian-thinking:enabled"},
+		{managedProtocolDashScopeText, `{"parameters":{"enable_thinking":false}}`, "bailian-thinking:disabled"},
+	} {
+		s := &managedExecutionState{attemptID: "attempt-1", publicRequest: []byte(tc.body),
+			config: &managedExecutionConfig{settings: managedSettings{Authority: "dashscope.aliyuncs.com"},
+				profile: managedProtocolProfile{supplier: "qwen", UpstreamProtocol: tc.protocol}}}
+		refs := appendManagedBailianEvidence(s, [][2]string{{"x-request-id", "a8a7295d-0699-991f-849a-97f767160077"}}, nil)
+		if tc.want != "" && !slices.Contains(refs, tc.want) || tc.want == "" && len(refs) != 2 {
+			t.Fatal("explicit mode evidence differs", tc, refs)
+		}
+	}
+}
 
 func TestManagedAvailableUsageRespectsProviderZeroAndEstimatesMissingParts(t *testing.T) {
 	state := &managedExecutionState{config: &managedExecutionConfig{}, requestText: "hello input"}
