@@ -53,6 +53,17 @@ func TestManagedReportedUsageStaysExact(t *testing.T) {
 	}
 }
 
+func TestImplicitCacheEstimateDoesNotPriceImpossibleExplicitWrites(t *testing.T) {
+	state := &managedExecutionState{config: &managedExecutionConfig{}, requestText: "available input", cacheMode: managedCacheImplicit}
+	usage := availableManagedUsage(state, executionfacts.AttemptOutcome{SendState: "observed_sent", Usage: executionfacts.MissingTokenUsage("omitted")}, nil)
+	if usage.Quantities["cache_write"] != "0" || usage.Quantities["cache_read_mode"] != "0" || usage.Source != "estimator" {
+		t.Fatal("known implicit cache constraints were lost", usage)
+	}
+	if _, exists := usage.Quantities["thinking_mode"]; exists {
+		t.Fatal("estimation invented an actual thinking mode", usage)
+	}
+}
+
 func TestExplicitMessagesEstimateUsesTotalInput(t *testing.T) {
 	state := &managedExecutionState{
 		config: &managedExecutionConfig{profile: managedProtocolProfile{

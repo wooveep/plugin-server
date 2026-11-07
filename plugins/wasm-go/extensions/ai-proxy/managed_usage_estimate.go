@@ -78,6 +78,12 @@ func availableManagedUsage(s *managedExecutionState, outcome executionfacts.Atte
 			delete(quantities, "cache_hit")
 		}
 	}
+	if s.cacheMode == managedCacheImplicit {
+		// This request mode cannot incur an explicit cache-write charge. Keep
+		// that known constraint while estimating the still-unknown counters.
+		quantities["cache_write"] = "0"
+		quantities["cache_read_mode"] = string(managedCacheImplicit)
+	}
 	return &executionfacts.Usage{Status: "estimated", Unit: "token", Source: "estimator", Quantities: quantities,
 		EstimatorVersion: "tiktoken-go.v0.7.0/" + string(tokenestimate.EncodingForModel(model)) + "/available-text.v5"}
 }

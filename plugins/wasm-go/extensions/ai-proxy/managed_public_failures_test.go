@@ -45,6 +45,12 @@ func publicFailureProbe(t *testing.T, client, upstream, supplier string, status 
 		require.Equal(t, managedBodyDigest([]byte(body)), fact.ResponseBodyDigest)
 		meters := []string{"input", "output", "cache_hit", "cache_miss"}
 		for meter := range fact.Usage.Quantities {
+			if meter == "cache_write" || meter == "cache_read_mode" {
+				require.Equal(t, "estimated", fact.Usage.Status)
+				require.Equal(t, "0", fact.Usage.Quantities["cache_write"])
+				require.Equal(t, "0", fact.Usage.Quantities["cache_read_mode"])
+				continue
+			}
 			require.Contains(t, meters, meter)
 		}
 	}

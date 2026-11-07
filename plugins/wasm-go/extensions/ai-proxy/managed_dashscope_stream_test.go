@@ -51,7 +51,7 @@ func TestRouterDashScopeStreamKeepsCumulativeTextOnceForEstimation(t *testing.T)
 	require.Equal(t, "Hello world", tokenestimate.ResponseText(stream.estimateBody()))
 }
 
-func TestInterruptedDashScopeUsageEstimatesOnlyBaseTokens(t *testing.T) {
+func TestInterruptedDashScopeEstimatePreservesKnownCacheMode(t *testing.T) {
 	for _, tc := range []struct{ name, marker string }{
 		{name: "implicit"},
 		{name: "explicit", marker: `,"cache_control":{"type":"ephemeral"}`},
@@ -89,7 +89,11 @@ func TestInterruptedDashScopeUsageEstimatesOnlyBaseTokens(t *testing.T) {
 			require.Equal(t, "estimated", usage.Status)
 			require.Equal(t, "3", usage.Quantities["input"])
 			require.Equal(t, "2", usage.Quantities["output"])
-			require.Equal(t, map[string]string{"input": "3", "output": "2"}, usage.Quantities)
+			expected := map[string]string{"input": "3", "output": "2"}
+			if state.cacheMode == managedCacheImplicit {
+				expected["cache_write"], expected["cache_read_mode"] = "0", "0"
+			}
+			require.Equal(t, expected, usage.Quantities)
 		})
 	}
 }
