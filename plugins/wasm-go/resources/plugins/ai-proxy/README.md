@@ -4,7 +4,7 @@ keywords: [AI网关, AI代理]
 description: AI 代理插件配置参考
 ---
 
-## 原生发布的 Router 执行（2.0.65）
+## 原生发布的 Router 执行（2.0.66）
 
 当前原生发布统一声明 `managed_execution.send_transport: router`。文本、向量、重排及内部模型使用原路由的冻结集群；SSE 按事件增量转换，原生 usage 在内容转换前观察。`router_timeout_ms` 仅表示显式上游总预算，未配置时不引入旧 callout 的 30 秒默认期限。
 

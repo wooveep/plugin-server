@@ -6,6 +6,7 @@ import (
 	"errors"
 	"hash"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
@@ -123,7 +124,15 @@ func dispatchManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, re
 		{":scheme", scheme}, {"content-length", strconv.Itoa(len(request.Body))},
 		{managedCallHeader, s.callID}, {managedAttemptHeader, s.attemptID},
 	}
-	headers = append(headers, request.Headers...)
+	for _, header := range request.Headers {
+		name := strings.ToLower(header[0])
+		if name != "accept-encoding" && !strings.HasPrefix(name, "x-envoy-") {
+			headers = append(headers, header)
+		}
+	}
+	// The observer consumes original SSE bytes; downstream compression belongs
+	// to Envoy's response filter after observation, never to the supplier codec.
+	headers = append(headers, [2]string{"accept-encoding", "identity"})
 	// Rebuilt headers exclude caller-owned Envoy controls. The legacy callout
 	// default must not impose a total deadline on an active Router stream.
 	var timeout uint32

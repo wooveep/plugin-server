@@ -49,6 +49,7 @@ func (r *managedMediaRuntime) routerCall(request mediaexecution.Request, callbac
 	}
 	key := uuid.NewString()
 	permit := managedMediaRouterPermit{descriptor.DescriptorDigest, request.Method(), request.Path(), request.OutboundBodyDigest(), request.Headers(), request.TimeoutMilliseconds(), r.now().Add(30 * time.Second)}
+	permit.Headers = append(permit.Headers, [2]string{managedCallHeader, request.CallID()}, [2]string{managedAttemptHeader, request.AttemptID()}, [2]string{"accept-encoding", "identity"})
 	wire, err := json.Marshal(permit)
 	if err != nil {
 		return err
