@@ -99,6 +99,7 @@ func queueManagedRouterContinuation(ctx wrapper.HttpContext, previous, next *man
 		expires = next.admissionDeadline
 	}
 	managedRouterPending[key] = managedRouterContinuation{ctx, previous, next, request, expires}
+	proxywasm.LogWarnf("[DEBUG-router-c2] queued call=%s attempt=%s", next.callID, next.attemptID)
 	uri := "http://" + wrapper.RouterContinuationHost + managedRouterTargetPath(next.config)
 	if proxywasm.SetProperty([]string{wrapper.RouterContinuationProperty}, []byte(key)) != nil {
 		delete(managedRouterPending, key)

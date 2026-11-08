@@ -65,7 +65,7 @@ func NewEmbeddingAttempt(original Envelope) (EmbeddingAttempt, error) {
 	if err := validateAttemptIdentity(original); err != nil {
 		return EmbeddingAttempt{}, err
 	}
-	if original.Mechanism != "router" || original.SendTransport != "http_call" || original.RecordingOwner != "ai_proxy" {
+	if original.Mechanism != "router" || !(original.SendTransport == "router" && original.RecordingOwner == "router_observer" || original.SendTransport == "http_call" && original.RecordingOwner == "ai_proxy") {
 		return EmbeddingAttempt{}, errors.New("embedding supports only the original single HTTP attempt")
 	}
 	copied, err := cloneEnvelope(original)
@@ -146,7 +146,7 @@ func validateEmbeddingEnvelope(e Envelope) error {
 	if err := validateEmbeddingIdentity(e); err != nil {
 		return err
 	}
-	if e.SendTransport != "" && e.SendTransport != "http_call" || e.RecordingOwner != "" && e.RecordingOwner != "ai_proxy" || e.Mechanism != "" && e.Mechanism != "router" {
+	if (e.SendTransport != "" || e.RecordingOwner != "") && !(e.SendTransport == "router" && e.RecordingOwner == "router_observer" || e.SendTransport == "http_call" && e.RecordingOwner == "ai_proxy") || e.Mechanism != "" && e.Mechanism != "router" {
 		return errors.New("embedding cannot declare another sender or retry mechanism")
 	}
 	usage := validateEmbeddingUsage
@@ -218,7 +218,7 @@ func decodeInputOnlySelection(raw []byte, retrieval bool) (map[string]interface{
 	}
 	operation, _ := object["operation_kind"].(string)
 	if object["selection_canonicalization"] != "selection-json.v1" || (!retrieval && operation != NativeEmbeddingOperation || retrieval && !IsRetrieval(operation)) ||
-		object["mechanism"] != "router" || object["send_transport"] != "http_call" || object["recording_owner"] != "ai_proxy" {
+		object["mechanism"] != "router" || !(object["send_transport"] == "router" && object["recording_owner"] == "router_observer" || object["send_transport"] == "http_call" && object["recording_owner"] == "ai_proxy") {
 		return nil, errors.New("native:v2 embedding selection requires its original single HTTP sender")
 	}
 	return object, nil

@@ -1753,7 +1753,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-proxy",
-      "declaredVersion": "2.0.66"
+      "declaredVersion": "2.0.67"
     },
     {
       "logicalId": "ai-quota",
@@ -3092,7 +3092,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "1.0.12"
+      "declaredVersion": "1.0.13"
     },
     {
       "logicalId": "ai-memory",

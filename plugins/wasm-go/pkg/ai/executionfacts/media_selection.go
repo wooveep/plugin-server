@@ -9,7 +9,7 @@ func decodeMediaSelection(raw []byte) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if object["selection_canonicalization"] != "selection-json.v1" || object["send_transport"] != "http_call" || object["recording_owner"] != "ai_proxy" {
+	if object["selection_canonicalization"] != "selection-json.v1" || !(object["send_transport"] == "router" && object["recording_owner"] == "router_observer" || object["send_transport"] == "http_call" && object["recording_owner"] == "ai_proxy") {
 		return nil, errors.New("media selection requires its original single HTTP sender")
 	}
 	if _, exists := object["operation_id"]; !exists {

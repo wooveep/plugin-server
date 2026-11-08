@@ -18,6 +18,46 @@ func embeddingFactFixture() Envelope {
 	return original
 }
 
+func TestInputOnlyRouterRetainsItsActualSenderAndOriginalSelection(t *testing.T) {
+	for _, operation := range []string{NativeEmbeddingOperation, MultimodalEmbeddingOperation, RerankOperation} {
+		t.Run(operation, func(t *testing.T) {
+			fact := embeddingFactFixture()
+			fact.OperationKind = operation
+			if IsRetrieval(operation) {
+				fact.SchemaVersion = RetrievalSchemaVersion
+				fact.BillingMode, fact.PrincipalKind, fact.AccountID, fact.SalesAssetID = "customer", "user", "wallet-1", "sale-1"
+				fact.CostOwner = nil
+			}
+			fact.SendTransport, fact.RecordingOwner = "router", "router_observer"
+			if _, err := NewEmbeddingAttempt(fact); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := FreezeEmbedding(fact); err != nil {
+				t.Fatal(err)
+			}
+			var selection map[string]interface{}
+			if err := json.Unmarshal(embeddingSelectionFixture(t), &selection); err != nil {
+				t.Fatal(err)
+			}
+			selection["operation_kind"], selection["send_transport"], selection["recording_owner"] = operation, "router", "router_observer"
+			raw, _ := json.Marshal(selection)
+			var err error
+			if IsRetrieval(operation) {
+				_, err = RetrievalSelectionDigest(raw)
+			} else {
+				_, err = EmbeddingSelectionDigest(raw)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			fact.RecordingOwner = "ai_proxy"
+			if _, err := NewEmbeddingAttempt(fact); err == nil {
+				t.Fatal("mixed Router/callout ownership accepted")
+			}
+		})
+	}
+}
+
 func TestNativeEmbeddingCodecKeepsInputOnlyOriginalServiceEvidence(t *testing.T) {
 	original := embeddingFactFixture()
 	if _, err := Freeze(original); err == nil {
