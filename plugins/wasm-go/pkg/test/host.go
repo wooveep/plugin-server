@@ -127,6 +127,7 @@ func NewTestHostWithForeignFuncs(config json.RawMessage, foreignFuncs map[string
 		WithVMContext(testVMContext)
 
 	host, reset := proxytest.NewHostEmulator(opt)
+	host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 
 	// register foreign functions before starting the plugin.
 	for name, f := range foreignFuncs {

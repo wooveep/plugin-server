@@ -151,6 +151,7 @@ func TestStatisticsAttributionCardinalityContract(t *testing.T) {
 				WithPluginConfiguration(config).
 				WithVMContext(testVM))
 			defer reset()
+			host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 			host.RegisterForeignFunction("get_log_level", func([]byte) []byte {
 				result := make([]byte, 4)
 				binary.LittleEndian.PutUint32(result, 0)

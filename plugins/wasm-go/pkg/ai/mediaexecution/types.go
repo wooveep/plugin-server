@@ -231,7 +231,7 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 	}
 	if original.RouterLoopbackService != "" &&
 		(field(candidate, "send_transport") != "router" ||
-			(original.RouterLoopbackService != "mfr-"+field(d, "release_id")+".dns" && original.RouterLoopbackService != "modelfusion-router-loopback.dns")) {
+			(original.RouterLoopbackService != "mfr-"+field(d, "release_id")+".static" && original.RouterLoopbackService != "mfr-"+field(d, "release_id")+".dns" && original.RouterLoopbackService != "modelfusion-router-loopback.dns")) {
 		return nil, ErrIdentity
 	}
 	var native struct {

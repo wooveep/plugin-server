@@ -47,7 +47,7 @@ func (r *managedMediaRuntime) routerCall(request mediaexecution.Request, callbac
 		return errors.New("media Router original target is absent")
 	}
 	service := request.RouterLoopbackService()
-	if service != "mfr-"+descriptor.ReleaseID+".dns" && service != "modelfusion-router-loopback.dns" {
+	if service != "mfr-"+descriptor.ReleaseID+".static" && service != "mfr-"+descriptor.ReleaseID+".dns" && service != "modelfusion-router-loopback.dns" {
 		return errors.New("media Router original loopback registry is absent")
 	}
 	key := uuid.NewString()

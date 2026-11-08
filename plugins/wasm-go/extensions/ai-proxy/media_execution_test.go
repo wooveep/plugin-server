@@ -167,7 +167,7 @@ func managedMediaHostJobTransport(t *testing.T, confirmed, legacy bool) (*manage
 	if !legacy {
 		candidate["send_transport"], candidate["recording_owner"] = "router", "router_observer"
 		archive["procurement"].(map[string]interface{})["writer"] = map[string]string{"producer_id": "original-producer", "role": "router_observer"}
-		archive["router_loopback_service"] = "mfr-" + d.ReleaseID + ".dns"
+		archive["router_loopback_service"] = "mfr-" + d.ReleaseID + ".static"
 	}
 	binding := mediaexecution.ProfileBinding{AdapterRef: d.AdapterRef, AdapterRevision: d.AdapterRevision, CreateClassifierRef: "original-native-classifier", QueryClassifierRef: "original-query-classifier", QueryCapabilityRef: "original-task-query", OutputIdentityContract: mediaexecution.NativeImageChoicesContent}
 	executor, err := mediaexecution.FromPrivateArchive(managedFixtureJSON(t, archive), mediaexecution.GatewayIdentity{ProducerID: "original-producer", Actor: "service/gateway/original-producer", BootID: "original-node/original-VM"}, binding)
@@ -298,7 +298,7 @@ func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t
 			if err := json.Unmarshal(job.request.Descriptor(), &descriptor); err != nil {
 				t.Fatal(err)
 			}
-			expectedCluster := "outbound|80||mfr-" + descriptor.ReleaseID + ".dns"
+			expectedCluster := "outbound|80||mfr-" + descriptor.ReleaseID + ".static"
 			if test.legacy {
 				expectedCluster = descriptor.ClusterRef
 			}
