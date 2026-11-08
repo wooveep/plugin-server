@@ -63,6 +63,7 @@ class SchemaConversionTests(unittest.TestCase):
             "activeProviderId": "fixture", "providers": [{"id": "fixture", "type": "deepseek", "apiTokens": ["fixture-key"]}],
             "managed_execution": {
                 "producer_id": "fixture", "call_identity_source": "admission", "private_stream": "fixture",
+                "send_transport": "router",
                 "redis": {"service_name": "redis.dns"}, "upstream_path": "/responses", "authority": "fixture.invalid",
                 "input_protocol": "openai_responses", "upstream_protocol": "openai_responses", "credential_value": "fixture-key",
             },
@@ -127,6 +128,7 @@ class SchemaConversionTests(unittest.TestCase):
                 "providers": [{"id": "owned-qwen", "type": "qwen", "apiTokens": ["owned-fixture-key"]}],
                 "managed_execution": {
                     "producer_id": "owned-producer", "private_stream": "owned-stream",
+                    "send_transport": "router",
                     "upstream_path": "/api/v1/services/aigc/" + operation + "/generation",
                     "authority": "qwen.example.invalid", "timeout_ms": 30000,
                     "call_identity_source": "admission", "credential_value": "owned-fixture-key",
