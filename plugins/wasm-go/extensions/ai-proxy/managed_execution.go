@@ -372,11 +372,11 @@ func (c *managedExecutionConfig) validate() error {
 	if c.settings.TimeoutMS == 0 {
 		c.settings.TimeoutMS = managedDefaultTimeoutMS
 	}
-	if c.settings.TimeoutMS > 10*60*1000 {
+	if c.settings.SendTransport != "router" && c.settings.TimeoutMS > 10*60*1000 {
 		return errors.New("managed execution timeout exceeds the supported callout boundary")
 	}
 	if timeout := c.settings.RouterTimeoutMS; timeout != nil &&
-		(c.settings.SendTransport != "router" || *timeout == 0 || *timeout > 10*60*1000) {
+		(c.settings.SendTransport != "router" || *timeout == 0) {
 		return errors.New("invalid explicit managed Router timeout")
 	}
 	r := &c.settings.Redis

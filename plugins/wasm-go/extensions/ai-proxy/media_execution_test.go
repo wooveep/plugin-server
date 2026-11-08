@@ -124,6 +124,10 @@ func TestManagedMediaReportRetriesExactWireOnTheExistingStream(t *testing.T) {
 }
 
 func managedMediaHostJob(t *testing.T, confirmed bool) (*managedMediaJob, *[]executionfacts.Envelope) {
+	return managedMediaHostJobTransport(t, confirmed, false)
+}
+
+func managedMediaHostJobTransport(t *testing.T, confirmed, legacy bool) (*managedMediaJob, *[]executionfacts.Envelope) {
 	t.Helper()
 	now := time.Now().UTC()
 	fixture := managedConfigFixture()
@@ -160,6 +164,11 @@ func managedMediaHostJob(t *testing.T, confirmed bool) (*managedMediaJob, *[]exe
 		"native_execution": map[string]any{"producer_id": "original-producer", "authority": "managed-provider.example", "credential_value": "original-provider-secret", "upstream_path": mediaexecution.CreatePath, "timeout_ms": 1000},
 		"procurement":      map[string]interface{}{"identity": map[string]string{"binding_id": d.BindingID, "provider_id": d.ProviderID, "purchase_account_id": d.ProviderAccountID, "region": "original-region", "upstream_model_name": d.UpstreamModel}, "pricing_asset_id": "original-cost-asset", "cost_owner": map[string]string{"kind": "platform", "owner_id": "original-cost-owner"}, "writer": map[string]string{"producer_id": "original-producer", "role": "ai_proxy"}},
 		"history":          history, "runtime_config_id": "original-runtime", "config_revision": "1", "output_identity_contract": mediaexecution.NativeImageChoicesContent}
+	if !legacy {
+		candidate["send_transport"], candidate["recording_owner"] = "router", "router_observer"
+		archive["procurement"].(map[string]interface{})["writer"] = map[string]string{"producer_id": "original-producer", "role": "router_observer"}
+		archive["router_loopback_service"] = "mfr-" + d.ReleaseID + ".dns"
+	}
 	binding := mediaexecution.ProfileBinding{AdapterRef: d.AdapterRef, AdapterRevision: d.AdapterRevision, CreateClassifierRef: "original-native-classifier", QueryClassifierRef: "original-query-classifier", QueryCapabilityRef: "original-task-query", OutputIdentityContract: mediaexecution.NativeImageChoicesContent}
 	executor, err := mediaexecution.FromPrivateArchive(managedFixtureJSON(t, archive), mediaexecution.GatewayIdentity{ProducerID: "original-producer", Actor: "service/gateway/original-producer", BootID: "original-node/original-VM"}, binding)
 	if err != nil {
@@ -195,7 +204,11 @@ func managedMediaHostJob(t *testing.T, confirmed bool) (*managedMediaJob, *[]exe
 			consumed = true
 			callback(resp.ArrayValue([]resp.Value{resp.StringValue("allow"), resp.StringValue("123-0")}))
 		case "XADD":
-			if args[1] != "original-execution-stream" || args[4] != "media_observation" {
+			expectedKind := "router_media_observation"
+			if legacy {
+				expectedKind = "media_observation"
+			}
+			if args[1] != "original-execution-stream" || args[4] != expectedKind {
 				t.Fatal("media report used another Stream")
 			}
 			var report struct {
@@ -232,15 +245,16 @@ func managedMediaHostJob(t *testing.T, confirmed bool) (*managedMediaJob, *[]exe
 // reader. Console replies are fixtures; this is not live supplier acceptance.
 func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t *testing.T) {
 	for _, test := range []struct {
-		name                 string
-		confirmed, keyScoped bool
+		name                         string
+		confirmed, keyScoped, legacy bool
 	}{
-		{"unknown_consume", false, false},
-		{"committed_user", true, false},
-		{"committed_key", true, true},
+		{"unknown_consume", false, false, false},
+		{"committed_user", true, false, false},
+		{"committed_key", true, true, false},
+		{"retained_legacy", true, false, true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			job, observed := managedMediaHostJob(t, test.confirmed)
+			job, observed := managedMediaHostJobTransport(t, test.confirmed, test.legacy)
 			if test.keyScoped {
 				key := "original-key"
 				job.notice.Admission.KeyID = &key
@@ -284,7 +298,11 @@ func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t
 			if err := json.Unmarshal(job.request.Descriptor(), &descriptor); err != nil {
 				t.Fatal(err)
 			}
-			if len(calls) != 1 || calls[0].Upstream != "outbound|80||mfr-"+descriptor.ReleaseID+".dns" {
+			expectedCluster := "outbound|80||mfr-" + descriptor.ReleaseID + ".dns"
+			if test.legacy {
+				expectedCluster = descriptor.ClusterRef
+			}
+			if len(calls) != 1 || calls[0].Upstream != expectedCluster {
 				t.Fatal("committed media send did not enter Router exactly once")
 			}
 			values := map[string]string{}
@@ -292,10 +310,18 @@ func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t
 				values[header[0]] = header[1]
 			}
 			providerHeaders := map[string]string{}
-			for _, header := range permit.Headers {
+			originalHeaders := permit.Headers
+			if test.legacy {
+				originalHeaders = calls[0].Headers
+			}
+			for _, header := range originalHeaders {
 				providerHeaders[header[0]] = header[1]
 			}
-			if !strings.HasPrefix(values[":path"], wrapper.RouterContinuationPathPrefix) || permit.Path != mediaexecution.CreatePath || providerHeaders["Authorization"] != "Bearer original-provider-secret" || providerHeaders["X-DashScope-Async"] != "enable" || !bytes.Contains(calls[0].Body, []byte("9007199254740993")) || !bytes.Contains(calls[0].Body, []byte(`"messages"`)) {
+			validPath := strings.HasPrefix(values[":path"], wrapper.RouterContinuationPathPrefix) && permit.Path == mediaexecution.CreatePath
+			if test.legacy {
+				validPath = values[":path"] == mediaexecution.CreatePath
+			}
+			if !validPath || providerHeaders["Authorization"] != "Bearer original-provider-secret" || providerHeaders["X-DashScope-Async"] != "enable" || !bytes.Contains(calls[0].Body, []byte("9007199254740993")) || !bytes.Contains(calls[0].Body, []byte(`"messages"`)) {
 				t.Fatal("provider body/credential came from a client or wrong protocol")
 			}
 			body := []byte(`{"request_id":"actual-provider-request","output":{"task_id":"actual-provider-task","task_status":"SUCCEEDED","choices":[{"message":{"content":[{"image":"https://provider.example/output.png?sig=original"}]}}]},"usage":{"image_count":1,"output_width":1024,"output_height":1024}}`)

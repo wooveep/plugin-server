@@ -69,6 +69,7 @@ type archiveWire struct {
 	Body                   string                `json:"request_body"`
 	Endpoint               string                `json:"provider_endpoint"`
 	Native                 json.RawMessage       `json:"native_execution"`
+	RouterLoopbackService  string                `json:"router_loopback_service"`
 	History                json.RawMessage       `json:"history"`
 	Runtime                string                `json:"runtime_config_id"`
 	Revision               string                `json:"config_revision"`
@@ -142,6 +143,7 @@ type Executor struct {
 // may send it, exactly once. It carries the original create history separately
 // from the actual HTTP attempt, including for read-only queries.
 type Request struct {
+	sendTransport, clusterRef, routerLoopbackService        string
 	outputContract, createClassifier                        string
 	method, endpoint, path, authority, secret               string
 	body                                                    []byte
@@ -154,23 +156,26 @@ type Request struct {
 	estimation                                              UsageEstimationPolicy
 }
 
-func (r Request) String() string              { return "mediaexecution.Request(redacted)" }
-func (e *Executor) String() string            { return "mediaexecution.Executor(redacted)" }
-func (r Request) Method() string              { return r.method }
-func (r Request) Endpoint() string            { return r.endpoint }
-func (r Request) Path() string                { return r.path }
-func (r Request) Body() []byte                { return append([]byte(nil), r.body...) }
-func (r Request) AttemptID() string           { return r.attemptID }
-func (r Request) CreateAttemptID() string     { return r.createAttemptID }
-func (r Request) OperationID() string         { return r.operationID }
-func (r Request) CallID() string              { return r.callID }
-func (r Request) IsQuery() bool               { return r.query }
-func (r Request) Profile() string             { return r.profile.name }
-func (r Request) OriginalHistory() []byte     { return append([]byte(nil), r.history...) }
-func (r Request) Selection() []byte           { return append([]byte(nil), r.selection...) }
-func (r Request) Descriptor() []byte          { return append([]byte(nil), r.descriptor...) }
-func (r Request) TimeoutMilliseconds() uint32 { return r.timeoutMS }
-func (r Request) OutboundBodyDigest() string  { return bodybasis.DigestBytes(r.body) }
+func (r Request) String() string                { return "mediaexecution.Request(redacted)" }
+func (e *Executor) String() string              { return "mediaexecution.Executor(redacted)" }
+func (r Request) Method() string                { return r.method }
+func (r Request) SendTransport() string         { return r.sendTransport }
+func (r Request) ClusterRef() string            { return r.clusterRef }
+func (r Request) RouterLoopbackService() string { return r.routerLoopbackService }
+func (r Request) Endpoint() string              { return r.endpoint }
+func (r Request) Path() string                  { return r.path }
+func (r Request) Body() []byte                  { return append([]byte(nil), r.body...) }
+func (r Request) AttemptID() string             { return r.attemptID }
+func (r Request) CreateAttemptID() string       { return r.createAttemptID }
+func (r Request) OperationID() string           { return r.operationID }
+func (r Request) CallID() string                { return r.callID }
+func (r Request) IsQuery() bool                 { return r.query }
+func (r Request) Profile() string               { return r.profile.name }
+func (r Request) OriginalHistory() []byte       { return append([]byte(nil), r.history...) }
+func (r Request) Selection() []byte             { return append([]byte(nil), r.selection...) }
+func (r Request) Descriptor() []byte            { return append([]byte(nil), r.descriptor...) }
+func (r Request) TimeoutMilliseconds() uint32   { return r.timeoutMS }
+func (r Request) OutboundBodyDigest() string    { return bodybasis.DigestBytes(r.body) }
 func (r Request) Headers() [][2]string {
 	headers := [][2]string{{"Authorization", "Bearer " + r.secret}, {"Host", r.authority}, {"Accept", "application/json"}}
 	if !r.query {
@@ -222,6 +227,11 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 	if err != nil || !identity(original.Dispatch.ID) || !identity(original.Dispatch.AttemptID) ||
 		!identity(original.Dispatch.OperationID) || !decimalID(original.Dispatch.Revision) ||
 		(original.Dispatch.State != "prepared" && original.Dispatch.State != "consumed") || original.Dispatch.Deadline.IsZero() {
+		return nil, ErrIdentity
+	}
+	if original.RouterLoopbackService != "" &&
+		(field(candidate, "send_transport") != "router" ||
+			(original.RouterLoopbackService != "mfr-"+field(d, "release_id")+".dns" && original.RouterLoopbackService != "modelfusion-router-loopback.dns")) {
 		return nil, ErrIdentity
 	}
 	var native struct {

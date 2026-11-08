@@ -930,6 +930,16 @@ func decodeManagedMediaJSON(raw []byte, target interface{}) error {
 }
 
 func (r *managedMediaRuntime) providerCall(request mediaexecution.Request, callback func(mediaexecution.Response)) error {
+	// Only retained pre-Router media tasks may use their original bounded JSON
+	// transport. New native plans cannot select this compatibility branch.
+	if request.SendTransport() == "http_call" {
+		headers := [][2]string{{":method", request.Method()}, {":path", request.Path()}, {managedCallHeader, request.CallID()}, {managedAttemptHeader, request.AttemptID()}}
+		headers = append(headers, request.Headers()...)
+		_, err := proxywasm.DispatchHttpCall(request.ClusterRef(), headers, request.Body(), nil, request.TimeoutMilliseconds(), func(count, size, _ int) {
+			callback(readManagedMediaResponse(count, size, r.settings.MaxResponseBytes, r.now(), ""))
+		})
+		return err
+	}
 	return r.routerCall(request, callback)
 }
 
@@ -938,21 +948,22 @@ func (r *managedMediaRuntime) providerCall(request mediaexecution.Request, callb
 func readManagedMediaResponse(numHeaders, bodySize, limit int, now time.Time, receipt string) mediaexecution.Response {
 	response := mediaexecution.Response{ObservedAt: now.UTC().Format(time.RFC3339Nano), SendState: "unknown"}
 	headers, err := proxywasm.GetHttpCallResponseHeaders()
-	actualReceipt, receiptErr := managedSingleHeader(headers, managedMediaRouterReceiptHeader)
-	if receiptErr != nil || actualReceipt != receipt {
-		response.TransportError = "media_router_upstream_not_observed"
-		return response
+	if receipt != "" {
+		actualReceipt, receiptErr := managedSingleHeader(headers, managedMediaRouterReceiptHeader)
+		if receiptErr != nil || actualReceipt != receipt {
+			response.TransportError = "media_router_upstream_not_observed"
+			return response
+		}
 	}
+	response.HeadersComplete = err == nil && len(headers) == numHeaders
 	clean := headers[:0]
 	for _, header := range headers {
 		if !strings.EqualFold(header[0], managedMediaRouterReceiptHeader) {
 			clean = append(clean, header)
 		}
 	}
-	numHeaders--
 	headers = clean
 	response.Headers = append([][2]string(nil), headers...)
-	response.HeadersComplete = err == nil && len(headers) == numHeaders
 	status, statusErr := managedSingleHeader(headers, ":status")
 	if statusErr == nil && len(status) == 3 {
 		parsed, err := strconv.ParseUint(status, 10, 16)

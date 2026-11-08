@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.71
+  version: 2.0.72
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -386,7 +386,7 @@ spec:
             router_timeout_ms:
               type: integer
               minimum: 1
-              maximum: 600000
+              maximum: 4294967295
             router_tool_usage:
               type: boolean
               const: true
@@ -2573,7 +2573,7 @@ spec:
             router_timeout_ms:
               type: integer
               minimum: 1
-              maximum: 600000
+              maximum: 4294967295
             router_tool_usage:
               type: boolean
               const: true

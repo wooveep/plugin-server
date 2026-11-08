@@ -124,6 +124,13 @@ func dispatchManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, re
 		{":scheme", scheme}, {"content-length", strconv.Itoa(len(request.Body))},
 		{managedCallHeader, s.callID}, {managedAttemptHeader, s.attemptID},
 	}
+	// Envoy requires X-Forwarded-Proto when it resolves an internal redirect.
+	// Reconstruct it from the original normalized downstream scheme.
+	forwardedProto := ctx.Scheme()
+	if forwardedProto == "" {
+		forwardedProto = scheme
+	}
+	headers = append(headers, [2]string{"x-forwarded-proto", forwardedProto})
 	for _, header := range request.Headers {
 		name := strings.ToLower(header[0])
 		if name != "accept-encoding" && !strings.HasPrefix(name, "x-envoy-") {

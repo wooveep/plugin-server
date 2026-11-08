@@ -46,6 +46,10 @@ func (r *managedMediaRuntime) routerCall(request mediaexecution.Request, callbac
 	if decodeManagedJSON(request.Descriptor(), &descriptor, true) != nil || descriptor.DescriptorDigest == "" || descriptor.ServiceRef == "" || r.redis == nil {
 		return errors.New("media Router original target is absent")
 	}
+	service := request.RouterLoopbackService()
+	if service != "mfr-"+descriptor.ReleaseID+".dns" && service != "modelfusion-router-loopback.dns" {
+		return errors.New("media Router original loopback registry is absent")
+	}
 	key := uuid.NewString()
 	permit := managedMediaRouterPermit{descriptor.DescriptorDigest, request.Method(), request.Path(), request.OutboundBodyDigest(), request.Headers(), request.TimeoutMilliseconds(), r.now().Add(30 * time.Second)}
 	permit.Headers = append(permit.Headers, [2]string{managedCallHeader, request.CallID()}, [2]string{managedAttemptHeader, request.AttemptID()}, [2]string{"accept-encoding", "identity"})
@@ -63,7 +67,7 @@ func (r *managedMediaRuntime) routerCall(request mediaexecution.Request, callbac
 		headers := [][2]string{{":method", request.Method()}, {":scheme", "http"}, {":authority", wrapper.RouterContinuationHost},
 			{":path", wrapper.RouterContinuationPathPrefix + strings.TrimSuffix(descriptor.ServiceRef, ".dns")},
 			{"content-type", "application/json"}, {managedMediaRouterPermitHeader, key}}
-		cluster := "outbound|80||mfr-" + descriptor.ReleaseID + ".dns"
+		cluster := "outbound|80||" + service
 		_, err := proxywasm.DispatchHttpCall(cluster, headers, request.Body(), nil, request.TimeoutMilliseconds()+1000, func(numHeaders, bodySize, _ int) {
 			callback(readManagedMediaResponse(numHeaders, bodySize, r.settings.MaxResponseBytes, r.now(), key))
 		})
@@ -123,7 +127,7 @@ func executeManagedMediaRouter(ctx wrapper.HttpContext, c *managedExecutionConfi
 			scheme = "https"
 		}
 		headers := [][2]string{{":method", permit.Method}, {":path", permit.Path}, {":authority", c.settings.Authority}, {":scheme", scheme},
-			{"content-length", strconv.Itoa(len(body))}, {"x-envoy-upstream-rq-timeout-ms", strconv.FormatUint(uint64(permit.TimeoutMS), 10)}}
+			{"content-length", strconv.Itoa(len(body))}, {"x-forwarded-proto", "http"}, {"x-envoy-upstream-rq-timeout-ms", strconv.FormatUint(uint64(permit.TimeoutMS), 10)}}
 		for _, header := range permit.Headers {
 			if !strings.EqualFold(header[0], "host") {
 				headers = append(headers, header)

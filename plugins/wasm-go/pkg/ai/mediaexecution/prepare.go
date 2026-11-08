@@ -350,6 +350,8 @@ func (e *Executor) request(method, path, attempt, task string, history, selectio
 		createAttemptID: e.original.Dispatch.AttemptID, taskID: task,
 		history: append([]byte(nil), history...), selection: append([]byte(nil), selection...), query: method == "GET"}
 	r.descriptor = append([]byte(nil), e.original.Descriptor...)
+	r.sendTransport, r.clusterRef = field(e.candidate, "send_transport"), field(e.descriptor, "cluster_ref")
+	r.routerLoopbackService = e.original.RouterLoopbackService
 	r.timeoutMS = e.timeoutMS
 	r.profile = e.profile
 	r.estimation = e.estimation
