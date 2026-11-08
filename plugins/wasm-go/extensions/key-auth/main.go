@@ -394,6 +394,13 @@ func parseOverrideRuleConfig(json gjson.Result, global KeyAuthConfig, config *Ke
 //
 // 显式配置 allow: [] 仍启用认证，并拒绝所有调用方。
 func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log.Log) types.Action {
+	// The same downstream request already passed admission. Only the Router
+	// executor can install this request-lifetime FilterState; request headers
+	// cannot authorize a continuation. The private executor still validates
+	// its one-use target/release handoff before any supplier send.
+	if strings.HasPrefix(ctx.Path(), wrapper.RouterContinuationPathPrefix) && wrapper.RouterContinuationPending() {
+		return types.ActionContinue
+	}
 	// Even an unmatched/public authentication rule must remove client-selected
 	// native account/key fields before a later managed quota filter can see them.
 	if err := removeBalanceIdentityHeaders(); err != nil {
