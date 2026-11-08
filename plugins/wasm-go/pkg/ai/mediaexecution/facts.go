@@ -90,6 +90,9 @@ func (r Request) GenerationObservation(actual executionfacts.Snapshot, observati
 // delivery writer already sealed in the original history. A task acknowledgement
 // is unknown delivery; complete actual output evidence determines the result.
 func (r Request) DeliveryObservation(generation executionfacts.Snapshot, observation Observation, previous *executionfacts.Snapshot) (executionfacts.Snapshot, error) {
+	if r.query && previous == nil {
+		return executionfacts.Snapshot{}, ErrIdentity
+	}
 	var h historyWire
 	if decode(r.history, &h) != nil || h.DeliveryWriter.ProducerID != generation.ProducerID() || h.DeliveryWriter.Role != "ai_proxy" && h.DeliveryWriter.Role != "router_observer" {
 		return executionfacts.Snapshot{}, ErrIdentity

@@ -392,6 +392,9 @@ func TestQueryCorrectionsKeepOriginalGenerationAndDeliverySources(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := q.DeliveryObservation(corrected, o, nil); err == nil {
+		t.Fatal("query recreated delivery revision one before its original predecessor committed")
+	}
 	finalDelivery, err := q.DeliveryObservation(corrected, o, &delivery)
 	if err != nil {
 		t.Fatal(err)
