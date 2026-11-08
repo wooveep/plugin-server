@@ -148,6 +148,34 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 	})
 }
 
+func TestPortalOverrideDoesNotBufferWhileOtherRoutesKeepModelRouting(t *testing.T) {
+	test.RunTest(t, func(t *testing.T) {
+		configuration := json.RawMessage(`{"modelToHeader":"x-higress-llm-model","enableOnPathSuffix":["*"],"_rules_":[{"_match_route_":["modelfusion-web-user-model-experience"],"enableOnPathSuffix":[]}]}`)
+		for _, route := range []string{"modelfusion-web-user-model-experience", "ordinary-model-route"} {
+			t.Run(route, func(t *testing.T) {
+				host, status := test.NewTestHost(configuration)
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+				require.NoError(t, host.SetRouteName(route))
+				action := host.CallOnHttpRequestHeaders([][2]string{
+					{":authority", "portal.example.test"},
+					{":path", "/api/v1/user/model-experience/chat/completions"},
+					{":method", "POST"}, {"content-type", "application/json"},
+					{"content-length", "123"},
+				})
+				_, hasLength := getHeader(host.GetRequestHeaders(), "content-length")
+				if route == "modelfusion-web-user-model-experience" {
+					require.Equal(t, types.ActionContinue, action)
+					require.True(t, hasLength)
+				} else {
+					require.Equal(t, types.HeaderStopIteration, action)
+					require.False(t, hasLength)
+				}
+			})
+		}
+	})
+}
+
 func TestOnHttpRequestBody_JSON(t *testing.T) {
 	test.RunTest(t, func(t *testing.T) {
 		t.Run("set headers and rewrite model when provider/model format", func(t *testing.T) {

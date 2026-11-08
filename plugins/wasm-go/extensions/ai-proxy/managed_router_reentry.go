@@ -76,6 +76,9 @@ func acceptManagedRouterContinuation(ctx wrapper.HttpContext, c *managedExecutio
 	}
 	s := entry.next
 	s.sourceConfig = c
+	// Request metadata is cloned shallowly. The old context still owns and closes
+	// its log, so the continuation needs an independent per-stream log entry.
+	ctx.SetContext(managedAccessLogContext, nil)
 	beginManagedAccessLog(ctx, c.release.Descriptor.ReleaseID)
 	ctx.SetContext(managedExecutionContextKey, s)
 	ctx.SetContext(managedRouterRedirectKey, false)
