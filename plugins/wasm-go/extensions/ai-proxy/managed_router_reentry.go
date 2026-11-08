@@ -99,8 +99,9 @@ func queueManagedRouterContinuation(ctx wrapper.HttpContext, previous, next *man
 		expires = next.admissionDeadline
 	}
 	managedRouterPending[key] = managedRouterContinuation{ctx, previous, next, request, expires}
-	uri := "http://" + wrapper.RouterContinuationHost + managedRouterTargetPath(next.config)
-	proxywasm.LogWarnf("Router continuation prepared: %s", uri)
+	// The response-stage SRDS lookup retains the original domain scope. The
+	// private path is compiled in that scope; FilterState still authorizes it.
+	uri := ctx.Scheme() + "://" + ctx.Host() + managedRouterTargetPath(next.config)
 	if proxywasm.SetProperty([]string{wrapper.RouterContinuationProperty}, []byte(key)) != nil {
 		delete(managedRouterPending, key)
 		return errors.New("Router continuation could not be installed")
