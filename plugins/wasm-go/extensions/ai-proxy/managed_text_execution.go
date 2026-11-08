@@ -9,6 +9,7 @@ import (
 	"time"
 
 	supplier "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
@@ -504,6 +505,7 @@ func qualifyManagedTextAttempt(ctx wrapper.HttpContext, next *managedExecutionSt
 	previous := call.current
 	call.current = next
 	next.healthUnavailable = func(reason string) {
+		proxywasm.LogWarnf("Router next-attempt qualification stopped: %s", reason)
 		next.closed = true
 		call.current = previous
 		if reason == "upstream_health_unavailable" {

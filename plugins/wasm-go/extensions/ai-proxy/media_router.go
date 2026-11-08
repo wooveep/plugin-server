@@ -17,7 +17,6 @@ import (
 	"github.com/tidwall/resp"
 )
 
-const managedMediaRouterCluster = "outbound|80||modelfusion-router-loopback.dns"
 const managedMediaRouterPermitHeader = "x-modelfusion-media-permit"
 const managedMediaRouterReceiptHeader = "x-modelfusion-media-upstream-receipt"
 const managedMediaRouterContextKey = "ai-proxy.media-router.v1"
@@ -64,7 +63,8 @@ func (r *managedMediaRuntime) routerCall(request mediaexecution.Request, callbac
 		headers := [][2]string{{":method", request.Method()}, {":scheme", "http"}, {":authority", wrapper.RouterContinuationHost},
 			{":path", wrapper.RouterContinuationPathPrefix + strings.TrimSuffix(descriptor.ServiceRef, ".dns")},
 			{"content-type", "application/json"}, {managedMediaRouterPermitHeader, key}}
-		_, err := proxywasm.DispatchHttpCall(managedMediaRouterCluster, headers, request.Body(), nil, request.TimeoutMilliseconds()+1000, func(numHeaders, bodySize, _ int) {
+		cluster := "outbound|80||mfr-" + descriptor.ReleaseID + ".dns"
+		_, err := proxywasm.DispatchHttpCall(cluster, headers, request.Body(), nil, request.TimeoutMilliseconds()+1000, func(numHeaders, bodySize, _ int) {
 			callback(readManagedMediaResponse(numHeaders, bodySize, r.settings.MaxResponseBytes, r.now(), key))
 		})
 		if err != nil {

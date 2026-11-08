@@ -100,6 +100,7 @@ func queueManagedRouterContinuation(ctx wrapper.HttpContext, previous, next *man
 	}
 	managedRouterPending[key] = managedRouterContinuation{ctx, previous, next, request, expires}
 	uri := "http://" + wrapper.RouterContinuationHost + managedRouterTargetPath(next.config)
+	proxywasm.LogWarnf("Router continuation prepared: %s", uri)
 	if proxywasm.SetProperty([]string{wrapper.RouterContinuationProperty}, []byte(key)) != nil {
 		delete(managedRouterPending, key)
 		return errors.New("Router continuation could not be installed")

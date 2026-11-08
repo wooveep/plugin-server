@@ -280,7 +280,11 @@ func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t
 				}
 				return
 			}
-			if len(calls) != 1 || calls[0].Upstream != managedMediaRouterCluster {
+			var descriptor managedDescriptor
+			if err := json.Unmarshal(job.request.Descriptor(), &descriptor); err != nil {
+				t.Fatal(err)
+			}
+			if len(calls) != 1 || calls[0].Upstream != "outbound|80||mfr-"+descriptor.ReleaseID+".dns" {
 				t.Fatal("committed media send did not enter Router exactly once")
 			}
 			values := map[string]string{}
