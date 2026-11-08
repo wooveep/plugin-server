@@ -119,30 +119,31 @@ type managedRedisSettings struct {
 }
 
 type managedSettings struct {
-	ProtocolMode       string                   `json:"-"`
-	SendTransport      string                   `json:"send_transport,omitempty"`
-	RouterToolUsage    bool                     `json:"router_tool_usage,omitempty"`
-	StreamProjection   bool                     `json:"stream_projection,omitempty"`
-	StreamProtocol     string                   `json:"stream_protocol,omitempty"`
-	ResponseProfile    clientresponse.Profile   `json:"response_profile,omitempty"`
-	ToolPolicy         *managedToolSettings     `json:"tool_policy,omitempty"`
-	MediaDispatchMode  string                   `json:"media_dispatch_mode,omitempty"`
-	ProducerID         string                   `json:"producer_id"`
-	CallIdentitySource string                   `json:"call_identity_source"`
-	PrivateStream      string                   `json:"private_stream"`
-	Redis              managedRedisSettings     `json:"redis"`
-	UpstreamPath       string                   `json:"upstream_path"`
-	Authority          string                   `json:"authority"`
-	CredentialValue    string                   `json:"credential_value,omitempty"`
-	Credentials        []managedCredential      `json:"credentials,omitempty"`
-	TimeoutMS          uint32                   `json:"timeout_ms,omitempty"`
-	RouterTimeoutMS    *uint32                  `json:"router_timeout_ms,omitempty"`
-	RouterReentry      bool                     `json:"router_reentry,omitempty"`
-	InputProtocol      string                   `json:"input_protocol,omitempty"`
-	UpstreamProtocol   string                   `json:"upstream_protocol,omitempty"`
-	UpstreamHealth     *managedHealthSettings   `json:"upstream_health,omitempty"`
-	InternalAuthority  *managedInternalEndpoint `json:"internal_authority,omitempty"`
-	TextExecution      *managedTextSettings     `json:"text_execution,omitempty"`
+	ProtocolMode         string                   `json:"-"`
+	SendTransport        string                   `json:"send_transport,omitempty"`
+	RouterToolUsage      bool                     `json:"router_tool_usage,omitempty"`
+	StreamProjection     bool                     `json:"stream_projection,omitempty"`
+	StreamProtocol       string                   `json:"stream_protocol,omitempty"`
+	ResponseProfile      clientresponse.Profile   `json:"response_profile,omitempty"`
+	ToolPolicy           *managedToolSettings     `json:"tool_policy,omitempty"`
+	MediaDispatchMode    string                   `json:"media_dispatch_mode,omitempty"`
+	ProducerID           string                   `json:"producer_id"`
+	CallIdentitySource   string                   `json:"call_identity_source"`
+	PrivateStream        string                   `json:"private_stream"`
+	Redis                managedRedisSettings     `json:"redis"`
+	UpstreamPath         string                   `json:"upstream_path"`
+	Authority            string                   `json:"authority"`
+	CredentialValue      string                   `json:"credential_value,omitempty"`
+	Credentials          []managedCredential      `json:"credentials,omitempty"`
+	TimeoutMS            uint32                   `json:"timeout_ms,omitempty"`
+	RouterTimeoutMS      *uint32                  `json:"router_timeout_ms,omitempty"`
+	RouterReentry        bool                     `json:"router_reentry,omitempty"`
+	RouterOriginalDomain bool                     `json:"router_reentry_original_domain,omitempty"`
+	InputProtocol        string                   `json:"input_protocol,omitempty"`
+	UpstreamProtocol     string                   `json:"upstream_protocol,omitempty"`
+	UpstreamHealth       *managedHealthSettings   `json:"upstream_health,omitempty"`
+	InternalAuthority    *managedInternalEndpoint `json:"internal_authority,omitempty"`
+	TextExecution        *managedTextSettings     `json:"text_execution,omitempty"`
 }
 
 type managedRedisClient interface {

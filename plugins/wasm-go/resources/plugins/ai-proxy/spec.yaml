@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.70
+  version: 2.0.71
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -378,6 +378,9 @@ spec:
               type: string
               const: router
             router_reentry:
+              type: boolean
+              const: true
+            router_reentry_original_domain:
               type: boolean
               const: true
             router_timeout_ms:
@@ -2562,6 +2565,9 @@ spec:
               type: string
               const: router
             router_reentry:
+              type: boolean
+              const: true
+            router_reentry_original_domain:
               type: boolean
               const: true
             router_timeout_ms:
