@@ -21,6 +21,8 @@ const (
 	FailureRate           FailureKind = "rate_limit"
 	FailureOverloaded     FailureKind = "overloaded"
 	FailureParameter      FailureKind = "customer_parameter"
+	FailureContext        FailureKind = "context_length"
+	FailureInputLength    FailureKind = "input_length"
 	FailurePolicy         FailureKind = "input_policy"
 	FailureInterrupted    FailureKind = "generation_interrupted"
 	FailureIncomplete     FailureKind = "response_incomplete"
@@ -80,6 +82,17 @@ func ClassifyFailure(input FailureInput) Failure {
 	}
 	if input.Status == 402 {
 		return Failure{Kind: FailureQuota, AllowFallback: true}
+	}
+	// Explicit length evidence does not require an optional supplier param.
+	// Keep ordinary 400s ambiguous: credentials, model mapping and transformed
+	// requests can still be platform configuration failures.
+	if code == "context_length_exceeded" {
+		return Failure{Kind: FailureContext}
+	}
+	if code == "invalidinputlength" ||
+		((code == "invalidparameter" || code == "internalerror.algo.invalidparameter") &&
+			strings.Contains(strings.ToLower(fields.Get("message").String()), "range of input length should be [")) {
+		return Failure{Kind: FailureInputLength}
 	}
 	if code == "content_policy_violation" || code == "datainspectionfailed" || code == "data_inspection_failed" || object.Get("promptFeedback.blockReason").String() != "" {
 		return Failure{Kind: FailurePolicy}
@@ -155,6 +168,10 @@ func (f Failure) public(protocol string) publicFailure {
 		return publicFailure{status, "overloaded_error", "server_is_overloaded", "The service is temporarily busy. Try again later."}
 	case FailureParameter:
 		return publicFailure{400, "invalid_request_error", "invalid_parameter", "A request parameter is invalid. Check the indicated parameter."}
+	case FailureContext:
+		return publicFailure{400, "invalid_request_error", "context_length_exceeded", "The request exceeds the model context limit. Shorten the input or conversation history."}
+	case FailureInputLength:
+		return publicFailure{400, "invalid_request_error", "invalid_input_length", "Input length is outside the model's supported range. Adjust the input or conversation history."}
 	case FailurePolicy:
 		return publicFailure{400, "invalid_request_error", "content_policy_violation", "The request could not be processed under the service content policy."}
 	case FailureInterrupted:
