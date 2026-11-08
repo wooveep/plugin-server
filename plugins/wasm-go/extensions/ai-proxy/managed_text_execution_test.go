@@ -165,11 +165,15 @@ func newManagedTextHost(t *testing.T, fixture map[string]interface{}) *managedHo
 			action, _ := onManagedRequestBody(ctx, cfg, body)
 			return action
 		}),
+		wrapper.ProcessResponseHeaders(onHttpResponseHeaders),
+		wrapper.ProcessResponseBody(onHttpResponseBody),
+		wrapper.ProcessStreamingResponseBody(onStreamingResponseBody),
 		wrapper.ProcessStreamDone(onManagedStreamDone))
 	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration(managedFixtureJSON(t, fixture)))
 	t.Cleanup(reset)
 	h.host = host
 	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
+	host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 	if err := host.SetProperty([]string{"node", "id"}, []byte("e2-original-gateway")); err != nil {
 		t.Fatal(err)
 	}

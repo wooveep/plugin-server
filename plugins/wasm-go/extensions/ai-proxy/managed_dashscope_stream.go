@@ -23,10 +23,17 @@ type managedDashScopeStream struct {
 }
 
 func (s *managedDashScopeStream) push(chunk []byte) {
+	s.pushEvents(chunk, nil)
+}
+
+func (s *managedDashScopeStream) pushEvents(chunk []byte, after func(managedProtocolEvent)) {
 	if s.framingError {
 		return
 	}
 	s.framingError = s.decoder.push(chunk, func(event managedProtocolEvent) {
+		if after != nil {
+			defer after(event)
+		}
 		if bytes.Equal(event.Data, []byte("[DONE]")) {
 			return
 		}

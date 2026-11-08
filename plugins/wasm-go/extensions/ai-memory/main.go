@@ -58,6 +58,7 @@ func init() {
 		wrapper.ProcessRequestBodyBy(onHttpRequestBody),
 		wrapper.ProcessResponseHeadersBy(onHttpResponseHeaders),
 		wrapper.ProcessStreamingResponseBodyBy(onHttpResponseBody),
+		wrapper.WithRouterResponseContinuation(func(c config.PluginConfig) bool { return c.RouterContinuation }),
 	)
 }
 

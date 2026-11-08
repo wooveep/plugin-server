@@ -242,3 +242,23 @@ func (a *ManagedAdapter) ConvertNativeResponse(ctx wrapper.HttpContext, body []b
 	result.WriteString("data: [DONE]\n\n")
 	return []byte(result.String()), nil
 }
+
+// ConvertNativeStreamEvent converts one already delimited native SSE event.
+// Completion and exact usage remain owned by the caller's original observer.
+func (a *ManagedAdapter) ConvertNativeStreamEvent(ctx wrapper.HttpContext, event StreamEvent) ([]byte, error) {
+	if handler, ok := a.provider.(StreamingEventHandler); ok {
+		events, err := handler.OnStreamingEvent(ctx, a.apiName, event)
+		if err != nil {
+			return nil, err
+		}
+		var result strings.Builder
+		for _, converted := range events {
+			result.WriteString(converted.ToHttpString())
+		}
+		return []byte(result.String()), nil
+	}
+	if handler, ok := a.provider.(StreamingResponseBodyHandler); ok {
+		return handler.OnStreamingResponseBody(ctx, a.apiName, []byte(event.ToHttpString()), false)
+	}
+	return nil, errors.New("native supplier stream conversion is unavailable")
+}

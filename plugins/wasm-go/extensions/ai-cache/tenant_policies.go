@@ -34,7 +34,7 @@ func parseTenantCachePolicies(input gjson.Result, c *config.PluginConfig, logger
 	if err != nil {
 		return err
 	}
-	*c = config.PluginConfig{TenantPolicies: directory, PublishedProtocolConfigured: true, PublishedProtocol: directory.Protocol}
+	*c = config.PluginConfig{RouterContinuation: input.Get("router_continuation").Bool(), TenantPolicies: directory, PublishedProtocolConfigured: true, PublishedProtocol: directory.Protocol}
 	return configureNativeCacheDelivery(input, c)
 }
 

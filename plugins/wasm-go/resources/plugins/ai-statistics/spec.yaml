@@ -16,7 +16,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-statistics/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-statistics/README_EN.md
-  version: 2.0.8
+  version: 2.0.9
   contact:
     name: rinfx
 spec:
@@ -40,6 +40,9 @@ spec:
             enable_path_suffixes:
               maxItems: 0
       properties:
+        router_continuation:
+          type: boolean
+          const: true
         use_default_attributes:
           type: boolean
           title: 使用完整默认属性
@@ -274,6 +277,9 @@ spec:
       additionalProperties: false
       allOf: *id001
       properties:
+        router_continuation:
+          type: boolean
+          const: true
         use_default_attributes:
           type: boolean
           title: 使用完整默认属性

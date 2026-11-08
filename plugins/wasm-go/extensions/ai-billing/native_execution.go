@@ -141,11 +141,11 @@ func configureNativeBilling(value gjson.Result, cfg *BillingConfig) error {
 		return err
 	}
 	operation := nativeBillingOperation(release)
-	if settings.RouterDelivery && (operation != "text_generate" || settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission) {
-		return errors.New("router delivery requires a customer text route")
+	if settings.RouterDelivery && (operation == "image_generate" || operation == "video_generate") {
+		return errors.New("media delivery belongs to its managed operation")
 	}
 	if operation == "image_generate" || operation == "video_generate" {
-		// Native media facts belong to the ai-proxy http_call worker and the
+		// Native media facts belong to the ai-proxy media worker and the
 		// Console media operation. A valid media binding must not install a
 		// second text delivery bridge or fall through to legacy BillingEvent.
 		cfg.PathScope = PathScopeBoundTarget
@@ -365,7 +365,8 @@ func onNativeBillingResponseHeaders(ctx wrapper.HttpContext, cfg BillingConfig) 
 	}
 	state, _ := ctx.GetContext(nativeBillingContextKey).(*nativeBillingState)
 	if state != nil && state.valid && state.config.routerDelivery {
-		if call, err := proxywasm.GetProperty([]string{observedusage.RouterDeliveryProperty}); err == nil && string(call) == state.origin.CallID {
+		if call, err := proxywasm.GetProperty([]string{observedusage.RouterDeliveryProperty}); err == nil &&
+			(string(call) == state.origin.CallID || state.internal != nil && len(call) != 0) {
 			state.bridgeSeen = true
 			return types.ActionContinue, true
 		}

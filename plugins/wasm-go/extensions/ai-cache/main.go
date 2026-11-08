@@ -58,6 +58,7 @@ func init() {
 		wrapper.ProcessResponseHeadersBy(onHttpResponseHeaders),
 		wrapper.ProcessStreamingResponseBodyBy(onHttpResponseBody),
 		wrapper.ProcessStreamDoneBy(onNativeCacheStreamDone),
+		wrapper.WithRouterResponseContinuation(func(c config.PluginConfig) bool { return c.RouterContinuation }),
 	)
 }
 

@@ -37,7 +37,7 @@ func (r Request) NewAttempt(producerID string) (executionfacts.Attempt, error) {
 		ProviderAccountID: field(d, "provider_account_id"), UpstreamModel: field(d, "upstream_model"),
 		CredentialRef: h.Attempt.CredentialRef, CredentialRevision: h.Attempt.CredentialRevision,
 		SelectionDigest: field(selection, "selection_digest"), ProviderTaskID: r.taskID,
-		OutboundBodyDigest: r.OutboundBodyDigest(), SendTransport: "http_call", RecordingOwner: "ai_proxy",
+		OutboundBodyDigest: r.OutboundBodyDigest(), SendTransport: field(selection, "send_transport"), RecordingOwner: field(selection, "recording_owner"),
 		OperationKind: operation, Mechanism: mechanism,
 	})
 }
@@ -91,7 +91,7 @@ func (r Request) GenerationObservation(actual executionfacts.Snapshot, observati
 // is unknown delivery; complete actual output evidence determines the result.
 func (r Request) DeliveryObservation(generation executionfacts.Snapshot, observation Observation, previous *executionfacts.Snapshot) (executionfacts.Snapshot, error) {
 	var h historyWire
-	if decode(r.history, &h) != nil || h.DeliveryWriter.ProducerID != generation.ProducerID() || h.DeliveryWriter.Role != "ai_proxy" {
+	if decode(r.history, &h) != nil || h.DeliveryWriter.ProducerID != generation.ProducerID() || h.DeliveryWriter.Role != "ai_proxy" && h.DeliveryWriter.Role != "router_observer" {
 		return executionfacts.Snapshot{}, ErrIdentity
 	}
 	g := generation.Envelope()

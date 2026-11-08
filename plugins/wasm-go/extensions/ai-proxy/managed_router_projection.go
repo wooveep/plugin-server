@@ -15,9 +15,19 @@ import (
 func validateManagedRouterProfile(c *managedExecutionConfig) error {
 	settings, profile := c.settings, c.profile
 	if settings.SendTransport == "" && !settings.StreamProjection && settings.StreamProtocol == "" && !settings.RouterToolUsage {
+		if settings.RouterReentry {
+			return errors.New("Router continuation requires Router transport")
+		}
 		return nil
 	}
 	protocol := profile.InputProtocol
+	if executionfacts.IsInputOnly(managedOperation(c)) {
+		if settings.SendTransport != "router" || settings.StreamProjection || settings.RouterToolUsage ||
+			protocol != profile.UpstreamProtocol || settings.StreamProtocol != protocol || settings.TextExecution != nil {
+			return errors.New("unsupported input-only Router profile")
+		}
+		return nil
+	}
 	native := protocol == profile.UpstreamProtocol
 	dashScope := protocol == managedProtocolDashScopeText || protocol == managedProtocolDashScopeMultimodal
 	switch protocol {
@@ -40,10 +50,10 @@ func validateManagedRouterProfile(c *managedExecutionConfig) error {
 	default:
 		return errors.New("unsupported managed Router stream protocol")
 	}
-	if settings.SendTransport != "router" || settings.StreamProjection != (settings.ProtocolMode == "auto" && !dashScope) ||
-		settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission || settings.TextExecution != nil ||
-		settings.RouterToolUsage != (settings.ToolPolicy != nil) || settings.RouterToolUsage && dashScope ||
-		!dashScope && c.vendor != nil && c.vendor.NativeResponseFormat() != "" {
+	public := settings.CallIdentitySource == executionfacts.CallIdentitySourceAdmission
+	if settings.SendTransport != "router" || settings.StreamProjection != (settings.ProtocolMode == "auto" && !dashScope && public) ||
+		settings.TextExecution != nil && !settings.RouterReentry ||
+		settings.RouterToolUsage != (settings.ToolPolicy != nil) {
 		return errors.New("unsupported managed Router response profile")
 	}
 	return nil
@@ -93,7 +103,7 @@ func projectManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 		if !r.projectionFailed && !r.projectedError {
 			output.WriteString(": keep-alive\n\n")
 		}
-	})
+	}, end)
 	if !end || r.projectedError {
 		return output.Bytes()
 	}

@@ -462,6 +462,10 @@ func continueManagedText(ctx wrapper.HttpContext, s *managedExecutionState, outc
 	if retry := policy.Retry; retry != nil && call.targetAttempts[target] <= retry.MaxRetries && managedTextStatusMatches(*outcome.HTTPStatus, retry.RetryOnStatus) {
 		next := newManagedTextAttempt(s, s.config.targets[target], "credential_retry")
 		next.config.settings.TimeoutMS = retry.RetryTimeoutMS
+		if next.config.settings.SendTransport == "router" {
+			timeout := retry.RetryTimeoutMS
+			next.config.settings.RouterTimeoutMS = &timeout
+		}
 		qualifyManagedTextAttempt(ctx, next, fallback, finish)
 		return true
 	}
@@ -480,6 +484,7 @@ func newManagedTextAttempt(previous *managedExecutionState, configuration *manag
 	state.streaming = previous.streaming
 	state.publicRequest = previous.publicRequest
 	state.resourceOwner = previous.resourceOwner
+	state.routerDeadline = previous.routerDeadline
 	state.requestedTools, state.removedTools = previous.requestedTools, previous.removedTools
 	return state
 }

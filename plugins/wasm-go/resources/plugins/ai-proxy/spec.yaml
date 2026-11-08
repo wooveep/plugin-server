@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.63
+  version: 2.0.64
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -369,10 +369,14 @@ spec:
           - redis
           - upstream_path
           - authority
+          - send_transport
           properties:
             send_transport:
               type: string
               const: router
+            router_reentry:
+              type: boolean
+              const: true
             router_timeout_ms:
               type: integer
               minimum: 1
@@ -385,7 +389,7 @@ spec:
               const: true
             stream_protocol:
               type: string
-              enum: [openai_responses, anthropic_messages, dashscope_text, dashscope_multimodal, openai_completions]
+              enum: [openai_responses, anthropic_messages, dashscope_text, dashscope_multimodal, openai_completions, openai_embeddings, dashscope_multimodal_embedding, dashscope_rerank, bailian_rerank]
             response_profile:
               type: string
               enum: [deepseek, qwen, openai]
@@ -2549,10 +2553,14 @@ spec:
           - redis
           - upstream_path
           - authority
+          - send_transport
           properties:
             send_transport:
               type: string
               const: router
+            router_reentry:
+              type: boolean
+              const: true
             router_timeout_ms:
               type: integer
               minimum: 1
@@ -2565,7 +2573,7 @@ spec:
               const: true
             stream_protocol:
               type: string
-              enum: [openai_responses, anthropic_messages, dashscope_text, dashscope_multimodal, openai_completions]
+              enum: [openai_responses, anthropic_messages, dashscope_text, dashscope_multimodal, openai_completions, openai_embeddings, dashscope_multimodal_embedding, dashscope_rerank, bailian_rerank]
             response_profile:
               type: string
               enum: [deepseek, qwen, openai]

@@ -4,6 +4,14 @@ keywords: [AI Gateway, AI Proxy]
 description: Reference for configuring the AI Proxy plugin
 ---
 
+## Native Router execution (2.0.64)
+
+New native releases use `managed_execution.send_transport: router` for supplier traffic. SSE content is converted incrementally; native usage is observed before conversion. Only an explicit `router_timeout_ms` supplies a total upstream deadline.
+
+The SDK pairs `router_reentry: true` with private same-Gateway entrances. A complete retryable error can continue with its original call and a distinct attempt, without repeating admission or request processors. Successful SSE is never replayed after delivery starts. Opted-in cache, memory, history and statistics observers retain their original context. Headers and private paths alone cannot authorize continuation.
+
+Persisted JSON media jobs hand consumed work to the local Router through one-use Redis permits. Actual upstream receipts distinguish supplier responses from local Gateway errors. This handoff uses the existing port 80 listener and the SDK-owned `modelfusion-router-loopback.dns` registry. Retain old immutable executors until their old media jobs finish; upgrade the complete platform and republish native routes together.
+
 ## Frozen Credential Directory
 
 The `2.0.5` configuration contract keeps `_modelfusion_execution` v1's scalar `credential_ref`/`credential_revision` and adds `modelfusion-execution.v2` with a complete, nonempty `credentials` array. Each member contains only those two fields; references are unique, revisions are canonical positive decimal strings, and secrets or mixed scalar/array shapes are rejected. The directory is not a selected attempt: actual D0/FACT attribution still contains one selected credential tuple. Billing and cache never select the first directory member.

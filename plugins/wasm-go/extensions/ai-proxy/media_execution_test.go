@@ -245,6 +245,18 @@ func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t
 				key := "original-key"
 				job.notice.Admission.KeyID = &key
 			}
+			var permit managedMediaRouterPermit
+			originalRedis := job.runtime.redis
+			job.runtime.redis = managedMediaTestRedis{command: func(args []interface{}, callback wrapper.RedisResponseCallback) error {
+				if args[0] == "SET" {
+					if err := json.Unmarshal([]byte(args[2].(string)), &permit); err != nil {
+						t.Fatal(err)
+					}
+					callback(resp.StringValue("OK"))
+					return nil
+				}
+				return originalRedis.Command(args, callback)
+			}}
 			job.runtime.provider = job.runtime.providerCall
 			type mediaHostConfig struct{}
 			vm := wrapper.NewCommonVmCtx("media-original-http", wrapper.ParseConfig(func(gjson.Result, *mediaHostConfig) error { return nil }),
@@ -268,18 +280,22 @@ func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t
 				}
 				return
 			}
-			if len(calls) != 1 || calls[0].Upstream != "outbound|80||managed-provider.static" {
-				t.Fatal("committed media send did not use original cluster exactly once")
+			if len(calls) != 1 || calls[0].Upstream != managedMediaRouterCluster {
+				t.Fatal("committed media send did not enter Router exactly once")
 			}
 			values := map[string]string{}
 			for _, header := range calls[0].Headers {
 				values[header[0]] = header[1]
 			}
-			if values[":path"] != mediaexecution.CreatePath || values["Authorization"] != "Bearer original-provider-secret" || values["X-DashScope-Async"] != "enable" || !bytes.Contains(calls[0].Body, []byte("9007199254740993")) || !bytes.Contains(calls[0].Body, []byte(`"messages"`)) {
+			providerHeaders := map[string]string{}
+			for _, header := range permit.Headers {
+				providerHeaders[header[0]] = header[1]
+			}
+			if !strings.HasPrefix(values[":path"], wrapper.RouterContinuationPathPrefix) || permit.Path != mediaexecution.CreatePath || providerHeaders["Authorization"] != "Bearer original-provider-secret" || providerHeaders["X-DashScope-Async"] != "enable" || !bytes.Contains(calls[0].Body, []byte("9007199254740993")) || !bytes.Contains(calls[0].Body, []byte(`"messages"`)) {
 				t.Fatal("provider body/credential came from a client or wrong protocol")
 			}
 			body := []byte(`{"request_id":"actual-provider-request","output":{"task_id":"actual-provider-task","task_status":"SUCCEEDED","choices":[{"message":{"content":[{"image":"https://provider.example/output.png?sig=original"}]}}]},"usage":{"image_count":1,"output_width":1024,"output_height":1024}}`)
-			host.CallOnHttpCallResponse(calls[0].CalloutID, [][2]string{{":status", "200"}}, nil, body)
+			host.CallOnHttpCallResponse(calls[0].CalloutID, [][2]string{{":status", "200"}, {managedMediaRouterReceiptHeader, values[managedMediaRouterPermitHeader]}}, nil, body)
 			job.runtime.now = func() time.Time { return time.Now().Add(2 * time.Second) }
 			if len(job.reports) > 0 {
 				job.report()

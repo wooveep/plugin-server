@@ -41,6 +41,7 @@ func init() {
 		wrapper.ProcessRequestBodyBy(onHttpRequestBody),
 		wrapper.ProcessResponseHeadersBy(onHttpResponseHeaders),
 		wrapper.ProcessStreamingResponseBodyBy(onHttpStreamResponseBody),
+		wrapper.WithRouterResponseContinuation(func(c PluginConfig) bool { return c.RouterContinuation }),
 	)
 }
 
@@ -93,7 +94,8 @@ type KVExtractor struct {
 }
 
 type PluginConfig struct {
-	tenantPolicies *tenantpolicy.Directory[PluginConfig]
+	RouterContinuation bool `json:"router_continuation,omitempty"`
+	tenantPolicies     *tenantpolicy.Directory[PluginConfig]
 	// @Title zh-CN Redis 地址信息
 	// @Description zh-CN 用于存储缓存结果的 Redis 地址
 	RedisInfo RedisInfo `required:"true" yaml:"redis" json:"redis"`
@@ -129,6 +131,7 @@ type ChatHistory struct {
 }
 
 func parseConfig(json gjson.Result, c *PluginConfig, log log.Log) error {
+	c.RouterContinuation = json.Get("router_continuation").Bool()
 	if json.Get("tenant_policies").Exists() {
 		return parseTenantHistoryPolicies(json, c, log)
 	}

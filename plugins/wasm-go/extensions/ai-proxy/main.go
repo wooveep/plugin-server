@@ -120,6 +120,7 @@ func init() {
 
 func parseGlobalConfig(json gjson.Result, pluginConfig *config.PluginConfig) error {
 	log.Debugf("loading global config")
+	managedRouterReentryTickRegistered = false
 
 	pluginConfig.FromJson(json)
 	if err := pluginConfig.Validate(); err != nil {
@@ -475,6 +476,9 @@ func failTransparentRequestAuthentication() types.Action {
 }
 
 func onHttpResponseHeaders(ctx wrapper.HttpContext, pluginConfig config.PluginConfig) types.Action {
+	if action, handled := observeManagedMediaRouterHeaders(ctx); handled {
+		return action
+	}
 	if s, _ := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState); s != nil && s.router != nil {
 		return observeManagedRouterHeaders(ctx, s)
 	}

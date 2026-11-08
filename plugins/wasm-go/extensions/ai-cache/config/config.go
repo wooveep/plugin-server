@@ -111,13 +111,14 @@ type NativeIdentityConfig struct {
 }
 
 type PluginConfig struct {
-	FixedToolDefaults []fixedtools.Tool
-	TenantPolicies    *tenantpolicy.Directory[PluginConfig]
-	materializedRedis wrapper.RedisClient
-	eventRedis        wrapper.RedisClient
-	legacyConfig      bool
-	protocolConfigErr error
-	nativeIdentityErr error
+	RouterContinuation bool `json:"router_continuation,omitempty"`
+	FixedToolDefaults  []fixedtools.Tool
+	TenantPolicies     *tenantpolicy.Directory[PluginConfig]
+	materializedRedis  wrapper.RedisClient
+	eventRedis         wrapper.RedisClient
+	legacyConfig       bool
+	protocolConfigErr  error
+	nativeIdentityErr  error
 
 	NativeIdentity *NativeIdentityConfig
 	// NativeExecution is a private parsed delivery config; never body-supplied.
@@ -141,6 +142,7 @@ type PluginConfig struct {
 
 func (c *PluginConfig) FromJson(json gjson.Result, _ log.Log) {
 	*c = PluginConfig{}
+	c.RouterContinuation = json.Get("router_continuation").Bool()
 	c.FixedToolDefaults = nil
 	for _, value := range json.Get("fixed_tool_defaults").Array() {
 		if tool := fixedtools.Tool(value.String()); fixedtools.Valid(tool) {

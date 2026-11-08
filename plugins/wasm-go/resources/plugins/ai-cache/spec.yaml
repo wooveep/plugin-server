@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-cache/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-cache/README_EN.md
-  version: 2.0.22
+  version: 2.0.23
   contact:
     name: johnlanni
   gatewayMinVersion: 2.0.0
@@ -103,6 +103,9 @@ spec:
               consume_body_basis:
                 const: true
       properties:
+        router_continuation:
+          type: boolean
+          const: true
         native_execution:
           type: object
           additionalProperties: false
@@ -1162,6 +1165,9 @@ spec:
       type: object
       additionalProperties: false
       properties:
+        router_continuation:
+          type: boolean
+          const: true
         native_execution: &id002
           type: object
           additionalProperties: false

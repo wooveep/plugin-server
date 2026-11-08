@@ -197,7 +197,7 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 	procurement, err := object(origin.Identity)
 	descriptor, descriptorError := object(original.Descriptor)
 	var asset string
-	if err != nil || descriptorError != nil || origin.Writer.ProducerID != gateway.ProducerID || origin.Writer.Role != "ai_proxy" ||
+	if err != nil || descriptorError != nil || origin.Writer.ProducerID != gateway.ProducerID || (origin.Writer.Role != "ai_proxy" && origin.Writer.Role != "router_observer") ||
 		!identityMatchesProcurement(procurement, descriptor) || json.Unmarshal(origin.PricingAssetID, &asset) != nil || !identity(asset) || len(origin.CostOwner) == 0 {
 		return nil, ErrIdentity
 	}
@@ -327,8 +327,8 @@ func FromPrivateArchive(raw []byte, gateway GatewayIdentity, supported ProfileBi
 	}
 	if field(candidate, "original_body_digest") != basis.Digest() || field(candidate, "call_id") != h.CallID ||
 		field(candidate, "operation_id") != h.OperationID || field(candidate, "operation_kind") != profile.operation ||
-		field(candidate, "selection_generation") != original.Revision || field(candidate, "send_transport") != "http_call" ||
-		field(candidate, "recording_owner") != "ai_proxy" || field(candidate, "mechanism") != "router" {
+		field(candidate, "selection_generation") != original.Revision || !validMediaSender(field(candidate, "send_transport"), field(candidate, "recording_owner")) ||
+		origin.Writer.Role != field(candidate, "recording_owner") || field(candidate, "mechanism") != "router" {
 		return nil, ErrIdentity
 	}
 	rewritten, err := profile.prepareBody(body)
@@ -493,4 +493,9 @@ func equalJSON(a, b []byte) bool {
 	aCanon, aErr := mfjson.Canonicalize(a)
 	bCanon, bErr := mfjson.Canonicalize(b)
 	return aErr == nil && bErr == nil && string(aCanon) == string(bCanon)
+}
+
+// Historical archives retain their original sender; new releases use Router.
+func validMediaSender(transport, owner string) bool {
+	return transport == "router" && owner == "router_observer" || transport == "http_call" && owner == "ai_proxy"
 }

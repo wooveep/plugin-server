@@ -16,7 +16,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-history/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-history/README_EN.md
-  version: 2.0.10
+  version: 2.0.11
   contact:
     name: sakura
 spec:
@@ -28,6 +28,9 @@ spec:
       required:
       - redis
       properties:
+        router_continuation:
+          type: boolean
+          const: true
         capture_body_basis:
           type: boolean
           default: false
@@ -195,6 +198,9 @@ spec:
       type: object
       additionalProperties: false
       properties:
+        router_continuation:
+          type: boolean
+          const: true
         capture_body_basis: &id001
           type: boolean
           default: false

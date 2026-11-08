@@ -16,7 +16,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-memory/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-memory/README_EN.md
-  version: 0.1.14
+  version: 0.1.15
 spec:
   phase: default
   priority: 260
@@ -41,6 +41,9 @@ spec:
     openAPIV3Schema:
       type: object
       properties:
+        router_continuation:
+          type: boolean
+          const: true
         redis_stream:
           type: object
           title: Redis Stream配置
@@ -288,6 +291,9 @@ spec:
       type: object
       additionalProperties: false
       properties:
+        router_continuation:
+          type: boolean
+          const: true
         redis_stream: &id001
           type: object
           title: Redis Stream配置

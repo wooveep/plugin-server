@@ -20,6 +20,7 @@ func nativeMediaProxyConfiguration(t *testing.T, profile string, misplacedEstima
 	protocol, err := mediaexecution.LookupProfile(profile)
 	require.NoError(t, err)
 	configuration.settings.MediaDispatchMode = "managed_operation"
+	configuration.settings.SendTransport = "router"
 	configuration.settings.InputProtocol, configuration.settings.UpstreamProtocol = profile, profile
 	configuration.settings.UpstreamPath = protocol.CreatePath
 	descriptor := &configuration.release.Descriptor

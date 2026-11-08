@@ -40,7 +40,10 @@ local function record(decision,reason)
   event.reason_code=reason or cjson.null
   event.recorded_at_ms=string.format('%.0f',now)
   local wire=cjson.encode(event)
-  local id=redis.call('XADD',KEYS[5],'*','message_type','media_dispatch','event',wire)
+  local kind='media_dispatch'
+  local selected=cjson.decode(event.selection)
+  if selected.send_transport=='router' then kind='router_media_dispatch' end
+  local id=redis.call('XADD',KEYS[5],'*','message_type',kind,'event',wire)
   redis.call('HSET',KEYS[1],'state',decision,'event',wire,'stream_id',id)
   return id
 end

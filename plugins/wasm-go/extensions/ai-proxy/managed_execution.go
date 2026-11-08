@@ -137,6 +137,7 @@ type managedSettings struct {
 	Credentials        []managedCredential      `json:"credentials,omitempty"`
 	TimeoutMS          uint32                   `json:"timeout_ms,omitempty"`
 	RouterTimeoutMS    *uint32                  `json:"router_timeout_ms,omitempty"`
+	RouterReentry      bool                     `json:"router_reentry,omitempty"`
 	InputProtocol      string                   `json:"input_protocol,omitempty"`
 	UpstreamProtocol   string                   `json:"upstream_protocol,omitempty"`
 	UpstreamHealth     *managedHealthSettings   `json:"upstream_health,omitempty"`
@@ -216,12 +217,18 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 		return errors.New("managed execution target descriptor digest differs")
 	}
 	if parsed.settings.MediaDispatchMode == "managed_operation" {
-		if parsed.settings.SendTransport != "" || parsed.settings.StreamProtocol != "" || parsed.settings.StreamProjection || parsed.settings.RouterToolUsage {
-			return errors.New("managed media requires its callout transport")
+		if parsed.settings.SendTransport != "router" || parsed.settings.StreamProtocol != "" || parsed.settings.StreamProjection || parsed.settings.RouterToolUsage {
+			return errors.New("managed media requires its private Router transport")
 		}
 		if err := validateManagedMediaRelease(&parsed, value, cfg); err != nil {
 			return err
 		}
+		redis := parsed.settings.Redis
+		client := wrapper.NewRedisClusterClient(wrapper.FQDNCluster{FQDN: redis.ServiceName, Port: int64(redis.ServicePort)})
+		if err := client.Init(redis.Username, redis.Password, redis.Timeout, wrapper.WithDataBase(redis.Database)); err != nil {
+			return errors.New("media Router Redis initialization failed")
+		}
+		parsed.priceRedis = client
 		cfg.ManagedExecution = &parsed
 		return nil
 	}
@@ -246,6 +253,11 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 	}
 	if err := validateManagedRouterProfile(&parsed); err != nil {
 		return err
+	}
+	if parsed.settings.RouterReentry {
+		if err := configureManagedRouterReentry(); err != nil {
+			return err
+		}
 	}
 	redis := parsed.settings.Redis
 	client := wrapper.NewRedisEventClient(wrapper.FQDNCluster{FQDN: redis.ServiceName, Port: int64(redis.ServicePort)}, proxywasm.DispatchRedisCallInBackground)
@@ -496,6 +508,7 @@ type managedExecutionState struct {
 	deliveries                                                 map[string]*executionfacts.Delivery
 	lastAttempt, lastDelivery                                  *executionfacts.Snapshot
 	admissionDeadline                                          time.Time
+	routerDeadline                                             time.Time
 	healthInFlight                                             bool
 	health                                                     *managedHealthAttempt
 	frozenSelection                                            json.RawMessage
@@ -509,6 +522,9 @@ type managedExecutionState struct {
 // Production calls have no temporary Console permit. Validation and internal
 // calls retain their original finite deadline throughout upload and retries.
 func (s *managedExecutionState) admissionCurrent(at time.Time) bool {
+	if !s.routerDeadline.IsZero() && !at.Before(s.routerDeadline) {
+		return false
+	}
 	return s.admissionDeadline.IsZero() && s.internal == nil || at.Before(s.admissionDeadline)
 }
 
@@ -521,6 +537,12 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	ctx.SetContext(managedPublicProfileKey, string(managed.settings.ResponseProfile))
 	beginManagedAccessLog(ctx, managed.release.Descriptor.ReleaseID)
 	ctx.SetContext(ctxSkipAIProxyLifecycle, true)
+	if managed.settings.MediaDispatchMode == "managed_operation" && strings.HasPrefix(ctx.Path(), wrapper.RouterContinuationPathPrefix) {
+		return acceptManagedMediaRouter(ctx, managed), true
+	}
+	if action, handled := acceptManagedRouterContinuation(ctx, managed); handled {
+		return action, true
+	}
 	if managed.outbox != nil && !managed.outbox.Accepting() {
 		return rejectManagedRequest(ctx, 503, "accounting_delivery_unavailable"), true
 	}
@@ -595,9 +617,17 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	if !enabled || managed == nil {
 		return types.ActionContinue, false
 	}
+	if ctx.GetContext(managedMediaRouterContextKey) != nil {
+		return executeManagedMediaRouter(ctx, managed, body), true
+	}
 	state, ok := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
 	if !ok || state == nil || state.sourceConfig != managed {
 		return rejectManagedRequest(ctx, 409, "original_execution_missing"), true
+	}
+	if request, ok := ctx.GetContext(managedRouterPreparedKey).(managedProtocolRequest); ok {
+		ctx.SetContext(managedRouterPreparedKey, nil)
+		dispatchManagedRouter(ctx, state, request)
+		return types.ActionPause, true
 	}
 	if state.dispatchStarted || state.closed || state.healthInFlight || state.resourcesRestoring {
 		return types.ActionPause, true
@@ -1362,6 +1392,9 @@ func managedFactGap(ctx wrapper.HttpContext, reason string) {
 
 func onManagedStreamDone(ctx wrapper.HttpContext, cfg config.PluginConfig) {
 	defer closeManagedAccessLog(ctx)
+	if ctx.GetBoolContext(managedRouterRedirectKey, false) {
+		return
+	}
 	s, ok := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
 	if !ok || s == nil || s.closed {
 		return

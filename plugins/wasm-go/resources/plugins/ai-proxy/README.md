@@ -4,6 +4,16 @@ keywords: [AI网关, AI代理]
 description: AI 代理插件配置参考
 ---
 
+## 原生发布的 Router 执行（2.0.64）
+
+当前原生发布统一声明 `managed_execution.send_transport: router`。文本、向量、重排及内部模型使用原路由的冻结集群；SSE 按事件增量转换，原生 usage 在内容转换前观察。`router_timeout_ms` 仅表示显式上游总预算，未配置时不引入旧 callout 的 30 秒默认期限。
+
+`router_reentry: true` 由发布编译器与 SDK 成对生成。完整失败响应可按原重试／回退策略重入同一 Gateway 的私有入口；已开始的成功 SSE 不重试。私有 FilterState 保存一次性续接标识，下一次尝试保留 call、原请求、独立凭据和 attempt，跳过重复准入及正文处理。cache、memory、history、statistics 使用 `router_continuation: true` 保留原观察状态。入口路径或请求头本身不能授权续接。
+
+媒体创建及任务查询保留已有持久任务、Consume、账户和查询能力，通过一次性 Redis 许可送入本机 Router。JSON 控制调用可缓冲；供应商 SSE 不走此通道。上游回执由实际 Router 响应产生，网关本地 502 不作为供应商 HTTP 502。该入口使用现有 Gateway 的 80 端口及 SDK 注册的 `modelfusion-router-loopback.dns`。
+
+旧不可变发布保留其原插件版本和发送事实；升级应部署完整平台、重新发布原生路由，并在旧媒体任务结束前保留对应旧执行器。不得把新入口、旧插件和新续接配置混装。
+
 ## 固定工具与指定出口
 
 `2.0.34` 读取发布端冻结的 `managed_execution.tool_policy`：模型与客户协议的已定价工具、出口可承载工具、供应商默认值和当前售价可用性 Redis 键。缺价在发送前拒绝，显式 0 允许；Q6 只移除出口不支持的固定工具及悬空的强制选择，保留普通同名函数，重试不得恢复已移除项。供应商终态的可信累计数以 `billing-facts.v5.tool_usage` 上报；意图、流中断和缺数保持未知，只跳过该项工具费。原生与兼容 Qwen 绑定各自保留路径，不改写连接的共享能力表。

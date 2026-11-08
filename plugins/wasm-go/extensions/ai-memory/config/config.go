@@ -77,9 +77,10 @@ type RouteConfig struct {
 
 // PluginConfig is the ai-memory plugin configuration root.
 type PluginConfig struct {
-	TenantPolicies *tenantpolicy.Directory[PluginConfig] `yaml:"-" json:"-"`
-	recentRedis    wrapper.RedisClient
-	eventRedis     EventRedisClient
+	RouterContinuation bool                                  `json:"router_continuation,omitempty"`
+	TenantPolicies     *tenantpolicy.Directory[PluginConfig] `yaml:"-" json:"-"`
+	recentRedis        wrapper.RedisClient
+	eventRedis         EventRedisClient
 
 	RedisStream        RedisStreamConfig     `yaml:"redis_stream" json:"redis_stream"`
 	RecentCache        RecentCacheConfig     `yaml:"recent_cache" json:"recent_cache"`
@@ -106,6 +107,7 @@ type PluginConfig struct {
 // ParseRoot loads a real global configuration or leaves a rules-only carrier dormant.
 func (c *PluginConfig) ParseRoot(json gjson.Result, log log.Log) error {
 	*c = defaultPluginConfig()
+	c.RouterContinuation = json.Get("router_continuation").Bool()
 	rulesOnly := true
 	for key := range json.Map() {
 		if key != "_rules_" {
@@ -132,6 +134,7 @@ func (c *PluginConfig) ParseRoot(json gjson.Result, log log.Log) error {
 
 func (c *PluginConfig) FromJson(json gjson.Result, log log.Log) {
 	*c = defaultPluginConfig()
+	c.RouterContinuation = json.Get("router_continuation").Bool()
 	c.initialized = true
 	c.RedisStream = parseRedisStreamConfig(c.RedisStream, json.Get("redis_stream"))
 	c.RecentCache = parseRecentCacheConfig(c.RecentCache, json.Get("recent_cache"))

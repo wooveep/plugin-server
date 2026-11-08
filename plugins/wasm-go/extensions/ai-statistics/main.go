@@ -43,6 +43,7 @@ func init() {
 		wrapper.ProcessStreamDone(onHttpStreamDone),
 		wrapper.WithRebuildAfterRequests[AIStatisticsConfig](1000),
 		wrapper.WithRebuildMaxMemBytes[AIStatisticsConfig](200*1024*1024),
+		wrapper.WithRouterResponseContinuation(func(c AIStatisticsConfig) bool { return c.routerContinuation }),
 	)
 }
 
@@ -444,8 +445,9 @@ type Attribute struct {
 }
 
 type AIStatisticsConfig struct {
-	initialized bool
-	invalidBase bool
+	routerContinuation bool
+	initialized        bool
+	invalidBase        bool
 	// Metrics
 	// TODO: add more metrics in Gauge and Histogram format
 	counterMetrics map[string]proxywasm.MetricCounter
@@ -566,7 +568,7 @@ func parseConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
 }
 
 func parseCompleteStatisticsConfig(configJson gjson.Result, config *AIStatisticsConfig) error {
-	*config = AIStatisticsConfig{}
+	*config = AIStatisticsConfig{routerContinuation: configJson.Get("router_continuation").Bool()}
 	// Check if use_default_attributes is enabled
 	useDefaultAttributes := configJson.Get("use_default_attributes").Bool()
 	// Check if use_default_response_attributes is enabled (lightweight mode)

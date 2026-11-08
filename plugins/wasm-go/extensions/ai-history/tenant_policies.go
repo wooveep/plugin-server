@@ -19,7 +19,7 @@ func parseTenantHistoryPolicies(input gjson.Result, c *PluginConfig, logger log.
 	if err != nil {
 		return err
 	}
-	*c = PluginConfig{tenantPolicies: directory, historyEnabled: false}
+	*c = PluginConfig{RouterContinuation: input.Get("router_continuation").Bool(), tenantPolicies: directory, historyEnabled: false}
 	return nil
 }
 

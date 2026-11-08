@@ -22,7 +22,7 @@ func parseTenantMemoryPolicies(input gjson.Result, c *config.PluginConfig, logge
 	}
 	// The common carrier owns no policy, Redis client, or materialized prefix.
 	// It retains body capture even for an admitted tenant without memory.
-	*c = config.PluginConfig{TenantPolicies: directory, CaptureBodyBasis: directory.CaptureBodyBasis,
+	*c = config.PluginConfig{RouterContinuation: input.Get("router_continuation").Bool(), TenantPolicies: directory, CaptureBodyBasis: directory.CaptureBodyBasis,
 		PathScope: config.PathScopeBoundTarget, Route: config.RouteConfig{MemoryMode: config.MemoryModeOff}}
 	return nil
 }

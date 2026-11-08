@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"mime"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -887,7 +886,11 @@ func (j *managedMediaJob) report() {
 	j.reportDeadline = j.runtime.now().Add(time.Duration(j.runtime.settings.Redis.Timeout)*time.Millisecond + time.Second)
 	report := j.reports[0]
 	wire := append([]byte(nil), report.Wire...)
-	err := j.runtime.redis.Command([]interface{}{"XADD", j.runtime.settings.PrivateStream, "*", "message_type", "media_observation", "event", string(wire)}, func(reply resp.Value) {
+	kind := "media_observation"
+	if gjson.GetBytes(j.selection, "send_transport").String() == "router" {
+		kind = "router_media_observation"
+	}
+	err := j.runtime.redis.Command([]interface{}{"XADD", j.runtime.settings.PrivateStream, "*", "message_type", kind, "event", string(wire)}, func(reply resp.Value) {
 		j.reportInFlight = false
 		if reply.Error() != nil || reply.Type() != resp.BulkString || !strings.Contains(reply.String(), "-") {
 			return
@@ -920,32 +923,27 @@ func decodeManagedMediaJSON(raw []byte, target interface{}) error {
 }
 
 func (r *managedMediaRuntime) providerCall(request mediaexecution.Request, callback func(mediaexecution.Response)) error {
-	var descriptor struct {
-		Cluster string `json:"cluster_ref"`
-	}
-	endpoint, err := url.Parse(request.Endpoint())
-	if err != nil || json.Unmarshal(request.Descriptor(), &descriptor) != nil || descriptor.Cluster == "" {
-		return errors.New("media original transport is absent")
-	}
-	headers := [][2]string{{":method", request.Method()}, {":scheme", endpoint.Scheme}, {":authority", endpoint.Host}, {":path", request.Path()}}
-	for _, header := range request.Headers() {
-		if !strings.EqualFold(header[0], "host") {
-			headers = append(headers, header)
-		} else {
-			headers[2][1] = header[1]
-		}
-	}
-	_, err = proxywasm.DispatchHttpCall(descriptor.Cluster, headers, request.Body(), nil, request.TimeoutMilliseconds(), func(numHeaders, bodySize, _ int) {
-		callback(readManagedMediaResponse(numHeaders, bodySize, r.settings.MaxResponseBytes, r.now()))
-	})
-	return err
+	return r.routerCall(request, callback)
 }
 
 // This is the actual instrumentor boundary. Never manufacture a provider 502
 // when response headers/body cannot be read or the host callback times out.
-func readManagedMediaResponse(numHeaders, bodySize, limit int, now time.Time) mediaexecution.Response {
+func readManagedMediaResponse(numHeaders, bodySize, limit int, now time.Time, receipt string) mediaexecution.Response {
 	response := mediaexecution.Response{ObservedAt: now.UTC().Format(time.RFC3339Nano), SendState: "unknown"}
 	headers, err := proxywasm.GetHttpCallResponseHeaders()
+	actualReceipt, receiptErr := managedSingleHeader(headers, managedMediaRouterReceiptHeader)
+	if receiptErr != nil || actualReceipt != receipt {
+		response.TransportError = "media_router_upstream_not_observed"
+		return response
+	}
+	clean := headers[:0]
+	for _, header := range headers {
+		if !strings.EqualFold(header[0], managedMediaRouterReceiptHeader) {
+			clean = append(clean, header)
+		}
+	}
+	numHeaders--
+	headers = clean
 	response.Headers = append([][2]string(nil), headers...)
 	response.HeadersComplete = err == nil && len(headers) == numHeaders
 	status, statusErr := managedSingleHeader(headers, ":status")

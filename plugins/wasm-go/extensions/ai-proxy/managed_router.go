@@ -6,6 +6,7 @@ import (
 	"errors"
 	"hash"
 	"strconv"
+	"time"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
@@ -23,10 +24,12 @@ type managedRouterResponse struct {
 	chat               *managedChatStream
 	native             *managedNativeStream
 	dashScope          *managedDashScopeStream
+	supplier           *managedRouterSupplierStream
 	toolProtocol       string
 	toolUsage          gjson.Result
 	digest             hash.Hash
 	jsonOutcome        *executionfacts.AttemptOutcome
+	attemptRecorded    bool
 	transportEnded     bool
 	ended              bool
 	injectingTerminal  bool
@@ -44,7 +47,7 @@ type managedRouterResponse struct {
 	rawAliasesInvalid  bool
 }
 
-func (r *managedRouterResponse) pushStream(chunk []byte, after func(managedProtocolEvent), comment func()) {
+func (r *managedRouterResponse) pushStream(chunk []byte, after func(managedProtocolEvent), comment func(), end bool) {
 	if r.toolProtocol != "" {
 		forward := after
 		after = func(event managedProtocolEvent) {
@@ -55,13 +58,15 @@ func (r *managedRouterResponse) pushStream(chunk []byte, after func(managedProto
 		}
 	}
 	switch {
+	case r.supplier != nil:
+		r.supplier.push(chunk, end, func(converted []byte) { r.chat.pushEvents(converted, after) }, comment)
 	case r.chat != nil:
 		r.chat.decoder.onComment = comment
 		r.chat.pushEvents(chunk, after)
 		r.chat.decoder.onComment = nil
 	case r.dashScope != nil:
 		r.dashScope.decoder.onComment = comment
-		r.dashScope.push(chunk)
+		r.dashScope.pushEvents(chunk, after)
 		r.dashScope.decoder.onComment = nil
 	default:
 		r.native.decoder.onComment = comment
@@ -72,6 +77,8 @@ func (r *managedRouterResponse) pushStream(chunk []byte, after func(managedProto
 
 func (r *managedRouterResponse) streamObservation() managedProtocolObservation {
 	switch {
+	case r.supplier != nil:
+		return r.supplier.observation()
 	case r.chat != nil:
 		return r.chat.observation()
 	case r.dashScope != nil:
@@ -84,8 +91,22 @@ func (r *managedRouterResponse) streamObservation() managedProtocolObservation {
 // The route already owns its immutable cluster. Only the validated outbound
 // request is installed before the paused decoder is returned to Envoy Router.
 func dispatchManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, request managedProtocolRequest) {
+	if previous, _ := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState); previous != nil && previous != s && previous.router != nil {
+		if err := queueManagedRouterContinuation(ctx, previous, s, request); err != nil {
+			rejectManagedPreparation(ctx, s, 503, "router_continuation_unavailable")
+		}
+		return
+	}
 	cluster, err := proxywasm.GetProperty([]string{"cluster_name"})
 	if err != nil || string(cluster) != s.config.release.Descriptor.ClusterRef {
+		if s.router == nil && s.config.settings.RouterReentry && s.sourceConfig != nil &&
+			s.sourceConfig.release.Descriptor.ReleaseID == s.config.release.Descriptor.ReleaseID &&
+			s.sourceConfig.release.Descriptor.TargetID != s.config.release.Descriptor.TargetID {
+			if err := queueManagedRouterContinuation(ctx, s, s, request); err != nil {
+				rejectManagedPreparation(ctx, s, 503, "router_continuation_unavailable")
+			}
+			return
+		}
 		rejectManagedPreparation(ctx, s, 503, "router_target_not_verified")
 		return
 	}
@@ -108,6 +129,20 @@ func dispatchManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, re
 	var timeout uint32
 	if s.config.settings.RouterTimeoutMS != nil {
 		timeout = *s.config.settings.RouterTimeoutMS
+	}
+	if s.routerDeadline.IsZero() && timeout != 0 && s.parentAttemptID == "" {
+		s.routerDeadline = time.Now().Add(time.Duration(timeout) * time.Millisecond)
+	}
+	if !s.routerDeadline.IsZero() {
+		remaining := time.Until(s.routerDeadline)
+		if remaining <= 0 {
+			rejectManagedPreparation(ctx, s, 504, "execution_budget_expired")
+			return
+		}
+		remainingMS := (remaining + time.Millisecond - 1) / time.Millisecond
+		if timeout == 0 || uint64(remainingMS) < uint64(timeout) {
+			timeout = uint32(remainingMS)
+		}
 	}
 	headers = append(headers, [2]string{"x-envoy-upstream-rq-timeout-ms", strconv.FormatUint(uint64(timeout), 10)})
 	if proxywasm.ReplaceHttpRequestBody(request.Body) != nil ||
@@ -134,6 +169,7 @@ func observeManagedRouterHeaders(ctx wrapper.HttpContext, s *managedExecutionSta
 	// This internal bridge belongs to the gateway. It can never come from a
 	// provider response, even when the rest of that response is transparent.
 	_ = proxywasm.RemoveHttpResponseHeader(executionfacts.DeliveryBridgeHeader)
+	_ = proxywasm.RemoveHttpResponseHeader(managedRouterRedirectHeader)
 	if !wrapper.IsResponseFromUpstream() {
 		ctx.DontReadResponseBody()
 		return types.ActionContinue
@@ -159,6 +195,11 @@ func observeManagedRouterHeaders(ctx wrapper.HttpContext, s *managedExecutionSta
 		finishManagedRouter(ctx, s, true)
 		return types.ActionContinue
 	}
+	if code >= 400 && s.config.settings.TextExecution != nil && s.config.settings.RouterReentry {
+		ctx.BufferResponseBody()
+		ctx.SetResponseBodyBufferLimit(defaultMaxBodyBytes)
+		return types.HeaderStopIteration
+	}
 	stream, err := managedProtocolContentType(headers)
 	if err == nil && stream {
 		profile := s.config.profile
@@ -177,6 +218,10 @@ func observeManagedRouterHeaders(ctx wrapper.HttpContext, s *managedExecutionSta
 			}
 		default:
 			r.native = newManagedNativeStream(profile.UpstreamProtocol, profile.supplier == "qwen", true)
+		}
+		if s.config.vendor != nil && s.config.vendor.NativeResponseFormat() != "" {
+			r.chat = &managedChatStream{collectText: true}
+			r.supplier = &managedRouterSupplierStream{context: ctx, state: s, format: s.config.vendor.NativeResponseFormat(), finished: make(map[string]string)}
 		}
 		r.digest = sha256.New()
 		if s.config.settings.StreamProjection {
@@ -203,7 +248,7 @@ func observeManagedRouterHeaders(ctx wrapper.HttpContext, s *managedExecutionSta
 	}
 	ctx.BufferResponseBody()
 	ctx.SetResponseBodyBufferLimit(defaultMaxBodyBytes)
-	if s.config.settings.StreamProjection || s.config.profile.InputProtocol == clientresponse.Responses {
+	if s.config.settings.ProtocolMode == "auto" || s.config.profile.InputProtocol == clientresponse.Responses {
 		return types.HeaderStopIteration
 	}
 	return types.ActionContinue
@@ -228,7 +273,7 @@ func observeManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 				err := s.publicAliases.ObserveEvent(clientresponse.Responses, clientresponse.Event{Name: event.Name, Data: event.Data})
 				r.rawAliasesInvalid = err != nil
 			}
-		}, nil)
+		}, nil, end)
 		if r.native.terminal {
 			if r.native.invalid || r.rawAliasesInvalid || len(r.heldRaw)+len(chunk) > int(defaultMaxBodyBytes) {
 				chunk = append(r.heldRaw, chunk...)
@@ -241,8 +286,15 @@ func observeManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 				chunk = nil
 			}
 		}
+	} else if r.supplier != nil && s.config.settings.ProtocolMode == "auto" {
+		var converted []byte
+		r.supplier.push(chunk, end, func(value []byte) {
+			r.chat.pushEvents(value, nil)
+			converted = append(converted, value...)
+		}, nil)
+		chunk = converted
 	} else {
-		r.pushStream(chunk, nil, nil)
+		r.pushStream(chunk, nil, nil, end)
 	}
 	if !end {
 		return chunk
@@ -311,7 +363,39 @@ func observeManagedRouterBody(ctx wrapper.HttpContext, s *managedExecutionState,
 	if r.status != nil {
 		outcome := managedResponseOutcome(s, r.headers, nil, body, nil)
 		r.jsonOutcome = &outcome
-		if s.config.settings.StreamProjection {
+		if managedRouterRetryOutcome(s, outcome) {
+			recordManagedAttempt(ctx, s, outcome)
+			r.attemptRecorded = true
+			ctx.SetContext(managedRouterBodyActiveKey, true)
+			var returned, finishRequested bool
+			finish := func() {
+				if !returned {
+					finishRequested = true
+					return
+				}
+				if finishManagedRouterJSON(ctx, s, body) == types.ActionContinue {
+					_ = proxywasm.ResumeHttpResponse()
+				}
+			}
+			continuing := continueManagedText(ctx, s, outcome, r.headers, body, finish)
+			returned = true
+			ctx.SetContext(managedRouterBodyActiveKey, false)
+			if continuing && !finishRequested {
+				if ctx.GetBoolContext(managedRouterRedirectKey, false) {
+					return types.ActionContinue
+				}
+				return types.ActionPause
+			}
+		}
+	}
+	return finishManagedRouterJSON(ctx, s, body)
+}
+
+func finishManagedRouterJSON(ctx wrapper.HttpContext, s *managedExecutionState, body []byte) types.Action {
+	r := s.router
+	if r.jsonOutcome != nil {
+		outcome := *r.jsonOutcome
+		if s.config.settings.ProtocolMode == "auto" {
 			r.projectionFailed = !projectManagedRouterJSON(ctx, s, body, outcome)
 		} else if managedNativeResponses(s.config) && *r.status >= 200 && *r.status < 300 {
 			aliases, err := clientresponse.ObserveNativeResources(clientresponse.Responses, body, false)
@@ -366,6 +450,8 @@ func finishManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, end 
 			outcome.Acceptance = "accepted"
 			if s.config.profile.supplier == "qwen" && outcome.Usage.Status == "reported" {
 				switch {
+				case r.supplier != nil:
+					applyManagedQwenThinking(s, outcome.Usage, r.supplier.thinking)
 				case r.chat != nil:
 					applyManagedQwenThinking(s, outcome.Usage, r.chat.thinking)
 				case r.dashScope != nil:
@@ -403,7 +489,10 @@ func finishManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, end 
 		}
 		outcome = managedResponseOutcome(s, r.headers, headerErr, nil, bodyErr)
 	}
-	recordManagedAttempt(ctx, s, outcome)
+	if !r.attemptRecorded {
+		recordManagedAttempt(ctx, s, outcome)
+		r.attemptRecorded = true
+	}
 	if !billableManagedSend(s, outcome) {
 		return
 	}

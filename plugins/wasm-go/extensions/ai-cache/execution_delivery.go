@@ -192,9 +192,6 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 	}
 	out.passthrough = mode.Str == "passthrough"
 	if out.passthrough {
-		if out.routerMiss {
-			return errors.New("native cache Router miss requires the standard response profile")
-		}
 		if value.Get("response_profile").Exists() {
 			return errors.New("passthrough cache cannot activate a response profile")
 		}

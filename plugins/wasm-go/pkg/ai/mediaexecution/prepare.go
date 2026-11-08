@@ -53,7 +53,7 @@ func (e *Executor) PrepareRedisCreate(reply resp.Value, actualSelection []byte, 
 	}
 	for name, value := range map[string]string{
 		"attempt_id": e.original.Dispatch.AttemptID, "target_id": field(e.descriptor, "target_id"),
-		"selection_digest": field(selection, "selection_digest"), "send_transport": "http_call", "recording_owner": "ai_proxy", "mechanism": "router",
+		"selection_digest": field(selection, "selection_digest"), "send_transport": field(selection, "send_transport"), "recording_owner": field(selection, "recording_owner"), "mechanism": "router",
 		"credential_ref": field(e.candidate, "credential_ref"), "credential_revision": field(e.candidate, "credential_revision"),
 	} {
 		attempt[name], _ = json.Marshal(value)
@@ -284,7 +284,7 @@ func (e *Executor) selection(raw []byte, query bool) (map[string]json.RawMessage
 	s, err := object(raw)
 	if err != nil || !hasDigest(raw, "selection_digest") || field(s, "selection_canonicalization") != "selection-json.v1" ||
 		field(s, "call_id") != e.history.CallID || field(s, "operation_id") != e.history.OperationID ||
-		field(s, "send_transport") != "http_call" || field(s, "recording_owner") != "ai_proxy" ||
+		field(s, "send_transport") != field(e.candidate, "send_transport") || field(s, "recording_owner") != field(e.candidate, "recording_owner") ||
 		field(s, "credential_ref") != field(e.candidate, "credential_ref") ||
 		field(s, "credential_revision") != field(e.candidate, "credential_revision") ||
 		field(s, "selection_generation") != e.original.Revision {
@@ -328,8 +328,8 @@ func (e *Executor) checkHistory(raw []byte, digest string) error {
 	}
 	a := h.Attempt
 	if a.ID != e.original.Dispatch.AttemptID || a.TargetID != field(e.descriptor, "target_id") ||
-		a.Writer.ProducerID != e.gateway.ProducerID || a.Writer.Role != "ai_proxy" ||
-		a.Transport != "http_call" || a.Owner != "ai_proxy" || a.Mechanism != "router" ||
+		a.Writer.ProducerID != e.gateway.ProducerID || a.Writer.Role != e.original.Procurement.Writer.Role ||
+		a.Transport != field(e.candidate, "send_transport") || a.Owner != field(e.candidate, "recording_owner") || a.Mechanism != "router" ||
 		a.CredentialRef != field(e.candidate, "credential_ref") || a.CredentialRevision != field(e.candidate, "credential_revision") ||
 		a.Procurement.BindingID != field(e.descriptor, "binding_id") || a.Procurement.ProviderID != field(e.descriptor, "provider_id") ||
 		a.Procurement.Account != field(e.descriptor, "provider_account_id") || a.Procurement.Model != e.profile.model || (a.Procurement.Region != "" && !identity(a.Procurement.Region)) ||
