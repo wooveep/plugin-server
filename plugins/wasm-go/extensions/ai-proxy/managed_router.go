@@ -442,6 +442,9 @@ func finishManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, end 
 			ResponseModel: observed.ResponseModel,
 			EvidenceRefs:  []string{"router:" + s.attemptID + ":upstream-response"},
 		}
+		if r.dashScope != nil {
+			recordManagedBailianRequestID(s, gjson.GetBytes(r.dashScope.last, "request_id").String())
+		}
 		outcome.EvidenceRefs = appendManagedBailianEvidence(s, r.headers, outcome.EvidenceRefs)
 		if *r.status >= 400 {
 			outcome.ExecutionResult, outcome.ErrorClass = "failed", "upstream_http_error"

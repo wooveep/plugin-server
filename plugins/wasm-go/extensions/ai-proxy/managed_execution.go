@@ -490,6 +490,8 @@ type managedExecutionState struct {
 	cacheMode                                                  managedCacheMode
 	identity                                                   balanceidentity.Snapshot
 	callID, attemptID, businessUTC                             string
+	bailianRequestID                                           string
+	bailianRequestIDConflict                                   bool
 	streaming                                                  bool
 	requestText                                                string
 	publicRequest                                              []byte
@@ -1123,6 +1125,9 @@ func sendManagedFinal(ctx wrapper.HttpContext, s *managedExecutionState, outcome
 }
 
 func managedResponseOutcome(s *managedExecutionState, headers [][2]string, headerErr error, body []byte, bodyErr error) executionfacts.AttemptOutcome {
+	if stream, err := managedProtocolContentType(headers); err == nil && !stream {
+		recordManagedBailianRequestID(s, gjson.GetBytes(body, "request_id").String())
+	}
 	o := executionfacts.AttemptOutcome{ObservedAt: managedNow(), SendState: "handed_off", Acceptance: "unknown", ExecutionResult: "unknown", Usage: executionfacts.MissingTokenUsage("provider_usage_not_observed")}
 	statusText, statusErr := managedSingleHeader(headers, ":status")
 	status, parseErr := strconv.ParseUint(statusText, 10, 16)
@@ -1229,15 +1234,17 @@ func appendManagedBailianEvidence(s *managedExecutionState, headers [][2]string,
 		host != "dashscope-us.aliyuncs.com" && !strings.HasSuffix(host, ".maas.aliyuncs.com") {
 		return evidence
 	}
-	value, err := managedSingleHeader(headers, "x-request-id")
-	if err != nil {
+	var count int
+	for _, header := range headers {
+		if strings.EqualFold(header[0], "x-request-id") {
+			count++
+			recordManagedBailianRequestID(s, header[1])
+		}
+	}
+	if count > 1 || s.bailianRequestIDConflict || s.bailianRequestID == "" {
 		return evidence
 	}
-	id, err := uuid.Parse(value)
-	if err != nil || id == uuid.Nil || id.String() != strings.ToLower(value) {
-		return evidence
-	}
-	evidence = append(evidence, "bailian-request:"+id.String(), "bailian-attempt:"+s.attemptID)
+	evidence = append(evidence, "bailian-request:"+s.bailianRequestID, "bailian-attempt:"+s.attemptID)
 	thinkingPath := "enable_thinking"
 	if s.config.profile.UpstreamProtocol == managedProtocolDashScopeText || s.config.profile.UpstreamProtocol == managedProtocolDashScopeMultimodal {
 		thinkingPath = "parameters.enable_thinking"
@@ -1254,6 +1261,23 @@ func appendManagedBailianEvidence(s *managedExecutionState, headers [][2]string,
 		evidence = append(evidence, "bailian-cache:explicit")
 	}
 	return evidence
+}
+
+// A native response can carry its original ID in the body rather than a header.
+// Conflicting supplier observations never become an automatic SLS association.
+func recordManagedBailianRequestID(s *managedExecutionState, value string) {
+	if s.config.profile.supplier != "qwen" || value == "" {
+		return
+	}
+	id, err := uuid.Parse(value)
+	if err != nil || id == uuid.Nil || id.String() != strings.ToLower(value) {
+		return
+	}
+	if s.bailianRequestID != "" && s.bailianRequestID != id.String() {
+		s.bailianRequestIDConflict = true
+		return
+	}
+	s.bailianRequestID = id.String()
 }
 
 func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome) {

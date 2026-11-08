@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-proxy/README_EN.md
-  version: 2.0.64
+  version: 2.0.65
   contact:
     name: CH3CHO
     url: https://github.com/CH3CHO
@@ -267,6 +267,9 @@ spec:
           - queue_capacity
           - max_response_bytes
           properties:
+            send_transport:
+              type: string
+              const: router
             producer_id:
               type: string
               minLength: 1

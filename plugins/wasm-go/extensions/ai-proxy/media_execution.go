@@ -47,6 +47,7 @@ type managedMediaProfile struct {
 // This global Redis/Stream registration is deployment-owned. Original target transport,
 // credential and all accounting identity still come from the frozen REL archive.
 type managedMediaSettings struct {
+	SendTransport    string                `json:"send_transport,omitempty"`
 	ProducerID       string                `json:"producer_id"`
 	ServiceAuthToken string                `json:"service_auth_token"`
 	PrivateStream    string                `json:"private_stream"`
@@ -248,6 +249,12 @@ func configureManagedMedia(value gjson.Result) error {
 	var settings managedMediaSettings
 	if err := decodeManagedMediaJSON([]byte(value.Raw), &settings); err != nil {
 		return errors.New("managed_media control configuration is invalid")
+	}
+	if settings.SendTransport == "" {
+		settings.SendTransport = "router"
+	}
+	if settings.SendTransport != "router" {
+		return errors.New("managed media requires Router transport")
 	}
 	if !managedID(settings.ProducerID) || settings.QueueCapacity < 1 || settings.QueueCapacity > 256 ||
 		settings.MaxResponseBytes < 1024 || settings.MaxResponseBytes > 4<<20 || len(settings.Profiles) == 0 || len(settings.Profiles) > 64 {

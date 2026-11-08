@@ -45,6 +45,9 @@ func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func(
 			usageKey := "usage"
 			switch s.format {
 			case "qwen":
+				var requestID string
+				_ = json.Unmarshal(object["request_id"], &requestID)
+				recordManagedBailianRequestID(s.state, requestID)
 				observed = managedQwenDocumentObservation(managedProtocolChat, 200, headers, event.Data, true, event.Name == "error", 0)
 				s.thinking = s.thinking || managedQwenReasoning(event.Data)
 			case "gemini":

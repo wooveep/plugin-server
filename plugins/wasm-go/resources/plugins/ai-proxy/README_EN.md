@@ -4,7 +4,7 @@ keywords: [AI Gateway, AI Proxy]
 description: Reference for configuring the AI Proxy plugin
 ---
 
-## Native Router execution (2.0.64)
+## Native Router execution (2.0.65)
 
 New native releases use `managed_execution.send_transport: router` for supplier traffic. SSE content is converted incrementally; native usage is observed before conversion. Only an explicit `router_timeout_ms` supplies a total upstream deadline.
 
