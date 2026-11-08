@@ -93,10 +93,17 @@ func (o *routerResponseContinuationOption[C]) Apply(vm *CommonVmCtx[C]) {
 	}
 	parse := vm.parseConfig
 	vm.parseConfig = func(context PluginContext, raw []byte, config *C) error {
-		// OnPluginStart clears tick registrations before parsing each reload.
+		// Envoy only declares property prototypes in a root context, before
+		// downstream streams exist. Request-stage declarations cannot survive
+		// an internal redirect. Reloads also clear tick registrations.
 		RegisterTickFunc(1000, collect)
 		if parse != nil {
-			return parse(context, raw, config)
+			if err := parse(context, raw, config); err != nil {
+				return err
+			}
+		}
+		if o.enabled(*config) {
+			return DeclareRequestProperty(property)
 		}
 		return nil
 	}
@@ -132,9 +139,6 @@ func (o *routerResponseContinuationOption[C]) Apply(vm *CommonVmCtx[C]) {
 			ctx.streamingResponseBody = responseStream != nil
 			contexts[string(key)] = ctx
 			return types.ActionContinue
-		}
-		if err := DeclareRequestProperty(property); err != nil {
-			return unavailableRouterObserver()
 		}
 		key := strconv.FormatUint(uint64(ctx.contextID), 10)
 		if proxywasm.SetProperty([]string{property}, []byte(key)) != nil {

@@ -12,7 +12,7 @@ import (
 func TestRouterContinuationRetainsObserverWithoutRepeatingRequestWork(t *testing.T) {
 	for _, oldDoneFirst := range []bool{false, true} {
 		t.Run(strconv.FormatBool(oldDoneFirst), func(t *testing.T) {
-			requests, bodies, responses, completions := 0, 0, 0, 0
+			requests, bodies, responses, completions, declarations := 0, 0, 0, 0, 0
 			vm := NewCommonVmCtx[struct{}]("observer", ProcessRequestHeaders(func(ctx HttpContext, _ struct{}) types.Action {
 				requests++
 				ctx.SetContext("retained", "original processed request")
@@ -29,11 +29,13 @@ func TestRouterContinuationRetainsObserverWithoutRepeatingRequestWork(t *testing
 			t.Cleanup(reset)
 			host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 			host.RegisterForeignFunction("declare_property", func(wire []byte) []byte {
+				declarations++
 				require.Equal(t, []byte{0x28, 0x01}, wire[len(wire)-2:])
 				return []byte{0}
 			})
 			require.Equal(t, types.OnVMStartStatusOK, host.StartVM())
 			require.Equal(t, types.OnPluginStartStatusOK, host.StartPlugin())
+			require.Equal(t, 1, declarations, "Envoy requires the property prototype before any HTTP stream is created")
 			old := host.InitializeHttpContext()
 			headers := [][2]string{{":method", "POST"}, {":path", "/v1/chat/completions"}, {"content-type", "application/json"}, {":authority", "example.test"}}
 			host.CallOnRequestHeaders(old, headers, false)
@@ -60,6 +62,7 @@ func TestRouterContinuationRetainsObserverWithoutRepeatingRequestWork(t *testing
 			require.Equal(t, 1, bodies)
 			require.Equal(t, 1, responses)
 			require.Equal(t, 1, completions)
+			require.Equal(t, 1, declarations, "request callbacks cannot register property prototypes")
 		})
 	}
 }
