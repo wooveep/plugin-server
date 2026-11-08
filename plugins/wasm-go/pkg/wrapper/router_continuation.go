@@ -102,10 +102,17 @@ func (o *routerResponseContinuationOption[C]) Apply(vm *CommonVmCtx[C]) {
 				return err
 			}
 		}
-		if o.enabled(*config) {
-			return DeclareRequestProperty(property)
+		return DeclareRequestProperty(property)
+	}
+	if parseRule := vm.parseRuleConfig; parseRule != nil {
+		vm.parseRuleConfig = func(context PluginContext, raw []byte, global C, config *C) error {
+			// Route-only configurations bypass the global parser entirely.
+			RegisterTickFunc(1000, collect)
+			if err := DeclareRequestProperty(property); err != nil {
+				return err
+			}
+			return parseRule(context, raw, global, config)
 		}
-		return nil
 	}
 	vm.onHttpRequestHeaders = func(context HttpContext, config C) types.Action {
 		if !o.enabled(config) {

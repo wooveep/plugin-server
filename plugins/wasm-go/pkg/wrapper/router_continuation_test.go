@@ -7,6 +7,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func TestRouterContinuationRetainsObserverWithoutRepeatingRequestWork(t *testing.T) {
@@ -65,4 +66,19 @@ func TestRouterContinuationRetainsObserverWithoutRepeatingRequestWork(t *testing
 			require.Equal(t, 1, declarations, "request callbacks cannot register property prototypes")
 		})
 	}
+}
+
+func TestRouterObserverDeclaresPropertyForRouteOnlyConfiguration(t *testing.T) {
+	declarations := 0
+	vm := NewCommonVmCtx("observer", ParseOverrideConfig(
+		func(gjson.Result, *bool) error { return nil },
+		func(raw gjson.Result, _ bool, c *bool) error { *c = raw.Get("enabled").Bool(); return nil }),
+		WithRouterResponseContinuation(func(c bool) bool { return c }))
+	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration([]byte(`{"_rules_":[{"_match_route_":["route"],"enabled":true}]}`)))
+	t.Cleanup(reset)
+	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
+	host.RegisterForeignFunction("declare_property", func([]byte) []byte { declarations++; return []byte{0} })
+	require.Equal(t, types.OnVMStartStatusOK, host.StartVM())
+	require.Equal(t, types.OnPluginStartStatusOK, host.StartPlugin())
+	require.Equal(t, 1, declarations, "a route override must declare its prototype before request processing")
 }
