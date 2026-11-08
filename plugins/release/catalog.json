@@ -3148,7 +3148,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "1.2.2"
+      "declaredVersion": "1.2.3"
     },
     {
       "logicalId": "custom-response",
