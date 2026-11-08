@@ -783,7 +783,11 @@ func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecut
 		return managedProtocolRequest{}, false
 	}
 	state.attemptID = attemptID.String()
-	if proxywasm.ReplaceHttpRequestHeader(managedAttemptHeader, state.attemptID) != nil {
+	previous, _ := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
+	continuing := managed.settings.SendTransport == "router" && previous != nil && previous != state && previous.router != nil
+	// Envoy seals the original request headers before encoding its response.
+	// A Router continuation installs this identity on its new decoder context.
+	if !continuing && proxywasm.ReplaceHttpRequestHeader(managedAttemptHeader, state.attemptID) != nil {
 		rejectManagedPreparation(ctx, state, 500, "execution_identity_install_failed")
 		return managedProtocolRequest{}, false
 	}

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	supplier "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
-	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
@@ -445,9 +444,6 @@ func managedTextUntried(s *managedExecutionState, members []managedHealthMember)
 // never become a new send merely because a retry pattern would match.
 func continueManagedText(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome, headers [][2]string, body []byte, finish func()) bool {
 	call := s.text
-	if call != nil {
-		proxywasm.LogWarnf("[DEBUG-router-c2] call=%s stopped=%t headers=%t body=%t result=%s acceptance=%s classified=%t attempts=%d max=%d admission=%t", s.callID, managedTextStopped(s), outcome.HeadersComplete, outcome.BodyComplete, outcome.ExecutionResult, outcome.Acceptance, managedTextFailureClassified(s, outcome, headers, body), len(call.attempts), call.maxAttempts, s.admissionCurrent(time.Now()))
-	}
 	if call == nil || managedTextStopped(s) || outcome.HTTPStatus == nil || *outcome.HTTPStatus < 400 || !outcome.HeadersComplete || !outcome.BodyComplete || outcome.ExecutionResult != "failed" || outcome.Acceptance == "accepted" || outcome.ProviderTaskID != "" || !managedTextFailureClassified(s, outcome, headers, body) || len(call.attempts) >= int(call.maxAttempts) || !s.admissionCurrent(time.Now()) {
 		return false
 	}
@@ -508,7 +504,6 @@ func qualifyManagedTextAttempt(ctx wrapper.HttpContext, next *managedExecutionSt
 	previous := call.current
 	call.current = next
 	next.healthUnavailable = func(reason string) {
-		proxywasm.LogWarnf("[DEBUG-router-c2] qualification unavailable call=%s reason=%s", next.callID, reason)
 		next.closed = true
 		call.current = previous
 		if reason == "upstream_health_unavailable" {
