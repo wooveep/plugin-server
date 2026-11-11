@@ -163,6 +163,9 @@ func (h *managedHost) records(t *testing.T) []managedStreamRecord {
 		if len(parts) != 7 || parts[0].String() != "XADD" || parts[1].String() != "private-execution-stream" || parts[3].String() != "message_type" || parts[5].String() != "event" {
 			t.Fatalf("unexpected stream command: %#v", parts)
 		}
+		if strings.HasSuffix(parts[4].String(), "execution_telemetry") {
+			continue
+		}
 		result = append(result, managedStreamRecord{messageType: parts[4].String(), raw: []byte(parts[6].String()), calloutID: callout.CalloutID})
 	}
 	return result

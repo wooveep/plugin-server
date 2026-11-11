@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -204,6 +205,13 @@ func managedMediaHostJobTransport(t *testing.T, confirmed, legacy bool) (*manage
 			consumed = true
 			callback(resp.ArrayValue([]resp.Value{resp.StringValue("allow"), resp.StringValue("123-0")}))
 		case "XADD":
+			if strings.HasSuffix(fmt.Sprint(args[4]), "execution_telemetry") {
+				if args[1] != "original-execution-stream" {
+					t.Fatal("telemetry left the authenticated original stream")
+				}
+				callback(resp.StringValue("124-0"))
+				return nil
+			}
 			expectedKind := "router_media_observation"
 			if legacy {
 				expectedKind = "media_observation"

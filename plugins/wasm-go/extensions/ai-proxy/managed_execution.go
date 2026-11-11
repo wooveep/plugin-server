@@ -483,6 +483,8 @@ func managedUniformMember(count int) (int, error) {
 // All request state belongs to this ai-proxy Wasm context. It does not assume
 // that a context map, Go pointer or private envelope crosses a Wasm boundary.
 type managedExecutionState struct {
+	sendStartedAt                                              time.Time
+	upstreamRequestID                                          string
 	router                                                     *managedRouterResponse
 	requestedTools, removedTools                               map[fixedtools.Tool]bool
 	config                                                     *managedExecutionConfig
@@ -828,6 +830,7 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 	// This is the only business send on the callout transport. Redis callbacks never resume the router or
 	// invoke it again. A DispatchHttpCall return is handoff, not wire proof.
 	state.dispatchStarted = true
+	state.sendStartedAt = time.Now()
 	markManagedTextAttempt(state)
 	recordManagedAccessAttempt(ctx, state)
 	upstreamPath := managed.settings.UpstreamPath
@@ -1133,6 +1136,7 @@ func managedResponseOutcome(s *managedExecutionState, headers [][2]string, heade
 	if stream, err := managedProtocolContentType(headers); err == nil && !stream {
 		recordManagedBailianRequestID(s, gjson.GetBytes(body, "request_id").String())
 	}
+	captureManagedUpstreamID(s, headers)
 	o := executionfacts.AttemptOutcome{ObservedAt: managedNow(), SendState: "handed_off", Acceptance: "unknown", ExecutionResult: "unknown", Usage: executionfacts.MissingTokenUsage("provider_usage_not_observed")}
 	statusText, statusErr := managedSingleHeader(headers, ":status")
 	status, parseErr := strconv.ParseUint(statusText, 10, 16)
@@ -1286,6 +1290,7 @@ func recordManagedBailianRequestID(s *managedExecutionState, value string) {
 }
 
 func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome) {
+	recordManagedTelemetry(ctx, s, outcome)
 	if s.config.settings.ToolPolicy != nil && outcome.ToolUsage == nil {
 		outcome.ToolUsage = managedToolUsage(s, nil, outcome, nil)
 	}
@@ -1368,7 +1373,7 @@ func dispatchManagedSnapshot(ctx wrapper.HttpContext, s *managedExecutionState, 
 	var appendToStream executionfacts.AppendFunc
 	client, stream, messageType := s.config.redis, s.config.settings.PrivateStream, retained.MessageType()
 	if s.original.SendTransport == "router" &&
-		(messageType == "execution_registration" || retained.Envelope().Kind == "upstream_attempt") {
+		(messageType == "execution_registration" || messageType == "execution_telemetry" || retained.Envelope().Kind == "upstream_attempt") {
 		messageType = "router_" + messageType
 	}
 	if client != nil && stream != "" {

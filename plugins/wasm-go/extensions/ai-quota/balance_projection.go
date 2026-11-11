@@ -103,7 +103,7 @@ if not unsigned(account[9], '9223372036854775807')
     return deny('authorization_stale')
 end
 local mapping = redis.call('HMGET', KEYS[3], 'account_id', 'cache_generation', 'projection_schema',
-    'projection_state', 'mapping_revision', 'admission_state_revision', 'credential_generation', 'enabled', 'authorized_routes')
+    'projection_state', 'mapping_revision', 'admission_state_revision', 'credential_generation', 'enabled', 'authorized_routes', 'expires_at_unix')
 if mapping[1] ~= ARGV[3] then return deny('authorization_stale') end
 if mapping[2] ~= control[2] then return deny('wrong_generation') end
 if mapping[3] ~= 'balance.v1' then return deny('projection_schema_mismatch') end
@@ -111,6 +111,11 @@ if mapping[4] ~= 'ready' then return deny('projection_unready') end
 if mapping[5] ~= account[9] or mapping[6] ~= account[10]
     or mapping[7] ~= account[11] or mapping[7] ~= ARGV[4] or mapping[8] ~= '1' then
     return deny('authorization_stale')
+end
+local expiry = mapping[10]
+if expiry and expiry ~= '' and expiry ~= '0' then
+    if not unsigned(expiry, '9223372036854775807') then return deny('authorization_stale') end
+    if tonumber(expiry) <= tonumber(redis.call('TIME')[1]) then return deny('credential_expired') end
 end
 -- Managed routes use the exact Key's grant list from the same atomic identity
 -- snapshot. A missing list is an unready projection; an empty list is a denial.

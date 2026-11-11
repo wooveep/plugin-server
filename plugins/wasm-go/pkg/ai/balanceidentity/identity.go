@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -22,6 +23,7 @@ var canonicalID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a
 // Snapshot is configuration bound to the exact successfully authenticated key.
 // It carries no credential and grants no permission by itself.
 type Snapshot struct {
+	ExpiresAtUnix        string `json:"expires_at_unix,omitempty"`
 	AccountID            string `json:"account_id"`
 	APIKeyID             string `json:"api_key_id"`
 	CredentialGeneration string `json:"credential_generation"`
@@ -36,6 +38,12 @@ func ValidID(value string) bool {
 
 // Validate checks the exact native identity without accepting numeric rounding.
 func (s Snapshot) Validate() error {
+	if s.ExpiresAtUnix != "" {
+		value, err := strconv.ParseInt(s.ExpiresAtUnix, 10, 64)
+		if err != nil || value < 1 || strconv.FormatInt(value, 10) != s.ExpiresAtUnix {
+			return errors.New("invalid credential expiry")
+		}
+	}
 	if !ValidID(s.AccountID) || !ValidID(s.APIKeyID) {
 		return errors.New("balance identity requires canonical non-nil account and API key IDs")
 	}
@@ -83,4 +91,13 @@ func Read(headers [][2]string) (Snapshot, error) {
 	}
 	snapshot := Snapshot{AccountID: values[AccountHeader], APIKeyID: values[APIKeyHeader], CredentialGeneration: values[GenerationHeader], TenantID: values[TenantHeader], PrincipalID: values[PrincipalHeader]}
 	return snapshot, snapshot.Validate()
+}
+
+// Expired is evaluated for every new authentication, including cache hits.
+func (s Snapshot) Expired(now time.Time) bool {
+	if s.ExpiresAtUnix == "" {
+		return false
+	}
+	value, err := strconv.ParseInt(s.ExpiresAtUnix, 10, 64)
+	return err != nil || now.Unix() >= value
 }

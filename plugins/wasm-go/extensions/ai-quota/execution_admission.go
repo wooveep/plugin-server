@@ -187,6 +187,7 @@ func checkExecutionAdmission(ctx wrapper.HttpContext, cfg QuotaConfig, identity 
 	pending := &executionAdmissionPending{}
 	ctx.SetContext(executionAdmissionContext, pending)
 	reject := func(status uint32, reason string) {
+		observeAdmissionRejection(ctx, cfg, identity, "execution_admission_denied")
 		if !pending.finished {
 			pending.finished = true
 			executionAdmissionReject(ctx, status, reason)

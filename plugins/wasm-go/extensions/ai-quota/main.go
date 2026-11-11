@@ -259,6 +259,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 	}
 	err = readBalanceAdmission(config.redisClient, config.namespace, identity, routeID, func(result balanceAdmission, err error) {
 		if err != nil {
+			observeAdmissionRejection(context, config, identity, "dependency_unavailable")
 			context.SetUserAttribute("balance_admission_reason", "dependency_unavailable")
 			log.Warn("ai-quota versioned balance read failed")
 			util.SendResponse(http.StatusServiceUnavailable, "ai-quota.dependency_unavailable", "text/plain", "Model request is temporarily unavailable.")
@@ -271,6 +272,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 			checkExecutionAdmission(context, config, identity, func() { proxywasm.ResumeHttpRequest() })
 			return
 		}
+		observeAdmissionRejection(context, config, identity, result.ReasonCode)
 		if result.ReasonCode == "insufficient_balance" {
 			deniedNoBalance()
 			return
@@ -285,6 +287,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 		util.SendResponse(status, "ai-quota."+result.ReasonCode, "text/plain", message)
 	})
 	if err != nil {
+		observeAdmissionRejection(context, config, identity, "dependency_unavailable")
 		context.SetUserAttribute("balance_admission_reason", "dependency_unavailable")
 		util.SendResponse(http.StatusServiceUnavailable, "ai-quota.dependency_unavailable", "text/plain", "Model request is temporarily unavailable.")
 		return types.ActionContinue

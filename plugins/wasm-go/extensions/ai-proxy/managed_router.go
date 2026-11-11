@@ -169,6 +169,7 @@ func dispatchManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, re
 	}
 	s.router = &managedRouterResponse{}
 	s.dispatchStarted = true
+	s.sendStartedAt = time.Now()
 	markManagedTextAttempt(s)
 	recordManagedAccessAttempt(ctx, s)
 	ctx.SetUserAttribute("managed_execution_transport", "router")

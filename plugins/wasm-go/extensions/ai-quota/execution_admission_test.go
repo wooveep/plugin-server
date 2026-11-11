@@ -230,7 +230,17 @@ func (h *executionAdmissionHost) response(t *testing.T, headers [][2]string, raw
 		t.Fatalf("expected one pending query, got %d", len(callouts))
 	}
 	h.host.CallOnHttpCallResponse(callouts[0].CalloutID, headers, nil, raw)
-	if len(h.host.GetCalloutAttributesFromContext(h.id)) != 0 || len(h.host.GetRedisCalloutAttributesFromContext(h.id)) != 0 {
+	for _, observation := range h.host.GetCalloutAttributesFromContext(h.id) {
+		var value struct {
+			Reason   string `json:"reason_code"`
+			APIKeyID string `json:"api_key_id"`
+		}
+		if err := json.Unmarshal(observation.Body, &value); err != nil || value.Reason != "execution_admission_denied" || value.APIKeyID == "" {
+			t.Fatal("unexpected follow-up admission query")
+		}
+		h.host.CallOnHttpCallResponse(observation.CalloutID, [][2]string{{":status", "200"}}, nil, []byte(`{"code":"ok"}`))
+	}
+	if len(h.host.GetRedisCalloutAttributesFromContext(h.id)) != 0 {
 		t.Fatal("control callback sent another HTTP query or changed money in Redis")
 	}
 }

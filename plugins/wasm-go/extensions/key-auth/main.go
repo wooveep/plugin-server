@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
@@ -439,11 +440,14 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 	// 验证token
 	identity, ok := config.credentialIdentities[credential]
 	if !ok {
-		log.Warnf("credential %q is not configured", credential)
+		log.Warn("credential is not configured")
 		return deniedUnauthorizedConsumer(config.Realm)
 	}
 	if !hasAllowedCredentialCandidate(sameValueCandidates, identity.Plan) {
-		log.Warnf("credential %q is not allowed from configured credential sources", credential)
+		log.Warn("credential source is not allowed")
+		return deniedUnauthorizedConsumer(config.Realm)
+	}
+	if identity.Balance != nil && identity.Balance.Expired(time.Now()) {
 		return deniedUnauthorizedConsumer(config.Realm)
 	}
 	if !identity.Consumer {
