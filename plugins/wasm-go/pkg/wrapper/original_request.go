@@ -34,6 +34,11 @@ func PreserveOriginalRequestID(ctx HttpContext) string {
 	if requestID == "" || requestID == "-" {
 		requestID, _ = proxywasm.GetHttpRequestHeader("x-request-id")
 		if requestID == "" || requestID == "-" {
+			if raw, err := proxywasm.GetProperty([]string{"x_request_id"}); err == nil {
+				requestID = string(raw)
+			}
+		}
+		if requestID == "" || requestID == "-" {
 			requestID = uuid.New().String()
 		}
 	}

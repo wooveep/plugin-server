@@ -350,6 +350,9 @@ func onNativeBillingResponseHeaders(ctx wrapper.HttpContext, cfg BillingConfig) 
 	if cfg.NativeExecution == nil {
 		return types.ActionContinue, false
 	}
+	if requestID := wrapper.PreserveOriginalRequestID(ctx); requestID != "" {
+		_ = proxywasm.ReplaceHttpResponseHeader(gatewayRequestIDHeader, requestID)
+	}
 	headers, err := proxywasm.GetHttpResponseHeaders()
 	if err != nil {
 		_ = proxywasm.RemoveHttpResponseHeader(executionfacts.DeliveryBridgeHeader)
