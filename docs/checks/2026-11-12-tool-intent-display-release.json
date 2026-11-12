@@ -1,0 +1,597 @@
+{
+  "schema_version": 1,
+  "scope": "reviewfix6 supplier tool-intent presentation; no financial meter change",
+  "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+  "branch": "dev",
+  "review_sha256": "49a3f946955346fb0ec6bf19f68247705bf62a6dd3f97d3c3c19801bf6c65358",
+  "formal_selected": 55,
+  "new_go_versions": 46,
+  "reused_original_cpp": 8,
+  "reused_original_rust": 1,
+  "trusted_policy_receipts": 216,
+  "standards_receipt_sha256": "ccf6bb93dc9a56859b64ab806ae6786f6ac784f7d4b8e4c5a311a8e7421fbfe2",
+  "spec_receipt_sha256": "bc6f633f997bb94248b81f37b223cc047d3d746aca770be5d785ef57759ba815",
+  "post_registration_receipt_sha256": "b9c1c6ee6e94482208a5bf9b4cd10acbb8b31a06ccf620ec951c7ce4ab8dd37a",
+  "image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:V2.2.1-dev-20261112-reviewfix6@sha256:1e1c131a90ce08506de2262bc750986988e265f2d192dfbb5c3336187e18a4ac",
+  "same_image_api_catalog_sha256": "1584c8bbb65c09b56cef40e4baa69185de48c389d08868d8c5661757be40ed89",
+  "live_postcheck": {
+    "helm_revision": 77,
+    "native_catalog_registration_exit": 0,
+    "selected_registered": 55,
+    "old_artifacts_preserved": 190,
+    "live_artifacts": 236,
+    "all_live_payloads_verified": 1400,
+    "selected_payloads_verified": 326
+  },
+  "unit_package": "go test ./pkg/ai/clientresponse passed",
+  "semantics": {
+    "registered_keys": [
+      "search",
+      "web_search",
+      "web_extractor",
+      "code_interpreter",
+      "image_search",
+      "web_search_image"
+    ],
+    "display_profiles": [
+      "deepseek",
+      "qwen"
+    ],
+    "strict_openai_unchanged": true,
+    "unregistered_fields_omitted": true,
+    "supplier_intent_not_completed_or_billable_usage": true,
+    "no_paid_replay_for_original_search": true
+  },
+  "packages": [
+    {
+      "plugin_name": "ai-agent",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:be84a339b39c37477d128c2c8be99ffa9c8d518f58ff2cf7011e976a893a97af",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:11fabb6b50077fcc8296468f732bfd608644cf173b8b5d3908ec3ad829089bcd",
+      "content_digest": "sha256:11a2195aa9a3bd4141daa0b67901e8c5fc9ffcd2877fc2e5904fbbcc96a7c07c",
+      "archive_digest": "sha256:ed17c4aca04df3947760256ae80e16821e24d415f28604e146157378339b25db"
+    },
+    {
+      "plugin_name": "ai-billing",
+      "plugin_version": "1.0.16",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:1dc5b5f3ec4cf853a412e070c89478d8865c010246a965d1160114958db29fda",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:da55eae9534927e525c8463b5e90a9b199a9a62b29c9ac56001353da89018e7e",
+      "content_digest": "sha256:11fad1ce388579f608df36f71b532e4009924aae970d6de1f7bfd252feb6c964",
+      "archive_digest": "sha256:4eb9c05145c98d436de5664040bf561ba95030a134c68eeba15634ca3124c6a4"
+    },
+    {
+      "plugin_name": "ai-cache",
+      "plugin_version": "2.0.29",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:8f9137d8d3cfe87e89bc6f1d90cb30cecb63dddf6046cb932a2f4771f9a39b6d",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:d80a40be12e2e365168d3de68ef641c152ee6bc4f53afd622a2ec68996d631c8",
+      "content_digest": "sha256:5d4844c7c96d9d5aeb2b5f143fba018b9304dc58f2326c57ade231f12cd337a3",
+      "archive_digest": "sha256:c38b5bc38451dc261ae499159b803bae00d1d587fc7043ddc4d885b0b29a0456"
+    },
+    {
+      "plugin_name": "ai-context-limit",
+      "plugin_version": "1.0.4",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:be91869a1cf09a0ed01db6d92835a23781ddaba5afac126cc69532046fa95bde",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:23122f32260224687fda916e4ed7cccf30ea2661ae71e89e139c8de5f8b877c4",
+      "content_digest": "sha256:f7bda7689fc04f85ca3af9633f1eaa4e09fe7d64e23a4e5a055756d91d0fb4bc",
+      "archive_digest": "sha256:5ff063e15465c0b7b9d86041407f5ea46535bc7d57dd9f330c06a432b0a314ff"
+    },
+    {
+      "plugin_name": "ai-data-masking",
+      "plugin_version": "2.0.6",
+      "source_commit": "0ca03ae9a5b2d13b9c98c3a5494c9a92998111c4",
+      "source_inputs_digest": "sha256:7b2f4b271b75a4bab9681e257595ce2d33308c88e11e7de119ca6b355786fd88",
+      "toolchain": "sha256:dbe09cb45a36cb593e7cef471a09424f3d98374eaf5bd6a7e60263f8ac4ee1dd",
+      "wasm_digest": "sha256:7249ba6d78ac624bfbbe697fc024ea8a5a53a1d9d59efef2d4c79aec02781073",
+      "content_digest": "sha256:69f3a97116ff242e84ab94959334f90090ba776f912554986333f9d0b07c54b7",
+      "archive_digest": "sha256:40480f2d71df5925b997ebe31845b526d5d4c8be35d75c44d574009821f57a1d"
+    },
+    {
+      "plugin_name": "ai-endpoint-picker",
+      "plugin_version": "2.0.6",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:22331bd7283cfcfba331aa3301b80a5b75e1f61a3a2ff122717f7d5ee3000d1e",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:3bd7466686fa97a02aa81d6b9268484f8795a480c002b8eb1d0d865c5a5ccb0b",
+      "content_digest": "sha256:b6904d6b355e759c195b94025de97663238c5de2e538568bac998dbdfea8a59d",
+      "archive_digest": "sha256:9659725ee66d661cdd6455f115d19f9386758c3bf8fd2d28a6eecba73870efdf"
+    },
+    {
+      "plugin_name": "ai-history",
+      "plugin_version": "2.0.17",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:6b037a5cb44b75c149314c4d8a33d6cad0dc98c26d9b11502995058d214b0d55",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:6559307344eefb3ac4651c7c3c66998e9d3a080906b6f94aa691106acbfc676f",
+      "content_digest": "sha256:ad2fd3c32daa8260cbdb72eac16fc2b3c9bdd8b9af9920a6c2b0741d9900aaf6",
+      "archive_digest": "sha256:58c4b743ecfaa4d92291d47cccde9a1b0c03f2f8646631019245c44a36564a74"
+    },
+    {
+      "plugin_name": "ai-intent",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:8a6efea5f5388a84328056568647277646af746eae5dd305b124c3854eef9f94",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:608f4b8a7c0f615dafa29718eb650e3414811441e2183b25c8b8d8f9f29d6dc1",
+      "content_digest": "sha256:b7c68f40c2c2a8d5a29cda1a89063652a02c15e52c5df85f4cb8ba0be9ca36bd",
+      "archive_digest": "sha256:e1847e02808c798bd92382c3d8ca96b9a2cb61e27427fb4091e364af83f076d7"
+    },
+    {
+      "plugin_name": "ai-json-resp",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:7a9cedf9e549f563b6b0027c4fcb60481c38899a04d7e288c8aeae0f827f3122",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:5527f6c22682f6b1d9368ec0ca6286b97ec2e8e8fc107e5998fef801ca14ce1a",
+      "content_digest": "sha256:87c490821f56bbe57720468579038a59c787a830497b86632b8435f6aca31bee",
+      "archive_digest": "sha256:2d3510d67da65d42bb02fab7566f82eaf31638eea51206ccc34c02eeae75efb7"
+    },
+    {
+      "plugin_name": "ai-load-balancer",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:47125dbf12a025386a34819913b1ec17d2339e01eecec4e32d677c284d68c6f6",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:52210685f1be0065de64c94bc792361f81fa4f345ebbe2b91383409889e96f39",
+      "content_digest": "sha256:3965fc292caddcde86ddb5fb4872a32cb32ffbe74896fea09af2d245983f37a4",
+      "archive_digest": "sha256:b4a6afdcfb069aed6eb693799389292f826e065963bba9cb95cdb14885145e0a"
+    },
+    {
+      "plugin_name": "ai-memory",
+      "plugin_version": "0.1.21",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:df9e67d57e339a12dde17b99f2d9b34e8b36e31ad61a9499f6ad93a6cc8246ad",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:6e1a61538d41cb7c1b1f9af7f78b81dda90092bf27d13db9bd7b755f7c75f16e",
+      "content_digest": "sha256:4b7f29d69a2493266c36d52a4e802cf2d84fdc32a993c314680115e58272d3b1",
+      "archive_digest": "sha256:626a82286a4b5e5f7b136ae2b6e49b43f35be3b27381a1de26a0cb4c630eb178"
+    },
+    {
+      "plugin_name": "ai-prompt-decorator",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:0b980fdf252c1b628aca9deab477ec51e712f1cd65f7738d6af94947e7a0b11c",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:290c483d8efb324fcfa4f491aaed414ed57ace9eb06c60c45f95a5414e72bae9",
+      "content_digest": "sha256:a7fc42734d36fb42f5b56b77c4f88345fb24c4c0fdb9bcf5ad0eef7f1ce268e5",
+      "archive_digest": "sha256:8e73acff08fd0f159b2512fe4c1a7ad99d2222c2b7acf96d84c94a079367f9a2"
+    },
+    {
+      "plugin_name": "ai-prompt-template",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:086076e5d2f58c7e204318abd824be9f4724501fbfdd594509e620916aa57978",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:2fd911e7b9440c88664e2a48e5420a6130efff158dd4d41e8927a432b138a978",
+      "content_digest": "sha256:e100b20d54073347ec6963e40558296085de4552cb925344b5e5f968d2b4e48d",
+      "archive_digest": "sha256:027a8c773c8722a589b84f5156f0387c0b9a1ce40d22e26ace778632729051d2"
+    },
+    {
+      "plugin_name": "ai-proxy",
+      "plugin_version": "2.0.80",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:ce590d58cb7ba5911c08938cc39a8fb68f7176b7d512f161d3d26696c5d6303d",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:301f55e06dc60c646357b988858cdab5d7578ec7934336f97ab462be73cd2e85",
+      "content_digest": "sha256:1f5466070f0ab5940ac94d5a4cb5f3f87860f6ec9b456d53af40a3b29f6d2818",
+      "archive_digest": "sha256:7c4a97f2df4a410013cc19d853a6284846fe4bef44255ff013c00fa4ad3d7e4e"
+    },
+    {
+      "plugin_name": "ai-quota",
+      "plugin_version": "2.0.13",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:5f6bc799845a92f8a81a144dd283c666dd730d43de1b2e32393e750f11cf52b4",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:0af4072824876d0806e38cf408571471426bd83f06229bdfb7db524d82738a9e",
+      "content_digest": "sha256:c4d1ef299e39774b66a93e70981e9e8859a4e616bc2a6f86c775079cf7924f55",
+      "archive_digest": "sha256:8b7f38fc40aef2a09c859f14f768499aeba1a00e339c5ad15d1cb7066e97759e"
+    },
+    {
+      "plugin_name": "ai-rag",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:fd8ee3d8e03077cc36d066a70ad28d38d0f1b85c193aed76b40455d91f8c2276",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:87f60714079f8282fe247970a1bef72b08d697b6b89f01bf0182ebd208ee595a",
+      "content_digest": "sha256:071887ed806bef1716f7adb8c5a4c3055dec9f030122e99f7b1914f6b31002a5",
+      "archive_digest": "sha256:66dc0cc25ca6b574e9502bdc6a219b289fe8367f395cb1e0ace8efbe3669c488"
+    },
+    {
+      "plugin_name": "ai-search",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:d8ff3c5bf4639edb65478c9bc65a9d1d697178aedee9054ae399e677e26a25d9",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:58bcd2b96a2e192d692e872407fabe97a393b2aa1d7b9b1a1c7b639dad639183",
+      "content_digest": "sha256:15b12df13a719e29cca51e6d44235091daaba2f1310ab286550402fa50339b29",
+      "archive_digest": "sha256:09f5f404b7bf80e2967762b01601066554f949ec8b849a2be5bde0da8bd14795"
+    },
+    {
+      "plugin_name": "ai-security-guard",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:448389da0e4fe048b1dba3934ce8042e93ae3853df0c70063e529f7527eddfba",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:d01a9758672e63d8bc8a30201de8e465a4a3b11d1d26c0b7980019dc38b83128",
+      "content_digest": "sha256:850e5fd3522b6464d27cd10e2622d0cb185deab22a5533e707980385f3feba38",
+      "archive_digest": "sha256:c0ad703c39db15fcb5b618fc60f2d755692a22a6bfb493ab3b75a724f0639934"
+    },
+    {
+      "plugin_name": "ai-statistics",
+      "plugin_version": "2.0.14",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:d3683d186ecf6ee63576aca5f2827c8eb11a5996418693fbb293623b81316c62",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:6f0b296a1f9d6fe0fc81f0876639d1f1ed530010112aeba304ffaf4cc050b67d",
+      "content_digest": "sha256:bde369de100a6abc25270a04c1dfd70bda488981157e4fd90ce92a2b21a8b6b7",
+      "archive_digest": "sha256:62e155f658622239220b8c11b4bc3822e42f383957a1b308816bf355451fa949"
+    },
+    {
+      "plugin_name": "ai-token-ratelimit",
+      "plugin_version": "2.0.11",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:34b462bdc2a10500f077ee779bf7b8c07657a54a119e26f4ab7e64cd2c3fba38",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:30d735167ef606d6c9336d787449b48f8e743d36a7a80c23e4b078472917f02f",
+      "content_digest": "sha256:b6e4f8dce303bba6d5636d39aa5ee66c4c53d9090f8899e68bd25fa30f21e719",
+      "archive_digest": "sha256:2f0e0dd8ff13485a9c7f5d1497ca8ea60c044f6a7744b3f33af0bd6fc22396b0"
+    },
+    {
+      "plugin_name": "ai-transformer",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:6ed0c719417b85e6a210686d0e0bdb02aca8961b4324b752bd527af98a4c8b37",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:7df27febe463ada47a3831ae31fb2ad1a92a3824ee21187472af83128ad8b1d3",
+      "content_digest": "sha256:49ca9688c589de57e401e52ab47b80d9698090d96da5340c88dce796916f9719",
+      "archive_digest": "sha256:47ba541c4c041a2b429a352b492380a56be34cdaae438274f33cbe32101725a2"
+    },
+    {
+      "plugin_name": "basic-auth",
+      "plugin_version": "2.0.1",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:bcf3cdb0386cba094e20a305b902c2aa5734081e1c4c9850ba1c02f92e33b0b2",
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "wasm_digest": "sha256:123a3f9faa49c01234eb6b690a4105c6a4011cf1179880b9e896210b9193e1a4",
+      "content_digest": "sha256:f44606bbce0c8256c2d4fbd5b4bb85dbbcfeca654dc299a081fd2c8567c16efb",
+      "archive_digest": "sha256:4f38601c32577b74b7e53a9fc566c07e7477da7200da9f4321d4f18dcb398f12"
+    },
+    {
+      "plugin_name": "bot-detect",
+      "plugin_version": "2.0.1",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:fa21fdb06e4a1c578ef3278eb8cb4fe951efe1210d7bac625184c2b5b2738069",
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "wasm_digest": "sha256:6d5df941b485742beb08a98077527520a3aa5b9ba234538e27361b210de8114c",
+      "content_digest": "sha256:c344160f4e6ae392e17613a841fde2a8bf1982bb87c1dd91a8673f9d4b1b4180",
+      "archive_digest": "sha256:ae2c1fd1e0cc571ba10d0f3a4036ac67b3734a273090bc5bf96d17408df3f102"
+    },
+    {
+      "plugin_name": "cache-control",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:d7b8913994fc29e1817f01899148d83dc8d7ddb1bcaa9e91636c3ff84c0c35a2",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:e0f026953fb04c1d1eec54ae8fa871fe438d6de8823d84efbe9177d0ef270890",
+      "content_digest": "sha256:a5715762d81df5b144e826c63c99f873df14a80bba8fce561c73cf7778f007d7",
+      "archive_digest": "sha256:5e117dc705fd62fe7c0f4ad0f4beeed013e1484f8c739085706988e3dd1c23c2"
+    },
+    {
+      "plugin_name": "cluster-key-rate-limit",
+      "plugin_version": "2.0.8",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:42b3fc30389f2453209c945c2edcc54fc211ca9383a4705ac5c2d3a2079c55af",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:769cc236a931874a56817bb162df1a80b4586c6afc4a81aeeebed10a1f09a2ff",
+      "content_digest": "sha256:942f742f47a70ed40033611c8f7e3609a0d94756f9fa48d7b1e057f7fec7f3a2",
+      "archive_digest": "sha256:a62ef034b981056e511d42bb216ee98bbb99b5dcdfe3ea174bb5c8e2b544a6dd"
+    },
+    {
+      "plugin_name": "cors",
+      "plugin_version": "2.0.8",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:3eee90a19691b792ae4120bf8818fa20c9b024116509f8425e8b3525aca4e049",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:71931522fff413e6f0e516aca9a078eec6666e83e892bc6a173352c6a213d37f",
+      "content_digest": "sha256:518199df21600b6968d763690e8a62f5902be80466b188c192caf6dd1636d135",
+      "archive_digest": "sha256:abf7b7cf22375fcec5faebc276da203316e8f1b1e14a2848c7e11d661f62e39b"
+    },
+    {
+      "plugin_name": "custom-response",
+      "plugin_version": "2.0.1",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:22cda2036b35609e87b6d2e177cffac8cc798aad87b27b2dcb298551575dd7b9",
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "wasm_digest": "sha256:a7424986afd3d4519ec837b445183dd702371b2b13b52f0d013b8ec54ee55779",
+      "content_digest": "sha256:b049973ef55538b318650e7c8132163d267cc0b9e2e47df379594cd41f2fe20e",
+      "archive_digest": "sha256:75951e4bd5ff4fd7722081d788ff36060cd0f1718c2925d955dc988891269257"
+    },
+    {
+      "plugin_name": "de-graphql",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:b8b0fb98c22cb4a18efe7fc0d898feb8b0a5ace7d14e3515c86285e6935bff5d",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:2c2bca197ab7e8fae5099115ad9f21c4a5c9b007d37fd15c0a13e0bcc6ecf9b9",
+      "content_digest": "sha256:e570da14415569751ffc73c24d81881f3c9894aaacd034eac9abb3737a7886e1",
+      "archive_digest": "sha256:bf543c355d38ef49e4679e3c3461996865abc3a3a93cc3a1ed6e31234de077ea"
+    },
+    {
+      "plugin_name": "ext-auth",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:0fa97055ce4b4a5518c93419b012e8b59e0b3fa39e596d2c988ccada1832f1dc",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:95a225f7c37783dca9a4e2a6e288f782796c6263f78a932a991ffe6fe3a355c5",
+      "content_digest": "sha256:ca142322f2b187595bd9029564fa9a8032d4c3b5425b41c8e3c9ad74b4d41744",
+      "archive_digest": "sha256:7d73362d7ec69a274732f24c8167daee9ae1e57923d3d6d10f690492b015990c"
+    },
+    {
+      "plugin_name": "frontend-gray",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:4d93db3abff47a662df59aeef7daa071df10c958d1b775cfbf6ac75abf13ba30",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:c4cdd26aeb29b88ce5f7873c2b5c4ca2c668cf79fe0e1b2a1df4b52d7ec5c5b9",
+      "content_digest": "sha256:f9f131f471c99aa66e8c4d84b7c2bc6d5ce0eee697102b5a5736b8648a361420",
+      "archive_digest": "sha256:a385a8d80e2b4e84ae934451df1375f1f5353721f78cfa53c10975c9bc3fdb62"
+    },
+    {
+      "plugin_name": "geo-ip",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:1ee0fea589a7c6028bba26a2932a0be438ad7b5e30b3e1bb5ad7db99b95a1536",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:47097a1955ba7b9fa3f7f5e066c7b07dd3314b3754e7c986a238bc2d28f44f3d",
+      "content_digest": "sha256:a091d2fd639e74595246aa22b2707a0f66c34da680110abc2f62d1a473eca647",
+      "archive_digest": "sha256:6595437b393c3c589b279d5d39d997053727b2f5d755447d1eeb3f21765c6609"
+    },
+    {
+      "plugin_name": "gw-error-format",
+      "plugin_version": "1.0.6",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:94dfb72681b96ea2ce2ec4fab484db3bbbd930bc307fcf7442c92ee043bead5a",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:07c006cd8e207f487219b737b787c04c36fa9bb920b776f981dd4935b84561ec",
+      "content_digest": "sha256:5ee4a9f396ebc4907f50bca2c61d2f901e77a6187121c80f8b2fba8856146a4a",
+      "archive_digest": "sha256:525697d56e9aff87d077e65aebbb155d49131e275591afddbfa77766794eac79"
+    },
+    {
+      "plugin_name": "hmac-auth",
+      "plugin_version": "2.0.1",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:a1a5c47f0360fb865eaa380a7f59cf6c16a7d5d1b80dcb72668b04a0ac34de85",
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "wasm_digest": "sha256:629fd29bcfe1c70f46ec449c698b309f9ec9098373d266ff9aee6434222bac3d",
+      "content_digest": "sha256:b4fbc412e01d74dc333590be88fc230dec4d55dc0d3ddb799b6478c2dc31db5c",
+      "archive_digest": "sha256:0419458e71b6845646e66172100e58435d1f2e3bf1e93e7d99450c56036fffb1"
+    },
+    {
+      "plugin_name": "hmac-auth-apisix",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:7bb3aa45ab81f94a8e02b8ee3578c509f8758655c5516020ae7febb947dc8cb8",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:1ea1175a0a83d0f2c4e82d12a432636e5368244e98a42d0a00775531decd5849",
+      "content_digest": "sha256:39e786fb01f3b4aaf03d07e520a235bd9be9510e5e2efabf6963818040451783",
+      "archive_digest": "sha256:7b901b8d1b32aefe48a499e643e0bb42d0d3af1b435c704d6f9000b68c779d48"
+    },
+    {
+      "plugin_name": "ip-restriction",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:dc800999bd142c0f637bf91ea398b71ee3c8024197733f4a803435fee2d755fd",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:781af6a637a1806fa292ab4d09d96a070e94e58c67f6c2256e4f2529234d64f1",
+      "content_digest": "sha256:70819242298b7acf2f61113b6511179f9c35d82bc350a208f390fd5870b9531d",
+      "archive_digest": "sha256:c0440b5e15939eac4328ee5fd8e36a7564498b958abc7be247d599940351eac7"
+    },
+    {
+      "plugin_name": "json-converter",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:5a9067b8620de6fb50cad225edce7f002dba74af89eeedc47f3cca72a4d215b8",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:c68c7c6fcfb22a47ea40d05ef4ab7b3e26f5930a110465db38564967f3f63be9",
+      "content_digest": "sha256:d10d682d0866ab9487beb66037c982a541d7793b60c84ecc18259d39aedbf06d",
+      "archive_digest": "sha256:253f95c6a75fd7d986c788756f0199564586e9409b0f13e9689409d695e8c3a4"
+    },
+    {
+      "plugin_name": "jwt-auth",
+      "plugin_version": "2.0.2",
+      "source_commit": "1382c1c7ae5e2a1f40a33b7ef0d00d2dcdeef7e2",
+      "source_inputs_digest": "sha256:1444cb722d58a307829432fa24b2ea82b46a214c9344cb80a5c5e3324bc6e071",
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "wasm_digest": "sha256:46c1f07ea5e9bce08d6f2dea0151007d73f41dd8493a5e4560f75544ef58fa54",
+      "content_digest": "sha256:acb6fc34323d3b64667305d216a8d59e6a3621cc6af08ce87a3c156bd51ca722",
+      "archive_digest": "sha256:10e5b0cdb68fb43ef111c25bec0e5561b2325d9b8fabbd2aff01d3fe913064bf"
+    },
+    {
+      "plugin_name": "key-auth",
+      "plugin_version": "1.2.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:ca4ab5eacb21043ba4f0d13b3d47c112730f025a0dbc7a9cb1e031d0d93bd219",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:26e831b1ca4f404dd16499e5caa473345c13f3b795033f4029ea32909c7476c8",
+      "content_digest": "sha256:e7c27ea7b6700feff5114ed459683b82fa4bdae403e320d3a281365411e20625",
+      "archive_digest": "sha256:3bb4fcb9e05e3d363c195434e92cd1dd1842241a13b36afda0ad4907b6c9d2cc"
+    },
+    {
+      "plugin_name": "key-rate-limit",
+      "plugin_version": "2.0.2",
+      "source_commit": "1382c1c7ae5e2a1f40a33b7ef0d00d2dcdeef7e2",
+      "source_inputs_digest": "sha256:267550fc70a49d3df23c7b2a71c0d10a02ade670d08ee2f26443231645bd397a",
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "wasm_digest": "sha256:54642093b07c55a18236fcf4d14f57c55b39e4d340c0969673f35576a833f8fe",
+      "content_digest": "sha256:6e50fb7e58466eeb31f7d260cfadd5057ecce7e24673e427ee2a3d5fbf44ebf1",
+      "archive_digest": "sha256:bf60ebfbf7231ce77828a4929935ca5e1b57785de782dc0ea09c08c3fdbc232e"
+    },
+    {
+      "plugin_name": "log-request-response",
+      "plugin_version": "1.0.4",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:11c180aa27fe52b90d3310a52baa9c087281d975f15775a3c8b00e7cc385efb8",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:8acf4b9662ffa51be2a4ee1782e52a8a005ef9ba0aef92ee871f4e218ddefc22",
+      "content_digest": "sha256:ed62fc47d6388300b423dc61a896958159a739ca742514884080dd5adb5e962f",
+      "archive_digest": "sha256:4b44e8d1d30fe0b9512be93f024715624c348cc4b5b417846cdaaaf397db3f6e"
+    },
+    {
+      "plugin_name": "mcp-router",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:b870bfb36c804f5cb9e02140816d25410e69c0638bd4258fd5553274f7758ea5",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:f25907f77a26314f4aadb6cb4b4afabf62f6acc5758b7a436c96c3e5928f13a1",
+      "content_digest": "sha256:76e88e9eabfe52d822f20fbe41649fe0fc52c69548aa486e0985eff03996ae16",
+      "archive_digest": "sha256:ed5621f331707a58653a2149b40460bd67b83cdf3517ab50b561507e5c6c8358"
+    },
+    {
+      "plugin_name": "mcp-server",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:31c02cdb7425bcb51af0175e72241ea9a543f7ffa688c56cd7cd97278ea1712d",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:cd65189abd2e8433f36d14bd5f32a562f52d44a10aac66f0223cd81cfa67e952",
+      "content_digest": "sha256:8dd750c026da7e0451a0d18f0a9ba488dc8516688bdd3b87a58551cebbb1cbd6",
+      "archive_digest": "sha256:8e7278d66dad464d3cec93149c62d6f218fba90a047c31ff4770c83272034fd3"
+    },
+    {
+      "plugin_name": "model-mapper",
+      "plugin_version": "2.0.9",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:03e6bb4f53e769c2bebfad9befcfd96e8a7decd6aade8955139a48523d82c5fb",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:95dabcda8a4ab31799fdbbff3c21bf0cc245dd5170b7bbadcbe59a765268e891",
+      "content_digest": "sha256:b6fa90e86fcc2cffaed8a5f673b3d7d185de18ac208dca73f3968207709ca11e",
+      "archive_digest": "sha256:229157bd411ee2d883aa8958c66439d1882af419e533a15a6e2bb134800c2b54"
+    },
+    {
+      "plugin_name": "model-router",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:ba81b9f31884c9c6a04d6184003afe989aebdc28f9fae2bbc46dea9f5a1e6512",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:1cde40ebfc672757c0e38e0d3a733914e6ded9cd7182b3eb028758aa9dd6279c",
+      "content_digest": "sha256:080b7cb3f4f3e6130d883069107d34d7716226c473211a7499ed2fa0116c38d6",
+      "archive_digest": "sha256:da3aea405e0cae8899763afe1be0465b86008714d656465b174eb12753181634"
+    },
+    {
+      "plugin_name": "nginx-rewrite-compatible",
+      "plugin_version": "1.0.4",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:58efa410f8323219380f8c5f2c5295d23547761dd98e8a8575966377d9612e07",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:3a6786acc02e07ba6b865106bcc4653a0f452a88b05e5d7a3b5dfdab020465f4",
+      "content_digest": "sha256:e96991ebec1b62fcaa915603cde93edc1bbabba3622c72b48b66afb8a18f1f2a",
+      "archive_digest": "sha256:9866fde66518fc946d19821d3c94289400a4565a4f484a16fd240fc7abb3af68"
+    },
+    {
+      "plugin_name": "oauth",
+      "plugin_version": "2.0.2",
+      "source_commit": "1382c1c7ae5e2a1f40a33b7ef0d00d2dcdeef7e2",
+      "source_inputs_digest": "sha256:c85f5303d1fa594803db7c6cfcb34af264994626c0b9fa13c398e38044cc2d30",
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "wasm_digest": "sha256:e5c90863b4175389a6814ce4fede5d570a6010409069b395406005a6d98d5efd",
+      "content_digest": "sha256:dde78314a1a007dc5e6cc639937e13cfddd233ab7132764310f2530cbd76fb0e",
+      "archive_digest": "sha256:e93976a2136a4db3215361d7b564c5966a2712cc99a557a2325fc417feb58a01"
+    },
+    {
+      "plugin_name": "oidc",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:47e258e54fbc87de8611b6aaf291cb17ecd0f5be847e22979a3def67b73c5757",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:a295a31e9af2dbabd2858817eecae01940d6303fdc5d49748406fbfcbbcd10a4",
+      "content_digest": "sha256:a0d093a564335c30110b778eea009632d633e26e8d8a18a3a77e3050baeee495",
+      "archive_digest": "sha256:c6d0305f0cfd4fbe2c17136e64db4445421c2d751f48d13d8a645ff8a95549ea"
+    },
+    {
+      "plugin_name": "opa",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:d95a89e8a4debbbdd714a9ec1f7faabb90991bba6e372cc5f61293f3d83c5483",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:4b38b7bffcb624f34e011cc618ece2cfa5e4e88e0b8aac332a1c6ea3b248656e",
+      "content_digest": "sha256:2dd3e771ba3869770048e40da2d3b8d61aa7dc4d76805c07a4451dc13269a5c3",
+      "archive_digest": "sha256:0b5ccc78869e3d235eafd891eb558819102b45ecb73da9cf25caec5564097c0a"
+    },
+    {
+      "plugin_name": "replay-protection",
+      "plugin_version": "1.0.4-alpha",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:8183fe174d3766467ec42025606f1bd2fc91a0de7ccea33205abcb9e3058b773",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:2c3c01e74240b48fca3044a4f7ce0cfb380ea8885aafdac2d5d4a4c2b89230cb",
+      "content_digest": "sha256:394952efc275bb9971dc6dbd2e20b4a9c82e2ef204b8fa9b175ec91f5a0556d2",
+      "archive_digest": "sha256:9c39669138372dbef54eac1fd4192009414fc3a709d44f7be09fa0049912e616"
+    },
+    {
+      "plugin_name": "request-block",
+      "plugin_version": "2.0.1",
+      "source_commit": "1492a61963107ef46f4692002a689e0dd827ad7e",
+      "source_inputs_digest": "sha256:cffe7f1dd69a7f806007a16bbc18387b212e70fa73e8343d300bd8c959e677c3",
+      "toolchain": "higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/build-tools-proxy:release-1.19-ef344298e65eeb2d9e2d07b87eb4e715c2def613@sha256:b421d05041df9e0426d61fd2f30b5191e55db6ac2a5bc4069c04b5ebce28d6e8",
+      "wasm_digest": "sha256:17974cf9348668898a229babc4a9b9a52cf15607f25c34e29fbcb0261e2d1f5b",
+      "content_digest": "sha256:00c2eb18370016d0ec8ea624f7dd31f42ad2746468e4e06c7a70370b7c97407a",
+      "archive_digest": "sha256:85ec46deac966d75286b3067e355b1638d4eebb571bc88a0a9c302e0e4e573c5"
+    },
+    {
+      "plugin_name": "request-validation",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:8752f4cdbc6fdca60a12d46cf23d889b8c06a5d8eb89bd9ec3250965e10f47f9",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:5060c839d0f2affc71000fb735bc1278c4747ddef5a9314bde618439692a7d9a",
+      "content_digest": "sha256:df30991645c5e4152d5f42727425d658d25c4f35b195a244f86134eb9fa1cebd",
+      "archive_digest": "sha256:198907d9afaa45d18eaf0975210b276ab8df0a266757085be32e7e444ca77e06"
+    },
+    {
+      "plugin_name": "response-cache",
+      "plugin_version": "1.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:d9d3655f696aead87f12254d6efbd4f820b2d9a89a163b9b157383525c00f823",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:d6e628d44e94376648302befe17bf4f7b96271efbcdc18da837a82f7004eb0fe",
+      "content_digest": "sha256:4e233e71af8667f726c323bb15cfd5a8d543185e4f34cc733f8cadd9cffd917c",
+      "archive_digest": "sha256:2fc905ea13662230f658aa53974e2d9f7baeb1582b1586a28b74937a3cdc1fcf"
+    },
+    {
+      "plugin_name": "traffic-tag",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:9716a758f73549a8a33488cf4464436a87537d7635ccd2f90aa0557de37f6294",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:016c699f953ea16191cae48f9127a551e780f34445f7bb52bd0f51133b29c9d3",
+      "content_digest": "sha256:971e5d2efaa93476f86aac0fffc7786d42c028a8c699a33c9f492b7006af4fb7",
+      "archive_digest": "sha256:0156e3c6f13e6a2f19975c044e95da1ac4421e33ccb1fa418a367137726cacc2"
+    },
+    {
+      "plugin_name": "transformer",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:3af7c3bf025c4f452de580b1f79eb3cdf8ed59746aa49b53e5669290e7998579",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:3f8041b3a134a12d9536a96106a8a8c87291335df4ab067eebc766cddfc9c04e",
+      "content_digest": "sha256:7281627cb0c88720967975ceb1c1b189009d16541eaa89ce2dc38a9ea860195a",
+      "archive_digest": "sha256:983782db04a07934b6e60b1d78f5088a5cff77f0b062bb338f728ed7c67880dc"
+    },
+    {
+      "plugin_name": "waf",
+      "plugin_version": "2.0.7",
+      "source_commit": "09b13b581daaab28260317e30827627a6502c288",
+      "source_inputs_digest": "sha256:65b0908c1617b6483e62aad5276f22ba5a6b8837c232786738566e16dc5df06a",
+      "toolchain": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+      "wasm_digest": "sha256:5ab6e72fe6f7346a015c2ed428fdff8ab4446411ec72abbed2c09f98e0ae1b6c",
+      "content_digest": "sha256:e89c4fae20935717a6373d645413caa8bb3116530bdb2526275c58017f1916bf",
+      "archive_digest": "sha256:9cab9db99bbdcbe625ea5cc929474d52cd0a78e59c823ecbb561a5ab4cd69c14"
+    }
+  ]
+}
