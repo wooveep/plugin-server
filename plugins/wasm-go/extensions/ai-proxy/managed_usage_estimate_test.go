@@ -12,6 +12,7 @@ func TestNativeBailianBodyRequestIDRemainsAvailableForSLSWithoutHeaders(t *testi
 	s := &managedExecutionState{attemptID: "attempt-1", config: &managedExecutionConfig{settings: managedSettings{Authority: "dashscope.aliyuncs.com"}, profile: managedProtocolProfile{supplier: "qwen"}}}
 	const id = "a8a7295d-0699-991f-849a-97f767160077"
 	recordManagedBailianRequestID(s, id)
+	require.Equal(t, id, s.upstreamRequestID)
 	require.Contains(t, appendManagedBailianEvidence(s, nil, nil), "bailian-request:"+id)
 	require.Empty(t, appendManagedBailianEvidence(s, [][2]string{{"x-request-id", "c652718f-433b-9413-a8dd-c81cb014ff54"}}, nil))
 }
