@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/mcp-router/README_ZH.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/mcp-router/README.md
-  version: 2.0.6
+  version: 2.0.7
   contact:
     name: Higress Team
     url: https://higress.io/
