@@ -56,3 +56,9 @@
 固定工具链完整构建55项通过；完整包、来源策略经独立核对，本地登记库追加保留旧55项，并构建了未部署的候选PluginServer镜像。发行前备份本地登记库及原策略，原版本不覆盖；未来镜像/PVC只按原种子流程追加已审完整版本。新增目录不改变已冻结路由引用，正式Qwen/Deep须另获明确原生发布范围后才能切换。Console接收列与认证ingest应先部署；真实首响应采集仍需后续真实请求验证，不凭包构建通过关闭I22。
 
 候选构建后，本地旧登记库副本按既有种子入口从236项追加到282项，旧236项manifest、archive摘要与artifact ID保留。验证发现既存`GET /artifacts`将整个列表交给单包JSON适配器：旧236项逐条编码已合计4,056,879字节，新282项为4,508,919字节，均触发1MiB输入限制并返回400/E_LIMIT。集合响应改为逐条沿用原canonical编码后组成同形JSON数组；不改变mf-json.v1适配器、单包限制、登记或归档契约。现有HTTP单元套件16项通过，其中新增一项覆盖大于4MiB的集合和精确数值；旧URL下载、重启与VM实际追加仍需分别留证，当前不据此宣称插件已部署或I22完成。
+
+2026-11-13实际阶段：plugin2于Helm97正常追加236→282，旧236的manifest/archive/ID、新55全部491个inventory文件、旧59引用URL及1000个唯一HTTP载荷摘要通过，集合200/4,509,216字节，API正常启动登记55。但影响核对漏了启动协调器：全目录选择除了已审model-router，还将两条internal限流引用推进新版本，其中ai-token-ratelimit的Wasm确有变化。按已确认逆覆盖正常回退至98；当前原55选择和59引用、完整价格/provider/portal/自有原null价本文档及131迁移账本恢复，7PVC和6非Helm Secret保持。新增46和登记历史保留于282库，没有替换库或删除不可变版本；原Plugin6的集合400/E_LIMIT也如实恢复。该次异常不作为新RT样本或完整I22通过。
+
+后续最小候选冻结[首响应选择目录](../../plugins/release/first-response-selection.json)：只选ai-proxy2.0.81，其他54项使用98原选中的不可变版本。该文件沿既有`selected_entries`元数据目录格式，供`verify-release-store.py`选择已登记完整包；不作为`build-all`的源码目录，也不修改各实现VERSION或旧包。Docker使用`--build-arg PLUGIN_RELEASE_CATALOG=plugins/release/first-response-selection.json`，默认构建仍使用原源码目录。旧54包来自原不可变image6和本地原登记库，新proxy来自已审完整包；只复制原manifest/archive/payload/ID，禁止重编旧版本。镜像/catalog endpoint/API登记使用同一生成目录，未选中的新46仍可保留在登记库及来源策略中。
+
+新proxy的首响应观测由`managed_telemetry.go`直接冻结独立RuntimeTelemetry，再由`dispatchManagedSnapshot`写入原私有Redis/outbox，不经过旧ai-billing的重新序列化；因此最小选择可保留其他54项代码。既有导出入口已实际导出55份完整包：旧54的目录条目、manifest、archive、载荷及ID与原版本逐字节相同，新proxy与已审plugin2完整包相同，无重编或重新打包；生成目录摘要为`sha256:1082d9ec83101fe1020c214b8bfea5f1be8fc2c5c8d2c7af1ab7d7620a770087`。现有release catalogue单元测试5项通过。下一次部署前需以98完整59资源spec作为比较基线，确认model-router、两internal及其他旧引用/配置均不变；尚未构建该候选镜像或再次部署，实际自有mock调用另行核对具体范围。
