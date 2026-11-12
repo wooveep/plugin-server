@@ -18,6 +18,7 @@ type RuntimeTelemetry struct {
 	UpstreamRequestID string `json:"upstream_request_id,omitempty"`
 	SentAt            string `json:"sent_at,omitempty"`
 	DurationMS        *int64 `json:"duration_ms,omitempty"`
+	FirstByteMS       *int64 `json:"first_byte_ms,omitempty"`
 	ObservedAt        string `json:"observed_at"`
 }
 
@@ -34,6 +35,9 @@ func FreezeRuntimeTelemetry(value RuntimeTelemetry) (Snapshot, error) {
 		if _, err := time.Parse(time.RFC3339Nano, value.SentAt); err != nil {
 			return Snapshot{}, errors.New("invalid actual send time")
 		}
+	}
+	if value.FirstByteMS != nil && (*value.FirstByteMS < 0 || value.Kind != "attempt" || value.SentAt == "") {
+		return Snapshot{}, errors.New("invalid upstream first response time")
 	}
 	raw, err := json.Marshal(value)
 	if err != nil {

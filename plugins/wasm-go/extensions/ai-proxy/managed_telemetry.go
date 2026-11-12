@@ -16,7 +16,7 @@ func recordManagedTelemetry(ctx wrapper.HttpContext, s *managedExecutionState, o
 		sent = s.sendStartedAt.UTC().Format(time.RFC3339Nano)
 	}
 	recordManagedAccessUpstream(ctx, s)
-	snapshot, err := executionfacts.FreezeRuntimeTelemetry(executionfacts.RuntimeTelemetry{ProducerID: s.config.settings.ProducerID, Kind: "attempt", CallID: s.callID, AttemptID: s.attemptID, RequestID: wrapper.PreserveOriginalRequestID(ctx), UpstreamRequestID: s.upstreamRequestID, SentAt: sent, ObservedAt: managedNow()})
+	snapshot, err := executionfacts.FreezeRuntimeTelemetry(executionfacts.RuntimeTelemetry{ProducerID: s.config.settings.ProducerID, Kind: "attempt", CallID: s.callID, AttemptID: s.attemptID, RequestID: wrapper.PreserveOriginalRequestID(ctx), UpstreamRequestID: s.upstreamRequestID, SentAt: sent, FirstByteMS: s.firstByteMS, ObservedAt: managedNow()})
 	if err == nil {
 		dispatchManagedSnapshot(ctx, s, snapshot)
 	} else {

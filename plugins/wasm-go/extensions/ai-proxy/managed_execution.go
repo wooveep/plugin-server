@@ -484,6 +484,7 @@ func managedUniformMember(count int) (int, error) {
 // that a context map, Go pointer or private envelope crosses a Wasm boundary.
 type managedExecutionState struct {
 	sendStartedAt                                              time.Time
+	firstByteMS                                                *int64
 	upstreamRequestID                                          string
 	router                                                     *managedRouterResponse
 	requestedTools, removedTools                               map[fixedtools.Tool]bool
