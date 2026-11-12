@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-quota/util"
 	"io"
 	"math/big"
 	"mime"
@@ -368,8 +369,8 @@ func executionAdmissionInstallHeaders(callID, releaseID, deadline, occurredAt st
 
 func executionAdmissionReject(ctx wrapper.HttpContext, status uint32, reason string) {
 	ctx.SetUserAttribute("execution_admission_reason", reason)
-	_ = proxywasm.SendHttpResponseWithDetail(status, "execution_admission_"+reason,
-		[][2]string{{"content-type", "application/json"}}, []byte(`{"error":"execution admission unavailable"}`), -1)
+	_ = util.SendResponse(ctx, status, "execution_admission_"+reason,
+		"application/json", `{"error":"execution admission unavailable"}`)
 }
 
 func executionAdmissionSingleHeader(headers [][2]string, name string) (string, bool) {
