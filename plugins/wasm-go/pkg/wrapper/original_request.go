@@ -20,7 +20,9 @@ func PreserveOriginalRequestID(ctx HttpContext) string {
 			}
 		}
 		ctx.SetContext(OriginalRequestStartContext, start)
-		_ = proxywasm.SetProperty([]string{"modelfusion_original_request_start"}, []byte(strconv.FormatInt(start.UnixMilli(), 10)))
+		if err := proxywasm.SetProperty([]string{"modelfusion_original_request_start"}, []byte(strconv.FormatInt(start.UnixMilli(), 10))); err != nil {
+			proxywasm.LogWarnf("original request start filter-state write failed: %v", err)
+		}
 	}
 	requestID, _ := ctx.GetContext(originalRequestIDContext).(string)
 	if requestID == "" {
@@ -36,6 +38,8 @@ func PreserveOriginalRequestID(ctx HttpContext) string {
 		}
 	}
 	ctx.SetContext(originalRequestIDContext, requestID)
-	_ = proxywasm.SetProperty([]string{"modelfusion_original_request_id"}, []byte(MarshalStr(requestID)))
+	if err := proxywasm.SetProperty([]string{"modelfusion_original_request_id"}, []byte(MarshalStr(requestID))); err != nil {
+		proxywasm.LogWarnf("original request ID filter-state write failed: %v", err)
+	}
 	return requestID
 }
