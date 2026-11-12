@@ -351,7 +351,9 @@ func onNativeBillingResponseHeaders(ctx wrapper.HttpContext, cfg BillingConfig) 
 		return types.ActionContinue, false
 	}
 	if requestID := wrapper.PreserveOriginalRequestID(ctx); requestID != "" {
-		_ = proxywasm.ReplaceHttpResponseHeader(gatewayRequestIDHeader, requestID)
+		if err := proxywasm.ReplaceHttpResponseHeader(gatewayRequestIDHeader, requestID); err != nil {
+			proxywasm.LogWarnf("native gateway request ID response header write failed: %v", err)
+		}
 	}
 	headers, err := proxywasm.GetHttpResponseHeaders()
 	if err != nil {
