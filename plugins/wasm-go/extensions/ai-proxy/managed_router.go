@@ -207,6 +207,7 @@ func observeManagedRouterHeaders(ctx wrapper.HttpContext, s *managedExecutionSta
 	r := s.router
 	code := uint16(status)
 	r.headers, r.status = headers, &code
+	captureManagedUpstreamID(s, headers)
 	if !ctx.HasResponseBody() {
 		r.transportEnded = true
 		finishManagedRouter(ctx, s, true)
