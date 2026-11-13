@@ -148,6 +148,38 @@ func publishAdapterMetadata(metadata adapterMetadata) {
 	}
 }
 
+func publishManagedOperationMetadata(config *managedExecutionConfig) {
+	var operation provider.ApiName
+	var path string
+	switch config.profile.InputProtocol {
+	case managedProtocolChat:
+		operation, path = provider.ApiNameChatCompletion, provider.PathOpenAIChatCompletions
+	case managedProtocolResponses:
+		operation, path = provider.ApiNameResponses, provider.PathOpenAIResponses
+	case managedProtocolMessages:
+		operation, path = provider.ApiNameAnthropicMessages, provider.PathAnthropicMessages
+	case managedProtocolEmbeddings:
+		operation, path = provider.ApiNameEmbeddings, provider.PathOpenAIEmbeddings
+	default:
+		return
+	}
+	metadata := adapterMetadata{SchemaVersion: 2, Matched: true, Mode: config.settings.ProtocolMode, NormalizedOperation: string(operation), OperationTemplate: path}
+	if raw, err := proxywasm.GetProperty([]string{adapterMetadataProperty}); err == nil && len(raw) != 0 {
+		var current adapterMetadata
+		if len(raw) > maxAdapterMetadataBytes || json.Unmarshal(raw, &current) != nil || current.SchemaVersion != 2 {
+			publishNoAdapterMetadata(config.settings.ProtocolMode)
+			return
+		}
+		if current.Matched {
+			if current.Mode != metadata.Mode || current.NormalizedOperation != metadata.NormalizedOperation || current.OperationTemplate != metadata.OperationTemplate {
+				publishNoAdapterMetadata(config.settings.ProtocolMode)
+			}
+			return
+		}
+	}
+	publishAdapterMetadata(metadata)
+}
+
 func applyResponsesFallbackAdapter(
 	ctx wrapper.HttpContext,
 	path string,
