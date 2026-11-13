@@ -13,13 +13,31 @@ import (
 
 // #14 R01: an owner handoff recreates the HTTP stream and its Wasm properties.
 func TestResponsesIncidentRouterContinuationRestoresOperationMetadata(t *testing.T) {
-	for _, authorized := range []bool{true, false} {
-		name := "untrusted continuation"
-		if authorized {
-			name = "verified owner handoff"
-		}
-		t.Run(name, func(t *testing.T) {
-			fixture := responseModeFixture("openai", clientresponse.Responses, clientresponse.Responses, "auto", clientresponse.OpenAI)
+	for _, tc := range []struct {
+		name                             string
+		authorized, converted, unmatched bool
+	}{
+		{"verified owner handoff", true, false, false},
+		{"verified matched conversion", true, true, false},
+		{"explicitly unmatched stays unknown", true, false, true},
+		{"untrusted continuation", false, true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			upstream := clientresponse.Responses
+			if tc.converted {
+				upstream = clientresponse.Chat
+			}
+			fixture := responseModeFixture("openai", clientresponse.Responses, upstream, "auto", clientresponse.OpenAI)
+			expected := adapterMetadata{SchemaVersion: 2, Matched: true, Mode: "auto", NormalizedOperation: string(provider.ApiNameResponses), OperationTemplate: provider.PathOpenAIResponses}
+			if tc.converted {
+				expected.AdapterID, expected.Version = "responses.to_chat_completions", "1"
+				expected.ProviderMatch, expected.CapabilityMatch, expected.UsageProfile = "openai", "openai/v1/chat/completions", "openai.responses.v1"
+			}
+			if tc.unmatched {
+				expected = adapterMetadata{SchemaVersion: 2, Mode: "auto"}
+			}
+			expectedRaw, err := json.Marshal(expected)
+			require.NoError(t, err)
 			settings := fixture["managed_execution"].(managedSettings)
 			settings.SendTransport, settings.StreamProtocol, settings.StreamProjection, settings.RouterReentry = "router", clientresponse.Responses, true, true
 			fixture["managed_execution"] = settings
@@ -29,9 +47,15 @@ func TestResponsesIncidentRouterContinuationRestoresOperationMetadata(t *testing
 				h := newManagedTextHost(t, fixture)
 				c := h.cfg.ManagedExecution.(*managedExecutionConfig)
 				require.NoError(t, h.host.SetProperty([]string{"cluster_name"}, []byte(c.release.Descriptor.ClusterRef)))
+				if tc.converted {
+					publishAdapterMetadata(expected)
+				}
 				request := responseModeRequest(clientresponse.Responses, c.release.PublicModel, true)
 				require.Equal(t, types.HeaderStopIteration, h.host.CallOnRequestHeaders(h.id, managedRequestHeaders(t, request), false))
-				if authorized {
+				if tc.unmatched {
+					publishNoAdapterMetadata("auto")
+				}
+				if tc.authorized {
 					previous := h.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
 					next := *previous
 					require.NoError(t, queueManagedRouterContinuation(h.ctx, previous, &next, managedProtocolRequest{Body: request}))
@@ -56,7 +80,7 @@ func TestResponsesIncidentRouterContinuationRestoresOperationMetadata(t *testing
 			headers := [][2]string{{":method", "POST"}, {":authority", wrapper.RouterContinuationHost}, {":path", managedRouterTargetPath(c)}, {"content-type", "application/json"}}
 			require.Equal(t, types.HeaderStopIteration, h.host.CallOnRequestHeaders(h.id, headers, false))
 			raw, err := h.host.GetProperty([]string{adapterMetadataProperty})
-			if !authorized {
+			if !tc.authorized {
 				require.EqualValues(t, 403, h.host.GetSentLocalResponse(h.id).StatusCode)
 				require.Empty(t, raw, "an unverified private URL cannot publish operation metadata")
 				return
@@ -66,12 +90,8 @@ func TestResponsesIncidentRouterContinuationRestoresOperationMetadata(t *testing
 			require.Empty(t, managedRouterPending)
 			var metadata adapterMetadata
 			require.NoError(t, json.Unmarshal(raw, &metadata))
-			require.Equal(t, 2, metadata.SchemaVersion)
-			require.True(t, metadata.Matched)
-			require.Equal(t, "auto", metadata.Mode)
-			require.Equal(t, string(provider.ApiNameResponses), metadata.NormalizedOperation)
-			require.Equal(t, provider.PathOpenAIResponses, metadata.OperationTemplate)
-			require.Empty(t, metadata.AdapterID)
+			require.Equal(t, expected, metadata)
+			require.Equal(t, expectedRaw, raw, "verified conversion identity must survive byte-for-byte")
 		})
 	}
 }
