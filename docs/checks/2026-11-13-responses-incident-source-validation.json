@@ -1,0 +1,301 @@
+{
+  "created_at": "2026-11-13T06:35:10.088099+00:00",
+  "base": "940dda90ae09a92de867dee8ca6e0a635cb58ff8",
+  "source_commit": "dacd69e148f61330b713d1a4854578e11b7fdcc3",
+  "source_tree": "edd6f1fe5e83beef425c3bb79b9626b1ac0c2d8c",
+  "source_sha256": {
+    "plugins/release/catalog.json": "475d545839a52ff729146dbf7037f58c72549b3939f9fadd2dd068e692049b78",
+    "plugins/release/responses-incident-selection.json": "9be2d8ddb25b0fc74999e1c0638f811b30d7fa3b82d331c749f12da6d26cd06c",
+    "plugins/wasm-go/extensions/ai-proxy/VERSION": "afdcbd2c2ba652de2a2049ecf76a875b157a2459f5b8f1be179ac00fa250859e",
+    "plugins/wasm-go/extensions/ai-proxy/adapter.go": "727ad07db1f328adee888f5df01a86d2352dbd355ffa849e1d4ce5257d45b635",
+    "plugins/wasm-go/extensions/ai-proxy/managed_execution.go": "37a1e48e0987595a51ef19e67e7f2a9271e1590d23c4459d4ff8de169d35a130",
+    "plugins/wasm-go/extensions/ai-proxy/managed_log.go": "3e8de0078f92cc4226d4fb790ceca2b4ac6c90786c3c07d53dcf680b40767da2",
+    "plugins/wasm-go/extensions/ai-proxy/managed_log_incident_test.go": "321a294ddb6f350309b12d344c89234cc92c15d3458b958217270e0715708710",
+    "plugins/wasm-go/extensions/ai-proxy/managed_log_reason_contract_test.go": "3f576debc2ffb89df92fc0fa11ebdcc6cf383a497ed8b599d566a3b42eea8562",
+    "plugins/wasm-go/extensions/ai-proxy/managed_native_attribution_test.go": "3ecc6f049f59f8aec3600a5bc3363f5c4a482f41bc4ebd066a66e8c8c566f088",
+    "plugins/wasm-go/extensions/ai-proxy/managed_protocol_incident_test.go": "42e57828c1a1a24050e50949e58a77e9990acac77d84f4b5a5d1d419e2582de4",
+    "plugins/wasm-go/extensions/ai-proxy/managed_public_resources.go": "6c9151944d4de90f7f75e4f687a5954f1c669f6892f773b8437cf58015de2921",
+    "plugins/wasm-go/extensions/ai-proxy/managed_public_resources_bench_test.go": "1b797cd436a1977f8017c05ae7ca75b80adbd044f3b97a062c94a49a2430cdab",
+    "plugins/wasm-go/extensions/ai-proxy/managed_resource_lookup_bench_test.go": "bdf2746f588d4db04f89d59563e0ca7056572e8bb927656eb7a985bf256c018d",
+    "plugins/wasm-go/extensions/ai-proxy/managed_router.go": "4b070556fae4e36eb2d022293067bce9ddceb6457adfb5a6cbd6a5400f631d9a",
+    "plugins/wasm-go/extensions/ai-proxy/responses_incident_test.go": "f21fd826ba51afec405ac562664f320c6b8ba81de473e97a2ec966c27557deff",
+    "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml": "3a57601adf9adf0faef0b5e3c12ea93466e0394ed4d5ce4f5fab7767a46d9b84"
+  },
+  "runtime_files": [
+    "plugins/wasm-go/extensions/ai-proxy/adapter.go",
+    "plugins/wasm-go/extensions/ai-proxy/managed_execution.go",
+    "plugins/wasm-go/extensions/ai-proxy/managed_log.go",
+    "plugins/wasm-go/extensions/ai-proxy/managed_public_resources.go",
+    "plugins/wasm-go/extensions/ai-proxy/managed_router.go"
+  ],
+  "test_count_top": 39,
+  "results": {
+    "final-related-regression-private.jsonl": {
+      "pass": [
+        "TestManagedChatStreamObservesOriginalUsageAcrossChunks",
+        "TestRouterChatProjectionEmitsContentBeforeTerminalUsage",
+        "TestManagedEmbeddingProtocolKeepsActualInputAndProviderUsage",
+        "TestManagedEmbeddingResponseRequiresActualSynchronousVectors",
+        "TestResponsesIncidentControlledReasonsRemainSafeAndExact",
+        "TestResponsesIncidentControlledReasonCallersAreCovered",
+        "TestManagedAccessLogUsesActualSendAndOnlySafeFields",
+        "TestManagedAccessLogKeepsEveryActualRetryInOriginalOrder",
+        "TestManagedAccessLogRejectsClientIdentityAndPreservesUnknown",
+        "TestManagedAccessLogBoundsItsOrderedPrefixWithoutReplacingIt",
+        "TestResponsesIncidentNativeOperationUsesTrustedProfile",
+        "TestResponsesIncidentPreservesMatchedConversionMetadata",
+        "TestResponsesIncidentMismatchedMetadataRemainsUnknown",
+        "TestResponsesIncidentJSONAliasFailureKeepsBoundaryAndUsage",
+        "TestResponsesIncidentTextRouterProtocolDeliveryMatrix",
+        "TestResponsesIncidentLargeTextRequestsPreserveBodies",
+        "TestNativeResourceWithoutOptionalAccountUsesSelectedCredentialBoundary",
+        "TestResourceCredentialBoundaryFiltersPoolWithoutChangingOrdinarySelection",
+        "TestNativeResourceOwnerIsSelectedBeforeWeightedTargetSend",
+        "TestNativeReferenceIsNotSentToDifferentFallbackOwner",
+        "TestNativeResponseAliasesAreSavedBeforePublicDelivery",
+        "TestUnknownNativeResourceRejectsBeforeSupplierSend",
+        "TestNativeResponsePreservesAFullParallelFunctionBatch",
+        "TestClosingWhileResourceMappingIsPendingKeepsOneOriginalSale",
+        "TestRouterStreamDoneDuringTerminalInjectionDefersFinalization",
+        "TestResponsesIncidentFullHistoryLookupRestoresEveryAlias",
+        "TestResponsesIncidentResourceSpansKeepOrderEscapesAndOtherFields",
+        "TestRouterConvertedStreamUsesOnlyVerifiedChatTerminal",
+        "TestRouterNativeStreamMatchesBufferedTerminalAcrossFragments",
+        "TestRouterCollectsOriginalHeadersBeforeJSONOrStreamBody",
+        "TestRouterSupplierStreamsForwardBeforeTerminalAndKeepOriginalCounters",
+        "TestResponseModesControlledValidationMatrix",
+        "TestPassthroughResourceOwnershipRestoresOriginalID",
+        "TestResponsesIncidentFactsAndUsagePrecedeTerminalClose",
+        "TestResponsesIncidentInjectionFailureRetainsFailedDelivery",
+        "TestResponsesIncidentResourceWriteFailurePreservesCompletedUsage",
+        "TestResponsesIncidentUnstoredResourceCannotContinue"
+      ],
+      "fail": [],
+      "skip": []
+    },
+    "legacy-responses-regression-private.jsonl": {
+      "pass": [
+        "TestResponsesNativeRoutingKeepsResponsesPath"
+      ],
+      "fail": [],
+      "skip": []
+    },
+    "statistics-attribution-regression-private.jsonl": {
+      "pass": [
+        "TestStatisticsAttributionCardinalityContract"
+      ],
+      "fail": [],
+      "skip": []
+    }
+  },
+  "commands": {
+    "related": {
+      "cwd": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/plugins/wasm-go/extensions/ai-proxy",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-run",
+        "^(TestResponsesIncident|TestNativeResource|TestResourceCredential|TestNativeResponse|TestNativeReference|TestUnknownNativeResource|TestClosingWhileResource|TestRouterStreamDoneDuringTerminalInjection|TestManagedAccessLog|TestRouterNativeStream|TestRouterConvertedStream|TestRouterChatProjection|TestManagedChatStream|TestRouterCollectsOriginalHeaders|TestRouterSupplierStreams|TestResponseModesControlledValidationMatrix|TestPassthroughResourceOwnership|TestManagedEmbeddingProtocolKeepsActualInputAndProviderUsage|TestManagedEmbeddingResponseRequiresActualSynchronousVectors)",
+        "-count=1",
+        "."
+      ]
+    },
+    "legacy": "go test . -run '^TestResponsesNativeRoutingKeepsResponsesPath$' -count=1",
+    "statistics": "go test . -run '^TestStatisticsAttributionCardinalityContract$' -count=1",
+    "benchmark": "go test . -run '^$' -bench '^BenchmarkRestoreManagedResource(References|Lookup)$' -benchmem -benchtime=3x -count=3"
+  },
+  "benchmarks": {
+    "BenchmarkRestoreManagedResourceReferences": {
+      "545": {
+        "median_ns_op": 535658,
+        "median_bytes_op": 573104,
+        "samples": [
+          {
+            "ns_op": 518044,
+            "bytes_op": 573104
+          },
+          {
+            "ns_op": 535658,
+            "bytes_op": 573104
+          },
+          {
+            "ns_op": 556771,
+            "bytes_op": 573104
+          }
+        ]
+      },
+      "1090": {
+        "median_ns_op": 1173100,
+        "median_bytes_op": 1261237,
+        "samples": [
+          {
+            "ns_op": 1119818,
+            "bytes_op": 1261237
+          },
+          {
+            "ns_op": 1173100,
+            "bytes_op": 1261237
+          },
+          {
+            "ns_op": 1218049,
+            "bytes_op": 1261232
+          }
+        ]
+      },
+      "2180": {
+        "median_ns_op": 2384053,
+        "median_bytes_op": 2621104,
+        "samples": [
+          {
+            "ns_op": 2294508,
+            "bytes_op": 2621104
+          },
+          {
+            "ns_op": 2695949,
+            "bytes_op": 2621109
+          },
+          {
+            "ns_op": 2384053,
+            "bytes_op": 2621104
+          }
+        ]
+      }
+    },
+    "BenchmarkRestoreManagedResourceLookup": {
+      "545": {
+        "median_ns_op": 4168034,
+        "median_bytes_op": 3552000,
+        "samples": [
+          {
+            "ns_op": 4581619,
+            "bytes_op": 3551936
+          },
+          {
+            "ns_op": 4168034,
+            "bytes_op": 3552064
+          },
+          {
+            "ns_op": 3950909,
+            "bytes_op": 3552000
+          }
+        ]
+      },
+      "1090": {
+        "median_ns_op": 7982926,
+        "median_bytes_op": 7383138,
+        "samples": [
+          {
+            "ns_op": 7694465,
+            "bytes_op": 7383013
+          },
+          {
+            "ns_op": 8175722,
+            "bytes_op": 7383269
+          },
+          {
+            "ns_op": 7982926,
+            "bytes_op": 7383138
+          }
+        ]
+      },
+      "2180": {
+        "median_ns_op": 16807412,
+        "median_bytes_op": 14968917,
+        "samples": [
+          {
+            "ns_op": 16202278,
+            "bytes_op": 14969610
+          },
+          {
+            "ns_op": 16807412,
+            "bytes_op": 14968778
+          },
+          {
+            "ns_op": 16858807,
+            "bytes_op": 14968917
+          }
+        ]
+      }
+    }
+  },
+  "benchmark_scope": "Native Go CPU; full Lookup validates actual complete records via MGET transport stub; no real Redis/Envoy timing, bytes_op is cumulative allocation not RSS",
+  "logs": {
+    "original-confirmed-red-baseline-private.json": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/original-confirmed-red-baseline-private.json",
+      "sha256": "377ee656c6e4146406cfe6addcdc01622ebb3bf35340ec803f2013af2999a3cf"
+    },
+    "original-red-private.jsonl": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/original-red-private.jsonl",
+      "sha256": "8915527536be7eefe9202da3136045a9e5c20a33eaa5512f7dd5959187ed99ae"
+    },
+    "original-terminal-order-red-private.jsonl": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/original-terminal-order-red-private.jsonl",
+      "sha256": "2361b310315d72306a71f8648ca50090ee10c595664db703e04f46c00862d972"
+    },
+    "original-benchmark-private.log": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/original-benchmark-private.log",
+      "sha256": "234d2060f4335410d6ff6caf54acc48481c49e62a8763ad8ade84ef25ea25383"
+    },
+    "full-lookup-before-benchmark-private.log": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/full-lookup-before-benchmark-private.log",
+      "sha256": "84e7306c5972199330b347da8fc7390705d0b95cd589f49cea1c33b04057ccb1"
+    },
+    "cross-profile-and-reason-contract-red-private.jsonl": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/cross-profile-and-reason-contract-red-private.jsonl",
+      "sha256": "b9f4dbb5083e1502b4607742f61f28d14f325057dd02e852b320fc5d56000141"
+    },
+    "embedding-stage1-confirmed-red-private.jsonl": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/embedding-stage1-confirmed-red-private.jsonl",
+      "sha256": "76ef14e814d941e609709742e8e91254db8825fc5b2504c2ea6bc87f3e40aef3"
+    },
+    "final-related-regression-private.jsonl": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/final-related-regression-private.jsonl",
+      "sha256": "8b5331db51611f0e4a4655bae6354275b50114eb58aae4b3ecc93adcf8971186"
+    },
+    "legacy-responses-regression-private.jsonl": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/legacy-responses-regression-private.jsonl",
+      "sha256": "bacef0e1ee001c576bb626c5868b41900e607ddf5b089a9b1932f74dd679fdd2"
+    },
+    "statistics-attribution-regression-private.jsonl": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/statistics-attribution-regression-private.jsonl",
+      "sha256": "06593c00083e29b950af89d5adfd656c0f65bc89fce7bca22a2aaa18fdef248c"
+    },
+    "frozen-source-benchmarks-private.log": {
+      "path": "/tmp/modelfusion-responses-incident-20261113/frozen-source-benchmarks-private.log",
+      "sha256": "a8fcabecd1ae789a247c937ccc8a85b5760d5b4d63edb4b26eaece66e05450bc"
+    }
+  },
+  "json_contract": "JSON unexposed resources retain503 durable-mapping gate; original supplier/observed usage17/5 and failed delivery verified; 200 hypothesis red excluded",
+  "profile_scope": "trusted Chat/Responses/Messages/Embedding operation mapping; preserve matched same-operation conversion metadata; mismatches unknown",
+  "reason_contract": "GoAST scans non-test production calls to four access-log producers; 11 additional unique fixed codes now covered; unknown tool prefix remains suppressed",
+  "history_scope": "complete1090 legal aliases; conversation string/object, child Result offsets, reverse source order, escaped public IDs/Unicode originals/unrelated bytes, lookup/owner/credential failure zero-send regressions",
+  "version": "2.0.82",
+  "selection_entries": 55,
+  "old54_exact": true,
+  "sdk_shared_go_dependencies_or_rust_changed": false,
+  "catalog_validation_exit": 0,
+  "diff_check_exit": 0,
+  "tracked_worktree_clean": true,
+  "go_version": "go version go1.26.3 linux/amd64",
+  "built": false,
+  "deployed": false,
+  "vm_actions": 0,
+  "new_model_requests": 0,
+  "old_rt_quota_reopened": false,
+  "final_independent_axes_pending": true,
+  "native_plan_path": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/docs/checks/2026-11-13-responses-incident-native-verification-plan.md",
+  "docs_not_part_of_source_commit": true,
+  "excluded_fixture_or_hypothesis_logs": [
+    "initial-fixture-invalid-private.jsonl",
+    "initial-stream-profile-fixture-invalid-private.jsonl",
+    "json-alias-original-red-private.jsonl",
+    "profile-fixture-diagnostic-private.jsonl"
+  ],
+  "embedding_red_replay": "exact tracked7a managed_execution.go through Go overlay; corrected existing node/VM identity fixture; no source mutation",
+  "record_kind": "source-stage evidence, immutable source_commit separate from documentation history",
+  "private_frozen_receipt": {
+    "path": "/tmp/modelfusion-responses-incident-20261113/final-source-frozen-private.json",
+    "sha256": "888ebc3b7a4e52d3a90f22dd9f19aa3784b7a8cbe4e871352c5d4000be08b85b"
+  }
+}
