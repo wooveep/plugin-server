@@ -4,7 +4,7 @@
 
 ## 固定参数与新增资源
 
-产品源码已冻结为 `dacd69e148f61330b713d1a4854578e11b7fdcc3`，两轴复核及完整制品尚待完成。候选为 ai-proxy **2.0.82**，实际 Wasm/archive/manifest/image 摘要届时填入执行回执；其余54项发行选择、已有282制品和正式发布均保留。
+产品源码已冻结为 `dacd69e148f61330b713d1a4854578e11b7fdcc3`，最终两轴复核均为0 P1/P2。候选为 ai-proxy **2.0.82**，完整镜像、登记库克隆和104→105正逆dry-run已准备，尚未部署；固定Wasm/archive/manifest/image摘要见[制品记录](2026-11-13-responses-incident-artifact-preparation.md)。其余54项发行选择、已有282制品和正式发布均保留。源码复核及本机构建不能代替以下真实网关验收。
 
 | 项目 | 计划值或数量 |
 | --- | --- |
@@ -27,6 +27,13 @@
 拟执行6次小输入正常请求（3协议×JSON/SSE）、3次约1MiB大请求、3次定向别名写失败（Responses auto SSE、raw SSE、raw JSON）及1次正常Embedding，合计 **13次Mock生成**。每格一次，客户端关闭自动重试；失败如实留证，不循环补到成功。续接拒绝验证另计最多3次网关请求，必须零Mock生成发送。它们是本次功能验证，不重开旧I22唯一RT采样额度，也不更改原call/attempt记录。
 
 6个正常样本中的Responses JSON兼作合法种子：小输入，Mock返回1090个完整function_call（各有原生item/call ID）、唯一response ID及协议usage。实际新插件先正常持久化，再从真实客户端交付提取1090个public call_id；该请求**不额外增加发送数**。后续Responses大包使用这些真实call aliases（可同时带种子previous_response_id），每项function_call_output约800字节。Mock逐项核验实际收到1090个原生call_id、原生previous_response_id和内容，不能用普通native ID扫描或手填Redis/数据库伪alias替代。2181个种子资源（response+1090 item+1090 call）在既有4096预算内。
+
+原生发布及请求严格按以下顺序执行，不为raw另建第三个销售资产：
+
+1. 通过正常发布流程建立本次文本资产的auto模式发布，记录实际入口、route、release/revision、采购绑定和所有权字段。先完成6个正常小输入样本；其中Responses JSON种子与后续Responses大包始终使用同一auto发布、身份、Key和销售资产。
+2. 保持该auto发布，完成3个大包、1个auto SSE映射未确认样本及1个Embedding样本，共11次Mock生成。确认auto种子、大包及全部保存回调已经结束并回读事实；未通过时保留失败结果，不切换发布后补做auto请求。
+3. 只通过正常接口将本次专属文本资产的资源ID交付模式切换为raw，再执行原生发布，记录新release/revision、实际Wasm配置及所有权字段。确认新配置生效后，各执行1次raw SSE和raw JSON映射未确认样本，至此合计13次Mock生成。原auto发布的种子与大包证据保持原release归属；不通过私有头、直接修改WasmPlugin或Redis伪造模式。
+4. 最多3次映射缺失续接拒绝验证分别紧随所属auto/raw故障样本，在相同有效发布与所有权范围内执行，必须在上游发送前拒绝。清理时按每条映射实际创建时的release和完整owner校验，不以最后一次raw发布覆盖auto历史所有权。
 
 Embedding使用正常认证/原生发布和新Wasm，响应为OpenAI同步向量schema，1个index0向量及usage.prompt_tokens=17/total_tokens=17，断言input-only原生事实及精确`/v1/embeddings`操作归因；SSE、Responses别名及相应故障均标N/A。
 

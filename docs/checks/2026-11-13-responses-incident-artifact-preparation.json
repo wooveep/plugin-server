@@ -1,0 +1,66 @@
+{
+  "source_commit": "dacd69e148f61330b713d1a4854578e11b7fdcc3",
+  "plugin_name": "ai-proxy",
+  "plugin_version": "2.0.82",
+  "source_archive_sha256": "a80dce4047a195e52b286c747a57aa7d9180a4ca128196e4c5a106f8f058b76f",
+  "source_tracked_input_count": 636,
+  "wasm_digest": "sha256:3b6b0ed80a2699c2b51f4f4e53c510a9df2b5b9dd7fbaaaa67e6b774f1f804cf",
+  "wasm_size": 24716504,
+  "archive_digest": "sha256:b5ab18383b44916221a4479c1c283a167f401542eb85c7a2ec984ce5d6feb8bd",
+  "content_digest": "sha256:da66b8617fb78307415661e21e8f8fa9173b9f3783c922efcae13c8f5ae408e6",
+  "source_digest": "sha256:fc9c87ac0edd2064555c0e6f5700ef265bd2d968a211ad4b0ad72a47b6b9a916",
+  "artifact_id": "10f364bd-59f8-4906-922e-d60e00f7c779",
+  "manifest_sha256": "88df2169e8b0911143850c9015340489df13fe8f55176937f6f652f4ba5506d1",
+  "image": "registry.lc.wooveep.com:9980/modelfusion/plugin-server:V2.2.1-dev-20261113-responses-dacd69e1@sha256:4405a58a09958b5177d74b10ea3bbe34a4c17deb9d6c1e34818b57dfcb13d794",
+  "image_index_digest": "sha256:4405a58a09958b5177d74b10ea3bbe34a4c17deb9d6c1e34818b57dfcb13d794",
+  "image_amd64_manifest_digest": "sha256:fb9bc293031c7935a369125970939aa6dbd78c5a33e9aad819fc312fc98823c4",
+  "selected_complete_packages": 55,
+  "all55_package_files_verified": 546,
+  "all55_package_bytes_verified": 606944452,
+  "other54_whole_selected_entries_packages_exact": true,
+  "old_registered": 282,
+  "candidate_normal_seed_registered": 283,
+  "old282_ids_manifests_archives_payload_and_complete_upload_history_exact": true,
+  "normal_seed_copied": 1,
+  "normal_seed_retained": 54,
+  "current64_wasm_reference_http_sha_verified_before_and_after_restart": true,
+  "local_candidate_container_and_anonymous_volumes_removed": true,
+  "policy_delta": "old262 receipts/order/environment unchanged plus exactly one independently reviewed tuple",
+  "tracked_source_modified": false,
+  "build_only_context_override": "unchanged original Docker ignore bytes plus only new frozen selection allow",
+  "build_exit": 0,
+  "push_exit": 0,
+  "fresh_backup_revision": 104,
+  "deployed": false,
+  "actual_envoy_wasm_verified": false,
+  "new_mock_identity_model_resources_created": false,
+  "model_requests": 0,
+  "vm_business_configuration_writes": 0,
+  "status": "artifact_preparation_complete_not_deployed",
+  "image_catalog_sha256": "03b71dc5ef01caf168e5afe8f1f6369a90869da87815acd109272e239775d2df",
+  "image_policy_sha256": "4e0a16fbfab402c033cb6cd802a59217bfcd4a4d9acd689dadeab8a5ebe1cd02",
+  "build_context_override_sha256": "ce45cd89d124de05d382a22781807cc64f7b99bc91543b9402084544ce6ae393",
+  "prepared_helm_plan": {
+    "baseline": 104,
+    "prospective_revision": 105,
+    "values_diff": [
+      "/higress-core/pluginServer/tag"
+    ],
+    "resource_diff": [
+      {
+        "resource": [
+          "apps/v1",
+          "Deployment",
+          "higress-system",
+          "higress-plugin-server"
+        ],
+        "paths": [
+          "/spec/template/spec/containers/0/image",
+          "/spec/template/spec/initContainers/0/image"
+        ]
+      }
+    ],
+    "all73_inverse_manifest_and_complete_values_exact104": true
+  },
+  "private_evidence_bundle_sha256": "060f2d0cfd739dc9fcf0d971425432ecb1994cc9356cd490e9a753664f858ab1"
+}
