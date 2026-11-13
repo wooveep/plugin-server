@@ -19,6 +19,8 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+var injectManagedRouterTerminal = proxywasm.InjectEncodedDataToFilterChain
+
 type managedRouterResponse struct {
 	headers            [][2]string
 	status             *uint16
@@ -331,16 +333,27 @@ func observeManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 		// already has terminal evidence, even if the client cancels.
 		pending, err := saveManagedRouterResources(ctx, s, func(err error) {
 			final := managedRouterResourceTail(ctx, s, chunk, err)
-			// Envoy may call stream-done synchronously while injecting end-of-stream.
-			// The injection result owns delivery finalization during that callback.
+			// Downstream filters and access logging can close synchronously during
+			// injection, so publish usage and retain/dispatch facts while HTTP is alive.
+			finishManagedRouter(ctx, s, true)
 			r.injectingTerminal = true
-			injectErr := proxywasm.InjectEncodedDataToFilterChain(final, true)
+			injectErr := injectManagedRouterTerminal(final, true)
 			r.injectingTerminal = false
 			if injectErr != nil {
 				r.projectionFailed = true
 				managedFactGap(ctx, "router_public_response_unavailable")
+				if !s.closed && s.lastDelivery != nil {
+					failed := s.lastDelivery.Envelope()
+					failed.DeliveryState, failed.ObservedAt = "failed", managedNow()
+					correction, err := executionfacts.Correct(*s.lastDelivery, failed)
+					if err != nil {
+						managedFactGap(ctx, "delivery_fact_invalid")
+					} else {
+						s.lastDelivery = &correction
+						dispatchManagedSnapshot(ctx, s, correction)
+					}
+				}
 			}
-			finishManagedRouter(ctx, s, true)
 		})
 		if pending {
 			ctx.NeedPauseStreamingResponse()
@@ -356,12 +369,10 @@ func managedRouterResourceTail(ctx wrapper.HttpContext, s *managedExecutionState
 	if err == nil {
 		return tail
 	}
-	s.router.projectionFailed = true
 	managedFactGap(ctx, "resource_reference_write_failed")
-	if s.router.projection == nil {
-		return nil
-	}
-	return managedRouterError(s, clientresponse.Failure{Kind: clientresponse.FailureConfiguration})
+	// Earlier stream bytes are already public. Missing continuation aliases
+	// cannot invalidate the verified terminal or its original usage.
+	return tail
 }
 
 func saveManagedRouterResources(ctx wrapper.HttpContext, s *managedExecutionState, done func(error)) (bool, error) {
