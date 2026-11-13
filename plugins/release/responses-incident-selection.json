@@ -152,7 +152,7 @@
     {
       "logicalId": "ai-proxy",
       "implementation": "go",
-      "declaredVersion": "2.0.82",
+      "declaredVersion": "2.0.83",
       "releaseEligible": true,
       "distribution": "wasm"
     },
