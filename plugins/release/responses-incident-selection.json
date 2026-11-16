@@ -1,0 +1,447 @@
+{
+  "schemaVersion": 1,
+  "requiredPlugins": [
+    "ai-agent",
+    "ai-billing",
+    "ai-cache",
+    "ai-context-limit",
+    "ai-data-masking",
+    "ai-endpoint-picker",
+    "ai-history",
+    "ai-intent",
+    "ai-json-resp",
+    "ai-load-balancer",
+    "ai-memory",
+    "ai-prompt-decorator",
+    "ai-prompt-template",
+    "ai-proxy",
+    "ai-quota",
+    "ai-rag",
+    "ai-search",
+    "ai-security-guard",
+    "ai-statistics",
+    "ai-token-ratelimit",
+    "ai-transformer",
+    "basic-auth",
+    "bot-detect",
+    "cache-control",
+    "cluster-key-rate-limit",
+    "cors",
+    "custom-response",
+    "de-graphql",
+    "ext-auth",
+    "frontend-gray",
+    "geo-ip",
+    "gw-error-format",
+    "hmac-auth",
+    "hmac-auth-apisix",
+    "ip-restriction",
+    "json-converter",
+    "jwt-auth",
+    "key-auth",
+    "key-rate-limit",
+    "log-request-response",
+    "mcp-router",
+    "mcp-server",
+    "model-mapper",
+    "model-router",
+    "nginx-rewrite-compatible",
+    "oauth",
+    "oidc",
+    "opa",
+    "replay-protection",
+    "request-block",
+    "request-validation",
+    "response-cache",
+    "traffic-tag",
+    "transformer",
+    "waf"
+  ],
+  "plugins": [
+    {
+      "logicalId": "ai-agent",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-billing",
+      "implementation": "go",
+      "declaredVersion": "1.0.16",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-cache",
+      "implementation": "go",
+      "declaredVersion": "2.0.29",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-context-limit",
+      "implementation": "go",
+      "declaredVersion": "1.0.4",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-data-masking",
+      "implementation": "rust",
+      "declaredVersion": "2.0.6",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-endpoint-picker",
+      "implementation": "go",
+      "declaredVersion": "2.0.6",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-history",
+      "implementation": "go",
+      "declaredVersion": "2.0.17",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-intent",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-json-resp",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-load-balancer",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-memory",
+      "implementation": "go",
+      "declaredVersion": "0.1.21",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-prompt-decorator",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-prompt-template",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-proxy",
+      "implementation": "go",
+      "declaredVersion": "2.0.82",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-quota",
+      "implementation": "go",
+      "declaredVersion": "2.0.13",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-rag",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-search",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-security-guard",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-statistics",
+      "implementation": "go",
+      "declaredVersion": "2.0.14",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-token-ratelimit",
+      "implementation": "go",
+      "declaredVersion": "2.0.11",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ai-transformer",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "basic-auth",
+      "implementation": "cpp",
+      "declaredVersion": "2.0.1",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "bot-detect",
+      "implementation": "cpp",
+      "declaredVersion": "2.0.1",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "cache-control",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "cluster-key-rate-limit",
+      "implementation": "go",
+      "declaredVersion": "2.0.8",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "cors",
+      "implementation": "go",
+      "declaredVersion": "2.0.8",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "custom-response",
+      "implementation": "cpp",
+      "declaredVersion": "2.0.1",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "de-graphql",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ext-auth",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "frontend-gray",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "geo-ip",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "gw-error-format",
+      "implementation": "go",
+      "declaredVersion": "1.0.6",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "hmac-auth",
+      "implementation": "cpp",
+      "declaredVersion": "2.0.1",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "hmac-auth-apisix",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "ip-restriction",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "json-converter",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "jwt-auth",
+      "implementation": "cpp",
+      "declaredVersion": "2.0.2",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "key-auth",
+      "implementation": "go",
+      "declaredVersion": "1.2.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "key-rate-limit",
+      "implementation": "cpp",
+      "declaredVersion": "2.0.2",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "log-request-response",
+      "implementation": "go",
+      "declaredVersion": "1.0.4",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "mcp-router",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "mcp-server",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "model-mapper",
+      "implementation": "go",
+      "declaredVersion": "2.0.9",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "model-router",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "nginx-rewrite-compatible",
+      "implementation": "go",
+      "declaredVersion": "1.0.4",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "oauth",
+      "implementation": "cpp",
+      "declaredVersion": "2.0.2",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "oidc",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "opa",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "replay-protection",
+      "implementation": "go",
+      "declaredVersion": "1.0.4-alpha",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "request-block",
+      "implementation": "cpp",
+      "declaredVersion": "2.0.1",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "request-validation",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "response-cache",
+      "implementation": "go",
+      "declaredVersion": "1.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "traffic-tag",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "transformer",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    },
+    {
+      "logicalId": "waf",
+      "implementation": "go",
+      "declaredVersion": "2.0.7",
+      "releaseEligible": true,
+      "distribution": "wasm"
+    }
+  ]
+}
