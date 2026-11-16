@@ -1,8 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
-	"strconv"
+	"slices"
 	"strings"
 
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
@@ -94,7 +95,7 @@ func persistManagedResourceAliases(ctx wrapper.HttpContext, s *managedExecutionS
 }
 
 type managedResourceInput struct {
-	path      string
+	value     gjson.Result
 	alias     clientresponse.ResourceAlias
 	reference bool
 }
@@ -105,26 +106,25 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 		return
 	}
 	var inputs []managedResourceInput
-	add := func(path, kind string, reference bool, value gjson.Result) bool {
+	add := func(kind string, reference bool, value gjson.Result) bool {
 		if !value.Exists() || value.Type == gjson.Null {
 			return true
 		}
 		if s.config.settings.ProtocolMode != "passthrough" && !resourceref.IsAlias(kind, value.String()) {
 			return !reference
 		}
-		inputs = append(inputs, managedResourceInput{path, clientresponse.ResourceAlias{Kind: kind, Public: value.String()}, reference})
+		inputs = append(inputs, managedResourceInput{value, clientresponse.ResourceAlias{Kind: kind, Public: value.String()}, reference})
 		return true
 	}
-	valid := add("previous_response_id", "response", true, gjson.GetBytes(body, "previous_response_id"))
+	valid := add("response", true, gjson.GetBytes(body, "previous_response_id"))
 	if conversation := gjson.GetBytes(body, "conversation"); conversation.IsObject() {
-		valid = add("conversation.id", "conversation", true, conversation.Get("id")) && valid
+		valid = add("conversation", true, conversation.Get("id")) && valid
 	} else {
-		valid = add("conversation", "conversation", true, conversation) && valid
+		valid = add("conversation", true, conversation) && valid
 	}
-	for i, item := range gjson.GetBytes(body, "input").Array() {
-		path := "input." + strconv.Itoa(i)
-		valid = add(path+".id", "item", item.Get("type").String() == "item_reference", item.Get("id")) && valid
-		valid = add(path+".call_id", "call", false, item.Get("call_id")) && valid
+	for _, item := range gjson.GetBytes(body, "input").Array() {
+		valid = add("item", item.Get("type").String() == "item_reference", item.Get("id")) && valid
+		valid = add("call", false, item.Get("call_id")) && valid
 	}
 	if !valid {
 		rejectManagedPreparation(ctx, s, 400, "resource_reference_unavailable")
@@ -162,25 +162,33 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 				copy := record.Owner
 				owner = &copy
 			}
-			body, err = sjson.SetBytes(body, inputs[i].path, record.Alias.Original)
-			if err != nil {
-				rejectManagedPreparation(ctx, s, 400, "resource_reference_incompatible")
-				return
-			}
-			_ = managedPublicPolicy(s)
-			s.publicAliases.Seed(record.Alias)
+			inputs[i].alias = record.Alias
 		}
 		if owner != nil {
 			if err := selectManagedResourceOwner(s, *owner); err != nil {
 				rejectManagedPreparation(ctx, s, 503, "resource_owner_unavailable")
 				return
 			}
+			s.resourceOwner = owner
+		}
+		_ = managedPublicPolicy(s)
+		slices.SortFunc(inputs, func(a, b managedResourceInput) int { return a.value.Index - b.value.Index })
+		restored := make([]byte, 0, len(body))
+		position := 0
+		for _, input := range inputs {
+			restored = append(restored, body[position:input.value.Index]...)
+			original, _ := json.Marshal(input.alias.Original)
+			restored = append(restored, original...)
+			position = input.value.Index + len(input.value.Raw)
+			s.publicAliases.Seed(input.alias)
+		}
+		body = append(restored, body[position:]...)
+		if owner != nil {
 			body, err = sjson.SetBytes(body, "model", s.config.release.Descriptor.UpstreamModel)
 			if err != nil {
 				rejectManagedPreparation(ctx, s, 503, "resource_owner_unavailable")
 				return
 			}
-			s.resourceOwner = owner
 		}
 		ready(body)
 	})
