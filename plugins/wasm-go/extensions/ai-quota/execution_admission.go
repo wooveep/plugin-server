@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-quota/util"
 	"io"
 	"math/big"
 	"mime"
@@ -188,7 +187,6 @@ func checkExecutionAdmission(ctx wrapper.HttpContext, cfg QuotaConfig, identity 
 	pending := &executionAdmissionPending{}
 	ctx.SetContext(executionAdmissionContext, pending)
 	reject := func(status uint32, reason string) {
-		observeAdmissionRejection(ctx, cfg, identity, "execution_admission_denied")
 		if !pending.finished {
 			pending.finished = true
 			executionAdmissionReject(ctx, status, reason)
@@ -369,8 +367,8 @@ func executionAdmissionInstallHeaders(callID, releaseID, deadline, occurredAt st
 
 func executionAdmissionReject(ctx wrapper.HttpContext, status uint32, reason string) {
 	ctx.SetUserAttribute("execution_admission_reason", reason)
-	_ = util.SendResponse(ctx, status, "execution_admission_"+reason,
-		"application/json", `{"error":"execution admission unavailable"}`)
+	_ = proxywasm.SendHttpResponseWithDetail(status, "execution_admission_"+reason,
+		[][2]string{{"content-type", "application/json"}}, []byte(`{"error":"execution admission unavailable"}`), -1)
 }
 
 func executionAdmissionSingleHeader(headers [][2]string, name string) (string, bool) {

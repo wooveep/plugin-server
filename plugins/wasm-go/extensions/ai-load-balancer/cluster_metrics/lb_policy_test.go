@@ -572,6 +572,11 @@ func (f *fakeHTTPContext) Scheme() string                           { return "" 
 func (f *fakeHTTPContext) Host() string                             { return "" }
 func (f *fakeHTTPContext) Path() string                             { return "" }
 func (f *fakeHTTPContext) Method() string                           { return "" }
+func (f *fakeHTTPContext) HasRequestBody() bool                     { return false }
+func (f *fakeHTTPContext) HasResponseBody() bool                    { return false }
+func (f *fakeHTTPContext) IsWebsocket() bool                        { return false }
+func (f *fakeHTTPContext) IsBinaryRequestBody() bool                { return false }
+func (f *fakeHTTPContext) IsBinaryResponseBody() bool               { return false }
 func (f *fakeHTTPContext) SetContext(key string, value interface{}) { f.values[key] = value }
 func (f *fakeHTTPContext) GetContext(key string) interface{}        { return f.values[key] }
 func (f *fakeHTTPContext) GetBoolContext(key string, defaultValue bool) bool {

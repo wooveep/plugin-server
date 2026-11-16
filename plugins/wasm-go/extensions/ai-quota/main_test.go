@@ -111,8 +111,7 @@ func TestRequestAdmission(t *testing.T) {
 				host, status := test.NewTestHost(monetaryConfig)
 				defer host.Reset()
 				require.Equal(t, types.OnPluginStartStatusOK, status)
-				headers := append(nativeAdmissionHeaders("/v1/chat/completions", http.MethodPost), [2]string{"x-request-id", "quota-original-request"})
-				action := host.CallOnHttpRequestHeaders(headers)
+				action := host.CallOnHttpRequestHeaders(nativeAdmissionHeaders("/v1/chat/completions", http.MethodPost))
 				require.Equal(t, types.HeaderStopAllIterationAndWatermark, action)
 				calls := host.GetRedisCalloutAttributes()
 				require.Len(t, calls, 1)
@@ -124,7 +123,6 @@ func TestRequestAdmission(t *testing.T) {
 					require.Equal(t, types.ActionContinue, host.GetHttpStreamAction())
 				} else {
 					require.Equal(t, uint32(tc.status), host.GetLocalResponse().StatusCode)
-					require.Contains(t, host.GetLocalResponse().Headers, [2]string{"x-ocmf-gateway-request-id", "quota-original-request"})
 					require.NotEqual(t, types.ActionContinue, host.GetHttpStreamAction())
 				}
 				require.Empty(t, host.GetRedisCalloutAttributes())
