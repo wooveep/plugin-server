@@ -16,15 +16,16 @@ package wrapper
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/tidwall/resp"
 )
 
@@ -177,57 +178,93 @@ func redisCallInternal(clusterName string, respQuery []byte, callback RedisRespo
 
 type redisDispatchFunc func(string, []byte, func(int, int)) (uint32, error)
 
+type redisCallTrace struct {
+	requestID string
+	attempt   int
+}
+
+func (trace redisCallTrace) diagnostic(stage, category, status string, started time.Time) string {
+	return fmt.Sprintf("redis operation request_id=%s attempt=%d stage=%s category=%s status=%s elapsed_us=%d",
+		trace.requestID, trace.attempt, stage, category, status, time.Since(started).Microseconds())
+}
+
+// Only public SDK error identities are classified. Error text can contain data.
+func redisSDKErrorCategory(err error) string {
+	switch {
+	case errors.Is(err, types.ErrorStatusNotFound):
+		return "not_found"
+	case errors.Is(err, types.ErrorStatusBadArgument):
+		return "bad_argument"
+	case errors.Is(err, types.ErrorStatusEmpty):
+		return "empty"
+	case errors.Is(err, types.ErrorStatusCasMismatch):
+		return "cas_mismatch"
+	case errors.Is(err, types.ErrorInternalFailure):
+		return "internal_failure"
+	case errors.Is(err, types.ErrorUnimplemented):
+		return "unimplemented"
+	default:
+		return "unknown"
+	}
+}
+
 func redisCallWithDispatch(clusterName string, respQuery []byte, callback RedisResponseCallback, readyPtr *bool, checkReadyFunc func() error, dispatch redisDispatchFunc) error {
-	requestID := uuid.New().String()
+	return redisCallAttempt(clusterName, respQuery, callback, readyPtr, checkReadyFunc, dispatch, redisCallTrace{requestID: uuid.New().String()})
+}
+
+func redisCallAttempt(clusterName string, respQuery []byte, callback RedisResponseCallback, readyPtr *bool, checkReadyFunc func() error, dispatch redisDispatchFunc, trace redisCallTrace) error {
+	started := time.Now()
 	_, err := dispatch(
 		clusterName,
 		respQuery,
 		func(status int, responseSize int) {
-			response, err := proxywasm.GetRedisCallResponse(0, responseSize)
 			var responseValue resp.Value
+			hostStatus := strconv.Itoa(status)
 			if status != 0 {
-				proxywasm.LogCriticalf("Error occurred while calling redis, it seems cannot connect to the redis cluster. request-id: %s", requestID)
-				responseValue = resp.ErrorValue(fmt.Errorf("cannot connect to redis cluster"))
+				// Redis callback statuses are not the SDK hostcall Status enum.
+				// Without a callback enum/reason, a nonzero value cannot identify a timeout.
+				proxywasm.LogCritical(trace.diagnostic("callback", "host_status_unknown", hostStatus, started))
+				responseValue = resp.ErrorValue(fmt.Errorf("redis host call failed (status=%d)", status))
 			} else {
+				response, err := proxywasm.GetRedisCallResponse(0, responseSize)
 				if err != nil {
-					proxywasm.LogCriticalf("failed to get redis response body, request-id: %s, error: %v", requestID, err)
+					proxywasm.LogCritical(trace.diagnostic("response_read", redisSDKErrorCategory(err), hostStatus, started))
 					responseValue = resp.ErrorValue(fmt.Errorf("cannot get redis response"))
 				} else {
 					rd := resp.NewReader(bytes.NewReader(response))
 					value, _, err := rd.ReadValue()
 					if err != nil && err != io.EOF {
-						proxywasm.LogCriticalf("failed to read redis response body, request-id: %s, error: %v", requestID, err)
+						proxywasm.LogCritical(trace.diagnostic("response_parse", "invalid_resp", hostStatus, started))
 						responseValue = resp.ErrorValue(fmt.Errorf("cannot read redis response"))
 					} else {
 						responseValue = value
-						proxywasm.LogDebugf("redis call end, request-id: %s, respQuery: %s, respValue: %s",
-							requestID, base64.StdEncoding.EncodeToString([]byte(respQuery)), base64.StdEncoding.EncodeToString(response))
+						if value.Error() == nil {
+							proxywasm.LogDebug(trace.diagnostic("response", "success", hostStatus, started))
+						} else if strings.Contains(value.Error().Error(), "NOAUTH Authentication required") {
+							proxywasm.LogWarn(trace.diagnostic("response", "noauth", hostStatus, started))
+						} else {
+							proxywasm.LogError(trace.diagnostic("response", "redis_error", hostStatus, started))
+						}
 					}
 				}
 			}
 
-			// Check for NOAUTH error and retry if possible
+			// Keep the original one-time NOAUTH retry and callback ownership.
 			shouldInvokeCallback := true
 			if responseValue.Error() != nil && readyPtr != nil && checkReadyFunc != nil {
-				errMsg := responseValue.Error().Error()
-				if bytes.Contains([]byte(errMsg), []byte("NOAUTH Authentication required")) {
-					proxywasm.LogWarnf("redis authentication required, request-id: %s, marking client as not ready and attempting re-authentication", requestID)
+				if strings.Contains(responseValue.Error().Error(), "NOAUTH Authentication required") {
 					*readyPtr = false
-
-					// Try to re-authenticate
+					authStarted := time.Now()
 					if err := checkReadyFunc(); err == nil {
-						proxywasm.LogInfof("redis re-authentication successful, retrying request, request-id: %s", requestID)
-						// Retry the Redis call
-						retryErr := redisCallWithDispatch(clusterName, respQuery, callback, nil, nil, dispatch)
-						if retryErr != nil {
-							// Retry dispatch failed, fall through to invoke callback with original error
-							proxywasm.LogErrorf("redis retry dispatch failed, request-id: %s, error: %v", requestID, retryErr)
-						} else {
-							// Retry succeeded, callback will be invoked by the retry call
+						proxywasm.LogInfo(trace.diagnostic("reauth", "success", "unavailable", authStarted))
+						retryTrace := trace
+						retryTrace.attempt++
+						retryErr := redisCallAttempt(clusterName, respQuery, callback, nil, nil, dispatch, retryTrace)
+						if retryErr == nil {
 							shouldInvokeCallback = false
 						}
 					} else {
-						proxywasm.LogErrorf("redis re-authentication failed, request-id: %s, error: %v", requestID, err)
+						proxywasm.LogError(trace.diagnostic("reauth", redisSDKErrorCategory(err), "unavailable", authStarted))
 					}
 				}
 			}
@@ -237,9 +274,9 @@ func redisCallWithDispatch(clusterName string, respQuery []byte, callback RedisR
 			}
 		})
 	if err != nil {
-		proxywasm.LogCriticalf("redis call failed, request-id: %s, error: %v", requestID, err)
+		proxywasm.LogCritical(trace.diagnostic("dispatch", redisSDKErrorCategory(err), "unavailable", started))
 	} else {
-		proxywasm.LogDebugf("redis call start, request-id: %s, respQuery: %s", requestID, base64.StdEncoding.EncodeToString([]byte(respQuery)))
+		proxywasm.LogDebug(trace.diagnostic("dispatch", "accepted", "unavailable", started))
 	}
 	return err
 }
@@ -304,19 +341,23 @@ func (c *RedisClusterClient[C]) Init(username, password string, timeout int64, o
 		if c.ready {
 			return nil
 		}
+		started := time.Now()
+		trace := redisCallTrace{requestID: uuid.New().String()}
 		initErr := proxywasm.RedisInit(clusterName, username, password, uint32(timeout))
 		if initErr != nil {
-			proxywasm.LogErrorf("failed to re-authenticate redis: %v", initErr)
+			proxywasm.LogError(trace.diagnostic("authentication", redisSDKErrorCategory(initErr), "unavailable", started))
 			return initErr
 		}
 		c.ready = true
-		proxywasm.LogInfof("redis re-authentication successful")
+		proxywasm.LogInfo(trace.diagnostic("authentication", "success", "unavailable", started))
 		return nil
 	}
 
+	started := time.Now()
+	trace := redisCallTrace{requestID: uuid.New().String()}
 	err := proxywasm.RedisInit(clusterName, username, password, uint32(timeout))
 	if err != nil {
-		proxywasm.LogWarnf("failed to init redis: %v, will retry later", err)
+		proxywasm.LogWarn(trace.diagnostic("initialization", redisSDKErrorCategory(err), "unavailable", started))
 		c.ready = false
 		return nil
 	}
