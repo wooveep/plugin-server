@@ -352,9 +352,9 @@ func onNativeBillingResponseHeaders(ctx wrapper.HttpContext, cfg BillingConfig) 
 	}
 	state, _ := ctx.GetContext(nativeBillingContextKey).(*nativeBillingState)
 	// This observation ID never replaces the gateway request ID.
-	_ = proxywasm.RemoveHttpResponseHeader(executionfacts.ClientCallIDHeader)
+	reportNativeCallHeaderError("remove", proxywasm.RemoveHttpResponseHeader(executionfacts.ClientCallIDHeader))
 	if state != nil && state.valid && state.internal == nil {
-		_ = proxywasm.ReplaceHttpResponseHeader(executionfacts.ClientCallIDHeader, state.origin.CallID)
+		reportNativeCallHeaderError("write", proxywasm.ReplaceHttpResponseHeader(executionfacts.ClientCallIDHeader, state.origin.CallID))
 	}
 	if requestID := wrapper.PreserveOriginalRequestID(ctx); requestID != "" {
 		if err := proxywasm.ReplaceHttpResponseHeader(gatewayRequestIDHeader, requestID); err != nil {
@@ -387,6 +387,13 @@ func onNativeBillingResponseHeaders(ctx wrapper.HttpContext, cfg BillingConfig) 
 	}
 	consumeNativeBillingBridge(ctx, cfg, state, value)
 	return types.ActionContinue, true
+}
+
+func reportNativeCallHeaderError(operation string, err error) {
+	if err == nil || operation == "remove" && errors.Is(err, types.ErrorStatusNotFound) {
+		return
+	}
+	proxywasm.LogWarnf("native client call ID response header %s failed", operation)
 }
 
 func splitNativeDeliveryBridge(headers [][2]string) (string, [][2]string, bool, error) {
