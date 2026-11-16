@@ -3,12 +3,13 @@
 ARG PYTHON_IMAGE=python:3.13.5-slim-bookworm@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419
 FROM ${PYTHON_IMAGE} AS builder
 WORKDIR /work
+ARG PLUGIN_RELEASE_CATALOG=plugins/release/catalog.json
 COPY requirements.lock ./
 RUN python3 -m pip install --no-cache-dir --require-hashes -r requirements.lock
 COPY *.py ./
 COPY artifact_schemas/ ./artifact_schemas/
 COPY scripts/seed-registered-store.py scripts/verify-release-store.py scripts/export-artifact-inventory.py ./scripts/
-COPY plugins/release/catalog.json ./source-catalog.json
+COPY ${PLUGIN_RELEASE_CATALOG} ./source-catalog.json
 COPY dist/plugins/ ./plugins/
 COPY dist/.plugins-artifact-state/ ./.plugins-artifact-state/
 COPY dist/policy.json ./policy.json

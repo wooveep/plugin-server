@@ -11,6 +11,7 @@
 !plugins/
 !plugins/release/
 !plugins/release/catalog.json
+!plugins/release/first-response-selection.json
 !dist/
 !dist/plugins/
 !dist/plugins/**
