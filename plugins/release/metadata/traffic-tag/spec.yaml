@@ -10,7 +10,7 @@ info:
     or specific request content.
   x-description-i18n:
     zh-CN: 根据权重或特定请求内容通过添加特定请求头的方式对请求流量进行标记。
-  version: 2.0.7
+  version: 2.0.8
   image: platform_wasm/traffic-tag
   gatewayMinVersion: ''
   iconUrl: https://img.alicdn.com/imgextra/i3/O1CN01bAFa9k1t1gdQcVTH0_!!6000000005842-2-tps-42-42.png
