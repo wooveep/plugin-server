@@ -105,8 +105,7 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 		return
 	}
 	var inputs []managedResourceInput
-	add := func(path, kind string, reference bool) bool {
-		value := gjson.GetBytes(body, path)
+	add := func(path, kind string, reference bool, value gjson.Result) bool {
 		if !value.Exists() || value.Type == gjson.Null {
 			return true
 		}
@@ -116,16 +115,16 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 		inputs = append(inputs, managedResourceInput{path, clientresponse.ResourceAlias{Kind: kind, Public: value.String()}, reference})
 		return true
 	}
-	valid := add("previous_response_id", "response", true)
+	valid := add("previous_response_id", "response", true, gjson.GetBytes(body, "previous_response_id"))
 	if conversation := gjson.GetBytes(body, "conversation"); conversation.IsObject() {
-		valid = add("conversation.id", "conversation", true) && valid
+		valid = add("conversation.id", "conversation", true, conversation.Get("id")) && valid
 	} else {
-		valid = add("conversation", "conversation", true) && valid
+		valid = add("conversation", "conversation", true, conversation) && valid
 	}
 	for i, item := range gjson.GetBytes(body, "input").Array() {
 		path := "input." + strconv.Itoa(i)
-		valid = add(path+".id", "item", item.Get("type").String() == "item_reference") && valid
-		valid = add(path+".call_id", "call", false) && valid
+		valid = add(path+".id", "item", item.Get("type").String() == "item_reference", item.Get("id")) && valid
+		valid = add(path+".call_id", "call", false, item.Get("call_id")) && valid
 	}
 	if !valid {
 		rejectManagedPreparation(ctx, s, 400, "resource_reference_unavailable")
