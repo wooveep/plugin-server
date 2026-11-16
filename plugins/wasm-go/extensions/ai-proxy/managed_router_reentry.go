@@ -85,6 +85,8 @@ func acceptManagedRouterContinuation(ctx wrapper.HttpContext, c *managedExecutio
 	ctx.SetContext(managedRouterRedirectKey, false)
 	ctx.SetContext(managedRouterPreparedKey, entry.request)
 	ctx.SetContext(managedRouterBodyActiveKey, false)
+	// Ordinary Wasm properties do not survive the recreated HTTP stream.
+	publishManagedOperationMetadata(c)
 	ctx.DisableReroute()
 	return types.HeaderStopIteration, true
 }
