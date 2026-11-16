@@ -7,6 +7,7 @@ import random
 import tracemalloc
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from decimal import Decimal
 from urllib.request import urlopen
 from http.client import HTTPConnection
 from http.server import ThreadingHTTPServer
@@ -172,6 +173,20 @@ class PluginServerTest(unittest.TestCase):
         self.assertEqual(entry["metadata"]["priority"], 321)
         self.assertEqual(entry["metadata"]["info"]["name"], "key-auth")
         self.assertEqual(entry["manifest"]["plugin_version"], "1.0.3")
+
+    def test_metadata_collection_can_exceed_package_json_limits_without_rounding(self):
+        entries = [{"manifest": {"artifact_id": f"artifact-{index}"},
+                    "metadata": {"description": "x" * 500_000,
+                                 "priority": Decimal("9007199254740993"),
+                                 "fraction": Decimal("0.1000000000000000001")}}
+                   for index in range(9)]
+        with patch.object(self.server.RequestHandlerClass.store, "list_metadata", return_value=entries):
+            status, headers, body = self.request("GET", "/artifacts")
+        self.assertEqual(status, 200, body[:100])
+        self.assertGreater(len(body), 4_194_304)
+        self.assertEqual(headers["Content-Length"], str(len(body)))
+        self.assertEqual(headers["Content-Type"], "application/json")
+        self.assertEqual(json.loads(body, parse_float=Decimal)["artifacts"], entries)
 
     def test_no_directory_listing_or_private_state_download(self):
         for path in ("/", "/plugins/", "/.plugins-artifact-state/state.sqlite3", "/plugins/../.plugins-artifact-state/store.lock"):

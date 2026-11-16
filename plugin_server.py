@@ -188,7 +188,9 @@ class PluginRequestHandler(BaseHTTPRequestHandler):
                     self._reply(HTTPStatus.OK, self.release_catalog_file.read_bytes())
                 return
             if path == "/artifacts":
-                self._reply(HTTPStatus.OK, json_bytes({"artifacts": self.store.list_metadata()}))
+                # Package JSON limits apply to each record, not the HTTP collection.
+                self._reply(HTTPStatus.OK, b'{"artifacts":[' + b','.join(
+                    json_bytes(item) for item in self.store.list_metadata()) + b']}')
                 return
             if path.startswith("/retention/") and path.count("/") == 2:
                 if not self._retention_authorized():
