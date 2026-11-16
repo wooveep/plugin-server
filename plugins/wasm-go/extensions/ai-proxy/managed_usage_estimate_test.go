@@ -17,6 +17,17 @@ func TestNativeBailianBodyRequestIDRemainsAvailableForSLSWithoutHeaders(t *testi
 	require.Empty(t, appendManagedBailianEvidence(s, [][2]string{{"x-request-id", "c652718f-433b-9413-a8dd-c81cb014ff54"}}, nil))
 }
 
+func TestManagedResponseHeaderIDPrecedesNativeStreamBodyID(t *testing.T) {
+	for _, name := range []string{"x-request-id", "request-id", "x-dashscope-request-id"} {
+		t.Run(name, func(t *testing.T) {
+			s := &managedExecutionState{config: &managedExecutionConfig{profile: managedProtocolProfile{supplier: "qwen"}}}
+			captureManagedUpstreamID(s, [][2]string{{name, "original-header-id"}})
+			recordManagedBailianRequestID(s, "a8a7295d-0699-991f-849a-97f767160077")
+			require.Equal(t, "original-header-id", s.upstreamRequestID)
+		})
+	}
+}
+
 func TestBailianThinkingEvidenceRetainsOnlyExplicitRequestModes(t *testing.T) {
 	for _, tc := range []struct{ protocol, body, want string }{
 		{managedProtocolChat, `{}`, ""},
