@@ -4,13 +4,18 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 func TestNativeCallHeaderFailuresAreDiagnosedWithoutFailingTheResponse(t *testing.T) {
+	original := proxywasm.GetVMContext()
 	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption())
-	defer reset()
+	defer func() {
+		reset()
+		proxywasm.SetVMContext(original)
+	}()
 	for _, tc := range []struct {
 		operation string
 		err       error
