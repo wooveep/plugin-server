@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -10,6 +12,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
+	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 )
 
@@ -19,11 +22,13 @@ const managedRouterPreparedKey = "ai-proxy.router-prepared"
 const managedRouterBodyActiveKey = "ai-proxy.router-body-active"
 
 type managedRouterContinuation struct {
-	context  wrapper.HttpContext
-	previous *managedExecutionState
-	next     *managedExecutionState
-	request  managedProtocolRequest
-	expires  time.Time
+	context              wrapper.HttpContext
+	previous             *managedExecutionState
+	next                 *managedExecutionState
+	request              managedProtocolRequest
+	expires              time.Time
+	operationMetadata    json.RawMessage
+	hasOperationMetadata bool
 }
 
 var managedRouterPending = make(map[string]managedRouterContinuation)
@@ -86,7 +91,19 @@ func acceptManagedRouterContinuation(ctx wrapper.HttpContext, c *managedExecutio
 	ctx.SetContext(managedRouterPreparedKey, entry.request)
 	ctx.SetContext(managedRouterBodyActiveKey, false)
 	// Ordinary Wasm properties do not survive the recreated HTTP stream.
-	publishManagedOperationMetadata(c)
+	switch {
+	case !entry.hasOperationMetadata:
+		publishManagedOperationMetadata(c)
+	case len(entry.operationMetadata) == 0:
+		publishNoAdapterMetadata(c.settings.ProtocolMode)
+	default:
+		if err := proxywasm.SetProperty([]string{adapterMetadataProperty}, entry.operationMetadata); err != nil {
+			log.Errorf("[Adapter Registry] failed to restore Router operation metadata")
+			publishNoAdapterMetadata(c.settings.ProtocolMode)
+		} else {
+			publishManagedOperationMetadata(c)
+		}
+	}
 	ctx.DisableReroute()
 	return types.HeaderStopIteration, true
 }
@@ -104,7 +121,22 @@ func queueManagedRouterContinuation(ctx wrapper.HttpContext, previous, next *man
 	if !next.admissionDeadline.IsZero() && next.admissionDeadline.Before(expires) {
 		expires = next.admissionDeadline
 	}
-	managedRouterPending[key] = managedRouterContinuation{ctx, previous, next, request, expires}
+	raw, metadataErr := proxywasm.GetProperty([]string{adapterMetadataProperty})
+	// Absence can use the trusted profile; an explicitly unknown value stays unknown.
+	hasMetadata := metadataErr == nil && len(raw) != 0 || metadataErr != nil && !errors.Is(metadataErr, types.ErrorStatusNotFound)
+	var operationMetadata json.RawMessage
+	if metadataErr == nil && len(raw) != 0 && len(raw) <= maxAdapterMetadataBytes {
+		var current adapterMetadata
+		decoder := json.NewDecoder(bytes.NewReader(raw))
+		decoder.DisallowUnknownFields()
+		if decoder.Decode(&current) == nil && len(bytes.TrimSpace(raw[decoder.InputOffset():])) == 0 && current.SchemaVersion == 2 && current.Matched {
+			operationMetadata = append(json.RawMessage(nil), raw...)
+		}
+	}
+	managedRouterPending[key] = managedRouterContinuation{
+		context: ctx, previous: previous, next: next, request: request, expires: expires,
+		operationMetadata: operationMetadata, hasOperationMetadata: hasMetadata,
+	}
 	// The response-stage SRDS lookup retains the original domain scope. The
 	// private path is compiled in that scope; FilterState still authorizes it.
 	uri := ctx.Scheme() + "://" + ctx.Host() + managedRouterTargetPath(next.config)
