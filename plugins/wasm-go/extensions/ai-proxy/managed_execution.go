@@ -608,12 +608,7 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	if state.internal == nil && proxywasm.ReplaceHttpRequestHeader(managedCallHeader, state.callID) != nil {
 		return rejectManagedRequest(ctx, 500, "execution_identity_install_failed"), true
 	}
-	if managed.profile.InputProtocol == clientresponse.Responses {
-		publishAdapterMetadata(adapterMetadata{
-			SchemaVersion: 2, Matched: true, Mode: managed.settings.ProtocolMode,
-			NormalizedOperation: "openai/v1/responses", OperationTemplate: "/v1/responses",
-		})
-	}
+	publishManagedOperationMetadata(managed)
 	ctx.SetUserAttribute("managed_execution_transport", "http_call")
 	ctx.SetUserAttribute("managed_execution_response_mode", "buffered_http_call")
 	ctx.SetUserAttribute("managed_call_id", state.callID)
