@@ -350,6 +350,12 @@ func onNativeBillingResponseHeaders(ctx wrapper.HttpContext, cfg BillingConfig) 
 	if cfg.NativeExecution == nil {
 		return types.ActionContinue, false
 	}
+	state, _ := ctx.GetContext(nativeBillingContextKey).(*nativeBillingState)
+	// This observation ID never replaces the gateway request ID.
+	_ = proxywasm.RemoveHttpResponseHeader(executionfacts.ClientCallIDHeader)
+	if state != nil && state.valid && state.internal == nil {
+		_ = proxywasm.ReplaceHttpResponseHeader(executionfacts.ClientCallIDHeader, state.origin.CallID)
+	}
 	if requestID := wrapper.PreserveOriginalRequestID(ctx); requestID != "" {
 		if err := proxywasm.ReplaceHttpResponseHeader(gatewayRequestIDHeader, requestID); err != nil {
 			proxywasm.LogWarnf("native gateway request ID response header write failed: %v", err)
@@ -368,7 +374,6 @@ func onNativeBillingResponseHeaders(ctx wrapper.HttpContext, cfg BillingConfig) 
 			return types.ActionContinue, true
 		}
 	}
-	state, _ := ctx.GetContext(nativeBillingContextKey).(*nativeBillingState)
 	if state != nil && state.valid && state.config.routerDelivery {
 		if call, err := proxywasm.GetProperty([]string{observedusage.RouterDeliveryProperty}); err == nil &&
 			(string(call) == state.origin.CallID || state.internal != nil && len(call) != 0) {

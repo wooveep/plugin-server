@@ -483,6 +483,7 @@ func managedUniformMember(count int) (int, error) {
 // All request state belongs to this ai-proxy Wasm context. It does not assume
 // that a context map, Go pointer or private envelope crosses a Wasm boundary.
 type managedExecutionState struct {
+	client                                                     executionfacts.ClientInfo
 	sendStartedAt                                              time.Time
 	firstByteMS                                                *int64
 	upstreamRequestID                                          string
@@ -603,7 +604,7 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	if err != nil || mediaErr != nil || mediaType != "application/json" || !ctx.HasRequestBody() {
 		return rejectManagedRequest(ctx, 400, "json_body_required"), true
 	}
-	state := &managedExecutionState{config: managed, sourceConfig: managed, identity: identity, internal: internal, callID: origin.CallID, admissionDeadline: origin.ValidUntil, businessUTC: origin.OccurredAt, ledger: executionfacts.NewLedger(128), deliveries: map[string]*executionfacts.Delivery{}}
+	state := &managedExecutionState{client: captureManagedClientInfo(headers), config: managed, sourceConfig: managed, identity: identity, internal: internal, callID: origin.CallID, admissionDeadline: origin.ValidUntil, businessUTC: origin.OccurredAt, ledger: executionfacts.NewLedger(128), deliveries: map[string]*executionfacts.Delivery{}}
 	ctx.SetContext(managedExecutionContextKey, state)
 	if state.internal == nil && proxywasm.ReplaceHttpRequestHeader(managedCallHeader, state.callID) != nil {
 		return rejectManagedRequest(ctx, 500, "execution_identity_install_failed"), true

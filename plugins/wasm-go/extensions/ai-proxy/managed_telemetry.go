@@ -1,11 +1,56 @@
 package main
 
 import (
+	"github.com/higress-group/proxy-wasm-go-sdk/properties"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
+	"net"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
+
+func captureManagedClientInfo(headers [][2]string) executionfacts.ClientInfo {
+	info := executionfacts.ClientInfo{}
+	if agent, err := managedSingleHeader(headers, "user-agent"); err == nil && utf8.ValidString(agent) {
+		valid := true
+		for _, char := range agent {
+			valid = valid && !unicode.IsControl(char)
+		}
+		if valid {
+			if len(agent) > executionfacts.MaxUserAgentBytes {
+				agent = agent[:executionfacts.MaxUserAgentBytes]
+				for !utf8.ValidString(agent) {
+					agent = agent[:len(agent)-1]
+				}
+			}
+			info.UserAgent = agent
+		}
+	}
+	// Via is only a suppression hint, never proof of a portal's original IP.
+	// Console binds the native call ID to its own original observation.
+	if via, err := managedSingleHeader(headers, "via"); err == nil {
+		for _, hop := range strings.Split(via, ",") {
+			if strings.EqualFold(strings.TrimSpace(hop), "1.1 modelfusion-portal") {
+				info.ClientIPSource = executionfacts.ClientIPUnconfirmedPortal
+				return info
+			}
+		}
+	}
+	address, err := properties.GetDownstreamRemoteAddress()
+	if err != nil {
+		return info
+	}
+	if host, _, err := net.SplitHostPort(address); err == nil {
+		address = host
+	}
+	if ip := net.ParseIP(address); ip != nil {
+		info.ClientIP = ip.String()
+		info.ClientIPSource = executionfacts.ClientIPDownstreamConnection
+	}
+	return info
+}
 
 func recordManagedTelemetry(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome) {
 	if s == nil || s.attemptID == "" {
@@ -16,7 +61,7 @@ func recordManagedTelemetry(ctx wrapper.HttpContext, s *managedExecutionState, o
 		sent = s.sendStartedAt.UTC().Format(time.RFC3339Nano)
 	}
 	recordManagedAccessUpstream(ctx, s)
-	snapshot, err := executionfacts.FreezeRuntimeTelemetry(executionfacts.RuntimeTelemetry{ProducerID: s.config.settings.ProducerID, Kind: "attempt", CallID: s.callID, AttemptID: s.attemptID, RequestID: wrapper.PreserveOriginalRequestID(ctx), UpstreamRequestID: s.upstreamRequestID, SentAt: sent, FirstByteMS: s.firstByteMS, ObservedAt: managedNow()})
+	snapshot, err := executionfacts.FreezeRuntimeTelemetry(executionfacts.RuntimeTelemetry{ClientInfo: s.client, ProducerID: s.config.settings.ProducerID, Kind: "attempt", CallID: s.callID, AttemptID: s.attemptID, RequestID: wrapper.PreserveOriginalRequestID(ctx), UpstreamRequestID: s.upstreamRequestID, SentAt: sent, FirstByteMS: s.firstByteMS, ObservedAt: managedNow()})
 	if err == nil {
 		dispatchManagedSnapshot(ctx, s, snapshot)
 	} else {
@@ -29,7 +74,7 @@ func recordManagedCallTiming(ctx wrapper.HttpContext, s *managedExecutionState) 
 		return
 	}
 	duration := time.Since(started).Milliseconds()
-	snapshot, err := executionfacts.FreezeRuntimeTelemetry(executionfacts.RuntimeTelemetry{ProducerID: s.config.settings.ProducerID, Kind: "call", CallID: s.callID, RequestID: wrapper.PreserveOriginalRequestID(ctx), DurationMS: &duration, ObservedAt: managedNow()})
+	snapshot, err := executionfacts.FreezeRuntimeTelemetry(executionfacts.RuntimeTelemetry{ClientInfo: s.client, ProducerID: s.config.settings.ProducerID, Kind: "call", CallID: s.callID, RequestID: wrapper.PreserveOriginalRequestID(ctx), DurationMS: &duration, ObservedAt: managedNow()})
 	if err == nil {
 		dispatchManagedSnapshot(ctx, s, snapshot)
 	}

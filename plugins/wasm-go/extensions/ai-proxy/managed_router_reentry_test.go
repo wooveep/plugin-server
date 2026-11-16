@@ -46,11 +46,14 @@ func TestRouterRetryUsesRemainingCallBudgetAndShorterAttemptLimit(t *testing.T) 
 	for _, limit := range []uint32{500, 9000} {
 		t.Run(strconv.FormatUint(uint64(limit), 10), func(t *testing.T) {
 			h := newManagedTextHost(t, routerTextFixture(t))
+			require.NoError(t, h.host.SetProperty([]string{"source", "address"}, []byte("192.0.2.7:443")))
 			c := h.cfg.ManagedExecution.(*managedExecutionConfig)
 			require.NoError(t, h.host.SetProperty([]string{"cluster_name"}, []byte(c.release.Descriptor.ClusterRef)))
 			h.start(t, []byte(managedOriginalBody), []byte(managedMappedBody))
 			respondManagedTextHealth(t, h, map[string]bool{"credential-1": true})
 			state := h.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
+			originalClient := state.client
+			require.Equal(t, "192.0.2.7", originalClient.ClientIP)
 			deadline := time.Now().Add(2500 * time.Millisecond)
 			state.routerDeadline = deadline
 			state.config.settings.TextExecution.Retry.RetryTimeoutMS = limit
@@ -61,11 +64,14 @@ func TestRouterRetryUsesRemainingCallBudgetAndShorterAttemptLimit(t *testing.T) 
 			require.Len(t, managedRouterPending, 1)
 			for _, entry := range managedRouterPending {
 				require.Equal(t, deadline, entry.next.routerDeadline)
+				require.Equal(t, originalClient, entry.next.client)
 			}
 			oldID := h.id
 			h.id = h.host.InitializeHttpContext()
+			require.NoError(t, h.host.SetProperty([]string{"source", "address"}, []byte("10.42.0.99:8080")))
 			headers := [][2]string{{":method", "POST"}, {":authority", wrapper.RouterContinuationHost}, {":path", managedRouterTargetPath(c)}, {"content-type", "application/json"}}
 			h.host.CallOnRequestHeaders(h.id, headers, false)
+			require.Equal(t, originalClient, h.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState).client)
 			h.host.CallOnRequestBody(h.id, []byte(managedMappedBody), true)
 			value, err := managedSingleHeader(h.host.GetCurrentRequestHeaders(h.id), "x-envoy-upstream-rq-timeout-ms")
 			require.NoError(t, err)
