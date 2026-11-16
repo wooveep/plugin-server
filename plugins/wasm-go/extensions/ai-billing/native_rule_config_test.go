@@ -69,6 +69,7 @@ func TestNativeBillingRuleOnlyTargetsDeliverToTheirOwnRedisAndStream(t *testing.
 				require.NoError(t, host.SetClusterName("outbound|8080||"+tc.target+".dns"))
 				headers := append([][2]string{
 					{":authority", "example.test"}, {":path", "/custom/customer/alias"}, {":method", http.MethodPost},
+					{"x-request-id", "a677ec9c-a2ba-4474-bcab-e101d9215fd4"},
 				}, nativeBillingAdmittedHeaders(tc.config, uuid.NewSHA1(uuid.NameSpaceURL, []byte(tc.target)).String())...)
 				require.Equal(t, types.ActionContinue, host.CallOnHttpRequestHeaders(headers))
 				require.Empty(t, host.GetRedisCalloutAttributes())
@@ -76,6 +77,7 @@ func TestNativeBillingRuleOnlyTargetsDeliverToTheirOwnRedisAndStream(t *testing.
 				snapshot := independentNativeBillingDelivery(t, tc.config, tc.target)
 				require.Equal(t, types.ActionContinue, host.CallOnHttpResponseHeaders([][2]string{
 					{":status", "200"}, {"content-type", "application/json"},
+					{gatewayRequestIDHeader, "untrusted-supplier-id"},
 					{executionfacts.DeliveryBridgeHeader, nativeBillingBridgeFixture(t, snapshot)},
 				}))
 				calls := host.GetRedisCalloutAttributes()
@@ -85,9 +87,16 @@ func TestNativeBillingRuleOnlyTargetsDeliverToTheirOwnRedisAndStream(t *testing.
 				require.Contains(t, string(calls[0].Query), "XADD")
 				require.Contains(t, string(calls[0].Query), "observation")
 				require.Equal(t, 1, bytes.Count(calls[0].Query, snapshot.Bytes()))
+				gatewayIDs := 0
 				for _, header := range host.GetResponseHeaders() {
 					require.NotEqual(t, executionfacts.DeliveryBridgeHeader, header[0])
+					if header[0] == gatewayRequestIDHeader {
+						gatewayIDs++
+						require.Equal(t, "a677ec9c-a2ba-4474-bcab-e101d9215fd4", header[1])
+						require.NotEqual(t, snapshot.Envelope().CallID, header[1])
+					}
 				}
+				require.Equal(t, 1, gatewayIDs)
 				if dependencyError {
 					host.CallOnRedisCall(0, test.CreateRedisRespError("controlled dependency failure"))
 				} else {
