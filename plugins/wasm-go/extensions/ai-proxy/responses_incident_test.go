@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
@@ -126,6 +127,38 @@ func TestResponsesIncidentResourceWriteFailurePreservesCompletedUsage(t *testing
 			entry, _ := readManagedAccessLog(t, h)
 			require.True(t, entry.FactGap)
 			require.Contains(t, entry.ReasonCodes, "resource_reference_write_failed")
+		})
+	}
+}
+
+func TestResponsesIncidentUnstoredResourceCannotContinue(t *testing.T) {
+	for _, mode := range []string{"auto", "passthrough"} {
+		t.Run(mode, func(t *testing.T) {
+			h := responsesIncidentRouter(t, mode)
+			h.host.CallOnResponseHeaders(h.id, [][2]string{{":status", "200"}, {"content-type", "text/event-stream"}}, false)
+			h.host.CallOnResponseBody(h.id, responseModePayload(clientresponse.Responses, true), true)
+			writes := h.host.GetRedisCalloutAttributesFromContext(h.id)
+			require.Len(t, writes, 1)
+			h.host.CallOnRedisCallResponse(writes[0].CalloutID, 0, []byte(":0\r\n"))
+			state := h.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
+			var id string
+			for _, alias := range state.publicAliases.Records() {
+				if alias.Kind == "response" {
+					id = alias.Public
+				}
+			}
+			require.NotEmpty(t, id)
+			require.Contains(t, string(h.host.GetCurrentResponseBody(h.id)), "event: response.completed")
+			h.host.CompleteHttpContext(h.id)
+			h.id = h.host.InitializeHttpContext()
+			request := []byte(fmt.Sprintf(`{"model":%q,"input":"next","previous_response_id":%q}`, state.config.release.PublicModel, id))
+			h.start(t, request, bytes.Replace(request, []byte(state.config.release.PublicModel), []byte("upstream-model"), 1))
+			lookups := h.host.GetRedisCalloutAttributesFromContext(h.id)
+			require.Len(t, lookups, 1)
+			h.host.CallOnRedisCallResponse(lookups[0].CalloutID, 0, []byte("*1\r\n$-1\r\n"))
+			require.EqualValues(t, 400, h.host.GetSentLocalResponse(h.id).StatusCode)
+			require.False(t, h.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState).dispatchStarted)
+			require.Empty(t, h.host.GetCalloutAttributesFromContext(h.id))
 		})
 	}
 }
