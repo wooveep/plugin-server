@@ -247,11 +247,11 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 	context.DontReadResponseBody()
 	headers, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil {
-		return deniedMissingIdentity()
+		return deniedMissingIdentity(context)
 	}
 	identity, err := balanceidentity.Read(headers)
 	if err != nil {
-		return deniedMissingIdentity()
+		return deniedMissingIdentity(context)
 	}
 	routeID := ""
 	if admission, ok := config.ExecutionAdmission.(*executionAdmissionConfig); ok && admission != nil {
@@ -262,7 +262,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 			observeAdmissionRejection(context, config, identity, "dependency_unavailable")
 			context.SetUserAttribute("balance_admission_reason", "dependency_unavailable")
 			log.Warn("ai-quota versioned balance read failed")
-			util.SendResponse(http.StatusServiceUnavailable, "ai-quota.dependency_unavailable", "text/plain", "Model request is temporarily unavailable.")
+			util.SendResponse(context, http.StatusServiceUnavailable, "ai-quota.dependency_unavailable", "text/plain", "Model request is temporarily unavailable.")
 			return
 		}
 		context.SetUserAttribute("balance_admission_reason", result.ReasonCode)
@@ -274,7 +274,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 		}
 		observeAdmissionRejection(context, config, identity, result.ReasonCode)
 		if result.ReasonCode == "insufficient_balance" {
-			deniedNoBalance()
+			deniedNoBalance(context)
 			return
 		}
 		status := uint32(http.StatusForbidden)
@@ -284,24 +284,24 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 			status = http.StatusServiceUnavailable
 			message = "Model request is temporarily unavailable."
 		}
-		util.SendResponse(status, "ai-quota."+result.ReasonCode, "text/plain", message)
+		util.SendResponse(context, status, "ai-quota."+result.ReasonCode, "text/plain", message)
 	})
 	if err != nil {
 		observeAdmissionRejection(context, config, identity, "dependency_unavailable")
 		context.SetUserAttribute("balance_admission_reason", "dependency_unavailable")
-		util.SendResponse(http.StatusServiceUnavailable, "ai-quota.dependency_unavailable", "text/plain", "Model request is temporarily unavailable.")
+		util.SendResponse(context, http.StatusServiceUnavailable, "ai-quota.dependency_unavailable", "text/plain", "Model request is temporarily unavailable.")
 		return types.ActionContinue
 	}
 	return types.HeaderStopAllIterationAndWatermark
 }
 
-func deniedMissingIdentity() types.Action {
-	util.SendResponse(http.StatusForbidden, "ai-quota.missing_identity", "text/plain", "Request denied by ai quota check. Missing authenticated wallet identity.")
+func deniedMissingIdentity(context wrapper.HttpContext) types.Action {
+	util.SendResponse(context, http.StatusForbidden, "ai-quota.missing_identity", "text/plain", "Request denied by ai quota check. Missing authenticated wallet identity.")
 	return types.ActionContinue
 }
 
-func deniedNoBalance() {
-	util.SendResponse(http.StatusForbidden, "ai-quota.no_balance", "text/plain", "Request denied by ai quota check. No monetary balance left.")
+func deniedNoBalance(context wrapper.HttpContext) {
+	util.SendResponse(context, http.StatusForbidden, "ai-quota.no_balance", "text/plain", "Request denied by ai quota check. No monetary balance left.")
 }
 
 func isAIPathEnabled(requestPath string, enabledSuffixes []string) bool {

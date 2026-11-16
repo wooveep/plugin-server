@@ -1,6 +1,9 @@
 package util
 
-import "github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+import (
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
+)
 
 const (
 	HeaderContentType = "Content-Type"
@@ -9,8 +12,9 @@ const (
 	MimeTypeApplicationJson = "application/json"
 )
 
-func SendResponse(statusCode uint32, statusCodeDetails string, contentType, body string) error {
-	return proxywasm.SendHttpResponseWithDetail(statusCode, statusCodeDetails, CreateHeaders(HeaderContentType, contentType), []byte(body), -1)
+func SendResponse(ctx wrapper.HttpContext, statusCode uint32, statusCodeDetails string, contentType, body string) error {
+	return proxywasm.SendHttpResponseWithDetail(statusCode, statusCodeDetails,
+		CreateHeaders(HeaderContentType, contentType, "x-ocmf-gateway-request-id", wrapper.PreserveOriginalRequestID(ctx)), []byte(body), -1)
 }
 
 func CreateHeaders(kvs ...string) [][2]string {
