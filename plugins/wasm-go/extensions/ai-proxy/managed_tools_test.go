@@ -148,8 +148,8 @@ func TestManagedToolMeteringUsesTerminalCountsAndKeepsUnknown(t *testing.T) {
 	}
 	state.config.profile.UpstreamProtocol = managedProtocolChat
 	usage = managedToolUsage(state, []byte(`{"usage":{"x_tools":{"search":{"count":99}}}}`), outcome, [][2]string{{"content-type", "application/json"}})
-	if usage[fixedtools.WebSearch].Status != "missing" {
-		t.Fatal("search intent was billed as actual use")
+	if usage[fixedtools.WebSearch].Status != "reported" || usage[fixedtools.WebSearch].Count != "99" {
+		t.Fatal("Qwen Chat platform search meter did not retain its terminal count")
 	}
 	state.config.settings.ToolPolicy.Supplier = "deepseek"
 	state.config.profile.UpstreamProtocol = managedProtocolResponses

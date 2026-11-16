@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -146,6 +147,14 @@ func managedToolUsage(s *managedExecutionState, body []byte, outcome executionfa
 
 func managedToolEventUsage(protocol string, data []byte, previous gjson.Result) gjson.Result {
 	object := gjson.ParseBytes(data)
+	if protocol == managedProtocolChat {
+		if bytes.Equal(bytes.TrimSpace(data), []byte("[DONE]")) {
+			return previous
+		}
+		// Only the terminal Chat usage can establish this platform meter.
+		// A preceding incremental count is not retained across later frames.
+		return object.Get("usage")
+	}
 	kind := object.Get("type").String()
 	if protocol == managedProtocolResponses {
 		if kind == "response.completed" || kind == "response.incomplete" || kind == "response.failed" {
@@ -185,6 +194,8 @@ func managedToolMeasurements(s *managedExecutionState, usage gjson.Result, outco
 		var count gjson.Result
 		protocol := s.config.profile.UpstreamProtocol
 		switch {
+		case p.Supplier == "qwen" && protocol == managedProtocolChat && tool == fixedtools.WebSearch:
+			count = usage.Get("x_tools.search.count")
 		case p.Supplier == "qwen" && protocol == managedProtocolResponses:
 			count = usage.Get("x_tools." + string(tool) + ".count")
 		case p.Supplier == "qwen" && protocol == managedProtocolMessages:
@@ -215,7 +226,12 @@ func managedToolMeasurements(s *managedExecutionState, usage gjson.Result, outco
 			if value.Sign() == 0 {
 				status = "known_zero"
 			}
-			result[tool] = executionfacts.ToolMeasurement{Status: status, Count: value.String(), Source: "provider"}
+			measurement := executionfacts.ToolMeasurement{Status: status, Count: value.String(), Source: "provider"}
+			if p.Supplier == "qwen" && protocol == managedProtocolChat && tool == fixedtools.WebSearch {
+				// User-selected platform accounting rule, not a supplier invoice claim.
+				measurement.ReasonCode = "platform_qwen_openai_chat_usage_x_tools_search_count"
+			}
+			result[tool] = measurement
 		}
 	}
 	return result
