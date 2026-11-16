@@ -17,6 +17,13 @@ type Usage struct {
 	QwenInputDetails      map[string]json.RawMessage
 	QwenOutputDetails     map[string]json.RawMessage
 	QwenDetails           json.RawMessage
+	ToolIntents           map[string]ToolIntent
+}
+
+// ToolIntent is an original supplier statistic, never a completed or billable use.
+type ToolIntent struct {
+	Count    json.RawMessage `json:"count"`
+	Strategy string          `json:"strategy,omitempty"`
 }
 
 func number(raw json.RawMessage) (*big.Int, bool) {
@@ -53,6 +60,28 @@ func readUsageObject(raw json.RawMessage, format string) Usage {
 	var o map[string]json.RawMessage
 	_ = json.Unmarshal(raw, &o)
 	u := Usage{Input: o["prompt_tokens"], Output: o["completion_tokens"], Total: o["total_tokens"], InputDetails: readDetails(o["prompt_tokens_details"], "cached_tokens cache_write_tokens audio_tokens image_tokens text_tokens"), OutputDetails: readDetails(o["completion_tokens_details"], "reasoning_tokens audio_tokens accepted_prediction_tokens rejected_prediction_tokens text_tokens")}
+	if format == Chat || format == Responses {
+		var source map[string]json.RawMessage
+		_ = json.Unmarshal(o["x_tools"], &source)
+		for _, key := range []string{"search", "web_search", "web_extractor", "code_interpreter", "image_search", "web_search_image"} {
+			var intent ToolIntent
+			if json.Unmarshal(source[key], &intent) != nil {
+				continue
+			}
+			if _, valid := number(intent.Count); !valid {
+				continue
+			}
+			switch intent.Strategy {
+			case "", "turbo", "max", "agent", "agent_max", "standard", "pro", "pro_max", "pro_ultra":
+			default:
+				intent.Strategy = ""
+			}
+			if u.ToolIntents == nil {
+				u.ToolIntents = make(map[string]ToolIntent)
+			}
+			u.ToolIntents[key] = intent
+		}
+	}
 	if format == Responses || format == Messages || format == "qwen" {
 		u.Input, u.Output = o["input_tokens"], o["output_tokens"]
 		if format == Responses {
@@ -370,12 +399,15 @@ func (u Usage) wireProfile(protocol string, profile Profile) json.RawMessage {
 		}
 	}
 	raw := u.wire(protocol)
-	if profile != Qwen || len(raw) == 0 {
+	if len(raw) == 0 || profile == OpenAI || (profile != Qwen && len(u.ToolIntents) == 0) {
 		return raw
 	}
 	var result map[string]json.RawMessage
 	_ = json.Unmarshal(raw, &result)
-	if protocol == Chat {
+	if (protocol == Chat || protocol == Responses) && len(u.ToolIntents) > 0 {
+		result["x_tools"], _ = json.Marshal(u.ToolIntents)
+	}
+	if profile == Qwen && protocol == Chat {
 		var input, output map[string]json.RawMessage
 		_ = json.Unmarshal(result["prompt_tokens_details"], &input)
 		_ = json.Unmarshal(result["completion_tokens_details"], &output)
@@ -399,7 +431,7 @@ func (u Usage) wireProfile(protocol string, profile Profile) json.RawMessage {
 		if len(output) > 0 {
 			result["completion_tokens_details"], _ = json.Marshal(output)
 		}
-	} else if protocol == Responses && len(u.QwenDetails) > 0 {
+	} else if profile == Qwen && protocol == Responses && len(u.QwenDetails) > 0 {
 		result["x_details"] = u.QwenDetails
 	}
 	raw, _ = json.Marshal(result)
