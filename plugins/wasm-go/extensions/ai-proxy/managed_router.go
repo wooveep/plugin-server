@@ -207,6 +207,11 @@ func observeManagedRouterHeaders(ctx wrapper.HttpContext, s *managedExecutionSta
 	r := s.router
 	code := uint16(status)
 	r.headers, r.status = headers, &code
+	if s.firstByteMS == nil {
+		// Measure the original upstream headers before buffering or conversion.
+		elapsed := time.Since(s.sendStartedAt).Milliseconds()
+		s.firstByteMS = &elapsed
+	}
 	captureManagedUpstreamID(s, headers)
 	if !ctx.HasResponseBody() {
 		r.transportEnded = true

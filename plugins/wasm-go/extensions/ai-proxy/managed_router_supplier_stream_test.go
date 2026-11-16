@@ -4,10 +4,34 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/stretchr/testify/require"
 )
+
+func TestRouterCollectsOriginalHeadersBeforeJSONOrStreamBody(t *testing.T) {
+	for _, contentType := range []string{"application/json", "text/event-stream"} {
+		t.Run(contentType, func(t *testing.T) {
+			fixture := managedConfigFixture()
+			settings := fixture["managed_execution"].(managedSettings)
+			settings.SendTransport, settings.StreamProjection = "router", true
+			fixture["managed_execution"] = settings
+			h := newManagedHost(t, fixture)
+			release := fixture["_modelfusion_execution"].(managedRelease)
+			require.NoError(t, h.host.SetProperty([]string{"cluster_name"}, []byte(release.Descriptor.ClusterRef)))
+			h.start(t, []byte(managedOriginalBody), []byte(managedMappedBody))
+			state := h.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
+			require.Nil(t, state.firstByteMS)
+			state.sendStartedAt = time.Now().Add(-10 * time.Millisecond)
+			require.NoError(t, h.host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
+			h.host.CallOnResponseHeaders(h.id, [][2]string{{":status", "200"}, {"content-type", contentType}}, false)
+			// No body or stream completion callback has run at this point.
+			require.NotNil(t, state.firstByteMS)
+			require.GreaterOrEqual(t, *state.firstByteMS, int64(10))
+		})
+	}
+}
 
 func TestRouterSupplierStreamsForwardBeforeTerminalAndKeepOriginalCounters(t *testing.T) {
 	for _, supplier := range []struct {
