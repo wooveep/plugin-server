@@ -1287,6 +1287,9 @@ func recordManagedBailianRequestID(s *managedExecutionState, value string) {
 		return
 	}
 	s.bailianRequestID = id.String()
+	if s.upstreamRequestID == "" {
+		s.upstreamRequestID = s.bailianRequestID
+	}
 }
 
 func recordManagedAttempt(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome) {
