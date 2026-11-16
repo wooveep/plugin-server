@@ -45,7 +45,7 @@ func init() {
 // @Title zh-CN AI intent
 // @Description zh-CN 大模型意图识别
 // @IconUrl
-// @Version 0.1.0
+// @Version 2.0.10
 //
 // @Contact.name jose
 // @Contact.url

@@ -1,0 +1,987 @@
+{
+  "baseline_tag": "V2.2.1-SP002",
+  "baseline_commit": "06518896c1aaa463fed3f23d4ff378784c422346",
+  "branch": "codex/sp003-plugins-sp002",
+  "retained_commits": [
+    {
+      "source": "5376663f587c200668459be1600c766757af4e0f",
+      "result": "04b01ef292b1643822f6e5ad6b03ec2f8e562bfa",
+      "included_paths": [
+        "plugins/release/catalog.json",
+        "plugins/wasm-go/extensions/ai-proxy/VERSION",
+        "plugins/wasm-go/extensions/ai-proxy/managed_execution.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_execution_test.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_log.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_router.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_router_reentry.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_telemetry.go",
+        "plugins/wasm-go/extensions/ai-proxy/media_execution.go",
+        "plugins/wasm-go/extensions/ai-proxy/media_execution_test.go",
+        "plugins/wasm-go/extensions/ai-quota/VERSION",
+        "plugins/wasm-go/extensions/ai-quota/execution_admission.go",
+        "plugins/wasm-go/extensions/ai-quota/main.go",
+        "plugins/wasm-go/extensions/ai-quota/rejection_observation.go",
+        "plugins/wasm-go/pkg/ai/executionfacts/telemetry.go",
+        "plugins/wasm-go/pkg/ai/executionfacts/telemetry_test.go",
+        "plugins/wasm-go/pkg/wrapper/original_request.go",
+        "plugins/wasm-go/pkg/wrapper/plugin_wrapper.go",
+        "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-quota/spec.yaml"
+      ],
+      "excluded_paths": [
+        "plugins/wasm-go/extensions/ai-quota/balance_projection.go",
+        "plugins/wasm-go/extensions/ai-quota/execution_admission_test.go",
+        "plugins/wasm-go/extensions/key-auth/VERSION",
+        "plugins/wasm-go/extensions/key-auth/main.go",
+        "plugins/wasm-go/pkg/ai/balanceidentity/identity.go",
+        "plugins/wasm-go/resources/plugins/key-auth/spec.yaml"
+      ]
+    },
+    {
+      "source": "45a5c28e4622a2e42f0daf4f141d4d9da17bc11a",
+      "result": "d4f151bc2a3907025446e391b6a4eed2e3cbd7a0",
+      "included_paths": [
+        "plugins/wasm-go/pkg/wrapper/original_request.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "67fae9a608046a82a173a6354fe5907b52e05681",
+      "result": "4249d85da19811907294f244b50ec415662df181",
+      "included_paths": [
+        "plugins/release/catalog.json",
+        "plugins/release/console/ai-context-limit/spec.yaml",
+        "plugins/release/console/ai-endpoint-picker/spec.yaml",
+        "plugins/release/console/gw-error-format/spec.yaml",
+        "plugins/release/console/hmac-auth-apisix/spec.yaml",
+        "plugins/release/console/json-converter/spec.yaml",
+        "plugins/release/console/log-request-response/spec.yaml",
+        "plugins/release/console/mcp-router/spec.yaml",
+        "plugins/release/console/nginx-rewrite-compatible/spec.yaml",
+        "plugins/release/console/response-cache/spec.yaml",
+        "plugins/release/metadata/ai-agent/spec.yaml",
+        "plugins/release/metadata/ai-intent/spec.yaml",
+        "plugins/release/metadata/ai-json-resp/spec.yaml",
+        "plugins/release/metadata/ai-load-balancer/spec.yaml",
+        "plugins/release/metadata/ai-prompt-decorator/spec.yaml",
+        "plugins/release/metadata/ai-prompt-template/spec.yaml",
+        "plugins/release/metadata/ai-rag/spec.yaml",
+        "plugins/release/metadata/ai-search/spec.yaml",
+        "plugins/release/metadata/ai-security-guard/spec.yaml",
+        "plugins/release/metadata/ai-transformer/spec.yaml",
+        "plugins/release/metadata/cache-control/spec.yaml",
+        "plugins/release/metadata/cors/spec.yaml",
+        "plugins/release/metadata/de-graphql/spec.yaml",
+        "plugins/release/metadata/ext-auth/spec.yaml",
+        "plugins/release/metadata/frontend-gray/spec.yaml",
+        "plugins/release/metadata/geo-ip/spec.yaml",
+        "plugins/release/metadata/ip-restriction/spec.yaml",
+        "plugins/release/metadata/mcp-server/spec.yaml",
+        "plugins/release/metadata/model-router/spec.yaml",
+        "plugins/release/metadata/oidc/spec.yaml",
+        "plugins/release/metadata/opa/spec.yaml",
+        "plugins/release/metadata/replay-protection/spec.yaml",
+        "plugins/release/metadata/request-validation/spec.yaml",
+        "plugins/release/metadata/traffic-tag/spec.yaml",
+        "plugins/release/metadata/transformer/spec.yaml",
+        "plugins/release/metadata/waf/spec.yaml",
+        "plugins/wasm-go/extensions/ai-agent/VERSION",
+        "plugins/wasm-go/extensions/ai-billing/VERSION",
+        "plugins/wasm-go/extensions/ai-cache/VERSION",
+        "plugins/wasm-go/extensions/ai-context-limit/VERSION",
+        "plugins/wasm-go/extensions/ai-endpoint-picker/VERSION",
+        "plugins/wasm-go/extensions/ai-history/VERSION",
+        "plugins/wasm-go/extensions/ai-intent/VERSION",
+        "plugins/wasm-go/extensions/ai-json-resp/VERSION",
+        "plugins/wasm-go/extensions/ai-load-balancer/VERSION",
+        "plugins/wasm-go/extensions/ai-memory/VERSION",
+        "plugins/wasm-go/extensions/ai-prompt-decorator/VERSION",
+        "plugins/wasm-go/extensions/ai-prompt-template/VERSION",
+        "plugins/wasm-go/extensions/ai-proxy/VERSION",
+        "plugins/wasm-go/extensions/ai-proxy/config/config.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_execution.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_usage_estimate_test.go",
+        "plugins/wasm-go/extensions/ai-proxy/option.yaml",
+        "plugins/wasm-go/extensions/ai-quota/VERSION",
+        "plugins/wasm-go/extensions/ai-rag/VERSION",
+        "plugins/wasm-go/extensions/ai-search/VERSION",
+        "plugins/wasm-go/extensions/ai-security-guard/VERSION",
+        "plugins/wasm-go/extensions/ai-statistics/VERSION",
+        "plugins/wasm-go/extensions/ai-transformer/VERSION",
+        "plugins/wasm-go/extensions/cache-control/VERSION",
+        "plugins/wasm-go/extensions/cors/VERSION",
+        "plugins/wasm-go/extensions/de-graphql/VERSION",
+        "plugins/wasm-go/extensions/ext-auth/VERSION",
+        "plugins/wasm-go/extensions/frontend-gray/VERSION",
+        "plugins/wasm-go/extensions/geo-ip/VERSION",
+        "plugins/wasm-go/extensions/gw-error-format/VERSION",
+        "plugins/wasm-go/extensions/hmac-auth-apisix/VERSION",
+        "plugins/wasm-go/extensions/ip-restriction/VERSION",
+        "plugins/wasm-go/extensions/jsonrpc-converter/VERSION",
+        "plugins/wasm-go/extensions/log-request-response/VERSION",
+        "plugins/wasm-go/extensions/mcp-router/VERSION",
+        "plugins/wasm-go/extensions/mcp-server/VERSION",
+        "plugins/wasm-go/extensions/model-mapper/VERSION",
+        "plugins/wasm-go/extensions/model-router/VERSION",
+        "plugins/wasm-go/extensions/nginx-rewrite-compatible/VERSION",
+        "plugins/wasm-go/extensions/oidc/VERSION",
+        "plugins/wasm-go/extensions/opa/VERSION",
+        "plugins/wasm-go/extensions/replay-protection/VERSION",
+        "plugins/wasm-go/extensions/request-validation/VERSION",
+        "plugins/wasm-go/extensions/response-cache/VERSION",
+        "plugins/wasm-go/extensions/traffic-tag/VERSION",
+        "plugins/wasm-go/extensions/transformer/VERSION",
+        "plugins/wasm-go/extensions/waf/VERSION",
+        "plugins/wasm-go/resources/plugins/ai-billing/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-cache/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-history/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-memory/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-quota/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-statistics/spec.yaml",
+        "plugins/wasm-go/resources/plugins/model-mapper/spec.yaml"
+      ],
+      "excluded_paths": [
+        "authentication/rate policy paths"
+      ],
+      "conflict_resolution": "preserved SP002 authentication/rate catalog pins"
+    },
+    {
+      "source": "0ca03ae9a5b2d13b9c98c3a5494c9a92998111c4",
+      "result": "c9eedd7564b0303dd87805e9119f2153eb9ec89b",
+      "included_paths": [
+        "plugins/release/catalog.json",
+        "plugins/release/metadata/ai-data-masking/spec.yaml",
+        "plugins/wasm-go/extensions/ai-proxy/managed_router.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_usage_estimate_test.go",
+        "plugins/wasm-rust/extensions/ai-data-masking/VERSION"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "47860973951cf80d4ed45e2ad482059f41cdbc47",
+      "result": "90d140864640a2f42e9513b3bd9c697ccd6d52a3",
+      "included_paths": [
+        "plugins/release/catalog.json",
+        "plugins/release/console/ai-context-limit/spec.yaml",
+        "plugins/release/console/ai-endpoint-picker/spec.yaml",
+        "plugins/release/console/gw-error-format/spec.yaml",
+        "plugins/release/console/hmac-auth-apisix/spec.yaml",
+        "plugins/release/console/json-converter/spec.yaml",
+        "plugins/release/console/log-request-response/spec.yaml",
+        "plugins/release/console/mcp-router/spec.yaml",
+        "plugins/release/console/nginx-rewrite-compatible/spec.yaml",
+        "plugins/release/console/response-cache/spec.yaml",
+        "plugins/release/metadata/ai-agent/spec.yaml",
+        "plugins/release/metadata/ai-intent/spec.yaml",
+        "plugins/release/metadata/ai-json-resp/spec.yaml",
+        "plugins/release/metadata/ai-load-balancer/spec.yaml",
+        "plugins/release/metadata/ai-prompt-decorator/spec.yaml",
+        "plugins/release/metadata/ai-prompt-template/spec.yaml",
+        "plugins/release/metadata/ai-rag/spec.yaml",
+        "plugins/release/metadata/ai-search/spec.yaml",
+        "plugins/release/metadata/ai-security-guard/spec.yaml",
+        "plugins/release/metadata/ai-transformer/spec.yaml",
+        "plugins/release/metadata/cache-control/spec.yaml",
+        "plugins/release/metadata/cors/spec.yaml",
+        "plugins/release/metadata/de-graphql/spec.yaml",
+        "plugins/release/metadata/ext-auth/spec.yaml",
+        "plugins/release/metadata/frontend-gray/spec.yaml",
+        "plugins/release/metadata/geo-ip/spec.yaml",
+        "plugins/release/metadata/ip-restriction/spec.yaml",
+        "plugins/release/metadata/mcp-server/spec.yaml",
+        "plugins/release/metadata/model-router/spec.yaml",
+        "plugins/release/metadata/oidc/spec.yaml",
+        "plugins/release/metadata/opa/spec.yaml",
+        "plugins/release/metadata/replay-protection/spec.yaml",
+        "plugins/release/metadata/request-validation/spec.yaml",
+        "plugins/release/metadata/traffic-tag/spec.yaml",
+        "plugins/release/metadata/transformer/spec.yaml",
+        "plugins/release/metadata/waf/spec.yaml",
+        "plugins/wasm-go/extensions/ai-agent/VERSION",
+        "plugins/wasm-go/extensions/ai-billing/VERSION",
+        "plugins/wasm-go/extensions/ai-billing/native_execution.go",
+        "plugins/wasm-go/extensions/ai-billing/native_rule_config_test.go",
+        "plugins/wasm-go/extensions/ai-cache/VERSION",
+        "plugins/wasm-go/extensions/ai-context-limit/VERSION",
+        "plugins/wasm-go/extensions/ai-endpoint-picker/VERSION",
+        "plugins/wasm-go/extensions/ai-history/VERSION",
+        "plugins/wasm-go/extensions/ai-intent/VERSION",
+        "plugins/wasm-go/extensions/ai-json-resp/VERSION",
+        "plugins/wasm-go/extensions/ai-load-balancer/VERSION",
+        "plugins/wasm-go/extensions/ai-memory/VERSION",
+        "plugins/wasm-go/extensions/ai-prompt-decorator/VERSION",
+        "plugins/wasm-go/extensions/ai-prompt-template/VERSION",
+        "plugins/wasm-go/extensions/ai-proxy/VERSION",
+        "plugins/wasm-go/extensions/ai-proxy/config/config.go",
+        "plugins/wasm-go/extensions/ai-proxy/option.yaml",
+        "plugins/wasm-go/extensions/ai-quota/VERSION",
+        "plugins/wasm-go/extensions/ai-rag/VERSION",
+        "plugins/wasm-go/extensions/ai-search/VERSION",
+        "plugins/wasm-go/extensions/ai-security-guard/VERSION",
+        "plugins/wasm-go/extensions/ai-statistics/VERSION",
+        "plugins/wasm-go/extensions/ai-transformer/VERSION",
+        "plugins/wasm-go/extensions/cache-control/VERSION",
+        "plugins/wasm-go/extensions/cors/VERSION",
+        "plugins/wasm-go/extensions/de-graphql/VERSION",
+        "plugins/wasm-go/extensions/ext-auth/VERSION",
+        "plugins/wasm-go/extensions/frontend-gray/VERSION",
+        "plugins/wasm-go/extensions/geo-ip/VERSION",
+        "plugins/wasm-go/extensions/gw-error-format/VERSION",
+        "plugins/wasm-go/extensions/hmac-auth-apisix/VERSION",
+        "plugins/wasm-go/extensions/ip-restriction/VERSION",
+        "plugins/wasm-go/extensions/jsonrpc-converter/VERSION",
+        "plugins/wasm-go/extensions/log-request-response/VERSION",
+        "plugins/wasm-go/extensions/mcp-router/VERSION",
+        "plugins/wasm-go/extensions/mcp-server/VERSION",
+        "plugins/wasm-go/extensions/model-mapper/VERSION",
+        "plugins/wasm-go/extensions/model-router/VERSION",
+        "plugins/wasm-go/extensions/nginx-rewrite-compatible/VERSION",
+        "plugins/wasm-go/extensions/oidc/VERSION",
+        "plugins/wasm-go/extensions/opa/VERSION",
+        "plugins/wasm-go/extensions/replay-protection/VERSION",
+        "plugins/wasm-go/extensions/request-validation/VERSION",
+        "plugins/wasm-go/extensions/response-cache/VERSION",
+        "plugins/wasm-go/extensions/traffic-tag/VERSION",
+        "plugins/wasm-go/extensions/transformer/VERSION",
+        "plugins/wasm-go/extensions/waf/VERSION",
+        "plugins/wasm-go/pkg/wrapper/original_request.go",
+        "plugins/wasm-go/resources/plugins/ai-billing/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-cache/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-history/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-memory/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-quota/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-statistics/spec.yaml",
+        "plugins/wasm-go/resources/plugins/model-mapper/spec.yaml"
+      ],
+      "excluded_paths": [
+        "plugins/wasm-go/extensions/ai-token-ratelimit/VERSION",
+        "plugins/wasm-go/extensions/cluster-key-rate-limit/VERSION",
+        "plugins/wasm-go/extensions/key-auth/VERSION",
+        "plugins/wasm-go/resources/plugins/ai-token-ratelimit/spec.yaml",
+        "plugins/wasm-go/resources/plugins/cluster-key-rate-limit/spec.yaml",
+        "plugins/wasm-go/resources/plugins/key-auth/spec.yaml"
+      ]
+    },
+    {
+      "source": "2e668742e5b2a48a472c1613895d39f101d9c6f5",
+      "result": "ba7c2fb54324352648a6ef4fe2c2e65d3385d5fe",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-billing/native_execution.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "9d22e5b05c57d7df4dc8c4171217473692f597f4",
+      "result": "012654c01778375030ec9060c5d1fd30a24a2c86",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-quota/execution_admission.go",
+        "plugins/wasm-go/extensions/ai-quota/main.go",
+        "plugins/wasm-go/extensions/ai-quota/main_test.go",
+        "plugins/wasm-go/extensions/ai-quota/util/http.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "09b13b581daaab28260317e30827627a6502c288",
+      "result": "d7ae28fd9480bc0f090ef546e8da54ba38d4120a",
+      "included_paths": [
+        "plugins/release/catalog.json",
+        "plugins/release/console/ai-context-limit/spec.yaml",
+        "plugins/release/console/ai-endpoint-picker/spec.yaml",
+        "plugins/release/console/gw-error-format/spec.yaml",
+        "plugins/release/console/hmac-auth-apisix/spec.yaml",
+        "plugins/release/console/json-converter/spec.yaml",
+        "plugins/release/console/log-request-response/spec.yaml",
+        "plugins/release/console/mcp-router/spec.yaml",
+        "plugins/release/console/nginx-rewrite-compatible/spec.yaml",
+        "plugins/release/console/response-cache/spec.yaml",
+        "plugins/release/metadata/ai-agent/spec.yaml",
+        "plugins/release/metadata/ai-intent/spec.yaml",
+        "plugins/release/metadata/ai-json-resp/spec.yaml",
+        "plugins/release/metadata/ai-load-balancer/spec.yaml",
+        "plugins/release/metadata/ai-prompt-decorator/spec.yaml",
+        "plugins/release/metadata/ai-prompt-template/spec.yaml",
+        "plugins/release/metadata/ai-rag/spec.yaml",
+        "plugins/release/metadata/ai-search/spec.yaml",
+        "plugins/release/metadata/ai-security-guard/spec.yaml",
+        "plugins/release/metadata/ai-transformer/spec.yaml",
+        "plugins/release/metadata/cache-control/spec.yaml",
+        "plugins/release/metadata/cors/spec.yaml",
+        "plugins/release/metadata/de-graphql/spec.yaml",
+        "plugins/release/metadata/ext-auth/spec.yaml",
+        "plugins/release/metadata/frontend-gray/spec.yaml",
+        "plugins/release/metadata/geo-ip/spec.yaml",
+        "plugins/release/metadata/ip-restriction/spec.yaml",
+        "plugins/release/metadata/mcp-server/spec.yaml",
+        "plugins/release/metadata/model-router/spec.yaml",
+        "plugins/release/metadata/oidc/spec.yaml",
+        "plugins/release/metadata/opa/spec.yaml",
+        "plugins/release/metadata/replay-protection/spec.yaml",
+        "plugins/release/metadata/request-validation/spec.yaml",
+        "plugins/release/metadata/traffic-tag/spec.yaml",
+        "plugins/release/metadata/transformer/spec.yaml",
+        "plugins/release/metadata/waf/spec.yaml",
+        "plugins/wasm-go/extensions/ai-agent/VERSION",
+        "plugins/wasm-go/extensions/ai-billing/VERSION",
+        "plugins/wasm-go/extensions/ai-cache/VERSION",
+        "plugins/wasm-go/extensions/ai-context-limit/VERSION",
+        "plugins/wasm-go/extensions/ai-endpoint-picker/VERSION",
+        "plugins/wasm-go/extensions/ai-history/VERSION",
+        "plugins/wasm-go/extensions/ai-intent/VERSION",
+        "plugins/wasm-go/extensions/ai-json-resp/VERSION",
+        "plugins/wasm-go/extensions/ai-load-balancer/VERSION",
+        "plugins/wasm-go/extensions/ai-memory/VERSION",
+        "plugins/wasm-go/extensions/ai-prompt-decorator/VERSION",
+        "plugins/wasm-go/extensions/ai-prompt-template/VERSION",
+        "plugins/wasm-go/extensions/ai-proxy/VERSION",
+        "plugins/wasm-go/extensions/ai-quota/VERSION",
+        "plugins/wasm-go/extensions/ai-rag/VERSION",
+        "plugins/wasm-go/extensions/ai-search/VERSION",
+        "plugins/wasm-go/extensions/ai-security-guard/VERSION",
+        "plugins/wasm-go/extensions/ai-statistics/VERSION",
+        "plugins/wasm-go/extensions/ai-transformer/VERSION",
+        "plugins/wasm-go/extensions/cache-control/VERSION",
+        "plugins/wasm-go/extensions/cors/VERSION",
+        "plugins/wasm-go/extensions/de-graphql/VERSION",
+        "plugins/wasm-go/extensions/ext-auth/VERSION",
+        "plugins/wasm-go/extensions/frontend-gray/VERSION",
+        "plugins/wasm-go/extensions/geo-ip/VERSION",
+        "plugins/wasm-go/extensions/gw-error-format/VERSION",
+        "plugins/wasm-go/extensions/hmac-auth-apisix/VERSION",
+        "plugins/wasm-go/extensions/ip-restriction/VERSION",
+        "plugins/wasm-go/extensions/jsonrpc-converter/VERSION",
+        "plugins/wasm-go/extensions/log-request-response/VERSION",
+        "plugins/wasm-go/extensions/mcp-router/VERSION",
+        "plugins/wasm-go/extensions/mcp-server/VERSION",
+        "plugins/wasm-go/extensions/model-mapper/VERSION",
+        "plugins/wasm-go/extensions/model-router/VERSION",
+        "plugins/wasm-go/extensions/nginx-rewrite-compatible/VERSION",
+        "plugins/wasm-go/extensions/oidc/VERSION",
+        "plugins/wasm-go/extensions/opa/VERSION",
+        "plugins/wasm-go/extensions/replay-protection/VERSION",
+        "plugins/wasm-go/extensions/request-validation/VERSION",
+        "plugins/wasm-go/extensions/response-cache/VERSION",
+        "plugins/wasm-go/extensions/traffic-tag/VERSION",
+        "plugins/wasm-go/extensions/transformer/VERSION",
+        "plugins/wasm-go/extensions/waf/VERSION",
+        "plugins/wasm-go/pkg/ai/clientresponse/tool_intents_test.go",
+        "plugins/wasm-go/pkg/ai/clientresponse/usage.go",
+        "plugins/wasm-go/resources/plugins/ai-billing/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-cache/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-history/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-memory/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-quota/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-statistics/spec.yaml",
+        "plugins/wasm-go/resources/plugins/model-mapper/spec.yaml"
+      ],
+      "excluded_paths": [
+        "plugins/wasm-go/extensions/ai-token-ratelimit/VERSION",
+        "plugins/wasm-go/extensions/cluster-key-rate-limit/VERSION",
+        "plugins/wasm-go/extensions/key-auth/VERSION",
+        "plugins/wasm-go/resources/plugins/ai-token-ratelimit/spec.yaml",
+        "plugins/wasm-go/resources/plugins/cluster-key-rate-limit/spec.yaml",
+        "plugins/wasm-go/resources/plugins/key-auth/spec.yaml"
+      ]
+    },
+    {
+      "source": "b1df05c7776b9465923f5877c19ab6b833100bd2",
+      "result": "d6c0b47febdbb2f96e8bfe73206f69c7435d1ad5",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/managed_execution.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_router.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_router_supplier_stream_test.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_telemetry.go",
+        "plugins/wasm-go/pkg/ai/executionfacts/telemetry.go",
+        "plugins/wasm-go/pkg/ai/executionfacts/telemetry_test.go"
+      ],
+      "excluded_paths": [
+        "docs/checks/2026-11-13-first-response-telemetry.md"
+      ]
+    },
+    {
+      "source": "53368bdaff2e4d4714856803b752be640b72c011",
+      "result": "31deaabef716fab8187dae9ce94f925ed4c091c0",
+      "included_paths": [
+        "plugins/release/catalog.json",
+        "plugins/release/console/ai-context-limit/spec.yaml",
+        "plugins/release/console/ai-endpoint-picker/spec.yaml",
+        "plugins/release/console/gw-error-format/spec.yaml",
+        "plugins/release/console/hmac-auth-apisix/spec.yaml",
+        "plugins/release/console/json-converter/spec.yaml",
+        "plugins/release/console/log-request-response/spec.yaml",
+        "plugins/release/console/mcp-router/spec.yaml",
+        "plugins/release/console/nginx-rewrite-compatible/spec.yaml",
+        "plugins/release/console/response-cache/spec.yaml",
+        "plugins/release/metadata/ai-agent/spec.yaml",
+        "plugins/release/metadata/ai-intent/spec.yaml",
+        "plugins/release/metadata/ai-json-resp/spec.yaml",
+        "plugins/release/metadata/ai-load-balancer/spec.yaml",
+        "plugins/release/metadata/ai-prompt-decorator/spec.yaml",
+        "plugins/release/metadata/ai-prompt-template/spec.yaml",
+        "plugins/release/metadata/ai-rag/spec.yaml",
+        "plugins/release/metadata/ai-search/spec.yaml",
+        "plugins/release/metadata/ai-security-guard/spec.yaml",
+        "plugins/release/metadata/ai-transformer/spec.yaml",
+        "plugins/release/metadata/cache-control/spec.yaml",
+        "plugins/release/metadata/cors/spec.yaml",
+        "plugins/release/metadata/de-graphql/spec.yaml",
+        "plugins/release/metadata/ext-auth/spec.yaml",
+        "plugins/release/metadata/frontend-gray/spec.yaml",
+        "plugins/release/metadata/geo-ip/spec.yaml",
+        "plugins/release/metadata/ip-restriction/spec.yaml",
+        "plugins/release/metadata/mcp-server/spec.yaml",
+        "plugins/release/metadata/model-router/spec.yaml",
+        "plugins/release/metadata/oidc/spec.yaml",
+        "plugins/release/metadata/opa/spec.yaml",
+        "plugins/release/metadata/replay-protection/spec.yaml",
+        "plugins/release/metadata/request-validation/spec.yaml",
+        "plugins/release/metadata/traffic-tag/spec.yaml",
+        "plugins/release/metadata/transformer/spec.yaml",
+        "plugins/release/metadata/waf/spec.yaml",
+        "plugins/wasm-go/extensions/ai-agent/VERSION",
+        "plugins/wasm-go/extensions/ai-billing/VERSION",
+        "plugins/wasm-go/extensions/ai-cache/VERSION",
+        "plugins/wasm-go/extensions/ai-context-limit/VERSION",
+        "plugins/wasm-go/extensions/ai-endpoint-picker/VERSION",
+        "plugins/wasm-go/extensions/ai-history/VERSION",
+        "plugins/wasm-go/extensions/ai-intent/VERSION",
+        "plugins/wasm-go/extensions/ai-json-resp/VERSION",
+        "plugins/wasm-go/extensions/ai-load-balancer/VERSION",
+        "plugins/wasm-go/extensions/ai-memory/VERSION",
+        "plugins/wasm-go/extensions/ai-prompt-decorator/VERSION",
+        "plugins/wasm-go/extensions/ai-prompt-template/VERSION",
+        "plugins/wasm-go/extensions/ai-proxy/VERSION",
+        "plugins/wasm-go/extensions/ai-quota/VERSION",
+        "plugins/wasm-go/extensions/ai-rag/VERSION",
+        "plugins/wasm-go/extensions/ai-search/VERSION",
+        "plugins/wasm-go/extensions/ai-security-guard/VERSION",
+        "plugins/wasm-go/extensions/ai-statistics/VERSION",
+        "plugins/wasm-go/extensions/ai-transformer/VERSION",
+        "plugins/wasm-go/extensions/cache-control/VERSION",
+        "plugins/wasm-go/extensions/cors/VERSION",
+        "plugins/wasm-go/extensions/de-graphql/VERSION",
+        "plugins/wasm-go/extensions/ext-auth/VERSION",
+        "plugins/wasm-go/extensions/frontend-gray/VERSION",
+        "plugins/wasm-go/extensions/geo-ip/VERSION",
+        "plugins/wasm-go/extensions/gw-error-format/VERSION",
+        "plugins/wasm-go/extensions/hmac-auth-apisix/VERSION",
+        "plugins/wasm-go/extensions/ip-restriction/VERSION",
+        "plugins/wasm-go/extensions/jsonrpc-converter/VERSION",
+        "plugins/wasm-go/extensions/log-request-response/VERSION",
+        "plugins/wasm-go/extensions/mcp-router/VERSION",
+        "plugins/wasm-go/extensions/mcp-server/VERSION",
+        "plugins/wasm-go/extensions/model-mapper/VERSION",
+        "plugins/wasm-go/extensions/model-router/VERSION",
+        "plugins/wasm-go/extensions/nginx-rewrite-compatible/VERSION",
+        "plugins/wasm-go/extensions/oidc/VERSION",
+        "plugins/wasm-go/extensions/opa/VERSION",
+        "plugins/wasm-go/extensions/replay-protection/VERSION",
+        "plugins/wasm-go/extensions/request-validation/VERSION",
+        "plugins/wasm-go/extensions/response-cache/VERSION",
+        "plugins/wasm-go/extensions/traffic-tag/VERSION",
+        "plugins/wasm-go/extensions/transformer/VERSION",
+        "plugins/wasm-go/extensions/waf/VERSION",
+        "plugins/wasm-go/resources/plugins/ai-billing/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-cache/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-history/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-memory/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-quota/spec.yaml",
+        "plugins/wasm-go/resources/plugins/ai-statistics/spec.yaml",
+        "plugins/wasm-go/resources/plugins/model-mapper/spec.yaml"
+      ],
+      "excluded_paths": [
+        "docs/checks/2026-11-13-first-response-artifact-preparation.md",
+        "plugins/wasm-go/extensions/ai-token-ratelimit/VERSION",
+        "plugins/wasm-go/extensions/cluster-key-rate-limit/VERSION",
+        "plugins/wasm-go/extensions/key-auth/VERSION",
+        "plugins/wasm-go/resources/plugins/ai-token-ratelimit/spec.yaml",
+        "plugins/wasm-go/resources/plugins/cluster-key-rate-limit/spec.yaml",
+        "plugins/wasm-go/resources/plugins/key-auth/spec.yaml"
+      ]
+    },
+    {
+      "source": "0fd20d147ccb5a9b8ce67320f467bc309b1e376f",
+      "result": "76915ecb2bd48d4a4d471322fae47850e76799b0",
+      "included_paths": [
+        "plugin_server.py",
+        "tests/test_plugin_server.py"
+      ],
+      "excluded_paths": [
+        "docs/checks/2026-11-13-first-response-artifact-preparation.md"
+      ]
+    },
+    {
+      "source": "84da4b26e7ef96f76b6215055bd6903f2559989a",
+      "result": "578128b8433d2c90467b0a6cfeb1d8f4fa8d3aad",
+      "included_paths": [
+        ".dockerignore",
+        "Dockerfile",
+        "plugins/release/first-response-selection.json"
+      ],
+      "excluded_paths": [
+        "docs/checks/2026-11-13-first-response-artifact-preparation.md"
+      ]
+    },
+    {
+      "source": "b3dcd30c216c5fa4067d9b3ec40c130885c9b825",
+      "result": "2789e333990dab9ab50d96faccce8701df86510c",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/managed_public_resources.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_public_resources_bench_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "c551a2ef35a77069c75eff6ca3ed25f05e60c3ab",
+      "result": "f314f6952b2c3942ec9b497a4296ad8c59cabdb2",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/managed_log.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_log_incident_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "880d3a18086ad0f069a7e86150c36b1350d48fd3",
+      "result": "d9d1e946e201b7db501e50f9fc0c45fb7289888e",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/managed_router.go",
+        "plugins/wasm-go/extensions/ai-proxy/responses_incident_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "7a866098a22a457bcfc3c0a8746245d48e1aa639",
+      "result": "23425ddc3933d75c82f1fa946af7d1fa23194227",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/managed_execution.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_native_attribution_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "3188cd01ec4731635751e1911032cf13e22214a5",
+      "result": "7192fda5e2131afb5d92992206fa964c72b90fe7",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/managed_public_resources.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_resource_lookup_bench_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "cf4fdbb8e08894b783f94fee54a6c0899ea17ab1",
+      "result": "6bf6208bbf150160133733de97b29375d826757d",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/managed_log.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_log_reason_contract_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "4111e9a9147f23ae7075a1ddca6333f6a06447f2",
+      "result": "b8c31712418626ee4fd12b5c1944a2d9beacc6f4",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/managed_protocol_incident_test.go",
+        "plugins/wasm-go/extensions/ai-proxy/responses_incident_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "462eb50bc9763d8f088f520e8b5332939589d615",
+      "result": "2340b1fc295cfcf7d3a0f145cabe04ddf18fa6fb",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/adapter.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_execution.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_native_attribution_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "dacd69e148f61330b713d1a4854578e11b7fdcc3",
+      "result": "46beaf9985f3e0de519e111de0b2d9895367948a",
+      "included_paths": [
+        "plugins/release/catalog.json",
+        "plugins/release/responses-incident-selection.json",
+        "plugins/wasm-go/extensions/ai-proxy/VERSION",
+        "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "4cbc095f0dbc441985740f27a3396b6a5a728783",
+      "result": "ce886677d8b273baa817c64bb4590b137b9852b3",
+      "included_paths": [
+        "plugins/release/catalog.json",
+        "plugins/release/responses-incident-selection.json",
+        "plugins/wasm-go/extensions/ai-proxy/VERSION",
+        "plugins/wasm-go/extensions/ai-proxy/managed_router_attribution_test.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_router_reentry.go",
+        "plugins/wasm-go/resources/plugins/ai-proxy/spec.yaml"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "33d64745b85d42a8e34eb2ef6bf367d419c85978",
+      "result": "4c34c8137a0f1cf54ee9d1db7ac28c07eb707195",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/managed_router_attribution_test.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_router_reentry.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "f4d71be1c5435eef479b220c6a9b107c8d159e0d",
+      "result": "61992b12fc7f9659345c95dfbc09f98eff0f0368",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-billing/native_execution.go",
+        "plugins/wasm-go/extensions/ai-billing/native_rule_config_test.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_execution.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_router_reentry_test.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_telemetry.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_telemetry_test.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_text_execution.go",
+        "plugins/wasm-go/pkg/ai/executionfacts/telemetry.go",
+        "plugins/wasm-go/pkg/ai/executionfacts/telemetry_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "7d2ff08dbaec09228524470da07522fb1da8df00",
+      "result": "dab27ac5aaed6ec79153570520fc0a604efa6327",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-billing/native_execution.go",
+        "plugins/wasm-go/extensions/ai-billing/native_response_headers_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "57f778092b8e2e256ef8e3965f5e62b3f61a94f3",
+      "result": "ab1dcfe5150804478b10dc8775af07f8322a023e",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-proxy/managed_chat_tools_test.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_tools.go",
+        "plugins/wasm-go/extensions/ai-proxy/managed_tools_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "b6c39f162c165d24801f43f02e505048ccfb9769",
+      "result": "7f1908e13385eba476610c5eb401914a2860ee55",
+      "included_paths": [
+        "plugins/wasm-go/extensions/ai-billing/native_response_headers_test.go"
+      ],
+      "excluded_paths": []
+    },
+    {
+      "source": "4d7c8dfe01834863edc962d6131c1946d718d733",
+      "result": "f197fabd6824e7aa459a8cca94a363076fd44da8",
+      "included_paths": [
+        "plugins/wasm-go/pkg/wrapper/redis_wrapper.go",
+        "plugins/wasm-go/pkg/wrapper/redis_wrapper_diagnostics_test.go"
+      ],
+      "excluded_paths": []
+    }
+  ],
+  "additional_scope_fix": {
+    "commit": "3834374f",
+    "scope": "Restore quota source/metadata to SP002 and complete legacy load-balancer test mocks."
+  },
+  "versions": [
+    {
+      "plugin": "ai-agent",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ai-cache",
+      "baseline_curated_version": "2.0.30",
+      "previous_sp003_version": "2.0.31",
+      "version": "2.0.32"
+    },
+    {
+      "plugin": "ai-context-limit",
+      "baseline_curated_version": "1.0.5",
+      "previous_sp003_version": "1.0.6",
+      "version": "1.0.7"
+    },
+    {
+      "plugin": "ai-endpoint-picker",
+      "baseline_curated_version": "2.0.7",
+      "previous_sp003_version": "2.0.8",
+      "version": "2.0.9"
+    },
+    {
+      "plugin": "ai-history",
+      "baseline_curated_version": "2.0.18",
+      "previous_sp003_version": "2.0.19",
+      "version": "2.0.20"
+    },
+    {
+      "plugin": "ai-intent",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ai-json-resp",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ai-load-balancer",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.10",
+      "version": "2.0.11"
+    },
+    {
+      "plugin": "ai-prompt-decorator",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ai-prompt-template",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ai-proxy",
+      "baseline_curated_version": "2.0.83",
+      "previous_sp003_version": "2.0.85",
+      "version": "2.0.86"
+    },
+    {
+      "plugin": "ai-quota",
+      "baseline_curated_version": "2.0.9",
+      "previous_sp003_version": "2.0.16",
+      "version": "2.0.17"
+    },
+    {
+      "plugin": "ai-rag",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ai-search",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ai-security-guard",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ai-statistics",
+      "baseline_curated_version": "2.0.15",
+      "previous_sp003_version": "2.0.17",
+      "version": "2.0.18"
+    },
+    {
+      "plugin": "ai-token-ratelimit",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.15",
+      "version": "2.0.16"
+    },
+    {
+      "plugin": "ai-transformer",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "cache-control",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "cluster-key-rate-limit",
+      "baseline_curated_version": "2.0.5",
+      "previous_sp003_version": "2.0.12",
+      "version": "2.0.13"
+    },
+    {
+      "plugin": "cors",
+      "baseline_curated_version": "2.0.9",
+      "previous_sp003_version": "2.0.10",
+      "version": "2.0.11"
+    },
+    {
+      "plugin": "de-graphql",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ext-auth",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "frontend-gray",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "geo-ip",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "gw-error-format",
+      "baseline_curated_version": "1.0.7",
+      "previous_sp003_version": "1.0.8",
+      "version": "1.0.9"
+    },
+    {
+      "plugin": "hmac-auth-apisix",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ip-restriction",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "json-converter",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "log-request-response",
+      "baseline_curated_version": "1.0.5",
+      "previous_sp003_version": "1.0.6",
+      "version": "1.0.7"
+    },
+    {
+      "plugin": "mcp-router",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "mcp-server",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "model-mapper",
+      "baseline_curated_version": "2.0.10",
+      "previous_sp003_version": "2.0.12",
+      "version": "2.0.13"
+    },
+    {
+      "plugin": "model-router",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "nginx-rewrite-compatible",
+      "baseline_curated_version": "1.0.5",
+      "previous_sp003_version": "1.0.6",
+      "version": "1.0.7"
+    },
+    {
+      "plugin": "oidc",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "opa",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "replay-protection",
+      "baseline_curated_version": "1.0.5-alpha",
+      "previous_sp003_version": "1.0.6-alpha",
+      "version": "1.0.7"
+    },
+    {
+      "plugin": "request-validation",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "response-cache",
+      "baseline_curated_version": "1.0.8",
+      "previous_sp003_version": "1.0.9",
+      "version": "1.0.10"
+    },
+    {
+      "plugin": "traffic-tag",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "transformer",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "waf",
+      "baseline_curated_version": "2.0.8",
+      "previous_sp003_version": "2.0.9",
+      "version": "2.0.10"
+    },
+    {
+      "plugin": "ai-billing",
+      "baseline_curated_version": "1.0.17",
+      "previous_sp003_version": "1.0.18",
+      "version": "1.0.19"
+    },
+    {
+      "plugin": "ai-memory",
+      "baseline_curated_version": "0.1.22",
+      "previous_sp003_version": "0.1.23",
+      "version": "0.1.24"
+    },
+    {
+      "plugin": "key-auth",
+      "baseline_curated_version": "1.2.3",
+      "previous_sp003_version": "1.2.12",
+      "version": "1.2.13"
+    }
+  ],
+  "validation": {
+    "python": "python -m unittest discover -s tests: 132 passed",
+    "go_modules": [
+      "ai-proxy",
+      "ai-billing",
+      "ai-statistics",
+      "model-mapper",
+      "ai-quota",
+      "key-auth",
+      "cluster-key-rate-limit",
+      "ai-token-ratelimit",
+      "ai-load-balancer"
+    ],
+    "shared_framework": "go test ./pkg/...: passed"
+  },
+  "artifacts_built": false,
+  "deployed": false
+}

@@ -52,7 +52,7 @@ func init() {
 // @Description zh-CN transformer 插件可以对请求/响应头、请求查询参数、请求/响应体参数进行转换，支持的转换操作类型包括删除、重命名、更新、添加、追加、映射、去重。
 // @Description en-US The transformer plugin can transform request/response headers, request query parameters, and request/response body parameters. Supported transform operations include remove, rename, replace, add, append, map, and dedupe.
 // @IconUrl https://img.alicdn.com/imgextra/i1/O1CN018iKKih1iVx287RltL_!!6000000004419-2-tps-42-42.png
-// @Version 1.0.0
+// @Version 2.0.10
 //
 // @Contact.name Higress Team
 // @Contact.url http://higress.io/

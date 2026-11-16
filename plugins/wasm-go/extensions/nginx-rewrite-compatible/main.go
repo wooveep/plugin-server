@@ -28,7 +28,7 @@ func init() {
 // @Title en-US Nginx Rewrite Compatibility Migration
 // @Description zh-CN 提供与 nginx rewrite + set 指令组合等价的路径重写、查询串重写，以及通过 arg_/http_/cookie_ 前缀修改请求参数、请求头和 Cookie 的能力，用于安全迁移到 Higress。
 // @Description en-US Provides path rewrite, query rewrite, and nginx-style arg_/http_/cookie_ variable handling for request parameters, headers, and cookies, enabling safe migration to Higress.
-// @Version 1.0.0
+// @Version 1.0.7
 func parseConfig(json gjson.Result, config *pkg.PluginConfig, logger log.Log) error {
 	if err := config.FromJson(json); err != nil {
 		return fmt.Errorf("failed to parse plugin config: %w", err)
