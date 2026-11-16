@@ -1059,7 +1059,7 @@ func (ctx *CommonHttpCtx[PluginConfig]) OnHttpRequestHeaders(numHeaders int, end
 	ctx.requestContentType, _ = proxywasm.GetHttpRequestHeader("content-type")
 	ctx.requestContentEncoding, _ = proxywasm.GetHttpRequestHeader("content-encoding")
 
-	requestID, _ := proxywasm.GetHttpRequestHeader("x-request-id")
+	requestID := PreserveOriginalRequestID(ctx)
 	_ = proxywasm.SetProperty([]string{"x_request_id"}, []byte(requestID))
 
 	// Increment request count and check rebuild condition

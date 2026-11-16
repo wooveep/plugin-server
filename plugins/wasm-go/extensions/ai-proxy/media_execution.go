@@ -115,6 +115,7 @@ type managedMediaRuntime struct {
 }
 
 type managedMediaJob struct {
+	sendStartedAt        time.Time
 	runtime              *managedMediaRuntime
 	notice               managedMediaNotice
 	key, stage           string
@@ -719,6 +720,7 @@ func (j *managedMediaJob) consume() {
 			return
 		}
 		j.stage = "sending"
+		j.sendStartedAt = j.runtime.now()
 		j.deadline = j.runtime.now().Add(time.Duration(j.request.TimeoutMilliseconds())*time.Millisecond + time.Second)
 		err = j.runtime.provider(j.request, func(response mediaexecution.Response) {
 			if j.providerCallbackSeen {
@@ -739,6 +741,21 @@ func (j *managedMediaJob) consume() {
 }
 
 func (j *managedMediaJob) capture(response mediaexecution.Response) {
+	if !j.request.IsQuery() && response.SendState == "observed_sent" && !j.sendStartedAt.IsZero() {
+		upstreamID := gjson.GetBytes(response.Body, "request_id").String()
+		for _, pair := range response.Headers {
+			if strings.EqualFold(pair[0], "x-request-id") {
+				upstreamID = pair[1]
+			}
+		}
+		snapshot, err := executionfacts.FreezeRuntimeTelemetry(executionfacts.RuntimeTelemetry{ProducerID: j.runtime.settings.ProducerID, Kind: "attempt", CallID: j.request.CallID(), AttemptID: j.request.AttemptID(), UpstreamRequestID: upstreamID, SentAt: j.sendStartedAt.UTC().Format(time.RFC3339Nano), ObservedAt: response.ObservedAt})
+		if err == nil {
+			if err = j.runtime.redis.Command([]interface{}{"XADD", j.runtime.settings.PrivateStream, "*", "message_type", "execution_telemetry", "event", string(snapshot.Bytes())}, func(resp.Value) {}); err != nil {
+				log.Warn("media operational observation dispatch failed")
+			}
+		}
+	}
+
 	observation, err := j.request.Observe(response)
 	if err != nil {
 		j.stage = "done"

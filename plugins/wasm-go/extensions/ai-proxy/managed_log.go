@@ -18,8 +18,10 @@ const managedAccessLogAttempts = 64
 const managedAccessLogReasons = 8
 
 type managedAccessAttempt struct {
-	AttemptID       string `json:"attempt_id"`
-	ParentAttemptID string `json:"parent_attempt_id,omitempty"`
+	UpstreamRequestID string `json:"upstream_request_id,omitempty"`
+	SentAt            string `json:"sent_at,omitempty"`
+	AttemptID         string `json:"attempt_id"`
+	ParentAttemptID   string `json:"parent_attempt_id,omitempty"`
 }
 
 type managedAccessLog struct {
@@ -109,6 +111,9 @@ func writeManagedAccessLog(ctx wrapper.HttpContext) {
 }
 
 func closeManagedAccessLog(ctx wrapper.HttpContext) {
+	if state, ok := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState); ok {
+		recordManagedCallTiming(ctx, state)
+	}
 	entry := managedAccessOrigin(ctx)
 	if entry == nil {
 		return

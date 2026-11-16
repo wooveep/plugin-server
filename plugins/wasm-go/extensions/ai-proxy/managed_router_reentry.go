@@ -74,6 +74,7 @@ func acceptManagedRouterContinuation(ctx wrapper.HttpContext, c *managedExecutio
 		proxywasm.SetProperty([]string{wrapper.RouterContinuationProperty}, []byte("-")) != nil {
 		return rejectManagedRequest(ctx, 503, "router_continuation_unavailable"), true
 	}
+	wrapper.PreserveOriginalRequestID(ctx)
 	s := entry.next
 	s.sourceConfig = c
 	// Request metadata is cloned shallowly. The old context still owns and closes
