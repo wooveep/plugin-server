@@ -10,6 +10,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -54,6 +55,7 @@ type QuotaConfig struct {
 	EnableMethods      []string `yaml:"enable_methods"`
 	redisClient        wrapper.RedisClient
 	ExecutionAdmission any
+	LocalReplyPolicy   *clientresponse.LocalReplyPolicy
 }
 
 type RedisInfo struct {
@@ -164,6 +166,11 @@ func parseQuotaConfigFields(json gjson.Result, config *QuotaConfig) error {
 	if err := configureExecutionAdmission(json, config); err != nil {
 		return err
 	}
+	localReplyPolicy, err := clientresponse.ParseLocalReplyPolicyField(json)
+	if err != nil {
+		return err
+	}
+	config.LocalReplyPolicy = localReplyPolicy
 	return config.redisClient.Init(username, password, int64(timeout), wrapper.WithDataBase(database))
 }
 
@@ -197,6 +204,7 @@ func parseRuleConfig(json gjson.Result, global QuotaConfig, config *QuotaConfig)
 	*config = global
 	config.EnablePathSuffixes = cloneStrings(global.EnablePathSuffixes)
 	config.EnableMethods = cloneStrings(global.EnableMethods)
+	config.LocalReplyPolicy = nil
 
 	if value := json.Get("path_scope"); value.Exists() {
 		pathScope, err := parsePathScope(value)
@@ -229,6 +237,11 @@ func parseRuleConfig(json gjson.Result, global QuotaConfig, config *QuotaConfig)
 		}
 		config.EnableMethods = methods
 	}
+	localReplyPolicy, err := clientresponse.ParseLocalReplyPolicyField(json)
+	if err != nil {
+		return err
+	}
+	config.LocalReplyPolicy = localReplyPolicy
 	return configureExecutionAdmission(json, config)
 }
 
@@ -247,11 +260,11 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 	context.DontReadResponseBody()
 	headers, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil {
-		return deniedMissingIdentity()
+		return deniedMissingIdentity(context, config.LocalReplyPolicy)
 	}
 	identity, err := balanceidentity.Read(headers)
 	if err != nil {
-		return deniedMissingIdentity()
+		return deniedMissingIdentity(context, config.LocalReplyPolicy)
 	}
 	routeID := ""
 	if admission, ok := config.ExecutionAdmission.(*executionAdmissionConfig); ok && admission != nil {
@@ -261,7 +274,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 		if err != nil {
 			context.SetUserAttribute("balance_admission_reason", "dependency_unavailable")
 			log.Warn("ai-quota versioned balance read failed")
-			util.SendResponse(http.StatusServiceUnavailable, "ai-quota.dependency_unavailable", "text/plain", "Model request is temporarily unavailable.")
+			sendQuotaResponse(context, config.LocalReplyPolicy, http.StatusServiceUnavailable, "ai-quota.dependency_unavailable", "Model request is temporarily unavailable.")
 			return
 		}
 		context.SetUserAttribute("balance_admission_reason", result.ReasonCode)
@@ -272,7 +285,7 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 			return
 		}
 		if result.ReasonCode == "insufficient_balance" {
-			deniedNoBalance()
+			deniedNoBalance(context, config.LocalReplyPolicy)
 			return
 		}
 		status := uint32(http.StatusForbidden)
@@ -282,23 +295,30 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 			status = http.StatusServiceUnavailable
 			message = "Model request is temporarily unavailable."
 		}
-		util.SendResponse(status, "ai-quota."+result.ReasonCode, "text/plain", message)
+		sendQuotaResponse(context, config.LocalReplyPolicy, status, "ai-quota."+result.ReasonCode, message)
 	})
 	if err != nil {
 		context.SetUserAttribute("balance_admission_reason", "dependency_unavailable")
-		util.SendResponse(http.StatusServiceUnavailable, "ai-quota.dependency_unavailable", "text/plain", "Model request is temporarily unavailable.")
+		sendQuotaResponse(context, config.LocalReplyPolicy, http.StatusServiceUnavailable, "ai-quota.dependency_unavailable", "Model request is temporarily unavailable.")
 		return types.ActionContinue
 	}
 	return types.HeaderStopAllIterationAndWatermark
 }
 
-func deniedMissingIdentity() types.Action {
-	util.SendResponse(http.StatusForbidden, "ai-quota.missing_identity", "text/plain", "Request denied by ai quota check. Missing authenticated wallet identity.")
+func sendQuotaResponse(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy, status uint32, detail, legacyBody string) {
+	if sent, _ := clientresponse.SendLocalReply(ctx, policy, status, detail, nil); sent {
+		return
+	}
+	_ = util.SendResponse(status, detail, "text/plain", legacyBody)
+}
+
+func deniedMissingIdentity(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy) types.Action {
+	sendQuotaResponse(ctx, policy, http.StatusForbidden, "ai-quota.missing_identity", "Request denied by ai quota check. Missing authenticated wallet identity.")
 	return types.ActionContinue
 }
 
-func deniedNoBalance() {
-	util.SendResponse(http.StatusForbidden, "ai-quota.no_balance", "text/plain", "Request denied by ai quota check. No monetary balance left.")
+func deniedNoBalance(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy) {
+	sendQuotaResponse(ctx, policy, http.StatusForbidden, "ai-quota.no_balance", "Request denied by ai quota check. No monetary balance left.")
 }
 
 func isAIPathEnabled(requestPath string, enabledSuffixes []string) bool {

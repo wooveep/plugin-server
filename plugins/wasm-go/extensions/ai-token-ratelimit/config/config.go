@@ -8,6 +8,7 @@ import (
 
 	"ai-token-ratelimit/util"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -59,13 +60,14 @@ var timeWindows = map[string]int64{
 }
 
 type AiTokenRateLimitConfig struct {
-	RuleName        string           // 限流规则名称
-	GlobalThreshold *GlobalThreshold // 全局限流配置
-	RuleItems       []LimitRuleItem  // 限流规则项
-	RejectedCode    uint32           // 当请求超过阈值被拒绝时,返回的HTTP状态码
-	RejectedMsg     string           // 当请求超过阈值被拒绝时,返回的响应体
-	RedisClient     wrapper.RedisClient
-	CounterMetrics  map[string]proxywasm.MetricCounter // Metrics
+	RuleName         string                           // 限流规则名称
+	GlobalThreshold  *GlobalThreshold                 // 全局限流配置
+	RuleItems        []LimitRuleItem                  // 限流规则项
+	RejectedCode     uint32                           // 当请求超过阈值被拒绝时,返回的HTTP状态码
+	RejectedMsg      string                           // 当请求超过阈值被拒绝时,返回的响应体
+	LocalReplyPolicy *clientresponse.LocalReplyPolicy // 可选本地错误直接编码策略
+	RedisClient      wrapper.RedisClient
+	CounterMetrics   map[string]proxywasm.MetricCounter // Metrics
 }
 
 type GlobalThreshold struct {
@@ -173,6 +175,11 @@ func ParseAiTokenRateLimitConfig(json gjson.Result, config *AiTokenRateLimitConf
 	} else {
 		config.RejectedMsg = DefaultRejectedMsg
 	}
+	localReplyPolicy, err := clientresponse.ParseLocalReplyPolicyField(json)
+	if err != nil {
+		return err
+	}
+	config.LocalReplyPolicy = localReplyPolicy
 	return nil
 }
 

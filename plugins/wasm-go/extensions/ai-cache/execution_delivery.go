@@ -31,6 +31,7 @@ type nativeCacheDeliveryConfig struct {
 	passthrough                                                                         bool
 	routerMiss                                                                          bool
 	responseProfile                                                                     clientresponse.Profile
+	localReplyPolicy                                                                    *clientresponse.LocalReplyPolicy
 }
 
 type nativeCacheDeliveryState struct {
@@ -192,7 +193,7 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 	}
 	out.passthrough = mode.Str == "passthrough"
 	if out.passthrough {
-		if value.Get("response_profile").Exists() {
+		if value.Get("response_profile").Exists() || cfg.LocalReplyPolicy != nil {
 			return errors.New("passthrough cache cannot activate a response profile")
 		}
 	} else {
@@ -204,6 +205,10 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 		if err != nil {
 			return err
 		}
+		if cfg.LocalReplyPolicy != nil && value.Get("client_protocol").Exists() && cfg.LocalReplyPolicy.Protocol != value.Get("client_protocol").String() {
+			return errors.New("native cache local_reply_policy differs from client_protocol")
+		}
+		out.localReplyPolicy = cfg.LocalReplyPolicy
 	}
 	if !balanceidentity.ValidID(out.routeID) || !balanceidentity.ValidID(out.salesAssetID) {
 		return errors.New("native cache requires its original route and sales asset")
@@ -479,7 +484,17 @@ func rejectNativeCache(ctx wrapper.HttpContext, state *nativeCacheDeliveryState,
 		state.rejected = true
 	}
 	ctx.SetUserAttribute("execution_cache_rejection", reason)
-	_ = proxywasm.SendHttpResponseWithDetail(status, "ai-cache.execution_delivery."+reason, [][2]string{{"content-type", "application/json"}}, []byte(`{"error":"native cache request unavailable"}`), -1)
+	var policy *clientresponse.LocalReplyPolicy
+	if state != nil && state.config != nil {
+		policy = state.config.localReplyPolicy
+	}
+	if policy == nil {
+		policy, _ = ctx.GetContext(CACHE_LOCAL_REPLY_POLICY_KEY).(*clientresponse.LocalReplyPolicy)
+	}
+	detail := "ai-cache.execution_delivery." + reason
+	if sent, _ := clientresponse.SendLocalReply(ctx, policy, status, detail, nil); !sent {
+		_ = proxywasm.SendHttpResponseWithDetail(status, detail, [][2]string{{"content-type", "application/json"}}, []byte(`{"error":"native cache request unavailable"}`), -1)
+	}
 	return false
 }
 func nativeCacheFactGap(ctx wrapper.HttpContext, reason string) {

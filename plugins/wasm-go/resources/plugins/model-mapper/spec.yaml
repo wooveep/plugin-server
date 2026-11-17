@@ -6,7 +6,7 @@ info:
   name: model-mapper
   image: platform_wasm/model-mapper
   title: Model Mapper
-  version: 2.0.13
+  version: 2.0.14
   description: Maps standalone model names and preserves exact original-body correlation
     for native publication.
 spec:
@@ -58,6 +58,39 @@ spec:
             zh-CN: 只对这些特定路径后缀的请求生效
           items:
             type: string
+        local_reply_policy: &local_reply_policy
+          type: object
+          additionalProperties: false
+          required:
+          - input_protocol
+          - response_profile
+          properties:
+            input_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_completions
+              - openai_responses
+              - anthropic_messages
+            response_profile:
+              type: string
+              enum:
+              - deepseek
+              - qwen
+              - openai
+          allOf:
+          - if:
+              properties:
+                input_protocol:
+                  const: anthropic_messages
+              required:
+              - input_protocol
+            then:
+              properties:
+                response_profile:
+                  enum:
+                  - deepseek
+                  - qwen
       allOf:
       - if:
           anyOf:
@@ -105,6 +138,7 @@ spec:
         capture_body_basis:
           type: boolean
           default: false
+        local_reply_policy: *local_reply_policy
       allOf:
       - if:
           anyOf:

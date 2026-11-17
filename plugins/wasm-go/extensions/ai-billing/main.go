@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/tokenusage"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -105,8 +106,9 @@ func init() {
 
 type BillingConfig struct {
 	// NativeExecution is installed only by an exact managed route configuration.
-	NativeExecution    any         `json:"-" yaml:"-"`
-	RedisStream        RedisStream `yaml:"redis_stream"`
+	NativeExecution    any                              `json:"-" yaml:"-"`
+	LocalReplyPolicy   *clientresponse.LocalReplyPolicy `json:"-" yaml:"-"`
+	RedisStream        RedisStream                      `yaml:"redis_stream"`
 	EventKind          string      `yaml:"event_kind"`
 	QuotaScope         string      `yaml:"quota_scope"`
 	Provider           string      `yaml:"provider"`
@@ -238,6 +240,11 @@ func parseCompleteBillingConfig(configJson gjson.Result, config *BillingConfig) 
 	if err := parseConfigFields(configJson, config); err != nil {
 		return err
 	}
+	localReplyPolicy, err := clientresponse.ParseLocalReplyPolicyField(configJson)
+	if err != nil {
+		return err
+	}
+	config.LocalReplyPolicy = localReplyPolicy
 	if err := parseRedisStream(configJson.Get("redis_stream"), config); err != nil {
 		return err
 	}
@@ -329,6 +336,12 @@ func parseRuleConfig(configJson gjson.Result, global BillingConfig, config *Bill
 		}
 		config.EnableMethods = methods
 	}
+	config.LocalReplyPolicy = nil
+	localReplyPolicy, err := clientresponse.ParseLocalReplyPolicyField(configJson)
+	if err != nil {
+		return err
+	}
+	config.LocalReplyPolicy = localReplyPolicy
 	return configureNativeBilling(configJson, config)
 }
 

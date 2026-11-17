@@ -14,7 +14,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/model-router/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/model-router/README_EN.md
-  version: 2.0.10
+  version: 2.0.11
   contact:
     name: johnlanni
   type: oss
@@ -69,6 +69,87 @@ spec:
             zh-CN: 只对这些特定路径后缀的请求生效
           items:
             type: string
+        local_reply_policy: &local_reply_policy
+          type: object
+          additionalProperties: false
+          required:
+          - input_protocol
+          - response_profile
+          properties:
+            input_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_completions
+              - openai_responses
+              - anthropic_messages
+            response_profile:
+              type: string
+              enum:
+              - deepseek
+              - qwen
+              - openai
+          allOf:
+          - if:
+              properties:
+                input_protocol:
+                  const: anthropic_messages
+              required:
+              - input_protocol
+            then:
+              properties:
+                response_profile:
+                  enum:
+                  - deepseek
+                  - qwen
+        local_reply_default:
+          type: boolean
+        local_reply_entrances:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - path
+            - local_reply_policy
+            properties:
+              domains:
+                type: array
+                items:
+                  type: string
+                  minLength: 1
+              path:
+                type: object
+                additionalProperties: false
+                required:
+                - match_type
+                - match_value
+                properties:
+                  match_type:
+                    type: string
+                    enum:
+                    - EQUAL
+                    - PRE
+                    - REGULAR
+                  match_value:
+                    type: string
+                    minLength: 1
+                  case_sensitive:
+                    type: boolean
+              local_reply_policy: *local_reply_policy
+      allOf:
+      - not:
+          required:
+          - local_reply_policy
+          - local_reply_entrances
+      - not:
+          allOf:
+          - required:
+            - local_reply_policy
+            - local_reply_default
+          - properties:
+              local_reply_default:
+                const: true
       example:
         addProviderHeader: x-higress-llm-provider
         modelToHeader: x-higress-llm-model

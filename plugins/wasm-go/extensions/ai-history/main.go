@@ -13,6 +13,7 @@ import (
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/tenantpolicy"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -52,7 +53,7 @@ func init() {
 // @Title zh-CN AI History
 // @Description zh-CN 大模型对话历史缓存
 // @IconUrl
-// @Version 2.0.20
+// @Version 2.0.21
 //
 // @Contact.name sakura
 // @Contact.url
@@ -120,9 +121,10 @@ type PluginConfig struct {
 	// @Title zh-CN 缓存的过期时间
 	// @Description zh-CN 单位是秒，默认值为0，即永不过期
 	CacheTTL       int                 `required:"false" yaml:"cacheTTL" json:"cacheTTL"`
-	redisClient    wrapper.RedisClient `yaml:"-" json:"-"`
-	historyEnabled bool
-	historyBinding *historyBinding
+	redisClient      wrapper.RedisClient `yaml:"-" json:"-"`
+	historyEnabled   bool
+	historyBinding   *historyBinding
+	localReplyPolicy *clientresponse.LocalReplyPolicy
 }
 
 type ChatHistory struct {
@@ -131,10 +133,18 @@ type ChatHistory struct {
 }
 
 func parseConfig(json gjson.Result, c *PluginConfig, log log.Log) error {
-	c.RouterContinuation = json.Get("router_continuation").Bool()
+	*c = PluginConfig{RouterContinuation: json.Get("router_continuation").Bool()}
 	if json.Get("tenant_policies").Exists() {
 		return parseTenantHistoryPolicies(json, c, log)
 	}
+	localReplyPolicy, err := clientresponse.ParseLocalReplyPolicyField(json)
+	if err != nil {
+		return err
+	}
+	if localReplyPolicy != nil && json.Get("client_protocol").Exists() && localReplyPolicy.Protocol != json.Get("client_protocol").String() {
+		return errors.New("ai-history local_reply_policy differs from client_protocol")
+	}
+	c.localReplyPolicy = localReplyPolicy
 	if err := parseHistoryBinding(json, c); err != nil {
 		return err
 	}
@@ -194,7 +204,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config PluginConfig, log log.
 	ctx.DisableReroute()
 	config = selectedHistoryPolicy(ctx, config)
 	if (config.historyBinding != nil && config.historyBinding.CaptureBodyBasis) || (config.tenantPolicies != nil && config.tenantPolicies.CaptureBodyBasis) {
-		if action := prepareHistoryBodyBasis(ctx); action != types.ActionContinue {
+		if action := prepareHistoryBodyBasis(ctx, config.localReplyPolicy); action != types.ActionContinue {
 			return action
 		}
 	}
@@ -232,7 +242,7 @@ func TrimQuote(source string) string {
 
 func onHttpRequestBody(ctx wrapper.HttpContext, config PluginConfig, body []byte, log log.Log) types.Action {
 	config = selectedHistoryPolicy(ctx, config)
-	if action := captureHistoryBodyBasis(ctx, body); action != types.ActionContinue {
+	if action := captureHistoryBodyBasis(ctx, config.localReplyPolicy, body); action != types.ActionContinue {
 		return action
 	}
 	if ctx.GetStringContext(historyGateContextKey, "") != "" {

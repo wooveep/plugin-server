@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-cache/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-cache/README_EN.md
-  version: 2.0.32
+  version: 2.0.33
   contact:
     name: johnlanni
   gatewayMinVersion: 2.0.0
@@ -1102,6 +1102,39 @@ spec:
           - open
           default: open
         fixed_tool_defaults: *id001
+        local_reply_policy: &local_reply_policy
+          type: object
+          additionalProperties: false
+          required:
+          - input_protocol
+          - response_profile
+          properties:
+            input_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_completions
+              - openai_responses
+              - anthropic_messages
+            response_profile:
+              type: string
+              enum:
+              - deepseek
+              - qwen
+              - openai
+          allOf:
+          - if:
+              properties:
+                input_protocol:
+                  const: anthropic_messages
+              required:
+              - input_protocol
+            then:
+              properties:
+                response_profile:
+                  enum:
+                  - deepseek
+                  - qwen
       required:
       - cache_policy_version
       example:
@@ -2266,6 +2299,7 @@ spec:
               cache_policy_version: *id016
               fail_policy: *id017
               fixed_tool_defaults: *id001
+              local_reply_policy: *local_reply_policy
             required:
             - cache_policy_version
             example:
@@ -2309,6 +2343,7 @@ spec:
           description: Original tenant-owned processing policies selected only by
             the authenticated, admitted caller tenant; absence bypasses processing.
         fixed_tool_defaults: *id001
+        local_reply_policy: *local_reply_policy
       allOf:
       - if:
           required:
@@ -2328,6 +2363,7 @@ spec:
           propertyNames:
             enum:
             - router_continuation
+            - local_reply_policy
             - protocol_mode
             - response_profile
             - path_scope
@@ -2423,6 +2459,7 @@ spec:
           propertyNames:
             enum:
             - router_continuation
+            - local_reply_policy
             - protocol_mode
             - response_profile
             - native_execution

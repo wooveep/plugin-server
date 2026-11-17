@@ -18,7 +18,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/key-auth/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/key-auth/README_EN.md
-  version: 1.2.15
+  version: 1.2.16
   contact:
     name: Higress Team
     url: http://higress.io/
@@ -262,6 +262,87 @@ spec:
               fails.
           default: MSE Gateway
           x-scope: GLOBAL
+        local_reply_policy: &local_reply_policy
+          type: object
+          additionalProperties: false
+          required:
+          - input_protocol
+          - response_profile
+          properties:
+            input_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_completions
+              - openai_responses
+              - anthropic_messages
+            response_profile:
+              type: string
+              enum:
+              - deepseek
+              - qwen
+              - openai
+          allOf:
+          - if:
+              properties:
+                input_protocol:
+                  const: anthropic_messages
+              required:
+              - input_protocol
+            then:
+              properties:
+                response_profile:
+                  enum:
+                  - deepseek
+                  - qwen
+        local_reply_default: &local_reply_default
+          type: boolean
+        local_reply_entrances: &local_reply_entrances
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - path
+            - local_reply_policy
+            properties:
+              domains:
+                type: array
+                items:
+                  type: string
+                  minLength: 1
+              path:
+                type: object
+                additionalProperties: false
+                required:
+                - match_type
+                - match_value
+                properties:
+                  match_type:
+                    type: string
+                    enum:
+                    - EQUAL
+                    - PRE
+                    - REGULAR
+                  match_value:
+                    type: string
+                    minLength: 1
+                  case_sensitive:
+                    type: boolean
+              local_reply_policy: *local_reply_policy
+      allOf: &local_reply_selector_allof
+      - not:
+          required:
+          - local_reply_policy
+          - local_reply_entrances
+      - not:
+          allOf:
+          - required:
+            - local_reply_policy
+            - local_reply_default
+          - properties:
+              local_reply_default:
+                const: true
       example:
         global_auth: true
         consumers:
@@ -296,6 +377,10 @@ spec:
           x-scope: RULE
           items:
             type: string
+        local_reply_policy: *local_reply_policy
+        local_reply_default: *local_reply_default
+        local_reply_entrances: *local_reply_entrances
+      allOf: *local_reply_selector_allof
       required:
       - allow
       example:

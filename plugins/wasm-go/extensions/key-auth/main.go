@@ -24,6 +24,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/serviceidentity"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -132,7 +133,7 @@ type credentialCandidate struct {
 // @Description zh-CN 本插件实现了实现了基于 API Key 进行认证鉴权的功能.
 // @Description en-US This plugin implements an authentication function based on API Key Auth standard.
 // @IconUrl https://img.alicdn.com/imgextra/i4/O1CN01BPFGlT1pGZ2VDLgaH_!!6000000005333-2-tps-42-42.png
-// @Version 1.2.15
+// @Version 1.2.16
 //
 // @Contact.name Higress Team
 // @Contact.url http://higress.io/
@@ -205,7 +206,8 @@ type KeyAuthConfig struct {
 	// @Scope GLOBAL
 	Realm string `yaml:"realm,omitempty"`
 
-	credentialIdentities map[string]credentialIdentity `yaml:"-"`
+	credentialIdentities map[string]credentialIdentity      `yaml:"-"`
+	localReply           clientresponse.LocalReplySelector `yaml:"-"`
 }
 
 func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) error {
@@ -215,6 +217,7 @@ func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) er
 	ruleSet = false
 	global.Realm = defaultProtectionSpace
 	global.credentialIdentities = make(map[string]credentialIdentity)
+	global.localReply = clientresponse.LocalReplySelector{}
 
 	// global_auth
 	globalAuth := json.Get("global_auth")
@@ -279,6 +282,11 @@ func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) er
 		if json.Get("allow").Exists() {
 			return parseOverrideRuleConfig(json, *global, global, log)
 		}
+		selector, err := clientresponse.ParseLocalReplySelector(json)
+		if err != nil {
+			return err
+		}
+		global.localReply = selector
 		return nil
 	}
 
@@ -354,6 +362,11 @@ func parseGlobalConfig(json gjson.Result, global *KeyAuthConfig, log log.Log) er
 	if json.Get("allow").Exists() {
 		return parseOverrideRuleConfig(json, *global, global, log)
 	}
+	selector, err := clientresponse.ParseLocalReplySelector(json)
+	if err != nil {
+		return err
+	}
+	global.localReply = selector
 	return nil
 }
 
@@ -361,6 +374,7 @@ func parseOverrideRuleConfig(json gjson.Result, global KeyAuthConfig, config *Ke
 	log.Debug("domain/route config")
 
 	*config = global
+	config.localReply = clientresponse.LocalReplySelector{}
 
 	allow := json.Get("allow")
 	if !allow.Exists() {
@@ -369,6 +383,11 @@ func parseOverrideRuleConfig(json gjson.Result, global KeyAuthConfig, config *Ke
 	if !allow.IsArray() {
 		return errors.New("allow must be an array")
 	}
+	selector, err := clientresponse.ParseLocalReplySelector(json)
+	if err != nil {
+		return err
+	}
+	config.localReply = selector
 	// An explicit empty rule denies every consumer; it must not become a public route.
 	config.allowConfigured = true
 	config.allow = nil
@@ -406,14 +425,14 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 	// Even an unmatched/public authentication rule must remove client-selected
 	// native account/key fields before a later managed quota filter can see them.
 	if err := removeBalanceIdentityHeaders(); err != nil {
-		return deniedUnauthorizedConsumer(config.Realm)
+		return deniedUnauthorizedConsumer(ctx, config)
 	}
 	// ACME HTTP-01 validation must reach Higress's transient solver even when a
 	// domain-wide rule or global_auth protects the host; strip forged identity
 	// headers first so unauthenticated callers cannot spoof downstream state.
 	if isAcmeChallengeRequest(ctx) {
 		if err := clearTrustedIdentityHeaders(); err != nil {
-			return deniedUnauthorizedConsumer(config.Realm)
+			return deniedUnauthorizedConsumer(ctx, config)
 		}
 		log.Info("authorization is not required for ACME HTTP-01 challenge")
 		return types.ActionContinue
@@ -442,9 +461,9 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 
 	// header/query
 	if len(candidatesByValue) > 1 {
-		return deniedMultiKeyAuthData(config.Realm)
+		return deniedMultiKeyAuthData(ctx, config)
 	} else if len(candidatesByValue) <= 0 {
-		return deniedNoKeyAuthData(config.Realm)
+		return deniedNoKeyAuthData(ctx, config)
 	}
 	credential, sameValueCandidates := singleCredentialCandidateGroup(candidatesByValue)
 
@@ -452,23 +471,23 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 	identity, ok := config.credentialIdentities[credential]
 	if !ok {
 		log.Warnf("credential %q is not configured", credential)
-		return deniedUnauthorizedConsumer(config.Realm)
+		return deniedUnauthorizedConsumer(ctx, config)
 	}
 	if !hasAllowedCredentialCandidate(sameValueCandidates, identity.Plan) {
 		log.Warnf("credential %q is not allowed from configured credential sources", credential)
-		return deniedUnauthorizedConsumer(config.Realm)
+		return deniedUnauthorizedConsumer(ctx, config)
 	}
 	if !identity.Consumer {
 		removeTrustedIdentityHeaders()
 		if !noAllow {
-			return deniedUnauthorizedConsumer(config.Realm)
+			return deniedUnauthorizedConsumer(ctx, config)
 		}
 		return authenticated("")
 	}
 
 	name := identity.Name
 	if err := propagateTrustedIdentity(identity); err != nil {
-		return deniedUnauthorizedConsumer(config.Realm)
+		return deniedUnauthorizedConsumer(ctx, config)
 	}
 
 	// 全局生效：
@@ -476,17 +495,17 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 	// - global_auth 未设置 且 没有任何一个 domain/route 配置该插件
 	if (globalAuthSetTrue && noAllow) || (globalAuthNoSet && !ruleSet) {
 		log.Infof("consumer %q authenticated", name)
-		return authenticatedIdentity(identity, config.Realm)
+		return authenticatedIdentity(ctx, identity, config)
 	}
 
 	// 全局生效，但当前 domain/route 配置了 allow 列表
 	if globalAuthSetTrue && !noAllow {
 		if !contains(config.allow, name) {
 			log.Warnf("consumer %q is not allowed", name)
-			return deniedUnauthorizedConsumer(config.Realm)
+			return deniedUnauthorizedConsumer(ctx, config)
 		}
 		log.Infof("consumer %q authenticated", name)
-		return authenticatedIdentity(identity, config.Realm)
+		return authenticatedIdentity(ctx, identity, config)
 	}
 
 	// 非全局生效
@@ -494,10 +513,10 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 		if !noAllow { // 配置了 allow 列表
 			if !contains(config.allow, name) {
 				log.Warnf("consumer %q is not allowed", name)
-				return deniedUnauthorizedConsumer(config.Realm)
+				return deniedUnauthorizedConsumer(ctx, config)
 			}
 			log.Infof("consumer %q authenticated", name)
-			return authenticatedIdentity(identity, config.Realm)
+			return authenticatedIdentity(ctx, identity, config)
 		}
 	}
 
@@ -796,22 +815,43 @@ func isAcmeChallengeRequest(ctx wrapper.HttpContext) bool {
 	return true
 }
 
-func deniedMultiKeyAuthData(realm string) types.Action {
-	_ = proxywasm.SendHttpResponseWithDetail(http.StatusUnauthorized, "key-auth.multi_key", WWWAuthenticateHeader(realm),
-		[]byte("Request denied by Key Auth check. Multiple distinct API keys found."), -1)
+func sendKeyAuthDenial(ctx wrapper.HttpContext, config KeyAuthConfig, status uint32, detail string, legacyMessage string) types.Action {
+	authHeaders := WWWAuthenticateHeader(config.Realm)
+	host := ""
+	rawPath := ""
+	if ctx != nil {
+		host = ctx.Host()
+		rawPath = ctx.Path()
+	}
+	if host == "" {
+		host, _ = proxywasm.GetHttpRequestHeader(":authority")
+	}
+	if rawPath == "" {
+		rawPath, _ = proxywasm.GetHttpRequestHeader(":path")
+	}
+	if handled, err := clientresponse.SendLocalReply(ctx, config.localReply.Resolve(host, rawPath), status, detail, authHeaders); handled {
+		if err != nil {
+			log.Errorf("key-auth local reply encoding failed: %v", err)
+		}
+		return types.ActionContinue
+	}
+	_ = proxywasm.SendHttpResponseWithDetail(status, detail, authHeaders, []byte(legacyMessage), -1)
 	return types.ActionContinue
 }
 
-func deniedNoKeyAuthData(realm string) types.Action {
-	_ = proxywasm.SendHttpResponseWithDetail(http.StatusUnauthorized, "key-auth.no_key", WWWAuthenticateHeader(realm),
-		[]byte("Request denied by Key Auth check. No Key Authentication information found."), -1)
-	return types.ActionContinue
+func deniedMultiKeyAuthData(ctx wrapper.HttpContext, config KeyAuthConfig) types.Action {
+	return sendKeyAuthDenial(ctx, config, http.StatusUnauthorized, "key-auth.multi_key",
+		"Request denied by Key Auth check. Multiple distinct API keys found.")
 }
 
-func deniedUnauthorizedConsumer(realm string) types.Action {
-	_ = proxywasm.SendHttpResponseWithDetail(http.StatusForbidden, "key-auth.unauthorized", WWWAuthenticateHeader(realm),
-		[]byte("Request denied by Key Auth check. Unauthorized consumer."), -1)
-	return types.ActionContinue
+func deniedNoKeyAuthData(ctx wrapper.HttpContext, config KeyAuthConfig) types.Action {
+	return sendKeyAuthDenial(ctx, config, http.StatusUnauthorized, "key-auth.no_key",
+		"Request denied by Key Auth check. No Key Authentication information found.")
+}
+
+func deniedUnauthorizedConsumer(ctx wrapper.HttpContext, config KeyAuthConfig) types.Action {
+	return sendKeyAuthDenial(ctx, config, http.StatusForbidden, "key-auth.unauthorized",
+		"Request denied by Key Auth check. Unauthorized consumer.")
 }
 
 func authenticated(name string) types.Action {

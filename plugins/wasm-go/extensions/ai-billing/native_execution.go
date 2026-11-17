@@ -15,6 +15,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/ai/observedusage"
@@ -282,7 +283,9 @@ func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (
 	}
 	if err := observedusage.Clear(); err != nil {
 		nativeBillingGap(ctx, nil, "internal_usage_state_unavailable")
-		_ = proxywasm.SendHttpResponseWithDetail(503, "modelfusion.local.accounting_unavailable", [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"metering_unavailable","message":"Metering temporarily unavailable"}}`), -1)
+		if sent, _ := clientresponse.SendLocalReply(ctx, cfg.LocalReplyPolicy, 503, "modelfusion.local.accounting_unavailable", nil); !sent {
+			_ = proxywasm.SendHttpResponseWithDetail(503, "modelfusion.local.accounting_unavailable", [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"metering_unavailable","message":"Metering temporarily unavailable"}}`), -1)
+		}
 		return types.ActionPause, true
 	}
 	ctx.SetContext(ctxBillingEnabled, false)
@@ -302,7 +305,9 @@ func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (
 		return types.ActionContinue, true
 	}
 	if configured.outbox != nil && !configured.outbox.Accepting() {
-		_ = proxywasm.SendHttpResponseWithDetail(503, "modelfusion.local.accounting_unavailable", [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"accounting_delivery_unavailable","message":"Accounting temporarily unavailable"}}`), -1)
+		if sent, _ := clientresponse.SendLocalReply(ctx, cfg.LocalReplyPolicy, 503, "modelfusion.local.accounting_unavailable", nil); !sent {
+			_ = proxywasm.SendHttpResponseWithDetail(503, "modelfusion.local.accounting_unavailable", [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"accounting_delivery_unavailable","message":"Accounting temporarily unavailable"}}`), -1)
+		}
 		return types.ActionPause, true
 	}
 	state := &nativeBillingState{config: configured}

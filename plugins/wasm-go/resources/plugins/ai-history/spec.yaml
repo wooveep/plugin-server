@@ -16,7 +16,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-history/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-history/README_EN.md
-  version: 2.0.20
+  version: 2.0.21
   contact:
     name: sakura
 spec:
@@ -182,6 +182,39 @@ spec:
           x-description-i18n:
             en-US: Cache expiration in seconds. 0 means never expire.
           default: 0
+        local_reply_policy: &local_reply_policy
+          type: object
+          additionalProperties: false
+          required:
+          - input_protocol
+          - response_profile
+          properties:
+            input_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_completions
+              - openai_responses
+              - anthropic_messages
+            response_profile:
+              type: string
+              enum:
+              - deepseek
+              - qwen
+              - openai
+          allOf:
+          - if:
+              properties:
+                input_protocol:
+                  const: anthropic_messages
+              required:
+              - input_protocol
+            then:
+              properties:
+                response_profile:
+                  enum:
+                  - deepseek
+                  - qwen
       example:
         redis:
           serviceName: my-redis.dns
@@ -350,6 +383,7 @@ spec:
               fillHistoryCnt: *id008
               cacheKeyPrefix: *id009
               cacheTTL: *id010
+              local_reply_policy: *local_reply_policy
             example:
               redis:
                 serviceName: my-redis.dns
@@ -359,6 +393,7 @@ spec:
               fillHistoryCnt: 3
           description: Original tenant-owned processing policies selected only by the authenticated, admitted
             caller tenant; absence bypasses processing.
+        local_reply_policy: *local_reply_policy
       allOf:
       - if:
           required:
@@ -375,6 +410,7 @@ spec:
           propertyNames:
             enum:
             - router_continuation
+            - local_reply_policy
             - path_scope
             - client_protocol
             - operation_kind
@@ -388,6 +424,7 @@ spec:
           propertyNames:
             enum:
             - router_continuation
+            - local_reply_policy
             - capture_body_basis
             - enabled
             - path_scope

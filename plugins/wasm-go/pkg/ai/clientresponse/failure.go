@@ -202,13 +202,17 @@ func (f Failure) Body(policy Policy) []byte {
 	if f.Kind == FailureOverloaded && policy.Profile == OpenAI && policy.Protocol != Messages {
 		public.errorType = "service_unavailable_error"
 	}
-	fields := map[string]string{"type": public.errorType, "code": public.code, "message": public.text}
-	if f.Param != "" {
-		fields["param"] = f.Param
+	return marshalErrorEnvelope(policy.Protocol, public.errorType, public.code, public.text, f.Param)
+}
+
+func marshalErrorEnvelope(protocol, errorType, code, message, param string) []byte {
+	fields := map[string]string{"type": errorType, "code": code, "message": message}
+	if param != "" {
+		fields["param"] = param
 	}
 	result := map[string]json.RawMessage{}
 	result["error"], _ = json.Marshal(fields)
-	if policy.Protocol == Messages {
+	if protocol == Messages {
 		result["type"] = json.RawMessage(`"error"`)
 	}
 	raw, _ := json.Marshal(result)

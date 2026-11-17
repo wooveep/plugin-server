@@ -418,3 +418,7 @@ Too many requests  # 限流成功
 插件版本 `2.0.4`。
 
 原生链优先使用经账务桥校验的当次交付 token，独立于公开 usage 是否为空／隐藏；保持既有规则和 EOS 单次累计。兼容链继续使用原响应解析。
+
+## 本地错误直接编码（`local_reply_policy`）
+
+配置可选声明 `local_reply_policy`（`input_protocol` + `response_profile`），在触发限流时保留配置的拒绝状态码、`ai-token-ratelimit.rejected` 与 `X-TokenRateLimit-Reset` 响应头，直接编码对应协议错误包络；未配置时继续返回 `rejected_msg`。

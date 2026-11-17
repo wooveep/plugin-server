@@ -40,3 +40,7 @@
 生产托管路由还须在同一次 Redis 原子读中核对当前 Key 的 `authorized_routes`。空列表返回 `route_authorization_missing`，缺失或损坏的列表返回 `projection_unready`；不会以同用户另一把 Key 的权限代替。授权变更与原 identity revision/outbox 同事务提交，映射刷新不写资金。账户 key 使用稳定的 `mf:balance:{scope}:account:<id>`，当前代际由 control/account/mapping 一致性校验；缓存恢复无需重发路由，旧代写者仍被拒绝。配置中的 `cache_generation` 保留冻结来源标识，不作为永久的运行地址或就绪心跳。
 
 普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。
+
+## 本地错误直接编码（`local_reply_policy`）
+
+路由规则可选声明 `local_reply_policy`（`input_protocol` + `response_profile`），对余额不足、身份缺失、投影不可用及执行准入拒绝直接输出对应协议包络并保留原 HTTP 状态码、`detail` 与 `x-request-id`；未配置时保持原文本/JSON 拒绝行为。

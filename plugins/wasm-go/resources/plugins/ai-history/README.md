@@ -186,3 +186,7 @@ Native tenant history executes after quota (280) and billing (270), before cache
 插件版本 `2.0.7`。
 
 已通过原生终态及内容资格检查的流式历史保留推理正文、Messages thinking／signature 及 Responses 原始 output 项。工具待结果、非法／未完整输出继续按既有边界跳过。
+
+## 本地错误直接编码（`local_reply_policy`）
+
+配置可选声明与 `client_protocol` 一致的 `local_reply_policy`（含 `tenant_policies`），在 `capture_body_basis` 本地拒绝时保留原状态码与 `modelfusion.local.ai-history.*` detail 直接编码协议错误包络。

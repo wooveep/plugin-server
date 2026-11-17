@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/ai/tenantpolicy"
@@ -119,8 +120,10 @@ type PluginConfig struct {
 	legacyConfig       bool
 	protocolConfigErr  error
 	nativeIdentityErr  error
+	localReplyErr      error
 
-	NativeIdentity *NativeIdentityConfig
+	NativeIdentity   *NativeIdentityConfig
+	LocalReplyPolicy *clientresponse.LocalReplyPolicy
 	// NativeExecution is a private parsed delivery config; never body-supplied.
 	NativeExecution any
 
@@ -152,6 +155,7 @@ func (c *PluginConfig) FromJson(json gjson.Result, _ log.Log) {
 	c.legacyConfig = containsLegacyOnlineCacheConfig(json)
 	c.parsePublishedProtocol(json)
 	c.parseNativeIdentity(json)
+	c.parseLocalReplyPolicy(json)
 	c.MaterializedLookup.Redis = RedisEndpointConfig{
 		Enabled:     json.Get("materialized_lookup.redis.enabled").Bool(),
 		ServiceName: json.Get("materialized_lookup.redis.service_name").String(),
@@ -250,6 +254,9 @@ func (c *PluginConfig) FromJsonWithGlobal(json gjson.Result, global PluginConfig
 	c.legacyConfig = c.legacyConfig || containsLegacyOnlineCacheConfig(json)
 	c.parsePublishedProtocol(json)
 	c.parseNativeIdentity(json)
+	c.LocalReplyPolicy = nil
+	c.localReplyErr = nil
+	c.parseLocalReplyPolicy(json)
 	consoleLookupEnabledOverride := json.Get("console_lookup.enabled").Exists()
 	routePolicyConsoleOverride := json.Get("route_policy.enable_console_lookup").Exists()
 	c.MaterializedLookup.Redis = mergeRedisEndpoint(c.MaterializedLookup.Redis, json.Get("materialized_lookup.redis"))
@@ -285,6 +292,9 @@ func (c *PluginConfig) Validate() error {
 	}
 	if c.protocolConfigErr != nil {
 		return c.protocolConfigErr
+	}
+	if c.localReplyErr != nil {
+		return c.localReplyErr
 	}
 	if c.legacyConfig {
 		return fmt.Errorf("legacy online cache configuration is not supported")
@@ -354,6 +364,15 @@ func (c *PluginConfig) parseNativeIdentity(input gjson.Result) {
 		return
 	}
 	c.NativeIdentity = &identity
+}
+
+func (c *PluginConfig) parseLocalReplyPolicy(input gjson.Result) {
+	policy, err := clientresponse.ParseLocalReplyPolicyField(input)
+	if err != nil {
+		c.localReplyErr = err
+		return
+	}
+	c.LocalReplyPolicy = policy
 }
 
 func (c *PluginConfig) parsePublishedProtocol(json gjson.Result) {

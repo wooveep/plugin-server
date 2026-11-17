@@ -39,9 +39,10 @@ const (
 	CACHE_RESPONSE_CAPTURE_KEY = "cacheResponseCapture"
 	CACHE_MEMORY_DIGEST_KEY    = "cacheMemoryDigest"
 	CACHE_POLICY_VERSION_KEY   = "cacheEffectivePolicyVersion"
-	CACHE_NATIVE_IDENTITY_KEY  = "cacheNativeIdentity"
-	CACHE_SEMANTIC_CONTEXT_KEY = "cacheSemanticContextDigest"
-	CACHE_LOCAL_REPLAY_KEY     = "cacheLocalReplay"
+	CACHE_NATIVE_IDENTITY_KEY    = "cacheNativeIdentity"
+	CACHE_SEMANTIC_CONTEXT_KEY   = "cacheSemanticContextDigest"
+	CACHE_LOCAL_REPLAY_KEY       = "cacheLocalReplay"
+	CACHE_LOCAL_REPLY_POLICY_KEY = "cacheLocalReplyPolicy"
 
 	DEFAULT_MAX_BODY_BYTES uint32 = 100 * 1024 * 1024
 )
@@ -102,6 +103,9 @@ func parseOverrideConfig(json gjson.Result, global config.PluginConfig, c *confi
 func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log log.Log) (action types.Action) {
 	ctx.DisableReroute()
 	c = selectedCachePolicy(ctx, c)
+	if c.LocalReplyPolicy != nil {
+		ctx.SetContext(CACHE_LOCAL_REPLY_POLICY_KEY, c.LocalReplyPolicy)
+	}
 	if c.NativeExecution != nil {
 		if !prepareNativeCacheHeaders(ctx, c) {
 			return types.ActionPause

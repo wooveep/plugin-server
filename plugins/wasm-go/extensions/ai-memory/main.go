@@ -10,6 +10,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
@@ -86,7 +87,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 	if c.CaptureBodyBasis {
 		headers, err := proxywasm.GetHttpRequestHeaders()
 		if err != nil {
-			return rejectMemoryBodyBasis(ctx, 500, "header_read_failed")
+			return rejectMemoryBodyBasis(ctx, c.LocalReplyPolicy, 500, "header_read_failed")
 		}
 		filtered := make([][2]string, 0, len(headers))
 		var contentType, encoding string
@@ -107,21 +108,21 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, c config.PluginConfig, log lo
 			filtered = append(filtered, header)
 		}
 		if err := proxywasm.ReplaceHttpRequestHeaders(filtered); err != nil {
-			return rejectMemoryBodyBasis(ctx, 500, "basis_clear_failed")
+			return rejectMemoryBodyBasis(ctx, c.LocalReplyPolicy, 500, "basis_clear_failed")
 		}
 		mediaType, _, err := mime.ParseMediaType(contentType)
 		if contentTypes != 1 || err != nil || !isJSONContentType(mediaType) {
-			return rejectMemoryBodyBasis(ctx, 415, "json_required")
+			return rejectMemoryBodyBasis(ctx, c.LocalReplyPolicy, 415, "json_required")
 		}
 		if encodings > 1 || encoding != "" && !strings.EqualFold(encoding, "identity") {
-			return rejectMemoryBodyBasis(ctx, 415, "content_encoding_unsupported")
+			return rejectMemoryBodyBasis(ctx, c.LocalReplyPolicy, 415, "content_encoding_unsupported")
 		}
 		if !ctx.HasRequestBody() {
-			return rejectMemoryBodyBasis(ctx, 400, "body_required")
+			return rejectMemoryBodyBasis(ctx, c.LocalReplyPolicy, 400, "body_required")
 		}
 		ctx.SetRequestBodyBufferLimit(maxRequestBodyBytes)
 		if !wrapper.RequireRequestBody(ctx) {
-			return rejectMemoryBodyBasis(ctx, 500, "body_context_unavailable")
+			return rejectMemoryBodyBasis(ctx, c.LocalReplyPolicy, 500, "body_context_unavailable")
 		}
 	}
 	removeCallerMemoryCacheDigest()
@@ -203,14 +204,14 @@ func onHttpRequestBody(ctx wrapper.HttpContext, c config.PluginConfig, body []by
 	if c.CaptureBodyBasis && ctx.GetContext(memoryBodyBasisContextKey) == nil {
 		basis, err := bodybasis.Capture(body)
 		if err != nil {
-			return rejectMemoryBodyBasis(ctx, 400, "invalid_model_body")
+			return rejectMemoryBodyBasis(ctx, c.LocalReplyPolicy, 400, "invalid_model_body")
 		}
 		headers, err := proxywasm.GetHttpRequestHeaders()
 		if err != nil {
-			return rejectMemoryBodyBasis(ctx, 500, "header_read_failed")
+			return rejectMemoryBodyBasis(ctx, c.LocalReplyPolicy, 500, "header_read_failed")
 		}
 		if err := proxywasm.ReplaceHttpRequestHeaders(append(headers, basis.Headers()...)); err != nil {
-			return rejectMemoryBodyBasis(ctx, 500, "basis_write_failed")
+			return rejectMemoryBodyBasis(ctx, c.LocalReplyPolicy, 500, "basis_write_failed")
 		}
 		ctx.SetContext(memoryBodyBasisContextKey, basis)
 	}
@@ -337,13 +338,16 @@ func skipMemoryRequest(ctx wrapper.HttpContext, c config.PluginConfig, reason st
 	return types.ActionContinue
 }
 
-func rejectMemoryBodyBasis(ctx wrapper.HttpContext, status uint32, code string) types.Action {
+func rejectMemoryBodyBasis(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy, status uint32, code string) types.Action {
 	ctx.SetContext(memoryBodyBasisRejectedKey, true)
 	markMemoryGate(ctx, "body-basis-"+code)
 	ctx.DontReadRequestBody()
-	response := []byte(`{"error":{"code":"` + code + `","type":"memory_body_basis_error"}}`)
-	if err := proxywasm.SendHttpResponseWithDetail(status, "modelfusion.local.ai-memory."+code, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
-		proxywasm.LogCritical("ai-memory could not send body-basis rejection")
+	detail := "modelfusion.local.ai-memory." + code
+	if sent, _ := clientresponse.SendLocalReply(ctx, policy, status, detail, nil); !sent {
+		response := []byte(`{"error":{"code":"` + code + `","type":"memory_body_basis_error"}}`)
+		if err := proxywasm.SendHttpResponseWithDetail(status, detail, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
+			proxywasm.LogCritical("ai-memory could not send body-basis rejection")
+		}
 	}
 	return types.ActionPause
 }

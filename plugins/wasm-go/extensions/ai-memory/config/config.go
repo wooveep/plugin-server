@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
 	"github.com/higress-group/wasm-go/pkg/ai/tenantpolicy"
 	"github.com/higress-group/wasm-go/pkg/log"
@@ -91,15 +92,17 @@ type PluginConfig struct {
 	RequestIDHeader    string                `yaml:"request_id_header" json:"request_id_header"`
 	EnablePathSuffixes []string              `yaml:"enable_path_suffixes" json:"enable_path_suffixes"`
 	PathScope          PathScope             `yaml:"path_scope" json:"path_scope"`
-	CaptureBodyBasis   bool                  `yaml:"capture_body_basis" json:"capture_body_basis"`
-	NativeIdentity     *NativeIdentityConfig `yaml:"native_identity" json:"native_identity,omitempty"`
-	FailPolicy         string                `yaml:"fail_policy" json:"fail_policy"`
-	Route              RouteConfig           `yaml:"route" json:"route"`
+	CaptureBodyBasis   bool                              `yaml:"capture_body_basis" json:"capture_body_basis"`
+	NativeIdentity     *NativeIdentityConfig             `yaml:"native_identity" json:"native_identity,omitempty"`
+	LocalReplyPolicy   *clientresponse.LocalReplyPolicy  `yaml:"-" json:"-"`
+	FailPolicy         string                            `yaml:"fail_policy" json:"fail_policy"`
+	Route              RouteConfig                       `yaml:"route" json:"route"`
 
 	unsupportedRouteTarget string
 	publishedProtocol      bool
 	protocolKind           protocol.ProtocolKind
 	requestScopeError      error
+	localReplyError        error
 	initialized            bool
 	baseError              error
 }
@@ -173,6 +176,8 @@ func (c *PluginConfig) FromJsonWithGlobal(json gjson.Result, global PluginConfig
 	}
 	c.Route = parseRouteConfig(c.Route, json)
 	c.requestScopeError = nil
+	c.LocalReplyPolicy = nil
+	c.localReplyError = nil
 	c.parseRequestScope(json)
 }
 
@@ -182,6 +187,9 @@ func (c PluginConfig) Validate() error {
 	}
 	if c.requestScopeError != nil {
 		return c.requestScopeError
+	}
+	if c.localReplyError != nil {
+		return c.localReplyError
 	}
 	if c.unsupportedRouteTarget != "" {
 		return fmt.Errorf("route-level %s is not supported", c.unsupportedRouteTarget)
@@ -225,6 +233,7 @@ func (c PluginConfig) ProtocolForPath(path string) protocol.ProtocolKind {
 }
 
 func (c *PluginConfig) parseRequestScope(json gjson.Result) {
+	c.LocalReplyPolicy, c.localReplyError = clientresponse.ParseLocalReplyPolicyField(json)
 	if identity := json.Get("native_identity"); identity.Exists() {
 		var err error
 		c.NativeIdentity, err = parseNativeIdentity(identity)
@@ -253,6 +262,9 @@ func (c *PluginConfig) parseRequestScope(json gjson.Result) {
 		if clientProtocol.Type != gjson.String || operation.Type != gjson.String || clientProtocol.String() == "" || operation.String() == "" {
 			c.requestScopeError = fmt.Errorf("client_protocol and operation_kind must be declared together as nonempty strings")
 			return
+		}
+		if c.localReplyError == nil && c.LocalReplyPolicy != nil && c.LocalReplyPolicy.Protocol != clientProtocol.String() {
+			c.localReplyError = fmt.Errorf("local_reply_policy differs from client_protocol")
 		}
 		c.publishedProtocol = true
 		// A complete unsupported binding stays unsupported; it never falls back to path guessing.

@@ -6,6 +6,7 @@ import (
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-cache/config"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/tenantpolicy"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -15,6 +16,10 @@ import (
 const selectedCachePolicyKey = "ai-cache.selected-tenant-policy"
 
 func parseTenantCachePolicies(input gjson.Result, c *config.PluginConfig, logger log.Log) error {
+	localReplyPolicy, err := clientresponse.ParseLocalReplyPolicyField(input)
+	if err != nil {
+		return err
+	}
 	directory, err := tenantpolicy.Parse(input, func(policy gjson.Result) (config.PluginConfig, error) {
 		var fields map[string]json.RawMessage
 		if err := json.Unmarshal([]byte(policy.Raw), &fields); err != nil {
@@ -23,6 +28,9 @@ func parseTenantCachePolicies(input gjson.Result, c *config.PluginConfig, logger
 		// The SDK injects one target envelope. Every tenant policy shares that
 		// exact envelope without converting integer identities through float64.
 		fields["_modelfusion_execution"] = json.RawMessage(input.Get("_modelfusion_execution").Raw)
+		if _, exists := fields[clientresponse.LocalReplyField]; !exists && localReplyPolicy != nil {
+			fields[clientresponse.LocalReplyField] = json.RawMessage(input.Get(clientresponse.LocalReplyField).Raw)
+		}
 		raw, err := json.Marshal(fields)
 		if err != nil {
 			return config.PluginConfig{}, fmt.Errorf("cache tenant execution envelope: %w", err)
@@ -34,7 +42,13 @@ func parseTenantCachePolicies(input gjson.Result, c *config.PluginConfig, logger
 	if err != nil {
 		return err
 	}
-	*c = config.PluginConfig{RouterContinuation: input.Get("router_continuation").Bool(), TenantPolicies: directory, PublishedProtocolConfigured: true, PublishedProtocol: directory.Protocol}
+	*c = config.PluginConfig{
+		RouterContinuation:          input.Get("router_continuation").Bool(),
+		TenantPolicies:              directory,
+		PublishedProtocolConfigured: true,
+		PublishedProtocol:           directory.Protocol,
+		LocalReplyPolicy:            localReplyPolicy,
+	}
 	return configureNativeCacheDelivery(input, c)
 }
 

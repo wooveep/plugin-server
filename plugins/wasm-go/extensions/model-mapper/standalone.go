@@ -12,6 +12,7 @@ import (
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -36,6 +37,7 @@ type standaloneConfig struct {
 	defaultModel       string
 	enableOnPathSuffix []string
 	modelToHeader      string
+	localReplyPolicy   *clientresponse.LocalReplyPolicy
 }
 
 func parseStandaloneConfig(json gjson.Result, config *standaloneConfig) error {
@@ -175,13 +177,15 @@ func onStandaloneRequestBody(ctx wrapper.HttpContext, config standaloneConfig, b
 	} else if duplicate {
 		message := jsonbody.DuplicateMemberMessage(config.modelKey)
 		log.Warnf("rejecting request: %s", message)
-		_ = proxywasm.SendHttpResponseWithDetail(
-			http.StatusBadRequest,
-			"duplicate_model_member",
-			[][2]string{{"content-type", "text/plain"}},
-			[]byte(message),
-			-1,
-		)
+		if sent, _ := clientresponse.SendLocalReply(ctx, config.localReplyPolicy, http.StatusBadRequest, "duplicate_model_member", nil); !sent {
+			_ = proxywasm.SendHttpResponseWithDetail(
+				http.StatusBadRequest,
+				"duplicate_model_member",
+				[][2]string{{"content-type", "text/plain"}},
+				[]byte(message),
+				-1,
+			)
+		}
 		return types.ActionPause
 	}
 

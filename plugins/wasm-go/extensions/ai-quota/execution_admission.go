@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -174,13 +175,13 @@ func checkExecutionAdmission(ctx wrapper.HttpContext, cfg QuotaConfig, identity 
 	}
 	parsed, ok := cfg.ExecutionAdmission.(*executionAdmissionConfig)
 	if !ok || parsed == nil || allowed == nil {
-		executionAdmissionReject(ctx, 503, "configuration_unavailable")
+		executionAdmissionReject(ctx, cfg.LocalReplyPolicy, 503, "configuration_unavailable")
 		return
 	}
 	if existing := ctx.GetContext(executionAdmissionContext); existing != nil {
 		if pending, ok := existing.(*executionAdmissionPending); ok && !pending.finished {
 			pending.finished = true
-			executionAdmissionReject(ctx, 503, "duplicate_check")
+			executionAdmissionReject(ctx, cfg.LocalReplyPolicy, 503, "duplicate_check")
 		}
 		return
 	}
@@ -189,7 +190,7 @@ func checkExecutionAdmission(ctx wrapper.HttpContext, cfg QuotaConfig, identity 
 	reject := func(status uint32, reason string) {
 		if !pending.finished {
 			pending.finished = true
-			executionAdmissionReject(ctx, status, reason)
+			executionAdmissionReject(ctx, cfg.LocalReplyPolicy, status, reason)
 		}
 	}
 	// Remove every occurrence, including case variants, before minting any call.
@@ -365,9 +366,13 @@ func executionAdmissionInstallHeaders(callID, releaseID, deadline, occurredAt st
 	return proxywasm.ReplaceHttpRequestHeaders(clean)
 }
 
-func executionAdmissionReject(ctx wrapper.HttpContext, status uint32, reason string) {
+func executionAdmissionReject(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy, status uint32, reason string) {
 	ctx.SetUserAttribute("execution_admission_reason", reason)
-	_ = proxywasm.SendHttpResponseWithDetail(status, "execution_admission_"+reason,
+	detail := "execution_admission_" + reason
+	if sent, _ := clientresponse.SendLocalReply(ctx, policy, status, detail, nil); sent {
+		return
+	}
+	_ = proxywasm.SendHttpResponseWithDetail(status, detail,
 		[][2]string{{"content-type", "application/json"}}, []byte(`{"error":"execution admission unavailable"}`), -1)
 }
 

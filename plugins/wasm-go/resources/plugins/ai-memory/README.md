@@ -196,3 +196,7 @@ deletion、management APIs、authorization checks 和 repair policy 都由 Conso
 | Authorization checks | 网关信任上游身份头，memory authorization checks 由 Console API 和 worker 负责。 |
 
 普通生产调用的原始身份与业务时间由前置 Redis 准入产生，不使用临时 Console 许可的5秒期限；上传、发送和重试遵守各自既有预算。带明确到期时间的 validation/internal 许可继续按原期限校验，不创建续约或延长许可路径。
+
+## 本地错误直接编码（`local_reply_policy`）
+
+配置可选声明与 `client_protocol` 一致的 `local_reply_policy`（含 `tenant_policies`），在 `capture_body_basis` 本地拒绝时保留原状态码与 `modelfusion.local.ai-memory.*` detail 直接编码协议错误包络；未声明时保持原拒绝响应。

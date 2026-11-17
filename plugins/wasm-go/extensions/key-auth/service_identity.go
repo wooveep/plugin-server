@@ -9,6 +9,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/ai/serviceidentity"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
 )
 
@@ -73,10 +74,10 @@ func installServiceIdentityHeaders(identity *serviceidentity.Snapshot) error {
 
 // Publishing follows the existing allow decision. A denied credential never
 // installs trusted service state, even if its configured headers were resolved.
-func authenticatedIdentity(identity credentialIdentity, realm string) types.Action {
+func authenticatedIdentity(ctx wrapper.HttpContext, identity credentialIdentity, config KeyAuthConfig) types.Action {
 	if identity.Service != nil {
 		if identity.Balance != nil || serviceidentity.Publish(*identity.Service) != nil {
-			return deniedUnauthorizedConsumer(realm)
+			return deniedUnauthorizedConsumer(ctx, config)
 		}
 	}
 	return authenticated(identity.Name)

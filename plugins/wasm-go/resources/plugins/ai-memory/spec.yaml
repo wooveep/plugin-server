@@ -16,7 +16,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-memory/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/resources/plugins/ai-memory/README_EN.md
-  version: 0.1.24
+  version: 0.1.25
 spec:
   phase: default
   priority: 260
@@ -237,6 +237,39 @@ spec:
           enum:
           - open
           default: open
+        local_reply_policy: &local_reply_policy
+          type: object
+          additionalProperties: false
+          required:
+          - input_protocol
+          - response_profile
+          properties:
+            input_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_completions
+              - openai_responses
+              - anthropic_messages
+            response_profile:
+              type: string
+              enum:
+              - deepseek
+              - qwen
+              - openai
+          allOf:
+          - if:
+              properties:
+                input_protocol:
+                  const: anthropic_messages
+              required:
+              - input_protocol
+            then:
+              properties:
+                response_profile:
+                  enum:
+                  - deepseek
+                  - qwen
       required:
       - redis_stream
       example:
@@ -600,6 +633,7 @@ spec:
               stream_value_from: *id026
               tool_calls_from: *id027
               policy_version: *id028
+              local_reply_policy: *local_reply_policy
             example:
               path_scope: bound_target
               client_protocol: openai_chat
@@ -624,6 +658,7 @@ spec:
               policy_version: memory-policy-v1
           description: Original tenant-owned processing policies selected only by the authenticated, admitted
             caller tenant; absence bypasses processing.
+        local_reply_policy: *local_reply_policy
       allOf:
       - if:
           required:
@@ -640,6 +675,7 @@ spec:
           propertyNames:
             enum:
             - router_continuation
+            - local_reply_policy
             - path_scope
             - client_protocol
             - operation_kind
@@ -651,6 +687,7 @@ spec:
           propertyNames:
             enum:
             - router_continuation
+            - local_reply_policy
             - redis_stream
             - recent_cache
             - console_internal

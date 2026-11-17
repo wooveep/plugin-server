@@ -161,3 +161,7 @@ enable_methods:
 插件版本 `1.0.7`。
 
 原生账务桥校验通过后，将当次原始交付用量发布到请求内 FilterState，供 TPM／统计观测；该载体不进入 HTTP。财务快照、计价、钱包应用和幂等键不变。
+
+## 本地错误直接编码（`local_reply_policy`）
+
+托管路由规则可选声明 `local_reply_policy`，在 `modelfusion.local.accounting_unavailable`（`503`）本地拒绝时直接输出协议错误包络并保留 `x-request-id`；未配置时保持原有响应。

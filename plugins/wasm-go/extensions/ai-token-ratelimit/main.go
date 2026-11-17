@@ -27,6 +27,7 @@ import (
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/observedusage"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/tokenusage"
@@ -204,7 +205,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitCo
 					i, matched[i].key, current, threshold, cfg.RejectedCode)
 				ctx.SetUserAttribute("token_ratelimit_status", "limited")
 				_ = ctx.WriteUserAttributeToLogWithKey(wrapper.AILogKey)
-				rejected(cfg, ttl)
+				rejected(ctx, cfg, ttl)
 				return
 			}
 		}
@@ -471,11 +472,14 @@ func generateMetricName(route, cluster, model, consumer, metricName string) stri
 	return fmt.Sprintf("route.%s.upstream.%s.model.%s.consumer.%s.metric.%s", route, cluster, model, consumer, metricName)
 }
 
-func rejected(cfg config.AiTokenRateLimitConfig, reset int) {
-	headers := make(map[string][]string)
-	headers[RateLimitResetHeader] = []string{strconv.Itoa(reset)}
-	_ = proxywasm.SendHttpResponseWithDetail(
-		cfg.RejectedCode, "ai-token-ratelimit.rejected", util.ReconvertHeaders(headers), []byte(cfg.RejectedMsg), -1)
+func rejected(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitConfig, reset int) {
+	resetHeaders := [][2]string{{RateLimitResetHeader, strconv.Itoa(reset)}}
+	if sent, _ := clientresponse.SendLocalReply(ctx, cfg.LocalReplyPolicy, cfg.RejectedCode, "ai-token-ratelimit.rejected", resetHeaders); !sent {
+		headers := make(map[string][]string)
+		headers[RateLimitResetHeader] = []string{strconv.Itoa(reset)}
+		_ = proxywasm.SendHttpResponseWithDetail(
+			cfg.RejectedCode, "ai-token-ratelimit.rejected", util.ReconvertHeaders(headers), []byte(cfg.RejectedMsg), -1)
+	}
 
 	route, _ := util.GetRouteName()
 	cluster, _ := util.GetClusterName()

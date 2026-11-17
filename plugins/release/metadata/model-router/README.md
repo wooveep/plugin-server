@@ -96,3 +96,7 @@ x-higress-llm-provider: dashscope
     "top_p": 0.95
 }
 ```
+
+## 本地错误直接编码（`local_reply_policy`）
+
+配置可选声明 `local_reply_policy` 或域名级 `local_reply_default` / `local_reply_entrances`，用于在进入 `ai-proxy` 前对 `duplicate_model_member` 直接输出对应协议的 `400` JSON 错误包络并保留 `x-request-id`；未配置时保持原有 `text/plain` 拒绝行为。

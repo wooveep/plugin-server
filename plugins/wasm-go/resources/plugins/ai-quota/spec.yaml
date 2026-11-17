@@ -15,7 +15,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/ai-quota/README_EN.md
-  version: 2.0.17
+  version: 2.0.18
   contact:
     name: 2456868764
 spec:
@@ -288,6 +288,39 @@ spec:
           items:
             type: string
             pattern: .*\S.*
+        local_reply_policy: &local_reply_policy
+          type: object
+          additionalProperties: false
+          required:
+          - input_protocol
+          - response_profile
+          properties:
+            input_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_completions
+              - openai_responses
+              - anthropic_messages
+            response_profile:
+              type: string
+              enum:
+              - deepseek
+              - qwen
+              - openai
+          allOf:
+          - if:
+              properties:
+                input_protocol:
+                  const: anthropic_messages
+              required:
+              - input_protocol
+            then:
+              properties:
+                response_profile:
+                  enum:
+                  - deepseek
+                  - qwen
       example:
         balance_scope_id: 00000000-0000-0000-0000-000000000005
         cache_generation: 00000000-0000-0000-0000-000000000006
@@ -339,5 +372,6 @@ spec:
           items:
             type: string
             pattern: .*\S.*
+        local_reply_policy: *local_reply_policy
       example:
         path_scope: bound_target

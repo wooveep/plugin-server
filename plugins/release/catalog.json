@@ -1470,7 +1470,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-cache",
-      "declaredVersion": "2.0.32"
+      "declaredVersion": "2.0.33"
     },
     {
       "logicalId": "ai-context-limit",
@@ -1573,7 +1573,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-history",
-      "declaredVersion": "2.0.20"
+      "declaredVersion": "2.0.21"
     },
     {
       "logicalId": "ai-image-reader",
@@ -1753,7 +1753,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-proxy",
-      "declaredVersion": "2.0.86"
+      "declaredVersion": "2.0.87"
     },
     {
       "logicalId": "ai-quota",
@@ -1781,7 +1781,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-quota",
-      "declaredVersion": "2.0.17"
+      "declaredVersion": "2.0.18"
     },
     {
       "logicalId": "ai-rag",
@@ -1921,7 +1921,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-token-ratelimit",
-      "declaredVersion": "2.0.16"
+      "declaredVersion": "2.0.17"
     },
     {
       "logicalId": "ai-transformer",
@@ -2418,7 +2418,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/model-mapper",
-      "declaredVersion": "2.0.13"
+      "declaredVersion": "2.0.14"
     },
     {
       "logicalId": "model-router",
@@ -2446,7 +2446,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/model-router",
-      "declaredVersion": "2.0.10"
+      "declaredVersion": "2.0.11"
     },
     {
       "logicalId": "nginx-rewrite-compatible",
@@ -3092,7 +3092,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "1.0.19"
+      "declaredVersion": "1.0.20"
     },
     {
       "logicalId": "ai-memory",
@@ -3120,7 +3120,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "0.1.24"
+      "declaredVersion": "0.1.25"
     },
     {
       "logicalId": "key-auth",
@@ -3148,7 +3148,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "1.2.15"
+      "declaredVersion": "1.2.16"
     },
     {
       "logicalId": "custom-response",

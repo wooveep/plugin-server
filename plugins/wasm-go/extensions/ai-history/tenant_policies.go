@@ -1,7 +1,10 @@
 package main
 
 import (
+	"errors"
+
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/tenantpolicy"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -11,15 +14,30 @@ import (
 const selectedHistoryPolicyKey = "ai-history.selected-tenant-policy"
 
 func parseTenantHistoryPolicies(input gjson.Result, c *PluginConfig, logger log.Log) error {
+	localReplyPolicy, err := clientresponse.ParseLocalReplyPolicyField(input)
+	if err != nil {
+		return err
+	}
+	if localReplyPolicy != nil && input.Get("client_protocol").Exists() && localReplyPolicy.Protocol != input.Get("client_protocol").String() {
+		return errors.New("ai-history local_reply_policy differs from client_protocol")
+	}
 	directory, err := tenantpolicy.Parse(input, func(policy gjson.Result) (PluginConfig, error) {
 		var selected PluginConfig
 		err := parseConfig(policy, &selected, logger)
+		if err == nil && selected.localReplyPolicy == nil {
+			selected.localReplyPolicy = localReplyPolicy
+		}
 		return selected, err
 	})
 	if err != nil {
 		return err
 	}
-	*c = PluginConfig{RouterContinuation: input.Get("router_continuation").Bool(), tenantPolicies: directory, historyEnabled: false}
+	*c = PluginConfig{
+		RouterContinuation: input.Get("router_continuation").Bool(),
+		tenantPolicies:     directory,
+		historyEnabled:     false,
+		localReplyPolicy:   localReplyPolicy,
+	}
 	return nil
 }
 

@@ -13,6 +13,7 @@ import (
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -55,6 +56,7 @@ type ModelRouterConfig struct {
 	enableAutoRouting bool
 	autoRoutingRules  []AutoRoutingRule
 	defaultModel      string
+	localReply        clientresponse.LocalReplySelector
 }
 
 func parseConfig(json gjson.Result, config *ModelRouterConfig) error {
@@ -116,6 +118,12 @@ func parseConfig(json gjson.Result, config *ModelRouterConfig) error {
 			}
 		}
 	}
+
+	localReply, err := clientresponse.ParseLocalReplySelector(json)
+	if err != nil {
+		return err
+	}
+	config.localReply = localReply
 
 	return nil
 }
@@ -220,13 +228,16 @@ func handleJsonBody(ctx wrapper.HttpContext, config ModelRouterConfig, body []by
 	} else if duplicate {
 		message := jsonbody.DuplicateMemberMessage(config.modelKey)
 		log.Warnf("rejecting request: %s", message)
-		_ = proxywasm.SendHttpResponseWithDetail(
-			http.StatusBadRequest,
-			"duplicate_model_member",
-			[][2]string{{"content-type", "text/plain"}},
-			[]byte(message),
-			-1,
-		)
+		policy := config.localReply.Resolve(ctx.Host(), ctx.Path())
+		if sent, _ := clientresponse.SendLocalReply(ctx, policy, http.StatusBadRequest, "duplicate_model_member", nil); !sent {
+			_ = proxywasm.SendHttpResponseWithDetail(
+				http.StatusBadRequest,
+				"duplicate_model_member",
+				[][2]string{{"content-type", "text/plain"}},
+				[]byte(message),
+				-1,
+			)
+		}
 		return types.ActionPause
 	}
 	modelValue := gjson.GetBytes(body, config.modelKey).String()

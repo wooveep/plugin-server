@@ -41,3 +41,7 @@ ai-proxy 必须同时核对受控发布顺序、原公开模型、实际映射�
 When an earlier trusted history/memory filter captures the original body, publish mapper with `consume_body_basis: true` and `capture_body_basis: false`. Mapper requires one valid original digest/public-model pair, validates the current JSON and unchanged public model, maps only the model, and preserves the original snapshot instead of capturing rewritten context. The flags are mutually exclusive. With no preprocessor, the existing `capture_body_basis: true` behavior clears client values and captures before mapping. The publisher chooses the unique first capturer from exact artifact phase/order; headers do not select it.
 
 The original capture boundary remains 1 MiB. Explicit consume mode validates the injected runtime body under 100 MiB, matching the surrounding history/memory/proxy HTTP limits, without canonicalizing it as a new original request. Duplicate names, malformed Unicode, number/depth/container rules remain strict. No public mf-json canonicalization, FACT or descriptor budget is raised.
+
+## Local Reply Policy (`local_reply_policy`)
+
+Optional `local_reply_policy` (`input_protocol` + `response_profile`) encodes `modelfusion.local.model-mapper.*` and standalone `duplicate_model_member` rejections directly into the published protocol envelope while preserving status codes, details, and `x-request-id`. Omitting `local_reply_policy` preserves legacy rejection bodies.

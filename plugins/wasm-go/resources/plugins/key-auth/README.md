@@ -124,3 +124,7 @@ allow:
 | 401 | 请求提供多个 API Key |
 | 401 | 请求未提供 API Key |
 | 403 | API Key 未配置或 consumer 无权访问 |
+
+## 本地错误直接编码（`local_reply_policy`）
+
+规则或全局配置可选声明 `local_reply_policy`（`input_protocol` + `response_profile`），或为前置域名范围声明 `local_reply_default` / `local_reply_entrances`。启用后认证/授权拒绝在响应头提交前直接按协议契约输出 JSON 错误包络并保留 `WWW-Authenticate`、`x-request-id` 与原状态码；未配置时保持原有响应行为。

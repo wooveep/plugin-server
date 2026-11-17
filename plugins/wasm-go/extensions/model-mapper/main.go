@@ -10,6 +10,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -35,6 +36,7 @@ type Config struct {
 	captureBodyBasis bool
 	consumeBodyBasis bool
 	standalone       *standaloneConfig
+	localReplyPolicy *clientresponse.LocalReplyPolicy
 }
 
 func main() {}
@@ -107,11 +109,17 @@ func parseConfig(input gjson.Result, config *Config) error {
 	if parsed.captureBodyBasis && parsed.consumeBodyBasis {
 		return errors.New("capture_body_basis and consume_body_basis are mutually exclusive")
 	}
+	localReplyPolicy, err := clientresponse.ParseLocalReplyPolicyField(input)
+	if err != nil {
+		return err
+	}
+	parsed.localReplyPolicy = localReplyPolicy
 	if !parsed.captureBodyBasis && !parsed.consumeBodyBasis {
 		var standalone standaloneConfig
 		if err := parseStandaloneConfig(input, &standalone); err != nil {
 			return err
 		}
+		standalone.localReplyPolicy = localReplyPolicy
 		parsed.standalone = &standalone
 	}
 	*config = parsed
@@ -122,10 +130,10 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config Config) types.Action {
 	if config.standalone != nil {
 		headers, err := proxywasm.GetHttpRequestHeaders()
 		if err != nil {
-			return reject(ctx, 500, "header_read_failed")
+			return reject(ctx, config.localReplyPolicy, 500, "header_read_failed")
 		}
 		if err := proxywasm.ReplaceHttpRequestHeaders(withoutBasis(headers, false)); err != nil {
-			return reject(ctx, 500, "basis_clear_failed")
+			return reject(ctx, config.localReplyPolicy, 500, "basis_clear_failed")
 		}
 		return onStandaloneRequestHeaders(ctx, *config.standalone)
 	}
@@ -133,35 +141,35 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config Config) types.Action {
 	ctx.DontReadResponseBody()
 	headers, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil {
-		return reject(ctx, 500, "header_read_failed")
+		return reject(ctx, config.localReplyPolicy, 500, "header_read_failed")
 	}
 	if config.consumeBodyBasis {
 		// Only trusted publication configuration selects consume mode. The first
 		// rewriter has already removed client values and captured the original.
 		basis, err := bodybasis.Read(headers)
 		if err != nil {
-			return reject(ctx, 400, "original_body_basis_missing")
+			return reject(ctx, config.localReplyPolicy, 400, "original_body_basis_missing")
 		}
 		ctx.SetContext(basisContextKey, basis)
 	} else {
 		// Standalone mapping keeps the original explicit capture behavior.
 		if err := proxywasm.ReplaceHttpRequestHeaders(withoutBasis(headers, false)); err != nil {
-			return reject(ctx, 500, "basis_clear_failed")
+			return reject(ctx, config.localReplyPolicy, 500, "basis_clear_failed")
 		}
 	}
 	if ctx.Method() != "POST" {
-		return reject(ctx, 405, "post_required")
+		return reject(ctx, config.localReplyPolicy, 405, "post_required")
 	}
 	contentType, ok := singleHeader(headers, "content-type")
 	mediaType, _, err := mime.ParseMediaType(contentType)
 	if !ok || err != nil || !strings.EqualFold(mediaType, "application/json") {
-		return reject(ctx, 415, "json_required")
+		return reject(ctx, config.localReplyPolicy, 415, "json_required")
 	}
 	if encoding, ok := singleHeader(headers, "content-encoding"); !ok || encoding != "" && !strings.EqualFold(encoding, "identity") {
-		return reject(ctx, 415, "content_encoding_unsupported")
+		return reject(ctx, config.localReplyPolicy, 415, "content_encoding_unsupported")
 	}
 	if !ctx.HasRequestBody() {
-		return reject(ctx, 400, "body_required")
+		return reject(ctx, config.localReplyPolicy, 400, "body_required")
 	}
 	limit := maxRequestBodyBytes
 	if config.consumeBodyBasis {
@@ -169,7 +177,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config Config) types.Action {
 	}
 	ctx.SetRequestBodyBufferLimit(uint32(limit))
 	if !wrapper.RequireRequestBody(ctx) {
-		return reject(ctx, 500, "body_context_unavailable")
+		return reject(ctx, config.localReplyPolicy, 500, "body_context_unavailable")
 	}
 	// Do not let downstream header callbacks run before the original basis exists.
 	return types.HeaderStopIteration
@@ -190,56 +198,56 @@ func onHttpRequestBody(ctx wrapper.HttpContext, config Config, body []byte) type
 		limit = maxRuntimeBodyBytes
 	}
 	if len(body) > limit {
-		return reject(ctx, 413, "body_too_large")
+		return reject(ctx, config.localReplyPolicy, 413, "body_too_large")
 	}
 	var basis bodybasis.Snapshot
 	if config.consumeBodyBasis {
 		var ok bool
 		basis, ok = ctx.GetContext(basisContextKey).(bodybasis.Snapshot)
 		if !ok {
-			return reject(ctx, 400, "original_body_basis_missing")
+			return reject(ctx, config.localReplyPolicy, 400, "original_body_basis_missing")
 		}
 		// Validate rewritten JSON without capturing it as the original body.
 		if err := mfjson.ValidateRuntimeBody(body, maxRuntimeBodyBytes); err != nil {
-			return reject(ctx, 400, "invalid_model_body")
+			return reject(ctx, config.localReplyPolicy, 400, "invalid_model_body")
 		}
 		var object map[string]json.RawMessage
 		var model string
 		if json.Unmarshal(body, &object) != nil || json.Unmarshal(object["model"], &model) != nil || model != basis.PublicModel() {
-			return reject(ctx, 400, "body_basis_model_differs")
+			return reject(ctx, config.localReplyPolicy, 400, "body_basis_model_differs")
 		}
 	} else {
 		var err error
 		basis, err = bodybasis.Capture(body)
 		if err != nil {
-			return reject(ctx, 400, "invalid_model_body")
+			return reject(ctx, config.localReplyPolicy, 400, "invalid_model_body")
 		}
 	}
 	target, found := config.modelMapping[basis.PublicModel()]
 	if !found {
-		return reject(ctx, 422, "model_mapping_missing")
+		return reject(ctx, config.localReplyPolicy, 422, "model_mapping_missing")
 	}
 	rewritten := body
 	if target != basis.PublicModel() {
 		var err error
 		rewritten, err = sjson.SetBytes(body, "model", target)
 		if err != nil {
-			return reject(ctx, 500, "model_rewrite_failed")
+			return reject(ctx, config.localReplyPolicy, 500, "model_rewrite_failed")
 		}
 	}
 	headers, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil {
-		return reject(ctx, 500, "header_read_failed")
+		return reject(ctx, config.localReplyPolicy, 500, "header_read_failed")
 	}
 	headers = withoutBasis(headers, true)
 	if config.captureBodyBasis || config.consumeBodyBasis {
 		headers = append(headers, basis.Headers()...)
 	}
 	if err := proxywasm.ReplaceHttpRequestBody(rewritten); err != nil {
-		return reject(ctx, 500, "body_replace_failed")
+		return reject(ctx, config.localReplyPolicy, 500, "body_replace_failed")
 	}
 	if err := proxywasm.ReplaceHttpRequestHeaders(headers); err != nil {
-		return reject(ctx, 500, "basis_write_failed")
+		return reject(ctx, config.localReplyPolicy, 500, "basis_write_failed")
 	}
 	ctx.SetContext(mappedContextKey, true)
 	return types.ActionContinue
@@ -271,12 +279,15 @@ func singleHeader(headers [][2]string, name string) (string, bool) {
 	return value, count <= 1
 }
 
-func reject(ctx wrapper.HttpContext, status uint32, code string) types.Action {
+func reject(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy, status uint32, code string) types.Action {
 	ctx.SetContext(rejectedContextKey, true)
 	ctx.DontReadRequestBody()
-	response := []byte(`{"error":{"code":"` + code + `","type":"model_mapper_error"}}`)
-	if err := proxywasm.SendHttpResponseWithDetail(status, "modelfusion.local.model-mapper."+code, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
-		proxywasm.LogCritical("model-mapper could not send local rejection")
+	detail := "modelfusion.local.model-mapper." + code
+	if sent, _ := clientresponse.SendLocalReply(ctx, policy, status, detail, nil); !sent {
+		response := []byte(`{"error":{"code":"` + code + `","type":"model_mapper_error"}}`)
+		if err := proxywasm.SendHttpResponseWithDetail(status, detail, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
+			proxywasm.LogCritical("model-mapper could not send local rejection")
+		}
 	}
 	return types.ActionPause
 }
