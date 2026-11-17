@@ -1,6 +1,6 @@
 {
   "baseline_tag": "V2.2.1-SP002",
-  "baseline_commit": "06518896c1aaa463fed3f23d4ff378784c422346",
+  "baseline_commit": "a2f1ada99be5ee86e0eca2db5df9608dc281fb03",
   "branch": "codex/sp003-plugins-sp002",
   "retained_commits": [
     {
@@ -965,6 +965,12 @@
       "baseline_curated_version": "1.2.3",
       "previous_sp003_version": "1.2.12",
       "version": "1.2.13"
+    },
+    {
+      "plugin": "ai-data-masking",
+      "implementation": "rust",
+      "version": "2.0.7",
+      "reason": "rebuild differs from already registered 2.0.6; preserve immutable versions"
     }
   ],
   "validation": {
@@ -980,8 +986,31 @@
       "ai-token-ratelimit",
       "ai-load-balancer"
     ],
-    "shared_framework": "go test ./pkg/...: passed"
+    "shared_framework": "go test ./pkg/...: passed",
+    "shared_packages": "pkg/... passed; D0 fixture tests passed with locked Python environment"
   },
-  "artifacts_built": false,
-  "deployed": false
+  "artifacts_built": true,
+  "deployed": true,
+  "tested_code_head": "6c6a66bab91c3e51580985b14580154e6e5ea189",
+  "additional_retained_fixes": [
+    {
+      "source": "b090cc62",
+      "result": "7ff8786e",
+      "scope": "hash-locked RFC3339 validator runtime dependency"
+    },
+    {
+      "sources": [
+        "969418a9",
+        "136e774d"
+      ],
+      "result": "c7fe09bc",
+      "scope": "#122 bounded original/current metadata snapshots; ai-billing 128 MiB rebuild guard; fixture registrations"
+    },
+    {
+      "result": "6c6a66ba",
+      "scope": "new ai-data-masking 2.0.7 for rebuilt immutable bytes"
+    }
+  ],
+  "artifact_count": 55,
+  "unchanged_SP002_artifact_count": 8
 }
