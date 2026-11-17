@@ -1,0 +1,37 @@
+[
+  {
+    "plugin": "key-auth",
+    "tracked_production_source_matches_SP002_except_version": true,
+    "differences": []
+  },
+  {
+    "plugin": "cluster-key-rate-limit",
+    "tracked_production_source_matches_SP002_except_version": true,
+    "differences": []
+  },
+  {
+    "plugin": "ai-token-ratelimit",
+    "tracked_production_source_matches_SP002_except_version": true,
+    "differences": []
+  },
+  {
+    "plugin": "ai-quota",
+    "tracked_production_source_matches_SP002_except_version": true,
+    "differences": []
+  },
+  {
+    "plugin": "ai-load-balancer",
+    "tracked_production_source_matches_SP002_except_version": true,
+    "differences": []
+  },
+  {
+    "plugin": "model-mapper",
+    "tracked_production_source_matches_SP002_except_version": true,
+    "differences": []
+  },
+  {
+    "plugin": "ai-statistics",
+    "tracked_production_source_matches_SP002_except_version": true,
+    "differences": []
+  }
+]
