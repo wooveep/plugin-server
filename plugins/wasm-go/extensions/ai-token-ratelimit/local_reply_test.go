@@ -27,7 +27,7 @@ func TestTokenRateLimitLocalReplyConfigValidationU02(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
 		for idx, bad := range []any{
 			map[string]any{"input_protocol": "anthropic_messages", "response_profile": "openai"},
-			map[string]any{"input_protocol": "openai_chat"},
+			map[string]any{"response_profile": "deepseek"},
 			map[string]any{"input_protocol": "openai_chat", "response_profile": "unknown"},
 		} {
 			cfg, err := json.Marshal(map[string]any{

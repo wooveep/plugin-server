@@ -320,7 +320,6 @@ spec:
           additionalProperties: false
           required:
           - input_protocol
-          - response_profile
           properties:
             input_protocol:
               type: string

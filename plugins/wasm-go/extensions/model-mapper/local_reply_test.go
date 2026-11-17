@@ -15,7 +15,7 @@ func TestModelMapperLocalReplyConfigValidationU02(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
 		for idx, raw := range []string{
 			`{"capture_body_basis":true,"modelMapping":{"a":"b"},"local_reply_policy":{"input_protocol":"anthropic_messages","response_profile":"openai"}}`,
-			`{"capture_body_basis":true,"modelMapping":{"a":"b"},"local_reply_policy":{"input_protocol":"openai_chat"}}`,
+			`{"capture_body_basis":true,"modelMapping":{"a":"b"},"local_reply_policy":{"response_profile":"deepseek"}}`,
 			`{"capture_body_basis":true,"modelMapping":{"a":"b"},"local_reply_policy":{"input_protocol":"openai_chat","response_profile":"deepseek"},"local_reply_policy":{"input_protocol":"openai_chat","response_profile":"qwen"}}`,
 		} {
 			host, status := test.NewTestHost(json.RawMessage(raw))

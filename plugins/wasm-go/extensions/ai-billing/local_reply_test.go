@@ -51,7 +51,7 @@ func TestBillingLocalReplyConfigValidationAndRuleIsolationU02U04(t *testing.T) {
 			for k, v := range ruleFixture {
 				badRule[k] = v
 			}
-			badRule["local_reply_policy"] = map[string]any{"input_protocol": "openai_chat"}
+			badRule["local_reply_policy"] = map[string]any{"response_profile": "deepseek"}
 			badRuleDoc, err := json.Marshal(map[string]any{
 				"redis_stream": map[string]any{"service_name": "redis.static", "service_port": 6379, "stream": "billing:events"},
 				"_rules_":      []any{badRule},

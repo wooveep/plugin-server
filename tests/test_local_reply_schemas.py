@@ -39,21 +39,27 @@ class LocalReplySchemaTests(unittest.TestCase):
             }),
             ("plugins/wasm-go/resources/plugins/ai-billing/spec.yaml", "route.schema.json", {"path_scope": "bound_target"}),
         ]
-        valid_combos = [
-            ("openai_chat", "deepseek"),
-            ("openai_chat", "qwen"),
-            ("openai_chat", "openai"),
-            ("openai_completions", "deepseek"),
-            ("openai_responses", "deepseek"),
-            ("openai_responses", "qwen"),
-            ("openai_responses", "openai"),
-            ("anthropic_messages", "deepseek"),
-            ("anthropic_messages", "qwen"),
+        valid_policies = [
+            {"input_protocol": "openai_chat"},
+            {"input_protocol": "openai_completions"},
+            {"input_protocol": "openai_responses"},
+            {"input_protocol": "anthropic_messages"},
+            {"input_protocol": "openai_chat", "response_profile": "deepseek"},
+            {"input_protocol": "openai_chat", "response_profile": "qwen"},
+            {"input_protocol": "openai_chat", "response_profile": "openai"},
+            {"input_protocol": "openai_completions", "response_profile": "deepseek"},
+            {"input_protocol": "openai_responses", "response_profile": "deepseek"},
+            {"input_protocol": "openai_responses", "response_profile": "qwen"},
+            {"input_protocol": "openai_responses", "response_profile": "openai"},
+            {"input_protocol": "anthropic_messages", "response_profile": "deepseek"},
+            {"input_protocol": "anthropic_messages", "response_profile": "qwen"},
         ]
         invalid_policies = [
+            {},
             {"input_protocol": "anthropic_messages", "response_profile": "openai"},
-            {"input_protocol": "openai_chat"},
             {"response_profile": "deepseek"},
+            {"input_protocol": "openai_chat", "response_profile": ""},
+            {"input_protocol": "openai_chat", "response_profile": None},
             {"input_protocol": "openai_chat", "response_profile": "unknown"},
             {"input_protocol": "openai_embeddings", "response_profile": "deepseek"},
             {"input_protocol": "openai_chat", "response_profile": "deepseek", "extra": True},
@@ -61,11 +67,8 @@ class LocalReplySchemaTests(unittest.TestCase):
         for spec_rel, schema_file, base in cases:
             with self.subTest(spec=spec_rel):
                 _validate(spec_rel, schema_file, base)
-                for proto, profile in valid_combos:
-                    _validate(spec_rel, schema_file, {
-                        **base,
-                        "local_reply_policy": {"input_protocol": proto, "response_profile": profile},
-                    })
+                for policy in valid_policies:
+                    _validate(spec_rel, schema_file, {**base, "local_reply_policy": policy})
                 for bad in invalid_policies:
                     with self.assertRaises(ArtifactError):
                         _validate(spec_rel, schema_file, {**base, "local_reply_policy": bad})

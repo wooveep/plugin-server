@@ -16,7 +16,7 @@ func TestMemoryLocalReplyConfigValidationU02(t *testing.T) {
 		for idx, policy := range []any{
 			map[string]any{"input_protocol": "anthropic_messages", "response_profile": "openai"},
 			map[string]any{"input_protocol": "openai_chat", "response_profile": "deepseek"},
-			map[string]any{"input_protocol": "anthropic_messages"},
+			map[string]any{"response_profile": "deepseek"},
 		} {
 			raw, err := sjson.SetBytes(base, "_rules_.0.local_reply_policy", policy)
 			require.NoError(t, err)

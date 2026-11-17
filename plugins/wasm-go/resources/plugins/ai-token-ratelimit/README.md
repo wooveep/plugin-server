@@ -421,4 +421,4 @@ Too many requests  # 限流成功
 
 ## 本地错误直接编码（`local_reply_policy`）
 
-配置可选声明 `local_reply_policy`（`input_protocol` + `response_profile`），在触发限流时保留配置的拒绝状态码、`ai-token-ratelimit.rejected` 与 `X-TokenRateLimit-Reset` 响应头，直接编码对应协议错误包络；未配置时继续返回 `rejected_msg`。
+配置可选声明 `local_reply_policy`（`input_protocol` + 可选 `response_profile`，缺省 `deepseek`），在触发限流时保留配置的拒绝状态码、`ai-token-ratelimit.rejected` 与 `X-TokenRateLimit-Reset` 响应头，直接编码对应协议错误包络；未配置时继续返回 `rejected_msg`。

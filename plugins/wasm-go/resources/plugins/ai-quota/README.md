@@ -43,4 +43,4 @@
 
 ## 本地错误直接编码（`local_reply_policy`）
 
-路由规则可选声明 `local_reply_policy`（`input_protocol` + `response_profile`），对余额不足、身份缺失、投影不可用及执行准入拒绝直接输出对应协议包络并保留原 HTTP 状态码、`detail` 与 `x-request-id`；未配置时保持原文本/JSON 拒绝行为。
+路由规则可选声明 `local_reply_policy`（`input_protocol` + 可选 `response_profile`，缺省 `deepseek`），对余额不足、身份缺失、投影不可用及执行准入拒绝直接输出对应协议包络并保留原 HTTP 状态码、`detail` 与 `x-request-id`；未配置时保持原文本/JSON 拒绝行为。

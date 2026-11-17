@@ -15,7 +15,7 @@ func TestQuotaLocalReplyConfigValidationU02(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
 		invalidPolicies := []any{
 			map[string]any{"input_protocol": "anthropic_messages", "response_profile": "openai"},
-			map[string]any{"input_protocol": "openai_chat"},
+			map[string]any{"response_profile": "deepseek"},
 			map[string]any{"input_protocol": "openai_chat", "response_profile": nil},
 			map[string]any{"input_protocol": "openai_chat", "response_profile": "deepseek", "extra": true},
 			"invalid",

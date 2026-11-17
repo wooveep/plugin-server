@@ -92,13 +92,14 @@ func ParseLocalReplyPolicyJSON(raw []byte) (*LocalReplyPolicy, error) {
 	if err := json.Unmarshal(rawProtocol, &protocol); err != nil {
 		return nil, fmt.Errorf("local_reply_policy.input_protocol must be a string: %w", err)
 	}
-	rawProfile, hasProfile := fields["response_profile"]
-	if !hasProfile || bytes.Equal(rawProfile, []byte("null")) {
-		return nil, errors.New("local_reply_policy.response_profile is required")
-	}
 	var profile string
-	if err := json.Unmarshal(rawProfile, &profile); err != nil || profile == "" {
-		return nil, errors.New("local_reply_policy.response_profile must be a non-empty string")
+	if rawProfile, hasProfile := fields["response_profile"]; hasProfile {
+		if bytes.Equal(rawProfile, []byte("null")) {
+			return nil, errors.New("local_reply_policy.response_profile must be a string when present")
+		}
+		if err := json.Unmarshal(rawProfile, &profile); err != nil || profile == "" {
+			return nil, errors.New("local_reply_policy.response_profile must be a non-empty string when present")
+		}
 	}
 	parsed, err := ParseLocalReplyPolicy(protocol, profile)
 	if err != nil {

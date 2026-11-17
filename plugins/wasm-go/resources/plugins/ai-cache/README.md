@@ -214,4 +214,4 @@ OpenAI 响应体，用户请求或响应体中的同名字段也不能控制它�
 
 ## 本地错误直接编码（`local_reply_policy`）
 
-非 `passthrough` 托管配置可选声明 `local_reply_policy`（含 `tenant_policies` 目录与子项），对交付资格与原始正文校验拒绝直接输出对应协议错误包络；缓存命中回放（`ai-cache.hit`）不执行错误重写。
+托管配置（含 `passthrough` 入口及 `tenant_policies` 目录与子项）可选声明 `local_reply_policy`（`input_protocol` 必填，`response_profile` 可选且缺省为 `deepseek`），对交付资格与原始正文校验拒绝直接输出对应协议错误包络；`passthrough` 转发响应与缓存命中回放（`ai-cache.hit`）不执行错误重写。

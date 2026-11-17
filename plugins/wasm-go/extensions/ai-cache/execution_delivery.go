@@ -193,7 +193,7 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 	}
 	out.passthrough = mode.Str == "passthrough"
 	if out.passthrough {
-		if value.Get("response_profile").Exists() || cfg.LocalReplyPolicy != nil {
+		if value.Get("response_profile").Exists() {
 			return errors.New("passthrough cache cannot activate a response profile")
 		}
 	} else {
@@ -205,11 +205,11 @@ func configureNativeCacheDelivery(value gjson.Result, cfg *config.PluginConfig) 
 		if err != nil {
 			return err
 		}
-		if cfg.LocalReplyPolicy != nil && value.Get("client_protocol").Exists() && cfg.LocalReplyPolicy.Protocol != value.Get("client_protocol").String() {
-			return errors.New("native cache local_reply_policy differs from client_protocol")
-		}
-		out.localReplyPolicy = cfg.LocalReplyPolicy
 	}
+	if cfg.LocalReplyPolicy != nil && value.Get("client_protocol").Exists() && cfg.LocalReplyPolicy.Protocol != value.Get("client_protocol").String() {
+		return errors.New("native cache local_reply_policy differs from client_protocol")
+	}
+	out.localReplyPolicy = cfg.LocalReplyPolicy
 	if !balanceidentity.ValidID(out.routeID) || !balanceidentity.ValidID(out.salesAssetID) {
 		return errors.New("native cache requires its original route and sales asset")
 	}

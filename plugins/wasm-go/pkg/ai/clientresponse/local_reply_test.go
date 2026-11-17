@@ -77,7 +77,6 @@ func TestLocalReplyPolicyValidationMatrixU01U02(t *testing.T) {
 	// Strict JSON boundary checks (U02)
 	invalidJSONs := []string{
 		`{}`,
-		`{"input_protocol":"openai_chat"}`,
 		`{"response_profile":"qwen"}`,
 		`{"input_protocol":"anthropic_messages","response_profile":"openai"}`,
 		`{"input_protocol":"openai_chat","response_profile":""}`,
@@ -90,6 +89,12 @@ func TestLocalReplyPolicyValidationMatrixU01U02(t *testing.T) {
 	for _, raw := range invalidJSONs {
 		if got, err := ParseLocalReplyPolicyJSON([]byte(raw)); err == nil {
 			t.Fatalf("expected boundary rejection for %s, got %+v", raw, got)
+		}
+	}
+	for _, raw := range []string{`{"input_protocol":"openai_chat"}`, `{"input_protocol":"anthropic_messages"}`} {
+		got, err := ParseLocalReplyPolicyJSON([]byte(raw))
+		if err != nil || got == nil || got.Profile != DeepSeek {
+			t.Fatalf("expected omitted response_profile to default to deepseek for %s, got %+v, err=%v", raw, got, err)
 		}
 	}
 	// Duplicate field in parent object rejected
