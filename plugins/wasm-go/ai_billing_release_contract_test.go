@@ -181,7 +181,7 @@ schema:
 			assertClosedObject(t, native, "native_execution")
 			assertStringSlice(t, native, "required", []string{"producer_id", "call_identity_source"})
 			nativeProperties := nestedMapping(t, native, "properties")
-			assertExactProperties(t, nativeProperties, []string{"producer_id", "call_identity_source"})
+			assertExactProperties(t, nativeProperties, []string{"producer_id", "call_identity_source", "router_delivery"})
 			assertStringValue(t, nestedMapping(t, nativeProperties, "call_identity_source"), "type", "string")
 			assertStringSlice(t, nestedMapping(t, nativeProperties, "call_identity_source"), "enum", []string{"admission", "internal_execution"})
 			producer := nestedMapping(t, nativeProperties, "producer_id")

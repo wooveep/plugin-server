@@ -37,6 +37,7 @@ func TestManagedMediaGlobalStartupPreservesOrdinaryTrafficAndAuthenticatesNotice
 	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).
 		WithPluginConfiguration(managedFixtureJSON(t, map[string]interface{}{"managed_media": settings})))
 	t.Cleanup(reset)
+	host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 	if err := host.SetProperty([]string{"node", "id"}, []byte("original-media-gateway")); err != nil {
 		t.Fatal(err)

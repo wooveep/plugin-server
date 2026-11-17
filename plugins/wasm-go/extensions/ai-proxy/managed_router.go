@@ -94,6 +94,7 @@ func (r *managedRouterResponse) streamObservation() managedProtocolObservation {
 // The route already owns its immutable cluster. Only the validated outbound
 // request is installed before the paused decoder is returned to Envoy Router.
 func dispatchManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, request managedProtocolRequest) {
+	wrapper.PreserveCurrentRequestLogID(ctx)
 	if previous, _ := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState); previous != nil && previous != s && previous.router != nil {
 		if err := queueManagedRouterContinuation(ctx, previous, s, request); err != nil {
 			rejectManagedPreparation(ctx, s, 503, "router_continuation_unavailable")

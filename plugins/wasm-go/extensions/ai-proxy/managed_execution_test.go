@@ -104,6 +104,7 @@ func newManagedHost(t *testing.T, fixtures ...map[string]interface{}) *managedHo
 	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration(managedFixtureJSON(t, fixture)))
 	t.Cleanup(reset)
 	h.host = host
+	host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 	if status := host.StartVM(); status != types.OnVMStartStatusOK {
 		t.Fatalf("VM start: %v", status)

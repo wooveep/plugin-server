@@ -1,6 +1,7 @@
 package wrapper
 
 import (
+	"bytes"
 	"strconv"
 	"testing"
 
@@ -13,7 +14,7 @@ import (
 func TestRouterContinuationRetainsObserverWithoutRepeatingRequestWork(t *testing.T) {
 	for _, oldDoneFirst := range []bool{false, true} {
 		t.Run(strconv.FormatBool(oldDoneFirst), func(t *testing.T) {
-			requests, bodies, responses, completions, declarations := 0, 0, 0, 0, 0
+			requests, bodies, responses, completions, observerDeclarations, totalDeclarations := 0, 0, 0, 0, 0, 0
 			vm := NewCommonVmCtx[struct{}]("observer", ProcessRequestHeaders(func(ctx HttpContext, _ struct{}) types.Action {
 				requests++
 				ctx.SetContext("retained", "original processed request")
@@ -30,13 +31,17 @@ func TestRouterContinuationRetainsObserverWithoutRepeatingRequestWork(t *testing
 			t.Cleanup(reset)
 			host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 			host.RegisterForeignFunction("declare_property", func(wire []byte) []byte {
-				declarations++
+				totalDeclarations++
+				if bytes.Contains(wire, []byte("modelfusion.router.observer.")) {
+					observerDeclarations++
+				}
 				require.Equal(t, []byte{0x28, 0x01}, wire[len(wire)-2:])
 				return []byte{0}
 			})
 			require.Equal(t, types.OnVMStartStatusOK, host.StartVM())
 			require.Equal(t, types.OnPluginStartStatusOK, host.StartPlugin())
-			require.Equal(t, 1, declarations, "Envoy requires the property prototype before any HTTP stream is created")
+			require.Equal(t, 1, observerDeclarations, "Envoy requires the property prototype before any HTTP stream is created")
+			declaredAtStart := totalDeclarations
 			old := host.InitializeHttpContext()
 			headers := [][2]string{{":method", "POST"}, {":path", "/v1/chat/completions"}, {"content-type", "application/json"}, {":authority", "example.test"}}
 			host.CallOnRequestHeaders(old, headers, false)
@@ -63,13 +68,14 @@ func TestRouterContinuationRetainsObserverWithoutRepeatingRequestWork(t *testing
 			require.Equal(t, 1, bodies)
 			require.Equal(t, 1, responses)
 			require.Equal(t, 1, completions)
-			require.Equal(t, 1, declarations, "request callbacks cannot register property prototypes")
+			require.Equal(t, 1, observerDeclarations, "request callbacks cannot register property prototypes")
+			require.Equal(t, declaredAtStart, totalDeclarations, "request callbacks cannot register property prototypes")
 		})
 	}
 }
 
 func TestRouterObserverDeclaresPropertyForRouteOnlyConfiguration(t *testing.T) {
-	declarations := 0
+	observerDeclarations := 0
 	vm := NewCommonVmCtx("observer", ParseOverrideConfig(
 		func(gjson.Result, *bool) error { return nil },
 		func(raw gjson.Result, _ bool, c *bool) error { *c = raw.Get("enabled").Bool(); return nil }),
@@ -77,8 +83,13 @@ func TestRouterObserverDeclaresPropertyForRouteOnlyConfiguration(t *testing.T) {
 	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration([]byte(`{"_rules_":[{"_match_route_":["route"],"enabled":true}]}`)))
 	t.Cleanup(reset)
 	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
-	host.RegisterForeignFunction("declare_property", func([]byte) []byte { declarations++; return []byte{0} })
+	host.RegisterForeignFunction("declare_property", func(wire []byte) []byte {
+		if bytes.Contains(wire, []byte("modelfusion.router.observer.")) {
+			observerDeclarations++
+		}
+		return []byte{0}
+	})
 	require.Equal(t, types.OnVMStartStatusOK, host.StartVM())
 	require.Equal(t, types.OnPluginStartStatusOK, host.StartPlugin())
-	require.Equal(t, 1, declarations, "a route override must declare its prototype before request processing")
+	require.Equal(t, 1, observerDeclarations, "a route override must declare its prototype before request processing")
 }

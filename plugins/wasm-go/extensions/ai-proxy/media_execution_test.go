@@ -288,6 +288,7 @@ func TestManagedMediaHostNeedsFirstCommittedConsumeAndSendsOriginalAccountOnce(t
 				}))
 			host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration([]byte(`{}`)))
 			t.Cleanup(reset)
+			host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 			host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 			if host.StartVM() != types.OnVMStartStatusOK || host.StartPlugin() != types.OnPluginStartStatusOK {
 				t.Fatal("media host failed to start")

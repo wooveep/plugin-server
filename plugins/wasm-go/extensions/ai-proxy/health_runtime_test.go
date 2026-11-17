@@ -66,6 +66,7 @@ func TestManagedHealthUsesDurableStateAndConsumesRecoveryBeforeSingleSend(t *tes
 			host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration(managedFixtureJSON(t, fixture)))
 			t.Cleanup(reset)
 			h.host = host
+			host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 			host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 			if err := host.SetProperty([]string{"node", "id"}, []byte("original-gateway-node")); err != nil {
 				t.Fatal(err)

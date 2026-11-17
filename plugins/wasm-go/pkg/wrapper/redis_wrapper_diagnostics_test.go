@@ -25,6 +25,7 @@ func redisDiagnosticHost(t *testing.T, request func() types.Action) (proxytest.H
 	vm := NewCommonVmCtx[struct{}]("redis-diagnostics", ProcessRequestHeaders(func(HttpContext, struct{}) types.Action { return request() }))
 	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration([]byte(`{}`)))
 	t.Cleanup(func() { reset(); proxywasm.SetVMContext(original) })
+	host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 	require.Equal(t, types.OnPluginStartStatusOK, host.StartPlugin())
 	id := host.InitializeHttpContext()

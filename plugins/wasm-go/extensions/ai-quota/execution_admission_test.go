@@ -177,6 +177,7 @@ func newExecutionAdmissionHost(t *testing.T, fixture map[string]interface{}) *ex
 	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration(executionAdmissionJSON(t, fixture)))
 	t.Cleanup(reset)
 	h.host = host
+	host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 	if host.StartVM() != types.OnVMStartStatusOK || host.StartPlugin() != types.OnPluginStartStatusOK {
 		t.Fatal("admission test host did not start")

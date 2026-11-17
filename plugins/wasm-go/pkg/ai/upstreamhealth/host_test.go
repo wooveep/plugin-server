@@ -42,6 +42,7 @@ func TestWasmHostReadsOneCompleteHashWithoutWriteOrProviderSend(t *testing.T) {
 	t.Cleanup(reset)
 	// Match the production host's logging capability before plugin startup. One
 	// emulator belongs to this test and releases the SDK global host on cleanup.
+	host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 	if host.StartVM() != types.OnVMStartStatusOK || host.StartPlugin() != types.OnPluginStartStatusOK {
 		t.Fatal("health host did not start")

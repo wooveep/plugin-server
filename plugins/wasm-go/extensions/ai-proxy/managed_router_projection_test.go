@@ -75,6 +75,7 @@ func TestRouterEstimateLimitDoesNotStopForwardingOrLoseReportedUsage(t *testing.
 func TestRouterConvertedStreamUsesOnlyVerifiedChatTerminal(t *testing.T) {
 	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption())
 	defer reset()
+	host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 	early := []byte("data:{\"id\":\"chat-q\",\"model\":\"upstream\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"early\"}}]}\r\n\r\n")
 	usage := []byte("data:{\"choices\":[{\"index\":0,\"finish_reason\":\"stop\"}]}\n\ndata:{\"choices\":[],\"usage\":{\"prompt_tokens\":29,\"completion_tokens\":7,\"total_tokens\":36}}\n\n")

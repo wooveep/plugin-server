@@ -1,6 +1,9 @@
 package wrapper
 
 import (
+	"encoding/binary"
+
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
@@ -50,6 +53,7 @@ func TestRequiredBodyReadFailureRejectsInsteadOfForwarding(t *testing.T) {
 			}
 			host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm))
 			t.Cleanup(reset)
+			host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
 			host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
 			require.Equal(t, types.OnVMStartStatusOK, host.StartVM())
 			require.Equal(t, types.OnPluginStartStatusOK, host.StartPlugin())
@@ -74,4 +78,47 @@ func TestRequiredBodyReadFailureRejectsInsteadOfForwarding(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWithRebuildMaxMemBytes(t *testing.T) {
+	original := proxywasm.GetVMContext()
+	order := []string{}
+	vm := NewCommonVmCtx[struct{}](
+		"rebuild-mem-test",
+		PrePluginStartOrReload[struct{}](func(PluginContext) error {
+			order = append(order, "pre")
+			return nil
+		}),
+		ParseRawConfig(func([]byte, *struct{}) error {
+			order = append(order, "parse")
+			return nil
+		}),
+		WithRebuildMaxMemBytes[struct{}](64*1024*1024),
+	)
+	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption().WithVMContext(vm).WithPluginConfiguration([]byte(`{}`)))
+	t.Cleanup(func() {
+		reset()
+		proxywasm.SetVMContext(original)
+	})
+	host.RegisterForeignFunction("get_log_level", func([]byte) []byte { return []byte{0, 0, 0, 0} })
+	host.RegisterForeignFunction("declare_property", func([]byte) []byte { return []byte{0} })
+	require.Equal(t, types.OnVMStartStatusOK, host.StartVM())
+	require.Equal(t, types.OnPluginStartStatusOK, host.StartPlugin())
+	require.Equal(t, []string{"pre", "parse"}, order)
+
+	mem := make([]byte, 8)
+	binary.LittleEndian.PutUint64(mem, 32*1024*1024)
+	require.NoError(t, host.SetProperty([]string{"plugin_vm_memory"}, mem))
+	belowID := host.InitializeHttpContext()
+	host.CallOnRequestHeaders(belowID, [][2]string{{":method", "POST"}, {":path", "/v1/chat/completions"}, {":authority", "gateway.example"}}, true)
+	_, err := host.GetProperty([]string{"wasm_need_rebuild"})
+	require.Error(t, err)
+
+	binary.LittleEndian.PutUint64(mem, 64*1024*1024)
+	require.NoError(t, host.SetProperty([]string{"plugin_vm_memory"}, mem))
+	atID := host.InitializeHttpContext()
+	host.CallOnRequestHeaders(atID, [][2]string{{":method", "POST"}, {":path", "/v1/chat/completions"}, {":authority", "gateway.example"}}, true)
+	flag, err := host.GetProperty([]string{"wasm_need_rebuild"})
+	require.NoError(t, err)
+	require.Equal(t, "true", string(flag))
 }

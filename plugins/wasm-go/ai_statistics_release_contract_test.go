@@ -142,6 +142,7 @@ schema:
 			"enable_methods",
 			"enable_content_types",
 			"session_id_header",
+			"router_continuation",
 		})
 		assertExactProperties(t, routeProperties, []string{
 			"use_default_attributes",
@@ -154,6 +155,7 @@ schema:
 			"enable_methods",
 			"enable_content_types",
 			"session_id_header",
+			"router_continuation",
 		})
 
 		attributeItems := nestedMapping(t, globalProperties, "attributes", "items")

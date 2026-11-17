@@ -585,6 +585,7 @@ type CommonPluginCtx[PluginConfig any] struct {
 	fingerPrint        string
 	ruleLevelIsolation bool
 	isLeader           bool
+	originalLogReady   bool
 }
 
 type Lease struct {
@@ -687,6 +688,26 @@ func (ctx *CommonPluginCtx[PluginConfig]) OnPluginStart(int) types.OnPluginStart
 		if err != nil {
 			log.Errorf("prePluginStartOrReload hook failed: %v", err)
 			return types.OnPluginStartStatusFailed
+		}
+	}
+	// New log-only properties use request scope before their first SetProperty call.
+	// Existing request identity properties keep their current lifecycle and semantics.
+	ctx.originalLogReady = true
+	for _, property := range []string{
+		originalLogCapturedProperty,
+		currentLogCapturedProperty,
+		currentLogIDProperty,
+		currentLogIDJSONProperty,
+		originalLogIDProperty,
+		originalLogIDJSONProperty,
+		originalLogUserAgentProperty,
+		originalLogUserAgentJSONProperty,
+		originalLogForwardedProperty,
+		originalLogForwardedJSONProperty,
+	} {
+		if err := DeclareRequestProperty(property); err != nil {
+			ctx.originalLogReady = false
+			log.Warnf("original request log property declaration failed: %v", err)
 		}
 	}
 	// Set max requests per IO cycle if configured
@@ -806,10 +827,11 @@ type CommonHttpCtx[PluginConfig any] struct {
 	path   string
 	method string
 	// Cached request headers from the header phase
-	requestConnection      string
-	requestUpgrade         string
-	requestContentType     string
-	requestContentEncoding string
+	requestConnection       string
+	requestUpgrade          string
+	requestContentType      string
+	requestContentEncoding  string
+	originalLogContinuation bool
 	// Cached response headers from the header phase
 	responseContentType     string
 	responseContentEncoding string
@@ -1059,7 +1081,23 @@ func (ctx *CommonHttpCtx[PluginConfig]) OnHttpRequestHeaders(numHeaders int, end
 	ctx.requestContentType, _ = proxywasm.GetHttpRequestHeader("content-type")
 	ctx.requestContentEncoding, _ = proxywasm.GetHttpRequestHeader("content-encoding")
 
+	// Read the old ID before PreserveOriginalRequestID can rewrite its legacy slot.
+	// Keep the trusted entry state outside userContext, which continuation restores.
+	ctx.originalLogContinuation = RouterContinuationPending()
+	var legacyLogID string
+	firstLogWrapper := false
+	if ctx.plugin.originalLogReady && !ctx.originalLogContinuation {
+		legacy, legacyErr := proxywasm.GetProperty([]string{"modelfusion_original_request_id"})
+		legacyLogID = string(legacy)
+		if errors.Is(legacyErr, types.ErrorStatusNotFound) {
+			_, startErr := proxywasm.GetProperty([]string{"modelfusion_original_request_start"})
+			firstLogWrapper = errors.Is(startErr, types.ErrorStatusNotFound)
+		}
+	}
 	requestID := PreserveOriginalRequestID(ctx)
+	if ctx.plugin.originalLogReady {
+		preserveOriginalRequestLogMetadata(requestID, legacyLogID, firstLogWrapper, ctx.originalLogContinuation)
+	}
 	_ = proxywasm.SetProperty([]string{"x_request_id"}, []byte(requestID))
 
 	// Increment request count and check rebuild condition

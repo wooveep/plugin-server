@@ -99,6 +99,7 @@ func init() {
 		wrapper.ProcessStreamingResponseBody(onHttpStreamingResponseBody),
 		wrapper.ProcessResponseBody(onHttpResponseBody),
 		wrapper.ProcessStreamDone(onHttpStreamDone),
+		wrapper.WithRebuildMaxMemBytes[BillingConfig](128*1024*1024),
 	)
 }
 
