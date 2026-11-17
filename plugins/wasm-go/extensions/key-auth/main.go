@@ -37,9 +37,11 @@ var (
 func main() {}
 
 const (
-	defaultProtectionSpace = "MSE Gateway"
-	consumerHeaderName     = "X-Mse-Consumer"
-	tenantHeaderName       = "X-Mse-Tenant"
+	defaultProtectionSpace  = "MSE Gateway"
+	consumerHeaderName      = "X-Mse-Consumer"
+	tenantHeaderName        = "X-Mse-Tenant"
+	acmeChallengePathPrefix = "/.well-known/acme-challenge/"
+	maxAcmeTokenLength      = 256
 )
 
 func init() {
@@ -130,7 +132,7 @@ type credentialCandidate struct {
 // @Description zh-CN 本插件实现了实现了基于 API Key 进行认证鉴权的功能.
 // @Description en-US This plugin implements an authentication function based on API Key Auth standard.
 // @IconUrl https://img.alicdn.com/imgextra/i4/O1CN01BPFGlT1pGZ2VDLgaH_!!6000000005333-2-tps-42-42.png
-// @Version 1.2.13
+// @Version 1.2.15
 //
 // @Contact.name Higress Team
 // @Contact.url http://higress.io/
@@ -405,6 +407,16 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config KeyAuthConfig, log log
 	// native account/key fields before a later managed quota filter can see them.
 	if err := removeBalanceIdentityHeaders(); err != nil {
 		return deniedUnauthorizedConsumer(config.Realm)
+	}
+	// ACME HTTP-01 validation must reach Higress's transient solver even when a
+	// domain-wide rule or global_auth protects the host; strip forged identity
+	// headers first so unauthenticated callers cannot spoof downstream state.
+	if isAcmeChallengeRequest(ctx) {
+		if err := clearTrustedIdentityHeaders(); err != nil {
+			return deniedUnauthorizedConsumer(config.Realm)
+		}
+		log.Info("authorization is not required for ACME HTTP-01 challenge")
+		return types.ActionContinue
 	}
 	var (
 		noAllow            = !config.allowConfigured // No matching rule leaves scoped authentication disabled.
@@ -745,9 +757,43 @@ func propagateTrustedIdentity(identity credentialIdentity) error {
 	return installBalanceIdentity(identity.Balance)
 }
 
+func clearTrustedIdentityHeaders() error {
+	for _, name := range []string{consumerHeaderName, tenantHeaderName} {
+		if err := proxywasm.RemoveHttpRequestHeader(name); err != nil && !errors.Is(err, types.ErrorStatusNotFound) {
+			return err
+		}
+	}
+	return nil
+}
+
 func removeTrustedIdentityHeaders() {
-	_ = proxywasm.RemoveHttpRequestHeader(consumerHeaderName)
-	_ = proxywasm.RemoveHttpRequestHeader(tenantHeaderName)
+	_ = clearTrustedIdentityHeaders()
+}
+
+func isAcmeChallengeRequest(ctx wrapper.HttpContext) bool {
+	if ctx.Method() != http.MethodGet && ctx.Method() != http.MethodHead {
+		return false
+	}
+	path, _, _ := strings.Cut(ctx.Path(), "?")
+	if strings.Contains(path, "#") {
+		return false
+	}
+	token, ok := strings.CutPrefix(path, acmeChallengePathPrefix)
+	if !ok || token == "" || len(token) > maxAcmeTokenLength {
+		return false
+	}
+	for i := 0; i < len(token); i++ {
+		c := token[i]
+		isValid := (c >= 'a' && c <= 'z') ||
+			(c >= 'A' && c <= 'Z') ||
+			(c >= '0' && c <= '9') ||
+			c == '-' ||
+			c == '_'
+		if !isValid {
+			return false
+		}
+	}
+	return true
 }
 
 func deniedMultiKeyAuthData(realm string) types.Action {

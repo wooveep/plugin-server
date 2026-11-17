@@ -15,9 +15,9 @@
 | ai-token-ratelimit | 2.0.16 |
 | cluster-key-rate-limit | 2.0.13 |
 | model-mapper | 2.0.13 |
-| key-auth | 1.2.13 |
+| key-auth | 1.2.15 |
 
-验证：插件服务 Python 测试 132 项通过；上述 9 个 Go 模块与共享框架测试通过。首次验证发现的 quota 额外 HTTP 调用和旧 LB 测试替身不完整问题已修正并复测。
+验证：插件服务 Python 测试 132 项通过；上述 9 个 Go 模块与共享框架测试通过。首次验证发现的 quota 额外 HTTP 调用和旧 LB 测试替身不完整问题已修正并复测。2026-11-17 按用户要求合入 `key-auth` `1.2.15` 自动 TLS 证书签发（ACME HTTP-01 `/.well-known/acme-challenge/<token>` `GET`/`HEAD` 校验放行及伪造身份请求头清理）优化，保持静态 SP002 鉴权模型，未引入 #129 热态 Redis 鉴权。
 
 已从固定源码重新编译全部 55 项正式插件，完成完整包校验、登记、镜像构建与推送，并在开发环境 Helm revision 3 部署。两条既有已发布路由通过 SP002 原生发布流程采纳新插件，修订分别为 14 和 6；其余草稿保持原状态。
 

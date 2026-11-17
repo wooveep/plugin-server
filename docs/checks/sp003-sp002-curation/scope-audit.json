@@ -1,8 +1,10 @@
 [
   {
     "plugin": "key-auth",
-    "tracked_production_source_matches_SP002_except_version": true,
-    "differences": []
+    "tracked_production_source_matches_SP002_except_version": false,
+    "differences": [
+      "Retain 1.2.15 ACME HTTP-01 challenge GET/HEAD bypass after scrubbing forged identity headers; no #129 hotauth or Redis auth code"
+    ]
   },
   {
     "plugin": "cluster-key-rate-limit",
