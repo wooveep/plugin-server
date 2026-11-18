@@ -1362,6 +1362,12 @@ func (c *ProviderConfig) handleRequestBody(
 	return types.ActionContinue, replaceRequestBody(body)
 }
 
+// StripClaudeInternalMessageFields removes internal Claude->OpenAI intermediate fields
+// before dispatching an OpenAI-protocol request body to non-Claude upstreams.
+func StripClaudeInternalMessageFields(body []byte, preserveMessageReasoningContent ...bool) []byte {
+	return stripClaudeInternalMessageFields(body, preserveMessageReasoningContent...)
+}
+
 func stripClaudeInternalMessageFields(body []byte, preserveMessageReasoningContent ...bool) []byte {
 	result := body
 	for _, field := range []string{"claude_thinking", "claude_output_config", "claude_anthropic_beta"} {

@@ -1470,7 +1470,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-cache",
-      "declaredVersion": "2.0.34"
+      "declaredVersion": "2.0.35"
     },
     {
       "logicalId": "ai-context-limit",
@@ -1573,7 +1573,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-history",
-      "declaredVersion": "2.0.22"
+      "declaredVersion": "2.0.23"
     },
     {
       "logicalId": "ai-image-reader",
@@ -1753,7 +1753,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-proxy",
-      "declaredVersion": "2.0.88"
+      "declaredVersion": "2.0.89"
     },
     {
       "logicalId": "ai-quota",
@@ -1781,7 +1781,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-quota",
-      "declaredVersion": "2.0.19"
+      "declaredVersion": "2.0.20"
     },
     {
       "logicalId": "ai-rag",
@@ -1921,7 +1921,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/ai-token-ratelimit",
-      "declaredVersion": "2.0.18"
+      "declaredVersion": "2.0.19"
     },
     {
       "logicalId": "ai-transformer",
@@ -2029,7 +2029,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/cluster-key-rate-limit",
-      "declaredVersion": "2.0.13"
+      "declaredVersion": "2.0.14"
     },
     {
       "logicalId": "cors",
@@ -2418,7 +2418,7 @@
         }
       },
       "metadataDir": "plugins/wasm-go/resources/plugins/model-mapper",
-      "declaredVersion": "2.0.15"
+      "declaredVersion": "2.0.16"
     },
     {
       "logicalId": "model-router",
@@ -2446,7 +2446,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/model-router",
-      "declaredVersion": "2.0.12"
+      "declaredVersion": "2.0.13"
     },
     {
       "logicalId": "nginx-rewrite-compatible",
@@ -3092,7 +3092,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "1.0.21"
+      "declaredVersion": "1.0.22"
     },
     {
       "logicalId": "ai-memory",
@@ -3120,7 +3120,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "0.1.26"
+      "declaredVersion": "0.1.27"
     },
     {
       "logicalId": "key-auth",
@@ -3148,7 +3148,7 @@
           "urlForm": "http"
         }
       },
-      "declaredVersion": "1.2.17"
+      "declaredVersion": "1.2.18"
     },
     {
       "logicalId": "custom-response",

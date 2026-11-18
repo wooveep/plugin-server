@@ -94,7 +94,9 @@ func projectManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 		if r.native != nil && r.native.terminal && kind != "error" {
 			// The usage and ownership attached to this frame must be complete
 			// before a consumer can treat it as a terminal or continue from it.
-			r.terminalEvent = clientresponse.Event{Name: event.Name, Data: event.Data}
+			if kind != "ping" {
+				r.terminalEvent = clientresponse.Event{Name: event.Name, Data: event.Data}
+			}
 			return
 		}
 		r.appendProjection(&output, clientresponse.Event{Name: event.Name, Data: event.Data})
@@ -152,7 +154,7 @@ func (r *managedRouterResponse) projectConvertedChatEvent(ctx wrapper.HttpContex
 	}
 	var wire bytes.Buffer
 	managedProtocolWriteEvent(&wire, event.Name, body)
-	if !managedProtocolNull(json.RawMessage(parsed.Get("choices.0.finish_reason").Raw)) {
+	if finish := parsed.Get("choices.0.finish_reason"); !managedProtocolNull(json.RawMessage(finish.Raw)) && finish.String() != "" {
 		// The converters close text and tool arguments on finish_reason.
 		// Keep those events pending until the Chat terminal is verified.
 		r.conversionFinish = wire.Bytes()

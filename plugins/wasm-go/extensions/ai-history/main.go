@@ -53,7 +53,7 @@ func init() {
 // @Title zh-CN AI History
 // @Description zh-CN 大模型对话历史缓存
 // @IconUrl
-// @Version 2.0.22
+// @Version 2.0.23
 //
 // @Contact.name sakura
 // @Contact.url

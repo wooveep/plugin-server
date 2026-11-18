@@ -105,7 +105,7 @@ func (a *ResourceAliases) rewrite(protocol string, raw []byte, stream bool) ([]b
 	}
 	set := func(key, kind string, required bool) error {
 		value, exists := object[key]
-		if !exists && !required || string(value) == "null" {
+		if !exists && !required || string(value) == "null" || (!required && string(value) == `""`) {
 			return nil
 		}
 		var err error
@@ -222,7 +222,7 @@ func (a *ResourceAliases) rewriteItem(raw json.RawMessage, protocol string) (jso
 		kind = "message"
 	}
 	for key, keyKind := range map[string]string{"id": kind, "call_id": "call", "tool_use_id": "call", "tool_call_id": "call"} {
-		if value, exists := item[key]; exists && string(value) != "null" {
+		if value, exists := item[key]; exists && string(value) != "null" && string(value) != `""` {
 			var err error
 			item[key], err = a.alias(keyKind, value)
 			if err != nil {
@@ -233,11 +233,12 @@ func (a *ResourceAliases) rewriteItem(raw json.RawMessage, protocol string) (jso
 	var calls []map[string]json.RawMessage
 	if json.Unmarshal(item["tool_calls"], &calls) == nil && calls != nil {
 		for _, call := range calls {
-			if _, present := call["id"]; !present {
+			id, present := call["id"]
+			if !present || string(id) == "null" || string(id) == `""` {
 				continue
 			}
 			var err error
-			call["id"], err = a.alias("call", call["id"])
+			call["id"], err = a.alias("call", id)
 			if err != nil {
 				return nil, err
 			}

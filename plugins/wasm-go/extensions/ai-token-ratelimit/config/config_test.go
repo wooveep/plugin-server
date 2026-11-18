@@ -81,7 +81,40 @@ func TestParseAiTokenRateLimitConfig(t *testing.T) {
 					}
 				]
 			}`,
-			expectedErr: errors.New("failed to parse rule_item in rule_items: 'token_per_minute' must be a positive integer for key 'key1', got -100"),
+			expectedErr: errors.New("failed to parse rule_item in rule_items: 'token_per_minute' must be a non-negative integer for key 'key1', got -100"),
+		},
+		{
+			name: "RuleItems_ZeroUnlimitedThreshold",
+			json: `{
+				"rule_name": "zero-unlimited",
+				"rule_items": [
+					{
+						"limit_by_header": "x-test",
+						"limit_keys": [
+							{"key": "key1", "token_per_minute": 0}
+						]
+					}
+				]
+			}`,
+			expected: AiTokenRateLimitConfig{
+				RuleName: "zero-unlimited",
+				RuleItems: []LimitRuleItem{
+					{
+						LimitType: LimitByHeaderType,
+						Key:       "x-test",
+						ConfigItems: []LimitConfigItem{
+							{
+								ConfigType: ExactType,
+								Key:        "key1",
+								Count:      0,
+								TimeWindow: SecondsPerMinute,
+							},
+						},
+					},
+				},
+				RejectedCode: DefaultRejectedCode,
+				RejectedMsg:  DefaultRejectedMsg,
+			},
 		},
 		{
 			name: "RuleItems_SingleRule",

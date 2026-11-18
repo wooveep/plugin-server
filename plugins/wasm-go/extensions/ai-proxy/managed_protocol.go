@@ -144,7 +144,14 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 		case managedProtocolResponses:
 			actual, err = provider.ConvertResponsesRequestToChatCompletion(body)
 		case managedProtocolMessages:
-			actual, err = (&provider.ClaudeToOpenAIConverter{}).ConvertClaudeRequestToOpenAIWithOptions(body, provider.ClaudeToOpenAIConvertOptions{UseMaxCompletionTokens: p.supplier == "openai"})
+			preserveReasoning := p.supplier == "qwen" || p.supplier == "openrouter" || p.supplier == "zhipuai" || p.supplier == "deepseek" || p.supplier == "moonshot"
+			actual, err = (&provider.ClaudeToOpenAIConverter{}).ConvertClaudeRequestToOpenAIWithOptions(body, provider.ClaudeToOpenAIConvertOptions{
+				UseMaxCompletionTokens:          p.supplier == "openai",
+				PreserveMessageReasoningContent: preserveReasoning,
+			})
+			if err == nil {
+				actual = provider.StripClaudeInternalMessageFields(actual, preserveReasoning)
+			}
 		default:
 			err = errors.New("unsupported managed protocol request conversion")
 		}
@@ -314,7 +321,7 @@ func managedChatTerminal(object map[string]json.RawMessage) string {
 		}
 		switch reason {
 		case "stop", "tool_calls", "function_call":
-		case "length", "content_filter":
+		case "length", "content_filter", "sensitive", "model_context_window_exceeded":
 			result = "partial"
 		default:
 			return "unknown"
@@ -370,7 +377,7 @@ func managedMessagesTerminal(object map[string]json.RawMessage) string {
 	switch reason {
 	case "end_turn", "tool_use", "stop_sequence", "refusal":
 		return "succeeded"
-	case "max_tokens", "pause_turn":
+	case "max_tokens", "pause_turn", "model_context_window_exceeded":
 		return "partial"
 	default:
 		return "unknown"
@@ -413,6 +420,7 @@ func managedMessagesUsage(raw json.RawMessage) *executionfacts.Usage {
 	}
 	quantities := map[string]string{"input": input.String(), "output": output.String()}
 	readRaw, hasRead := usage["cache_read_input_tokens"]
+	hasRead = hasRead && !managedProtocolNull(readRaw)
 	write, hasWrite := managedCacheWriteCount(usage)
 	if hasWrite && write == nil {
 		return executionfacts.MissingTokenUsage(managedCacheWriteConflict)

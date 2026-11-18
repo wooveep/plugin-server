@@ -609,8 +609,12 @@ func convertChatCompletionResponseToResponses(body []byte) ([]byte, error) {
 	}
 
 	output := convertChatCompletionMessageToResponsesOutput(choice.Message)
-	if choice.Message.ReasoningContent != "" {
-		response.Output = append(response.Output, reasoningOutput("rs_"+chatResponse.ID, choice.Message.ReasoningContent, response.Status))
+	reasoningText := choice.Message.ReasoningContent
+	if reasoningText == "" {
+		reasoningText = choice.Message.Reasoning
+	}
+	if reasoningText != "" {
+		response.Output = append(response.Output, reasoningOutput("rs_"+chatResponse.ID, reasoningText, response.Status))
 	}
 	if response.Status != "completed" {
 		output.Status = "incomplete"
@@ -641,10 +645,10 @@ func convertChatCompletionUsageToResponsesUsage(chatUsage *usage) *responsesUsag
 
 func applyResponsesFinishStatus(response *responsesResponse, finishReason string) {
 	switch finishReason {
-	case "length":
+	case "length", "model_context_window_exceeded":
 		response.Status = "incomplete"
 		response.IncompleteDetails = &responsesIncomplete{Reason: "max_output_tokens"}
-	case "content_filter":
+	case "content_filter", "sensitive":
 		response.Status = "incomplete"
 		response.IncompleteDetails = &responsesIncomplete{Reason: "content_filter"}
 	case "insufficient_system_resource", "aborted":
@@ -788,7 +792,11 @@ func (c *chatCompletionToResponsesStreamConverter) convert(chunk []byte, isLastC
 					return nil, err
 				}
 			}
-			if text := choice.Delta.ReasoningContent; text != "" {
+			reasoningDelta := choice.Delta.ReasoningContent
+			if reasoningDelta == "" {
+				reasoningDelta = choice.Delta.Reasoning
+			}
+			if text := reasoningDelta; text != "" {
 				if c.reasoningIndex == nil {
 					index := len(c.outputs)
 					c.reasoningIndex = &index

@@ -288,7 +288,9 @@ func ReadUsage(body []byte, format string, stream bool) Usage {
 				latest = map[string]json.RawMessage{}
 			}
 			for k, v := range update {
-				latest[k] = v
+				if !bytes.Equal(bytes.TrimSpace(v), []byte("null")) {
+					latest[k] = v
+				}
 			}
 		}
 	}

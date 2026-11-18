@@ -476,7 +476,8 @@ func LocalReplyKindForDetail(detail string) (LocalReplyKind, bool) {
 		"ai-quota.insufficient_balance",
 		"execution_admission_insufficient_balance":
 		return LocalInsufficientBalance, true
-	case "ai-token-ratelimit.rejected":
+	case "ai-token-ratelimit.rejected",
+		"cluster-key-rate-limit.rejected":
 		return LocalRateLimitExceeded, true
 	case "duplicate_model_member":
 		return LocalDuplicateModel, true

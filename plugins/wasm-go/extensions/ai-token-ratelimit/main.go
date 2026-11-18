@@ -347,7 +347,7 @@ func collectMatchedRules(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitCon
 
 	for _, ruleItem := range cfg.RuleItems {
 		val, hitRule, hitItem := hitRateRuleItem(ctx, ruleItem)
-		if hitRule != nil && hitItem != nil {
+		if hitRule != nil && hitItem != nil && hitItem.Count > 0 {
 			matched = append(matched, MatchedRule{
 				key:    fmt.Sprintf(AiTokenRateLimitFormat, cfg.RuleName, hitRule.LimitType, hitItem.TimeWindow, hitRule.Key, val),
 				count:  hitItem.Count,

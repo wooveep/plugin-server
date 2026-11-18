@@ -295,28 +295,20 @@ func TestManagedMessagesChatLimitUsesFrozenSupplier(t *testing.T) {
 }
 
 func TestQwenMessagesTerminalInputPreservesReportedMeasurement(t *testing.T) {
-	body := []byte("event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"native\",\"model\":\"qwen\",\"role\":\"assistant\",\"content\":[],\"usage\":{\"input_tokens\":4,\"output_tokens\":0}}}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"input_tokens\":65,\"output_tokens\":26,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
-	for _, supplier := range []string{"qwen", "deepseek"} {
+	body := []byte("event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"native\",\"model\":\"qwen\",\"role\":\"assistant\",\"content\":[],\"usage\":{\"input_tokens\":10100,\"output_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"input_tokens\":8862,\"output_tokens\":16,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"service_tier\":\"standard\"}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\nevent: ping\ndata: {\"type\":\"ping\"}\n\n")
+	for _, supplier := range []string{"qwen", "deepseek", "claude"} {
 		p, err := newManagedProtocolProfile(managedProtocolMessages, managedProtocolMessages)
 		if err != nil {
 			t.Fatal(err)
 		}
 		p.supplier = supplier
 		observation := p.ObserveResponse(200, [][2]string{{"content-type", "text/event-stream"}}, body, true)
-		if supplier == "qwen" {
-			if !observation.BodyComplete || observation.Usage.Status != "reported" || observation.Usage.Quantities["input"] != "65" || observation.Usage.Quantities["output"] != "26" {
-				t.Fatalf("final Qwen counts lost: %#v", observation)
-			}
-			decreasing := bytes.Replace(body, []byte(`"input_tokens":65`), []byte(`"input_tokens":3`), 1)
-			if p.ObserveResponse(200, [][2]string{{"content-type", "text/event-stream"}}, decreasing, true).BodyComplete {
-				t.Fatal("decreasing Qwen input accepted")
-			}
-			afterTerminal := bytes.Replace(body, []byte("event: message_stop"), []byte("event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{},\"usage\":{\"input_tokens\":999,\"output_tokens\":26}}\n\nevent: message_stop"), 1)
-			if p.ObserveResponse(200, [][2]string{{"content-type", "text/event-stream"}}, afterTerminal, true).BodyComplete {
-				t.Fatal("post-terminal Qwen input amendment accepted")
-			}
-		} else if observation.BodyComplete || observation.Usage.Status == "reported" {
-			t.Fatal("other Messages supplier accepted contradictory input")
+		if !observation.BodyComplete || observation.Usage.Status != "reported" || observation.Usage.Quantities["input"] != "8862" || observation.Usage.Quantities["output"] != "16" {
+			t.Fatalf("settled Messages counts lost for %s: %#v", supplier, observation)
+		}
+		afterTerminal := bytes.Replace(body, []byte("event: message_stop"), []byte("event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{},\"usage\":{\"input_tokens\":999,\"output_tokens\":16}}\n\nevent: message_stop"), 1)
+		if p.ObserveResponse(200, [][2]string{{"content-type", "text/event-stream"}}, afterTerminal, true).BodyComplete {
+			t.Fatalf("post-terminal conflicting input amendment accepted for %s", supplier)
 		}
 	}
 }

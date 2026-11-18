@@ -22,7 +22,20 @@ func Events(body []byte) ([]Event, error) {
 	text := strings.ReplaceAll(string(body), "\r\n", "\n")
 	text = strings.ReplaceAll(text, "\r", "\n")
 	if text != "" && !strings.HasSuffix(text, "\n\n") {
-		return nil, errors.New("public SSE response has an unterminated event")
+		tail := text
+		if idx := strings.LastIndex(text, "\n\n"); idx >= 0 {
+			tail = text[idx+2:]
+		}
+		for _, line := range strings.Split(tail, "\n") {
+			if line != "" && !strings.HasPrefix(line, ":") {
+				return nil, errors.New("public SSE response has an unterminated event")
+			}
+		}
+		if idx := strings.LastIndex(text, "\n\n"); idx >= 0 {
+			text = text[:idx+2]
+		} else {
+			text = ""
+		}
 	}
 	var events []Event
 	for _, block := range strings.Split(text, "\n\n") {

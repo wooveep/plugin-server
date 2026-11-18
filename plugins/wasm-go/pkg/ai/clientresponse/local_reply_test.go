@@ -134,6 +134,8 @@ func TestLocalReplyDifferentialParityAndSupplierSeparationU03U08(t *testing.T) {
 		{"execution_admission_check_unavailable", 503, "api_error", "service_unavailable", "The service is temporarily unavailable."},
 		{"ai-token-ratelimit.rejected", 429, "rate_limit_error", "rate_limit_exceeded", "The request limit has been exceeded. Try again later."},
 		{"ai-token-ratelimit.rejected", 418, "rate_limit_error", "rate_limit_exceeded", "The request limit has been exceeded. Try again later."},
+		{"cluster-key-rate-limit.rejected", 429, "rate_limit_error", "rate_limit_exceeded", "The request limit has been exceeded. Try again later."},
+		{"cluster-key-rate-limit.rejected", 418, "rate_limit_error", "rate_limit_exceeded", "The request limit has been exceeded. Try again later."},
 		{"duplicate_model_member", 400, "invalid_request_error", "invalid_parameter", "The request contains duplicate model fields."},
 		{"modelfusion.local.model-mapper.body_too_large", 413, "invalid_request_error", "request_too_large", "The request is too large."},
 		{"modelfusion.local.ai-history.body_too_large", 413, "invalid_request_error", "request_too_large", "The request is too large."},

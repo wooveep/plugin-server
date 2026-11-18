@@ -24,9 +24,29 @@ var publicBlockFields = map[string]string{
 	"tool_use":                     "id name input",
 	"server_tool_use":              "id name input",
 	"tool_result":                  "tool_use_id content is_error",
-	"web_search_tool_result":       "tool_use_id content",
-	"web_search_result":            "url title encrypted_content page_age",
-	"web_search_tool_result_error": "error_code",
+	"web_search_tool_result":                      "tool_use_id content",
+	"web_search_result":                           "url title encrypted_content page_age",
+	"web_search_tool_result_error":                "error_code",
+	"web_fetch_tool_result":                       "tool_use_id content",
+	"web_fetch_result":                            "url content retrieved_at",
+	"web_fetch_tool_result_error":                 "error_code",
+	"code_execution_tool_result":                  "tool_use_id content",
+	"code_execution_result":                       "stdout stderr return_code content",
+	"code_execution_tool_result_error":            "error_code",
+	"bash_code_execution_tool_result":             "tool_use_id content",
+	"bash_code_execution_result":                  "stdout stderr return_code content",
+	"bash_code_execution_output":                  "file_id",
+	"bash_code_execution_tool_result_error":       "error_code",
+	"text_editor_code_execution_tool_result":      "tool_use_id content",
+	"text_editor_code_execution_view_result":      "file_type content num_lines start_line total_lines",
+	"text_editor_code_execution_create_result":    "is_file_update",
+	"text_editor_code_execution_str_replace_result": "old_start old_lines new_start new_lines lines",
+	"text_editor_code_execution_tool_result_error": "error_code error_message",
+	"tool_search_tool_result":                     "tool_use_id content",
+	"tool_search_tool_search_result":              "tool_references",
+	"tool_search_tool_result_error":               "error_code error_message",
+	"tool_reference":                              "tool_name",
+	"container_upload":                            "file_id",
 	"web_search_call":              "id status action",
 	"file_search_call":             "id status queries results",
 	"code_interpreter_call":        "id status code container_id outputs",
@@ -58,7 +78,7 @@ func projectBlock(raw json.RawMessage) (json.RawMessage, error) {
 		return nil, errors.New("unregistered public content block type")
 	}
 	object = retain(object, "type "+fields)
-	for _, key := range []string{"content", "summary"} {
+	for _, key := range []string{"content", "summary", "tool_references"} {
 		if value, ok := object[key]; ok && len(value) > 0 && value[0] == '[' {
 			var err error
 			object[key], err = projectBlockList(value)

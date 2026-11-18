@@ -28,6 +28,9 @@ class LocalReplySchemaTests(unittest.TestCase):
             ("plugins/wasm-go/resources/plugins/ai-token-ratelimit/spec.yaml", "route.schema.json", {
                 "rule_name": "r1", "global_threshold": {"token_per_minute": 100}, "redis": {"service_name": "r.static"},
             }),
+            ("plugins/wasm-go/resources/plugins/cluster-key-rate-limit/spec.yaml", "route.schema.json", {
+                "rule_name": "r1", "global_threshold": {"query_per_minute": 100}, "redis": {"service_name": "r.static"},
+            }),
             ("plugins/wasm-go/resources/plugins/model-mapper/spec.yaml", "route.schema.json", {
                 "capture_body_basis": True, "modelMapping": {"a": "b"},
             }),
@@ -137,6 +140,34 @@ class LocalReplySchemaTests(unittest.TestCase):
                 }
             },
         })
+
+    def test_rate_limit_limit_keys_minimum_zero_and_negative_rejection(self):
+        for spec_rel, field in [
+            ("plugins/wasm-go/resources/plugins/cluster-key-rate-limit/spec.yaml", "query_per_minute"),
+            ("plugins/wasm-go/resources/plugins/ai-token-ratelimit/spec.yaml", "token_per_minute"),
+        ]:
+            for schema_file in ("config.schema.json", "route.schema.json"):
+                with self.subTest(spec=spec_rel, schema=schema_file):
+                    _validate(spec_rel, schema_file, {
+                        "rule_name": "static-user-limit",
+                        "redis": {"service_name": "redis.static"},
+                        "rule_items": [{
+                            "limit_by_per_header": "x-modelfusion-principal-id",
+                            "limit_keys": [
+                                {"key": "regexp:^unlimited$", field: 0},
+                                {"key": "*", field: 10},
+                            ],
+                        }],
+                    })
+                    with self.assertRaises(ArtifactError):
+                        _validate(spec_rel, schema_file, {
+                            "rule_name": "static-user-limit",
+                            "redis": {"service_name": "redis.static"},
+                            "rule_items": [{
+                                "limit_by_per_header": "x-modelfusion-principal-id",
+                                "limit_keys": [{"key": "*", field: -1}],
+                            }],
+                        })
 
 
 if __name__ == "__main__":

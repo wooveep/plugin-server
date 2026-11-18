@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"cluster-key-rate-limit/util"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -60,12 +61,13 @@ var timeWindows = map[string]int64{
 }
 
 type ClusterKeyRateLimitConfig struct {
-	RuleName             string           // 限流规则名称
-	GlobalThreshold      *GlobalThreshold // 全局限流配置
-	RuleItems            []LimitRuleItem  // 限流规则项
-	ShowLimitQuotaHeader bool             // 响应头中是否显示X-RateLimit-Limit和X-RateLimit-Remaining
-	RejectedCode         uint32           // 当请求超过阈值被拒绝时,返回的HTTP状态码
-	RejectedMsg          string           // 当请求超过阈值被拒绝时,返回的响应体
+	RuleName             string                            // 限流规则名称
+	GlobalThreshold      *GlobalThreshold                  // 全局限流配置
+	RuleItems            []LimitRuleItem                   // 限流规则项
+	ShowLimitQuotaHeader bool                              // 响应头中是否显示X-RateLimit-Limit和X-RateLimit-Remaining
+	RejectedCode         uint32                            // 当请求超过阈值被拒绝时,返回的HTTP状态码
+	RejectedMsg          string                            // 当请求超过阈值被拒绝时,返回的响应体
+	LocalReplyPolicy     *clientresponse.LocalReplyPolicy  // 可选AI路由协议本地错误响应策略
 	RedisClient          wrapper.RedisClient
 }
 
@@ -161,6 +163,11 @@ func ParseClusterKeyRateLimitConfig(json gjson.Result, config *ClusterKeyRateLim
 	} else {
 		config.RejectedMsg = DefaultRejectedMsg
 	}
+	localReplyPolicy, err := clientresponse.ParseLocalReplyPolicyField(json)
+	if err != nil {
+		return err
+	}
+	config.LocalReplyPolicy = localReplyPolicy
 	return nil
 }
 
@@ -391,8 +398,8 @@ func createConfigItemFromRate(item gjson.Result, itemType LimitConfigItemType, k
 		q := item.Get(timeWindowKey)
 		if q.Exists() {
 			count := q.Int()
-			if count <= 0 {
-				return nil, fmt.Errorf("'%s' must be a positive integer for key '%s', got %d", timeWindowKey, key, count)
+			if q.Type != gjson.Number || count < 0 || q.Float() != float64(count) {
+				return nil, fmt.Errorf("'%s' must be a non-negative integer for key '%s', got %s", timeWindowKey, key, q.Raw)
 			}
 			return &LimitConfigItem{
 				ConfigType: itemType,

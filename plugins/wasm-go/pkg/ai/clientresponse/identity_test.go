@@ -56,4 +56,26 @@ func TestChatToolDeltaWithoutIDDoesNotCreateAnotherCall(t *testing.T) {
 	if gjson.GetBytes(events[1].Data, "choices.0.delta.tool_calls.0.id").Exists() || gjson.GetBytes(events[1].Data, "choices.0.delta.tool_calls.1.id").Exists() || gjson.GetBytes(events[0].Data, "choices.0.delta.tool_calls.0.id").String() == gjson.GetBytes(events[0].Data, "choices.0.delta.tool_calls.1.id").String() {
 		t.Fatal("tool argument deltas changed parallel call identity")
 	}
+
+	emptyIDDelta := []byte("data: {\"id\":\"raw\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call_real\",\"type\":\"function\",\"function\":{\"name\":\"lookup\",\"arguments\":\"{\"}}]}}]}\n\ndata: {\"id\":\"raw\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"\",\"function\":{\"arguments\":\"}\"}}]}}]}\n\ndata: [DONE]\n\n: keep-alive\n")
+	projectedEmpty, err := Project(Policy{Protocol: Chat, PublicModel: "sales"}, emptyIDDelta, true, Usage{})
+	if err != nil {
+		t.Fatalf("empty tool_calls id or trailing comment rejected: %v", err)
+	}
+	emptyEvents, err := Events(projectedEmpty)
+	if err != nil || len(emptyEvents) != 3 {
+		t.Fatalf("expected 3 events, got %d err=%v", len(emptyEvents), err)
+	}
+	if got := gjson.GetBytes(emptyEvents[1].Data, "choices.0.delta.tool_calls.0.id").String(); got != "" {
+		t.Fatalf("empty tool_calls delta id minted bogus alias %q", got)
+	}
+
+	msgNullDelta := []byte("event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"m\",\"content\":[],\"usage\":{\"input_tokens\":100,\"output_tokens\":0,\"cache_read_input_tokens\":25}}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"web_fetch_tool_result\",\"tool_use_id\":\"srvtoolu_1\",\"content\":{\"type\":\"web_fetch_result\",\"url\":\"https://example.com\",\"retrieved_at\":\"2026-01-01T00:00:00Z\"}}}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"input_tokens\":null,\"output_tokens\":12,\"cache_read_input_tokens\":null}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
+	mergedUsage := ReadUsage(msgNullDelta, Messages, true)
+	if string(mergedUsage.MessagesInput) != "100" || string(mergedUsage.Output) != "12" || string(mergedUsage.InputDetails["cached_tokens"]) != "25" {
+		t.Fatalf("null message_delta usage clobbered message_start counts: %+v", mergedUsage)
+	}
+	if _, err := Project(Policy{Protocol: Messages, PublicModel: "sales", Profile: DeepSeek}, msgNullDelta, true, mergedUsage); err != nil {
+		t.Fatalf("server tool result projection failed: %v", err)
+	}
 }

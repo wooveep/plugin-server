@@ -14,20 +14,22 @@ import (
 // managedNativeStream observes the original wire events. The same terminal
 // rules apply to a Router stream and an already buffered callout.
 type managedNativeStream struct {
-	protocol       string
-	terminalInput  bool
-	decoder        managedSSEDecoder
-	observed       managedProtocolObservation
-	invalid        bool
-	terminal       bool
-	messageStarted bool
-	stopReason     string
-	finalOutput    bool
-	messageUsage   map[string]json.RawMessage
-	publicUsage    clientresponse.Usage
-	collectText    bool
-	text           strings.Builder
-	textLimited    bool
+	protocol             string
+	terminalInput        bool
+	decoder              managedSSEDecoder
+	observed             managedProtocolObservation
+	invalid              bool
+	terminal             bool
+	messageStarted       bool
+	rawStopReason        string
+	stopReason           string
+	finalOutput          bool
+	terminalInputSettled bool
+	messageUsage         map[string]json.RawMessage
+	publicUsage          clientresponse.Usage
+	collectText          bool
+	text                 strings.Builder
+	textLimited          bool
 }
 
 func newManagedNativeStream(protocol string, terminalInput, collectText bool) *managedNativeStream {
@@ -52,14 +54,35 @@ func (s *managedNativeStream) push(chunk []byte, after func(managedProtocolEvent
 			kind = gjson.GetBytes(event.Data, "type").String()
 		}
 		// Completed Responses items echo the deltas already received.
-		if s.collectText && !s.textLimited && (kind == "response.output_text.delta" ||
-			kind == "response.function_call_arguments.delta" || kind == "content_block_delta") {
-			text := tokenestimate.ResponseText(event.Data)
-			if s.text.Len()+len(text) <= managedEstimateTextBytes {
-				s.text.WriteString(text)
-			} else {
-				s.textLimited = true
-				s.text.Reset()
+		if s.collectText && !s.textLimited {
+			var text string
+			switch kind {
+			case "response.output_text.delta", "response.function_call_arguments.delta":
+				text = tokenestimate.ResponseText(event.Data)
+			case "response.reasoning_text.delta", "response.reasoning_summary_text.delta",
+				"response.custom_tool_call_input.delta", "response.refusal.delta":
+				if delta := gjson.GetBytes(event.Data, "delta"); delta.Type == gjson.String {
+					text = delta.String()
+				}
+			case "content_block_delta":
+				text = tokenestimate.ResponseText(event.Data)
+				if text == "" {
+					delta := gjson.GetBytes(event.Data, "delta")
+					switch delta.Get("type").String() {
+					case "input_json_delta":
+						text = delta.Get("partial_json").String()
+					case "thinking_delta":
+						text = delta.Get("thinking").String()
+					}
+				}
+			}
+			if text != "" {
+				if s.text.Len()+len(text) <= managedEstimateTextBytes {
+					s.text.WriteString(text)
+				} else {
+					s.textLimited = true
+					s.text.Reset()
+				}
 			}
 		}
 		if after != nil {
@@ -71,8 +94,15 @@ func (s *managedNativeStream) push(chunk []byte, after func(managedProtocolEvent
 
 func (s *managedNativeStream) observeEvent(event managedProtocolEvent) bool {
 	if s.terminal {
-		return s.protocol == managedProtocolResponses && bytes.Equal(event.Data, []byte("[DONE]")) ||
-			s.protocol == managedProtocolMessages && s.observed.ProviderError
+		if s.protocol == managedProtocolResponses && bytes.Equal(event.Data, []byte("[DONE]")) ||
+			s.protocol == managedProtocolMessages && s.observed.ProviderError {
+			return true
+		}
+		if s.protocol == managedProtocolMessages || s.protocol == managedProtocolResponses {
+			_, kind, err := managedProtocolEventObject(event)
+			return err == nil && kind == "ping"
+		}
+		return false
 	}
 	object, kind, err := managedProtocolEventObject(event)
 	if err != nil {
@@ -121,9 +151,18 @@ func (s *managedNativeStream) observeMessages(object map[string]json.RawMessage,
 	case "message_start":
 		var message map[string]json.RawMessage
 		if s.messageStarted || json.Unmarshal(object["message"], &message) != nil || message == nil ||
-			!managedProtocolMergeModel(&s.observed.ResponseModel, message["model"]) ||
-			json.Unmarshal(message["usage"], &s.messageUsage) != nil || s.messageUsage == nil {
+			!managedProtocolMergeModel(&s.observed.ResponseModel, message["model"]) {
 			return false
+		}
+		if managedProtocolNull(message["usage"]) {
+			s.messageUsage = map[string]json.RawMessage{}
+		} else if json.Unmarshal(message["usage"], &s.messageUsage) != nil || s.messageUsage == nil {
+			return false
+		}
+		for key, value := range s.messageUsage {
+			if managedProtocolNull(value) {
+				delete(s.messageUsage, key)
+			}
 		}
 		s.messageStarted = true
 		s.publicUsage = clientresponse.ReadUsageObject(message["usage"], clientresponse.Messages)
@@ -136,22 +175,29 @@ func (s *managedNativeStream) observeMessages(object map[string]json.RawMessage,
 		if json.Unmarshal(object["delta"], &delta) != nil || delta == nil {
 			return false
 		}
-		terminalDelta := !managedProtocolNull(delta["stop_reason"])
-		if terminalDelta {
-			next := managedMessagesTerminal(map[string]json.RawMessage{"stop_reason": delta["stop_reason"]})
-			if s.stopReason != "" || next == "unknown" {
+		if !managedProtocolNull(delta["stop_reason"]) {
+			var rawReason string
+			if json.Unmarshal(delta["stop_reason"], &rawReason) != nil || rawReason == "" {
 				return false
 			}
+			next := managedMessagesTerminal(map[string]json.RawMessage{"stop_reason": delta["stop_reason"]})
+			if next == "unknown" || s.rawStopReason != "" && s.rawStopReason != rawReason {
+				return false
+			}
+			s.rawStopReason = rawReason
 			s.stopReason = next
 		}
-		if raw, exists := object["usage"]; exists {
+		if raw, exists := object["usage"]; exists && !managedProtocolNull(raw) {
 			var update map[string]json.RawMessage
 			if json.Unmarshal(raw, &update) != nil || update == nil {
 				return false
 			}
 			for key, value := range update {
-				switch {
-				case key == "output_tokens" || key == "input_tokens" && s.terminalInput && terminalDelta:
+				if managedProtocolNull(value) {
+					continue
+				}
+				switch key {
+				case "output_tokens":
 					next, valid := managedCount(value)
 					if !valid {
 						return false
@@ -159,11 +205,27 @@ func (s *managedNativeStream) observeMessages(object map[string]json.RawMessage,
 					if prior, valid := managedCount(s.messageUsage[key]); valid && next.Cmp(prior) < 0 {
 						return false
 					}
-					if key == "output_tokens" {
-						s.finalOutput = s.stopReason != ""
+					s.finalOutput = s.finalOutput || s.stopReason != ""
+				case "input_tokens":
+					next, valid := managedCount(value)
+					if !valid {
+						return false
 					}
-				default:
-					if prior, exists := s.messageUsage[key]; exists && key != "server_tool_use" && !bytes.Equal(prior, value) {
+					if s.terminalInputSettled {
+						if prior, valid := managedCount(s.messageUsage[key]); valid && next.Cmp(prior) != 0 {
+							return false
+						}
+					}
+					if s.stopReason != "" {
+						s.terminalInputSettled = true
+					}
+				case "cache_read_input_tokens", "cache_creation_input_tokens", "cache_write_tokens":
+					if _, valid := managedCount(value); !valid {
+						return false
+					}
+				case "cache_creation", "cache_write_tokens_details", "server_tool_use":
+					var nested map[string]json.RawMessage
+					if json.Unmarshal(value, &nested) != nil || nested == nil {
 						return false
 					}
 				}

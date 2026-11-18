@@ -257,9 +257,17 @@ func TestManagedProtocolMessagesAggregatedStreamRequiresFinalCumulativeUsage(t *
 	if observed.ExecutionResult != "succeeded" || observed.Usage.Status != "missing" {
 		t.Fatal("intermediate count was promoted to final cumulative usage")
 	}
-	invalid := strings.Replace(finish, `"output_tokens":2`, `"output_tokens":2,"input_tokens":1`, 1)
+	settled := strings.Replace(finish, `"output_tokens":2`, `"output_tokens":2,"input_tokens":8862`, 1)
+	if observed := profile.ObserveResponse(200, managedProtocolSSEHeaders, []byte(start+settled), true); observed.ExecutionResult != "succeeded" || observed.Usage.Status != "reported" || observed.Usage.Quantities["input"] != "8862" || observed.Usage.Quantities["output"] != "2" {
+		t.Fatalf("Messages settled input_tokens in message_delta was rejected: %#v", observed)
+	}
+	invalid := strings.Replace(finish, `"output_tokens":2`, `"output_tokens":2,"input_tokens":-1`, 1)
 	if observed := profile.ObserveResponse(200, managedProtocolSSEHeaders, []byte(start+invalid), true); observed.ExecutionResult != "unknown" || observed.Usage.Status != "missing" {
-		t.Fatal("Messages source count replacement was silently accepted")
+		t.Fatal("Messages negative input_tokens in message_delta was silently accepted")
+	}
+	decreasingOut := progress + strings.Replace(finish, `"output_tokens":2`, `"output_tokens":0`, 1)
+	if observed := profile.ObserveResponse(200, managedProtocolSSEHeaders, []byte(start+decreasingOut), true); observed.ExecutionResult != "unknown" || observed.Usage.Status != "missing" {
+		t.Fatal("Messages decreasing output_tokens was silently accepted")
 	}
 }
 

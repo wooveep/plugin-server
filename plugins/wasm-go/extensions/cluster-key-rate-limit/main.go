@@ -27,6 +27,7 @@ import (
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -166,7 +167,7 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, cfg config.ClusterKeyRateLimi
 				// 命中触发的第一条规则（按 collectMatchedRules 顺序，global 优先）
 				log.Debugf("cluster-key-rate-limit: rule[%d] key=%s triggered (current=%d > threshold=%d), rejecting with code %d",
 					i, matched[i].key, current, threshold, cfg.RejectedCode)
-				rejected(cfg, LimitContext{
+				rejected(ctx, cfg, LimitContext{
 					count:     threshold,
 					remaining: threshold - current,
 					reset:     ttl,
@@ -231,7 +232,7 @@ func collectMatchedRules(ctx wrapper.HttpContext, cfg config.ClusterKeyRateLimit
 
 	for _, ruleItem := range cfg.RuleItems {
 		val, hitRule, hitItem := hitRateRuleItem(ctx, ruleItem)
-		if hitRule != nil && hitItem != nil {
+		if hitRule != nil && hitItem != nil && hitItem.Count > 0 {
 			matched = append(matched, MatchedRule{
 				key:    fmt.Sprintf(ClusterRateLimitFormat, cfg.RuleName, hitRule.LimitType, hitItem.TimeWindow, hitRule.Key, val),
 				count:  hitItem.Count,
@@ -352,13 +353,22 @@ func getDownStreamIp(rule config.LimitRuleItem) (net.IP, error) {
 	return realIP, nil
 }
 
-func rejected(config config.ClusterKeyRateLimitConfig, context LimitContext) {
+func rejected(ctx wrapper.HttpContext, cfg config.ClusterKeyRateLimitConfig, context LimitContext) {
+	const detail = "cluster-key-rate-limit.rejected"
 	headers := make(map[string][]string)
 	headers[RateLimitResetHeader] = []string{strconv.Itoa(context.reset)}
-	if config.ShowLimitQuotaHeader {
+	if cfg.ShowLimitQuotaHeader {
 		headers[RateLimitLimitHeader] = []string{strconv.Itoa(context.count)}
 		headers[RateLimitRemainingHeader] = []string{strconv.Itoa(0)}
 	}
-	_ = proxywasm.SendHttpResponseWithDetail(
-		config.RejectedCode, "cluster-key-rate-limit.rejected", util.ReconvertHeaders(headers), []byte(config.RejectedMsg), -1)
+	reconverted := util.ReconvertHeaders(headers)
+	sent, err := clientresponse.SendLocalReply(ctx, cfg.LocalReplyPolicy, cfg.RejectedCode, detail, reconverted)
+	if err != nil {
+		proxywasm.LogCriticalf("cluster-key-rate-limit failed to send local reply (status=%d, detail=%s): %v", cfg.RejectedCode, detail, err)
+	} else if !sent {
+		if err := proxywasm.SendHttpResponseWithDetail(
+			cfg.RejectedCode, detail, reconverted, []byte(cfg.RejectedMsg), -1); err != nil {
+			proxywasm.LogCriticalf("cluster-key-rate-limit failed to send legacy rejection (status=%d, detail=%s): %v", cfg.RejectedCode, detail, err)
+		}
+	}
 }

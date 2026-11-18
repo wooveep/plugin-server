@@ -17,7 +17,7 @@ info:
   readmeUrl: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/cluster-key-rate-limit/README.md
   x-readmeUrl-i18n:
     en-US: https://github.com/alibaba/higress/blob/main/plugins/wasm-go/extensions/cluster-key-rate-limit/README_EN.md
-  version: 2.0.13
+  version: 2.0.14
   contact:
     name: Higress Team
     url: http://higress.io/
@@ -201,6 +201,7 @@ spec:
                         zh-CN: 匹配的键值，某些类型支持正则表达式或 *
                     query_per_second:
                       type: integer
+                      minimum: 0
                       title: Requests Per Second
                       x-title-i18n:
                         zh-CN: 每秒请求数
@@ -209,6 +210,7 @@ spec:
                         zh-CN: 允许每秒请求次数
                     query_per_minute:
                       type: integer
+                      minimum: 0
                       title: Requests Per Minute
                       x-title-i18n:
                         zh-CN: 每分钟请求数
@@ -217,6 +219,7 @@ spec:
                         zh-CN: 允许每分钟请求次数
                     query_per_hour:
                       type: integer
+                      minimum: 0
                       title: Requests Per Hour
                       x-title-i18n:
                         zh-CN: 每小时请求数
@@ -225,6 +228,7 @@ spec:
                         zh-CN: 允许每小时请求次数
                     query_per_day:
                       type: integer
+                      minimum: 0
                       title: Requests Per Day
                       x-title-i18n:
                         zh-CN: 每天请求数
@@ -322,6 +326,38 @@ spec:
               x-description-i18n:
                 zh-CN: 使用的 Redis 数据库 ID，例如配置为 1 对应 SELECT 1
               default: 0
+        local_reply_policy: &local_reply_policy
+          type: object
+          additionalProperties: false
+          required:
+          - input_protocol
+          properties:
+            input_protocol:
+              type: string
+              enum:
+              - openai_chat
+              - openai_completions
+              - openai_responses
+              - anthropic_messages
+            response_profile:
+              type: string
+              enum:
+              - deepseek
+              - qwen
+              - openai
+          allOf:
+          - if:
+              properties:
+                input_protocol:
+                  const: anthropic_messages
+              required:
+              - input_protocol
+            then:
+              properties:
+                response_profile:
+                  enum:
+                  - deepseek
+                  - qwen
       required:
       - rule_name
       - redis
@@ -527,6 +563,7 @@ spec:
                         zh-CN: 匹配的键值，某些类型支持正则表达式或 *
                     query_per_second:
                       type: integer
+                      minimum: 0
                       title: Requests Per Second
                       x-title-i18n:
                         zh-CN: 每秒请求数
@@ -535,6 +572,7 @@ spec:
                         zh-CN: 允许每秒请求次数
                     query_per_minute:
                       type: integer
+                      minimum: 0
                       title: Requests Per Minute
                       x-title-i18n:
                         zh-CN: 每分钟请求数
@@ -543,6 +581,7 @@ spec:
                         zh-CN: 允许每分钟请求次数
                     query_per_hour:
                       type: integer
+                      minimum: 0
                       title: Requests Per Hour
                       x-title-i18n:
                         zh-CN: 每小时请求数
@@ -551,6 +590,7 @@ spec:
                         zh-CN: 允许每小时请求次数
                     query_per_day:
                       type: integer
+                      minimum: 0
                       title: Requests Per Day
                       x-title-i18n:
                         zh-CN: 每天请求数
@@ -648,6 +688,7 @@ spec:
               x-description-i18n:
                 zh-CN: 使用的 Redis 数据库 ID，例如配置为 1 对应 SELECT 1
               default: 0
+        local_reply_policy: *local_reply_policy
       required:
       - rule_name
       - redis

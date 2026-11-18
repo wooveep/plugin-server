@@ -140,12 +140,14 @@ func (s *managedChatStream) observeEvent(event managedProtocolEvent) {
 			}
 			if raw := choice["finish_reason"]; !managedProtocolNull(raw) {
 				var reason string
-				if json.Unmarshal(raw, &reason) != nil || reason == "" {
+				if json.Unmarshal(raw, &reason) != nil {
 					s.invalid = true
 					return
 				}
-				s.finished[key] = true
-				s.partial = s.partial || reason == "length" || reason == "content_filter"
+				if reason != "" {
+					s.finished[key] = true
+					s.partial = s.partial || reason == "length" || reason == "content_filter" || reason == "sensitive" || reason == "model_context_window_exceeded"
+				}
 			}
 		}
 	}

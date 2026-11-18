@@ -410,8 +410,8 @@ func createConfigItemFromRate(item gjson.Result, itemType LimitConfigItemType, k
 		q := item.Get(timeWindowKey)
 		if q.Exists() {
 			count := q.Int()
-			if count <= 0 {
-				return nil, fmt.Errorf("'%s' must be a positive integer for key '%s', got %d", timeWindowKey, key, count)
+			if q.Type != gjson.Number || count < 0 || q.Float() != float64(count) {
+				return nil, fmt.Errorf("'%s' must be a non-negative integer for key '%s', got %s", timeWindowKey, key, q.Raw)
 			}
 			return &LimitConfigItem{
 				ConfigType: itemType,
