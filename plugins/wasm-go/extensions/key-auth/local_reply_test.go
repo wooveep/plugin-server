@@ -7,11 +7,23 @@ import (
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
+	"github.com/higress-group/wasm-go/pkg/iface"
 	"github.com/higress-group/wasm-go/pkg/test"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
+
+type keyAuthCommittedCtx struct {
+	wrapper.HttpContext
+}
+
+func (keyAuthCommittedCtx) GetExecutionPhase() iface.HTTPExecutionPhase { return iface.EncodeHeader }
+func (keyAuthCommittedCtx) GetStringContext(string, string) string      { return "req-ka-committed" }
+func (keyAuthCommittedCtx) GetContext(string) interface{}               { return nil }
+func (keyAuthCommittedCtx) Host() string                                { return "ai.example.com" }
+func (keyAuthCommittedCtx) Path() string                                { return "/v1/messages" }
 
 func TestKeyAuthLocalReplyStaticRulesAndSecurityBoundaries(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
@@ -259,6 +271,26 @@ func TestKeyAuthLocalReplyStaticRulesAndSecurityBoundaries(t *testing.T) {
 			host, status := test.NewTestHost(bad)
 			defer host.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, status)
+		})
+
+		t.Run("committed_response_phase_logs_critical_without_legacy_double_send_ST01", func(t *testing.T) {
+			host, status := test.NewTestHost([]byte(rawCfg))
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+			host.InitHttp()
+
+			policy, err := clientresponse.ParseLocalReplyPolicy(clientresponse.Messages, "qwen")
+			require.NoError(t, err)
+			cfg := KeyAuthConfig{
+				Realm:      "AI Gateway",
+				localReply: clientresponse.LocalReplySelector{Policy: &policy},
+			}
+			action := sendKeyAuthDenial(keyAuthCommittedCtx{}, cfg, http.StatusUnauthorized, "key-auth.no_key", "legacy fallback must not send")
+			require.Equal(t, types.ActionContinue, action)
+			require.Nil(t, host.GetLocalResponse(), "must not fall through to legacy SendHttpResponseWithDetail after committed response")
+			joined := strings.Join(host.GetCriticalLogs(), "\n")
+			require.Contains(t, joined, "key-auth failed to send local reply (status=401, detail=key-auth.no_key)")
+			require.Contains(t, joined, clientresponse.ErrLocalReplyAfterResponseCommitted.Error())
 		})
 	})
 }

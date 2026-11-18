@@ -3,13 +3,28 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
+	"github.com/higress-group/wasm-go/pkg/iface"
 	"github.com/higress-group/wasm-go/pkg/test"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/sjson"
 )
+
+type historyCommittedCtx struct {
+	wrapper.HttpContext
+}
+
+func (historyCommittedCtx) GetExecutionPhase() iface.HTTPExecutionPhase { return iface.EncodeHeader }
+func (historyCommittedCtx) GetStringContext(string, string) string      { return "req-history-committed" }
+func (historyCommittedCtx) GetContext(string) interface{}               { return nil }
+func (historyCommittedCtx) SetContext(string, interface{})              {}
+func (historyCommittedCtx) DontReadRequestBody()                        {}
+func (historyCommittedCtx) DontReadResponseBody()                       {}
 
 func TestHistoryLocalReplyConfigValidationU02(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
@@ -25,6 +40,19 @@ func TestHistoryLocalReplyConfigValidationU02(t *testing.T) {
 			host.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, status, "invalid policy %d", idx)
 		}
+
+		host, status := test.NewTestHost(json.RawMessage(historyCaptureConfig("anthropic_messages")))
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		host.InitHttp()
+
+		policy, err := clientresponse.ParseLocalReplyPolicy(clientresponse.Messages, "qwen")
+		require.NoError(t, err)
+		require.Equal(t, types.ActionPause, rejectHistoryBodyBasis(historyCommittedCtx{}, &policy, http.StatusUnsupportedMediaType, "json_required"))
+		require.Nil(t, host.GetLocalResponse(), "must not send legacy fallback when SendLocalReply fails on committed response")
+		joined := strings.Join(host.GetCriticalLogs(), "\n")
+		require.Contains(t, joined, "ai-history failed to send local reply (status=415, detail=modelfusion.local.ai-history.json_required)")
+		require.Contains(t, joined, clientresponse.ErrLocalReplyAfterResponseCommitted.Error())
 	})
 }
 

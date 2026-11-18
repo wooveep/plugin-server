@@ -306,10 +306,17 @@ func onHttpRequestHeaders(context wrapper.HttpContext, config QuotaConfig) types
 }
 
 func sendQuotaResponse(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy, status uint32, detail, legacyBody string) {
-	if sent, _ := clientresponse.SendLocalReply(ctx, policy, status, detail, nil); sent {
+	sent, err := clientresponse.SendLocalReply(ctx, policy, status, detail, nil)
+	if err != nil {
+		proxywasm.LogCriticalf("ai-quota failed to send local reply (status=%d, detail=%s): %v", status, detail, err)
 		return
 	}
-	_ = util.SendResponse(status, detail, "text/plain", legacyBody)
+	if sent {
+		return
+	}
+	if err := util.SendResponse(status, detail, "text/plain", legacyBody); err != nil {
+		proxywasm.LogCriticalf("ai-quota failed to send legacy response (status=%d, detail=%s): %v", status, detail, err)
+	}
 }
 
 func deniedMissingIdentity(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy) types.Action {

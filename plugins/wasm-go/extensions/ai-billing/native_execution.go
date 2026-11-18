@@ -275,6 +275,22 @@ func validateNativeBillingCredentials(value gjson.Result, release nativeBillingR
 	return nil
 }
 
+func rejectNativeBillingUnavailable(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy, legacyBody []byte) types.Action {
+	const (
+		status uint32 = 503
+		detail        = "modelfusion.local.accounting_unavailable"
+	)
+	sent, err := clientresponse.SendLocalReply(ctx, policy, status, detail, nil)
+	if err != nil {
+		proxywasm.LogCriticalf("ai-billing failed to send local reply (status=%d, detail=%s): %v", status, detail, err)
+	} else if !sent {
+		if err := proxywasm.SendHttpResponseWithDetail(status, detail, [][2]string{{"content-type", "application/json"}}, legacyBody, -1); err != nil {
+			proxywasm.LogCriticalf("ai-billing failed to send legacy accounting rejection (status=%d, detail=%s): %v", status, detail, err)
+		}
+	}
+	return types.ActionPause
+}
+
 // Quota precedes billing and installs this call's committed admission identity.
 // Proxy or cache later supplies the sole delivery bridge; attempt IDs stay separate.
 func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (types.Action, bool) {
@@ -283,10 +299,7 @@ func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (
 	}
 	if err := observedusage.Clear(); err != nil {
 		nativeBillingGap(ctx, nil, "internal_usage_state_unavailable")
-		if sent, _ := clientresponse.SendLocalReply(ctx, cfg.LocalReplyPolicy, 503, "modelfusion.local.accounting_unavailable", nil); !sent {
-			_ = proxywasm.SendHttpResponseWithDetail(503, "modelfusion.local.accounting_unavailable", [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"metering_unavailable","message":"Metering temporarily unavailable"}}`), -1)
-		}
-		return types.ActionPause, true
+		return rejectNativeBillingUnavailable(ctx, cfg.LocalReplyPolicy, []byte(`{"error":{"code":"metering_unavailable","message":"Metering temporarily unavailable"}}`)), true
 	}
 	ctx.SetContext(ctxBillingEnabled, false)
 	ctx.DontReadRequestBody()
@@ -305,10 +318,7 @@ func onNativeBillingRequestHeaders(ctx wrapper.HttpContext, cfg BillingConfig) (
 		return types.ActionContinue, true
 	}
 	if configured.outbox != nil && !configured.outbox.Accepting() {
-		if sent, _ := clientresponse.SendLocalReply(ctx, cfg.LocalReplyPolicy, 503, "modelfusion.local.accounting_unavailable", nil); !sent {
-			_ = proxywasm.SendHttpResponseWithDetail(503, "modelfusion.local.accounting_unavailable", [][2]string{{"content-type", "application/json"}}, []byte(`{"error":{"code":"accounting_delivery_unavailable","message":"Accounting temporarily unavailable"}}`), -1)
-		}
-		return types.ActionPause, true
+		return rejectNativeBillingUnavailable(ctx, cfg.LocalReplyPolicy, []byte(`{"error":{"code":"accounting_delivery_unavailable","message":"Accounting temporarily unavailable"}}`)), true
 	}
 	state := &nativeBillingState{config: configured}
 	ctx.SetContext(nativeBillingContextKey, state)

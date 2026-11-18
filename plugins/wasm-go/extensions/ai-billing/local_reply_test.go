@@ -4,13 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
+	"github.com/higress-group/wasm-go/pkg/iface"
 	wasmtest "github.com/higress-group/wasm-go/pkg/test"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/stretchr/testify/require"
 )
+
+type billingCommittedCtx struct {
+	wrapper.HttpContext
+}
+
+func (billingCommittedCtx) GetExecutionPhase() iface.HTTPExecutionPhase { return iface.EncodeHeader }
+func (billingCommittedCtx) GetStringContext(string, string) string      { return "req-billing-committed" }
+func (billingCommittedCtx) GetContext(string) interface{}               { return nil }
 
 func saturateBillingOutbox(t *testing.T, cfg BillingConfig) {
 	t.Helper()
@@ -79,6 +91,26 @@ func TestBillingLocalReplyConfigValidationAndRuleIsolationU02U04(t *testing.T) {
 			matched, err := host.GetMatchConfig()
 			require.NoError(t, err)
 			require.Nil(t, matched.(*BillingConfig).LocalReplyPolicy)
+		})
+
+		t.Run("committed response phase logs critical without legacy double send ST01", func(t *testing.T) {
+			doc, err := json.Marshal(map[string]any{
+				"redis_stream": map[string]any{"service_name": "redis.static", "service_port": 6379, "stream": "billing:events"},
+				"_rules_":      []any{ruleFixture},
+			})
+			require.NoError(t, err)
+			host, status := wasmtest.NewTestHost(doc)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+			host.InitHttp()
+
+			policy, err := clientresponse.ParseLocalReplyPolicy(clientresponse.Messages, "qwen")
+			require.NoError(t, err)
+			require.Equal(t, types.ActionPause, rejectNativeBillingUnavailable(billingCommittedCtx{}, &policy, []byte(`{"error":"legacy"}`)))
+			require.Nil(t, host.GetLocalResponse(), "must not send legacy fallback when SendLocalReply fails on committed response")
+			joined := strings.Join(host.GetCriticalLogs(), "\n")
+			require.Contains(t, joined, "ai-billing failed to send local reply (status=503, detail=modelfusion.local.accounting_unavailable)")
+			require.Contains(t, joined, clientresponse.ErrLocalReplyAfterResponseCommitted.Error())
 		})
 	})
 }

@@ -89,10 +89,13 @@ func rejectHistoryBodyBasis(ctx wrapper.HttpContext, policy *clientresponse.Loca
 	ctx.DontReadRequestBody()
 	ctx.DontReadResponseBody()
 	detail := "modelfusion.local.ai-history." + code
-	if sent, _ := clientresponse.SendLocalReply(ctx, policy, status, detail, nil); !sent {
+	sent, err := clientresponse.SendLocalReply(ctx, policy, status, detail, nil)
+	if err != nil {
+		proxywasm.LogCriticalf("ai-history failed to send local reply (status=%d, detail=%s): %v", status, detail, err)
+	} else if !sent {
 		body := []byte(`{"error":{"code":"` + code + `","type":"history_body_basis_error"}}`)
-		if proxywasm.SendHttpResponseWithDetail(status, detail, [][2]string{{"content-type", "application/json"}}, body, -1) != nil {
-			proxywasm.LogCritical("ai-history could not send body-basis rejection")
+		if err := proxywasm.SendHttpResponseWithDetail(status, detail, [][2]string{{"content-type", "application/json"}}, body, -1); err != nil {
+			proxywasm.LogCriticalf("ai-history could not send body-basis rejection (status=%d, detail=%s): %v", status, detail, err)
 		}
 	}
 	return types.ActionPause

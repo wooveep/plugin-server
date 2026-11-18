@@ -7,9 +7,21 @@ import (
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
+	"github.com/higress-group/wasm-go/pkg/iface"
 	"github.com/higress-group/wasm-go/pkg/test"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/stretchr/testify/require"
 )
+
+type quotaCommittedCtx struct {
+	wrapper.HttpContext
+}
+
+func (quotaCommittedCtx) GetExecutionPhase() iface.HTTPExecutionPhase { return iface.EncodeHeader }
+func (quotaCommittedCtx) GetStringContext(string, string) string      { return "req-quota-committed" }
+func (quotaCommittedCtx) GetContext(string) interface{}               { return nil }
+func (quotaCommittedCtx) SetUserAttribute(string, interface{})        {}
 
 func TestQuotaLocalReplyConfigValidationU02(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
@@ -38,6 +50,23 @@ func TestQuotaLocalReplyConfigValidationU02(t *testing.T) {
 			ruleHost.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, ruleStatus, "rule invalid case %d", idx)
 		}
+
+		host, status := test.NewTestHost(quotaConfigWith(map[string]any{
+			"local_reply_policy": map[string]any{"input_protocol": "openai_chat"},
+		}))
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		host.InitHttp()
+
+		policy, err := clientresponse.ParseLocalReplyPolicy(clientresponse.Chat, "deepseek")
+		require.NoError(t, err)
+		sendQuotaResponse(quotaCommittedCtx{}, &policy, http.StatusForbidden, "ai-quota.no_balance", "legacy body")
+		executionAdmissionReject(quotaCommittedCtx{}, &policy, http.StatusForbidden, "check_denied")
+		require.Nil(t, host.GetLocalResponse(), "must not send legacy fallback when SendLocalReply fails on committed response")
+		joined := strings.Join(host.GetCriticalLogs(), "\n")
+		require.Contains(t, joined, "ai-quota failed to send local reply (status=403, detail=ai-quota.no_balance)")
+		require.Contains(t, joined, "ai-quota failed to send execution admission local reply (status=403, detail=execution_admission_check_denied)")
+		require.Contains(t, joined, clientresponse.ErrLocalReplyAfterResponseCommitted.Error())
 	})
 }
 

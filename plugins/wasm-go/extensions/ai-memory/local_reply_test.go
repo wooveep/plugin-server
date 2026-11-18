@@ -2,13 +2,29 @@ package main
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
+	"github.com/higress-group/wasm-go/pkg/iface"
 	"github.com/higress-group/wasm-go/pkg/test"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/sjson"
 )
+
+type memoryCommittedCtx struct {
+	wrapper.HttpContext
+}
+
+func (memoryCommittedCtx) GetExecutionPhase() iface.HTTPExecutionPhase { return iface.EncodeHeader }
+func (memoryCommittedCtx) GetStringContext(string, string) string      { return "req-memory-committed" }
+func (memoryCommittedCtx) GetContext(string) interface{}               { return nil }
+func (memoryCommittedCtx) SetContext(string, interface{})              {}
+func (memoryCommittedCtx) SetUserAttribute(string, interface{})        {}
+func (memoryCommittedCtx) WriteUserAttributeToLog() error              { return nil }
+func (memoryCommittedCtx) DontReadRequestBody()                        {}
 
 func TestMemoryLocalReplyConfigValidationU02(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
@@ -24,6 +40,19 @@ func TestMemoryLocalReplyConfigValidationU02(t *testing.T) {
 			host.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, status, "invalid policy %d", idx)
 		}
+
+		host, status := newMemoryConfigTestHost(base)
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		host.InitHttp()
+
+		policy, err := clientresponse.ParseLocalReplyPolicy(clientresponse.Messages, "deepseek")
+		require.NoError(t, err)
+		require.Equal(t, types.ActionPause, rejectMemoryBodyBasis(memoryCommittedCtx{}, &policy, http.StatusUnsupportedMediaType, "content_encoding_unsupported"))
+		require.Nil(t, host.GetLocalResponse(), "must not send legacy fallback when SendLocalReply fails on committed response")
+		joined := strings.Join(host.GetCriticalLogs(), "\n")
+		require.Contains(t, joined, "ai-memory failed to send local reply (status=415, detail=modelfusion.local.ai-memory.content_encoding_unsupported)")
+		require.Contains(t, joined, clientresponse.ErrLocalReplyAfterResponseCommitted.Error())
 	})
 }
 

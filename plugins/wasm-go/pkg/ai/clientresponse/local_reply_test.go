@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/iface"
 	"github.com/tidwall/gjson"
 )
@@ -260,6 +262,9 @@ func (p phaseStubHttpContext) GetStringContext(string, string) string      { ret
 func (p phaseStubHttpContext) GetContext(string) interface{}               { return nil }
 
 func TestLocalReplyRefusesCommittedResponsePhasesU09(t *testing.T) {
+	host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption())
+	defer reset()
+
 	policy, err := ParseLocalReplyPolicy(Chat, "deepseek")
 	if err != nil {
 		t.Fatal(err)
@@ -282,11 +287,113 @@ func TestLocalReplyRefusesCommittedResponsePhasesU09(t *testing.T) {
 			t.Fatalf("SendLocalReply in phase %v must refuse without host send: handled=%v err=%v", phase, handled, sendErr)
 		}
 	}
+	critLogs := host.GetCriticalLogs()
+	if len(critLogs) != 3 {
+		t.Fatalf("expected 3 critical logs across committed phases, got %d: %v", len(critLogs), critLogs)
+	}
+	for _, entry := range critLogs {
+		if !strings.Contains(entry, "status=500") ||
+			!strings.Contains(entry, "detail=modelfusion.local.model-mapper.header_read_failed") ||
+			!strings.Contains(entry, ErrLocalReplyAfterResponseCommitted.Error()) {
+			t.Fatalf("critical log missing status/detail/error: %q", entry)
+		}
+	}
 	for _, phase := range []iface.HTTPExecutionPhase{iface.DecodeHeader, iface.DecodeData} {
 		if ResponseHeadersCommitted(phaseStubHttpContext{phase: phase}) {
 			t.Fatalf("request phase %v must not report committed", phase)
 		}
 	}
+}
+
+func TestSendLocalReplyErrorPropagationAndCriticalLoggingST01(t *testing.T) {
+	policy, err := ParseLocalReplyPolicy(Chat, "deepseek")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reqCtx := phaseStubHttpContext{phase: iface.DecodeHeader}
+
+	t.Run("encoding_failure_unregistered_detail_logs_critical_without_host_send", func(t *testing.T) {
+		host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption())
+		defer reset()
+
+		sendCalls := 0
+		handled, sendErr := sendLocalReply(reqCtx, &policy, 400, "unregistered.detail", nil, func(uint32, string, [][2]string, []byte, int32) error {
+			sendCalls++
+			return nil
+		})
+		if !handled || sendErr == nil {
+			t.Fatalf("expected (true, err) on unregistered detail, got handled=%v err=%v", handled, sendErr)
+		}
+		if sendCalls != 0 {
+			t.Fatalf("host send must not be called when encoding fails, got %d calls", sendCalls)
+		}
+		critLogs := host.GetCriticalLogs()
+		if len(critLogs) != 1 ||
+			!strings.Contains(critLogs[0], "status=400") ||
+			!strings.Contains(critLogs[0], "detail=unregistered.detail") ||
+			!strings.Contains(critLogs[0], "unregistered local reply detail") {
+			t.Fatalf("unexpected critical logs: %v", critLogs)
+		}
+	})
+
+	t.Run("encoding_failure_invalid_policy_logs_critical_without_host_send", func(t *testing.T) {
+		host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption())
+		defer reset()
+
+		sendCalls := 0
+		badPolicy := LocalReplyPolicy{Protocol: Messages, Profile: OpenAI}
+		handled, sendErr := sendLocalReply(reqCtx, &badPolicy, 401, "key-auth.no_key", nil, func(uint32, string, [][2]string, []byte, int32) error {
+			sendCalls++
+			return nil
+		})
+		if !handled || !errors.Is(sendErr, ErrInvalidLocalReplyPolicy) {
+			t.Fatalf("expected (true, ErrInvalidLocalReplyPolicy), got handled=%v err=%v", handled, sendErr)
+		}
+		if sendCalls != 0 {
+			t.Fatalf("host send must not be called when policy is invalid, got %d calls", sendCalls)
+		}
+		critLogs := host.GetCriticalLogs()
+		if len(critLogs) != 1 ||
+			!strings.Contains(critLogs[0], "status=401") ||
+			!strings.Contains(critLogs[0], "detail=key-auth.no_key") ||
+			!strings.Contains(critLogs[0], ErrInvalidLocalReplyPolicy.Error()) {
+			t.Fatalf("unexpected critical logs: %v", critLogs)
+		}
+	})
+
+	t.Run("host_send_failure_propagates_error_logs_critical_and_never_double_sends", func(t *testing.T) {
+		host, reset := proxytest.NewHostEmulator(proxytest.NewEmulatorOption())
+		defer reset()
+
+		sendCalls := 0
+		handled, sendErr := sendLocalReply(
+			reqCtx,
+			&policy,
+			429,
+			"ai-token-ratelimit.rejected",
+			[][2]string{{"X-TokenRateLimit-Reset", "30"}},
+			func(statusCode uint32, detail string, headers [][2]string, body []byte, _ int32) error {
+				sendCalls++
+				if statusCode != 429 || detail != "ai-token-ratelimit.rejected" || len(body) == 0 {
+					t.Fatalf("unexpected encoded payload passed to host send: status=%d detail=%s body=%q", statusCode, detail, string(body))
+				}
+				return types.ErrorStatusBadArgument
+			},
+		)
+		if !handled || !errors.Is(sendErr, types.ErrorStatusBadArgument) {
+			t.Fatalf("expected (true, ErrorStatusBadArgument), got handled=%v err=%v", handled, sendErr)
+		}
+		if sendCalls != 1 {
+			t.Fatalf("expected exactly 1 host send attempt (no double-send), got %d", sendCalls)
+		}
+		critLogs := host.GetCriticalLogs()
+		if len(critLogs) != 1 ||
+			!strings.Contains(critLogs[0], "status=429") ||
+			!strings.Contains(critLogs[0], "detail=ai-token-ratelimit.rejected") ||
+			!strings.Contains(critLogs[0], types.ErrorStatusBadArgument.Error()) {
+			t.Fatalf("unexpected critical logs: %v", critLogs)
+		}
+	})
 }
 
 func TestLocalReplySelectorPreRouteAndCustomMessagesPathU10(t *testing.T) {

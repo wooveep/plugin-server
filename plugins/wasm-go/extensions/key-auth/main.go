@@ -133,7 +133,7 @@ type credentialCandidate struct {
 // @Description zh-CN 本插件实现了实现了基于 API Key 进行认证鉴权的功能.
 // @Description en-US This plugin implements an authentication function based on API Key Auth standard.
 // @IconUrl https://img.alicdn.com/imgextra/i4/O1CN01BPFGlT1pGZ2VDLgaH_!!6000000005333-2-tps-42-42.png
-// @Version 1.2.16
+// @Version 1.2.17
 //
 // @Contact.name Higress Team
 // @Contact.url http://higress.io/
@@ -829,13 +829,17 @@ func sendKeyAuthDenial(ctx wrapper.HttpContext, config KeyAuthConfig, status uin
 	if rawPath == "" {
 		rawPath, _ = proxywasm.GetHttpRequestHeader(":path")
 	}
-	if handled, err := clientresponse.SendLocalReply(ctx, config.localReply.Resolve(host, rawPath), status, detail, authHeaders); handled {
-		if err != nil {
-			log.Errorf("key-auth local reply encoding failed: %v", err)
-		}
+	handled, err := clientresponse.SendLocalReply(ctx, config.localReply.Resolve(host, rawPath), status, detail, authHeaders)
+	if err != nil {
+		log.Criticalf("key-auth failed to send local reply (status=%d, detail=%s): %v", status, detail, err)
 		return types.ActionContinue
 	}
-	_ = proxywasm.SendHttpResponseWithDetail(status, detail, authHeaders, []byte(legacyMessage), -1)
+	if handled {
+		return types.ActionContinue
+	}
+	if err := proxywasm.SendHttpResponseWithDetail(status, detail, authHeaders, []byte(legacyMessage), -1); err != nil {
+		log.Criticalf("key-auth failed to send legacy denial (status=%d, detail=%s): %v", status, detail, err)
+	}
 	return types.ActionContinue
 }
 

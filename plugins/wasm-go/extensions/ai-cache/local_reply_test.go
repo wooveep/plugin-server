@@ -3,14 +3,27 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/memorycache"
+	"github.com/higress-group/wasm-go/pkg/iface"
 	"github.com/higress-group/wasm-go/pkg/test"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/sjson"
 )
+
+type cacheCommittedCtx struct {
+	wrapper.HttpContext
+}
+
+func (cacheCommittedCtx) GetExecutionPhase() iface.HTTPExecutionPhase { return iface.EncodeHeader }
+func (cacheCommittedCtx) GetStringContext(string, string) string      { return "req-cache-committed" }
+func (cacheCommittedCtx) GetContext(string) interface{}               { return nil }
+func (cacheCommittedCtx) SetUserAttribute(string, interface{})        {}
 
 func TestNativeCacheLocalReplyConfigValidationU02U08(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
@@ -56,6 +69,28 @@ func TestNativeCacheLocalReplyConfigValidationU02U08(t *testing.T) {
 			host, status := test.NewTestHost(raw)
 			host.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, status)
+		})
+
+		t.Run("committed response phase logs critical without legacy double send ST01", func(t *testing.T) {
+			raw, err := sjson.SetBytes(nativeCacheExecutionConfig(t, true), "local_reply_policy", map[string]any{
+				"input_protocol": "openai_chat",
+			})
+			require.NoError(t, err)
+			host, status := test.NewTestHost(raw)
+			defer host.Reset()
+			require.Equal(t, types.OnPluginStartStatusOK, status)
+			host.InitHttp()
+
+			policy, err := clientresponse.ParseLocalReplyPolicy(clientresponse.Chat, "deepseek")
+			require.NoError(t, err)
+			state := &nativeCacheDeliveryState{
+				config: &nativeCacheDeliveryConfig{localReplyPolicy: &policy},
+			}
+			require.False(t, rejectNativeCache(cacheCommittedCtx{}, state, http.StatusForbidden, "authenticated_caller_missing"))
+			require.Nil(t, host.GetLocalResponse(), "must not send legacy fallback when SendLocalReply fails on committed response")
+			joined := strings.Join(host.GetCriticalLogs(), "\n")
+			require.Contains(t, joined, "ai-cache failed to send local reply (status=403, detail=ai-cache.execution_delivery.authenticated_caller_missing)")
+			require.Contains(t, joined, clientresponse.ErrLocalReplyAfterResponseCommitted.Error())
 		})
 	})
 }

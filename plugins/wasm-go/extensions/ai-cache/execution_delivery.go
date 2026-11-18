@@ -492,8 +492,13 @@ func rejectNativeCache(ctx wrapper.HttpContext, state *nativeCacheDeliveryState,
 		policy, _ = ctx.GetContext(CACHE_LOCAL_REPLY_POLICY_KEY).(*clientresponse.LocalReplyPolicy)
 	}
 	detail := "ai-cache.execution_delivery." + reason
-	if sent, _ := clientresponse.SendLocalReply(ctx, policy, status, detail, nil); !sent {
-		_ = proxywasm.SendHttpResponseWithDetail(status, detail, [][2]string{{"content-type", "application/json"}}, []byte(`{"error":"native cache request unavailable"}`), -1)
+	sent, err := clientresponse.SendLocalReply(ctx, policy, status, detail, nil)
+	if err != nil {
+		proxywasm.LogCriticalf("ai-cache failed to send local reply (status=%d, detail=%s): %v", status, detail, err)
+	} else if !sent {
+		if err := proxywasm.SendHttpResponseWithDetail(status, detail, [][2]string{{"content-type", "application/json"}}, []byte(`{"error":"native cache request unavailable"}`), -1); err != nil {
+			proxywasm.LogCriticalf("ai-cache failed to send legacy rejection (status=%d, detail=%s): %v", status, detail, err)
+		}
 	}
 	return false
 }

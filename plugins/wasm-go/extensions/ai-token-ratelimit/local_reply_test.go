@@ -4,13 +4,27 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 
+	"ai-token-ratelimit/config"
+
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
+	"github.com/higress-group/wasm-go/pkg/iface"
 	"github.com/higress-group/wasm-go/pkg/test"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/resp"
 )
+
+type tpmCommittedCtx struct {
+	wrapper.HttpContext
+}
+
+func (tpmCommittedCtx) GetExecutionPhase() iface.HTTPExecutionPhase { return iface.EncodeHeader }
+func (tpmCommittedCtx) GetStringContext(string, string) string      { return "req-tpm-committed" }
+func (tpmCommittedCtx) GetContext(string) interface{}               { return nil }
 
 func bigintMultiRuleResp(threshold, current string, ttl int) []byte {
 	raw, _ := resp.ArrayValue([]resp.Value{
@@ -61,6 +75,35 @@ func TestTokenRateLimitLocalReplyConfigValidationU02(t *testing.T) {
 		zeroHost, zeroStatus := test.NewTestHost(zeroThresholdCfg)
 		zeroHost.Reset()
 		require.Equal(t, types.OnPluginStartStatusFailed, zeroStatus)
+
+		okCfg, err := json.Marshal(map[string]any{
+			"rule_name": "ai-token-st01",
+			"global_threshold": map[string]any{
+				"token_per_minute": 100,
+			},
+			"redis": map[string]any{
+				"service_name": "redis.static",
+				"service_port": 6379,
+			},
+			"rejected_code": 429,
+			"rejected_msg":  "legacy-msg",
+			"local_reply_policy": map[string]any{
+				"input_protocol": "openai_chat",
+			},
+		})
+		require.NoError(t, err)
+		host, status := test.NewTestHost(okCfg)
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		matched, err := host.GetMatchConfig()
+		require.NoError(t, err)
+		host.InitHttp()
+
+		rejected(tpmCommittedCtx{}, *matched.(*config.AiTokenRateLimitConfig), 20)
+		require.Nil(t, host.GetLocalResponse(), "must not send legacy fallback when SendLocalReply fails on committed response")
+		joined := strings.Join(host.GetCriticalLogs(), "\n")
+		require.Contains(t, joined, "ai-token-ratelimit failed to send local reply (status=429, detail=ai-token-ratelimit.rejected)")
+		require.Contains(t, joined, clientresponse.ErrLocalReplyAfterResponseCommitted.Error())
 	})
 }
 

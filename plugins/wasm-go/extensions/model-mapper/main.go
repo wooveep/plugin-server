@@ -283,10 +283,13 @@ func reject(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy, st
 	ctx.SetContext(rejectedContextKey, true)
 	ctx.DontReadRequestBody()
 	detail := "modelfusion.local.model-mapper." + code
-	if sent, _ := clientresponse.SendLocalReply(ctx, policy, status, detail, nil); !sent {
+	sent, err := clientresponse.SendLocalReply(ctx, policy, status, detail, nil)
+	if err != nil {
+		proxywasm.LogCriticalf("model-mapper failed to send local reply (status=%d, detail=%s): %v", status, detail, err)
+	} else if !sent {
 		response := []byte(`{"error":{"code":"` + code + `","type":"model_mapper_error"}}`)
 		if err := proxywasm.SendHttpResponseWithDetail(status, detail, [][2]string{{"content-type", "application/json"}}, response, -1); err != nil {
-			proxywasm.LogCritical("model-mapper could not send local rejection")
+			proxywasm.LogCriticalf("model-mapper could not send local rejection (status=%d, detail=%s): %v", status, detail, err)
 		}
 	}
 	return types.ActionPause

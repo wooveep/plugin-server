@@ -4,12 +4,26 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
+	"github.com/higress-group/wasm-go/pkg/iface"
 	"github.com/higress-group/wasm-go/pkg/test"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/stretchr/testify/require"
 )
+
+type mapperCommittedCtx struct {
+	wrapper.HttpContext
+}
+
+func (mapperCommittedCtx) GetExecutionPhase() iface.HTTPExecutionPhase { return iface.EncodeHeader }
+func (mapperCommittedCtx) GetStringContext(string, string) string      { return "req-mapper-committed" }
+func (mapperCommittedCtx) GetContext(string) interface{}               { return nil }
+func (mapperCommittedCtx) SetContext(string, interface{})              {}
+func (mapperCommittedCtx) DontReadRequestBody()                        {}
 
 func TestModelMapperLocalReplyConfigValidationU02(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
@@ -22,6 +36,24 @@ func TestModelMapperLocalReplyConfigValidationU02(t *testing.T) {
 			host.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, status, "invalid config %d", idx)
 		}
+
+		host, status := test.NewTestHost(json.RawMessage(captureConfig))
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		host.InitHttp()
+
+		policy, err := clientresponse.ParseLocalReplyPolicy(clientresponse.Messages, "qwen")
+		require.NoError(t, err)
+		require.Equal(t, types.ActionPause, reject(mapperCommittedCtx{}, &policy, http.StatusInternalServerError, "header_read_failed"))
+		require.Equal(t, types.ActionPause, onStandaloneRequestBody(mapperCommittedCtx{}, standaloneConfig{
+			modelKey:         "model",
+			localReplyPolicy: &policy,
+		}, []byte(`{"model":"a","model":"b"}`)))
+		require.Nil(t, host.GetLocalResponse(), "must not send legacy fallback when SendLocalReply fails on committed response")
+		joined := strings.Join(host.GetCriticalLogs(), "\n")
+		require.Contains(t, joined, "model-mapper failed to send local reply (status=500, detail=modelfusion.local.model-mapper.header_read_failed)")
+		require.Contains(t, joined, "model-mapper failed to send local reply (status=400, detail=duplicate_model_member)")
+		require.Contains(t, joined, clientresponse.ErrLocalReplyAfterResponseCommitted.Error())
 	})
 }
 

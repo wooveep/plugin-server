@@ -606,9 +606,15 @@ func ResponseHeadersCommitted(ctx iface.HttpContext) bool {
 	return phase == iface.EncodeHeader || phase == iface.EncodeData || phase == iface.Done
 }
 
+type localReplyResponseSender func(statusCode uint32, statusCodeDetailData string, headers [][2]string, body []byte, gRPCStatus int32) error
+
 // SendLocalReply encodes and sends a pre-response local rejection when policy is configured.
 // When policy is nil, it returns (false, nil) so legacy configurations keep their existing path.
 func SendLocalReply(ctx iface.HttpContext, policy *LocalReplyPolicy, status uint32, detail string, extraHeaders [][2]string) (bool, error) {
+	return sendLocalReply(ctx, policy, status, detail, extraHeaders, proxywasm.SendHttpResponseWithDetail)
+}
+
+func sendLocalReply(ctx iface.HttpContext, policy *LocalReplyPolicy, status uint32, detail string, extraHeaders [][2]string, sendResponse localReplyResponseSender) (bool, error) {
 	if policy == nil {
 		return false, nil
 	}
@@ -641,10 +647,14 @@ func SendLocalReply(ctx iface.HttpContext, policy *LocalReplyPolicy, status uint
 		ResponseCommitted: committed,
 	})
 	if err != nil {
-		return true, err
+		wrapped := fmt.Errorf("encode local reply %s (status %d): %w", detail, status, err)
+		proxywasm.LogCriticalf("local reply failed (status=%d, detail=%s): %v", status, detail, wrapped)
+		return true, wrapped
 	}
-	if err := proxywasm.SendHttpResponseWithDetail(out.Status, out.Detail, out.Headers, out.Body, -1); err != nil {
-		return true, fmt.Errorf("send local reply %s: %w", detail, err)
+	if err := sendResponse(out.Status, out.Detail, out.Headers, out.Body, -1); err != nil {
+		wrapped := fmt.Errorf("send local reply %s (status %d): %w", out.Detail, out.Status, err)
+		proxywasm.LogCriticalf("local reply failed (status=%d, detail=%s): %v", out.Status, out.Detail, wrapped)
+		return true, wrapped
 	}
 	return true, nil
 }

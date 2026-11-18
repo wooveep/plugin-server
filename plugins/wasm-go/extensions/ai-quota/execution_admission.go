@@ -369,11 +369,18 @@ func executionAdmissionInstallHeaders(callID, releaseID, deadline, occurredAt st
 func executionAdmissionReject(ctx wrapper.HttpContext, policy *clientresponse.LocalReplyPolicy, status uint32, reason string) {
 	ctx.SetUserAttribute("execution_admission_reason", reason)
 	detail := "execution_admission_" + reason
-	if sent, _ := clientresponse.SendLocalReply(ctx, policy, status, detail, nil); sent {
+	sent, err := clientresponse.SendLocalReply(ctx, policy, status, detail, nil)
+	if err != nil {
+		proxywasm.LogCriticalf("ai-quota failed to send execution admission local reply (status=%d, detail=%s): %v", status, detail, err)
 		return
 	}
-	_ = proxywasm.SendHttpResponseWithDetail(status, detail,
-		[][2]string{{"content-type", "application/json"}}, []byte(`{"error":"execution admission unavailable"}`), -1)
+	if sent {
+		return
+	}
+	if err := proxywasm.SendHttpResponseWithDetail(status, detail,
+		[][2]string{{"content-type", "application/json"}}, []byte(`{"error":"execution admission unavailable"}`), -1); err != nil {
+		proxywasm.LogCriticalf("ai-quota failed to send legacy execution admission rejection (status=%d, detail=%s): %v", status, detail, err)
+	}
 }
 
 func executionAdmissionSingleHeader(headers [][2]string, name string) (string, bool) {

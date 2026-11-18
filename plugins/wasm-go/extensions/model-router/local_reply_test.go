@@ -3,12 +3,26 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
+	"github.com/higress-group/wasm-go/pkg/iface"
 	"github.com/higress-group/wasm-go/pkg/test"
+	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/stretchr/testify/require"
 )
+
+type routerCommittedCtx struct {
+	wrapper.HttpContext
+}
+
+func (routerCommittedCtx) GetExecutionPhase() iface.HTTPExecutionPhase { return iface.EncodeHeader }
+func (routerCommittedCtx) GetStringContext(string, string) string      { return "req-router-committed" }
+func (routerCommittedCtx) GetContext(string) interface{}               { return nil }
+func (routerCommittedCtx) Host() string                                { return "api.ai.example.com" }
+func (routerCommittedCtx) Path() string                                { return "/v1/chat/completions" }
 
 func TestModelRouterLocalReplyConfigValidationU02(t *testing.T) {
 	test.RunGoTest(t, func(t *testing.T) {
@@ -51,6 +65,25 @@ func TestModelRouterLocalReplyConfigValidationU02(t *testing.T) {
 			host.Reset()
 			require.Equal(t, types.OnPluginStartStatusFailed, status, "invalid config %d", idx)
 		}
+
+		rawOk, err := json.Marshal(map[string]any{"modelKey": "model", "modelToHeader": "x-higress-llm-model"})
+		require.NoError(t, err)
+		host, status := test.NewTestHost(rawOk)
+		defer host.Reset()
+		require.Equal(t, types.OnPluginStartStatusOK, status)
+		host.InitHttp()
+
+		policy, err := clientresponse.ParseLocalReplyPolicy(clientresponse.Chat, "deepseek")
+		require.NoError(t, err)
+		routerCfg := ModelRouterConfig{
+			modelKey:   "model",
+			localReply: clientresponse.LocalReplySelector{Policy: &policy},
+		}
+		require.Equal(t, types.ActionPause, handleJsonBody(routerCommittedCtx{}, routerCfg, []byte(`{"model":"a","model":"b"}`)))
+		require.Nil(t, host.GetLocalResponse(), "must not double-send or fall back to plaintext on committed response")
+		joined := strings.Join(host.GetCriticalLogs(), "\n")
+		require.Contains(t, joined, "model-router failed to send local reply (status=400, detail=duplicate_model_member)")
+		require.Contains(t, joined, clientresponse.ErrLocalReplyAfterResponseCommitted.Error())
 	})
 }
 

@@ -473,12 +473,18 @@ func generateMetricName(route, cluster, model, consumer, metricName string) stri
 }
 
 func rejected(ctx wrapper.HttpContext, cfg config.AiTokenRateLimitConfig, reset int) {
+	const detail = "ai-token-ratelimit.rejected"
 	resetHeaders := [][2]string{{RateLimitResetHeader, strconv.Itoa(reset)}}
-	if sent, _ := clientresponse.SendLocalReply(ctx, cfg.LocalReplyPolicy, cfg.RejectedCode, "ai-token-ratelimit.rejected", resetHeaders); !sent {
+	sent, err := clientresponse.SendLocalReply(ctx, cfg.LocalReplyPolicy, cfg.RejectedCode, detail, resetHeaders)
+	if err != nil {
+		proxywasm.LogCriticalf("ai-token-ratelimit failed to send local reply (status=%d, detail=%s): %v", cfg.RejectedCode, detail, err)
+	} else if !sent {
 		headers := make(map[string][]string)
 		headers[RateLimitResetHeader] = []string{strconv.Itoa(reset)}
-		_ = proxywasm.SendHttpResponseWithDetail(
-			cfg.RejectedCode, "ai-token-ratelimit.rejected", util.ReconvertHeaders(headers), []byte(cfg.RejectedMsg), -1)
+		if err := proxywasm.SendHttpResponseWithDetail(
+			cfg.RejectedCode, detail, util.ReconvertHeaders(headers), []byte(cfg.RejectedMsg), -1); err != nil {
+			proxywasm.LogCriticalf("ai-token-ratelimit failed to send legacy rejection (status=%d, detail=%s): %v", cfg.RejectedCode, detail, err)
+		}
 	}
 
 	route, _ := util.GetRouteName()

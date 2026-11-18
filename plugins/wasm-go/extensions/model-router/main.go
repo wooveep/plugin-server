@@ -229,14 +229,20 @@ func handleJsonBody(ctx wrapper.HttpContext, config ModelRouterConfig, body []by
 		message := jsonbody.DuplicateMemberMessage(config.modelKey)
 		log.Warnf("rejecting request: %s", message)
 		policy := config.localReply.Resolve(ctx.Host(), ctx.Path())
-		if sent, _ := clientresponse.SendLocalReply(ctx, policy, http.StatusBadRequest, "duplicate_model_member", nil); !sent {
-			_ = proxywasm.SendHttpResponseWithDetail(
+		const detail = "duplicate_model_member"
+		sent, err := clientresponse.SendLocalReply(ctx, policy, http.StatusBadRequest, detail, nil)
+		if err != nil {
+			log.Criticalf("model-router failed to send local reply (status=%d, detail=%s): %v", http.StatusBadRequest, detail, err)
+		} else if !sent {
+			if err := proxywasm.SendHttpResponseWithDetail(
 				http.StatusBadRequest,
-				"duplicate_model_member",
+				detail,
 				[][2]string{{"content-type", "text/plain"}},
 				[]byte(message),
 				-1,
-			)
+			); err != nil {
+				log.Criticalf("model-router failed to send legacy local reply (status=%d, detail=%s): %v", http.StatusBadRequest, detail, err)
+			}
 		}
 		return types.ActionPause
 	}
