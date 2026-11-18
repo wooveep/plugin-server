@@ -60,6 +60,15 @@ func NewManagedAdapter(config ProviderConfig, apiName ApiName, upstreamPath stri
 			}
 			capabilities[string(apiName)] = upstreamPath
 			config.capabilities = capabilities
+		} else if apiName == ApiNameChatCompletion && (upstreamPath == qwenChatCompletionPath || upstreamPath == qwenMultimodalGenerationPath) {
+			config.qwenEnableCompatible = false
+			config.providerBasePath = ""
+			capabilities := make(map[string]string, len(config.capabilities)+1)
+			for name, path := range config.capabilities {
+				capabilities[name] = path
+			}
+			capabilities[string(apiName)] = upstreamPath
+			config.capabilities = capabilities
 		}
 		if !config.qwenEnableCompatible && apiName != ApiNameChatCompletion && apiName != ApiNameEmbeddings {
 			return nil, errors.New("managed Qwen API is unsupported")
@@ -143,6 +152,8 @@ func (a *ManagedAdapter) NativeResponseFormat() string {
 // The caller freezes these resulting bytes and path before its sole send.
 func (a *ManagedAdapter) Prepare(ctx wrapper.HttpContext, body []byte, headers http.Header, model, credential string, streaming bool) ([]byte, error) {
 	search := gjson.GetBytes(body, "enable_search")
+	codeInterpreter := gjson.GetBytes(body, "enable_code_interpreter")
+	searchOptions := gjson.GetBytes(body, "search_options")
 	headers.Set(":path", a.config.managedRequestPath)
 	if a.apiName == ApiNameDashScopeText || a.apiName == ApiNameDashScopeMultimodal {
 		headers.Del("x-api-key")
@@ -187,11 +198,25 @@ func (a *ManagedAdapter) Prepare(ctx wrapper.HttpContext, body []byte, headers h
 	if err != nil {
 		return nil, err
 	}
-	if a.NativeQwen() && search.Exists() {
-		// A request-level false overrides the connection's legacy default.
-		body, err = sjson.SetBytes(body, "parameters.enable_search", search.Bool())
-		if err != nil {
-			return nil, err
+	if a.NativeQwen() {
+		if search.Exists() {
+			// A request-level false overrides the connection's legacy default.
+			body, err = sjson.SetBytes(body, "parameters.enable_search", search.Bool())
+			if err != nil {
+				return nil, err
+			}
+		}
+		if codeInterpreter.Exists() {
+			body, err = sjson.SetBytes(body, "parameters.enable_code_interpreter", codeInterpreter.Bool())
+			if err != nil {
+				return nil, err
+			}
+		}
+		if searchOptions.IsObject() {
+			body, err = sjson.SetRawBytes(body, "parameters.search_options", []byte(searchOptions.Raw))
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	headers.Set(":path", a.config.applyProviderBasePath(headers.Get(":path")))

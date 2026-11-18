@@ -11,6 +11,7 @@ import (
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
+	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
 
@@ -70,10 +71,14 @@ func newManagedProtocolProfile(input, upstream string) (managedProtocolProfile, 
 	if input == upstream && (input == managedProtocolDashScopeText || input == managedProtocolDashScopeMultimodal) {
 		return managedProtocolProfile{InputProtocol: input, UpstreamProtocol: upstream}, nil
 	}
-	valid := func(value string) bool {
+	validInput := func(value string) bool {
 		return value == managedProtocolChat || value == managedProtocolResponses || value == managedProtocolMessages
 	}
-	if !valid(input) || !valid(upstream) || input != upstream && upstream != managedProtocolChat {
+	validUpstream := func(value string) bool {
+		return validInput(value) || value == managedProtocolDashScopeText || value == managedProtocolDashScopeMultimodal
+	}
+	if !validInput(input) || !validUpstream(upstream) ||
+		input != upstream && upstream != managedProtocolChat && upstream != managedProtocolDashScopeText && upstream != managedProtocolDashScopeMultimodal {
 		return managedProtocolProfile{}, errors.New("unsupported managed protocol profile")
 	}
 	return managedProtocolProfile{InputProtocol: input, UpstreamProtocol: upstream}, nil
@@ -140,9 +145,16 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 	actual := append([]byte(nil), body...)
 	var err error
 	if p.InputProtocol != p.UpstreamProtocol {
+		dashScopeUpstream := p.UpstreamProtocol == managedProtocolDashScopeText || p.UpstreamProtocol == managedProtocolDashScopeMultimodal
 		switch p.InputProtocol {
+		case managedProtocolChat:
+			if !dashScopeUpstream {
+				err = errors.New("unsupported managed protocol request conversion")
+			}
 		case managedProtocolResponses:
-			actual, err = provider.ConvertResponsesRequestToChatCompletion(body)
+			actual, err = provider.ConvertResponsesRequestToChatCompletionWithOptions(body, provider.ResponsesToChatConvertOptions{
+				DeveloperRoleAsSystem: dashScopeUpstream || p.supplier != "" && p.supplier != "openai" && p.supplier != "azure",
+			})
 		case managedProtocolMessages:
 			preserveReasoning := p.supplier == "qwen" || p.supplier == "openrouter" || p.supplier == "zhipuai" || p.supplier == "deepseek" || p.supplier == "moonshot"
 			actual, err = (&provider.ClaudeToOpenAIConverter{}).ConvertClaudeRequestToOpenAIWithOptions(body, provider.ClaudeToOpenAIConvertOptions{
@@ -150,7 +162,22 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 				PreserveMessageReasoningContent: preserveReasoning,
 			})
 			if err == nil {
-				actual = provider.StripClaudeInternalMessageFields(actual, preserveReasoning)
+				if dashScopeUpstream {
+					if thinking := gjson.GetBytes(actual, "claude_thinking"); thinking.IsObject() {
+						switch thinking.Get("type").String() {
+						case "enabled":
+							actual, err = sjson.SetBytes(actual, "enable_thinking", true)
+							if err == nil && thinking.Get("budget_tokens").Int() > 0 {
+								actual, err = sjson.SetBytes(actual, "thinking_budget", thinking.Get("budget_tokens").Int())
+							}
+						case "disabled":
+							actual, err = sjson.SetBytes(actual, "enable_thinking", false)
+						}
+					}
+				}
+				if err == nil {
+					actual = provider.StripClaudeInternalMessageFields(actual, preserveReasoning)
+				}
 			}
 		default:
 			err = errors.New("unsupported managed protocol request conversion")

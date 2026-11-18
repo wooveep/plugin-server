@@ -30,9 +30,11 @@ func validateManagedRouterProfile(c *managedExecutionConfig) error {
 	}
 	native := protocol == profile.UpstreamProtocol
 	dashScope := protocol == managedProtocolDashScopeText || protocol == managedProtocolDashScopeMultimodal
+	dashScopeUpstream := profile.UpstreamProtocol == managedProtocolDashScopeText || profile.UpstreamProtocol == managedProtocolDashScopeMultimodal
+	dashScopeConverted := dashScopeUpstream && c.vendor != nil && c.vendor.NativeQwen()
 	switch protocol {
 	case managedProtocolChat:
-		if !native || settings.StreamProtocol != "" {
+		if (!native && (!dashScopeConverted || !settings.StreamProjection)) || settings.StreamProtocol != "" {
 			return errors.New("unsupported managed Router stream protocol")
 		}
 	case managedProtocolCompletions:
@@ -40,7 +42,7 @@ func validateManagedRouterProfile(c *managedExecutionConfig) error {
 			return errors.New("unsupported managed Router stream protocol")
 		}
 	case managedProtocolResponses, managedProtocolMessages:
-		if settings.StreamProtocol != protocol || !native && (profile.UpstreamProtocol != managedProtocolChat || !settings.StreamProjection) {
+		if settings.StreamProtocol != protocol || !native && ((profile.UpstreamProtocol != managedProtocolChat && !dashScopeConverted) || !settings.StreamProjection) {
 			return errors.New("unsupported managed Router stream protocol")
 		}
 	case managedProtocolDashScopeText, managedProtocolDashScopeMultimodal:
@@ -71,7 +73,9 @@ func projectManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 				r.projectionFailed = true
 				return
 			}
-			if usage := clientresponse.ReadUsage(event.Data, clientresponse.Chat, false); usage.Input != nil {
+			if r.supplier != nil && r.supplier.hasPublicUsage {
+				r.projectionUsage = r.supplier.publicUsage
+			} else if usage := clientresponse.ReadUsage(event.Data, clientresponse.Chat, false); usage.Input != nil {
 				r.projectionUsage = usage
 			}
 		} else {

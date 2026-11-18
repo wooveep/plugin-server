@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 )
@@ -13,18 +14,20 @@ import (
 // Native counters are observed before each event's content conversion. Neither
 // this decoder nor the converter waits for the complete generation response.
 type managedRouterSupplierStream struct {
-	context  wrapper.HttpContext
-	state    *managedExecutionState
-	format   string
-	decoder  managedSSEDecoder
-	usage    *executionfacts.Usage
-	model    string
-	finished map[string]string
-	last     managedProtocolObservation
-	invalid  bool
-	failed   bool
-	done     bool
-	thinking bool
+	context        wrapper.HttpContext
+	state          *managedExecutionState
+	format         string
+	decoder        managedSSEDecoder
+	usage          *executionfacts.Usage
+	publicUsage    clientresponse.Usage
+	hasPublicUsage bool
+	model          string
+	finished       map[string]string
+	last           managedProtocolObservation
+	invalid        bool
+	failed         bool
+	done           bool
+	thinking       bool
 }
 
 func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func([]byte), comment func()) {
@@ -91,8 +94,14 @@ func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func(
 				}
 				observed.Usage = managedOpenAIUsage(object)
 			}
-			if _, exists := object[usageKey]; exists {
+			if raw, exists := object[usageKey]; exists {
 				s.usage = observed.Usage
+				if s.format == "qwen" && !managedProtocolNull(raw) {
+					if parsed := clientresponse.ReadUsageObject(raw, "qwen"); parsed.Input != nil {
+						s.publicUsage = parsed
+						s.hasPublicUsage = true
+					}
+				}
 			}
 			if s.state.router.toolProtocol != "" {
 				s.state.router.toolUsage = managedToolEventUsage(s.state.router.toolProtocol, event.Data, s.state.router.toolUsage)
@@ -105,6 +114,16 @@ func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func(
 			}
 			s.failed = s.failed || observed.ProviderError || event.Name == "error"
 			s.last = observed
+			if s.failed {
+				errPayload := event.Data
+				if managedProtocolNull(object["error"]) {
+					errPayload, _ = json.Marshal(map[string]json.RawMessage{"error": event.Data})
+				}
+				var wire bytes.Buffer
+				managedProtocolWriteEvent(&wire, "error", errPayload)
+				forward(wire.Bytes())
+				return
+			}
 			delete(object, usageKey)
 			stripped, err := json.Marshal(object)
 			if err != nil {
@@ -133,12 +152,25 @@ func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func(
 					s.invalid = true
 					return
 				}
+				_, hadUsage := content["usage"]
 				delete(content, "usage")
+				if hadUsage {
+					var choices []struct {
+						Delta        map[string]json.RawMessage `json:"delta"`
+						FinishReason *string                    `json:"finish_reason"`
+					}
+					if err := json.Unmarshal(content["choices"], &choices); err != nil {
+						s.invalid = true
+						return
+					}
+					// Qwen's content converter emits an empty delta for its generated
+					// usage after finish_reason. Omit it so Chat choice finality holds.
+					if len(choices) == 0 || len(choices) == 1 && len(choices[0].Delta) == 0 && choices[0].FinishReason == nil {
+						continue
+					}
+				}
 				data, _ := json.Marshal(content)
-				managedProtocolWriteEvent(&wire, convertedEvent.Name, data)
-			}
-			if s.failed {
-				managedProtocolWriteEvent(&wire, "error", []byte(`{"error":{"code":"upstream_error","message":"Upstream request failed"}}`))
+				managedProtocolWriteEvent(&wire, "", data)
 			}
 			forward(wire.Bytes())
 		}) != nil || s.invalid

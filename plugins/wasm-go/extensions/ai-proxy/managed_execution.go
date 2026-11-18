@@ -244,7 +244,7 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 			return errors.New("retrieval protocol requires a Bailian supplier")
 		}
 	} else {
-		parsed.vendor, err = supplier.NewManagedAdapter(*providerConfig, managedSupplierAPIName(profile), parsed.settings.UpstreamPath)
+		parsed.vendor, err = newManagedSupplierAdapter(*providerConfig, profile, parsed.settings.UpstreamPath)
 		if err != nil {
 			return errors.New("managed execution supplier does not support its frozen protocol profile")
 		}
@@ -736,7 +736,12 @@ func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecut
 		if len(removed) > 0 {
 			// Directed text converters can omit supplier extension flags. Reapply
 			// the frozen removals before the supplier adapter reads its defaults.
-			request.Body, err = fixedtools.Filter(request.Body, managed.profile.UpstreamProtocol, nil, removed)
+			filterProtocol := managed.profile.UpstreamProtocol
+			if managed.profile.InputProtocol != managed.profile.UpstreamProtocol &&
+				(filterProtocol == managedProtocolDashScopeText || filterProtocol == managedProtocolDashScopeMultimodal) {
+				filterProtocol = managedProtocolChat
+			}
+			request.Body, err = fixedtools.Filter(request.Body, filterProtocol, nil, removed)
 			if err != nil {
 				rejectManagedPreparation(ctx, state, 400, "invalid_effective_tool_request")
 				return managedProtocolRequest{}, false
@@ -1257,14 +1262,37 @@ func appendManagedBailianEvidence(s *managedExecutionState, headers [][2]string,
 		return evidence
 	}
 	evidence = append(evidence, "bailian-request:"+s.bailianRequestID, "bailian-attempt:"+s.attemptID)
-	thinkingPath := "enable_thinking"
-	if s.config.profile.UpstreamProtocol == managedProtocolDashScopeText || s.config.profile.UpstreamProtocol == managedProtocolDashScopeMultimodal {
-		thinkingPath = "parameters.enable_thinking"
+	input := s.config.profile.InputProtocol
+	if input == "" {
+		input = s.config.profile.UpstreamProtocol
 	}
-	if mode := gjson.GetBytes(s.publicRequest, thinkingPath); mode.Type == gjson.True {
-		evidence = append(evidence, "bailian-thinking:enabled")
-	} else if mode.Type == gjson.False {
-		evidence = append(evidence, "bailian-thinking:disabled")
+	switch input {
+	case managedProtocolDashScopeText, managedProtocolDashScopeMultimodal:
+		if mode := gjson.GetBytes(s.publicRequest, "parameters.enable_thinking"); mode.Type == gjson.True {
+			evidence = append(evidence, "bailian-thinking:enabled")
+		} else if mode.Type == gjson.False {
+			evidence = append(evidence, "bailian-thinking:disabled")
+		}
+	case managedProtocolMessages:
+		switch gjson.GetBytes(s.publicRequest, "thinking.type").String() {
+		case "enabled":
+			evidence = append(evidence, "bailian-thinking:enabled")
+		case "disabled":
+			evidence = append(evidence, "bailian-thinking:disabled")
+		}
+	case managedProtocolResponses:
+		switch gjson.GetBytes(s.publicRequest, "reasoning.effort").String() {
+		case "none":
+			evidence = append(evidence, "bailian-thinking:disabled")
+		case "minimal", "low", "medium", "high", "xhigh", "max":
+			evidence = append(evidence, "bailian-thinking:enabled")
+		}
+	default:
+		if mode := gjson.GetBytes(s.publicRequest, "enable_thinking"); mode.Type == gjson.True {
+			evidence = append(evidence, "bailian-thinking:enabled")
+		} else if mode.Type == gjson.False {
+			evidence = append(evidence, "bailian-thinking:disabled")
+		}
 	}
 	switch s.cacheMode {
 	case managedCacheImplicit:

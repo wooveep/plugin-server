@@ -201,8 +201,9 @@ func (m *qwenProvider) onChatCompletionRequestBody(ctx wrapper.HttpContext, body
 		return nil, err
 	}
 
-	// Use the qwen multimodal model generation API
-	if strings.HasPrefix(request.Model, qwenVlModelPrefixName) {
+	// Use the qwen multimodal model generation API only in unmanaged legacy mode;
+	// managed execution binds each target to its exact frozen upstream path.
+	if !m.config.managedRequest && strings.HasPrefix(request.Model, qwenVlModelPrefixName) {
 		util.OverwriteRequestPathHeader(headers, qwenMultimodalGenerationPath)
 	}
 
@@ -211,11 +212,15 @@ func (m *qwenProvider) onChatCompletionRequestBody(ctx wrapper.HttpContext, body
 		headers.Set("Accept", "text/event-stream")
 		headers.Set("X-DashScope-SSE", "enable")
 	} else {
-		headers.Set("Accept", "*/*")
+		if m.config.managedRequest {
+			headers.Set("Accept", "application/json")
+		} else {
+			headers.Set("Accept", "*/*")
+		}
 		headers.Del("X-DashScope-SSE")
 	}
 
-	return m.buildQwenTextGenerationRequest(ctx, request, streaming)
+	return m.buildQwenGenerationRequest(ctx, request, body, streaming, headers.Get(":path") == qwenMultimodalGenerationPath)
 }
 
 func (m *qwenProvider) onEmbeddingsRequestBody(ctx wrapper.HttpContext, body []byte) ([]byte, error) {
@@ -282,6 +287,8 @@ func (m *qwenProvider) OnStreamingEvent(ctx wrapper.HttpContext, name ApiName, e
 			return nil, fmt.Errorf("unable to marshal response: %v", err)
 		}
 		modifiedEvent := event
+		modifiedEvent.Id = ""
+		modifiedEvent.Event = ""
 		modifiedEvent.Data = string(responseBody)
 		outputEvents = append(outputEvents, modifiedEvent)
 	}
@@ -311,6 +318,9 @@ func (m *qwenProvider) TransformResponseBody(ctx wrapper.HttpContext, apiName Ap
 }
 
 func (m *qwenProvider) onChatCompletionResponseBody(ctx wrapper.HttpContext, body []byte) ([]byte, error) {
+	if code := gjson.GetBytes(body, "code").String(); code != "" && code != "200" && !gjson.GetBytes(body, "output").Exists() {
+		return body, nil
+	}
 	qwenResponse := &qwenTextGenResponse{}
 	if err := json.Unmarshal(body, qwenResponse); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal Qwen response: %v", err)
@@ -355,9 +365,77 @@ func (m *qwenProvider) onAudioSpeechResponseBody(ctx wrapper.HttpContext, body [
 }
 
 func (m *qwenProvider) buildQwenTextGenerationRequest(ctx wrapper.HttpContext, origRequest *chatCompletionRequest, streaming bool) ([]byte, error) {
+	return m.buildQwenGenerationRequest(ctx, origRequest, nil, streaming, false)
+}
+
+func (m *qwenProvider) buildQwenGenerationRequest(ctx wrapper.HttpContext, origRequest *chatCompletionRequest, rawBody []byte, streaming, multimodal bool) ([]byte, error) {
 	messages := make([]qwenMessage, 0, len(origRequest.Messages))
 	for i := range origRequest.Messages {
-		messages = append(messages, chatMessage2QwenMessage(origRequest.Messages[i]))
+		msg := chatMessage2QwenMessage(origRequest.Messages[i])
+		if multimodal {
+			if (msg.Role == roleSystem || msg.Role == roleUser) && msg.IsStringContent() {
+				msg.Content = []qwenVlMessageContent{{Text: msg.StringContent()}}
+			}
+		} else if msg.Role == roleSystem {
+			if contents, ok := msg.Content.([]qwenVlMessageContent); ok {
+				plain := true
+				var text strings.Builder
+				for _, item := range contents {
+					if item.Image != "" || item.CacheControl != nil {
+						plain = false
+						break
+					}
+					text.WriteString(item.Text)
+				}
+				if plain {
+					msg.Content = text.String()
+				}
+			}
+		}
+		messages = append(messages, msg)
+	}
+	var topP float64
+	if origRequest.TopP > 0 {
+		topP = math.Max(qwenTopPMin, math.Min(origRequest.TopP, qwenTopPMax))
+	}
+	var enableThinking *bool
+	var thinkingBudget int
+	if rawEnable := gjson.GetBytes(rawBody, "enable_thinking"); rawEnable.Type == gjson.True || rawEnable.Type == gjson.False {
+		val := rawEnable.Bool()
+		enableThinking = &val
+	}
+	if rawBudget := gjson.GetBytes(rawBody, "thinking_budget"); rawBudget.Type == gjson.Number && rawBudget.Int() > 0 {
+		thinkingBudget = int(rawBudget.Int())
+	}
+	if enableThinking == nil && origRequest.ClaudeThinking != nil {
+		switch origRequest.ClaudeThinking.Type {
+		case "enabled":
+			val := true
+			enableThinking = &val
+			if thinkingBudget == 0 && origRequest.ClaudeThinking.BudgetTokens > 0 {
+				thinkingBudget = origRequest.ClaudeThinking.BudgetTokens
+			}
+		case "disabled":
+			val := false
+			enableThinking = &val
+		}
+	}
+	if enableThinking == nil && origRequest.Thinking != nil {
+		switch origRequest.Thinking.Type {
+		case "enabled":
+			val := true
+			enableThinking = &val
+			if thinkingBudget == 0 && origRequest.Thinking.BudgetToken > 0 {
+				thinkingBudget = origRequest.Thinking.BudgetToken
+			}
+		case "disabled":
+			val := false
+			enableThinking = &val
+		}
+	}
+	if enableThinking == nil && origRequest.ReasoningEffort != "" {
+		val := origRequest.ReasoningEffort != "none"
+		enableThinking = &val
 	}
 	request := &qwenTextGenRequest{
 		Model: origRequest.Model,
@@ -366,19 +444,26 @@ func (m *qwenProvider) buildQwenTextGenerationRequest(ctx wrapper.HttpContext, o
 		},
 		Parameters: qwenTextGenParameters{
 			ResultFormat:      qwenResultFormatMessage,
-			MaxTokens:         origRequest.MaxTokens,
+			MaxTokens:         origRequest.getMaxTokens(),
+			PresencePenalty:   origRequest.PresencePenalty,
 			N:                 origRequest.N,
 			Seed:              origRequest.Seed,
+			Stop:              origRequest.Stop,
 			Temperature:       origRequest.Temperature,
-			TopP:              math.Max(qwenTopPMin, math.Min(origRequest.TopP, qwenTopPMax)),
+			TopP:              topP,
 			IncrementalOutput: streaming && (len(origRequest.Tools) == 0),
 			EnableSearch:      m.config.qwenEnableSearch,
+			EnableThinking:    enableThinking,
+			ThinkingBudget:    thinkingBudget,
 			PreserveThinking:  shouldEnableQwenPreserveThinking(origRequest.Model, origRequest.Messages),
+			ResponseFormat:    origRequest.ResponseFormat,
 			Tools:             origRequest.Tools,
+			ToolChoice:        origRequest.ToolChoice,
+			ParallelToolCalls: origRequest.ParallelToolCalls,
 		},
 	}
 
-	if streaming {
+	if streaming && ctx != nil {
 		ctx.SetContext(ctxKeyIncrementalStreaming, request.Parameters.IncrementalOutput)
 	}
 
@@ -403,10 +488,18 @@ func (m *qwenProvider) buildQwenTextGenerationRequest(ctx wrapper.HttpContext, o
 }
 
 func (m *qwenProvider) buildChatCompletionResponse(ctx wrapper.HttpContext, qwenResponse *qwenTextGenResponse) *chatCompletionResponse {
-	choices := make([]chatCompletionChoice, 0, len(qwenResponse.Output.Choices))
-	for _, qwenChoice := range qwenResponse.Output.Choices {
+	qwenChoices := qwenResponse.Output.Choices
+	if len(qwenChoices) == 0 && (qwenResponse.Output.Text != "" || qwenResponse.Output.FinishReason != "") {
+		qwenChoices = []qwenTextGenChoice{{
+			FinishReason: qwenResponse.Output.FinishReason,
+			Message:      qwenMessage{Role: roleAssistant, Content: qwenResponse.Output.Text},
+		}}
+	}
+	choices := make([]chatCompletionChoice, 0, len(qwenChoices))
+	for i, qwenChoice := range qwenChoices {
 		message := qwenMessageToChatMessage(qwenChoice.Message, m.config.reasoningContentMode)
 		choices = append(choices, chatCompletionChoice{
+			Index:        i,
 			Message:      &message,
 			FinishReason: util.Ptr(qwenChoice.FinishReason),
 		})
@@ -427,7 +520,14 @@ func (m *qwenProvider) buildChatCompletionResponse(ctx wrapper.HttpContext, qwen
 }
 
 func (m *qwenProvider) buildChatCompletionStreamingResponse(ctx wrapper.HttpContext, qwenResponse *qwenTextGenResponse, incrementalStreaming bool) []*chatCompletionResponse {
-	if len(qwenResponse.Output.Choices) == 0 {
+	qwenChoices := qwenResponse.Output.Choices
+	if len(qwenChoices) == 0 && (qwenResponse.Output.Text != "" || qwenResponse.Output.FinishReason != "") {
+		qwenChoices = []qwenTextGenChoice{{
+			FinishReason: qwenResponse.Output.FinishReason,
+			Message:      qwenMessage{Role: roleAssistant, Content: qwenResponse.Output.Text},
+		}}
+	}
+	if len(qwenChoices) == 0 {
 		log.Warnf("qwen response has no choices, request_id: %s", qwenResponse.RequestId)
 		return nil
 	}
@@ -443,15 +543,21 @@ func (m *qwenProvider) buildChatCompletionStreamingResponse(ctx wrapper.HttpCont
 
 	responses := make([]*chatCompletionResponse, 0)
 
-	qwenChoice := qwenResponse.Output.Choices[0]
+	qwenChoice := qwenChoices[0]
 	// Yes, Qwen uses a string "null" as null.
 	finished := qwenChoice.FinishReason != "" && qwenChoice.FinishReason != "null"
 	message := qwenChoice.Message
+	for i := range message.ToolCalls {
+		if message.ToolCalls[i].Index == 0 && i > 0 {
+			message.ToolCalls[i].Index = i
+		}
+	}
 
 	reasoningContentMode := m.config.reasoningContentMode
 
 	log.Debugf("incrementalStreaming: %v", incrementalStreaming)
-	deltaContentMessage := &chatMessage{Role: message.Role, Content: message.Content, ReasoningContent: message.ReasoningContent}
+	currentText := message.StringContent()
+	deltaContentMessage := &chatMessage{Role: message.Role, Content: currentText, ReasoningContent: message.ReasoningContent}
 	deltaToolCallsMessage := &chatMessage{Role: message.Role, ToolCalls: append([]toolCall{}, message.ToolCalls...)}
 	if incrementalStreaming {
 		deltaContentMessage.handleStreamingReasoningContent(ctx, reasoningContentMode)
@@ -463,30 +569,11 @@ func (m *qwenProvider) buildChatCompletionStreamingResponse(ctx wrapper.HttpCont
 			}
 		}
 		if pushedMessage, ok := ctx.GetContext(ctxKeyPushedMessage).(qwenMessage); ok {
-			if message.Content == "" {
+			pushedText := pushedMessage.StringContent()
+			if currentText == "" {
 				message.Content = pushedMessage.Content
-			} else if message.IsStringContent() {
-				deltaContentMessage.Content = util.StripPrefix(deltaContentMessage.StringContent(), pushedMessage.StringContent())
-			} else if strings.HasPrefix(baseMessage.Model, qwenVlModelPrefixName) {
-				// Use the Qwen multimodal model generation API
-				deltaContentList, ok := deltaContentMessage.Content.([]qwenVlMessageContent)
-				if !ok {
-					log.Warnf("unexpected deltaContentMessage content type: %T", deltaContentMessage.Content)
-				} else {
-					pushedContentList, ok := pushedMessage.Content.([]qwenVlMessageContent)
-					if !ok {
-						log.Warnf("unexpected pushedMessage content type: %T", pushedMessage.Content)
-					} else {
-						for i, content := range deltaContentList {
-							if i >= len(pushedContentList) {
-								break
-							}
-							pushedText := pushedContentList[i].Text
-							content.Text = util.StripPrefix(content.Text, pushedText)
-							deltaContentList[i] = content
-						}
-					}
-				}
+			} else {
+				deltaContentMessage.Content = util.StripPrefix(currentText, pushedText)
 			}
 			if message.ReasoningContent == "" {
 				message.ReasoningContent = pushedMessage.ReasoningContent
@@ -500,7 +587,9 @@ func (m *qwenProvider) buildChatCompletionStreamingResponse(ctx wrapper.HttpCont
 					if i >= len(pushedMessage.ToolCalls) {
 						break
 					}
-					pushedFunction := pushedMessage.ToolCalls[i].Function
+					pushedToolCall := pushedMessage.ToolCalls[i]
+					pushedFunction := pushedToolCall.Function
+					tc.Id = util.StripPrefix(tc.Id, pushedToolCall.Id)
 					tc.Function.Id = util.StripPrefix(tc.Function.Id, pushedFunction.Id)
 					tc.Function.Name = util.StripPrefix(tc.Function.Name, pushedFunction.Name)
 					tc.Function.Arguments = util.StripPrefix(tc.Function.Arguments, pushedFunction.Arguments)
@@ -723,17 +812,24 @@ type qwenTextGenInput struct {
 }
 
 type qwenTextGenParameters struct {
-	ResultFormat      string  `json:"result_format,omitempty"`
-	MaxTokens         int     `json:"max_tokens,omitempty"`
-	RepetitionPenalty float64 `json:"repetition_penalty,omitempty"`
-	N                 int     `json:"n,omitempty"`
-	Seed              int     `json:"seed,omitempty"`
-	Temperature       float64 `json:"temperature,omitempty"`
-	TopP              float64 `json:"top_p,omitempty"`
-	IncrementalOutput bool    `json:"incremental_output,omitempty"`
-	EnableSearch      bool    `json:"enable_search,omitempty"`
-	PreserveThinking  bool    `json:"preserve_thinking,omitempty"`
-	Tools             []tool  `json:"tools,omitempty"`
+	ResultFormat      string                 `json:"result_format,omitempty"`
+	MaxTokens         int                    `json:"max_tokens,omitempty"`
+	RepetitionPenalty float64                `json:"repetition_penalty,omitempty"`
+	PresencePenalty   float64                `json:"presence_penalty,omitempty"`
+	N                 int                    `json:"n,omitempty"`
+	Seed              int                    `json:"seed,omitempty"`
+	Stop              []string               `json:"stop,omitempty"`
+	Temperature       float64                `json:"temperature,omitempty"`
+	TopP              float64                `json:"top_p,omitempty"`
+	IncrementalOutput bool                   `json:"incremental_output,omitempty"`
+	EnableSearch      bool                   `json:"enable_search,omitempty"`
+	EnableThinking    *bool                  `json:"enable_thinking,omitempty"`
+	ThinkingBudget    int                    `json:"thinking_budget,omitempty"`
+	PreserveThinking  bool                   `json:"preserve_thinking,omitempty"`
+	ResponseFormat    map[string]interface{} `json:"response_format,omitempty"`
+	Tools             []tool                 `json:"tools,omitempty"`
+	ToolChoice        interface{}            `json:"tool_choice,omitempty"`
+	ParallelToolCalls *bool                  `json:"parallel_tool_calls,omitempty"`
 }
 
 type qwenTextGenResponse struct {
@@ -743,6 +839,7 @@ type qwenTextGenResponse struct {
 }
 
 type qwenTextGenOutput struct {
+	Text         string              `json:"text,omitempty"`
 	FinishReason string              `json:"finish_reason"`
 	Choices      []qwenTextGenChoice `json:"choices"`
 }
@@ -872,11 +969,13 @@ type qwenMessage struct {
 	Partial          *bool      `json:"partial,omitempty"`
 	ReasoningContent string     `json:"reasoning_content,omitempty"`
 	ToolCalls        []toolCall `json:"tool_calls,omitempty"`
+	ToolCallId       string     `json:"tool_call_id,omitempty"`
 }
 
 type qwenVlMessageContent struct {
-	Image string `json:"image,omitempty"`
-	Text  string `json:"text,omitempty"`
+	CacheControl map[string]interface{} `json:"cache_control,omitempty"`
+	Image        string                 `json:"image,omitempty"`
+	Text         string                 `json:"text,omitempty"`
 }
 
 type qwenTextEmbeddingRequest struct {
@@ -910,12 +1009,29 @@ type qwenTextEmbeddings struct {
 }
 
 func qwenMessageToChatMessage(qwenMessage qwenMessage, reasoningContentMode string) chatMessage {
+	var content any
+	if qwenMessage.Content != nil {
+		text := qwenMessage.StringContent()
+		if text != "" || len(qwenMessage.ToolCalls) == 0 {
+			content = text
+		}
+	}
+	toolCalls := qwenMessage.ToolCalls
+	if len(toolCalls) > 1 {
+		toolCalls = append([]toolCall(nil), toolCalls...)
+		for i := range toolCalls {
+			if toolCalls[i].Index == 0 && i > 0 {
+				toolCalls[i].Index = i
+			}
+		}
+	}
 	msg := chatMessage{
 		Name:             qwenMessage.Name,
 		Role:             qwenMessage.Role,
-		Content:          qwenMessage.Content,
+		Content:          content,
 		ReasoningContent: qwenMessage.ReasoningContent,
-		ToolCalls:        qwenMessage.ToolCalls,
+		ToolCalls:        toolCalls,
+		ToolCallId:       qwenMessage.ToolCallId,
 	}
 	msg.handleNonStreamingReasoningContent(reasoningContentMode)
 	return msg
@@ -927,23 +1043,28 @@ func (m *qwenMessage) IsStringContent() bool {
 }
 
 func (m *qwenMessage) StringContent() string {
-	content, ok := m.Content.(string)
-	if ok {
+	if content, ok := m.Content.(string); ok {
 		return content
 	}
-	contentList, ok := m.Content.([]any)
-	if ok {
-		var contentStr string
+	if vlList, ok := m.Content.([]qwenVlMessageContent); ok {
+		var contentStr strings.Builder
+		for _, item := range vlList {
+			contentStr.WriteString(item.Text)
+		}
+		return contentStr.String()
+	}
+	if contentList, ok := m.Content.([]any); ok {
+		var contentStr strings.Builder
 		for _, contentItem := range contentList {
 			contentMap, ok := contentItem.(map[string]any)
 			if !ok {
 				continue
 			}
 			if text, ok := contentMap["text"].(string); ok {
-				contentStr += text
+				contentStr.WriteString(text)
 			}
 		}
-		return contentStr
+		return contentStr.String()
 	}
 	return ""
 }
@@ -965,9 +1086,12 @@ func qwenSupportsPreserveThinking(model string) bool {
 	switch {
 	case model == "qwen3.6-max-preview":
 		return true
-	case strings.HasPrefix(model, "qwen3.6-plus"):
+	case strings.HasPrefix(model, "qwen3.6-plus"),
+		strings.HasPrefix(model, "qwen3.6-flash"),
+		strings.HasPrefix(model, "qwen3.7-"),
+		strings.HasPrefix(model, "qwen3.8-"):
 		return true
-	case model == "kimi-k2.6":
+	case model == "kimi-k2.6", strings.HasPrefix(model, "kimi-k2.7"):
 		return true
 	default:
 		return false
@@ -984,6 +1108,37 @@ func requestBodyHasMessageReasoningContent(body []byte) bool {
 }
 
 func chatMessage2QwenMessage(chatMessage chatMessage) qwenMessage {
+	if chatMessage.Role == roleTool {
+		var content string
+		if s, ok := chatMessage.Content.(string); ok {
+			content = s
+		} else {
+			var builder strings.Builder
+			for _, part := range chatMessage.ParseContent() {
+				if part.Type == contentTypeText {
+					builder.WriteString(part.Text)
+				}
+			}
+			content = builder.String()
+		}
+		return qwenMessage{
+			Name:       chatMessage.Name,
+			Role:       chatMessage.Role,
+			Content:    content,
+			ToolCallId: chatMessage.ToolCallId,
+		}
+	}
+	if chatMessage.Content == nil {
+		return qwenMessage{
+			Name:             chatMessage.Name,
+			Role:             chatMessage.Role,
+			Content:          "",
+			Partial:          chatMessage.Partial,
+			ReasoningContent: chatMessage.ReasoningContent,
+			ToolCalls:        chatMessage.ToolCalls,
+			ToolCallId:       chatMessage.ToolCallId,
+		}
+	}
 	if chatMessage.IsStringContent() {
 		return qwenMessage{
 			Name:             chatMessage.Name,
@@ -992,27 +1147,29 @@ func chatMessage2QwenMessage(chatMessage chatMessage) qwenMessage {
 			Partial:          chatMessage.Partial,
 			ReasoningContent: chatMessage.ReasoningContent,
 			ToolCalls:        chatMessage.ToolCalls,
+			ToolCallId:       chatMessage.ToolCallId,
 		}
-	} else {
-		var contents []qwenVlMessageContent
-		openaiContent := chatMessage.ParseContent()
-		for _, part := range openaiContent {
-			var content qwenVlMessageContent
-			if part.Type == contentTypeText {
-				content.Text = part.Text
-			} else if part.Type == contentTypeImageUrl {
-				content.Image = part.ImageUrl.Url
-			}
-			contents = append(contents, content)
+	}
+	var contents []qwenVlMessageContent
+	openaiContent := chatMessage.ParseContent()
+	for _, part := range openaiContent {
+		var content qwenVlMessageContent
+		content.CacheControl = part.CacheControl
+		if part.Type == contentTypeText {
+			content.Text = part.Text
+		} else if part.Type == contentTypeImageUrl {
+			content.Image = part.ImageUrl.Url
 		}
-		return qwenMessage{
-			Name:             chatMessage.Name,
-			Role:             chatMessage.Role,
-			Content:          contents,
-			Partial:          chatMessage.Partial,
-			ReasoningContent: chatMessage.ReasoningContent,
-			ToolCalls:        chatMessage.ToolCalls,
-		}
+		contents = append(contents, content)
+	}
+	return qwenMessage{
+		Name:             chatMessage.Name,
+		Role:             chatMessage.Role,
+		Content:          contents,
+		Partial:          chatMessage.Partial,
+		ReasoningContent: chatMessage.ReasoningContent,
+		ToolCalls:        chatMessage.ToolCalls,
+		ToolCallId:       chatMessage.ToolCallId,
 	}
 }
 

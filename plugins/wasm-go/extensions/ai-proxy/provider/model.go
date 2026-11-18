@@ -421,10 +421,14 @@ func (m *chatMessage) ParseContent() []chatMessageContent {
 			switch contentMap["type"] {
 			case contentTypeText:
 				if subStr, ok := contentMap[contentTypeText].(string); ok {
-					contentList = append(contentList, chatMessageContent{
+					msg := chatMessageContent{
 						Type: contentTypeText,
 						Text: subStr,
-					})
+					}
+					if cc, ok := contentMap["cache_control"].(map[string]any); ok {
+						msg.CacheControl = cc
+					}
+					contentList = append(contentList, msg)
 				}
 			case contentTypeImageUrl:
 				if subObj, ok := contentMap[contentTypeImageUrl].(map[string]any); ok {
@@ -436,6 +440,9 @@ func (m *chatMessage) ParseContent() []chatMessageContent {
 					}
 					if detail, ok := subObj["detail"].(string); ok {
 						msg.ImageUrl.Detail = detail
+					}
+					if cc, ok := contentMap["cache_control"].(map[string]any); ok {
+						msg.CacheControl = cc
 					}
 					contentList = append(contentList, msg)
 				}

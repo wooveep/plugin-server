@@ -21,12 +21,32 @@ func managedSupplierAPIName(profile managedProtocolProfile) supplier.ApiName {
 	case managedProtocolEmbeddings:
 		return supplier.ApiNameEmbeddings
 	case managedProtocolDashScopeText:
-		return supplier.ApiNameDashScopeText
+		if profile.InputProtocol == managedProtocolDashScopeText {
+			return supplier.ApiNameDashScopeText
+		}
+		return supplier.ApiNameChatCompletion
 	case managedProtocolDashScopeMultimodal:
-		return supplier.ApiNameDashScopeMultimodal
+		if profile.InputProtocol == managedProtocolDashScopeMultimodal {
+			return supplier.ApiNameDashScopeMultimodal
+		}
+		return supplier.ApiNameChatCompletion
 	default:
 		return supplier.ApiNameChatCompletion
 	}
+}
+
+func newManagedSupplierAdapter(config supplier.ProviderConfig, profile managedProtocolProfile, upstreamPath string) (*supplier.ManagedAdapter, error) {
+	switch profile.UpstreamProtocol {
+	case managedProtocolDashScopeText:
+		if config.GetType() != "qwen" || upstreamPath != "/api/v1/services/aigc/text-generation/generation" {
+			return nil, errors.New("managed DashScope text requires its registered synchronous Qwen text path")
+		}
+	case managedProtocolDashScopeMultimodal:
+		if config.GetType() != "qwen" || upstreamPath != "/api/v1/services/aigc/multimodal-generation/generation" {
+			return nil, errors.New("managed DashScope multimodal requires its registered synchronous Qwen multimodal path")
+		}
+	}
+	return supplier.NewManagedAdapter(config, managedSupplierAPIName(profile), upstreamPath)
 }
 
 // DashScope emits cumulative native counters. Observe the final original result,
@@ -86,7 +106,7 @@ func managedQwenDocumentObservation(protocol string, status uint16, headers [][2
 	managedProtocolMergeModel(&observation.ResponseModel, object["model"])
 	wireUsage := make(map[string]json.RawMessage)
 	for source, destination := range map[string]string{"input_tokens": "prompt_tokens", "output_tokens": "completion_tokens", "total_tokens": "total_tokens", "prompt_tokens_details": "prompt_tokens_details", "output_tokens_details": "completion_tokens_details"} {
-		if value, exists := usage[source]; exists {
+		if value, exists := usage[source]; exists && !managedProtocolNull(value) {
 			wireUsage[destination] = value
 		}
 	}
@@ -196,11 +216,17 @@ func convertManagedSupplierResponse(ctx wrapper.HttpContext, s *managedExecution
 	if err != nil {
 		return managedProtocolClientResponse{}, err
 	}
-	converted, err = managedProtocolRestoreUsage(converted, stream, profile.UpstreamProtocol, outcome.Usage)
+	chatUpstream := profile.UpstreamProtocol
+	if chatUpstream != managedProtocolEmbeddings {
+		chatUpstream = managedProtocolChat
+	}
+	converted, err = managedProtocolRestoreUsage(converted, stream, chatUpstream, outcome.Usage)
 	if err != nil {
 		return managedProtocolClientResponse{}, err
 	}
-	result, err := profile.ConvertResponse(ctx, *outcome.HTTPStatus, headers, converted)
+	convertedProfile := profile
+	convertedProfile.UpstreamProtocol = chatUpstream
+	result, err := convertedProfile.ConvertResponse(ctx, *outcome.HTTPStatus, headers, converted)
 	if err != nil {
 		return managedProtocolClientResponse{}, err
 	}

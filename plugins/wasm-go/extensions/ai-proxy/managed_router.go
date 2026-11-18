@@ -238,9 +238,11 @@ func observeManagedRouterHeaders(ctx wrapper.HttpContext, s *managedExecutionSta
 		case managedProtocolCompletions:
 			r.chat = &managedChatStream{completions: true}
 		case managedProtocolDashScopeText, managedProtocolDashScopeMultimodal:
-			r.dashScope = &managedDashScopeStream{
-				protocol:    profile.UpstreamProtocol,
-				incremental: gjson.GetBytes(s.publicRequest, "parameters.incremental_output").Bool(),
+			if s.config.vendor == nil || s.config.vendor.NativeResponseFormat() == "" {
+				r.dashScope = &managedDashScopeStream{
+					protocol:    profile.UpstreamProtocol,
+					incremental: gjson.GetBytes(s.publicRequest, "parameters.incremental_output").Bool(),
+				}
 			}
 		default:
 			r.native = newManagedNativeStream(profile.UpstreamProtocol, profile.supplier == "qwen", true)
@@ -554,8 +556,12 @@ func projectManagedRouterJSON(ctx wrapper.HttpContext, s *managedExecutionState,
 	r := s.router
 	policy := managedPublicPolicy(s)
 	if *r.status >= 400 {
+		format := s.config.profile.UpstreamProtocol
+		if s.config.vendor != nil && s.config.vendor.NativeResponseFormat() != "" {
+			format = s.config.vendor.NativeResponseFormat()
+		}
 		return replaceManagedRouterFailure(ctx, s, clientresponse.ClassifyFailure(clientresponse.FailureInput{
-			Status: *r.status, Format: s.config.profile.UpstreamProtocol, Client: policy.Protocol,
+			Status: *r.status, Format: format, Client: policy.Protocol,
 			Body: body, Request: s.publicRequest,
 		}))
 	}

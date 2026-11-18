@@ -197,12 +197,24 @@ type chatCompletionResponseEnvelope struct {
 	Usage   *usage                 `json:"usage,omitempty"`
 }
 
+type ResponsesToChatConvertOptions struct {
+	DeveloperRoleAsSystem bool
+}
+
 // ConvertResponsesRequestToChatCompletion reuses the registered Responses fallback adapter.
 func ConvertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 	return convertResponsesRequestToChatCompletion(body)
 }
 
+func ConvertResponsesRequestToChatCompletionWithOptions(body []byte, options ResponsesToChatConvertOptions) ([]byte, error) {
+	return convertResponsesRequestToChatCompletionWithOptions(body, options)
+}
+
 func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
+	return convertResponsesRequestToChatCompletionWithOptions(body, ResponsesToChatConvertOptions{})
+}
+
+func convertResponsesRequestToChatCompletionWithOptions(body []byte, options ResponsesToChatConvertOptions) ([]byte, error) {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(body, &fields); err != nil {
 		return nil, fmt.Errorf("invalid Responses fallback request: %w", err)
@@ -231,7 +243,7 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 		return nil, errors.New("reasoning summary is unsupported in Responses fallback mode")
 	}
 
-	messages, err := convertResponsesInputToChatMessages(request.Input)
+	messages, err := convertResponsesInputToChatMessagesWithOptions(request.Input, options.DeveloperRoleAsSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -240,8 +252,12 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to marshal responses instructions: %w", err)
 		}
+		instructionRole := roleDeveloper
+		if options.DeveloperRoleAsSystem {
+			instructionRole = roleSystem
+		}
 		messages = append([]responsesChatInputMessage{{
-			Role:    roleDeveloper,
+			Role:    instructionRole,
 			Content: content,
 		}}, messages...)
 	}
@@ -312,6 +328,10 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 }
 
 func convertResponsesInputToChatMessages(input json.RawMessage) ([]responsesChatInputMessage, error) {
+	return convertResponsesInputToChatMessagesWithOptions(input, false)
+}
+
+func convertResponsesInputToChatMessagesWithOptions(input json.RawMessage, developerRoleAsSystem bool) ([]responsesChatInputMessage, error) {
 	if len(bytes.TrimSpace(input)) == 0 || bytes.Equal(bytes.TrimSpace(input), []byte("null")) {
 		return nil, errors.New("input is required for Responses fallback mode")
 	}
@@ -362,11 +382,15 @@ func convertResponsesInputToChatMessages(input json.RawMessage) ([]responsesChat
 			default:
 				return nil, fmt.Errorf("message role %q is unsupported in Responses fallback mode", item.Role)
 			}
-			content, err := convertResponsesMessageContent(item.Content, item.Role)
+			role := item.Role
+			if role == roleDeveloper && developerRoleAsSystem {
+				role = roleSystem
+			}
+			content, err := convertResponsesMessageContent(item.Content, role)
 			if err != nil {
 				return nil, err
 			}
-			if item.Role == roleAssistant && len(messages) > 0 {
+			if role == roleAssistant && len(messages) > 0 {
 				last := &messages[len(messages)-1]
 				if last.Role == roleAssistant && last.ReasoningContent != nil && last.Content == nil {
 					last.Content, last.PromptCacheBreakpoint = content, item.PromptCacheBreakpoint
@@ -413,7 +437,7 @@ func convertResponsesInputToChatMessages(input json.RawMessage) ([]responsesChat
 				last.PromptCacheBreakpoint = nil
 				continue
 			}
-			messages = append(messages, responsesChatInputMessage{Role: item.Role, Content: content, PromptCacheBreakpoint: item.PromptCacheBreakpoint})
+			messages = append(messages, responsesChatInputMessage{Role: role, Content: content, PromptCacheBreakpoint: item.PromptCacheBreakpoint})
 		case "function_call":
 			if item.CallID == "" || item.Name == "" || item.Arguments == nil {
 				return nil, errors.New("function_call requires call_id, name and string arguments in Responses fallback mode")

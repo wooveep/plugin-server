@@ -321,7 +321,7 @@ func validateManagedTextProvider(proxy gjson.Result, c *managedExecutionConfig) 
 	if err := parsed.Validate(); err != nil {
 		return errors.New("managed supplier configuration is invalid")
 	}
-	adapter, err := supplier.NewManagedAdapter(parsed, managedSupplierAPIName(c.profile), c.settings.UpstreamPath)
+	adapter, err := newManagedSupplierAdapter(parsed, c.profile, c.settings.UpstreamPath)
 	if err != nil {
 		return err
 	}

@@ -396,3 +396,72 @@ func TestTransformRequestBodyHeadersCompatibleModeOmitsPreserveThinkingWithoutRe
 	require.NoError(t, err)
 	assert.False(t, gjson.GetBytes(modifiedBody, "preserve_thinking").Exists())
 }
+
+func TestQwenNativeToolCallMultiTurnAndCumulativeStreamingFidelity(t *testing.T) {
+	provider := &qwenProvider{}
+	parallel := true
+	request := &chatCompletionRequest{
+		Model:               "qwen-flash",
+		MaxCompletionTokens: 320,
+		ClaudeThinking:      &claudeThinkingConfig{Type: "enabled", BudgetTokens: 2048},
+		ToolChoice:          "auto",
+		ParallelToolCalls:   &parallel,
+		Messages: []chatMessage{
+			{Role: "user", Content: "Check Hangzhou weather"},
+			{
+				Role:             "assistant",
+				Content:          nil,
+				ReasoningContent: "Call weather tool",
+				ToolCalls: []toolCall{{
+					Id:       "call_weather_1",
+					Type:     "function",
+					Function: functionCall{Name: "get_weather", Arguments: `{"city":"Hangzhou"}`},
+				}},
+			},
+			{
+				Role:       "tool",
+				ToolCallId: "call_weather_1",
+				Content:    []any{map[string]any{"type": "text", "text": "24C sunny"}},
+			},
+		},
+		Tools: []tool{{Type: "function", Function: function{Name: "get_weather"}}},
+	}
+
+	raw, err := provider.buildQwenTextGenerationRequest(nil, request, false)
+	require.NoError(t, err)
+	assert.Equal(t, int64(320), gjson.GetBytes(raw, "parameters.max_tokens").Int())
+	assert.True(t, gjson.GetBytes(raw, "parameters.enable_thinking").Bool())
+	assert.Equal(t, int64(2048), gjson.GetBytes(raw, "parameters.thinking_budget").Int())
+	assert.Equal(t, "auto", gjson.GetBytes(raw, "parameters.tool_choice").String())
+	assert.True(t, gjson.GetBytes(raw, "parameters.parallel_tool_calls").Bool())
+	assert.False(t, gjson.GetBytes(raw, "parameters.top_p").Exists())
+	assert.Equal(t, gjson.String, gjson.GetBytes(raw, "input.messages.1.content").Type)
+	assert.Equal(t, "call_weather_1", gjson.GetBytes(raw, "input.messages.2.tool_call_id").String())
+	assert.Equal(t, "24C sunny", gjson.GetBytes(raw, "input.messages.2.content").String())
+
+	ctx := newMockMultipartHttpContext()
+	ctx.SetContext(ctxKeyFinalRequestModel, "qwen-flash")
+	ctx.SetContext(ctxKeyIncrementalStreaming, false)
+
+	events1, err := provider.OnStreamingEvent(ctx, ApiNameChatCompletion, StreamEvent{
+		Event: "result",
+		Data:  `{"request_id":"req-1","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_weather_1","type":"function","function":{"name":"get_weather","arguments":"{\"city\":"}}]}}]},"usage":{"input_tokens":20,"output_tokens":5,"total_tokens":25}}`,
+	})
+	require.NoError(t, err)
+	require.Len(t, events1, 1)
+	assert.Empty(t, events1[0].Event)
+	assert.Equal(t, "call_weather_1", gjson.Get(events1[0].Data, "choices.0.delta.tool_calls.0.id").String())
+	assert.Equal(t, "get_weather", gjson.Get(events1[0].Data, "choices.0.delta.tool_calls.0.function.name").String())
+	assert.Equal(t, `{"city":`, gjson.Get(events1[0].Data, "choices.0.delta.tool_calls.0.function.arguments").String())
+
+	events2, err := provider.OnStreamingEvent(ctx, ApiNameChatCompletion, StreamEvent{
+		Event: "result",
+		Data:  `{"request_id":"req-1","output":{"choices":[{"finish_reason":"tool_calls","message":{"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_weather_1","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Hangzhou\"}"}}]}}]},"usage":{"input_tokens":20,"output_tokens":9,"total_tokens":29}}`,
+	})
+	require.NoError(t, err)
+	require.Len(t, events2, 3)
+	assert.Empty(t, gjson.Get(events2[0].Data, "choices.0.delta.tool_calls.0.id").String(), "subsequent delta chunk must not duplicate tool_call id")
+	assert.Empty(t, gjson.Get(events2[0].Data, "choices.0.delta.tool_calls.0.function.name").String())
+	assert.Equal(t, `"Hangzhou"}`, gjson.Get(events2[0].Data, "choices.0.delta.tool_calls.0.function.arguments").String())
+	assert.Equal(t, "tool_calls", gjson.Get(events2[1].Data, "choices.0.finish_reason").String())
+}

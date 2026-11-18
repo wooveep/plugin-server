@@ -88,6 +88,8 @@ func TestRouterSupplierStreamsForwardBeforeTerminalAndKeepOriginalCounters(t *te
 				require.NotNil(t, attempt.BodyComplete)
 				require.True(t, *attempt.BodyComplete)
 				require.Equal(t, "succeeded", attempt.ExecutionResult)
+				require.Equal(t, "succeeded", delivery.DeliveryState)
+				require.NotContains(t, string(h.host.GetCurrentResponseBody(h.id)), "response_incomplete")
 				require.Equal(t, supplier.input, attempt.Usage.Quantities["input"])
 				require.Equal(t, supplier.output, attempt.Usage.Quantities["output"])
 				require.Equal(t, attempt.Usage, delivery.Usage)
