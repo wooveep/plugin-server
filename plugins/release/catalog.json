@@ -2446,7 +2446,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/model-router",
-      "declaredVersion": "2.0.13"
+      "declaredVersion": "2.0.14"
     },
     {
       "logicalId": "nginx-rewrite-compatible",
