@@ -127,23 +127,77 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 		})
 
 		t.Run("do not process for unsupported content-type", func(t *testing.T) {
-			host, status := test.NewTestHost(basicConfig)
+			for _, contentType := range []string{"text/plain", "image/png", "image/svg+xml", "application/gzip"} {
+				t.Run(contentType, func(t *testing.T) {
+					host, status := test.NewTestHost(basicConfig)
+					defer host.Reset()
+					require.Equal(t, types.OnPluginStartStatusOK, status)
+
+					originalHeaders := [][2]string{
+						{":authority", "example.com"},
+						{":path", "/v1/chat/completions"},
+						{":method", "POST"},
+						{"content-type", contentType},
+						{"content-length", "123"},
+					}
+					action := host.CallOnHttpRequestHeaders(originalHeaders)
+					require.Equal(t, types.ActionContinue, action)
+
+					newHeaders := host.GetRequestHeaders()
+					_, found := getHeader(newHeaders, "content-length")
+					require.True(t, found, "content-length should not be removed for unsupported content-type")
+				})
+			}
+		})
+
+		t.Run("skip binary portal asset upload under wildcard path suffix", func(t *testing.T) {
+			wildcardCfg, err := json.Marshal(map[string]interface{}{
+				"modelToHeader":      "x-higress-llm-model",
+				"enableOnPathSuffix": []string{"*"},
+			})
+			require.NoError(t, err)
+
+			host, status := test.NewTestHost(wildcardCfg)
 			defer host.Reset()
 			require.Equal(t, types.OnPluginStartStatusOK, status)
 
-			originalHeaders := [][2]string{
-				{":authority", "example.com"},
-				{":path", "/v1/chat/completions"},
+			action := host.CallOnHttpRequestHeaders([][2]string{
+				{":authority", "admin.example.test"},
+				{":path", "/api/v1/system/portal-assets"},
 				{":method", "POST"},
-				{"content-type", "text/plain"},
-				{"content-length", "123"},
-			}
-			action := host.CallOnHttpRequestHeaders(originalHeaders)
-			require.Equal(t, types.HeaderStopIteration, action)
+				{"content-type", "image/png"},
+				{"content-length", "5242880"},
+			})
+			require.Equal(t, types.ActionContinue, action)
 
-			newHeaders := host.GetRequestHeaders()
-			_, found := getHeader(newHeaders, "content-length")
-			require.False(t, found, "content-length should not be removed for unsupported content-type")
+			length, found := getHeader(host.GetRequestHeaders(), "content-length")
+			require.True(t, found, "content-length must remain intact for binary asset uploads")
+			require.Equal(t, "5242880", length)
+		})
+
+		t.Run("process multipart/form-data and mixed-case application/json", func(t *testing.T) {
+			for _, contentType := range []string{
+				"Application/JSON; charset=utf-8",
+				"multipart/form-data; boundary=----FormBoundary",
+			} {
+				t.Run(contentType, func(t *testing.T) {
+					host, status := test.NewTestHost(basicConfig)
+					defer host.Reset()
+					require.Equal(t, types.OnPluginStartStatusOK, status)
+
+					action := host.CallOnHttpRequestHeaders([][2]string{
+						{":authority", "example.com"},
+						{":path", "/v1/chat/completions"},
+						{":method", "POST"},
+						{"content-type", contentType},
+						{"content-length", "123"},
+					})
+					require.Equal(t, types.HeaderStopIteration, action)
+
+					_, found := getHeader(host.GetRequestHeaders(), "content-length")
+					require.False(t, found)
+				})
+			}
 		})
 	})
 }

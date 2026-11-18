@@ -147,7 +147,13 @@ func onHttpRequestHeaders(ctx wrapper.HttpContext, config ModelRouterConfig) typ
 		}
 	}
 
-	if !enable || !ctx.HasRequestBody() {
+	contentType, err := proxywasm.GetHttpRequestHeader("content-type")
+	lowerContentType := strings.ToLower(contentType)
+	supportedContentType := err == nil &&
+		(strings.Contains(lowerContentType, "application/json") ||
+			strings.Contains(lowerContentType, "multipart/form-data"))
+
+	if !enable || !supportedContentType || !ctx.HasRequestBody() {
 		ctx.DontReadRequestBody()
 		return types.ActionContinue
 	}
@@ -165,10 +171,11 @@ func onHttpRequestBody(ctx wrapper.HttpContext, config ModelRouterConfig, body [
 	if err != nil {
 		return types.ActionContinue
 	}
+	lowerContentType := strings.ToLower(contentType)
 
-	if strings.Contains(contentType, "application/json") {
+	if strings.Contains(lowerContentType, "application/json") {
 		return handleJsonBody(ctx, config, body)
-	} else if strings.Contains(contentType, "multipart/form-data") {
+	} else if strings.Contains(lowerContentType, "multipart/form-data") {
 		return handleMultipartBody(ctx, config, body, contentType)
 	}
 
