@@ -137,6 +137,11 @@ func TestDashScopeCrossProtocolSixCellMultiTurnMatrix(t *testing.T) {
 					require.Equal(t, up.model, gjson.GetBytes(outbound1, "model").String())
 					require.Equal(t, int64(128), gjson.GetBytes(outbound1, "parameters.max_tokens").Int())
 					require.True(t, gjson.GetBytes(outbound1, "parameters.enable_thinking").Bool(), string(outbound1))
+					if stream {
+						require.True(t, gjson.GetBytes(outbound1, "parameters.incremental_output").Bool(), "enable_thinking + stream must set incremental_output=true: %s", string(outbound1))
+					} else {
+						require.False(t, gjson.GetBytes(outbound1, "parameters.incremental_output").Bool(), string(outbound1))
+					}
 					require.False(t, gjson.GetBytes(outbound1, "parameters.top_p").Exists(), "omitted top_p must not clamp to 0.000001")
 					require.Equal(t, "get_weather", gjson.GetBytes(outbound1, "parameters.tools.0.function.name").String())
 					require.Equal(t, "auto", gjson.GetBytes(outbound1, "parameters.tool_choice").String())
@@ -165,10 +170,13 @@ func TestDashScopeCrossProtocolSixCellMultiTurnMatrix(t *testing.T) {
 							{"content-type", "text/event-stream"},
 							{"x-request-id", "a8a7295d-0699-991f-849a-97f767160077"},
 						}, false))
-						// Cumulative (incremental_output=false) DashScope SSE frames with reasoning + split tool_calls arguments.
-						sseTurn1 := "event: result\ndata: " + `{"request_id":"a8a7295d-0699-991f-849a-97f767160077","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","reasoning_content":"Checking Hangzhou weather..."}}]},"usage":{"input_tokens":84,"output_tokens":5,"total_tokens":89}}` + "\n\n" +
-							"event: result\ndata: " + `{"request_id":"a8a7295d-0699-991f-849a-97f767160077","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","reasoning_content":"Checking Hangzhou weather...","tool_calls":[{"index":0,"id":"call_hz_1","type":"function","function":{"name":"get_weather","arguments":"{\"city\":"}}]}}]},"usage":{"input_tokens":84,"output_tokens":12,"total_tokens":96}}` + "\n\n" +
-							"event: result\ndata: " + `{"request_id":"a8a7295d-0699-991f-849a-97f767160077","output":{"choices":[{"finish_reason":"tool_calls","message":{"role":"assistant","content":"","reasoning_content":"Checking Hangzhou weather...","tool_calls":[{"index":0,"id":"call_hz_1","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Hangzhou\"}"}}]}}]},"usage":{"input_tokens":84,"output_tokens":18,"total_tokens":102,"prompt_tokens_details":{"cached_tokens":32},"output_tokens_details":{"reasoning_tokens":6}}}` + "\n\n"
+						// Incremental (incremental_output=true) DashScope SSE frames when enable_thinking=true + tools.
+						sseTurn1 := "id:1\nevent:result\n:HTTP_STATUS/200\ndata:" + `{"request_id":"a8a7295d-0699-991f-849a-97f767160077","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","reasoning_content":"Checking Hangzhou "}}]},"usage":{"input_tokens":84,"output_tokens":3,"total_tokens":87}}` + "\n\n" +
+							"id:2\nevent:result\n:HTTP_STATUS/200\ndata:" + `{"request_id":"a8a7295d-0699-991f-849a-97f767160077","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","reasoning_content":"weather..."}}]},"usage":{"input_tokens":84,"output_tokens":6,"total_tokens":90}}` + "\n\n" +
+							"id:3\nevent:result\n:HTTP_STATUS/200\ndata:" + `{"request_id":"a8a7295d-0699-991f-849a-97f767160077","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","reasoning_content":"","tool_calls":[{"index":0,"id":"call_hz_1","type":"function","function":{"name":"get_weather","arguments":""}}]}}]},"usage":{"input_tokens":84,"output_tokens":9,"total_tokens":93}}` + "\n\n" +
+							"id:4\nevent:result\n:HTTP_STATUS/200\ndata:" + `{"request_id":"a8a7295d-0699-991f-849a-97f767160077","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","reasoning_content":"","tool_calls":[{"index":0,"id":"","type":"function","function":{"arguments":"{\"city\":"}}]}}]},"usage":{"input_tokens":84,"output_tokens":14,"total_tokens":98}}` + "\n\n" +
+							"id:5\nevent:result\n:HTTP_STATUS/200\ndata:" + `{"request_id":"a8a7295d-0699-991f-849a-97f767160077","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","reasoning_content":"","tool_calls":[{"index":0,"id":"","type":"function","function":{"arguments":"\"Hangzhou\"}"}}]}}]},"usage":{"input_tokens":84,"output_tokens":18,"total_tokens":102}}` + "\n\n" +
+							"id:6\nevent:result\n:HTTP_STATUS/200\ndata:" + `{"request_id":"a8a7295d-0699-991f-849a-97f767160077","output":{"choices":[{"finish_reason":"tool_calls","message":{"role":"assistant","content":"","reasoning_content":"","tool_calls":[{"index":0,"type":"function","function":{}}]}}]},"usage":{"input_tokens":84,"output_tokens":18,"total_tokens":102,"prompt_tokens_details":{"cached_tokens":32},"output_tokens_details":{"reasoning_tokens":6}}}` + "\n\n"
 						h1.host.CallOnResponseBody(h1.id, []byte(sseTurn1), true)
 					} else {
 						require.Equal(t, types.HeaderStopIteration, h1.host.CallOnResponseHeaders(h1.id, [][2]string{
@@ -216,6 +224,8 @@ func TestDashScopeCrossProtocolSixCellMultiTurnMatrix(t *testing.T) {
 							require.Contains(t, resp1, `"type":"thinking_delta"`)
 							require.Contains(t, resp1, `"type":"input_json_delta"`)
 							require.Contains(t, resp1, `"stop_reason":"tool_use"`)
+							require.NotContains(t, resp1, `"input_tokens":84,"output_tokens":0`, "message_start must not attach partial intermediate usage: %s", resp1)
+							require.Contains(t, resp1, `"output_tokens":18`)
 							require.Contains(t, resp1, "event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
 						} else {
 							require.Equal(t, "tool_use", gjson.Get(resp1, "stop_reason").String())
@@ -529,6 +539,93 @@ func TestDashScopeCrossProtocolBufferedHttpCallConversion(t *testing.T) {
 					h.host.CompleteHttpContext(h.id)
 				})
 			}
+		}
+	}
+}
+
+func TestDashScopeCumulativeToolStreamWithoutThinking(t *testing.T) {
+	upstreams := []struct {
+		protocol string
+		path     string
+		model    string
+	}{
+		{managedProtocolDashScopeText, "/api/v1/services/aigc/text-generation/generation", "qwen-flash"},
+		{managedProtocolDashScopeMultimodal, "/api/v1/services/aigc/multimodal-generation/generation", "qwen3.6-plus"},
+	}
+	for _, up := range upstreams {
+		for _, in := range []string{managedProtocolChat, managedProtocolResponses, managedProtocolMessages} {
+			t.Run(in+"->"+up.protocol, func(t *testing.T) {
+				h := newDashScopeConversionHost(t, in, up.protocol, up.model)
+				var pub []byte
+				switch in {
+				case managedProtocolChat:
+					pub = []byte(`{"model":"public-model","stream":true,"stream_options":{"include_usage":true},"messages":[{"role":"user","content":"Read AGENTS.md"}],"tools":[{"type":"function","function":{"name":"read_file","parameters":{"type":"object"}}}]}`)
+				case managedProtocolResponses:
+					pub = []byte(`{"model":"public-model","stream":true,"input":"Read AGENTS.md","tools":[{"type":"function","name":"read_file","parameters":{"type":"object"}}]}`)
+				case managedProtocolMessages:
+					pub = []byte(`{"model":"public-model","stream":true,"max_tokens":128,"messages":[{"role":"user","content":"Read AGENTS.md"}],"tools":[{"name":"read_file","input_schema":{"type":"object"}}]}`)
+				}
+				h.start(t, pub, bytes.Replace(pub, []byte(`"public-model"`), []byte(`"`+up.model+`"`), 1))
+
+				outbound := h.host.GetCurrentRequestBody(h.id)
+				require.False(t, gjson.GetBytes(outbound, "parameters.incremental_output").Bool(), "tools without enable_thinking uses cumulative streaming: %s", string(outbound))
+
+				var injected bytes.Buffer
+				origInject := injectManagedRouterTerminal
+				t.Cleanup(func() { injectManagedRouterTerminal = origInject })
+				injectManagedRouterTerminal = func(body []byte, end bool) error {
+					injected.Write(body)
+					return nil
+				}
+
+				require.NoError(t, h.host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
+				require.Equal(t, types.ActionContinue, h.host.CallOnResponseHeaders(h.id, [][2]string{
+					{":status", "200"},
+					{"content-type", "text/event-stream"},
+					{"x-request-id", "2fb1128e-80fc-4d08-a0fc-a08e78564e08"},
+				}, false))
+
+				// Exact real DashScope cumulative tool stream: id:1 has arguments="" (suppressed by OnStreamingEvent),
+				// id:2..3 accumulate arguments, and id:4 repeats full arguments with finish_reason="tool_calls".
+				id1 := "id:1\nevent:result\n:HTTP_STATUS/200\ndata:" + `{"request_id":"2fb1128e-80fc-4d08-a0fc-a08e78564e08","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_rf_99","type":"function","function":{"name":"read_file","arguments":""}}]}}]},"usage":{"input_tokens":2013,"output_tokens":1,"total_tokens":2014}}` + "\n\n"
+				id2 := "id:2\nevent:result\n:HTTP_STATUS/200\ndata:" + `{"request_id":"2fb1128e-80fc-4d08-a0fc-a08e78564e08","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_rf_99","type":"function","function":{"name":"read_file","arguments":"{\"path\":"}}]}}]},"usage":{"input_tokens":2013,"output_tokens":9,"total_tokens":2022}}` + "\n\n"
+				id3 := "id:3\nevent:result\n:HTTP_STATUS/200\ndata:" + `{"request_id":"2fb1128e-80fc-4d08-a0fc-a08e78564e08","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_rf_99","type":"function","function":{"name":"read_file","arguments":"{\"path\":\"AGENTS.md\"}"}}]}}]},"usage":{"input_tokens":2013,"output_tokens":16,"total_tokens":2029}}` + "\n\n"
+				id4 := "id:4\nevent:result\n:HTTP_STATUS/200\ndata:" + `{"request_id":"2fb1128e-80fc-4d08-a0fc-a08e78564e08","output":{"choices":[{"finish_reason":"tool_calls","message":{"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_rf_99","type":"function","function":{"name":"read_file","arguments":"{\"path\":\"AGENTS.md\"}"}}]}}]},"usage":{"input_tokens":2013,"output_tokens":16,"total_tokens":2029,"prompt_tokens_details":{"cached_tokens":1024}}}` + "\n\n"
+				var streamed bytes.Buffer
+				for i, frame := range []string{id1, id2, id3, id4} {
+					h.host.CallOnResponseBody(h.id, []byte(frame), i == 3)
+					streamed.Write(h.host.GetCurrentResponseBody(h.id))
+				}
+				drainDashScopeRedis(h)
+
+				resp := streamed.String() + injected.String()
+				require.NotContains(t, resp, "response_incomplete", resp)
+				switch in {
+				case managedProtocolChat:
+					require.Contains(t, resp, "data: [DONE]\n\n")
+					require.Equal(t, 1, strings.Count(resp, `"id":"call_pf_`), resp)
+					require.Contains(t, resp, `"prompt_tokens":2013`)
+				case managedProtocolResponses:
+					require.Contains(t, resp, `"type":"response.function_call_arguments.delta"`)
+					require.Contains(t, resp, `"type":"response.completed"`)
+					require.Contains(t, resp, `"input_tokens":2013`)
+				case managedProtocolMessages:
+					require.Contains(t, resp, `"type":"input_json_delta"`)
+					require.Contains(t, resp, `"stop_reason":"tool_use"`)
+					require.NotContains(t, resp, `"input_tokens":2013,"output_tokens":0`, resp)
+					require.Contains(t, resp, `"output_tokens":16`)
+					require.Contains(t, resp, "event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
+				}
+
+				state := h.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
+				require.NotNil(t, state.lastDelivery)
+				deliv := state.lastDelivery.Envelope()
+				require.Equal(t, "succeeded", deliv.DeliveryState)
+				require.Equal(t, "2013", deliv.Usage.Quantities["input"])
+				require.Equal(t, "16", deliv.Usage.Quantities["output"])
+				require.Equal(t, "1024", deliv.Usage.Quantities["cache_hit"])
+				h.host.CompleteHttpContext(h.id)
+			})
 		}
 	}
 }

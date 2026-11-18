@@ -73,9 +73,7 @@ func projectManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 				r.projectionFailed = true
 				return
 			}
-			if r.supplier != nil && r.supplier.hasPublicUsage {
-				r.projectionUsage = r.supplier.publicUsage
-			} else if usage := clientresponse.ReadUsage(event.Data, clientresponse.Chat, false); usage.Input != nil {
+			if usage := clientresponse.ReadUsage(event.Data, clientresponse.Chat, false); usage.Input != nil {
 				r.projectionUsage = usage
 			}
 		} else {
@@ -114,8 +112,12 @@ func projectManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 		return output.Bytes()
 	}
 	observed := r.streamObservation()
-	if r.chat != nil && observed.Usage.Status != "reported" {
-		r.projectionUsage = clientresponse.Usage{}
+	if r.chat != nil {
+		if observed.Usage.Status != "reported" {
+			r.projectionUsage = clientresponse.Usage{}
+		} else if r.supplier != nil && r.supplier.hasPublicUsage {
+			r.projectionUsage = r.supplier.publicUsage
+		}
 	}
 	if !r.projectionFailed && observed.BodyComplete && (r.native != nil || observed.ExecutionResult == "succeeded" || observed.ExecutionResult == "partial") {
 		switch {

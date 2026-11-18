@@ -409,7 +409,7 @@ func (m *qwenProvider) buildQwenGenerationRequest(ctx wrapper.HttpContext, origR
 	}
 	if enableThinking == nil && origRequest.ClaudeThinking != nil {
 		switch origRequest.ClaudeThinking.Type {
-		case "enabled":
+		case "enabled", "adaptive":
 			val := true
 			enableThinking = &val
 			if thinkingBudget == 0 && origRequest.ClaudeThinking.BudgetTokens > 0 {
@@ -422,7 +422,7 @@ func (m *qwenProvider) buildQwenGenerationRequest(ctx wrapper.HttpContext, origR
 	}
 	if enableThinking == nil && origRequest.Thinking != nil {
 		switch origRequest.Thinking.Type {
-		case "enabled":
+		case "enabled", "adaptive":
 			val := true
 			enableThinking = &val
 			if thinkingBudget == 0 && origRequest.Thinking.BudgetToken > 0 {
@@ -451,7 +451,7 @@ func (m *qwenProvider) buildQwenGenerationRequest(ctx wrapper.HttpContext, origR
 			Stop:              origRequest.Stop,
 			Temperature:       origRequest.Temperature,
 			TopP:              topP,
-			IncrementalOutput: streaming && (len(origRequest.Tools) == 0),
+			IncrementalOutput: streaming && (len(origRequest.Tools) == 0 || (enableThinking != nil && *enableThinking)),
 			EnableSearch:      m.config.qwenEnableSearch,
 			EnableThinking:    enableThinking,
 			ThinkingBudget:    thinkingBudget,
@@ -561,6 +561,33 @@ func (m *qwenProvider) buildChatCompletionStreamingResponse(ctx wrapper.HttpCont
 	deltaToolCallsMessage := &chatMessage{Role: message.Role, ToolCalls: append([]toolCall{}, message.ToolCalls...)}
 	if incrementalStreaming {
 		deltaContentMessage.handleStreamingReasoningContent(ctx, reasoningContentMode)
+		if len(deltaToolCallsMessage.ToolCalls) > 0 && ctx != nil {
+			pushedCalls, _ := ctx.GetContext("qwenPushedIncrementalToolCalls").(map[int]toolCall)
+			if pushedCalls == nil {
+				pushedCalls = make(map[int]toolCall)
+			}
+			for i, tc := range deltaToolCallsMessage.ToolCalls {
+				if prev, exists := pushedCalls[tc.Index]; exists {
+					if prev.Id != "" && tc.Id == prev.Id {
+						tc.Id = ""
+						if prev.Function.Name != "" && tc.Function.Name == prev.Function.Name {
+							tc.Function.Name = ""
+						}
+					}
+					if tc.Id != "" {
+						prev.Id = tc.Id
+					}
+					if tc.Function.Name != "" {
+						prev.Function.Name = tc.Function.Name
+					}
+					pushedCalls[tc.Index] = prev
+				} else if tc.Id != "" || tc.Function.Name != "" {
+					pushedCalls[tc.Index] = toolCall{Index: tc.Index, Id: tc.Id, Function: functionCall{Name: tc.Function.Name}}
+				}
+				deltaToolCallsMessage.ToolCalls[i] = tc
+			}
+			ctx.SetContext("qwenPushedIncrementalToolCalls", pushedCalls)
+		}
 	} else {
 		for _, tc := range message.ToolCalls {
 			if tc.Function.Arguments == "" && !finished {
@@ -598,6 +625,15 @@ func (m *qwenProvider) buildChatCompletionStreamingResponse(ctx wrapper.HttpCont
 			}
 		}
 		ctx.SetContext(ctxKeyPushedMessage, message)
+	}
+	if len(deltaToolCallsMessage.ToolCalls) > 0 {
+		filtered := deltaToolCallsMessage.ToolCalls[:0]
+		for _, tc := range deltaToolCallsMessage.ToolCalls {
+			if !tc.Function.IsEmpty() {
+				filtered = append(filtered, tc)
+			}
+		}
+		deltaToolCallsMessage.ToolCalls = filtered
 	}
 
 	if !deltaContentMessage.IsEmpty() {

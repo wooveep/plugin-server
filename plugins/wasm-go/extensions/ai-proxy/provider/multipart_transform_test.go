@@ -24,9 +24,19 @@ func newMockMultipartHttpContext() *mockMultipartHttpContext {
 func (m *mockMultipartHttpContext) SetContext(key string, value interface{}) {
 	m.contextMap[key] = value
 }
-func (m *mockMultipartHttpContext) GetContext(key string) interface{}                 { return m.contextMap[key] }
-func (m *mockMultipartHttpContext) GetBoolContext(key string, def bool) bool          { return def }
-func (m *mockMultipartHttpContext) GetStringContext(key, def string) string           { return def }
+func (m *mockMultipartHttpContext) GetContext(key string) interface{} { return m.contextMap[key] }
+func (m *mockMultipartHttpContext) GetBoolContext(key string, def bool) bool {
+	if b, ok := m.contextMap[key].(bool); ok {
+		return b
+	}
+	return def
+}
+func (m *mockMultipartHttpContext) GetStringContext(key, def string) string {
+	if s, ok := m.contextMap[key].(string); ok {
+		return s
+	}
+	return def
+}
 func (m *mockMultipartHttpContext) GetByteSliceContext(key string, def []byte) []byte { return def }
 func (m *mockMultipartHttpContext) Scheme() string                                    { return "" }
 func (m *mockMultipartHttpContext) Host() string                                      { return "" }

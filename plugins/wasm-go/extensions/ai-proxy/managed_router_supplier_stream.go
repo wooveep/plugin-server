@@ -135,6 +135,9 @@ func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func(
 				s.invalid = true
 				return
 			}
+			if len(converted) == 0 {
+				return
+			}
 			// Legacy content codecs may emit zero-valued SDK usage after their
 			// native counters were removed. Only the original observer supplies it.
 			events, err := managedProtocolEvents(converted)
@@ -172,7 +175,9 @@ func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func(
 				data, _ := json.Marshal(content)
 				managedProtocolWriteEvent(&wire, "", data)
 			}
-			forward(wire.Bytes())
+			if wire.Len() != 0 {
+				forward(wire.Bytes())
+			}
 		}) != nil || s.invalid
 	}
 	s.decoder.onComment = nil

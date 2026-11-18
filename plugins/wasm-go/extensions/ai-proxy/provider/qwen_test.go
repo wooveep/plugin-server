@@ -443,6 +443,13 @@ func TestQwenNativeToolCallMultiTurnAndCumulativeStreamingFidelity(t *testing.T)
 	ctx.SetContext(ctxKeyFinalRequestModel, "qwen-flash")
 	ctx.SetContext(ctxKeyIncrementalStreaming, false)
 
+	events0, err := provider.OnStreamingEvent(ctx, ApiNameChatCompletion, StreamEvent{
+		Event: "result",
+		Data:  `{"request_id":"req-1","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_weather_1","type":"function","function":{"name":"get_weather","arguments":""}}]}}]},"usage":{"input_tokens":20,"output_tokens":1,"total_tokens":21}}`,
+	})
+	require.NoError(t, err)
+	assert.Empty(t, events0, "empty-arguments intermediate frame in cumulative mode is buffered without error")
+
 	events1, err := provider.OnStreamingEvent(ctx, ApiNameChatCompletion, StreamEvent{
 		Event: "result",
 		Data:  `{"request_id":"req-1","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_weather_1","type":"function","function":{"name":"get_weather","arguments":"{\"city\":"}}]}}]},"usage":{"input_tokens":20,"output_tokens":5,"total_tokens":25}}`,
@@ -464,4 +471,59 @@ func TestQwenNativeToolCallMultiTurnAndCumulativeStreamingFidelity(t *testing.T)
 	assert.Empty(t, gjson.Get(events2[0].Data, "choices.0.delta.tool_calls.0.function.name").String())
 	assert.Equal(t, `"Hangzhou"}`, gjson.Get(events2[0].Data, "choices.0.delta.tool_calls.0.function.arguments").String())
 	assert.Equal(t, "tool_calls", gjson.Get(events2[1].Data, "choices.0.finish_reason").String())
+}
+
+func TestQwenStreamingThinkingWithToolsEnablesIncrementalOutput(t *testing.T) {
+	provider := &qwenProvider{}
+	ctx := newMockMultipartHttpContext()
+	ctx.SetContext(ctxKeyFinalRequestModel, "qwen-flash")
+	request := &chatCompletionRequest{
+		Model:          "qwen-flash",
+		Stream:         true,
+		ClaudeThinking: &claudeThinkingConfig{Type: "enabled", BudgetTokens: 1024},
+		Messages:       []chatMessage{{Role: "user", Content: "Read AGENTS.md"}},
+		Tools:          []tool{{Type: "function", Function: function{Name: "read_file"}}},
+	}
+
+	raw, err := provider.buildQwenGenerationRequest(ctx, request, nil, true, false)
+	require.NoError(t, err)
+	assert.True(t, gjson.GetBytes(raw, "parameters.enable_thinking").Bool())
+	assert.True(t, gjson.GetBytes(raw, "parameters.incremental_output").Bool(), "DashScope requires incremental_output=true when enable_thinking=true under stream mode")
+	assert.True(t, ctx.GetBoolContext(ctxKeyIncrementalStreaming, false))
+
+	evThink, err := provider.OnStreamingEvent(ctx, ApiNameChatCompletion, StreamEvent{
+		Event: "result",
+		Data:  `{"request_id":"req-inc","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","reasoning_content":"Reading AGENTS.md..."}}]},"usage":{"input_tokens":50,"output_tokens":4,"total_tokens":54}}`,
+	})
+	require.NoError(t, err)
+	require.Len(t, evThink, 1)
+	assert.Equal(t, "Reading AGENTS.md...", gjson.Get(evThink[0].Data, "choices.0.delta.reasoning_content").String())
+
+	evStart, err := provider.OnStreamingEvent(ctx, ApiNameChatCompletion, StreamEvent{
+		Event: "result",
+		Data:  `{"request_id":"req-inc","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","reasoning_content":"","tool_calls":[{"index":0,"id":"call_rf_1","type":"function","function":{"name":"read_file","arguments":""}}]}}]},"usage":{"input_tokens":50,"output_tokens":8,"total_tokens":58}}`,
+	})
+	require.NoError(t, err)
+	require.Len(t, evStart, 1)
+	assert.Equal(t, "call_rf_1", gjson.Get(evStart[0].Data, "choices.0.delta.tool_calls.0.id").String())
+	assert.Equal(t, "read_file", gjson.Get(evStart[0].Data, "choices.0.delta.tool_calls.0.function.name").String())
+	assert.Equal(t, "", gjson.Get(evStart[0].Data, "choices.0.delta.tool_calls.0.function.arguments").String())
+
+	evArg, err := provider.OnStreamingEvent(ctx, ApiNameChatCompletion, StreamEvent{
+		Event: "result",
+		Data:  `{"request_id":"req-inc","output":{"choices":[{"finish_reason":"null","message":{"role":"assistant","content":"","reasoning_content":"","tool_calls":[{"index":0,"id":"","type":"function","function":{"arguments":"{\"path\":\"AGENTS.md\"}"}}]}}]},"usage":{"input_tokens":50,"output_tokens":14,"total_tokens":64}}`,
+	})
+	require.NoError(t, err)
+	require.Len(t, evArg, 1)
+	assert.Empty(t, gjson.Get(evArg[0].Data, "choices.0.delta.tool_calls.0.id").String())
+	assert.Empty(t, gjson.Get(evArg[0].Data, "choices.0.delta.tool_calls.0.function.name").String())
+	assert.Equal(t, `{"path":"AGENTS.md"}`, gjson.Get(evArg[0].Data, "choices.0.delta.tool_calls.0.function.arguments").String())
+
+	evFin, err := provider.OnStreamingEvent(ctx, ApiNameChatCompletion, StreamEvent{
+		Event: "result",
+		Data:  `{"request_id":"req-inc","output":{"choices":[{"finish_reason":"tool_calls","message":{"role":"assistant","content":"","reasoning_content":"","tool_calls":[{"index":0,"type":"function","function":{}}]}}]},"usage":{"input_tokens":50,"output_tokens":14,"total_tokens":64}}`,
+	})
+	require.NoError(t, err)
+	require.Len(t, evFin, 2, "final empty function:{} must not emit a duplicate tool_call chunk before finish_reason")
+	assert.Equal(t, "tool_calls", gjson.Get(evFin[0].Data, "choices.0.finish_reason").String())
 }
