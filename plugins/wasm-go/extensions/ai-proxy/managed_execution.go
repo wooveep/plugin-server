@@ -871,15 +871,13 @@ func dispatchManagedPreparedRequest(ctx wrapper.HttpContext, state *managedExecu
 func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot, body []byte) error {
 	s.requestText = tokenestimate.RequestText(body)
 	profile := s.config.profile
-	qwenCache := profile.supplier == "qwen" && (profile.UpstreamProtocol == managedProtocolChat ||
-		profile.UpstreamProtocol == managedProtocolMessages || profile.UpstreamProtocol == managedProtocolResponses ||
-		profile.UpstreamProtocol == managedProtocolDashScopeText || profile.UpstreamProtocol == managedProtocolDashScopeMultimodal)
-	if qwenCache || profile.UpstreamProtocol == managedProtocolMessages {
+	switch profile.UpstreamProtocol {
+	case managedProtocolChat, managedProtocolMessages, managedProtocolResponses,
+		managedProtocolDashScopeText, managedProtocolDashScopeMultimodal:
 		// Check the final bytes after any protocol conversion.
-		switch {
-		case hasManagedCacheControl(gjson.ParseBytes(body), profile.UpstreamProtocol):
+		if hasManagedCacheControl(gjson.ParseBytes(body), profile.UpstreamProtocol) {
 			s.cacheMode = managedCacheExplicit
-		case qwenCache:
+		} else {
 			s.cacheMode = managedCacheImplicit
 		}
 	}
@@ -1252,14 +1250,19 @@ func appendManagedBailianEvidence(s *managedExecutionState, headers [][2]string,
 		host != "dashscope-us.aliyuncs.com" && !strings.HasSuffix(host, ".maas.aliyuncs.com") {
 		return evidence
 	}
-	var count int
-	for _, header := range headers {
-		if strings.EqualFold(header[0], "x-request-id") {
-			count++
-			recordManagedBailianRequestID(s, header[1])
+	for _, name := range []string{"x-request-id", "x-dashscope-request-id", "request-id"} {
+		perName := 0
+		for _, header := range headers {
+			if strings.EqualFold(header[0], name) && header[1] != "" {
+				perName++
+				recordManagedBailianRequestID(s, header[1])
+			}
+		}
+		if perName > 1 {
+			return evidence
 		}
 	}
-	if count > 1 || s.bailianRequestIDConflict || s.bailianRequestID == "" {
+	if s.bailianRequestIDConflict || s.bailianRequestID == "" {
 		return evidence
 	}
 	evidence = append(evidence, "bailian-request:"+s.bailianRequestID, "bailian-attempt:"+s.attemptID)
@@ -1276,16 +1279,15 @@ func appendManagedBailianEvidence(s *managedExecutionState, headers [][2]string,
 		}
 	case managedProtocolMessages:
 		switch gjson.GetBytes(s.publicRequest, "thinking.type").String() {
-		case "enabled":
+		case "enabled", "adaptive":
 			evidence = append(evidence, "bailian-thinking:enabled")
 		case "disabled":
 			evidence = append(evidence, "bailian-thinking:disabled")
 		}
 	case managedProtocolResponses:
-		switch gjson.GetBytes(s.publicRequest, "reasoning.effort").String() {
-		case "none":
+		if effort := strings.TrimSpace(gjson.GetBytes(s.publicRequest, "reasoning.effort").String()); effort == "none" {
 			evidence = append(evidence, "bailian-thinking:disabled")
-		case "minimal", "low", "medium", "high", "xhigh", "max":
+		} else if effort != "" {
 			evidence = append(evidence, "bailian-thinking:enabled")
 		}
 	default:
@@ -1668,6 +1670,17 @@ func managedOpenAIUsage(object map[string]json.RawMessage) *executionfacts.Usage
 		hit, ok := managedCount(cached)
 		if !ok || hit.Cmp(input) > 0 {
 			return executionfacts.MissingTokenUsage("provider_cache_split_invalid")
+		}
+		quantities["cache_hit"] = hit.String()
+		quantities["cache_miss"] = new(big.Int).Sub(new(big.Int).Set(input), hit).String()
+	}
+	if cached, exists := usage["cached_tokens"]; exists && !managedProtocolNull(cached) {
+		hit, ok := managedCount(cached)
+		if !ok || hit.Cmp(input) > 0 {
+			return executionfacts.MissingTokenUsage("provider_cache_split_invalid")
+		}
+		if prior, exists := quantities["cache_hit"]; exists && prior != hit.String() {
+			return executionfacts.MissingTokenUsage("provider_cache_split_conflict")
 		}
 		quantities["cache_hit"] = hit.String()
 		quantities["cache_miss"] = new(big.Int).Sub(new(big.Int).Set(input), hit).String()

@@ -34,6 +34,13 @@ func TestBailianThinkingEvidenceRetainsOnlyExplicitRequestModes(t *testing.T) {
 		{managedProtocolChat, `{"enable_thinking":false}`, "bailian-thinking:disabled"},
 		{managedProtocolChat, `{"enable_thinking":true}`, "bailian-thinking:enabled"},
 		{managedProtocolDashScopeText, `{"parameters":{"enable_thinking":false}}`, "bailian-thinking:disabled"},
+		{managedProtocolMessages, `{}`, ""},
+		{managedProtocolMessages, `{"thinking":{"type":"enabled","budget_tokens":1024}}`, "bailian-thinking:enabled"},
+		{managedProtocolMessages, `{"thinking":{"type":"adaptive"}}`, "bailian-thinking:enabled"},
+		{managedProtocolMessages, `{"thinking":{"type":"disabled"}}`, "bailian-thinking:disabled"},
+		{managedProtocolResponses, `{}`, ""},
+		{managedProtocolResponses, `{"reasoning":{"effort":"none"}}`, "bailian-thinking:disabled"},
+		{managedProtocolResponses, `{"reasoning":{"effort":"high"}}`, "bailian-thinking:enabled"},
 	} {
 		s := &managedExecutionState{attemptID: "attempt-1", publicRequest: []byte(tc.body),
 			config: &managedExecutionConfig{settings: managedSettings{Authority: "dashscope.aliyuncs.com"},
@@ -43,6 +50,26 @@ func TestBailianThinkingEvidenceRetainsOnlyExplicitRequestModes(t *testing.T) {
 			t.Fatal("explicit mode evidence differs", tc, refs)
 		}
 	}
+	const id = "a8a7295d-0699-991f-849a-97f767160077"
+	for _, hdrs := range [][][2]string{
+		{{"x-dashscope-request-id", id}},
+		{{"request-id", id}},
+		{{"x-request-id", "envoy-non-uuid-trace"}, {"x-dashscope-request-id", id}},
+		{{"x-request-id", id}, {"x-dashscope-request-id", id}},
+	} {
+		s := &managedExecutionState{attemptID: "attempt-1",
+			config: &managedExecutionConfig{settings: managedSettings{Authority: "dashscope.aliyuncs.com"},
+				profile: managedProtocolProfile{supplier: "qwen", UpstreamProtocol: managedProtocolMessages}}}
+		refs := appendManagedBailianEvidence(s, hdrs, nil)
+		require.Contains(t, refs, "bailian-request:"+id)
+	}
+	conflict := &managedExecutionState{attemptID: "attempt-1",
+		config: &managedExecutionConfig{settings: managedSettings{Authority: "dashscope.aliyuncs.com"},
+			profile: managedProtocolProfile{supplier: "qwen", UpstreamProtocol: managedProtocolMessages}}}
+	require.Empty(t, appendManagedBailianEvidence(conflict, [][2]string{
+		{"x-request-id", id},
+		{"x-dashscope-request-id", "c652718f-433b-9413-a8dd-c81cb014ff54"},
+	}, nil))
 }
 
 func TestManagedAvailableUsageRespectsProviderZeroAndEstimatesMissingParts(t *testing.T) {

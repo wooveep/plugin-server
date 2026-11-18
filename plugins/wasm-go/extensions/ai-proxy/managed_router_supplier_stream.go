@@ -55,6 +55,7 @@ func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func(
 				s.thinking = s.thinking || managedQwenReasoning(event.Data)
 			case "gemini":
 				observed = managedGoogleObservation(managedProtocolChat, 200, headers, event.Data, true, 0)
+				s.thinking = s.thinking || managedGoogleThinking(event.Data)
 				usageKey = "usageMetadata"
 				var candidates []struct {
 					Index  *uint32 `json:"index"`
@@ -78,6 +79,7 @@ func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func(
 			default:
 				// Moonshot's original nested counters precede its lossless
 				// relocation to the OpenAI root.
+				s.thinking = s.thinking || managedQwenReasoning(event.Data)
 				var choices []map[string]json.RawMessage
 				if raw, exists := object["choices"]; exists && json.Unmarshal(raw, &choices) != nil {
 					s.invalid = true

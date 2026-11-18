@@ -113,27 +113,37 @@ func managedRetrievalObservation(protocol, model string, status uint16, headers 
 			if raw, exists := usage["input_tokens_details"]; exists && json.Unmarshal(raw, &details) != nil {
 				return o
 			}
-			if visualRaw, exists := details["image_tokens"]; exists {
+			if visualRaw, exists := details["image_tokens"]; exists && !managedProtocolNull(visualRaw) {
 				visual, valid := managedCount(visualRaw)
 				if !valid || visual.Cmp(input) > 0 {
 					return o
 				}
-				if textRaw, exists := details["text_tokens"]; exists {
+				if textRaw, exists := details["text_tokens"]; exists && !managedProtocolNull(textRaw) {
 					text, valid := managedCount(textRaw)
 					if !valid || new(big.Int).Add(text, visual).Cmp(input) != 0 {
 						return o
 					}
 				}
 				quantities["visual_input"] = visual.String()
+			} else {
+				if textRaw, exists := details["text_tokens"]; exists && !managedProtocolNull(textRaw) {
+					text, valid := managedCount(textRaw)
+					if !valid || text.Cmp(input) != 0 {
+						return o
+					}
+				}
+				quantities["visual_input"] = "0"
 			}
 		} else {
-			if raw, exists := usage["image_tokens"]; exists {
+			if raw, exists := usage["image_tokens"]; exists && !managedProtocolNull(raw) {
 				visual, valid := managedCount(raw)
 				if !valid {
 					return o
 				}
 				input.Add(input, visual)
 				quantities["visual_input"] = visual.String()
+			} else {
+				quantities["visual_input"] = "0"
 			}
 			if raw, exists := usage["total_tokens"]; exists {
 				total, valid := managedCount(raw)

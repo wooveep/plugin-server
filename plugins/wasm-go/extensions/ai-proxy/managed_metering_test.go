@@ -135,14 +135,18 @@ func TestCacheWriteAliasesUseOneObservedQuantity(t *testing.T) {
 func TestN04N05RetrievalKeepsTheWireBodyAndMeasuresOnlyInputs(t *testing.T) {
 	for _, tc := range []struct{ protocol, model, usage, result, input, visual string }{
 		{"dashscope_multimodal_embedding", "qwen3-vl-embedding", `{"input_tokens":300,"image_tokens":700,"total_tokens":1000}`, `"output":{"embeddings":[{"index":0,"embedding":[0.1,0.2]}]}`, "1000", "700"},
+		{"dashscope_multimodal_embedding", "qwen3-vl-embedding", `{"input_tokens":300,"total_tokens":300}`, `"output":{"embeddings":[{"index":0,"embedding":[0.1,0.2]}]}`, "300", "0"},
 		{"dashscope_multimodal_embedding", "qwen2.5-vl-embedding", `{"input_tokens":300,"image_tokens":700}`, `"output":{"embeddings":[{"index":0,"embedding":[0.1]}]}`, "1000", "700"},
+		{"dashscope_multimodal_embedding", "qwen2.5-vl-embedding", `{"input_tokens":300}`, `"output":{"embeddings":[{"index":0,"embedding":[0.1]}]}`, "300", "0"},
 		{"dashscope_multimodal_embedding", "tongyi-embedding-vision-plus", `{"input_tokens":1000,"input_tokens_details":{"text_tokens":300,"image_tokens":700},"output_tokens":89,"total_tokens":1089}`, `"output":{"embeddings":[{"index":0,"embedding":[0.1]}]}`, "1000", "700"},
+		{"dashscope_multimodal_embedding", "tongyi-embedding-vision-plus", `{"input_tokens":300,"input_tokens_details":{"text_tokens":300},"output_tokens":89,"total_tokens":389}`, `"output":{"embeddings":[{"index":0,"embedding":[0.1]}]}`, "300", "0"},
+		{"dashscope_multimodal_embedding", "tongyi-embedding-vision-flash", `{"input_tokens":300}`, `"output":{"embeddings":[{"index":0,"embedding":[0.1]}]}`, "300", "0"},
 		{"dashscope_rerank", "qwen3-rerank", `{"total_tokens":1200}`, `"output":{"results":[{"index":0,"relevance_score":0.8}]}`, "1200", ""},
 		{"bailian_rerank", "qwen3-rerank", `{"total_tokens":1200,"prompt_tokens":1200}`, `"results":[{"index":0,"relevance_score":0.8},{"index":1,"relevance_score":0.5}]`, "1200", ""},
 		{"dashscope_rerank", "qwen3.7-text-rerank", `{"total_tokens":45,"prompt_tokens":45}`, `"output":{"results":[{"index":0,"relevance_score":0.8}]}`, "45", ""},
 		{"bailian_rerank", "qwen3.7-text-rerank", `{"total_tokens":45,"prompt_tokens":45}`, `"results":[{"index":0,"relevance_score":0.8}]`, "45", ""},
 	} {
-		t.Run(tc.protocol+"/"+tc.model, func(t *testing.T) {
+		t.Run(tc.protocol+"/"+tc.model+"/"+tc.visual, func(t *testing.T) {
 			require.True(t, managedRetrievalModel(tc.protocol, tc.model))
 			profile, err := newManagedProtocolProfile(tc.protocol, tc.protocol)
 			require.NoError(t, err)
@@ -159,6 +163,10 @@ func TestN04N05RetrievalKeepsTheWireBodyAndMeasuresOnlyInputs(t *testing.T) {
 			require.NotContains(t, outcome.Usage.Quantities, "output")
 		})
 	}
+	invalidVisual := managedRetrievalObservation("dashscope_multimodal_embedding", "qwen3-vl-embedding", 200, [][2]string{{"content-type", "application/json"}}, []byte(`{"output":{"embeddings":[{"index":0,"embedding":[0.1]}]},"usage":{"input_tokens":300,"image_tokens":"bad"}}`), true)
+	require.Equal(t, "missing", invalidVisual.Usage.Status)
+	mismatchText := managedRetrievalObservation("dashscope_multimodal_embedding", "tongyi-embedding-vision-plus", 200, [][2]string{{"content-type", "application/json"}}, []byte(`{"output":{"embeddings":[{"index":0,"embedding":[0.1]}]},"usage":{"input_tokens":300,"input_tokens_details":{"text_tokens":200}}}`), true)
+	require.Equal(t, "missing", mismatchText.Usage.Status)
 	require.False(t, managedRetrievalModel("bailian_rerank", "qwen3-vl-rerank"))
 }
 
@@ -555,4 +563,217 @@ func TestQwenMessagesImplicitZeroWriteAndResponsesReasoningConflict(t *testing.T
 			})
 		}
 	})
+}
+
+func TestCacheModeNormalizationForZeroWriteAndExplicitHitWithoutCacheType(t *testing.T) {
+	for _, protocol := range []string{managedProtocolChat, managedProtocolResponses, managedProtocolDashScopeText} {
+		t.Run("implicit_zero_write/"+protocol, func(t *testing.T) {
+			state := &managedExecutionState{
+				cacheMode: managedCacheImplicit,
+				config:    &managedExecutionConfig{profile: managedProtocolProfile{UpstreamProtocol: protocol}},
+			}
+			usage := &executionfacts.Usage{
+				Status: "reported", Unit: "token", Source: "provider",
+				Quantities: map[string]string{"input": "1000", "output": "50", "cache_hit": "400", "cache_miss": "600", "cache_write": "0"},
+			}
+			applyManagedQwenThinking(state, usage, false)
+			require.Equal(t, "0", usage.Quantities["cache_read_mode"])
+			require.Equal(t, "0", usage.Quantities["cache_write"])
+			require.NotContains(t, usage.Quantities, "cache_write_inapplicable")
+			require.Equal(t, "0", usage.Quantities["thinking_mode"])
+		})
+		t.Run("explicit_hit_without_cache_type/"+protocol, func(t *testing.T) {
+			state := &managedExecutionState{
+				cacheMode: managedCacheExplicit,
+				config:    &managedExecutionConfig{profile: managedProtocolProfile{UpstreamProtocol: protocol}},
+			}
+			usage := &executionfacts.Usage{
+				Status: "reported", Unit: "token", Source: "provider",
+				Quantities: map[string]string{"input": "1000", "output": "50", "cache_hit": "400", "cache_miss": "600", "cache_write": "0"},
+			}
+			applyManagedQwenThinking(state, usage, true)
+			require.Equal(t, "1", usage.Quantities["cache_read_mode"])
+			require.Equal(t, "1", usage.Quantities["thinking_mode"])
+
+			zeroHit := &executionfacts.Usage{
+				Status: "reported", Unit: "token", Source: "provider",
+				Quantities: map[string]string{"input": "1000", "output": "50", "cache_hit": "0", "cache_miss": "1000", "cache_write": "300"},
+			}
+			applyManagedQwenThinking(state, zeroHit, false)
+			require.NotContains(t, zeroHit.Quantities, "cache_read_mode")
+			require.Equal(t, "0", zeroHit.Quantities["thinking_mode"])
+		})
+	}
+}
+
+func TestAllSuppliersNormalizeThinkingModeAndImplicitCacheAcrossRouterAndHTTPCall(t *testing.T) {
+	type supplierCase struct {
+		name      string
+		provider  string
+		protocol  string
+		jsonPlain string
+		jsonThink string
+		ssePlain  string
+		sseThink  string
+		wantReas  string
+	}
+	cases := []supplierCase{
+		{
+			name:      "deepseek",
+			provider:  `{"type":"deepseek","apiTokens":["controlled-upstream-key"]}`,
+			protocol:  managedProtocolChat,
+			jsonPlain: `{"id":"c1","model":"upstream-model","choices":[{"index":0,"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":100,"completion_tokens":20,"prompt_tokens_details":{"cached_tokens":40}}}`,
+			jsonThink: `{"id":"c1","model":"upstream-model","choices":[{"index":0,"message":{"role":"assistant","content":"ok","reasoning_content":"step"},"finish_reason":"stop"}],"usage":{"prompt_tokens":100,"completion_tokens":20,"prompt_tokens_details":{"cached_tokens":40},"completion_tokens_details":{"reasoning_tokens":12}}}`,
+			ssePlain:  "data: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[],\"usage\":{\"prompt_tokens\":100,\"completion_tokens\":20,\"prompt_tokens_details\":{\"cached_tokens\":40}}}\n\ndata: [DONE]\n\n",
+			sseThink:  "data: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"reasoning_content\":\"step\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[],\"usage\":{\"prompt_tokens\":100,\"completion_tokens\":20,\"prompt_tokens_details\":{\"cached_tokens\":40},\"completion_tokens_details\":{\"reasoning_tokens\":12}}}\n\ndata: [DONE]\n\n",
+			wantReas:  "12",
+		},
+		{
+			name:      "zhipuai",
+			provider:  `{"type":"zhipuai","apiTokens":["controlled-upstream-key"]}`,
+			protocol:  managedProtocolChat,
+			jsonPlain: `{"id":"c1","model":"upstream-model","choices":[{"index":0,"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":100,"completion_tokens":20,"prompt_tokens_details":{"cached_tokens":40}}}`,
+			jsonThink: `{"id":"c1","model":"upstream-model","choices":[{"index":0,"message":{"role":"assistant","content":"ok","reasoning_content":"step"},"finish_reason":"stop"}],"usage":{"prompt_tokens":100,"completion_tokens":20,"prompt_tokens_details":{"cached_tokens":40}}}`,
+			ssePlain:  "data: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[],\"usage\":{\"prompt_tokens\":100,\"completion_tokens\":20,\"prompt_tokens_details\":{\"cached_tokens\":40}}}\n\ndata: [DONE]\n\n",
+			sseThink:  "data: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"reasoning_content\":\"step\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[],\"usage\":{\"prompt_tokens\":100,\"completion_tokens\":20,\"prompt_tokens_details\":{\"cached_tokens\":40}}}\n\ndata: [DONE]\n\n",
+		},
+		{
+			name:      "moonshot",
+			provider:  `{"type":"moonshot","apiTokens":["controlled-upstream-key"]}`,
+			protocol:  managedProtocolChat,
+			jsonPlain: `{"id":"c1","model":"upstream-model","choices":[{"index":0,"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":100,"completion_tokens":20,"cached_tokens":40}}`,
+			jsonThink: `{"id":"c1","model":"upstream-model","choices":[{"index":0,"message":{"role":"assistant","content":"ok","reasoning_content":"step"},"finish_reason":"stop"}],"usage":{"prompt_tokens":100,"completion_tokens":20,"cached_tokens":40}}`,
+			ssePlain:  "data: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"},\"finish_reason\":\"stop\",\"usage\":{\"prompt_tokens\":100,\"completion_tokens\":20,\"cached_tokens\":40}}]}\n\ndata: [DONE]\n\n",
+			sseThink:  "data: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"reasoning_content\":\"step\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"c1\",\"model\":\"upstream-model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"},\"finish_reason\":\"stop\",\"usage\":{\"prompt_tokens\":100,\"completion_tokens\":20,\"cached_tokens\":40}}]}\n\ndata: [DONE]\n\n",
+		},
+		{
+			name:      "gemini",
+			provider:  `{"type":"gemini","apiTokens":["controlled-upstream-key"]}`,
+			protocol:  managedProtocolChat,
+			jsonPlain: `{"candidates":[{"index":0,"content":{"role":"model","parts":[{"text":"ok"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":100,"candidatesTokenCount":20,"totalTokenCount":120,"cachedContentTokenCount":40}}`,
+			jsonThink: `{"candidates":[{"index":0,"content":{"role":"model","parts":[{"thought":true,"text":"step"},{"text":"ok"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":100,"candidatesTokenCount":8,"thoughtsTokenCount":12,"totalTokenCount":120,"cachedContentTokenCount":40}}`,
+			ssePlain:  "data: {\"candidates\":[{\"index\":0,\"content\":{\"role\":\"model\",\"parts\":[{\"text\":\"ok\"}]}}]}\n\ndata: {\"candidates\":[{\"index\":0,\"finishReason\":\"STOP\"}],\"usageMetadata\":{\"promptTokenCount\":100,\"candidatesTokenCount\":20,\"totalTokenCount\":120,\"cachedContentTokenCount\":40}}\n\n",
+			sseThink:  "data: {\"candidates\":[{\"index\":0,\"content\":{\"role\":\"model\",\"parts\":[{\"thought\":true,\"text\":\"step\"},{\"text\":\"ok\"}]}}]}\n\ndata: {\"candidates\":[{\"index\":0,\"finishReason\":\"STOP\"}],\"usageMetadata\":{\"promptTokenCount\":100,\"candidatesTokenCount\":8,\"thoughtsTokenCount\":12,\"totalTokenCount\":120,\"cachedContentTokenCount\":40}}\n\n",
+			wantReas:  "12",
+		},
+		{
+			name:      "claude",
+			provider:  `{"type":"claude","apiTokens":["controlled-upstream-key"],"claudeVersion":"2023-06-01"}`,
+			protocol:  managedProtocolMessages,
+			jsonPlain: `{"id":"m1","type":"message","role":"assistant","model":"upstream-model","content":[{"type":"text","text":"ok"}],"stop_reason":"end_turn","usage":{"input_tokens":60,"output_tokens":20,"cache_read_input_tokens":40}}`,
+			jsonThink: `{"id":"m1","type":"message","role":"assistant","model":"upstream-model","content":[{"type":"thinking","thinking":"step","signature":"sig1"},{"type":"text","text":"ok"}],"stop_reason":"end_turn","usage":{"input_tokens":60,"output_tokens":20,"cache_read_input_tokens":40}}`,
+			ssePlain:  "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"m1\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"upstream-model\",\"content\":[],\"stop_reason\":null,\"usage\":{\"input_tokens\":60,\"output_tokens\":0,\"cache_read_input_tokens\":40}}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"ok\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":20}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n",
+			sseThink:  "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"m1\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"upstream-model\",\"content\":[],\"stop_reason\":null,\"usage\":{\"input_tokens\":60,\"output_tokens\":0,\"cache_read_input_tokens\":40}}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"thinking\",\"thinking\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"step\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"signature_delta\",\"signature\":\"sig1\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"ok\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":1}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":20}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n",
+		},
+		{
+			name:      "openai_responses",
+			provider:  `{"type":"openai","apiTokens":["controlled-upstream-key"]}`,
+			protocol:  managedProtocolResponses,
+			jsonPlain: `{"id":"r1","object":"response","status":"completed","model":"upstream-model","output":[{"id":"msg_1","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"ok","annotations":[]}]}],"usage":{"input_tokens":100,"output_tokens":20,"total_tokens":120,"input_tokens_details":{"cached_tokens":40},"output_tokens_details":{"reasoning_tokens":0}}}`,
+			jsonThink: `{"id":"r1","object":"response","status":"completed","model":"upstream-model","output":[{"id":"rs_1","type":"reasoning","summary":[{"type":"summary_text","text":"step"}]},{"id":"msg_1","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"ok","annotations":[]}]}],"usage":{"input_tokens":100,"output_tokens":20,"total_tokens":120,"input_tokens_details":{"cached_tokens":40},"output_tokens_details":{"reasoning_tokens":12}}}`,
+			ssePlain:  "event: response.created\ndata: {\"type\":\"response.created\",\"sequence_number\":0,\"response\":{\"id\":\"r1\",\"object\":\"response\",\"model\":\"upstream-model\",\"status\":\"in_progress\",\"output\":[]}}\n\nevent: response.completed\ndata: {\"type\":\"response.completed\",\"sequence_number\":1,\"response\":{\"id\":\"r1\",\"object\":\"response\",\"model\":\"upstream-model\",\"status\":\"completed\",\"output\":[{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"ok\",\"annotations\":[]}]}],\"usage\":{\"input_tokens\":100,\"output_tokens\":20,\"total_tokens\":120,\"input_tokens_details\":{\"cached_tokens\":40},\"output_tokens_details\":{\"reasoning_tokens\":0}}}}\n\n",
+			sseThink:  "event: response.created\ndata: {\"type\":\"response.created\",\"sequence_number\":0,\"response\":{\"id\":\"r1\",\"object\":\"response\",\"model\":\"upstream-model\",\"status\":\"in_progress\",\"output\":[]}}\n\nevent: response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"sequence_number\":1,\"output_index\":0,\"item\":{\"id\":\"rs_1\",\"type\":\"reasoning\",\"summary\":[]}}\n\nevent: response.completed\ndata: {\"type\":\"response.completed\",\"sequence_number\":2,\"response\":{\"id\":\"r1\",\"object\":\"response\",\"model\":\"upstream-model\",\"status\":\"completed\",\"output\":[{\"id\":\"rs_1\",\"type\":\"reasoning\",\"summary\":[{\"type\":\"summary_text\",\"text\":\"step\"}]},{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"ok\",\"annotations\":[]}]}],\"usage\":{\"input_tokens\":100,\"output_tokens\":20,\"total_tokens\":120,\"input_tokens_details\":{\"cached_tokens\":40},\"output_tokens_details\":{\"reasoning_tokens\":12}}}}\n\n",
+			wantReas:  "12",
+		},
+	}
+
+	for _, sc := range cases {
+		for _, transport := range []string{"http_call", "router"} {
+			for _, stream := range []bool{false, true} {
+				for _, thinking := range []bool{false, true} {
+					t.Run(fmt.Sprintf("%s/%s/stream=%t/thinking=%t", sc.name, transport, stream, thinking), func(t *testing.T) {
+						fixture := managedConfigFixture()
+						fixture["provider"] = json.RawMessage(sc.provider)
+						release := fixture["_modelfusion_execution"].(managedRelease)
+						settings := fixture["managed_execution"].(managedSettings)
+						settings.InputProtocol, settings.UpstreamProtocol = sc.protocol, sc.protocol
+						if sc.protocol != managedProtocolChat {
+							release.Descriptor.AdapterRef = "ai-proxy.native-text.v1:" + sc.protocol + ":" + sc.protocol
+							release.Descriptor.Transport.PathAdapterRef = release.Descriptor.AdapterRef
+							descRaw, err := json.Marshal(release.Descriptor)
+							require.NoError(t, err)
+							release.Descriptor.DescriptorDigest, err = managedDescriptorDigest(descRaw)
+							require.NoError(t, err)
+							fixture["_modelfusion_execution"] = release
+							if sc.protocol == managedProtocolMessages {
+								settings.UpstreamPath = "/v1/messages"
+							} else {
+								settings.UpstreamPath = "/v1/responses"
+							}
+							fixture["protocol_mode"] = "auto"
+						}
+						if transport == "router" {
+							settings.SendTransport = "router"
+							settings.StreamProjection = true
+							if sc.protocol != managedProtocolChat {
+								settings.StreamProtocol = sc.protocol
+							}
+						}
+						fixture["managed_execution"] = settings
+
+						h := newManagedHost(t, fixture)
+						if transport == "router" {
+							require.NoError(t, h.host.SetProperty([]string{"cluster_name"}, []byte(release.Descriptor.ClusterRef)))
+						}
+						payload := `"messages":[{"role":"user","content":"hello"}],"max_tokens":64`
+						if sc.protocol == managedProtocolResponses {
+							payload = `"input":"hello","max_output_tokens":64`
+						} else if sc.protocol == managedProtocolChat && stream {
+							payload += `,"stream_options":{"include_usage":true}`
+						}
+						public := []byte(fmt.Sprintf(`{"model":"public-model","stream":%t,%s}`, stream, payload))
+						mapped := bytes.Replace(public, []byte(`"public-model"`), []byte(`"upstream-model"`), 1)
+						h.start(t, public, mapped)
+
+						body := sc.jsonPlain
+						contentType := "application/json"
+						if stream && thinking {
+							body, contentType = sc.sseThink, "text/event-stream"
+						} else if stream {
+							body, contentType = sc.ssePlain, "text/event-stream"
+						} else if thinking {
+							body = sc.jsonThink
+						}
+						headers := [][2]string{{":status", "200"}, {"content-type", contentType}}
+						if transport == "http_call" {
+							h.response(t, headers, []byte(body))
+						} else {
+							require.NoError(t, h.host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
+							if stream {
+								require.Equal(t, types.ActionContinue, h.host.CallOnResponseHeaders(h.id, headers, false))
+							} else {
+								require.Equal(t, types.HeaderStopIteration, h.host.CallOnResponseHeaders(h.id, headers, false))
+							}
+							h.host.CallOnResponseBody(h.id, []byte(body), true)
+							for _, call := range h.host.GetRedisCalloutAttributesFromContext(h.id) {
+								h.host.CallOnRedisCallResponse(call.CalloutID, 0, []byte(":1\r\n"))
+							}
+						}
+
+						state := h.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
+						require.NotNil(t, state.lastAttempt)
+						require.NotNil(t, state.lastDelivery)
+						for _, fact := range []executionfacts.Envelope{state.lastAttempt.Envelope(), state.lastDelivery.Envelope()} {
+							require.Equal(t, "reported", fact.Usage.Status)
+							require.Equal(t, "100", fact.Usage.Quantities["input"])
+							require.Equal(t, "20", fact.Usage.Quantities["output"])
+							require.Equal(t, "40", fact.Usage.Quantities["cache_hit"])
+							require.Equal(t, "60", fact.Usage.Quantities["cache_miss"])
+							require.Equal(t, "0", fact.Usage.Quantities["cache_read_mode"])
+							require.Equal(t, "1", fact.Usage.Quantities["cache_write_inapplicable"])
+							wantThink := "0"
+							if thinking {
+								wantThink = "1"
+								if sc.wantReas != "" {
+									require.Equal(t, sc.wantReas, fact.Usage.Quantities["reasoning_tokens"])
+								}
+							}
+							require.Equal(t, wantThink, fact.Usage.Quantities["thinking_mode"])
+						}
+						h.host.CompleteHttpContext(h.id)
+					})
+				}
+			}
+		}
+	}
 }

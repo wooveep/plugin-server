@@ -153,10 +153,10 @@ func managedCacheWrite(quantities map[string]string, write *big.Int, creation, w
 	}
 }
 
-// Qwen reports thinking in the original message or delta, before projection
-// can hide it. An intact terminal with no evidence is the non-thinking mode.
+// Reasoning output is observed in the original message or delta, before
+// projection can hide it. An intact terminal with no evidence is non-thinking.
 func recordManagedQwenThinking(s *managedExecutionState, usage *executionfacts.Usage, headers [][2]string, body []byte, terminal bool) {
-	if s.config.profile.supplier != "qwen" || usage.Status != "reported" || !terminal {
+	if usage.Status != "reported" || !terminal {
 		return
 	}
 	protocol := s.config.profile.UpstreamProtocol
@@ -165,6 +165,7 @@ func recordManagedQwenThinking(s *managedExecutionState, usage *executionfacts.U
 	default:
 		return
 	}
+	gemini := s.config.vendor != nil && s.config.vendor.NativeResponseFormat() == "gemini"
 	thinking := false
 	if stream, _ := managedProtocolContentType(headers); stream {
 		events, err := managedProtocolEvents(body)
@@ -172,16 +173,23 @@ func recordManagedQwenThinking(s *managedExecutionState, usage *executionfacts.U
 			return
 		}
 		for _, event := range events {
-			if managedQwenEventThinking(protocol, event) {
+			if gemini {
+				if managedGoogleThinking(event.Data) {
+					thinking = true
+					break
+				}
+			} else if managedQwenEventThinking(protocol, event) {
 				thinking = true
 				break
 			}
 		}
 	} else {
-		switch protocol {
-		case managedProtocolMessages:
+		switch {
+		case gemini:
+			thinking = managedGoogleThinking(body)
+		case protocol == managedProtocolMessages:
 			thinking = managedMessagesThinking(body)
-		case managedProtocolResponses:
+		case protocol == managedProtocolResponses:
 			thinking = managedResponsesThinking(body)
 		default:
 			thinking = managedQwenReasoning(body)
@@ -263,8 +271,27 @@ func managedResponsesEventThinking(object map[string]json.RawMessage, kind strin
 	return false
 }
 
+func managedGoogleThinking(payload []byte) bool {
+	for _, candidate := range gjson.GetBytes(payload, "candidates").Array() {
+		for _, part := range candidate.Get("content.parts").Array() {
+			if part.Get("thought").Type == gjson.True && part.Get("text").String() != "" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func managedQwenReasoning(payload []byte) bool {
-	for _, path := range []string{"choices.#.delta.reasoning_content", "choices.#.message.reasoning_content", "output.choices.#.message.reasoning_content"} {
+	for _, path := range []string{
+		"choices.#.delta.reasoning_content",
+		"choices.#.message.reasoning_content",
+		"choices.#.delta.reasoning",
+		"choices.#.message.reasoning",
+		"choices.#.delta.reasoning_redacted_content",
+		"choices.#.message.reasoning_redacted_content",
+		"output.choices.#.message.reasoning_content",
+	} {
 		for _, item := range gjson.GetBytes(payload, path).Array() {
 			if item.Type == gjson.String && item.String() != "" {
 				return true
@@ -275,12 +302,17 @@ func managedQwenReasoning(payload []byte) bool {
 }
 
 func applyManagedQwenThinking(s *managedExecutionState, usage *executionfacts.Usage, thinking bool) {
-	if s.cacheMode == managedCacheImplicit {
+	switch s.cacheMode {
+	case managedCacheImplicit:
 		if usage.Quantities["cache_write"] == "" && (usage.Quantities["cache_read_mode"] == "" || s.config.profile.UpstreamProtocol == managedProtocolMessages) {
 			usage.Quantities["cache_read_mode"] = string(managedCacheImplicit)
 			usage.Quantities["cache_write_inapplicable"] = "1"
-		} else if s.config.profile.UpstreamProtocol == managedProtocolMessages && usage.Quantities["cache_write"] == "0" {
+		} else if usage.Quantities["cache_write"] == "0" && (usage.Quantities["cache_read_mode"] == "" || s.config.profile.UpstreamProtocol == managedProtocolMessages) {
 			usage.Quantities["cache_read_mode"] = string(managedCacheImplicit)
+		}
+	case managedCacheExplicit:
+		if usage.Quantities["cache_read_mode"] == "" && usage.Quantities["cache_hit"] != "" && usage.Quantities["cache_hit"] != "0" {
+			usage.Quantities["cache_read_mode"] = string(managedCacheExplicit)
 		}
 	}
 	if count, exists := usage.Quantities["reasoning_tokens"]; exists {

@@ -488,7 +488,7 @@ func finishManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, end 
 		} else if r.transportEnded && *r.status >= 200 && *r.status < 300 &&
 			(observed.ExecutionResult == "succeeded" || observed.ExecutionResult == "partial") {
 			outcome.Acceptance = "accepted"
-			if s.config.profile.supplier == "qwen" && outcome.Usage.Status == "reported" {
+			if outcome.Usage.Status == "reported" && s.config.profile.UpstreamProtocol != managedProtocolCompletions {
 				switch {
 				case r.supplier != nil:
 					applyManagedQwenThinking(s, outcome.Usage, r.supplier.thinking)

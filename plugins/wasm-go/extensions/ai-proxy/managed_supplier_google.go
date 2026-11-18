@@ -34,6 +34,9 @@ func managedGoogleUsage(raw json.RawMessage) map[string]json.RawMessage {
 			}
 		}
 	}
+	if thoughts, ok := managedCount(native["thoughtsTokenCount"]); ok {
+		wire["completion_tokens_details"], _ = json.Marshal(map[string]json.RawMessage{"reasoning_tokens": json.RawMessage(thoughts.String())})
+	}
 	if cached, exists := native["cachedContentTokenCount"]; exists {
 		wire["prompt_tokens_details"], _ = json.Marshal(map[string]json.RawMessage{"cached_tokens": cached})
 	}
