@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"math/big"
 
@@ -30,11 +31,39 @@ func hasManagedCacheControl(request gjson.Result, protocol string) bool {
 			}
 		}
 	}
+	if protocol == managedProtocolResponses {
+		if request.Get("cache_control.type").String() == "ephemeral" {
+			return true
+		}
+		if input := request.Get("input"); input.IsArray() {
+			for _, item := range input.Array() {
+				if item.Get("cache_control.type").String() == "ephemeral" {
+					return true
+				}
+				if content := item.Get("content"); content.IsArray() {
+					for _, block := range content.Array() {
+						if block.Get("cache_control.type").String() == "ephemeral" {
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
 	for _, path := range []string{"messages", "input.messages"} {
 		for _, message := range request.Get(path).Array() {
 			for _, content := range message.Get("content").Array() {
 				if content.Get("cache_control.type").String() == "ephemeral" {
 					return true
+				}
+				if protocol == managedProtocolMessages {
+					if nested := content.Get("content"); nested.IsArray() {
+						for _, sub := range nested.Array() {
+							if sub.Get("cache_control.type").String() == "ephemeral" {
+								return true
+							}
+						}
+					}
 				}
 			}
 		}
@@ -130,8 +159,9 @@ func recordManagedQwenThinking(s *managedExecutionState, usage *executionfacts.U
 	if s.config.profile.supplier != "qwen" || usage.Status != "reported" || !terminal {
 		return
 	}
-	switch s.config.profile.UpstreamProtocol {
-	case managedProtocolChat, managedProtocolDashScopeText, managedProtocolDashScopeMultimodal:
+	protocol := s.config.profile.UpstreamProtocol
+	switch protocol {
+	case managedProtocolChat, managedProtocolMessages, managedProtocolResponses, managedProtocolDashScopeText, managedProtocolDashScopeMultimodal:
 	default:
 		return
 	}
@@ -142,15 +172,95 @@ func recordManagedQwenThinking(s *managedExecutionState, usage *executionfacts.U
 			return
 		}
 		for _, event := range events {
-			if managedQwenReasoning(event.Data) {
+			if managedQwenEventThinking(protocol, event) {
 				thinking = true
 				break
 			}
 		}
 	} else {
-		thinking = managedQwenReasoning(body)
+		switch protocol {
+		case managedProtocolMessages:
+			thinking = managedMessagesThinking(body)
+		case managedProtocolResponses:
+			thinking = managedResponsesThinking(body)
+		default:
+			thinking = managedQwenReasoning(body)
+		}
 	}
 	applyManagedQwenThinking(s, usage, thinking)
+}
+
+func managedQwenEventThinking(protocol string, event managedProtocolEvent) bool {
+	switch protocol {
+	case managedProtocolMessages:
+		if bytes.Equal(bytes.TrimSpace(event.Data), []byte("[DONE]")) {
+			return false
+		}
+		object, kind, err := managedProtocolEventObject(event)
+		return err == nil && managedMessagesEventThinking(object, kind)
+	case managedProtocolResponses:
+		if bytes.Equal(bytes.TrimSpace(event.Data), []byte("[DONE]")) {
+			return false
+		}
+		object, kind, err := managedProtocolEventObject(event)
+		return err == nil && managedResponsesEventThinking(object, kind)
+	default:
+		return managedQwenReasoning(event.Data)
+	}
+}
+
+func managedMessagesThinking(payload []byte) bool {
+	for _, item := range gjson.GetBytes(payload, "content").Array() {
+		switch item.Get("type").String() {
+		case "thinking", "redacted_thinking":
+			return true
+		}
+	}
+	return false
+}
+
+func managedMessagesEventThinking(object map[string]json.RawMessage, kind string) bool {
+	switch kind {
+	case "message_start":
+		return managedMessagesThinking(object["message"])
+	case "content_block_start":
+		switch gjson.GetBytes(object["content_block"], "type").String() {
+		case "thinking", "redacted_thinking":
+			return true
+		}
+	case "content_block_delta":
+		switch gjson.GetBytes(object["delta"], "type").String() {
+		case "thinking_delta", "signature_delta":
+			return true
+		}
+	}
+	return false
+}
+
+func managedResponsesThinking(payload []byte) bool {
+	for _, item := range gjson.GetBytes(payload, "output").Array() {
+		if item.Get("type").String() == "reasoning" {
+			return true
+		}
+	}
+	return false
+}
+
+func managedResponsesEventThinking(object map[string]json.RawMessage, kind string) bool {
+	switch kind {
+	case "response.output_item.added", "response.output_item.done":
+		if gjson.GetBytes(object["item"], "type").String() == "reasoning" {
+			return true
+		}
+	case "response.reasoning_text.delta", "response.reasoning_text.done",
+		"response.reasoning_summary_text.delta", "response.reasoning_summary_text.done",
+		"response.reasoning_summary_part.added", "response.reasoning_summary_part.done":
+		return true
+	}
+	if raw, exists := object["response"]; exists {
+		return managedResponsesThinking(raw)
+	}
+	return false
 }
 
 func managedQwenReasoning(payload []byte) bool {
@@ -165,9 +275,13 @@ func managedQwenReasoning(payload []byte) bool {
 }
 
 func applyManagedQwenThinking(s *managedExecutionState, usage *executionfacts.Usage, thinking bool) {
-	if s.cacheMode == managedCacheImplicit && usage.Quantities["cache_write"] == "" && usage.Quantities["cache_read_mode"] == "" {
-		usage.Quantities["cache_read_mode"] = string(managedCacheImplicit)
-		usage.Quantities["cache_write_inapplicable"] = "1"
+	if s.cacheMode == managedCacheImplicit {
+		if usage.Quantities["cache_write"] == "" && (usage.Quantities["cache_read_mode"] == "" || s.config.profile.UpstreamProtocol == managedProtocolMessages) {
+			usage.Quantities["cache_read_mode"] = string(managedCacheImplicit)
+			usage.Quantities["cache_write_inapplicable"] = "1"
+		} else if s.config.profile.UpstreamProtocol == managedProtocolMessages && usage.Quantities["cache_write"] == "0" {
+			usage.Quantities["cache_read_mode"] = string(managedCacheImplicit)
+		}
 	}
 	if count, exists := usage.Quantities["reasoning_tokens"]; exists {
 		if count == "0" && thinking {

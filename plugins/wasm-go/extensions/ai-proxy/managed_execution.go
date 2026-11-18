@@ -872,6 +872,7 @@ func prepareManagedExecution(s *managedExecutionState, basis bodybasis.Snapshot,
 	s.requestText = tokenestimate.RequestText(body)
 	profile := s.config.profile
 	qwenCache := profile.supplier == "qwen" && (profile.UpstreamProtocol == managedProtocolChat ||
+		profile.UpstreamProtocol == managedProtocolMessages || profile.UpstreamProtocol == managedProtocolResponses ||
 		profile.UpstreamProtocol == managedProtocolDashScopeText || profile.UpstreamProtocol == managedProtocolDashScopeMultimodal)
 	if qwenCache || profile.UpstreamProtocol == managedProtocolMessages {
 		// Check the final bytes after any protocol conversion.

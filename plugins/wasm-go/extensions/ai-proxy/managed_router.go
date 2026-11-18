@@ -496,6 +496,8 @@ func finishManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, end 
 					applyManagedQwenThinking(s, outcome.Usage, r.chat.thinking)
 				case r.dashScope != nil:
 					applyManagedQwenThinking(s, outcome.Usage, r.dashScope.thinking)
+				case r.native != nil:
+					applyManagedQwenThinking(s, outcome.Usage, r.native.thinking)
 				}
 			}
 		}

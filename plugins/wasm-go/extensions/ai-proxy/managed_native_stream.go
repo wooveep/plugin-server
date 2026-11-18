@@ -20,6 +20,7 @@ type managedNativeStream struct {
 	observed             managedProtocolObservation
 	invalid              bool
 	terminal             bool
+	thinking             bool
 	messageStarted       bool
 	rawStopReason        string
 	stopReason           string
@@ -127,6 +128,7 @@ func (s *managedNativeStream) observeResponses(object map[string]json.RawMessage
 			return false
 		}
 	}
+	s.thinking = s.thinking || managedResponsesEventThinking(object, kind)
 	expected := map[string]string{"response.completed": "succeeded", "response.incomplete": "partial", "response.failed": "failed"}[kind]
 	if expected == "" {
 		return true
@@ -165,6 +167,7 @@ func (s *managedNativeStream) observeMessages(object map[string]json.RawMessage,
 			}
 		}
 		s.messageStarted = true
+		s.thinking = s.thinking || managedMessagesEventThinking(object, kind)
 		s.publicUsage = clientresponse.ReadUsageObject(message["usage"], clientresponse.Messages)
 		return true
 	case "message_delta":
@@ -248,7 +251,11 @@ func (s *managedNativeStream) observeMessages(object map[string]json.RawMessage,
 		s.terminal = true
 		return true
 	case "content_block_start", "content_block_delta", "content_block_stop":
-		return s.messageStarted && s.stopReason == ""
+		if !s.messageStarted || s.stopReason != "" {
+			return false
+		}
+		s.thinking = s.thinking || managedMessagesEventThinking(object, kind)
+		return true
 	default:
 		return false
 	}
