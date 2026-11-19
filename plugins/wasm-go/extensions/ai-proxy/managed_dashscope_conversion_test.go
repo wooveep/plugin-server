@@ -642,3 +642,48 @@ func newManagedSupplierAdapterErrorCheck(raw []byte, _ *managedExecutionConfig) 
 	}
 	return configureManagedExecution(value, &cfg)
 }
+
+func TestDashScopeCrossProtocolWave2AdaptiveZeroAndToolChoiceGuards(t *testing.T) {
+	t.Run("responses_explicit_zero_temperature_survives_to_dashscope_text", func(t *testing.T) {
+		h := newDashScopeConversionHost(t, managedProtocolResponses, managedProtocolDashScopeText, "qwen-flash")
+		defer h.host.CompleteHttpContext(h.id)
+		pub := []byte(`{"model":"public-model","temperature":0,"max_output_tokens":64,"input":[{"role":"user","content":"hi"}]}`)
+		mapped := bytes.Replace(pub, []byte(`"public-model"`), []byte(`"qwen-flash"`), 1)
+		h.start(t, pub, mapped)
+		outbound := h.host.GetCurrentRequestBody(h.id)
+		require.True(t, gjson.GetBytes(outbound, "parameters.temperature").Exists())
+		require.Equal(t, float64(0), gjson.GetBytes(outbound, "parameters.temperature").Float())
+	})
+
+	t.Run("messages_adaptive_thinking_enables_dashscope_thinking", func(t *testing.T) {
+		h := newDashScopeConversionHost(t, managedProtocolMessages, managedProtocolDashScopeText, "qwen-flash")
+		defer h.host.CompleteHttpContext(h.id)
+		pub := []byte(`{"model":"public-model","max_tokens":256,"thinking":{"type":"adaptive","display":"summarized"},"output_config":{"effort":"high"},"messages":[{"role":"user","content":"hi"}]}`)
+		mapped := bytes.Replace(pub, []byte(`"public-model"`), []byte(`"qwen-flash"`), 1)
+		h.start(t, pub, mapped)
+		outbound := h.host.GetCurrentRequestBody(h.id)
+		require.True(t, gjson.GetBytes(outbound, "parameters.enable_thinking").Bool())
+	})
+
+	t.Run("messages_thinking_plus_forced_tool_choice_returns_400_invalid_request_error", func(t *testing.T) {
+		h := newDashScopeConversionHost(t, managedProtocolMessages, managedProtocolDashScopeText, "qwen-flash")
+		defer h.host.CompleteHttpContext(h.id)
+		pub := []byte(`{
+			"model":"public-model",
+			"max_tokens":256,
+			"thinking":{"type":"adaptive"},
+			"output_config":{"effort":"medium"},
+			"tools":[{"name":"get_weather","description":"Get weather","input_schema":{"type":"object","properties":{"city":{"type":"string"}}}}],
+			"tool_choice":{"type":"any"},
+			"messages":[{"role":"user","content":"Weather?"}]
+		}`)
+		mapped := bytes.Replace(pub, []byte(`"public-model"`), []byte(`"qwen-flash"`), 1)
+		h.start(t, pub, mapped)
+		local := h.host.GetSentLocalResponse(h.id)
+		require.NotNil(t, local)
+		require.Equal(t, uint32(400), local.StatusCode)
+		require.Equal(t, "invalid_request_error", gjson.GetBytes(local.Data, "error.type").String())
+		require.Equal(t, "false", managedResponseHeaderValue(local.Headers, "x-should-retry"))
+		require.Empty(t, h.host.GetCalloutAttributesFromContext(h.id))
+	})
+}

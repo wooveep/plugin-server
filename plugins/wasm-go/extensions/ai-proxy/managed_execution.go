@@ -542,6 +542,13 @@ func onManagedRequestHeaders(ctx wrapper.HttpContext, cfg config.PluginConfig) (
 	}
 	ctx.SetContext(managedPublicProtocolKey, managed.profile.InputProtocol)
 	ctx.SetContext(managedPublicProfileKey, string(managed.settings.ResponseProfile))
+	ctx.SetContext(managedPublicTextRejectKey,
+		managed.settings.CallIdentitySource != executionfacts.CallIdentitySourceInternal &&
+			managed.settings.MediaDispatchMode != "managed_operation" &&
+			managedOperation(managed) == "text_generate" &&
+			(managed.profile.InputProtocol == clientresponse.Chat ||
+				managed.profile.InputProtocol == clientresponse.Responses ||
+				managed.profile.InputProtocol == clientresponse.Messages))
 	beginManagedAccessLog(ctx, managed.release.Descriptor.ReleaseID)
 	ctx.SetContext(ctxSkipAIProxyLifecycle, true)
 	if managed.settings.MediaDispatchMode == "managed_operation" && strings.HasPrefix(ctx.Path(), wrapper.RouterContinuationPathPrefix) {
@@ -720,6 +727,7 @@ func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecut
 	}
 	request, err := managed.profile.PrepareRequest(body, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue)
 	if err != nil {
+		log.Warnf("ai-proxy managed protocol preparation rejected, call_id:%s input:%s upstream:%s reason:%s %s", state.callID, managed.profile.InputProtocol, managed.profile.UpstreamProtocol, "unsupported_or_invalid_protocol_request", managedSafeProtocolDetail(err))
 		rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")
 		return managedProtocolRequest{}, false
 	}
@@ -1518,7 +1526,8 @@ func recordManagedCancelledSale(ctx wrapper.HttpContext, s *managedExecutionStat
 func rejectManagedRequest(ctx wrapper.HttpContext, status uint32, reason string) types.Action {
 	recordManagedAccessFailure(ctx, reason, false)
 	ctx.SetUserAttribute("managed_execution_rejection", reason)
-	_ = proxywasm.SendHttpResponseWithDetail(status, "ai-proxy.managed_execution", [][2]string{{"content-type", "application/json"}}, managedPublicError(ctx, reason), -1)
+	body, headers := managedPublicError(ctx, status, reason)
+	_ = proxywasm.SendHttpResponseWithDetail(status, "ai-proxy.managed_execution", headers, body, -1)
 	return types.ActionPause
 }
 

@@ -53,11 +53,14 @@ func TestResponsesFallbackAdvancedFields(t *testing.T) {
 	}
 	for _, tc := range []struct{ fields, want string }{
 		{`"background":true`, "background"},
-		{`"reasoning":{"summary":"auto"}`, "reasoning summary"},
-		{`"reasoning":{"generate_summary":"concise"}`, "reasoning summary"},
 	} {
 		_, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello",` + tc.fields + `}`))
 		require.ErrorContains(t, err, tc.want)
+	}
+	for _, summaryField := range []string{`"summary":"auto"`, `"generate_summary":"concise"`} {
+		summarized, err := ConvertResponsesRequestToChatCompletion([]byte(`{"model":"test","input":"hello","reasoning":{"effort":"high",` + summaryField + `}}`))
+		require.NoError(t, err)
+		require.Equal(t, "high", gjson.GetBytes(summarized, "reasoning_effort").String())
 	}
 }
 

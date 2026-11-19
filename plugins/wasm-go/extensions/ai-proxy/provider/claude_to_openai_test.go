@@ -1683,3 +1683,121 @@ func parseClaudeSSEEvents(t *testing.T, raw []byte) []parsedClaudeSSEEvent {
 func stringPtr(value string) *string {
 	return &value
 }
+
+func TestClaudeToOpenAIConverter_AdaptiveThinkingAndToolResultEdgeCases(t *testing.T) {
+	converter := &ClaudeToOpenAIConverter{}
+
+	t.Run("adaptive_thinking_maps_output_config_effort_and_survives_strip", func(t *testing.T) {
+		cases := []struct {
+			name   string
+			body   string
+			expect string
+		}{
+			{
+				name:   "adaptive_low",
+				body:   `{"model":"claude-sonnet-4-6","max_tokens":2048,"thinking":{"type":"adaptive"},"output_config":{"effort":"low"},"messages":[{"role":"user","content":"hi"}]}`,
+				expect: "low",
+			},
+			{
+				name:   "adaptive_medium_summarized",
+				body:   `{"model":"claude-sonnet-4-6","max_tokens":2048,"thinking":{"type":"adaptive","display":"summarized"},"output_config":{"effort":"medium"},"messages":[{"role":"user","content":"hi"}]}`,
+				expect: "medium",
+			},
+			{
+				name:   "adaptive_high",
+				body:   `{"model":"claude-sonnet-4-6","max_tokens":2048,"thinking":{"type":"adaptive"},"output_config":{"effort":"high"},"messages":[{"role":"user","content":"hi"}]}`,
+				expect: "high",
+			},
+			{
+				name:   "adaptive_max_maps_high",
+				body:   `{"model":"claude-sonnet-4-6","max_tokens":2048,"thinking":{"type":"adaptive"},"output_config":{"effort":"max"},"messages":[{"role":"user","content":"hi"}]}`,
+				expect: "high",
+			},
+			{
+				name:   "adaptive_without_effort_defaults_medium",
+				body:   `{"model":"claude-sonnet-4-6","max_tokens":2048,"thinking":{"type":"adaptive"},"messages":[{"role":"user","content":"hi"}]}`,
+				expect: "medium",
+			},
+		}
+
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				converted, err := converter.ConvertClaudeRequestToOpenAIWithOptions([]byte(tc.body), ClaudeToOpenAIConvertOptions{
+					UseMaxCompletionTokens:          true,
+					PreserveMessageReasoningContent: true,
+				})
+				require.NoError(t, err)
+				stripped := StripClaudeInternalMessageFields(converted, true)
+
+				var rawJSON map[string]interface{}
+				require.NoError(t, json.Unmarshal(stripped, &rawJSON))
+				assert.Equal(t, tc.expect, rawJSON["reasoning_effort"])
+				assert.NotContains(t, rawJSON, "thinking")
+				assert.NotContains(t, rawJSON, "claude_thinking")
+				assert.NotContains(t, rawJSON, "claude_output_config")
+			})
+		}
+	})
+
+	t.Run("tool_result_missing_content_and_multimodal_tool_result", func(t *testing.T) {
+		claudeReq := `{
+			"model": "claude-sonnet-4-6",
+			"max_tokens": 1024,
+			"metadata": {"user_id": "hermes_audit"},
+			"context_management": {"edits": []},
+			"speed": "fast",
+			"tools": [{
+				"name": "screenshot",
+				"description": "capture",
+				"input_schema": {"type": "object"},
+				"cache_control": {"type": "ephemeral"}
+			}],
+			"messages": [{
+				"role": "user",
+				"content": [
+					{
+						"type": "tool_result",
+						"tool_use_id": "call_nil"
+					},
+					{
+						"type": "tool_result",
+						"tool_use_id": "call_img",
+						"content": [
+							{"type": "text", "text": "Captured view"},
+							{"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "iVBORw0KGgo="}}
+						]
+					}
+				]
+			}]
+		}`
+
+		var converted []byte
+		var err error
+		require.NotPanics(t, func() {
+			converted, err = converter.ConvertClaudeRequestToOpenAI([]byte(claudeReq))
+		})
+		require.NoError(t, err)
+
+		var req chatCompletionRequest
+		require.NoError(t, json.Unmarshal(converted, &req))
+		require.Len(t, req.Messages, 3)
+		assert.Equal(t, "tool", req.Messages[0].Role)
+		assert.Equal(t, "call_nil", req.Messages[0].ToolCallId)
+		assert.Equal(t, "", req.Messages[0].Content)
+
+		assert.Equal(t, "tool", req.Messages[1].Role)
+		assert.Equal(t, "call_img", req.Messages[1].ToolCallId)
+		assert.Equal(t, "Captured view", req.Messages[1].Content)
+
+		assert.Equal(t, "user", req.Messages[2].Role)
+		parts := req.Messages[2].ParseContent()
+		require.NotEmpty(t, parts)
+		hasImage := false
+		for _, p := range parts {
+			if p.Type == contentTypeImageUrl && p.ImageUrl != nil && strings.HasPrefix(p.ImageUrl.Url, "data:image/png;base64,") {
+				hasImage = true
+			}
+		}
+		assert.True(t, hasImage, "companion user message must preserve tool_result image")
+	})
+}

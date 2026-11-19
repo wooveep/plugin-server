@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -12,6 +15,7 @@ import (
 
 const managedPublicProtocolKey = "ai-proxy.public-client-protocol"
 const managedPublicProfileKey = "ai-proxy.public-response-profile"
+const managedPublicTextRejectKey = "ai-proxy.public-text-reject"
 
 func managedPublicPolicy(s *managedExecutionState) clientresponse.Policy {
 	if s.publicAliases == nil {
@@ -69,8 +73,87 @@ func projectManagedResponse(s *managedExecutionState, originalHeaders [][2]strin
 	return managedProtocolClientResponse{Body: body, Headers: publicHeaders}, nil
 }
 
-func managedPublicError(ctx wrapper.HttpContext, reason string) []byte {
-	return clientresponse.Error(clientresponse.Policy{Protocol: ctx.GetStringContext(managedPublicProtocolKey, ""), Profile: clientresponse.Profile(ctx.GetStringContext(managedPublicProfileKey, ""))}, managedErrorBody(reason))
+func managedPublicError(ctx wrapper.HttpContext, status uint32, reason string) ([]byte, [][2]string) {
+	headers := [][2]string{{"content-type", "application/json"}}
+	if ctx == nil {
+		return managedErrorBody(reason), headers
+	}
+	protocol := ctx.GetStringContext(managedPublicProtocolKey, "")
+	if !managedIsPublicTextRejection(ctx, protocol, reason) {
+		return managedErrorBody(reason), headers
+	}
+	headers = append(headers, [2]string{"x-should-retry", "false"})
+	if reqID := managedRejectionRequestID(ctx); reqID != "" {
+		headers = append(headers, [2]string{"x-request-id", reqID})
+	}
+	errorType, code, message := managedLocalErrorSpec(status, reason)
+	return marshalManagedLocalError(protocol, errorType, code, message), headers
+}
+
+func managedIsPublicTextRejection(ctx wrapper.HttpContext, protocol, reason string) bool {
+	if explicit, ok := ctx.GetContext(managedPublicTextRejectKey).(bool); ok && !explicit {
+		return false
+	}
+	if protocol != clientresponse.Chat && protocol != clientresponse.Responses && protocol != clientresponse.Messages {
+		return false
+	}
+	if strings.HasPrefix(reason, "media_") || strings.HasPrefix(reason, "internal_execution_") || reason == "registered_internal_service_call_required" {
+		return false
+	}
+	return true
+}
+
+func managedRejectionRequestID(ctx wrapper.HttpContext) string {
+	if state, ok := ctx.GetContext(managedExecutionContextKey).(*managedExecutionState); ok && state != nil && managedID(state.callID) {
+		return state.callID
+	}
+	if reqID, err := proxywasm.GetHttpRequestHeader("x-request-id"); err == nil && reqID != "-" && managedID(reqID) {
+		return reqID
+	}
+	return ""
+}
+
+func managedLocalErrorSpec(status uint32, reason string) (string, string, string) {
+	switch reason {
+	case "resource_reference_unavailable":
+		return "invalid_request_error", "resource_reference_unavailable", "The resource reference is unavailable or expired. Resend the full conversation history."
+	case "resource_reference_incompatible":
+		return "invalid_request_error", "resource_reference_incompatible", "These resource references cannot be used together on this service. Resend the full conversation history."
+	}
+	switch status {
+	case 400:
+		return "invalid_request_error", "invalid_parameter", "A request parameter is invalid. Check the indicated parameter."
+	case 403:
+		return "permission_error", "permission_denied", "The account is not permitted to use this service."
+	case 409:
+		return "invalid_request_error", "invalid_parameter", "The request could not be completed due to a request state conflict."
+	case 413:
+		return "invalid_request_error", "request_too_large", "The request is too large."
+	case 502:
+		return "api_error", "gateway_error", "The service could not complete the request. Try again later."
+	case 503:
+		return "api_error", "service_unavailable", "The service is currently unavailable. Contact support with the request ID."
+	case 504:
+		return "api_error", "request_timeout", "The service timed out. Try again later."
+	default:
+		return "api_error", "server_error", "The service could not complete the request. Try again later."
+	}
+}
+
+func marshalManagedLocalError(protocol, errorType, code, message string) []byte {
+	inner, _ := json.Marshal(map[string]string{
+		"type":    errorType,
+		"code":    code,
+		"message": message,
+	})
+	envelope := map[string]json.RawMessage{
+		"error": inner,
+	}
+	if protocol == clientresponse.Messages {
+		envelope["type"] = json.RawMessage(`"error"`)
+	}
+	raw, _ := json.Marshal(envelope)
+	return raw
 }
 
 // configureManagedResponse validates the only response branch for this target.

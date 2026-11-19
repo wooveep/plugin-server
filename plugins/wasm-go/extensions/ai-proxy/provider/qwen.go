@@ -147,6 +147,13 @@ func (m *qwenProvider) TransformRequestBodyHeaders(ctx wrapper.HttpContext, apiN
 			}
 			modifiedBody = newBody
 		}
+		if apiName == ApiNameChatCompletion {
+			sanitized, err := sanitizeQwenCompatibleChatRequest(modifiedBody)
+			if err != nil {
+				return modifiedBody, err
+			}
+			modifiedBody = sanitized
+		}
 		if mappedModel != "" && requestBodyHasMessageReasoningContent(modifiedBody) && qwenSupportsPreserveThinking(mappedModel) {
 			// Qwen OpenAI-compatible mode requires top-level preserve_thinking=true
 			// before historical reasoning_content can be reused by supported models.
@@ -437,6 +444,15 @@ func (m *qwenProvider) buildQwenGenerationRequest(ctx wrapper.HttpContext, origR
 		val := origRequest.ReasoningEffort != "none"
 		enableThinking = &val
 	}
+	if isDashScopeForcedToolChoice(origRequest.ToolChoice) {
+		if len(origRequest.Tools) == 0 {
+			return nil, fmt.Errorf("forced tool_choice requires tools in DashScope mode")
+		}
+		if enableThinking != nil && *enableThinking {
+			return nil, fmt.Errorf("forced tool_choice is unsupported when enable_thinking is enabled in DashScope mode")
+		}
+	}
+	temperaturePtr, presencePenaltyPtr := resolveDashScopeOptionalFloatParams(origRequest, rawBody)
 	request := &qwenTextGenRequest{
 		Model: origRequest.Model,
 		Input: qwenTextGenInput{
@@ -445,11 +461,11 @@ func (m *qwenProvider) buildQwenGenerationRequest(ctx wrapper.HttpContext, origR
 		Parameters: qwenTextGenParameters{
 			ResultFormat:      qwenResultFormatMessage,
 			MaxTokens:         origRequest.getMaxTokens(),
-			PresencePenalty:   origRequest.PresencePenalty,
+			PresencePenalty:   presencePenaltyPtr,
 			N:                 origRequest.N,
 			Seed:              origRequest.Seed,
 			Stop:              origRequest.Stop,
-			Temperature:       origRequest.Temperature,
+			Temperature:       temperaturePtr,
 			TopP:              topP,
 			IncrementalOutput: streaming && (len(origRequest.Tools) == 0 || (enableThinking != nil && *enableThinking)),
 			EnableSearch:      m.config.qwenEnableSearch,
@@ -851,11 +867,11 @@ type qwenTextGenParameters struct {
 	ResultFormat      string                 `json:"result_format,omitempty"`
 	MaxTokens         int                    `json:"max_tokens,omitempty"`
 	RepetitionPenalty float64                `json:"repetition_penalty,omitempty"`
-	PresencePenalty   float64                `json:"presence_penalty,omitempty"`
+	PresencePenalty   *float64               `json:"presence_penalty,omitempty"`
 	N                 int                    `json:"n,omitempty"`
 	Seed              int                    `json:"seed,omitempty"`
 	Stop              []string               `json:"stop,omitempty"`
-	Temperature       float64                `json:"temperature,omitempty"`
+	Temperature       *float64               `json:"temperature,omitempty"`
 	TopP              float64                `json:"top_p,omitempty"`
 	IncrementalOutput bool                   `json:"incremental_output,omitempty"`
 	EnableSearch      bool                   `json:"enable_search,omitempty"`
@@ -1143,7 +1159,127 @@ func requestBodyHasMessageReasoningContent(body []byte) bool {
 	return false
 }
 
+func sanitizeQwenCompatibleChatRequest(body []byte) ([]byte, error) {
+	modified := body
+	var err error
+	for _, field := range []string{
+		"store",
+		"prompt_cache_key",
+		"prompt_cache_retention",
+		"prompt_cache_options",
+		"reasoning_summary",
+		"safety_identifier",
+		"context_management",
+	} {
+		if gjson.GetBytes(modified, field).Exists() {
+			if modified, err = sjson.DeleteBytes(modified, field); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if tools := gjson.GetBytes(modified, "tools"); tools.IsArray() {
+		for idx, toolItem := range tools.Array() {
+			if toolItem.Get("cache_control").Exists() {
+				if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("tools.%d.cache_control", idx)); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	if messages := gjson.GetBytes(modified, "messages"); messages.IsArray() {
+		for idx, msg := range messages.Array() {
+			for _, field := range []string{"thinking_blocks", "reasoning_details", "extra_content", "cache_control"} {
+				if msg.Get(field).Exists() {
+					if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("messages.%d.%s", idx, field)); err != nil {
+						return nil, err
+					}
+				}
+			}
+			role := msg.Get("role").String()
+			if role == roleDeveloper {
+				if modified, err = sjson.SetBytes(modified, fmt.Sprintf("messages.%d.role", idx), roleSystem); err != nil {
+					return nil, err
+				}
+			} else if role == roleTool && msg.Get("name").Exists() {
+				if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("messages.%d.name", idx)); err != nil {
+					return nil, err
+				}
+			} else if role == roleAssistant && msg.Get("content").Type == gjson.Null {
+				if modified, err = sjson.SetBytes(modified, fmt.Sprintf("messages.%d.content", idx), ""); err != nil {
+					return nil, err
+				}
+			}
+			if content := msg.Get("content"); content.IsArray() {
+				for partIdx, part := range content.Array() {
+					if part.Get("cache_control").Exists() {
+						if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("messages.%d.content.%d.cache_control", idx, partIdx)); err != nil {
+							return nil, err
+						}
+					}
+				}
+			}
+			if toolCalls := msg.Get("tool_calls"); toolCalls.IsArray() {
+				for tcIdx, tc := range toolCalls.Array() {
+					if tc.Get("extra_content").Exists() {
+						if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("messages.%d.tool_calls.%d.extra_content", idx, tcIdx)); err != nil {
+							return nil, err
+						}
+					}
+				}
+			}
+		}
+	}
+	return modified, nil
+}
+
+func resolveDashScopeOptionalFloatParams(origRequest *chatCompletionRequest, rawBody []byte) (*float64, *float64) {
+	var temperature, presencePenalty *float64
+	if rawBody != nil {
+		if t := gjson.GetBytes(rawBody, "temperature"); t.Type == gjson.Number {
+			v := t.Float()
+			temperature = &v
+		}
+		if p := gjson.GetBytes(rawBody, "presence_penalty"); p.Type == gjson.Number {
+			v := p.Float()
+			presencePenalty = &v
+		}
+		return temperature, presencePenalty
+	}
+	if origRequest.Temperature != 0 {
+		v := origRequest.Temperature
+		temperature = &v
+	}
+	if origRequest.PresencePenalty != 0 {
+		v := origRequest.PresencePenalty
+		presencePenalty = &v
+	}
+	return temperature, presencePenalty
+}
+
+func isDashScopeForcedToolChoice(toolChoice interface{}) bool {
+	if toolChoice == nil {
+		return false
+	}
+	switch v := toolChoice.(type) {
+	case string:
+		return v == "required"
+	case map[string]interface{}:
+		if t, _ := v["type"].(string); t == "function" {
+			return true
+		}
+		_, hasFunc := v["function"]
+		return hasFunc
+	default:
+		return false
+	}
+}
+
 func chatMessage2QwenMessage(chatMessage chatMessage) qwenMessage {
+	if chatMessage.Role == roleDeveloper {
+		chatMessage.Role = roleSystem
+	}
 	if chatMessage.Role == roleTool {
 		var content string
 		if s, ok := chatMessage.Content.(string); ok {
@@ -1158,7 +1294,6 @@ func chatMessage2QwenMessage(chatMessage chatMessage) qwenMessage {
 			content = builder.String()
 		}
 		return qwenMessage{
-			Name:       chatMessage.Name,
 			Role:       chatMessage.Role,
 			Content:    content,
 			ToolCallId: chatMessage.ToolCallId,

@@ -112,7 +112,7 @@ func TestResponsesFallbackRejectsUnrepresentableOrInvalidHistory(t *testing.T) {
 	for _, tc := range []struct{ name, input, want string }{
 		{"null_input", `null`, "input"},
 		{"unknown_item", `[{"type":"item_reference","id":"msg_stored"}]`, "item_reference"},
-		{"reasoning", `[{"type":"reasoning","encrypted_content":"opaque"}]`, "reasoning"},
+		{"bare_reasoning_without_content_or_opaque", `[{"type":"reasoning"}]`, "reasoning"},
 		{"image_file_id", `[{"role":"user","content":[{"type":"input_image","file_id":"file_1"}]}]`, "file_id"},
 		{"missing_image_url", `[{"role":"user","content":[{"type":"input_image"}]}]`, "image_url"},
 		{"invalid_image_detail", `[{"role":"user","content":[{"type":"input_image","image_url":"https://example.test/a.png","detail":"invalid"}]}]`, "detail"},

@@ -527,3 +527,136 @@ func TestQwenStreamingThinkingWithToolsEnablesIncrementalOutput(t *testing.T) {
 	require.Len(t, evFin, 2, "final empty function:{} must not emit a duplicate tool_call chunk before finish_reason")
 	assert.Equal(t, "tool_calls", gjson.Get(evFin[0].Data, "choices.0.finish_reason").String())
 }
+
+func TestQwenCompatibleSanitizesAgentBridgingArtifacts(t *testing.T) {
+	provider := &qwenProvider{
+		config: ProviderConfig{
+			qwenEnableCompatible: true,
+			modelMapping: map[string]string{
+				"public-qwen": "qwen3.6-plus",
+			},
+		},
+	}
+
+	body := []byte(`{
+		"model": "public-qwen",
+		"stream": true,
+		"stream_options": {"include_usage": true},
+		"store": false,
+		"prompt_cache_key": "pck_hermes_1",
+		"prompt_cache_retention": "24h",
+		"prompt_cache_options": {"mode": "explicit"},
+		"reasoning_summary": "auto",
+		"safety_identifier": "user_1",
+		"context_management": [{"type": "compaction"}],
+		"max_completion_tokens": 1800,
+		"reasoning_effort": "medium",
+		"tools": [{
+			"type": "function",
+			"cache_control": {"type": "ephemeral"},
+			"function": {"name": "read_file", "parameters": {"type": "object"}}
+		}],
+		"messages": [
+			{"role": "developer", "content": "Be concise."},
+			{"role": "user", "content": [{"type": "text", "text": "Inspect", "cache_control": {"type": "ephemeral"}}]},
+			{
+				"role": "assistant",
+				"content": null,
+				"reasoning_content": "Thinking trace",
+				"reasoning_details": [{"type": "reasoning.text", "text": "Thinking trace"}],
+				"thinking_blocks": [{"type": "thinking", "thinking": "Thinking trace", "signature": "sig_1"}],
+				"cache_control": {"type": "ephemeral"},
+				"tool_calls": [{
+					"id": "call_1",
+					"type": "function",
+					"extra_content": {"google": {"thought_signature": "sig"}},
+					"function": {"name": "read_file", "arguments": "{}"}
+				}]
+			},
+			{"role": "tool", "tool_call_id": "call_1", "name": "read_file", "content": "ok"}
+		]
+	}`)
+
+	out, err := provider.TransformRequestBodyHeaders(nil, ApiNameChatCompletion, body, http.Header{})
+	require.NoError(t, err)
+
+	assert.Equal(t, "qwen3.6-plus", gjson.GetBytes(out, "model").String())
+	assert.True(t, gjson.GetBytes(out, "preserve_thinking").Bool())
+	assert.Equal(t, int64(1800), gjson.GetBytes(out, "max_completion_tokens").Int())
+	assert.Equal(t, "medium", gjson.GetBytes(out, "reasoning_effort").String())
+
+	for _, droppedTop := range []string{"store", "prompt_cache_key", "prompt_cache_retention", "prompt_cache_options", "reasoning_summary", "safety_identifier", "context_management"} {
+		assert.False(t, gjson.GetBytes(out, droppedTop).Exists(), "compatible mode must strip %s", droppedTop)
+	}
+	assert.False(t, gjson.GetBytes(out, "tools.0.cache_control").Exists())
+	assert.Equal(t, "system", gjson.GetBytes(out, "messages.0.role").String())
+	assert.False(t, gjson.GetBytes(out, "messages.1.content.0.cache_control").Exists())
+	assert.Equal(t, gjson.String, gjson.GetBytes(out, "messages.2.content").Type, "assistant null content must normalize to empty string")
+	assert.Equal(t, "", gjson.GetBytes(out, "messages.2.content").String())
+	assert.Equal(t, "Thinking trace", gjson.GetBytes(out, "messages.2.reasoning_content").String())
+	assert.False(t, gjson.GetBytes(out, "messages.2.reasoning_details").Exists())
+	assert.False(t, gjson.GetBytes(out, "messages.2.thinking_blocks").Exists())
+	assert.False(t, gjson.GetBytes(out, "messages.2.cache_control").Exists())
+	assert.False(t, gjson.GetBytes(out, "messages.2.tool_calls.0.extra_content").Exists())
+	assert.False(t, gjson.GetBytes(out, "messages.3.name").Exists(), "tool message name must be stripped")
+}
+
+func TestQwenDashScopeExplicitZerosAndToolChoiceThinkingGuard(t *testing.T) {
+	provider := &qwenProvider{
+		config: ProviderConfig{
+			typ:                  providerTypeQwen,
+			qwenEnableCompatible: false,
+			managedRequest:       true,
+		},
+	}
+
+	t.Run("preserves_explicit_zero_temperature_and_presence_penalty", func(t *testing.T) {
+		ctx := newMockMultipartHttpContext()
+		body := []byte(`{
+			"model": "qwen-plus",
+			"temperature": 0,
+			"presence_penalty": 0,
+			"messages": [
+				{"role": "developer", "content": "System policy"},
+				{"role": "user", "content": "Hello"}
+			],
+			"tools": [{"type": "function", "function": {"name": "ping", "parameters": {"type": "object"}}}],
+			"tool_choice": "required"
+		}`)
+		out, err := provider.TransformRequestBodyHeaders(ctx, ApiNameChatCompletion, body, http.Header{})
+		require.NoError(t, err)
+		assert.True(t, gjson.GetBytes(out, "parameters.temperature").Exists(), "explicit temperature=0 must survive")
+		assert.Equal(t, float64(0), gjson.GetBytes(out, "parameters.temperature").Float())
+		assert.True(t, gjson.GetBytes(out, "parameters.presence_penalty").Exists(), "explicit presence_penalty=0 must survive")
+		assert.Equal(t, float64(0), gjson.GetBytes(out, "parameters.presence_penalty").Float())
+		assert.Equal(t, "system", gjson.GetBytes(out, "input.messages.0.role").String())
+		assert.Equal(t, "required", gjson.GetBytes(out, "parameters.tool_choice").String())
+	})
+
+	t.Run("omits_absent_temperature_and_presence_penalty", func(t *testing.T) {
+		ctx := newMockMultipartHttpContext()
+		body := []byte(`{
+			"model": "qwen-plus",
+			"messages": [{"role": "user", "content": "Hello"}]
+		}`)
+		out, err := provider.TransformRequestBodyHeaders(ctx, ApiNameChatCompletion, body, http.Header{})
+		require.NoError(t, err)
+		assert.False(t, gjson.GetBytes(out, "parameters.temperature").Exists())
+		assert.False(t, gjson.GetBytes(out, "parameters.presence_penalty").Exists())
+	})
+
+	t.Run("rejects_forced_tool_choice_when_thinking_enabled", func(t *testing.T) {
+		for _, tc := range []string{`"required"`, `{"type":"function","function":{"name":"ping"}}`} {
+			ctx := newMockMultipartHttpContext()
+			body := []byte(`{
+				"model": "qwen-plus",
+				"enable_thinking": true,
+				"messages": [{"role": "user", "content": "Hello"}],
+				"tools": [{"type": "function", "function": {"name": "ping", "parameters": {"type": "object"}}}],
+				"tool_choice": ` + tc + `
+			}`)
+			_, err := provider.TransformRequestBodyHeaders(ctx, ApiNameChatCompletion, body, http.Header{})
+			require.Error(t, err, "DashScope thinking + forced tool_choice %s must be rejected explicitly", tc)
+		}
+	})
+}

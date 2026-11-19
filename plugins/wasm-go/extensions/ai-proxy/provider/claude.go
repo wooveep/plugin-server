@@ -29,9 +29,11 @@ const (
 type claudeProviderInitializer struct{}
 
 type claudeTool struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description,omitempty"`
-	InputSchema map[string]interface{} `json:"input_schema,omitempty"`
+	Type         string                 `json:"type,omitempty"`
+	Name         string                 `json:"name"`
+	Description  string                 `json:"description,omitempty"`
+	InputSchema  map[string]interface{} `json:"input_schema,omitempty"`
+	CacheControl map[string]interface{} `json:"cache_control,omitempty"`
 }
 
 type claudeToolChoice struct {
@@ -232,22 +234,26 @@ type claudeOutputConfig struct {
 }
 
 type claudeTextGenRequest struct {
-	Model            string                `json:"model,omitempty"`
-	Messages         []claudeChatMessage   `json:"messages"`
-	System           *claudeSystemPrompt   `json:"system,omitempty"`
-	MaxTokens        int                   `json:"max_tokens,omitempty"`
-	StopSequences    []string              `json:"stop_sequences,omitempty"`
-	Stream           bool                  `json:"stream,omitempty"`
-	Temperature      float64               `json:"temperature,omitempty"`
-	TopP             float64               `json:"top_p,omitempty"`
-	TopK             int                   `json:"top_k,omitempty"`
-	ToolChoice       *claudeToolChoice     `json:"tool_choice,omitempty"`
-	Tools            []claudeTool          `json:"tools,omitempty"`
-	ServiceTier      string                `json:"service_tier,omitempty"`
-	Thinking         *claudeThinkingConfig `json:"thinking,omitempty"`
-	OutputConfig     *claudeOutputConfig   `json:"output_config,omitempty"`
-	AnthropicBeta    []string              `json:"anthropic_beta,omitempty"`
-	AnthropicVersion string                `json:"anthropic_version,omitempty"`
+	Model             string                 `json:"model,omitempty"`
+	Messages          []claudeChatMessage    `json:"messages"`
+	System            *claudeSystemPrompt    `json:"system,omitempty"`
+	MaxTokens         int                    `json:"max_tokens,omitempty"`
+	StopSequences     []string               `json:"stop_sequences,omitempty"`
+	Stream            bool                   `json:"stream,omitempty"`
+	Temperature       float64                `json:"temperature,omitempty"`
+	TopP              float64                `json:"top_p,omitempty"`
+	TopK              int                    `json:"top_k,omitempty"`
+	ToolChoice        *claudeToolChoice      `json:"tool_choice,omitempty"`
+	Tools             []claudeTool           `json:"tools,omitempty"`
+	ServiceTier       string                 `json:"service_tier,omitempty"`
+	Metadata          map[string]interface{} `json:"metadata,omitempty"`
+	ContextManagement json.RawMessage        `json:"context_management,omitempty"`
+	Speed             string                 `json:"speed,omitempty"`
+	CacheControl      map[string]interface{} `json:"cache_control,omitempty"`
+	Thinking          *claudeThinkingConfig  `json:"thinking,omitempty"`
+	OutputConfig      *claudeOutputConfig    `json:"output_config,omitempty"`
+	AnthropicBeta     []string               `json:"anthropic_beta,omitempty"`
+	AnthropicVersion  string                 `json:"anthropic_version,omitempty"`
 }
 
 type claudeTextGenResponse struct {

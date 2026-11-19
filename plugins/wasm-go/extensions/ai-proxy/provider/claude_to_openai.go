@@ -226,19 +226,50 @@ func (c *ClaudeToOpenAIConverter) ConvertClaudeRequestToOpenAIWithOptions(body [
 
 			// Handle tool results if present
 			if len(conversionResult.toolResults) > 0 {
+				var toolImageContents []chatMessageContent
 				for _, toolResult := range conversionResult.toolResults {
+					toolContent := ""
+					if toolResult.Content != nil {
+						toolContent = toolResult.Content.GetStringValue()
+						if !toolResult.Content.IsString {
+							nested := c.convertContentArray(toolResult.Content.GetArrayValue())
+							for _, part := range nested.openaiContents {
+								if part.Type == contentTypeImageUrl {
+									toolImageContents = append(toolImageContents, part)
+								}
+							}
+						}
+					}
 					toolMsg := chatMessage{
 						Role:                "tool",
-						Content:             toolResult.Content.GetStringValue(),
+						Content:             toolContent,
 						ToolCallId:          toolResult.ToolUseId,
 						ClaudeContentBlocks: []claudeChatMessageContent{toolResult},
 					}
 					openaiRequest.Messages = append(openaiRequest.Messages, toolMsg)
 				}
-				// Also add visible text content if present alongside tool results.
+				// Also add visible text or multimodal image content if present alongside tool results.
 				// This companion message intentionally does not carry reasoning_content:
 				// tool_result content is user/tool-side data, while thinking belongs to assistant turns.
-				if len(conversionResult.textParts) > 0 {
+				if len(toolImageContents) > 0 {
+					var companion []chatMessageContent
+					if len(conversionResult.textParts) > 0 {
+						companion = append(companion, chatMessageContent{
+							Type: contentTypeText,
+							Text: strings.Join(conversionResult.textParts, "\n\n"),
+						})
+					} else {
+						companion = append(companion, chatMessageContent{
+							Type: contentTypeText,
+							Text: "Attached image(s) from tool result:",
+						})
+					}
+					companion = append(companion, toolImageContents...)
+					openaiRequest.Messages = append(openaiRequest.Messages, chatMessage{
+						Role:    claudeMsg.Role,
+						Content: companion,
+					})
+				} else if len(conversionResult.textParts) > 0 {
 					textMsg := chatMessage{
 						Role:    claudeMsg.Role,
 						Content: strings.Join(conversionResult.textParts, "\n\n"),
@@ -332,7 +363,8 @@ func (c *ClaudeToOpenAIConverter) ConvertClaudeRequestToOpenAIWithOptions(body [
 			claudeRequest.Thinking.Type, claudeRequest.Thinking.BudgetTokens)
 		openaiRequest.ClaudeThinking = claudeRequest.Thinking
 
-		if claudeRequest.Thinking.Type == "enabled" {
+		switch claudeRequest.Thinking.Type {
+		case "enabled":
 			// Set ReasoningEffort based on budget_tokens
 			// low: <4096, medium: >=4096 and <16384, high: >=16384
 			if claudeRequest.Thinking.BudgetTokens < 4096 {
@@ -345,6 +377,19 @@ func (c *ClaudeToOpenAIConverter) ConvertClaudeRequestToOpenAIWithOptions(body [
 
 			log.Debugf("[Claude->OpenAI] Converted thinking config: budget_tokens=%d, reasoning_effort=%s",
 				claudeRequest.Thinking.BudgetTokens, openaiRequest.ReasoningEffort)
+		case "adaptive":
+			effort := "medium"
+			if claudeRequest.OutputConfig != nil {
+				switch strings.ToLower(strings.TrimSpace(claudeRequest.OutputConfig.Effort)) {
+				case "low":
+					effort = "low"
+				case "medium":
+					effort = "medium"
+				case "high", "max":
+					effort = "high"
+				}
+			}
+			openaiRequest.ReasoningEffort = effort
 		}
 	}
 	if claudeRequest.OutputConfig != nil {

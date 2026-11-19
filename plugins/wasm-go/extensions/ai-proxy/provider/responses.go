@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
-	"github.com/tidwall/gjson"
 )
 
 type responsesRequest struct {
@@ -199,6 +198,23 @@ type chatCompletionResponseEnvelope struct {
 
 type ResponsesToChatConvertOptions struct {
 	DeveloperRoleAsSystem bool
+	OmitStore             bool
+}
+
+// ResponsesFallbackError identifies a deterministic Responses-to-Chat conversion
+// rejection using a fixed code and sanitized field/item name for safe logging.
+type ResponsesFallbackError struct {
+	Code    string
+	Field   string
+	Message string
+}
+
+func (e ResponsesFallbackError) Error() string {
+	return e.Message
+}
+
+func responsesFallbackReject(code, field, message string) error {
+	return ResponsesFallbackError{Code: code, Field: field, Message: message}
 }
 
 // ConvertResponsesRequestToChatCompletion reuses the registered Responses fallback adapter.
@@ -217,30 +233,27 @@ func convertResponsesRequestToChatCompletion(body []byte) ([]byte, error) {
 func convertResponsesRequestToChatCompletionWithOptions(body []byte, options ResponsesToChatConvertOptions) ([]byte, error) {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(body, &fields); err != nil {
-		return nil, fmt.Errorf("invalid Responses fallback request: %w", err)
+		return nil, responsesFallbackReject("invalid_json_request", "", fmt.Sprintf("invalid Responses fallback request: %v", err))
 	}
-	const supported = " model instructions input stream stream_options temperature top_p presence_penalty frequency_penalty max_output_tokens user metadata store background reasoning prompt_cache_key prompt_cache_retention prompt_cache_options text tools tool_choice parallel_tool_calls previous_response_id conversation enable_search search_options web_search_options "
+	const supported = " model instructions input stream stream_options temperature top_p presence_penalty frequency_penalty max_output_tokens user metadata store background reasoning prompt_cache_key prompt_cache_retention prompt_cache_options text tools tool_choice parallel_tool_calls previous_response_id conversation enable_search search_options web_search_options truncation include service_tier safety_identifier max_tool_calls top_logprobs context_management prompt moderation client_metadata "
 	for name := range fields {
 		if !strings.Contains(supported, " "+name+" ") {
-			return nil, fmt.Errorf("%s is unsupported in Responses fallback mode", name)
+			return nil, responsesFallbackReject("unsupported_top_level_field", name, fmt.Sprintf("%s is unsupported in Responses fallback mode", name))
 		}
 	}
-	if gjson.GetBytes(body, "previous_response_id").Exists() {
-		return nil, errors.New("previous_response_id is unsupported in Responses fallback mode")
+	if isNonEmptyJSONReference(fields["previous_response_id"]) {
+		return nil, responsesFallbackReject("unsupported_stateful_reference", "previous_response_id", "previous_response_id is unsupported in Responses fallback mode")
 	}
-	if gjson.GetBytes(body, "conversation").Exists() {
-		return nil, errors.New("conversation is unsupported in Responses fallback mode")
+	if isNonEmptyJSONReference(fields["conversation"]) {
+		return nil, responsesFallbackReject("unsupported_stateful_reference", "conversation", "conversation is unsupported in Responses fallback mode")
 	}
 
 	var request responsesRequest
 	if err := json.Unmarshal(body, &request); err != nil {
-		return nil, fmt.Errorf("unable to unmarshal responses request: %w", err)
+		return nil, responsesFallbackReject("invalid_request_schema", "", fmt.Sprintf("unable to unmarshal responses request: %v", err))
 	}
 	if request.Background {
-		return nil, errors.New("background is unsupported in Responses fallback mode")
-	}
-	if request.Reasoning != nil && (request.Reasoning.Summary != nil || request.Reasoning.GenerateSummary != nil) {
-		return nil, errors.New("reasoning summary is unsupported in Responses fallback mode")
+		return nil, responsesFallbackReject("unsupported_background_mode", "background", "background is unsupported in Responses fallback mode")
 	}
 
 	messages, err := convertResponsesInputToChatMessagesWithOptions(request.Input, options.DeveloperRoleAsSystem)
@@ -299,8 +312,12 @@ func convertResponsesRequestToChatCompletionWithOptions(body []byte, options Res
 		case "json_schema":
 			responseFormat = &responsesChatResponseFormat{Type: format.Type, JSONSchema: &format.responsesJSONSchema}
 		default:
-			return nil, fmt.Errorf("text.format type %q is unsupported in Responses fallback mode", format.Type)
+			return nil, responsesFallbackReject("unsupported_text_format", "text.format", fmt.Sprintf("text.format type %q is unsupported in Responses fallback mode", format.Type))
 		}
+	}
+	var store *bool
+	if !options.OmitStore {
+		store = request.Store
 	}
 	// Override the shared Chat scalar fields only at this conversion boundary so
 	// explicit zero values survive without changing other providers' defaults.
@@ -322,9 +339,21 @@ func convertResponsesRequestToChatCompletionWithOptions(body []byte, options Res
 		PresencePenalty:       request.PresencePenalty,
 		FrequencyPenalty:      request.FrequencyPenalty,
 		ResponseFormat:        responseFormat,
-		Store:                 request.Store,
+		Store:                 store,
 		PromptCacheOptions:    request.PromptCacheOptions,
 	})
+}
+
+func isNonEmptyJSONReference(raw json.RawMessage) bool {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
+		return false
+	}
+	var text string
+	if err := json.Unmarshal(trimmed, &text); err == nil {
+		return text != ""
+	}
+	return true
 }
 
 func convertResponsesInputToChatMessages(input json.RawMessage) ([]responsesChatInputMessage, error) {
@@ -333,7 +362,7 @@ func convertResponsesInputToChatMessages(input json.RawMessage) ([]responsesChat
 
 func convertResponsesInputToChatMessagesWithOptions(input json.RawMessage, developerRoleAsSystem bool) ([]responsesChatInputMessage, error) {
 	if len(bytes.TrimSpace(input)) == 0 || bytes.Equal(bytes.TrimSpace(input), []byte("null")) {
-		return nil, errors.New("input is required for Responses fallback mode")
+		return nil, responsesFallbackReject("missing_input", "input", "input is required for Responses fallback mode")
 	}
 	var text string
 	if err := json.Unmarshal(input, &text); err == nil {
@@ -342,7 +371,7 @@ func convertResponsesInputToChatMessagesWithOptions(input json.RawMessage, devel
 
 	var items []responsesInputItem
 	if err := json.Unmarshal(input, &items); err != nil {
-		return nil, fmt.Errorf("unsupported responses input: %w", err)
+		return nil, responsesFallbackReject("invalid_input_schema", "input", fmt.Sprintf("unsupported responses input: %v", err))
 	}
 	messages := make([]responsesChatInputMessage, 0, len(items))
 	pending := make(map[string]struct{})
@@ -350,17 +379,25 @@ func convertResponsesInputToChatMessagesWithOptions(input json.RawMessage, devel
 	for _, item := range items {
 		switch item.Type {
 		case "reasoning":
-			if len(item.EncryptedContent) > 0 && !bytes.Equal(bytes.TrimSpace(item.EncryptedContent), []byte("null")) || len(item.Summary) > 0 {
-				return nil, errors.New("opaque or summary-only reasoning is unsupported in Responses fallback mode")
+			trimmedContent := bytes.TrimSpace(item.Content)
+			hasContent := len(trimmedContent) > 0 && !bytes.Equal(trimmedContent, []byte("null")) && !bytes.Equal(trimmedContent, []byte("[]"))
+			if !hasContent {
+				hasEncrypted := len(item.EncryptedContent) > 0 && !bytes.Equal(bytes.TrimSpace(item.EncryptedContent), []byte("null"))
+				if hasEncrypted || item.Summary != nil {
+					// Fallback Chat/DashScope targets cannot replay opaque encrypted reasoning.
+					// Skip encrypted/summary-only history items so surrounding turns convert cleanly.
+					continue
+				}
+				return nil, responsesFallbackReject("unsupported_reasoning_content", "reasoning", "reasoning requires plaintext reasoning_text content in Responses fallback mode")
 			}
 			var parts []responsesContentPart
 			if json.Unmarshal(item.Content, &parts) != nil || len(parts) == 0 {
-				return nil, errors.New("reasoning requires plaintext reasoning_text content in Responses fallback mode")
+				return nil, responsesFallbackReject("unsupported_reasoning_content", "reasoning", "reasoning requires plaintext reasoning_text content in Responses fallback mode")
 			}
 			var text strings.Builder
 			for _, part := range parts {
 				if part.Type != "reasoning_text" || part.Text == nil {
-					return nil, errors.New("reasoning content cannot be converted without loss")
+					return nil, responsesFallbackReject("unsupported_reasoning_content", "reasoning", "reasoning content cannot be converted without loss")
 				}
 				text.WriteString(*part.Text)
 			}
@@ -375,12 +412,12 @@ func convertResponsesInputToChatMessagesWithOptions(input json.RawMessage, devel
 			last.ReasoningContent = &value
 		case "", "message":
 			if len(pending) > 0 && (item.Role != roleAssistant || messages[len(messages)-1].Role != roleAssistant) {
-				return nil, errors.New("function_call_output is required before the next message in Responses fallback mode")
+				return nil, responsesFallbackReject("pending_function_call_output", "function_call_output", "function_call_output is required before the next message in Responses fallback mode")
 			}
 			switch item.Role {
 			case roleUser, roleAssistant, roleDeveloper, roleSystem:
 			default:
-				return nil, fmt.Errorf("message role %q is unsupported in Responses fallback mode", item.Role)
+				return nil, responsesFallbackReject("unsupported_message_role", "input.role", fmt.Sprintf("message role %q is unsupported in Responses fallback mode", item.Role))
 			}
 			role := item.Role
 			if role == roleDeveloper && developerRoleAsSystem {
@@ -418,13 +455,13 @@ func convertResponsesInputToChatMessagesWithOptions(input json.RawMessage, devel
 					}
 					for _, part := range parts {
 						if part.Type == "refusal" {
-							return nil, errors.New("Chat cannot combine refusal and other assistant content parts in Responses fallback mode")
+							return nil, responsesFallbackReject("incompatible_refusal_merge", "input.content", "Chat cannot combine refusal and other assistant content parts in Responses fallback mode")
 						}
 					}
 					if segment.PromptCacheBreakpoint != nil {
 						end := &parts[len(parts)-1]
 						if end.PromptCacheBreakpoint != nil && *end.PromptCacheBreakpoint != *segment.PromptCacheBreakpoint {
-							return nil, errors.New("conflicting cache breakpoints at one assistant content boundary in Responses fallback mode")
+							return nil, responsesFallbackReject("conflicting_cache_breakpoints", "prompt_cache_breakpoint", "conflicting cache breakpoints at one assistant content boundary in Responses fallback mode")
 						}
 						end.PromptCacheBreakpoint = segment.PromptCacheBreakpoint
 					}
@@ -440,13 +477,13 @@ func convertResponsesInputToChatMessagesWithOptions(input json.RawMessage, devel
 			messages = append(messages, responsesChatInputMessage{Role: role, Content: content, PromptCacheBreakpoint: item.PromptCacheBreakpoint})
 		case "function_call":
 			if item.CallID == "" || item.Name == "" || item.Arguments == nil {
-				return nil, errors.New("function_call requires call_id, name and string arguments in Responses fallback mode")
+				return nil, responsesFallbackReject("invalid_function_call", "function_call", "function_call requires call_id, name and string arguments in Responses fallback mode")
 			}
 			if _, exists := seen[item.CallID]; exists {
-				return nil, fmt.Errorf("duplicate function_call call_id %q in Responses fallback mode", item.CallID)
+				return nil, responsesFallbackReject("invalid_function_call", "function_call", fmt.Sprintf("duplicate function_call call_id %q in Responses fallback mode", item.CallID))
 			}
 			if len(pending) > 0 && messages[len(messages)-1].Role != roleAssistant {
-				return nil, errors.New("all function_call_output items must precede the next function_call in Responses fallback mode")
+				return nil, responsesFallbackReject("invalid_function_call", "function_call", "all function_call_output items must precede the next function_call in Responses fallback mode")
 			}
 			if len(messages) == 0 || messages[len(messages)-1].Role != roleAssistant {
 				messages = append(messages, responsesChatInputMessage{Role: roleAssistant})
@@ -457,7 +494,7 @@ func convertResponsesInputToChatMessagesWithOptions(input json.RawMessage, devel
 			seen[item.CallID] = struct{}{}
 		case "function_call_output":
 			if _, exists := pending[item.CallID]; !exists {
-				return nil, fmt.Errorf("function_call_output call_id %q has no matching pending function_call in Responses fallback mode", item.CallID)
+				return nil, responsesFallbackReject("orphan_function_call_output", "function_call_output", fmt.Sprintf("function_call_output call_id %q has no matching pending function_call in Responses fallback mode", item.CallID))
 			}
 			content, err := convertResponsesMessageContent(item.Output, roleTool)
 			if err != nil {
@@ -466,18 +503,18 @@ func convertResponsesInputToChatMessagesWithOptions(input json.RawMessage, devel
 			messages = append(messages, responsesChatInputMessage{Role: roleTool, Content: content, ToolCallID: item.CallID})
 			delete(pending, item.CallID)
 		default:
-			return nil, fmt.Errorf("input item type %q is unsupported in Responses fallback mode", item.Type)
+			return nil, responsesFallbackReject("unsupported_input_item_type", item.Type, fmt.Sprintf("input item type %q is unsupported in Responses fallback mode", item.Type))
 		}
 	}
 	if len(pending) > 0 {
-		return nil, errors.New("function_call_output is required for every function_call in Responses fallback mode")
+		return nil, responsesFallbackReject("pending_function_call_output", "function_call_output", "function_call_output is required for every function_call in Responses fallback mode")
 	}
 	return messages, nil
 }
 
 func convertResponsesMessageContent(content json.RawMessage, role string) (json.RawMessage, error) {
 	if len(bytes.TrimSpace(content)) == 0 || bytes.Equal(bytes.TrimSpace(content), []byte("null")) {
-		return nil, errors.New("message or function output content is required in Responses fallback mode")
+		return nil, responsesFallbackReject("invalid_message_content", "content", "message or function output content is required in Responses fallback mode")
 	}
 	var text string
 	if err := json.Unmarshal(content, &text); err == nil {
@@ -486,10 +523,10 @@ func convertResponsesMessageContent(content json.RawMessage, role string) (json.
 
 	var parts []responsesContentPart
 	if err := json.Unmarshal(content, &parts); err != nil {
-		return nil, fmt.Errorf("unsupported responses message content: %w", err)
+		return nil, responsesFallbackReject("invalid_message_content", "content", fmt.Sprintf("unsupported responses message content: %v", err))
 	}
 	if len(parts) == 0 {
-		return nil, errors.New("message or function output content must not be empty in Responses fallback mode")
+		return nil, responsesFallbackReject("invalid_message_content", "content", "message or function output content must not be empty in Responses fallback mode")
 	}
 	var builder bytes.Buffer
 	chatParts := make([]responsesChatContentPart, 0, len(parts))
@@ -498,36 +535,36 @@ func convertResponsesMessageContent(content json.RawMessage, role string) (json.
 		switch part.Type {
 		case "input_text", "output_text":
 			if part.Text == nil {
-				return nil, errors.New("text content requires a string text field in Responses fallback mode")
+				return nil, responsesFallbackReject("invalid_message_content", "content", "text content requires a string text field in Responses fallback mode")
 			}
 			builder.WriteString(*part.Text)
 			chatParts = append(chatParts, responsesChatContentPart{Type: "text", Text: part.Text, PromptCacheBreakpoint: part.PromptCacheBreakpoint})
 			preserveParts = preserveParts || part.PromptCacheBreakpoint != nil
 		case "input_image":
 			if role != roleUser {
-				return nil, errors.New("input_image is supported only on user messages; Chat tool outputs support text only in Responses fallback mode")
+				return nil, responsesFallbackReject("unsupported_image_content", "input_image", "input_image is supported only on user messages; Chat tool outputs support text only in Responses fallback mode")
 			}
 			if part.FileID != "" {
-				return nil, errors.New("input_image file_id cannot be resolved to image_url in Responses fallback mode")
+				return nil, responsesFallbackReject("unsupported_image_content", "file_id", "input_image file_id cannot be resolved to image_url in Responses fallback mode")
 			}
 			if part.ImageURL == "" {
-				return nil, errors.New("input_image requires image_url in Responses fallback mode")
+				return nil, responsesFallbackReject("unsupported_image_content", "input_image", "input_image requires image_url in Responses fallback mode")
 			}
 			switch part.Detail {
 			case "", "auto", "low", "high", "original":
 			default:
-				return nil, fmt.Errorf("image detail %q is unsupported in Responses fallback mode", part.Detail)
+				return nil, responsesFallbackReject("unsupported_image_content", "input_image", fmt.Sprintf("image detail %q is unsupported in Responses fallback mode", part.Detail))
 			}
 			chatParts = append(chatParts, responsesChatContentPart{Type: "image_url", ImageURL: &chatMessageContentImageUrl{Url: part.ImageURL, Detail: part.Detail}, PromptCacheBreakpoint: part.PromptCacheBreakpoint})
 			preserveParts = true
 		case "refusal":
 			if role != roleAssistant || part.Refusal == nil || len(parts) != 1 {
-				return nil, errors.New("refusal requires a single assistant refusal content part in Responses fallback mode")
+				return nil, responsesFallbackReject("invalid_refusal_content", "refusal", "refusal requires a single assistant refusal content part in Responses fallback mode")
 			}
 			chatParts = append(chatParts, responsesChatContentPart{Type: "refusal", Refusal: part.Refusal})
 			preserveParts = true
 		default:
-			return nil, fmt.Errorf("%s is unsupported in Responses fallback mode", part.Type)
+			return nil, responsesFallbackReject("unsupported_content_part_type", part.Type, fmt.Sprintf("%s is unsupported in Responses fallback mode", part.Type))
 		}
 	}
 	if preserveParts {
@@ -543,7 +580,7 @@ func convertResponsesTools(tools []responsesTool) ([]tool, error) {
 	chatTools := make([]tool, 0, len(tools))
 	for _, responsesTool := range tools {
 		if responsesTool.Type != "function" {
-			return nil, fmt.Errorf("%s is unsupported in Responses fallback mode", responsesTool.Type)
+			return nil, responsesFallbackReject("unsupported_tool_type", responsesTool.Type, fmt.Sprintf("%s is unsupported in Responses fallback mode", responsesTool.Type))
 		}
 		chatTools = append(chatTools, tool{
 			Type: "function",
@@ -559,7 +596,8 @@ func convertResponsesTools(tools []responsesTool) ([]tool, error) {
 }
 
 func convertResponsesToolChoice(raw json.RawMessage) (interface{}, error) {
-	if len(bytes.TrimSpace(raw)) == 0 {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
 		return nil, nil
 	}
 	var choiceString string
@@ -568,7 +606,7 @@ func convertResponsesToolChoice(raw json.RawMessage) (interface{}, error) {
 		case "auto", "none", "required":
 			return choiceString, nil
 		default:
-			return nil, fmt.Errorf("tool_choice %q is unsupported in Responses fallback mode", choiceString)
+			return nil, responsesFallbackReject("unsupported_tool_choice", "tool_choice", fmt.Sprintf("tool_choice %q is unsupported in Responses fallback mode", choiceString))
 		}
 	}
 
@@ -577,14 +615,14 @@ func convertResponsesToolChoice(raw json.RawMessage) (interface{}, error) {
 		Name string `json:"name,omitempty"`
 	}
 	if err := json.Unmarshal(raw, &choice); err != nil {
-		return nil, fmt.Errorf("unsupported tool_choice in Responses fallback mode: %w", err)
+		return nil, responsesFallbackReject("unsupported_tool_choice", "tool_choice", fmt.Sprintf("unsupported tool_choice in Responses fallback mode: %v", err))
 	}
 	switch choice.Type {
 	case "auto", "none", "required":
 		return choice.Type, nil
 	case "function":
 		if choice.Name == "" {
-			return nil, errors.New("function tool_choice requires name in Responses fallback mode")
+			return nil, responsesFallbackReject("unsupported_tool_choice", "tool_choice", "function tool_choice requires name in Responses fallback mode")
 		}
 		return &toolChoice{
 			Type: "function",
@@ -593,7 +631,7 @@ func convertResponsesToolChoice(raw json.RawMessage) (interface{}, error) {
 			},
 		}, nil
 	default:
-		return nil, fmt.Errorf("tool_choice type %q is unsupported in Responses fallback mode", choice.Type)
+		return nil, responsesFallbackReject("unsupported_tool_choice", "tool_choice", fmt.Sprintf("tool_choice type %q is unsupported in Responses fallback mode", choice.Type))
 	}
 }
 

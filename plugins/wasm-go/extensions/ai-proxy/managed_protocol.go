@@ -86,6 +86,51 @@ func newManagedProtocolProfile(input, upstream string) (managedProtocolProfile, 
 
 // PrepareRequest accepts the mapper's output, not the original public body.
 // The caller must freeze the returned actual bytes as outbound_body_digest.
+type managedProtocolRejectionError struct {
+	Code  string
+	Field string
+}
+
+func (e managedProtocolRejectionError) Error() string {
+	if e.Field == "" {
+		return e.Code
+	}
+	return e.Code + ":" + e.Field
+}
+
+func managedSafeIdentifier(value string) string {
+	if value == "" || len(value) > 64 {
+		return ""
+	}
+	for i := 0; i < len(value); i++ {
+		c := value[i]
+		isValid := (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '.' || c == '-'
+		if !isValid {
+			return ""
+		}
+	}
+	return value
+}
+
+func managedSafeProtocolDetail(err error) string {
+	var rej managedProtocolRejectionError
+	if errors.As(err, &rej) {
+		if rej.Field == "" {
+			return "code=" + rej.Code
+		}
+		return "code=" + rej.Code + " field=" + rej.Field
+	}
+	var fallback provider.ResponsesFallbackError
+	if errors.As(err, &fallback) {
+		field := managedSafeIdentifier(fallback.Field)
+		if field == "" {
+			return "code=" + fallback.Code
+		}
+		return "code=" + fallback.Code + " field=" + field
+	}
+	return "code=managed_protocol_request_conversion_failed"
+}
+
 func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credential string) (managedProtocolRequest, error) {
 	if p.InputProtocol == managedProtocolEmbeddings && p.UpstreamProtocol == managedProtocolEmbeddings {
 		return prepareManagedEmbeddingRequest(body, frozenModel, credential)
@@ -152,8 +197,10 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 				err = errors.New("unsupported managed protocol request conversion")
 			}
 		case managedProtocolResponses:
+			isNonOpenAI := dashScopeUpstream || p.supplier != "" && p.supplier != "openai" && p.supplier != "azure"
 			actual, err = provider.ConvertResponsesRequestToChatCompletionWithOptions(body, provider.ResponsesToChatConvertOptions{
-				DeveloperRoleAsSystem: dashScopeUpstream || p.supplier != "" && p.supplier != "openai" && p.supplier != "azure",
+				DeveloperRoleAsSystem: isNonOpenAI,
+				OmitStore:             isNonOpenAI,
 			})
 		case managedProtocolMessages:
 			preserveReasoning := p.supplier == "qwen" || p.supplier == "openrouter" || p.supplier == "zhipuai" || p.supplier == "deepseek" || p.supplier == "moonshot"
@@ -165,7 +212,7 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 				if dashScopeUpstream {
 					if thinking := gjson.GetBytes(actual, "claude_thinking"); thinking.IsObject() {
 						switch thinking.Get("type").String() {
-						case "enabled":
+						case "enabled", "adaptive":
 							actual, err = sjson.SetBytes(actual, "enable_thinking", true)
 							if err == nil && thinking.Get("budget_tokens").Int() > 0 {
 								actual, err = sjson.SetBytes(actual, "thinking_budget", thinking.Get("budget_tokens").Int())
@@ -184,7 +231,17 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 		}
 	}
 	if err != nil {
-		// Provider errors can contain body details; expose a fixed local reason.
+		// Provider errors can contain body details; preserve only fixed enum code and safe field key.
+		var fallback provider.ResponsesFallbackError
+		if errors.As(err, &fallback) {
+			return managedProtocolRequest{}, managedProtocolRejectionError{
+				Code:  managedSafeIdentifier(fallback.Code),
+				Field: managedSafeIdentifier(fallback.Field),
+			}
+		}
+		if p.InputProtocol == managedProtocolMessages {
+			return managedProtocolRequest{}, managedProtocolRejectionError{Code: "messages_request_conversion_failed"}
+		}
 		return managedProtocolRequest{}, errors.New("managed protocol request conversion failed")
 	}
 	var converted map[string]json.RawMessage
