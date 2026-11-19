@@ -1521,7 +1521,7 @@
         }
       },
       "metadataDir": "plugins/release/metadata/ai-data-masking",
-      "declaredVersion": "2.0.7"
+      "declaredVersion": "2.0.8"
     },
     {
       "logicalId": "ai-endpoint-picker",
