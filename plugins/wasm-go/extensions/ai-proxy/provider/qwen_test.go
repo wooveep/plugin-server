@@ -590,7 +590,7 @@ func TestQwenCompatibleSanitizesAgentBridgingArtifacts(t *testing.T) {
 	}
 	assert.False(t, gjson.GetBytes(out, "tools.0.cache_control").Exists())
 	assert.Equal(t, "system", gjson.GetBytes(out, "messages.0.role").String())
-	assert.False(t, gjson.GetBytes(out, "messages.1.content.0.cache_control").Exists())
+	assert.Equal(t, "ephemeral", gjson.GetBytes(out, "messages.1.content.0.cache_control.type").String(), "H3: compatible mode must preserve messages[].content[].cache_control")
 	assert.Equal(t, gjson.String, gjson.GetBytes(out, "messages.2.content").Type, "assistant null content must normalize to empty string")
 	assert.Equal(t, "", gjson.GetBytes(out, "messages.2.content").String())
 	assert.Equal(t, "Thinking trace", gjson.GetBytes(out, "messages.2.reasoning_content").String())

@@ -15,4 +15,7 @@
 
 !*/
 
+!testdata/canonical/
+!testdata/canonical/*.json
+
 /out

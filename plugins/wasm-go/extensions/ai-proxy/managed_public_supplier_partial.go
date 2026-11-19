@@ -12,6 +12,9 @@ import (
 // Native prefix conversion shares the existing supplier codec, but never its
 // success observation. Original facts were retained before this encoder runs.
 func publicSupplierPartialStream(ctx wrapper.HttpContext, s *managedExecutionState, headers [][2]string, original []byte, format string) (managedProtocolClientResponse, uint32, bool, error) {
+	if managedPublicText(s) && managedUsesCanonicalIR(s.config) {
+		return encodeManagedCanonicalPartialResponse(ctx, s, headers, original)
+	}
 	normalized := bytes.ReplaceAll(original, []byte("\r\n"), []byte("\n"))
 	last := bytes.LastIndex(normalized, []byte("\n\n"))
 	if last < 0 {

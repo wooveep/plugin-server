@@ -25,6 +25,7 @@ import (
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/canonical"
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
@@ -500,6 +501,7 @@ type managedExecutionState struct {
 	streaming                                                  bool
 	requestText                                                string
 	publicRequest                                              []byte
+	baseCanonical                                              *canonical.Request
 	publicPartial                                              json.RawMessage
 	publicAliases                                              *clientresponse.ResourceAliases
 	resourceOwner                                              *resourceref.Owner
@@ -716,74 +718,182 @@ func onManagedRequestBody(ctx wrapper.HttpContext, cfg config.PluginConfig, body
 	return types.ActionPause, true
 }
 
-// Credential choice has already frozen this request's config before protocol
-// conversion installs its Authorization. No callback can choose another member.
-func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecutionState, body []byte) (managedProtocolRequest, bool) {
+func ensureManagedBaseCanonicalRequest(state *managedExecutionState, body []byte) (*canonical.Request, error) {
+	if state.text != nil && state.text.baseCanonical != nil {
+		state.baseCanonical = state.text.baseCanonical
+		return state.baseCanonical, nil
+	}
+	if state.baseCanonical != nil {
+		return state.baseCanonical, nil
+	}
+	decoded, err := supplier.DecodeCanonicalRequest(canonical.Protocol(state.config.profile.InputProtocol), body)
+	if err != nil {
+		return nil, err
+	}
+	state.baseCanonical = &decoded
+	if state.text != nil {
+		state.text.baseCanonical = &decoded
+	}
+	return state.baseCanonical, nil
+}
+
+func prepareManagedCanonicalRequest(ctx wrapper.HttpContext, state *managedExecutionState, body []byte) (managedProtocolRequest, bool) {
 	managed := state.config
-	body, err := prepareManagedTools(ctx, state, body)
+	effectiveRemoved, defaults, err := resolveManagedAttemptRemovedTools(ctx, state)
 	if err != nil {
 		rejectManagedPreparation(ctx, state, 403, "tool_not_open_for_selected_target")
 		return managedProtocolRequest{}, false
 	}
-	request, err := managed.profile.PrepareRequest(body, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue)
+
+	credential := managed.settings.CredentialValue
+	validCred := credential != ""
+	for _, char := range credential {
+		if char <= 0x20 || char > 0x7e {
+			validCred = false
+			break
+		}
+	}
+	if !validCred {
+		log.Warnf("ai-proxy managed protocol preparation rejected, call_id:%s input:%s upstream:%s reason:%s %s", state.callID, managed.profile.InputProtocol, managed.profile.UpstreamProtocol, "unsupported_or_invalid_protocol_request", "code=invalid_upstream_credential")
+		rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")
+		return managedProtocolRequest{}, false
+	}
+
+	baseReq, err := ensureManagedBaseCanonicalRequest(state, body)
 	if err != nil {
 		log.Warnf("ai-proxy managed protocol preparation rejected, call_id:%s input:%s upstream:%s reason:%s %s", state.callID, managed.profile.InputProtocol, managed.profile.UpstreamProtocol, "unsupported_or_invalid_protocol_request", managedSafeProtocolDetail(err))
 		rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")
 		return managedProtocolRequest{}, false
 	}
-	if policy := managed.settings.ToolPolicy; policy != nil {
-		removed := make(map[fixedtools.Tool]bool, len(state.removedTools)+len(policy.Defaults))
-		for tool := range state.removedTools {
-			removed[tool] = true
-		}
-		for _, tool := range policy.Defaults {
-			if !state.requestedTools[tool] {
-				removed[tool] = true
-			}
-		}
-		if len(removed) > 0 {
-			// Directed text converters can omit supplier extension flags. Reapply
-			// the frozen removals before the supplier adapter reads its defaults.
-			filterProtocol := managed.profile.UpstreamProtocol
-			if managed.profile.InputProtocol != managed.profile.UpstreamProtocol &&
-				(filterProtocol == managedProtocolDashScopeText || filterProtocol == managedProtocolDashScopeMultimodal) {
-				filterProtocol = managedProtocolChat
-			}
-			request.Body, err = fixedtools.Filter(request.Body, filterProtocol, nil, removed)
-			if err != nil {
-				rejectManagedPreparation(ctx, state, 400, "invalid_effective_tool_request")
-				return managedProtocolRequest{}, false
-			}
-		}
-	}
-	if managed.profile.InputProtocol == managedProtocolDashScopeText || managed.profile.InputProtocol == managedProtocolDashScopeMultimodal {
-		request.Streaming = state.streaming
-	}
-	var outboundObject map[string]json.RawMessage
-	var model string
-	if decodeManagedJSON(request.Body, &outboundObject, false) != nil || json.Unmarshal(outboundObject["model"], &model) != nil || model != managed.release.Descriptor.UpstreamModel {
-		rejectManagedPreparation(ctx, state, 500, "protocol_conversion_changed_selection")
+
+	upstreamModel := managed.release.Descriptor.UpstreamModel
+	if !managedID(upstreamModel) || (state.text == nil && baseReq.Model != upstreamModel) {
+		log.Warnf("ai-proxy managed protocol preparation rejected, call_id:%s input:%s upstream:%s reason:%s %s", state.callID, managed.profile.InputProtocol, managed.profile.UpstreamProtocol, "unsupported_or_invalid_protocol_request", "code=model_mismatch field=model")
+		rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")
 		return managedProtocolRequest{}, false
 	}
-	if managed.vendor != nil {
-		headers := make(http.Header, len(request.Headers)+1)
-		for _, header := range request.Headers {
-			headers.Add(header[0], header[1])
-		}
-		request.Body, err = managed.vendor.Prepare(ctx, request.Body, headers, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue, request.Streaming)
+
+	attemptReq := baseReq.CloneForAttempt()
+	attemptReq.Model = upstreamModel
+	if managed.settings.ToolPolicy != nil {
+		attemptReq = fixedtools.FilterCanonical(attemptReq, defaults, effectiveRemoved)
+	}
+
+	target := resolveManagedCanonicalTarget(managed, attemptReq.Stream)
+	if err := supplier.ValidateCanonicalTarget(attemptReq, target); err != nil {
+		log.Warnf("ai-proxy managed protocol preparation rejected, call_id:%s input:%s upstream:%s reason:%s %s", state.callID, managed.profile.InputProtocol, managed.profile.UpstreamProtocol, "unsupported_or_invalid_protocol_request", managedSafeProtocolDetail(err))
+		rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")
+		return managedProtocolRequest{}, false
+	}
+
+	var request managedProtocolRequest
+	request.Streaming = attemptReq.Stream
+
+	if managed.vendor == nil {
+		wireBody, err := supplier.EncodeCanonicalRequest(attemptReq, target)
 		if err != nil {
+			log.Warnf("ai-proxy managed supplier preparation rejected, call_id:%s input:%s upstream:%s reason:%s %s", state.callID, managed.profile.InputProtocol, managed.profile.UpstreamProtocol, "unsupported_or_invalid_supplier_request", managedSafeProtocolDetail(err))
 			rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_supplier_request")
 			return managedProtocolRequest{}, false
 		}
-		request.UpstreamPath = headers.Get(":path")
-		request.Headers = nil
-		for name, values := range headers {
+		request.Body = wireBody
+		request.Headers = [][2]string{
+			{"content-type", "application/json"},
+			{"accept", "application/json, text/event-stream"},
+			{"accept-encoding", "identity"},
+			{"authorization", "Bearer " + credential},
+		}
+	} else {
+		httpHeaders := make(http.Header, 6)
+		httpHeaders.Set("content-type", "application/json")
+		httpHeaders.Set("accept", "application/json, text/event-stream")
+		httpHeaders.Set("accept-encoding", "identity")
+		wireBody, err := managed.vendor.PrepareCanonical(ctx, attemptReq, target, httpHeaders, credential)
+		if err != nil {
+			log.Warnf("ai-proxy managed supplier preparation rejected, call_id:%s input:%s upstream:%s reason:%s %s", state.callID, managed.profile.InputProtocol, managed.profile.UpstreamProtocol, "unsupported_or_invalid_supplier_request", managedSafeProtocolDetail(err))
+			rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_supplier_request")
+			return managedProtocolRequest{}, false
+		}
+		request.Body = wireBody
+		request.UpstreamPath = httpHeaders.Get(":path")
+		for name, values := range httpHeaders {
 			switch strings.ToLower(name) {
 			case ":path", ":authority", "host", "content-length":
 				continue
 			}
 			for _, value := range values {
 				request.Headers = append(request.Headers, [2]string{strings.ToLower(name), value})
+			}
+		}
+	}
+
+	modelVerified := target.Model == attemptReq.Model && target.Model == upstreamModel
+	if target.WireFormat == supplier.WireGeminiGenerateContent {
+		modelVerified = modelVerified && strings.Contains(request.UpstreamPath, "/models/"+upstreamModel+":")
+	} else {
+		modelVerified = modelVerified && gjson.GetBytes(request.Body, "model").String() == upstreamModel
+	}
+	if !modelVerified {
+		rejectManagedPreparation(ctx, state, 500, "protocol_conversion_changed_selection")
+		return managedProtocolRequest{}, false
+	}
+	return request, true
+}
+
+// Credential choice has already frozen this request's config before protocol
+// conversion installs its Authorization. No callback can choose another member.
+func prepareManagedSelectedRequest(ctx wrapper.HttpContext, state *managedExecutionState, body []byte) (managedProtocolRequest, bool) {
+	managed := state.config
+	var request managedProtocolRequest
+	if managedUsesCanonicalIR(managed) {
+		var ok bool
+		request, ok = prepareManagedCanonicalRequest(ctx, state, body)
+		if !ok {
+			return managedProtocolRequest{}, false
+		}
+	} else {
+		var err error
+		body, err = prepareManagedTools(ctx, state, body)
+		if err != nil {
+			rejectManagedPreparation(ctx, state, 403, "tool_not_open_for_selected_target")
+			return managedProtocolRequest{}, false
+		}
+		request, err = managed.profile.PrepareRequest(body, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue)
+		if err != nil {
+			log.Warnf("ai-proxy managed protocol preparation rejected, call_id:%s input:%s upstream:%s reason:%s %s", state.callID, managed.profile.InputProtocol, managed.profile.UpstreamProtocol, "unsupported_or_invalid_protocol_request", managedSafeProtocolDetail(err))
+			rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")
+			return managedProtocolRequest{}, false
+		}
+		if managed.profile.InputProtocol == managedProtocolDashScopeText || managed.profile.InputProtocol == managedProtocolDashScopeMultimodal {
+			request.Streaming = state.streaming
+		}
+		var outboundObject map[string]json.RawMessage
+		var model string
+		if decodeManagedJSON(request.Body, &outboundObject, false) != nil || json.Unmarshal(outboundObject["model"], &model) != nil || model != managed.release.Descriptor.UpstreamModel {
+			rejectManagedPreparation(ctx, state, 500, "protocol_conversion_changed_selection")
+			return managedProtocolRequest{}, false
+		}
+		if managed.vendor != nil {
+			headers := make(http.Header, len(request.Headers)+1)
+			for _, header := range request.Headers {
+				headers.Add(header[0], header[1])
+			}
+			request.Body, err = managed.vendor.Prepare(ctx, request.Body, headers, managed.release.Descriptor.UpstreamModel, managed.settings.CredentialValue, request.Streaming)
+			if err != nil {
+				log.Warnf("ai-proxy managed supplier preparation rejected, call_id:%s input:%s upstream:%s reason:%s %s", state.callID, managed.profile.InputProtocol, managed.profile.UpstreamProtocol, "unsupported_or_invalid_supplier_request", managedSafeProtocolDetail(err))
+				rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_supplier_request")
+				return managedProtocolRequest{}, false
+			}
+			request.UpstreamPath = headers.Get(":path")
+			request.Headers = nil
+			for name, values := range headers {
+				switch strings.ToLower(name) {
+				case ":path", ":authority", "host", "content-length":
+					continue
+				}
+				for _, value := range values {
+					request.Headers = append(request.Headers, [2]string{strings.ToLower(name), value})
+				}
 			}
 		}
 	}
@@ -1062,7 +1172,7 @@ func finishManagedHTTPResponse(ctx wrapper.HttpContext, s *managedExecutionState
 		}
 	}
 	clientResponse, err := convertManagedSupplierResponse(ctx, s, outcome, headers, body)
-	if err == nil && *outcome.HTTPStatus < 400 {
+	if err == nil && *outcome.HTTPStatus < 400 && !managedUsesCanonicalIR(s.config) {
 		clientResponse, err = projectManagedResponse(s, headers, body, clientResponse)
 	}
 	if err != nil {

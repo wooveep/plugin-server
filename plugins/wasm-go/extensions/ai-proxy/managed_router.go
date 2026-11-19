@@ -28,6 +28,7 @@ type managedRouterResponse struct {
 	native             *managedNativeStream
 	dashScope          *managedDashScopeStream
 	supplier           *managedRouterSupplierStream
+	canonical          *managedCanonicalRouterStream
 	toolProtocol       string
 	toolUsage          gjson.Result
 	digest             hash.Hash
@@ -232,6 +233,43 @@ func observeManagedRouterHeaders(ctx wrapper.HttpContext, s *managedExecutionSta
 		if s.config.settings.RouterToolUsage && len(s.requestedTools) > 0 {
 			r.toolProtocol = profile.UpstreamProtocol
 		}
+		if managedUsesCanonicalIR(s.config) {
+			rc, initErr := newManagedCanonicalRouterStream(ctx, s)
+			r.canonical = rc
+			if initErr != nil {
+				r.projectionFailed = true
+			}
+			if s.config.vendor != nil && s.config.vendor.NativeResponseFormat() != "" {
+				r.supplier = &managedRouterSupplierStream{
+					context:     ctx,
+					state:       s,
+					format:      s.config.vendor.NativeResponseFormat(),
+					finished:    make(map[string]string),
+					collectText: true,
+					incremental: rc.target.IncrementalOutputMode != provider.IncrementalForceFalse,
+				}
+			} else {
+				switch profile.UpstreamProtocol {
+				case managedProtocolChat:
+					r.chat = &managedChatStream{collectText: true}
+				case managedProtocolDashScopeText, managedProtocolDashScopeMultimodal:
+					r.dashScope = &managedDashScopeStream{
+						protocol:    profile.UpstreamProtocol,
+						incremental: rc.target.IncrementalOutputMode != provider.IncrementalForceFalse,
+					}
+				}
+			}
+			r.digest = sha256.New()
+			if s.config.settings.StreamProjection {
+				headers := clientresponse.Headers(rc.policy, headers, true)
+				headers = append([][2]string{{":status", statusText}}, headers...)
+				if proxywasm.ReplaceHttpResponseHeaders(headers) != nil {
+					r.projectionFailed = true
+					managedFactGap(ctx, "router_public_headers_unavailable")
+				}
+			}
+			return types.ActionContinue
+		}
 		switch profile.UpstreamProtocol {
 		case managedProtocolChat:
 			r.chat = &managedChatStream{collectText: true}
@@ -293,7 +331,9 @@ func observeManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 	}
 	_, _ = r.digest.Write(chunk)
 	tracksResources := s.config.profile.InputProtocol == clientresponse.Responses
-	if r.projection != nil {
+	if r.canonical != nil {
+		chunk = projectManagedCanonicalRouterChunk(ctx, s, chunk, end)
+	} else if r.projection != nil {
 		chunk = projectManagedRouterChunk(ctx, s, chunk, end)
 	} else if tracksResources {
 		r.pushStream(chunk, func(event managedProtocolEvent) {
@@ -510,6 +550,8 @@ func finishManagedRouter(ctx wrapper.HttpContext, s *managedExecutionState, end 
 		}
 		if outcome.Usage.Status == "missing" {
 			switch {
+			case r.supplier != nil && !r.supplier.textLimited:
+				outcome.Usage = availableManagedUsage(s, outcome, r.supplier.estimateBody())
 			case r.chat != nil && !r.chat.textLimited:
 				outcome.Usage = availableManagedUsage(s, outcome, r.chat.estimateBody())
 			case r.native != nil && !r.native.textLimited:
@@ -572,6 +614,14 @@ func projectManagedRouterJSON(ctx wrapper.HttpContext, s *managedExecutionState,
 		if handled && err == nil {
 			return replaceManagedRouterJSON(ctx, uint16(status), partial.Headers, partial.Body)
 		}
+	}
+	if managedUsesCanonicalIR(s.config) {
+		converted, err := convertAndProjectManagedCanonicalResponse(ctx, s, outcome, r.headers, body)
+		if err == nil {
+			return replaceManagedRouterJSON(ctx, *r.status, converted.Headers, converted.Body)
+		}
+		replaceManagedRouterFailure(ctx, s, clientresponse.Failure{Kind: clientresponse.FailureIncomplete})
+		return false
 	}
 	converted, err := convertManagedSupplierResponse(ctx, s, outcome, r.headers, body)
 	if err == nil {

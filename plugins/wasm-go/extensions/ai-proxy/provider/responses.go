@@ -247,6 +247,12 @@ func convertResponsesRequestToChatCompletionWithOptions(body []byte, options Res
 	if isNonEmptyJSONReference(fields["conversation"]) {
 		return nil, responsesFallbackReject("unsupported_stateful_reference", "conversation", "conversation is unsupported in Responses fallback mode")
 	}
+	if rawPrompt, hasPrompt := fields["prompt"]; hasPrompt {
+		trimmedPrompt := bytes.TrimSpace(rawPrompt)
+		if len(trimmedPrompt) > 0 && !bytes.Equal(trimmedPrompt, []byte("null")) {
+			return nil, responsesFallbackReject("unsupported_stateful_reference", "prompt", "prompt is unsupported in Responses fallback mode")
+		}
+	}
 
 	var request responsesRequest
 	if err := json.Unmarshal(body, &request); err != nil {

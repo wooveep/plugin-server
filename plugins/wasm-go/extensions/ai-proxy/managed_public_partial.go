@@ -15,6 +15,9 @@ import (
 // original attempt has been recorded and existing recovery has finished.
 // In particular, a content prefix never becomes new procurement evidence.
 func publicPartialResponse(ctx wrapper.HttpContext, s *managedExecutionState, headers [][2]string, original []byte) (managedProtocolClientResponse, uint32, bool, error) {
+	if managedPublicText(s) && managedUsesCanonicalIR(s.config) {
+		return encodeManagedCanonicalPartialResponse(ctx, s, headers, original)
+	}
 	return encodePublicPartialResponse(ctx, s, headers, original, nil)
 }
 

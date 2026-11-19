@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
+	"github.com/higress-group/wasm-go/pkg/ai/canonical"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
-	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
 
@@ -84,6 +84,53 @@ func newManagedProtocolProfile(input, upstream string) (managedProtocolProfile, 
 	return managedProtocolProfile{InputProtocol: input, UpstreamProtocol: upstream}, nil
 }
 
+func managedClientWireFormat(protocol string) (provider.WireFormat, bool) {
+	switch protocol {
+	case managedProtocolChat:
+		return provider.WireChatCompletions, true
+	case managedProtocolResponses:
+		return provider.WireOpenAIResponses, true
+	case managedProtocolMessages:
+		return provider.WireAnthropicMessages, true
+	case managedProtocolDashScopeText:
+		return provider.WireDashScopeText, false
+	case managedProtocolDashScopeMultimodal:
+		return provider.WireDashScopeMultimodal, false
+	default:
+		return "", false
+	}
+}
+
+func resolveManagedCanonicalTarget(c *managedExecutionConfig, streaming bool) provider.CanonicalTarget {
+	if c == nil {
+		return provider.CanonicalTarget{}
+	}
+	return provider.ResolveCanonicalTarget(
+		c.vendor,
+		c.profile.UpstreamProtocol,
+		c.profile.supplier,
+		c.settings.UpstreamPath,
+		c.release.Descriptor.UpstreamModel,
+		streaming,
+	)
+}
+
+// managedUsesCanonicalIR establishes the sole cross-wire canonical IR gate:
+// clientProtocol != target.WireFormat for published text protocols, keeping
+// same-wire Chat->Chat, Responses->Responses, Messages->Messages, and
+// DashScope->DashScope on the native byte channel (C01..C06).
+func managedUsesCanonicalIR(c *managedExecutionConfig) bool {
+	if c == nil || c.settings.ProtocolMode == "passthrough" || managedOperation(c) != "text_generate" {
+		return false
+	}
+	clientWire, canonicalClient := managedClientWireFormat(c.profile.InputProtocol)
+	if !canonicalClient {
+		return false
+	}
+	target := resolveManagedCanonicalTarget(c, false)
+	return clientWire != target.WireFormat
+}
+
 // PrepareRequest accepts the mapper's output, not the original public body.
 // The caller must freeze the returned actual bytes as outbound_body_digest.
 type managedProtocolRejectionError struct {
@@ -113,6 +160,10 @@ func managedSafeIdentifier(value string) string {
 }
 
 func managedSafeProtocolDetail(err error) string {
+	var canonicalRej canonical.RejectionError
+	if errors.As(err, &canonicalRej) {
+		return canonicalRej.SafeDetail()
+	}
 	var rej managedProtocolRejectionError
 	if errors.As(err, &rej) {
 		if rej.Field == "" {
@@ -190,66 +241,33 @@ func (p managedProtocolProfile) PrepareRequest(body []byte, frozenModel, credent
 	actual := append([]byte(nil), body...)
 	var err error
 	if p.InputProtocol != p.UpstreamProtocol {
-		dashScopeUpstream := p.UpstreamProtocol == managedProtocolDashScopeText || p.UpstreamProtocol == managedProtocolDashScopeMultimodal
-		switch p.InputProtocol {
-		case managedProtocolChat:
-			if !dashScopeUpstream {
-				err = errors.New("unsupported managed protocol request conversion")
-			}
-		case managedProtocolResponses:
-			isNonOpenAI := dashScopeUpstream || p.supplier != "" && p.supplier != "openai" && p.supplier != "azure"
-			actual, err = provider.ConvertResponsesRequestToChatCompletionWithOptions(body, provider.ResponsesToChatConvertOptions{
-				DeveloperRoleAsSystem: isNonOpenAI,
-				OmitStore:             isNonOpenAI,
-			})
-		case managedProtocolMessages:
-			preserveReasoning := p.supplier == "qwen" || p.supplier == "openrouter" || p.supplier == "zhipuai" || p.supplier == "deepseek" || p.supplier == "moonshot"
-			actual, err = (&provider.ClaudeToOpenAIConverter{}).ConvertClaudeRequestToOpenAIWithOptions(body, provider.ClaudeToOpenAIConvertOptions{
-				UseMaxCompletionTokens:          p.supplier == "openai",
-				PreserveMessageReasoningContent: preserveReasoning,
-			})
+		var req canonical.Request
+		req, err = provider.DecodeCanonicalRequest(canonical.Protocol(p.InputProtocol), body)
+		if err == nil {
+			req.Model = frozenModel
+			target := provider.ResolveCanonicalTarget(nil, p.UpstreamProtocol, p.supplier, "", frozenModel, streaming)
+			err = provider.ValidateCanonicalTarget(req, target)
 			if err == nil {
-				if dashScopeUpstream {
-					if thinking := gjson.GetBytes(actual, "claude_thinking"); thinking.IsObject() {
-						switch thinking.Get("type").String() {
-						case "enabled", "adaptive":
-							actual, err = sjson.SetBytes(actual, "enable_thinking", true)
-							if err == nil && thinking.Get("budget_tokens").Int() > 0 {
-								actual, err = sjson.SetBytes(actual, "thinking_budget", thinking.Get("budget_tokens").Int())
-							}
-						case "disabled":
-							actual, err = sjson.SetBytes(actual, "enable_thinking", false)
-						}
-					}
-				}
-				if err == nil {
-					actual = provider.StripClaudeInternalMessageFields(actual, preserveReasoning)
-				}
-			}
-		default:
-			err = errors.New("unsupported managed protocol request conversion")
-		}
-	}
-	if err != nil {
-		// Provider errors can contain body details; preserve only fixed enum code and safe field key.
-		var fallback provider.ResponsesFallbackError
-		if errors.As(err, &fallback) {
-			return managedProtocolRequest{}, managedProtocolRejectionError{
-				Code:  managedSafeIdentifier(fallback.Code),
-				Field: managedSafeIdentifier(fallback.Field),
+				actual, err = provider.EncodeCanonicalRequest(req, target)
 			}
 		}
-		if p.InputProtocol == managedProtocolMessages {
-			return managedProtocolRequest{}, managedProtocolRejectionError{Code: "messages_request_conversion_failed"}
+		if err != nil {
+			var canonicalRej canonical.RejectionError
+			if errors.As(err, &canonicalRej) {
+				return managedProtocolRequest{}, canonicalRej
+			}
+			if p.InputProtocol == managedProtocolMessages {
+				return managedProtocolRequest{}, managedProtocolRejectionError{Code: "messages_request_conversion_failed"}
+			}
+			return managedProtocolRequest{}, errors.New("managed protocol request conversion failed")
 		}
-		return managedProtocolRequest{}, errors.New("managed protocol request conversion failed")
 	}
 	var converted map[string]json.RawMessage
 	var convertedModel string
 	if decodeManagedJSON(actual, &converted, false) != nil || json.Unmarshal(converted["model"], &convertedModel) != nil || convertedModel != frozenModel {
 		return managedProtocolRequest{}, errors.New("managed protocol conversion changed frozen model")
 	}
-	if streaming && p.UpstreamProtocol == managedProtocolChat {
+	if streaming && p.InputProtocol == p.UpstreamProtocol && p.UpstreamProtocol == managedProtocolChat {
 		// Managed billing needs the provider's original usage, including when a
 		// client suppresses it. Freeze the resulting wire bytes after this step.
 		actual, err = sjson.SetBytes(actual, "stream_options.include_usage", true)

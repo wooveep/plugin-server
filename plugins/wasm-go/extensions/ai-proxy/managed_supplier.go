@@ -193,6 +193,9 @@ func managedSupplierConversionInput(body []byte, stream bool, usageField string)
 }
 
 func convertManagedSupplierResponse(ctx wrapper.HttpContext, s *managedExecutionState, outcome executionfacts.AttemptOutcome, headers [][2]string, body []byte) (managedProtocolClientResponse, error) {
+	if managedUsesCanonicalIR(s.config) && outcome.HTTPStatus != nil && *outcome.HTTPStatus < 400 {
+		return convertAndProjectManagedCanonicalResponse(ctx, s, outcome, headers, body)
+	}
 	profile := s.config.profile
 	if s.config.vendor == nil || s.config.vendor.NativeResponseFormat() == "" || *outcome.HTTPStatus >= 400 {
 		return profile.ConvertResponse(ctx, *outcome.HTTPStatus, headers, body)

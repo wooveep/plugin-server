@@ -1,0 +1,3028 @@
+{
+  "schema_version": "canonical-ir-manifest.v1",
+  "plan_revision": "v4",
+  "baseline_commit": "abc7a34a05f3cb9d1fc34d3e2c6a032696b48163",
+  "baseline_plugin_version": "2.0.94",
+  "candidate_min_version": "2.0.95",
+  "behavior_deltas_doc": "behavior-deltas.md",
+  "official_rules_doc": "../../../../../../docs/2026-11-18-canonical-ir-official-api-research.md",
+  "pinned_api_revisions": {
+    "anthropic_messages": "2023-06-01",
+    "openai_chat": "v1",
+    "openai_responses": "v1",
+    "dashscope_text": "2024-05-15",
+    "dashscope_multimodal": "2024-05-15",
+    "gemini_generate_content": "v1beta"
+  },
+  "allowed_response_profiles": {
+    "openai_chat": [
+      "deepseek",
+      "qwen",
+      "openai"
+    ],
+    "openai_responses": [
+      "deepseek",
+      "qwen",
+      "openai"
+    ],
+    "anthropic_messages": [
+      "deepseek",
+      "qwen"
+    ]
+  },
+  "coverage_matrix_summary": {
+    "C01": "Chat/Responses/Messages -> generic Chat compatible (6 core cells: 3 clients x JSON/SSE; openai_chat->chat_completions stays native bypass)",
+    "C02": "Chat/Responses/Messages -> DashScope text (6 core cells: 3 clients x JSON/SSE, multi-turn parallel tools + reasoning, image 400 reject)",
+    "C03": "Chat/Responses/Messages -> DashScope multimodal (6 core cells: 3 clients x JSON/SSE, vision + companion tool_result image + multi-turn tools)",
+    "C04": "Chat/Responses/Messages -> Gemini generateContent/streamGenerateContent (6 core cells in P4: 2-turn functionCall/functionResponse, Data URL, remote URL 400 reject, promptFeedback)",
+    "C05": "Registered supplier variants (12 cells: 6 Qwen logical openai_chat + NativeQwen() -> dashscope_text/multimodal JSON/SSE; 6 Moonshot nested choices[0].usage across 3 clients x JSON/SSE)",
+    "C06": "Native same-wire paths (Responses/Messages/DashScope/Chat auto 8 ResponseProfiles + passthrough unknown-field preservation)",
+    "C07": "Unopened cross-protocol directions rejected at config validation (Chat->Responses, Chat->Messages, Responses<->Messages, DashScope->others)",
+    "C08": "Non-text operations (embeddings, rerank visual_input, completions/FIM, media_operation, internal execution) + 11 external consumer modules"
+  },
+  "test_group_index": {
+    "T01": {
+      "name": "TestCanonicalPresenceMatrix",
+      "fn_refs": [
+        "FN01",
+        "FN05"
+      ],
+      "rules": [
+        "OA03",
+        "OA12",
+        "AN02",
+        "H1",
+        "R03"
+      ]
+    },
+    "T02": {
+      "name": "TestCanonicalInstructionOrder",
+      "fn_refs": [
+        "FN01",
+        "FN07"
+      ],
+      "rules": [
+        "OA01",
+        "AN02",
+        "GE01",
+        "R06"
+      ]
+    },
+    "T03": {
+      "name": "TestCanonicalOutputLimitScope",
+      "fn_refs": [
+        "FN02",
+        "FN05",
+        "FN07"
+      ],
+      "rules": [
+        "OA02",
+        "AN02",
+        "DS01",
+        "GE01",
+        "R02",
+        "R03",
+        "DEF-03"
+      ]
+    },
+    "T04": {
+      "name": "TestCanonicalSamplingAndStop",
+      "fn_refs": [
+        "FN01",
+        "FN07"
+      ],
+      "rules": [
+        "OA03",
+        "AN02",
+        "DS01",
+        "GE01",
+        "S-BOUND-01",
+        "DEF-01",
+        "DEF-02"
+      ]
+    },
+    "T05": {
+      "name": "TestCanonicalFunctionConstraints",
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07"
+      ],
+      "rules": [
+        "OA04",
+        "OA05",
+        "AN07",
+        "AN09",
+        "DS02",
+        "DS05",
+        "R04",
+        "H2",
+        "DEF-04",
+        "DEF-06"
+      ]
+    },
+    "T06": {
+      "name": "TestCanonicalToolAssociations",
+      "fn_refs": [
+        "FN01",
+        "FN03",
+        "FN07"
+      ],
+      "rules": [
+        "OA05",
+        "AN08",
+        "DS02"
+      ]
+    },
+    "T07": {
+      "name": "TestCanonicalArgumentRepresentations",
+      "fn_refs": [
+        "FN01",
+        "FN07",
+        "FN10",
+        "FN15",
+        "FN16"
+      ],
+      "rules": [
+        "OA04",
+        "OA05",
+        "AN12",
+        "GE01"
+      ]
+    },
+    "T08": {
+      "name": "TestCanonicalToolResultSemantics",
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07"
+      ],
+      "rules": [
+        "OA06",
+        "AN08",
+        "GE01",
+        "H2"
+      ]
+    },
+    "T09": {
+      "name": "TestCanonicalImageRepresentations",
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07"
+      ],
+      "rules": [
+        "OA09",
+        "OA10",
+        "AN11",
+        "DS03",
+        "GE01",
+        "S-BOUND-02"
+      ]
+    },
+    "T10": {
+      "name": "TestCanonicalCacheBoundaries",
+      "fn_refs": [
+        "FN01",
+        "FN07",
+        "FN08"
+      ],
+      "rules": [
+        "OA08",
+        "AN05",
+        "DS04",
+        "GE03",
+        "H3",
+        "B03",
+        "B05"
+      ]
+    },
+    "T11": {
+      "name": "TestCanonicalThinkingModes",
+      "fn_refs": [
+        "FN01",
+        "FN02",
+        "FN07"
+      ],
+      "rules": [
+        "OA07",
+        "AN01",
+        "AN03",
+        "DS06",
+        "R07",
+        "S-BOUND-03",
+        "S-BOUND-04"
+      ]
+    },
+    "T12": {
+      "name": "TestCanonicalOpaqueOwnership",
+      "fn_refs": [
+        "FN01",
+        "FN07",
+        "FN10",
+        "FN16"
+      ],
+      "rules": [
+        "OA07",
+        "OA11",
+        "OA13",
+        "AN04",
+        "AN06",
+        "GE01",
+        "H1",
+        "R05"
+      ]
+    },
+    "T13": {
+      "name": "TestCanonicalFixedToolsDecision",
+      "fn_refs": [
+        "FN03",
+        "FN04",
+        "FN05",
+        "FN08"
+      ],
+      "rules": [
+        "B03",
+        "R01"
+      ]
+    },
+    "T14": {
+      "name": "TestCanonicalResponseEndings",
+      "fn_refs": [
+        "FN09",
+        "FN10",
+        "FN15",
+        "FN17"
+      ],
+      "rules": [
+        "AN10",
+        "GE04",
+        "B06"
+      ]
+    },
+    "T15": {
+      "name": "TestCanonicalChatStream",
+      "fn_refs": [
+        "FN11",
+        "FN12",
+        "FN13",
+        "FN14",
+        "FN16",
+        "FN17"
+      ],
+      "rules": [
+        "OA05",
+        "SE01",
+        "B06"
+      ]
+    },
+    "T16": {
+      "name": "TestCanonicalDashScopeStream",
+      "fn_refs": [
+        "FN10",
+        "FN11",
+        "FN13",
+        "FN14",
+        "FN16"
+      ],
+      "rules": [
+        "DS03",
+        "R05",
+        "B05"
+      ]
+    },
+    "T17": {
+      "name": "TestCanonicalMessagesStreamUsage",
+      "fn_refs": [
+        "FN12",
+        "FN14",
+        "FN16",
+        "FN17"
+      ],
+      "rules": [
+        "AN04",
+        "AN10",
+        "B06"
+      ]
+    },
+    "T18": {
+      "name": "TestCanonicalResponsesStreamLifecycle",
+      "fn_refs": [
+        "FN14",
+        "FN16",
+        "FN17",
+        "FN18",
+        "FN20"
+      ],
+      "rules": [
+        "OA13",
+        "SE01",
+        "B02",
+        "B04",
+        "R05"
+      ]
+    },
+    "T19": {
+      "name": "TestCanonicalGeminiHistoryAndStream",
+      "fn_refs": [
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN12"
+      ],
+      "rules": [
+        "GE01",
+        "GE02",
+        "GE03",
+        "GE04",
+        "R06",
+        "B05",
+        "DEF-05"
+      ]
+    },
+    "T20": {
+      "name": "TestCanonicalSSEPartitionMatrix",
+      "fn_refs": [
+        "FN11",
+        "FN13",
+        "FN14",
+        "FN16"
+      ],
+      "rules": [
+        "SE01"
+      ]
+    },
+    "T21": {
+      "name": "TestCanonicalFailureProjection",
+      "fn_refs": [
+        "FN05",
+        "FN09",
+        "FN14",
+        "FN17",
+        "FN20"
+      ],
+      "rules": [
+        "B04",
+        "B06",
+        "DEF-06"
+      ]
+    },
+    "T22": {
+      "name": "TestCanonicalResourcePersistenceBoundary",
+      "fn_refs": [
+        "FN17",
+        "FN18",
+        "FN19"
+      ],
+      "rules": [
+        "OA12",
+        "R08",
+        "B01",
+        "B02"
+      ]
+    },
+    "T23": {
+      "name": "TestCanonicalAttemptIsolation",
+      "fn_refs": [
+        "FN04",
+        "FN05",
+        "FN08",
+        "FN11",
+        "FN14"
+      ],
+      "rules": [
+        "B03",
+        "B05"
+      ]
+    },
+    "T24": {
+      "name": "TestCanonicalNativeAndNonTextRegression",
+      "fn_refs": [
+        "FN01",
+        "FN02",
+        "FN06",
+        "FN08",
+        "FN17",
+        "FN20"
+      ],
+      "rules": [
+        "AN01",
+        "C06",
+        "C07",
+        "C08",
+        "H3",
+        "B03",
+        "B08"
+      ]
+    },
+    "T25": {
+      "name": "TestCanonicalOfflineSDKConsumption",
+      "fn_refs": [
+        "FN15",
+        "FN16",
+        "FN17"
+      ],
+      "rules": [
+        "OA05",
+        "OA13",
+        "AN04",
+        "AN10"
+      ]
+    },
+    "T26": {
+      "name": "FuzzCanonicalRequestBoundary_And_FuzzCanonicalSSEPartition",
+      "fn_refs": [
+        "FN01",
+        "FN11",
+        "FN13",
+        "FN14"
+      ],
+      "rules": [
+        "SE01",
+        "OA03"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "case_id": "C01-openai_chat-json",
+      "cell_id": "C01",
+      "test_group": "T24",
+      "source_rules": [
+        "OA01",
+        "OA03",
+        "DS04"
+      ],
+      "delta_ids": [
+        "B03",
+        "H3"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN08",
+        "FN17"
+      ],
+      "summary": "C01 core cell: openai_chat -> chat_completions (json), profile=qwen, tag=native"
+    },
+    {
+      "case_id": "C01-openai_chat-sse",
+      "cell_id": "C01",
+      "test_group": "T24",
+      "source_rules": [
+        "OA01",
+        "OA03",
+        "DS04"
+      ],
+      "delta_ids": [
+        "B03",
+        "H3"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN08",
+        "FN17"
+      ],
+      "summary": "C01 core cell: openai_chat -> chat_completions (sse), profile=qwen, tag=native"
+    },
+    {
+      "case_id": "C01-openai_responses-json",
+      "cell_id": "C01",
+      "test_group": "T14",
+      "source_rules": [
+        "OA01",
+        "OA02",
+        "OA05",
+        "OA13"
+      ],
+      "delta_ids": [
+        "H1",
+        "H3",
+        "B02",
+        "R05"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN14",
+        "FN15",
+        "FN16",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C01 core cell: openai_responses -> chat_completions (json), profile=qwen, tag=exact"
+    },
+    {
+      "case_id": "C01-openai_responses-sse",
+      "cell_id": "C01",
+      "test_group": "T15",
+      "source_rules": [
+        "OA01",
+        "OA02",
+        "OA05",
+        "OA13"
+      ],
+      "delta_ids": [
+        "H1",
+        "H3",
+        "B02",
+        "R05"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "chat_completions",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN14",
+        "FN15",
+        "FN16",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C01 core cell: openai_responses -> chat_completions (sse), profile=qwen, tag=exact"
+    },
+    {
+      "case_id": "C01-anthropic_messages-json",
+      "cell_id": "C01",
+      "test_group": "T14",
+      "source_rules": [
+        "AN01",
+        "AN02",
+        "AN03",
+        "AN05",
+        "AN08"
+      ],
+      "delta_ids": [
+        "H2",
+        "H3",
+        "S-BOUND-03",
+        "DEF-01"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN14",
+        "FN15",
+        "FN16",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C01 core cell: anthropic_messages -> chat_completions (json), profile=qwen, tag=compatible"
+    },
+    {
+      "case_id": "C01-anthropic_messages-sse",
+      "cell_id": "C01",
+      "test_group": "T15",
+      "source_rules": [
+        "AN01",
+        "AN02",
+        "AN03",
+        "AN05",
+        "AN08"
+      ],
+      "delta_ids": [
+        "H2",
+        "H3",
+        "S-BOUND-03",
+        "DEF-01"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "chat_completions",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN14",
+        "FN15",
+        "FN16",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C01 core cell: anthropic_messages -> chat_completions (sse), profile=qwen, tag=compatible"
+    },
+    {
+      "case_id": "C02-openai_chat-json-2turn",
+      "cell_id": "C02",
+      "test_group": "T06",
+      "source_rules": [
+        "OA02",
+        "OA03",
+        "DS01",
+        "DS03",
+        "DS06"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "DEF-01",
+        "DEF-02",
+        "S-BOUND-04"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-flash",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN04",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C02 core cell: openai_chat -> dashscope_text (json) two-turn parallel tool call & reasoning round-trip"
+    },
+    {
+      "case_id": "C02-openai_chat-sse-2turn",
+      "cell_id": "C02",
+      "test_group": "T16",
+      "source_rules": [
+        "OA02",
+        "OA03",
+        "DS01",
+        "DS03",
+        "DS06"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "DEF-01",
+        "DEF-02",
+        "S-BOUND-04"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-flash",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN04",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C02 core cell: openai_chat -> dashscope_text (sse) two-turn parallel tool call & reasoning round-trip"
+    },
+    {
+      "case_id": "C02-openai_responses-json-2turn",
+      "cell_id": "C02",
+      "test_group": "T06",
+      "source_rules": [
+        "OA01",
+        "OA02",
+        "OA05",
+        "DS01",
+        "DS03"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "H1",
+        "B02"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-flash",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN04",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C02 core cell: openai_responses -> dashscope_text (json) two-turn parallel tool call & reasoning round-trip"
+    },
+    {
+      "case_id": "C02-openai_responses-sse-2turn",
+      "cell_id": "C02",
+      "test_group": "T16",
+      "source_rules": [
+        "OA01",
+        "OA02",
+        "OA05",
+        "DS01",
+        "DS03"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "H1",
+        "B02"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-flash",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN04",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C02 core cell: openai_responses -> dashscope_text (sse) two-turn parallel tool call & reasoning round-trip"
+    },
+    {
+      "case_id": "C02-anthropic_messages-json-2turn",
+      "cell_id": "C02",
+      "test_group": "T06",
+      "source_rules": [
+        "AN01",
+        "AN02",
+        "AN03",
+        "AN08",
+        "DS01",
+        "DS03"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "H2",
+        "B02",
+        "S-BOUND-03"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-flash",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN04",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C02 core cell: anthropic_messages -> dashscope_text (json) two-turn parallel tool call & reasoning round-trip"
+    },
+    {
+      "case_id": "C02-anthropic_messages-sse-2turn",
+      "cell_id": "C02",
+      "test_group": "T16",
+      "source_rules": [
+        "AN01",
+        "AN02",
+        "AN03",
+        "AN08",
+        "DS01",
+        "DS03"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "H2",
+        "B02",
+        "S-BOUND-03"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-flash",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN04",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C02 core cell: anthropic_messages -> dashscope_text (sse) two-turn parallel tool call & reasoning round-trip"
+    },
+    {
+      "case_id": "C03-openai_chat-json-multimodal",
+      "cell_id": "C03",
+      "test_group": "T09",
+      "source_rules": [
+        "OA09",
+        "DS01",
+        "DS03",
+        "DS04"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "S-BOUND-02"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_multimodal",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen3.6-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C03 core cell: openai_chat -> dashscope_multimodal (json) vision + two-turn function round-trip"
+    },
+    {
+      "case_id": "C03-openai_chat-sse-multimodal",
+      "cell_id": "C03",
+      "test_group": "T16",
+      "source_rules": [
+        "OA09",
+        "DS01",
+        "DS03",
+        "DS04"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "S-BOUND-02"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_multimodal",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen3.6-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C03 core cell: openai_chat -> dashscope_multimodal (sse) vision + two-turn function round-trip"
+    },
+    {
+      "case_id": "C03-openai_responses-json-multimodal",
+      "cell_id": "C03",
+      "test_group": "T09",
+      "source_rules": [
+        "OA05",
+        "OA09",
+        "DS01",
+        "DS03"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "H1",
+        "B02",
+        "S-BOUND-02"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_multimodal",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen3.6-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C03 core cell: openai_responses -> dashscope_multimodal (json) vision + two-turn function round-trip"
+    },
+    {
+      "case_id": "C03-openai_responses-sse-multimodal",
+      "cell_id": "C03",
+      "test_group": "T16",
+      "source_rules": [
+        "OA05",
+        "OA09",
+        "DS01",
+        "DS03"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "H1",
+        "B02",
+        "S-BOUND-02"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_multimodal",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen3.6-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C03 core cell: openai_responses -> dashscope_multimodal (sse) vision + two-turn function round-trip"
+    },
+    {
+      "case_id": "C03-anthropic_messages-json-multimodal",
+      "cell_id": "C03",
+      "test_group": "T09",
+      "source_rules": [
+        "AN08",
+        "AN11",
+        "DS01",
+        "DS03"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "H2",
+        "B02",
+        "S-BOUND-02"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "dashscope_multimodal",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen3.6-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C03 core cell: anthropic_messages -> dashscope_multimodal (json) vision + two-turn function round-trip"
+    },
+    {
+      "case_id": "C03-anthropic_messages-sse-multimodal",
+      "cell_id": "C03",
+      "test_group": "T16",
+      "source_rules": [
+        "AN08",
+        "AN11",
+        "DS01",
+        "DS03"
+      ],
+      "delta_ids": [
+        "R02",
+        "R05",
+        "H2",
+        "B02",
+        "S-BOUND-02"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "dashscope_multimodal",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen3.6-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C03 core cell: anthropic_messages -> dashscope_multimodal (sse) vision + two-turn function round-trip"
+    },
+    {
+      "case_id": "C04-openai_chat-json-gemini-2turn",
+      "cell_id": "C04",
+      "test_group": "T19",
+      "source_rules": [
+        "OA01",
+        "OA02",
+        "GE01",
+        "GE02",
+        "GE04"
+      ],
+      "delta_ids": [
+        "R02",
+        "R06",
+        "B05",
+        "DEF-01",
+        "DEF-05"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "gemini_generate_content",
+      "transport_mode": "json",
+      "supplier": "gemini",
+      "model": "gemini-2.5-pro",
+      "api_version": "v1beta",
+      "response_profile": "openai",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C04 core cell (P4): openai_chat -> gemini_generate_content (json) with 2-turn functionCall/functionResponse & GE02 usage"
+    },
+    {
+      "case_id": "C04-openai_chat-sse-gemini-2turn",
+      "cell_id": "C04",
+      "test_group": "T19",
+      "source_rules": [
+        "OA01",
+        "OA02",
+        "GE01",
+        "GE02",
+        "GE04"
+      ],
+      "delta_ids": [
+        "R02",
+        "R06",
+        "B05",
+        "DEF-01",
+        "DEF-05"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "gemini_generate_content",
+      "transport_mode": "sse",
+      "supplier": "gemini",
+      "model": "gemini-2.5-pro",
+      "api_version": "v1beta",
+      "response_profile": "openai",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C04 core cell (P4): openai_chat -> gemini_generate_content (sse) with 2-turn functionCall/functionResponse & GE02 usage"
+    },
+    {
+      "case_id": "C04-openai_responses-json-gemini-2turn",
+      "cell_id": "C04",
+      "test_group": "T19",
+      "source_rules": [
+        "OA01",
+        "OA05",
+        "GE01",
+        "GE02",
+        "GE04"
+      ],
+      "delta_ids": [
+        "R02",
+        "R06",
+        "B02",
+        "B05",
+        "DEF-05"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "gemini_generate_content",
+      "transport_mode": "json",
+      "supplier": "gemini",
+      "model": "gemini-2.5-pro",
+      "api_version": "v1beta",
+      "response_profile": "openai",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C04 core cell (P4): openai_responses -> gemini_generate_content (json) with 2-turn functionCall/functionResponse & GE02 usage"
+    },
+    {
+      "case_id": "C04-openai_responses-sse-gemini-2turn",
+      "cell_id": "C04",
+      "test_group": "T19",
+      "source_rules": [
+        "OA01",
+        "OA05",
+        "GE01",
+        "GE02",
+        "GE04"
+      ],
+      "delta_ids": [
+        "R02",
+        "R06",
+        "B02",
+        "B05",
+        "DEF-05"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "gemini_generate_content",
+      "transport_mode": "sse",
+      "supplier": "gemini",
+      "model": "gemini-2.5-pro",
+      "api_version": "v1beta",
+      "response_profile": "openai",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C04 core cell (P4): openai_responses -> gemini_generate_content (sse) with 2-turn functionCall/functionResponse & GE02 usage"
+    },
+    {
+      "case_id": "C04-anthropic_messages-json-gemini-2turn",
+      "cell_id": "C04",
+      "test_group": "T19",
+      "source_rules": [
+        "AN02",
+        "AN08",
+        "GE01",
+        "GE02",
+        "GE04"
+      ],
+      "delta_ids": [
+        "R02",
+        "R06",
+        "H2",
+        "B02",
+        "B05",
+        "DEF-05"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "gemini_generate_content",
+      "transport_mode": "json",
+      "supplier": "gemini",
+      "model": "gemini-2.5-pro",
+      "api_version": "v1beta",
+      "response_profile": "deepseek",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C04 core cell (P4): anthropic_messages -> gemini_generate_content (json) with 2-turn functionCall/functionResponse & GE02 usage"
+    },
+    {
+      "case_id": "C04-anthropic_messages-sse-gemini-2turn",
+      "cell_id": "C04",
+      "test_group": "T19",
+      "source_rules": [
+        "AN02",
+        "AN08",
+        "GE01",
+        "GE02",
+        "GE04"
+      ],
+      "delta_ids": [
+        "R02",
+        "R06",
+        "H2",
+        "B02",
+        "B05",
+        "DEF-05"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "gemini_generate_content",
+      "transport_mode": "sse",
+      "supplier": "gemini",
+      "model": "gemini-2.5-pro",
+      "api_version": "v1beta",
+      "response_profile": "deepseek",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17",
+        "FN18"
+      ],
+      "summary": "C04 core cell (P4): anthropic_messages -> gemini_generate_content (sse) with 2-turn functionCall/functionResponse & GE02 usage"
+    },
+    {
+      "case_id": "C05-qwen-native-entry-1-json",
+      "cell_id": "C05",
+      "test_group": "T04",
+      "source_rules": [
+        "DS01",
+        "DS03",
+        "DS06"
+      ],
+      "delta_ids": [
+        "B03",
+        "R05",
+        "S-BOUND-01",
+        "S-BOUND-04"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN02",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN17"
+      ],
+      "summary": "C05 Qwen variant: logical openai_chat + NativeQwen() -> dashscope_text (qwen-plus, json)"
+    },
+    {
+      "case_id": "C05-qwen-native-entry-1-sse",
+      "cell_id": "C05",
+      "test_group": "T16",
+      "source_rules": [
+        "DS01",
+        "DS03",
+        "DS06"
+      ],
+      "delta_ids": [
+        "B03",
+        "R05",
+        "S-BOUND-01",
+        "S-BOUND-04"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN02",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN17"
+      ],
+      "summary": "C05 Qwen variant: logical openai_chat + NativeQwen() -> dashscope_text (qwen-plus, sse)"
+    },
+    {
+      "case_id": "C05-qwen-native-entry-2-json",
+      "cell_id": "C05",
+      "test_group": "T04",
+      "source_rules": [
+        "DS01",
+        "DS03",
+        "DS06"
+      ],
+      "delta_ids": [
+        "B03",
+        "R05",
+        "S-BOUND-01",
+        "S-BOUND-04"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_multimodal",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-vl-max",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN02",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN17"
+      ],
+      "summary": "C05 Qwen variant: logical openai_chat + NativeQwen() -> dashscope_multimodal (qwen-vl-max, json)"
+    },
+    {
+      "case_id": "C05-qwen-native-entry-2-sse",
+      "cell_id": "C05",
+      "test_group": "T16",
+      "source_rules": [
+        "DS01",
+        "DS03",
+        "DS06"
+      ],
+      "delta_ids": [
+        "B03",
+        "R05",
+        "S-BOUND-01",
+        "S-BOUND-04"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_multimodal",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-vl-max",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN02",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN17"
+      ],
+      "summary": "C05 Qwen variant: logical openai_chat + NativeQwen() -> dashscope_multimodal (qwen-vl-max, sse)"
+    },
+    {
+      "case_id": "C05-qwen-native-entry-3-json",
+      "cell_id": "C05",
+      "test_group": "T04",
+      "source_rules": [
+        "DS01",
+        "DS03",
+        "DS06"
+      ],
+      "delta_ids": [
+        "B03",
+        "R05",
+        "S-BOUND-01",
+        "S-BOUND-04"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-long",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN02",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN17"
+      ],
+      "summary": "C05 Qwen variant: logical openai_chat + NativeQwen() -> dashscope_text (qwen-long, json)"
+    },
+    {
+      "case_id": "C05-qwen-native-entry-3-sse",
+      "cell_id": "C05",
+      "test_group": "T16",
+      "source_rules": [
+        "DS01",
+        "DS03",
+        "DS06"
+      ],
+      "delta_ids": [
+        "B03",
+        "R05",
+        "S-BOUND-01",
+        "S-BOUND-04"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-long",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN02",
+        "FN05",
+        "FN07",
+        "FN09",
+        "FN10",
+        "FN11",
+        "FN17"
+      ],
+      "summary": "C05 Qwen variant: logical openai_chat + NativeQwen() -> dashscope_text (qwen-long, sse)"
+    },
+    {
+      "case_id": "C05-moonshot-openai_chat-json",
+      "cell_id": "C05",
+      "test_group": "T14",
+      "source_rules": [
+        "OA03",
+        "SE01"
+      ],
+      "delta_ids": [
+        "B05",
+        "B06"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "moonshot",
+      "model": "kimi-k2",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN09",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17"
+      ],
+      "summary": "C05 Moonshot variant: openai_chat -> chat_completions (json) nested choices[0].usage observation & public projection"
+    },
+    {
+      "case_id": "C05-moonshot-openai_chat-sse",
+      "cell_id": "C05",
+      "test_group": "T15",
+      "source_rules": [
+        "OA03",
+        "SE01"
+      ],
+      "delta_ids": [
+        "B05",
+        "B06"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "sse",
+      "supplier": "moonshot",
+      "model": "kimi-k2",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN09",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17"
+      ],
+      "summary": "C05 Moonshot variant: openai_chat -> chat_completions (sse) nested choices[0].usage observation & public projection"
+    },
+    {
+      "case_id": "C05-moonshot-openai_responses-json",
+      "cell_id": "C05",
+      "test_group": "T14",
+      "source_rules": [
+        "OA03",
+        "SE01"
+      ],
+      "delta_ids": [
+        "B05",
+        "B06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "moonshot",
+      "model": "kimi-k2",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN09",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17"
+      ],
+      "summary": "C05 Moonshot variant: openai_responses -> chat_completions (json) nested choices[0].usage observation & public projection"
+    },
+    {
+      "case_id": "C05-moonshot-openai_responses-sse",
+      "cell_id": "C05",
+      "test_group": "T15",
+      "source_rules": [
+        "OA03",
+        "SE01"
+      ],
+      "delta_ids": [
+        "B05",
+        "B06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "chat_completions",
+      "transport_mode": "sse",
+      "supplier": "moonshot",
+      "model": "kimi-k2",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN09",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17"
+      ],
+      "summary": "C05 Moonshot variant: openai_responses -> chat_completions (sse) nested choices[0].usage observation & public projection"
+    },
+    {
+      "case_id": "C05-moonshot-anthropic_messages-json",
+      "cell_id": "C05",
+      "test_group": "T14",
+      "source_rules": [
+        "OA03",
+        "SE01"
+      ],
+      "delta_ids": [
+        "B05",
+        "B06"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "moonshot",
+      "model": "kimi-k2",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN09",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17"
+      ],
+      "summary": "C05 Moonshot variant: anthropic_messages -> chat_completions (json) nested choices[0].usage observation & public projection"
+    },
+    {
+      "case_id": "C05-moonshot-anthropic_messages-sse",
+      "cell_id": "C05",
+      "test_group": "T15",
+      "source_rules": [
+        "OA03",
+        "SE01"
+      ],
+      "delta_ids": [
+        "B05",
+        "B06"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "chat_completions",
+      "transport_mode": "sse",
+      "supplier": "moonshot",
+      "model": "kimi-k2",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN09",
+        "FN11",
+        "FN12",
+        "FN14",
+        "FN17"
+      ],
+      "summary": "C05 Moonshot variant: anthropic_messages -> chat_completions (sse) nested choices[0].usage observation & public projection"
+    },
+    {
+      "case_id": "C06-native-openai_chat-profile-deepseek",
+      "cell_id": "C06",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01",
+        "OA12",
+        "OA13"
+      ],
+      "delta_ids": [
+        "B03",
+        "B06"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "sse",
+      "supplier": "openai",
+      "model": "public-native-model",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN17",
+        "FN19"
+      ],
+      "summary": "C06 native auto profile regression: openai_chat same-wire SSE with ResponseProfile=deepseek & unknown field preservation"
+    },
+    {
+      "case_id": "C06-native-openai_chat-profile-qwen",
+      "cell_id": "C06",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01",
+        "OA12",
+        "OA13"
+      ],
+      "delta_ids": [
+        "B03",
+        "B06"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "public-native-model",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN17",
+        "FN19"
+      ],
+      "summary": "C06 native auto profile regression: openai_chat same-wire SSE with ResponseProfile=qwen & unknown field preservation"
+    },
+    {
+      "case_id": "C06-native-openai_chat-profile-openai",
+      "cell_id": "C06",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01",
+        "OA12",
+        "OA13"
+      ],
+      "delta_ids": [
+        "B03",
+        "B06"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "sse",
+      "supplier": "openai",
+      "model": "public-native-model",
+      "api_version": "v1",
+      "response_profile": "openai",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN17",
+        "FN19"
+      ],
+      "summary": "C06 native auto profile regression: openai_chat same-wire SSE with ResponseProfile=openai & unknown field preservation"
+    },
+    {
+      "case_id": "C06-native-openai_responses-profile-deepseek",
+      "cell_id": "C06",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01",
+        "OA12",
+        "OA13"
+      ],
+      "delta_ids": [
+        "B03",
+        "B06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "openai_responses",
+      "transport_mode": "sse",
+      "supplier": "openai",
+      "model": "public-native-model",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN17",
+        "FN19"
+      ],
+      "summary": "C06 native auto profile regression: openai_responses same-wire SSE with ResponseProfile=deepseek & unknown field preservation"
+    },
+    {
+      "case_id": "C06-native-openai_responses-profile-qwen",
+      "cell_id": "C06",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01",
+        "OA12",
+        "OA13"
+      ],
+      "delta_ids": [
+        "B03",
+        "B06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "openai_responses",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "public-native-model",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN17",
+        "FN19"
+      ],
+      "summary": "C06 native auto profile regression: openai_responses same-wire SSE with ResponseProfile=qwen & unknown field preservation"
+    },
+    {
+      "case_id": "C06-native-openai_responses-profile-openai",
+      "cell_id": "C06",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01",
+        "OA12",
+        "OA13"
+      ],
+      "delta_ids": [
+        "B03",
+        "B06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "openai_responses",
+      "transport_mode": "sse",
+      "supplier": "openai",
+      "model": "public-native-model",
+      "api_version": "v1",
+      "response_profile": "openai",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN17",
+        "FN19"
+      ],
+      "summary": "C06 native auto profile regression: openai_responses same-wire SSE with ResponseProfile=openai & unknown field preservation"
+    },
+    {
+      "case_id": "C06-native-anthropic_messages-profile-deepseek",
+      "cell_id": "C06",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01",
+        "OA12",
+        "OA13"
+      ],
+      "delta_ids": [
+        "B03",
+        "B06"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "anthropic_messages",
+      "transport_mode": "sse",
+      "supplier": "openai",
+      "model": "public-native-model",
+      "api_version": "2023-06-01",
+      "response_profile": "deepseek",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN17",
+        "FN19"
+      ],
+      "summary": "C06 native auto profile regression: anthropic_messages same-wire SSE with ResponseProfile=deepseek & unknown field preservation"
+    },
+    {
+      "case_id": "C06-native-anthropic_messages-profile-qwen",
+      "cell_id": "C06",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01",
+        "OA12",
+        "OA13"
+      ],
+      "delta_ids": [
+        "B03",
+        "B06"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "anthropic_messages",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "public-native-model",
+      "api_version": "2023-06-01",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN17",
+        "FN19"
+      ],
+      "summary": "C06 native auto profile regression: anthropic_messages same-wire SSE with ResponseProfile=qwen & unknown field preservation"
+    },
+    {
+      "case_id": "C06-native-dashscope-passthrough",
+      "cell_id": "C06",
+      "test_group": "T24",
+      "source_rules": [
+        "DS01",
+        "DS03",
+        "DS04"
+      ],
+      "delta_ids": [
+        "B03"
+      ],
+      "client_protocol": "dashscope_text",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN08"
+      ],
+      "summary": "C06 native DashScope same-wire passthrough preserving unknown parameters"
+    },
+    {
+      "case_id": "C07-reject-config-openai_chat-to-openai_responses",
+      "cell_id": "C07",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01"
+      ],
+      "delta_ids": [
+        "B06"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "openai_responses",
+      "transport_mode": "config",
+      "supplier": "openai",
+      "model": "gpt-4o",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN02"
+      ],
+      "summary": "C07 unopened direction / forbidden A-P01 profile rejected at config boundary: openai_chat -> openai_responses"
+    },
+    {
+      "case_id": "C07-reject-config-openai_chat-to-anthropic_messages",
+      "cell_id": "C07",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01"
+      ],
+      "delta_ids": [
+        "B06"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "anthropic_messages",
+      "transport_mode": "config",
+      "supplier": "openai",
+      "model": "gpt-4o",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN02"
+      ],
+      "summary": "C07 unopened direction / forbidden A-P01 profile rejected at config boundary: openai_chat -> anthropic_messages"
+    },
+    {
+      "case_id": "C07-reject-config-openai_responses-to-anthropic_messages",
+      "cell_id": "C07",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01"
+      ],
+      "delta_ids": [
+        "B06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "anthropic_messages",
+      "transport_mode": "config",
+      "supplier": "openai",
+      "model": "gpt-4o",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN02"
+      ],
+      "summary": "C07 unopened direction / forbidden A-P01 profile rejected at config boundary: openai_responses -> anthropic_messages"
+    },
+    {
+      "case_id": "C07-reject-config-anthropic_messages-to-openai_responses",
+      "cell_id": "C07",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01"
+      ],
+      "delta_ids": [
+        "B06"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "openai_responses",
+      "transport_mode": "config",
+      "supplier": "openai",
+      "model": "gpt-4o",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN02"
+      ],
+      "summary": "C07 unopened direction / forbidden A-P01 profile rejected at config boundary: anthropic_messages -> openai_responses"
+    },
+    {
+      "case_id": "C07-reject-config-dashscope_text-to-openai_chat",
+      "cell_id": "C07",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01"
+      ],
+      "delta_ids": [
+        "B06"
+      ],
+      "client_protocol": "dashscope_text",
+      "wire_format": "openai_chat",
+      "transport_mode": "config",
+      "supplier": "openai",
+      "model": "gpt-4o",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN02"
+      ],
+      "summary": "C07 unopened direction / forbidden A-P01 profile rejected at config boundary: dashscope_text -> openai_chat"
+    },
+    {
+      "case_id": "C07-reject-config-anthropic_messages_openai_profile-to-anthropic_messages",
+      "cell_id": "C07",
+      "test_group": "T24",
+      "source_rules": [
+        "AN01"
+      ],
+      "delta_ids": [
+        "B06"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "anthropic_messages",
+      "transport_mode": "config",
+      "supplier": "openai",
+      "model": "gpt-4o",
+      "api_version": "v1",
+      "response_profile": "openai",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN02"
+      ],
+      "summary": "C07 unopened direction / forbidden A-P01 profile rejected at config boundary: anthropic_messages_openai_profile -> anthropic_messages"
+    },
+    {
+      "case_id": "C08-embeddings",
+      "cell_id": "C08",
+      "test_group": "T24",
+      "source_rules": [
+        "OA03"
+      ],
+      "delta_ids": [
+        "B06",
+        "B08"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "text-embedding-v3",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN08",
+        "FN20"
+      ],
+      "summary": "Embeddings input-only managed execution & metering regression"
+    },
+    {
+      "case_id": "C08-rerank-visual-input",
+      "cell_id": "C08",
+      "test_group": "T24",
+      "source_rules": [
+        "OA03"
+      ],
+      "delta_ids": [
+        "B06",
+        "B08"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "text-embedding-v3",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN08",
+        "FN20"
+      ],
+      "summary": "Bailian rerank / multimodal retrieval visual_input 2.0.93 metering regression"
+    },
+    {
+      "case_id": "C08-completions-fim",
+      "cell_id": "C08",
+      "test_group": "T24",
+      "source_rules": [
+        "OA03"
+      ],
+      "delta_ids": [
+        "B06",
+        "B08"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "text-embedding-v3",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN08",
+        "FN20"
+      ],
+      "summary": "Legacy Completions / FIM stream observation without thinking_mode pollution"
+    },
+    {
+      "case_id": "C08-media-and-internal-error-isolation",
+      "cell_id": "C08",
+      "test_group": "T24",
+      "source_rules": [
+        "OA03"
+      ],
+      "delta_ids": [
+        "B06",
+        "B08"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "text-embedding-v3",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN08",
+        "FN20"
+      ],
+      "summary": "Media managed_operation & internal call retaining managed_execution_error envelope"
+    },
+    {
+      "case_id": "C08-external-11-consumers",
+      "cell_id": "C08",
+      "test_group": "T24",
+      "source_rules": [
+        "OA03"
+      ],
+      "delta_ids": [
+        "B06",
+        "B08"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "chat_completions",
+      "transport_mode": "compile",
+      "supplier": "qwen",
+      "model": "text-embedding-v3",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "native",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN01",
+        "FN06",
+        "FN08",
+        "FN20"
+      ],
+      "summary": "Compile & test verification across 11 external wasm-go modules importing clientresponse/fixedtools/executionfacts"
+    },
+    {
+      "case_id": "T01-presence-and-h1-prompt-reject",
+      "cell_id": "C01",
+      "test_group": "T01",
+      "source_rules": [
+        "OA03",
+        "OA12",
+        "AN02"
+      ],
+      "delta_ids": [
+        "R03",
+        "H1",
+        "DEF-01"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN01",
+        "FN05"
+      ],
+      "summary": "T01/H1: non-null prompt rejected with 400 unsupported_stateful_reference (field=prompt), while null/empty refs, stateless agent fields & explicit 0 pass"
+    },
+    {
+      "case_id": "T01-stream-null-reject",
+      "cell_id": "C01",
+      "test_group": "T01",
+      "source_rules": [
+        "OA03"
+      ],
+      "delta_ids": [
+        "R03"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN01",
+        "FN05"
+      ],
+      "summary": "T01: stream:null explicitly rejected at managed conversion boundary"
+    },
+    {
+      "case_id": "T02-instruction-and-multi-system-order",
+      "cell_id": "C04",
+      "test_group": "T02",
+      "source_rules": [
+        "OA01",
+        "AN02",
+        "GE01"
+      ],
+      "delta_ids": [
+        "R06",
+        "DEF-05"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "gemini_generate_content",
+      "transport_mode": "json",
+      "supplier": "gemini",
+      "model": "gemini-2.5-flash",
+      "api_version": "v1beta",
+      "response_profile": "openai",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN07"
+      ],
+      "summary": "T02: instructions + developer + multiple system messages merged in order without overwriting earlier segments"
+    },
+    {
+      "case_id": "T03-max-tokens-zero-warmup-reject",
+      "cell_id": "C02",
+      "test_group": "T03",
+      "source_rules": [
+        "OA02",
+        "AN02",
+        "DS01"
+      ],
+      "delta_ids": [
+        "R02",
+        "R03",
+        "DEF-03"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN02",
+        "FN05",
+        "FN07"
+      ],
+      "summary": "T03: max_tokens:0 / max_output_tokens:0 rejected with 400 before send on targets without zero-token warmup"
+    },
+    {
+      "case_id": "T04-chat-stop-union-and-qwen-top-p",
+      "cell_id": "C02",
+      "test_group": "T04",
+      "source_rules": [
+        "OA03",
+        "DS01"
+      ],
+      "delta_ids": [
+        "S-BOUND-01",
+        "DEF-01",
+        "DEF-02"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN07"
+      ],
+      "summary": "T04: single-string stop decoded cleanly, >4 stop array rejected, top_p==1.0 clamped to 0.999999, Seed:0/Temperature:0 preserved"
+    },
+    {
+      "case_id": "T05-strict-schema-and-h2-builtin-tool-reject",
+      "cell_id": "C01",
+      "test_group": "T05",
+      "source_rules": [
+        "OA04",
+        "OA05",
+        "AN07",
+        "AN09",
+        "DS02",
+        "DS05"
+      ],
+      "delta_ids": [
+        "R04",
+        "H2",
+        "DEF-04",
+        "DEF-06"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07"
+      ],
+      "summary": "T05/H2: bash_20250124 / text_editor / tool_search rejected 400; strict absent/false/true & ResponseFormat json_schema preserved; thinking+forced tool rejected"
+    },
+    {
+      "case_id": "T06-an08-tool-result-ordering",
+      "cell_id": "C01",
+      "test_group": "T06",
+      "source_rules": [
+        "OA05",
+        "AN08",
+        "DS02"
+      ],
+      "delta_ids": [
+        "B03"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "openai",
+      "model": "gpt-4o",
+      "api_version": "v1",
+      "response_profile": "deepseek",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN01",
+        "FN03",
+        "FN07"
+      ],
+      "summary": "T06/AN08: Messages tool_result appearing after ordinary user text or interleaved message rejected 400; client function named web_search not billed as fixed tool"
+    },
+    {
+      "case_id": "T07-int64-precision-9007199254740993",
+      "cell_id": "C04",
+      "test_group": "T07",
+      "source_rules": [
+        "OA04",
+        "OA05",
+        "AN12",
+        "GE01"
+      ],
+      "delta_ids": [
+        "H3",
+        "R06"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "gemini_generate_content",
+      "transport_mode": "json",
+      "supplier": "gemini",
+      "model": "gemini-2.5-pro",
+      "api_version": "v1beta",
+      "response_profile": "deepseek",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN07",
+        "FN10",
+        "FN15",
+        "FN16"
+      ],
+      "summary": "T07: 9007199254740993 preserved bit-for-bit across JSON Schema, tool_use.input RawMessage, and string arguments without float64 truncation"
+    },
+    {
+      "case_id": "T08-multimodal-tool-result-split-vs-reject",
+      "cell_id": "C02",
+      "test_group": "T08",
+      "source_rules": [
+        "OA06",
+        "AN08",
+        "GE01"
+      ],
+      "delta_ids": [
+        "H2"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-flash",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07"
+      ],
+      "summary": "T08/H2: Messages image tool_result rejected 400 on dashscope_text (0 sends) and Responses function_call_output image rejected 400, while visual targets emit companion user image"
+    },
+    {
+      "case_id": "T09-image-detail-original-file-id-and-gemini-url-reject",
+      "cell_id": "C04",
+      "test_group": "T09",
+      "source_rules": [
+        "OA09",
+        "OA10",
+        "AN11",
+        "GE01"
+      ],
+      "delta_ids": [
+        "S-BOUND-02",
+        "R06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "gemini_generate_content",
+      "transport_mode": "json",
+      "supplier": "gemini",
+      "model": "gemini-2.5-flash",
+      "api_version": "v1beta",
+      "response_profile": "openai",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN01",
+        "FN05",
+        "FN07"
+      ],
+      "summary": "T09: file_id, unsupported detail:original, dashscope_text image, and managed Gemini remote https:// image URL all rejected 400 before send"
+    },
+    {
+      "case_id": "T10-h3-qwen-compat-cache-control-and-an05-order",
+      "cell_id": "C01",
+      "test_group": "T10",
+      "source_rules": [
+        "OA08",
+        "AN05",
+        "DS04",
+        "GE03"
+      ],
+      "delta_ids": [
+        "H3",
+        "B03",
+        "B05",
+        "R01"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN07",
+        "FN08"
+      ],
+      "summary": "T10/H3: qwenCompatibleChatPolicy preserves messages[].content[].cache_control (s.cacheMode==explicit), strips tools/message outer cache_control, enforces tools->system->messages & forbids Thinking cache_control"
+    },
+    {
+      "case_id": "T11-thinking-adaptive-preserve-and-cch-strip",
+      "cell_id": "C02",
+      "test_group": "T11",
+      "source_rules": [
+        "OA07",
+        "AN01",
+        "AN03",
+        "DS06"
+      ],
+      "delta_ids": [
+        "R07",
+        "S-BOUND-03",
+        "S-BOUND-04"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN02",
+        "FN07"
+      ],
+      "summary": "T11: Messages 2023-06-01 adaptive+effort mapping, cch= billing header strip, and top-level vs parameters preserve_thinking distinction"
+    },
+    {
+      "case_id": "T12-opaque-ownership-and-responses-skip",
+      "cell_id": "C01",
+      "test_group": "T12",
+      "source_rules": [
+        "OA07",
+        "OA11",
+        "OA13",
+        "AN04",
+        "AN06",
+        "GE01"
+      ],
+      "delta_ids": [
+        "H1",
+        "R05"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "chat_completions",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "v1",
+      "response_profile": "qwen",
+      "result_tag": "compatible",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN07",
+        "FN10",
+        "FN16"
+      ],
+      "summary": "T12/H1: encrypted/summary-only (incl. summary:[]) reasoning skipped cross-wire, bare reasoning rejected 400, signature_delta preserved, R05 reasoning_text.delta enforced"
+    },
+    {
+      "case_id": "T13-fixed-tools-single-filter-and-fallback-isolation",
+      "cell_id": "C02",
+      "test_group": "T13",
+      "source_rules": [
+        "DS02"
+      ],
+      "delta_ids": [
+        "B03",
+        "R01"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_text",
+      "transport_mode": "json",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN03",
+        "FN04",
+        "FN05",
+        "FN08"
+      ],
+      "summary": "T13: FilterCanonical writes explicit false for removed defaults and isolates removedTools per target across heterogeneous fallback"
+    },
+    {
+      "case_id": "T14-response-endings-rc04-and-prompt-feedback",
+      "cell_id": "C04",
+      "test_group": "T14",
+      "source_rules": [
+        "AN10",
+        "GE04"
+      ],
+      "delta_ids": [
+        "B06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "gemini_generate_content",
+      "transport_mode": "json",
+      "supplier": "gemini",
+      "model": "gemini-2.5-pro",
+      "api_version": "v1beta",
+      "response_profile": "openai",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN09",
+        "FN10",
+        "FN15",
+        "FN17"
+      ],
+      "summary": "T14: unknown finishReason preserved without defaulting to stop, RC-04 non-empty id on refusal/incomplete, Gemini promptFeedback classified as non-retryable FailurePolicy"
+    },
+    {
+      "case_id": "T15-chat-stream-dual-index-and-tool-null-content",
+      "cell_id": "C01",
+      "test_group": "T15",
+      "source_rules": [
+        "OA05",
+        "SE01"
+      ],
+      "delta_ids": [
+        "B06"
+      ],
+      "client_protocol": "openai_chat",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN11",
+        "FN12",
+        "FN13",
+        "FN14",
+        "FN16",
+        "FN17"
+      ],
+      "summary": "T15: choice/tool dual index isolation, single terminal include_usage frame, and C02 tool content:null preservation"
+    },
+    {
+      "case_id": "T17-messages-m04-qwen-vs-deepseek-usage",
+      "cell_id": "C02",
+      "test_group": "T17",
+      "source_rules": [
+        "AN04",
+        "AN10"
+      ],
+      "delta_ids": [
+        "B06"
+      ],
+      "client_protocol": "anthropic_messages",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN12",
+        "FN14",
+        "FN16",
+        "FN17"
+      ],
+      "summary": "T17/M04: qwen profile trims message_start.usage to input/output tokens and emits full cache details on message_delta without double-summing"
+    },
+    {
+      "case_id": "T18-responses-stream-fail-incomplete-items",
+      "cell_id": "C02",
+      "test_group": "T18",
+      "source_rules": [
+        "OA13",
+        "SE01"
+      ],
+      "delta_ids": [
+        "B02",
+        "B04",
+        "R05"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN14",
+        "FN16",
+        "FN17",
+        "FN18",
+        "FN20"
+      ],
+      "summary": "T18/B04: mid-stream truncation invokes Projection.Fail + Writer.Fail emitting response.failed with status:incomplete items and never synthesizes completed"
+    },
+    {
+      "case_id": "T20-sse-arbitrary-partition-invariance",
+      "cell_id": "C02",
+      "test_group": "T20",
+      "source_rules": [
+        "SE01"
+      ],
+      "delta_ids": [
+        "B05"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN11",
+        "FN13",
+        "FN14",
+        "FN16"
+      ],
+      "summary": "T20/SE01: BOM, lone CR, CRLF, multi-data, mid-UTF8, byte-by-byte & seeded random splits yield identical canonical events & public SSE; B+1 envelope rejected"
+    },
+    {
+      "case_id": "T21-local-400-contract-e04-and-partial-response",
+      "cell_id": "C01",
+      "test_group": "T21",
+      "source_rules": [
+        "AN10"
+      ],
+      "delta_ids": [
+        "B04",
+        "B06",
+        "DEF-06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "chat_completions",
+      "transport_mode": "json",
+      "supplier": "openai",
+      "model": "gpt-4o",
+      "api_version": "v1",
+      "response_profile": "openai",
+      "result_tag": "reject",
+      "expected_send_count": 0,
+      "fn_refs": [
+        "FN05",
+        "FN09",
+        "FN14",
+        "FN17",
+        "FN20"
+      ],
+      "summary": "T21: 2.0.94 invalid_request_error + x-should-retry:false + x-request-id + sanitized code/field Warn log, openai 503 service_unavailable_error (E04), and publicPartialResponse migration"
+    },
+    {
+      "case_id": "T22-b01-dual-branch-and-b02-salted-alias-turn2",
+      "cell_id": "C02",
+      "test_group": "T22",
+      "source_rules": [
+        "OA12"
+      ],
+      "delta_ids": [
+        "R08",
+        "B01",
+        "B02"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN17",
+        "FN18",
+        "FN19"
+      ],
+      "summary": "T22: B01 buffered 503 vs Router SSE response.completed+fact_gap on Redis write failure; B02 salted slot key Turn 2 MGET 200 without Seed() collision; early client close idempotency"
+    },
+    {
+      "case_id": "T23-heterogeneous-fallback-and-missing-usage-estimate",
+      "cell_id": "C02",
+      "test_group": "T23",
+      "source_rules": [
+        "DS03"
+      ],
+      "delta_ids": [
+        "B03",
+        "B05"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN04",
+        "FN05",
+        "FN08",
+        "FN11",
+        "FN14"
+      ],
+      "summary": "T23: per-attempt state isolation across same-wire primary -> cross-wire fallback and bounded managedEstimateTextBytes when upstream omits usage"
+    },
+    {
+      "case_id": "T25-offline-sdk-parser-consumption",
+      "cell_id": "C02",
+      "test_group": "T25",
+      "source_rules": [
+        "OA05",
+        "OA13",
+        "AN04",
+        "AN10"
+      ],
+      "delta_ids": [
+        "B06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN15",
+        "FN16",
+        "FN17"
+      ],
+      "summary": "T25: offline consumption of projected Chat, Responses, and Messages JSON/SSE fixtures with parallel tool calls and reasoning"
+    },
+    {
+      "case_id": "T26-fuzz-request-and-sse-partition",
+      "cell_id": "C02",
+      "test_group": "T26",
+      "source_rules": [
+        "SE01",
+        "OA03"
+      ],
+      "delta_ids": [
+        "B05",
+        "B06"
+      ],
+      "client_protocol": "openai_responses",
+      "wire_format": "dashscope_text",
+      "transport_mode": "sse",
+      "supplier": "qwen",
+      "model": "qwen-plus",
+      "api_version": "2024-05-15",
+      "response_profile": "qwen",
+      "result_tag": "exact",
+      "expected_send_count": 1,
+      "fn_refs": [
+        "FN01",
+        "FN11",
+        "FN13",
+        "FN14"
+      ],
+      "summary": "T26: FuzzCanonicalRequestBoundary and FuzzCanonicalSSEPartition seeded corpus replay with zero panic and partition invariance"
+    }
+  ]
+}

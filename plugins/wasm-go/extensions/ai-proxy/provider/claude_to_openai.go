@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/higress-group/wasm-go/pkg/ai/canonical"
+	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 )
@@ -314,17 +316,39 @@ func (c *ClaudeToOpenAIConverter) ConvertClaudeRequestToOpenAIWithOptions(body [
 		openaiRequest.Messages = append([]chatMessage{systemMsg}, openaiRequest.Messages...)
 	}
 
-	// Convert tools if present
+	// Convert tools if present (H2: validate claudeTool.Type — only ""/"custom" map to
+	// ordinary function tools, registered types preserve fixedtools.Kind, and Anthropic
+	// proprietary server tools reject with 400 unsupported_tool_type).
 	for _, claudeTool := range claudeRequest.Tools {
-		openaiTool := tool{
-			Type: "function",
-			Function: function{
-				Name:        claudeTool.Name,
-				Description: claudeTool.Description,
-				Parameters:  claudeTool.InputSchema,
-			},
+		switch claudeTool.Type {
+		case "", "custom":
+			if claudeTool.Name == "" {
+				return nil, canonical.NewRejectionError("invalid_tool_definition", "tools", "Anthropic function tool requires name")
+			}
+			openaiRequest.Tools = append(openaiRequest.Tools, tool{
+				Type: "function",
+				Function: function{
+					Name:        claudeTool.Name,
+					Description: claudeTool.Description,
+					Parameters:  claudeTool.InputSchema,
+					Strict:      claudeTool.Strict,
+				},
+			})
+		default:
+			if _, ok := fixedtools.Kind(claudeTool.Type); ok {
+				openaiRequest.Tools = append(openaiRequest.Tools, tool{
+					Type: claudeTool.Type,
+					Function: function{
+						Name:        claudeTool.Name,
+						Description: claudeTool.Description,
+						Parameters:  claudeTool.InputSchema,
+						Strict:      claudeTool.Strict,
+					},
+				})
+				continue
+			}
+			return nil, canonical.NewRejectionError("unsupported_tool_type", "tools", fmt.Sprintf("Anthropic tool type %q is unsupported", claudeTool.Type))
 		}
-		openaiRequest.Tools = append(openaiRequest.Tools, openaiTool)
 	}
 
 	// Convert tool choice if present

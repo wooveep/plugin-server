@@ -1,0 +1,186 @@
+{
+  "worktree": "/home/cloudyi/.codex/worktrees/ai-proxy-canonical-ir",
+  "toolchain": {
+    "image": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+    "go_version": "go1.26.3 linux/amd64",
+    "gotoolchain": "local"
+  },
+  "make_test": {
+    "command": "make test PYTHON=/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/.venv/bin/python",
+    "exit_code": 0,
+    "elapsed_seconds": 33.92,
+    "python_tests": "136 passed"
+  },
+  "go_test_and_vet": [
+    {
+      "module": "pkg/ai",
+      "path": "plugins/wasm-go/pkg/ai/...",
+      "exit_code": 0,
+      "elapsed_seconds": 9.45
+    },
+    {
+      "module": "ai-billing",
+      "path": "plugins/wasm-go/extensions/ai-billing",
+      "exit_code": 0,
+      "elapsed_seconds": 12.04
+    },
+    {
+      "module": "ai-cache",
+      "path": "plugins/wasm-go/extensions/ai-cache",
+      "exit_code": 0,
+      "elapsed_seconds": 12.79
+    },
+    {
+      "module": "ai-history",
+      "path": "plugins/wasm-go/extensions/ai-history",
+      "exit_code": 0,
+      "elapsed_seconds": 2.11
+    },
+    {
+      "module": "ai-memory",
+      "path": "plugins/wasm-go/extensions/ai-memory",
+      "exit_code": 0,
+      "elapsed_seconds": 3.79
+    },
+    {
+      "module": "ai-quota",
+      "path": "plugins/wasm-go/extensions/ai-quota",
+      "exit_code": 0,
+      "elapsed_seconds": 1.94
+    },
+    {
+      "module": "ai-token-ratelimit",
+      "path": "plugins/wasm-go/extensions/ai-token-ratelimit",
+      "exit_code": 0,
+      "elapsed_seconds": 2.64
+    },
+    {
+      "module": "cluster-key-rate-limit",
+      "path": "plugins/wasm-go/extensions/cluster-key-rate-limit",
+      "exit_code": 0,
+      "elapsed_seconds": 1.23
+    },
+    {
+      "module": "key-auth",
+      "path": "plugins/wasm-go/extensions/key-auth",
+      "exit_code": 0,
+      "elapsed_seconds": 1.37
+    },
+    {
+      "module": "model-mapper",
+      "path": "plugins/wasm-go/extensions/model-mapper",
+      "exit_code": 0,
+      "elapsed_seconds": 1.97
+    },
+    {
+      "module": "model-router",
+      "path": "plugins/wasm-go/extensions/model-router",
+      "exit_code": 0,
+      "elapsed_seconds": 2.62
+    }
+  ],
+  "b08_wasm_diff": {
+    "dist_reference_root": "/home/cloudyi/CodeWorkspace/modelfusionproject/plugin-server/dist/plugins",
+    "baseline_b_matches_dist": true,
+    "root_cause": "pkg/ai/clientresponse/canonical.go and pkg/ai/fixedtools/canonical.go were added inside existing packages and import pkg/ai/canonical, altering compiled package symbols for all direct and transitive consumers (including executionfacts -> fixedtools and resourceref -> clientresponse).",
+    "siblings": [
+      {
+        "plugin": "ai-billing",
+        "version": "1.0.22",
+        "status": "DIFF",
+        "built_sha256": "0349dc8cab7b3653015115782497acfeb14f3dd1a54e757f677f117c755e1e5a",
+        "dist_sha256": "39686174632da8c62a2d0970c74a72fd6942af932d43358bab7320851475b707",
+        "baseline_b_sha256": "39686174632da8c62a2d0970c74a72fd6942af932d43358bab7320851475b707"
+      },
+      {
+        "plugin": "ai-cache",
+        "version": "2.0.35",
+        "status": "DIFF",
+        "built_sha256": "313e7f2f51a22d9d3e4a168f8e41ca0583b520ba8cf2453ef1d0c9972dbafc4a",
+        "dist_sha256": "63df5dd456e47a6d5971ff68ca349cecdee489fa3964220a4c7f8663410b2aef",
+        "baseline_b_sha256": "63df5dd456e47a6d5971ff68ca349cecdee489fa3964220a4c7f8663410b2aef"
+      },
+      {
+        "plugin": "ai-history",
+        "version": "2.0.23",
+        "status": "DIFF",
+        "built_sha256": "df9c2dac161856a74251c42d813282eaf1c1125363adcd9c750860112524ab9c",
+        "dist_sha256": "d31eb0199ac4ed573f036ec11d29219a9cd04bb4431fb79a003deaa7d1876bdb",
+        "baseline_b_sha256": "d31eb0199ac4ed573f036ec11d29219a9cd04bb4431fb79a003deaa7d1876bdb"
+      },
+      {
+        "plugin": "ai-memory",
+        "version": "0.1.27",
+        "status": "DIFF",
+        "built_sha256": "70949c2a664e4428cee1ceda472e0445bc15c8ce367558309fc95cad6224512d",
+        "dist_sha256": "9f510e5c65df9ada2666127da13c5ac36c6b4ce36cc4a52e11c060bfea6a48d8",
+        "baseline_b_sha256": "9f510e5c65df9ada2666127da13c5ac36c6b4ce36cc4a52e11c060bfea6a48d8"
+      },
+      {
+        "plugin": "ai-quota",
+        "version": "2.0.20",
+        "status": "DIFF",
+        "built_sha256": "cba9a90dcbfd82df99e6cd3df80c22c00e1810051f8c4315d821831d318e249a",
+        "dist_sha256": "ac9b311c7213cd6d5473b9cf69462ca2f65c44932615e7f8a83613b6b04827b7",
+        "baseline_b_sha256": "ac9b311c7213cd6d5473b9cf69462ca2f65c44932615e7f8a83613b6b04827b7"
+      },
+      {
+        "plugin": "ai-token-ratelimit",
+        "version": "2.0.19",
+        "status": "DIFF",
+        "built_sha256": "0865ac2d68090817c901b8d45798ec9cfc3bf18a105307efed9d64e55fe5ae93",
+        "dist_sha256": "593a43ccc7d52d8a233ab572302d9ad462adcf0739295473c536fc9dbf7dfbd8",
+        "baseline_b_sha256": "593a43ccc7d52d8a233ab572302d9ad462adcf0739295473c536fc9dbf7dfbd8"
+      },
+      {
+        "plugin": "cluster-key-rate-limit",
+        "version": "2.0.14",
+        "status": "DIFF",
+        "built_sha256": "ffa5f388e5924b16e5a485c9c5ada3302863af63c8b2bb7f9ba0503f722fff46",
+        "dist_sha256": "711e691481160d1ac0a793e371f7c2e9a802f3c64860f2574fd087983eab5852",
+        "baseline_b_sha256": "711e691481160d1ac0a793e371f7c2e9a802f3c64860f2574fd087983eab5852"
+      },
+      {
+        "plugin": "key-auth",
+        "version": "1.2.18",
+        "status": "DIFF",
+        "built_sha256": "6c24e3a6975d2231070ee910adecf4121133851db7e8d1fbd843e1adaa8fa2cc",
+        "dist_sha256": "b758c56f92872b5294bc96ace98d8ca9d32b50a374dbbd6058f5890e7c4043e1",
+        "baseline_b_sha256": "b758c56f92872b5294bc96ace98d8ca9d32b50a374dbbd6058f5890e7c4043e1"
+      },
+      {
+        "plugin": "model-mapper",
+        "version": "2.0.16",
+        "status": "DIFF",
+        "built_sha256": "c09c213fa26f045ece979d8ed1edd6b370e2f5db559c24c3a2dd3eaedf8ca8cc",
+        "dist_sha256": "db2348467b9b5fd34b466adbd1e113972df85d1556eaea8a215c878fb782c171",
+        "baseline_b_sha256": "db2348467b9b5fd34b466adbd1e113972df85d1556eaea8a215c878fb782c171"
+      },
+      {
+        "plugin": "model-router",
+        "version": "2.0.14",
+        "status": "DIFF",
+        "built_sha256": "a853bbaffd6a4350a643f389791ccfdb047565cf64c071360e42237f574216d0",
+        "dist_sha256": "e94aa25679169b3ef32c4fbc31c007d5c7d7e133e728dad8eda95f3321bf0fb1",
+        "baseline_b_sha256": "e94aa25679169b3ef32c4fbc31c007d5c7d7e133e728dad8eda95f3321bf0fb1"
+      }
+    ],
+    "spot_checks": [
+      {
+        "plugin": "cors",
+        "version": "2.0.11",
+        "status": "MATCH",
+        "built_sha256": "8137184a99a2222dfdeb554bd17457dad1b316978cf98b0641f87d6e5eb7f70f",
+        "dist_sha256": "8137184a99a2222dfdeb554bd17457dad1b316978cf98b0641f87d6e5eb7f70f"
+      },
+      {
+        "plugin": "ai-statistics",
+        "version": "2.0.18",
+        "status": "DIFF",
+        "built_sha256": "e6a0f2d31e65762f6ae02f8b110da9db554bbf416f65ca4c16bce17d602c1c60",
+        "dist_sha256": "75c742d360c8856fe23f1840d1abbe375fda939172c11cf5a608ddfa9e7a8dea",
+        "note": "transitive consumer via pkg/ai/observedusage -> pkg/ai/executionfacts -> pkg/ai/fixedtools"
+      }
+    ]
+  }
+}

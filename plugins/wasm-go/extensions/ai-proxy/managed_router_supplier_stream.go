@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"strconv"
+	"strings"
 
 	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
+	"github.com/higress-group/wasm-go/pkg/ai/tokenestimate"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 )
 
@@ -19,15 +21,248 @@ type managedRouterSupplierStream struct {
 	format         string
 	decoder        managedSSEDecoder
 	usage          *executionfacts.Usage
+	priorUsage     *executionfacts.Usage
 	publicUsage    clientresponse.Usage
 	hasPublicUsage bool
 	model          string
 	finished       map[string]string
+	choiceDone     map[string]bool
 	last           managedProtocolObservation
 	invalid        bool
 	failed         bool
+	namedError     bool
 	done           bool
+	partial        bool
 	thinking       bool
+	modelConflict  bool
+	usageConflict  bool
+	collectText    bool
+	incremental    bool
+	text           strings.Builder
+	estimateUsage  json.RawMessage
+	textLimited    bool
+}
+
+func (s *managedRouterSupplierStream) allChoicesFinished() bool {
+	for _, done := range s.choiceDone {
+		if !done {
+			return false
+		}
+	}
+	return len(s.choiceDone) != 0
+}
+
+func (s *managedRouterSupplierStream) estimateBody() []byte {
+	text, _ := json.Marshal(s.text.String())
+	choices := append([]byte(`[{"message":{"content":`), text...)
+	choices = append(choices, []byte(`}}]`)...)
+	object := map[string]json.RawMessage{"choices": choices}
+	if s.estimateUsage != nil {
+		if s.format == "gemini" {
+			object["usageMetadata"] = s.estimateUsage
+		} else {
+			object["usage"] = s.estimateUsage
+		}
+	}
+	body, _ := json.Marshal(object)
+	return body
+}
+
+// pushRaw observes raw supplier SSE frames (billing counters, Bailian request_id,
+// model/usage conflicts, bounded text estimation, and terminal completion) without
+// stripping usage or converting through intermediate Chat SSE.
+func (s *managedRouterSupplierStream) pushRaw(chunk []byte, after func(managedProtocolEvent), comment func()) {
+	s.decoder.onComment = comment
+	defer func() {
+		s.decoder.onComment = nil
+	}()
+	if s.invalid {
+		return
+	}
+	s.invalid = s.decoder.push(chunk, func(event managedProtocolEvent) {
+		if !s.modelConflict && !s.usageConflict && event.Name == "error" {
+			s.namedError = true
+		}
+		if s.done {
+			s.invalid = true
+			return
+		}
+		if bytes.Equal(bytes.TrimSpace(event.Data), []byte("[DONE]")) {
+			s.done = true
+			if after != nil {
+				after(event)
+			}
+			return
+		}
+		var object map[string]json.RawMessage
+		if decodeManagedJSON(event.Data, &object, false) != nil || object == nil {
+			if event.Name == "error" {
+				s.failed = true
+				if after != nil {
+					after(event)
+				}
+				return
+			}
+			s.invalid = true
+			return
+		}
+
+		headers := [][2]string{{"content-type", "application/json"}}
+		switch s.format {
+		case "qwen":
+			var requestID string
+			_ = json.Unmarshal(object["request_id"], &requestID)
+			recordManagedBailianRequestID(s.state, requestID)
+			observed := managedQwenDocumentObservation(managedProtocolChat, 200, headers, event.Data, true, event.Name == "error", 0)
+			s.thinking = s.thinking || managedQwenReasoning(event.Data)
+			if raw, exists := object["usage"]; exists {
+				s.usage = observed.Usage
+				if !managedProtocolNull(raw) {
+					s.estimateUsage = raw
+					if parsed := clientresponse.ReadSupplierUsage(event.Data, "qwen", false); parsed.Input != nil {
+						s.publicUsage = parsed
+						s.hasPublicUsage = true
+					}
+				}
+			}
+			if observed.ResponseModel != "" {
+				if s.model != "" && s.model != observed.ResponseModel {
+					s.modelConflict = true
+					s.invalid = true
+				}
+				s.model = observed.ResponseModel
+			}
+			s.failed = s.failed || observed.ProviderError || event.Name == "error"
+			s.last = observed
+
+		case "gemini":
+			observed := managedGoogleObservation(managedProtocolChat, 200, headers, event.Data, true, 0)
+			s.thinking = s.thinking || managedGoogleThinking(event.Data)
+			if raw, exists := object["usageMetadata"]; exists {
+				s.usage = observed.Usage
+				if !managedProtocolNull(raw) {
+					s.estimateUsage = raw
+					if parsed := clientresponse.ReadSupplierUsage(event.Data, "gemini", false); parsed.Input != nil {
+						s.publicUsage = parsed
+						s.hasPublicUsage = true
+					}
+				}
+			}
+			var candidates []struct {
+				Index  *uint32 `json:"index"`
+				Finish string  `json:"finishReason"`
+			}
+			if raw, exists := object["candidates"]; exists {
+				if json.Unmarshal(raw, &candidates) != nil {
+					s.invalid = true
+					return
+				}
+			}
+			for ordinal, candidate := range candidates {
+				index := strconv.Itoa(ordinal)
+				if candidate.Index != nil {
+					index = strconv.FormatUint(uint64(*candidate.Index), 10)
+				}
+				if _, exists := s.finished[index]; !exists || candidate.Finish != "" {
+					s.finished[index] = candidate.Finish
+				}
+			}
+			if observed.ResponseModel != "" {
+				if s.model != "" && s.model != observed.ResponseModel {
+					s.modelConflict = true
+					s.invalid = true
+				}
+				s.model = observed.ResponseModel
+			}
+			s.failed = s.failed || observed.ProviderError || event.Name == "error"
+			s.last = observed
+
+		default:
+			s.thinking = s.thinking || managedQwenReasoning(event.Data)
+			if event.Name == "error" || !managedProtocolNull(object["error"]) {
+				s.failed = true
+			}
+			var choices []map[string]json.RawMessage
+			if raw, exists := object["choices"]; exists && json.Unmarshal(raw, &choices) != nil {
+				s.invalid = true
+				return
+			}
+			var rawUsage json.RawMessage
+			if raw, exists := object["usage"]; exists && !managedProtocolNull(raw) {
+				rawUsage = raw
+			}
+			for _, choice := range choices {
+				if raw, exists := choice["usage"]; exists && !managedProtocolNull(raw) {
+					rawUsage = raw
+				}
+			}
+			var usage *executionfacts.Usage
+			if len(rawUsage) > 0 {
+				s.estimateUsage = rawUsage
+				usage = managedOpenAIUsage(map[string]json.RawMessage{"usage": rawUsage})
+				if parsed := clientresponse.ReadSupplierUsage(event.Data, "moonshot", false); parsed.Input != nil {
+					s.publicUsage = parsed
+					s.hasPublicUsage = true
+				}
+			}
+			if !s.modelConflict && !s.usageConflict {
+				s.modelConflict = !managedProtocolMergeModel(&s.model, object["model"])
+				if !s.modelConflict && usage != nil {
+					s.usageConflict = s.priorUsage != nil && !managedProtocolSameUsage(s.priorUsage, usage)
+					if !s.usageConflict {
+						s.priorUsage = usage
+					}
+				}
+			}
+			if len(choices) > 0 {
+				if s.choiceDone == nil {
+					s.choiceDone = make(map[string]bool)
+				}
+				for _, choice := range choices {
+					index, ok := managedCount(choice["index"])
+					if !ok || index.BitLen() > 32 || s.choiceDone[index.String()] {
+						s.invalid = true
+						return
+					}
+					key := index.String()
+					s.choiceDone[key] = false
+					if raw := choice["finish_reason"]; !managedProtocolNull(raw) {
+						var reason string
+						if json.Unmarshal(raw, &reason) != nil {
+							s.invalid = true
+							return
+						}
+						if reason != "" {
+							s.choiceDone[key] = true
+							s.partial = s.partial || reason == "length" || reason == "content_filter" || reason == "sensitive" || reason == "model_context_window_exceeded"
+						}
+					}
+				}
+			}
+			if usage != nil && s.allChoicesFinished() {
+				s.usage = usage
+			}
+		}
+
+		if s.collectText && !s.textLimited && !s.failed {
+			text := tokenestimate.ResponseText(event.Data)
+			if text != "" {
+				if s.format == "qwen" && !s.incremental {
+					s.text.Reset()
+				}
+				if s.text.Len()+len(text) <= managedEstimateTextBytes {
+					s.text.WriteString(text)
+				} else {
+					s.textLimited = true
+					s.text.Reset()
+				}
+			}
+		}
+
+		if after != nil {
+			after(event)
+		}
+	}) != nil || s.invalid
 }
 
 func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func([]byte), comment func()) {
@@ -98,8 +333,8 @@ func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func(
 			}
 			if raw, exists := object[usageKey]; exists {
 				s.usage = observed.Usage
-				if s.format == "qwen" && !managedProtocolNull(raw) {
-					if parsed := clientresponse.ReadUsageObject(raw, "qwen"); parsed.Input != nil {
+				if !managedProtocolNull(raw) {
+					if parsed := clientresponse.ReadSupplierUsage(event.Data, s.format, false); parsed.Input != nil {
 						s.publicUsage = parsed
 						s.hasPublicUsage = true
 					}
@@ -201,6 +436,52 @@ func (s *managedRouterSupplierStream) push(chunk []byte, end bool, forward func(
 }
 
 func (s *managedRouterSupplierStream) observation() managedProtocolObservation {
+	if s.format != "qwen" && s.format != "gemini" && (s.state == nil || s.state.router == nil || s.state.router.chat == nil) {
+		finishErr := s.decoder.finish()
+		providerError := s.failed || s.namedError
+		usage := s.usage
+		result := "unknown"
+		if finishErr != nil || s.invalid || !s.done || !s.allChoicesFinished() {
+			usage = executionfacts.MissingTokenUsage("stream_terminal_not_observed")
+		} else if providerError {
+			usage, result = executionfacts.MissingTokenUsage("stream_provider_error"), "failed"
+		} else {
+			if usage == nil {
+				usage = executionfacts.MissingTokenUsage("stream_usage_not_observed")
+			}
+			if s.partial {
+				result = "partial"
+			} else {
+				result = "succeeded"
+			}
+		}
+		if finishErr == nil {
+			if s.namedError {
+				result, providerError = "failed", true
+			}
+			switch {
+			case s.modelConflict:
+				usage, result = executionfacts.MissingTokenUsage("stream_model_conflict"), "unknown"
+			case s.usageConflict:
+				usage = executionfacts.MissingTokenUsage("stream_usage_conflict")
+			case providerError && result == "failed" && s.priorUsage != nil && s.priorUsage.Status == "reported":
+				usage = s.priorUsage
+			}
+		}
+		acceptance := "unknown"
+		if result == "succeeded" || result == "partial" {
+			acceptance = "accepted"
+		}
+		return managedProtocolObservation{
+			Usage:           usage,
+			ExecutionResult: result,
+			ProviderError:   providerError,
+			Acceptance:      acceptance,
+			ResponseModel:   s.model,
+			BodyComplete:    result != "unknown",
+		}
+	}
+
 	o := managedProtocolObservation{Usage: s.usage, ResponseModel: s.model, ExecutionResult: "unknown", Acceptance: "unknown", ProviderError: s.failed}
 	if o.Usage == nil {
 		o.Usage = executionfacts.MissingTokenUsage("native_stream_usage_not_observed")

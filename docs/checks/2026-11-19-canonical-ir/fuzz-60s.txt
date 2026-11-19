@@ -1,0 +1,52 @@
+=== FuzzCanonicalSSEPartition (60s) ===
+fuzz: elapsed: 0s, gathering baseline coverage: 0/13 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 13/13 completed, now fuzzing with 16 workers
+fuzz: elapsed: 3s, execs: 458 (153/sec), new interesting: 3 (total: 16)
+fuzz: elapsed: 6s, execs: 2643 (727/sec), new interesting: 4 (total: 17)
+fuzz: elapsed: 9s, execs: 5711 (1025/sec), new interesting: 5 (total: 18)
+fuzz: elapsed: 12s, execs: 10010 (1431/sec), new interesting: 6 (total: 19)
+fuzz: elapsed: 15s, execs: 19446 (3149/sec), new interesting: 7 (total: 20)
+fuzz: elapsed: 18s, execs: 19914 (156/sec), new interesting: 9 (total: 22)
+fuzz: elapsed: 21s, execs: 19914 (0/sec), new interesting: 9 (total: 22)
+fuzz: elapsed: 24s, execs: 19914 (0/sec), new interesting: 9 (total: 22)
+fuzz: elapsed: 27s, execs: 24512 (1532/sec), new interesting: 11 (total: 24)
+fuzz: elapsed: 30s, execs: 24512 (0/sec), new interesting: 11 (total: 24)
+fuzz: elapsed: 33s, execs: 24512 (0/sec), new interesting: 11 (total: 24)
+fuzz: elapsed: 36s, execs: 24512 (0/sec), new interesting: 11 (total: 24)
+fuzz: elapsed: 39s, execs: 51948 (9146/sec), new interesting: 12 (total: 25)
+fuzz: elapsed: 42s, execs: 51948 (0/sec), new interesting: 12 (total: 25)
+fuzz: elapsed: 45s, execs: 51948 (0/sec), new interesting: 12 (total: 25)
+fuzz: elapsed: 48s, execs: 51948 (0/sec), new interesting: 12 (total: 25)
+fuzz: elapsed: 51s, execs: 51948 (0/sec), new interesting: 12 (total: 25)
+fuzz: elapsed: 54s, execs: 51948 (0/sec), new interesting: 12 (total: 25)
+fuzz: elapsed: 57s, execs: 51948 (0/sec), new interesting: 12 (total: 25)
+fuzz: elapsed: 1m0s, execs: 51948 (0/sec), new interesting: 12 (total: 25)
+fuzz: elapsed: 1m1s, execs: 51948 (0/sec), new interesting: 12 (total: 25)
+PASS
+ok  	github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy	61.037s
+=== FuzzCanonicalRequestBoundary (60s, ./provider) ===
+fuzz: elapsed: 0s, gathering baseline coverage: 0/29 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 29/29 completed, now fuzzing with 16 workers
+fuzz: elapsed: 3s, execs: 102971 (34319/sec), new interesting: 59 (total: 88)
+fuzz: elapsed: 6s, execs: 164123 (20383/sec), new interesting: 81 (total: 110)
+fuzz: elapsed: 9s, execs: 359834 (65205/sec), new interesting: 98 (total: 127)
+fuzz: elapsed: 12s, execs: 663918 (101396/sec), new interesting: 140 (total: 169)
+fuzz: elapsed: 15s, execs: 755674 (30580/sec), new interesting: 195 (total: 224)
+fuzz: elapsed: 18s, execs: 884092 (42815/sec), new interesting: 210 (total: 239)
+fuzz: elapsed: 21s, execs: 1155104 (90326/sec), new interesting: 246 (total: 275)
+fuzz: elapsed: 24s, execs: 1251492 (32139/sec), new interesting: 290 (total: 319)
+fuzz: elapsed: 27s, execs: 1314679 (21063/sec), new interesting: 291 (total: 320)
+fuzz: elapsed: 30s, execs: 1417304 (34202/sec), new interesting: 294 (total: 323)
+fuzz: elapsed: 33s, execs: 1538437 (40377/sec), new interesting: 296 (total: 325)
+fuzz: elapsed: 36s, execs: 1702088 (54562/sec), new interesting: 311 (total: 340)
+fuzz: elapsed: 39s, execs: 1780015 (25978/sec), new interesting: 333 (total: 362)
+fuzz: elapsed: 42s, execs: 2011562 (77178/sec), new interesting: 333 (total: 362)
+fuzz: elapsed: 45s, execs: 2071318 (19915/sec), new interesting: 335 (total: 364)
+fuzz: elapsed: 48s, execs: 2319592 (82776/sec), new interesting: 337 (total: 366)
+fuzz: elapsed: 51s, execs: 2395764 (25385/sec), new interesting: 339 (total: 368)
+fuzz: elapsed: 54s, execs: 2555878 (53276/sec), new interesting: 347 (total: 376)
+fuzz: elapsed: 57s, execs: 2627009 (23753/sec), new interesting: 354 (total: 383)
+fuzz: elapsed: 1m0s, execs: 2634892 (2628/sec), new interesting: 354 (total: 383)
+fuzz: elapsed: 1m1s, execs: 2634892 (0/sec), new interesting: 354 (total: 383)
+PASS
+ok  	github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider	61.085s

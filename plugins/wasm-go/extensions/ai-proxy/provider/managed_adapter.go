@@ -3,9 +3,13 @@ package provider
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
+	"slices"
 	"strings"
 
+	"github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util"
+	"github.com/higress-group/wasm-go/pkg/ai/canonical"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -146,6 +150,301 @@ func (a *ManagedAdapter) NativeResponseFormat() string {
 		return a.config.typ
 	}
 	return ""
+}
+
+// ResolveCanonicalTarget freezes the immutable supplier wire format, API revision,
+// model identity, and capability contract for a selected target without network I/O.
+func ResolveCanonicalTarget(adapter *ManagedAdapter, upstreamProtocol, supplierType, upstreamPath, model string, streaming bool) CanonicalTarget {
+	supplier := supplierType
+	if adapter != nil && adapter.config.typ != "" {
+		supplier = adapter.config.typ
+	}
+
+	var wireFormat WireFormat
+	switch upstreamProtocol {
+	case "openai_responses":
+		wireFormat = WireOpenAIResponses
+	case "anthropic_messages":
+		wireFormat = WireAnthropicMessages
+	case "dashscope_text":
+		wireFormat = WireDashScopeText
+	case "dashscope_multimodal":
+		wireFormat = WireDashScopeMultimodal
+	case "openai_chat", "":
+		switch {
+		case adapter != nil && adapter.config.typ == providerTypeGemini:
+			wireFormat = WireGeminiGenerateContent
+		case adapter != nil && adapter.NativeQwen():
+			if adapter.apiName == ApiNameDashScopeMultimodal ||
+				adapter.config.managedRequestPath == qwenMultimodalGenerationPath ||
+				upstreamPath == qwenMultimodalGenerationPath {
+				wireFormat = WireDashScopeMultimodal
+			} else {
+				wireFormat = WireDashScopeText
+			}
+		default:
+			wireFormat = WireChatCompletions
+		}
+	default:
+		wireFormat = WireFormat(upstreamProtocol)
+	}
+
+	var apiVersion string
+	switch {
+	case supplier == providerTypeGemini:
+		if adapter != nil && adapter.config.apiVersion != "" {
+			apiVersion = adapter.config.apiVersion
+		} else {
+			apiVersion = geminiDefaultApiVersion
+		}
+	case wireFormat == WireAnthropicMessages || supplier == providerTypeClaude:
+		if adapter != nil && adapter.config.apiVersion != "" {
+			apiVersion = adapter.config.apiVersion
+		} else {
+			apiVersion = claudeDefaultVersion
+		}
+	case supplier == providerTypeAzure && adapter != nil:
+		if az, ok := adapter.provider.(*azureProvider); ok && az.serviceUrl != nil {
+			apiVersion = az.serviceUrl.Query().Get(queryAzureApiVersion)
+		}
+	}
+
+	isOpenAIOrAzure := supplier == providerTypeOpenAI || supplier == providerTypeAzure
+	allowedDetails := []canonical.ImageDetail{
+		canonical.ImageDetailAuto,
+		canonical.ImageDetailLow,
+		canonical.ImageDetailHigh,
+	}
+	if isOpenAIOrAzure || supplier == "" || wireFormat == WireGeminiGenerateContent {
+		allowedDetails = append(allowedDetails, canonical.ImageDetailOriginal)
+	}
+
+	target := CanonicalTarget{
+		WireFormat:               wireFormat,
+		Supplier:                 supplier,
+		Model:                    model,
+		APIVersion:               apiVersion,
+		Streaming:                streaming,
+		SupportsDeveloperRole:    wireFormat == WireChatCompletions && (isOpenAIOrAzure || supplier == ""),
+		AcceptedLimitScopes:      LimitScopeMaskAll,
+		SupportsCompletionTokens: wireFormat == WireChatCompletions && supplier == providerTypeOpenAI,
+		SupportsThinking: supplier == providerTypeQwen ||
+			supplier == providerTypeDeepSeek ||
+			supplier == providerTypeZhipuAi ||
+			supplier == providerTypeMoonshot ||
+			supplier == providerTypeOpenRouter ||
+			supplier == providerTypeGemini ||
+			supplier == providerTypeClaude,
+		SupportsAdaptiveThinking: supplier == providerTypeClaude ||
+			supplier == providerTypeQwen ||
+			supplier == providerTypeGemini,
+		SupportsPreserveThinking: supplier == providerTypeQwen && qwenSupportsPreserveThinking(model),
+		ForbidsForcedToolThink: wireFormat == WireDashScopeText ||
+			wireFormat == WireDashScopeMultimodal ||
+			wireFormat == WireAnthropicMessages,
+		IncrementalOutputMode: IncrementalAuto,
+		SupportsStrictSchema: wireFormat != WireAnthropicMessages &&
+			supplier != providerTypeDeepSeek &&
+			model != "qwen-turbo" &&
+			model != "qwen-long",
+		SupportsURLImages:           wireFormat != WireDashScopeText && wireFormat != WireGeminiGenerateContent,
+		AllowedImageDetails:         allowedDetails,
+		SupportsStore:               wireFormat == WireChatCompletions && (isOpenAIOrAzure || supplier == ""),
+		SupportsPromptCacheKey:      wireFormat == WireChatCompletions && supplier != providerTypeQwen,
+		SupportsContentCacheControl: wireFormat == WireChatCompletions || wireFormat == WireDashScopeMultimodal || wireFormat == WireAnthropicMessages,
+	}
+
+	if supplier == providerTypeQwen && wireFormat == WireChatCompletions {
+		qwenCompatibleChatPolicy(model).applyToTarget(&target)
+	}
+	if wireFormat == WireDashScopeText || wireFormat == WireDashScopeMultimodal {
+		target.NormalizeEmptyAssistantContent = true
+		target.StripToolMessageName = true
+		target.StripOuterCacheControl = true
+		if adapter != nil {
+			target.QwenEnableSearchDefault = adapter.config.qwenEnableSearch
+			if len(adapter.config.qwenFileIds) > 0 {
+				target.QwenLongFileIDs = slices.Clone(adapter.config.qwenFileIds)
+			}
+		}
+	}
+	if wireFormat == WireGeminiGenerateContent && adapter != nil {
+		if len(adapter.config.geminiSafetySetting) > 0 {
+			target.GeminiSafetySettings = maps.Clone(adapter.config.geminiSafetySetting)
+		}
+		target.GeminiThinkingBudget = adapter.config.geminiThinkingBudget
+	}
+	return target
+}
+
+// ResolveCanonicalTarget resolves the frozen CanonicalTarget for this ManagedAdapter.
+func (a *ManagedAdapter) ResolveCanonicalTarget(upstreamProtocol string, streaming bool, model string) CanonicalTarget {
+	var supplierType, upstreamPath string
+	if a != nil {
+		supplierType = a.config.typ
+		upstreamPath = a.config.managedRequestPath
+	}
+	return ResolveCanonicalTarget(a, upstreamProtocol, supplierType, upstreamPath, model, streaming)
+}
+
+// PrepareCanonical encodes req directly into target's wire format and configures
+// upstream path, authentication, and SSE negotiation headers without intermediate
+// Chat JSON decoding or wrapper.HttpContext state mutations.
+func (a *ManagedAdapter) PrepareCanonical(_ wrapper.HttpContext, req canonical.Request, target CanonicalTarget, headers http.Header, credential string) ([]byte, error) {
+	streaming := req.Stream || target.Streaming
+	if a == nil {
+		for _, name := range []string{"authorization", "x-api-key", "api-key", geminiApiKeyHeader} {
+			headers.Del(name)
+		}
+		headers.Set("authorization", "Bearer "+credential)
+		if streaming {
+			headers.Set("accept", "text/event-stream")
+		}
+		return EncodeCanonicalRequest(req, target)
+	}
+
+	headers.Set(":path", a.config.managedRequestPath)
+	for _, name := range []string{"authorization", "x-api-key", "api-key", geminiApiKeyHeader} {
+		headers.Del(name)
+	}
+
+	if target.WireFormat == WireDashScopeText || target.WireFormat == WireDashScopeMultimodal ||
+		a.apiName == ApiNameDashScopeText || a.apiName == ApiNameDashScopeMultimodal {
+		headers.Set("authorization", "Bearer "+credential)
+		if streaming {
+			headers.Set("accept", "text/event-stream")
+			headers.Set("x-dashscope-sse", "enable")
+		} else {
+			headers.Set("accept", "application/json")
+			headers.Del("x-dashscope-sse")
+		}
+		if a.apiName != ApiNameDashScopeText && a.apiName != ApiNameDashScopeMultimodal {
+			if !a.config.IsOriginal() {
+				a.config.overwriteRequestPathHeaderByCapability(headers, string(a.apiName))
+			}
+			headers.Set(":path", a.config.applyProviderBasePath(headers.Get(":path")))
+		}
+	} else {
+		if streaming {
+			headers.Set("accept", "text/event-stream")
+		}
+		switch a.config.typ {
+		case providerTypeGemini:
+			headers.Set(geminiApiKeyHeader, credential)
+			if gp, ok := a.provider.(*geminiProvider); ok {
+				headers.Set(":path", a.config.applyProviderBasePath(gp.getRequestPath(a.apiName, target.Model, streaming)))
+			}
+		case providerTypeAzure:
+			headers.Set("api-key", credential)
+			if az, ok := a.provider.(*azureProvider); ok && !a.config.IsOriginal() {
+				var resolvedPath string
+				if az.serviceUrlType == azureServiceUrlTypeFull {
+					resolvedPath = az.serviceUrlFullPath
+				} else {
+					resolvedPath = util.MapRequestPathByCapability(string(a.apiName), a.config.pathMappingInput(), a.config.capabilities)
+					if strings.Contains(resolvedPath, pathAzureModelPlaceholder) {
+						deployModel := target.Model
+						if az.serviceUrlType == azureServiceUrlTypeWithDeployment || deployModel == "" {
+							deployModel = az.defaultModel
+						}
+						resolvedPath = strings.ReplaceAll(resolvedPath, pathAzureModelPlaceholder, deployModel)
+					}
+					if az.serviceUrl != nil {
+						resolvedPath = appendAzureServiceURLRawQuery(resolvedPath, az.serviceUrl.RawQuery)
+					}
+				}
+				if resolvedPath != "" {
+					headers.Set(":path", a.config.applyProviderBasePath(resolvedPath))
+				}
+			}
+		case providerTypeClaude:
+			if a.config.claudeCodeMode {
+				headers.Set("authorization", "Bearer "+credential)
+			} else {
+				headers.Set("x-api-key", credential)
+			}
+			if headers.Get("anthropic-version") == "" {
+				ver := a.config.apiVersion
+				if ver == "" {
+					ver = claudeDefaultVersion
+				}
+				headers.Set("anthropic-version", ver)
+			}
+			if !a.config.IsOriginal() {
+				a.config.overwriteRequestPathHeaderByCapability(headers, string(a.apiName))
+			}
+			headers.Set(":path", a.config.applyProviderBasePath(headers.Get(":path")))
+		case providerTypeMinimax:
+			headers.Set("authorization", "Bearer "+credential)
+			headers.Set(":path", a.config.applyProviderBasePath(minimaxChatCompletionV2Path))
+		case providerTypeCloudflare:
+			headers.Set("authorization", "Bearer "+credential)
+			headers.Set(":path", a.config.applyProviderBasePath(strings.Replace(cloudflareChatCompletionPath, "{account_id}", a.config.cloudflareAccountId, 1)))
+		case providerTypeMistral:
+			headers.Set("authorization", "Bearer "+credential)
+			headers.Set(":path", a.config.applyProviderBasePath(headers.Get(":path")))
+		case providerTypeOllama:
+			if !a.config.IsOriginal() {
+				a.config.overwriteRequestPathHeaderByCapability(headers, string(a.apiName))
+			}
+			headers.Set(":path", a.config.applyProviderBasePath(headers.Get(":path")))
+		case providerTypeVllm:
+			if len(a.config.apiTokens) > 0 {
+				headers.Set("authorization", "Bearer "+credential)
+			}
+			if vp, ok := a.provider.(*vllmProvider); ok && vp.isDirectCustomPath {
+				headers.Set(":path", a.config.applyProviderBasePath(vp.customPath))
+			} else if !a.config.IsOriginal() {
+				a.config.overwriteRequestPathHeaderByCapability(headers, string(a.apiName))
+				headers.Set(":path", a.config.applyProviderBasePath(headers.Get(":path")))
+			}
+		case providerTypeAi360, providerTypeGithub:
+			headers.Set("authorization", credential)
+			if !a.config.IsOriginal() {
+				a.config.overwriteRequestPathHeaderByCapability(headers, string(a.apiName))
+			}
+			headers.Set(":path", a.config.applyProviderBasePath(headers.Get(":path")))
+		default:
+			headers.Set("authorization", "Bearer "+credential)
+			if !a.config.IsOriginal() {
+				a.config.overwriteRequestPathHeaderByCapability(headers, string(a.apiName))
+			}
+			headers.Set(":path", a.config.applyProviderBasePath(headers.Get(":path")))
+		}
+	}
+
+	body, err := EncodeCanonicalRequest(req, target)
+	if err != nil {
+		return nil, err
+	}
+
+	if target.WireFormat == WireChatCompletions {
+		switch a.config.typ {
+		case providerTypeZhipuAi:
+			if gjson.GetBytes(body, "reasoning_effort").String() != "" {
+				body, _ = sjson.SetBytes(body, "thinking", map[string]string{"type": "enabled"})
+				body, _ = sjson.DeleteBytes(body, "reasoning_effort")
+			} else if req.SourceProtocol == canonical.ProtocolAnthropicMessages &&
+				req.Thinking.Mode != canonical.ThinkingEnabled &&
+				req.Thinking.Mode != canonical.ThinkingAdaptive {
+				body, _ = sjson.SetBytes(body, "thinking", map[string]string{"type": "disabled"})
+			}
+			if requestBodyHasMessageReasoningContent(body) {
+				body, _ = sjson.SetBytes(body, "thinking.clear_thinking", false)
+			}
+		case providerTypeOpenRouter:
+			if req.SourceProtocol == canonical.ProtocolAnthropicMessages &&
+				req.Thinking.Mode == canonical.ThinkingEnabled &&
+				req.Thinking.BudgetTokens.ValueOr(0) > 0 {
+				body, _ = sjson.DeleteBytes(body, "reasoning_effort")
+				body, err = sjson.SetBytes(body, "reasoning.max_tokens", req.Thinking.BudgetTokens.Val)
+				if err != nil {
+					return nil, fmt.Errorf("set openrouter reasoning.max_tokens: %w", err)
+				}
+			}
+		}
+	}
+	return body, nil
 }
 
 // Prepare transforms the actual wire body and headers using the selected key.

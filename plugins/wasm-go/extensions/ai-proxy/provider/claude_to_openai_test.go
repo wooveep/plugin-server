@@ -2,9 +2,12 @@ package provider
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
+	"github.com/higress-group/wasm-go/pkg/ai/canonical"
+	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1799,5 +1802,61 @@ func TestClaudeToOpenAIConverter_AdaptiveThinkingAndToolResultEdgeCases(t *testi
 			}
 		}
 		assert.True(t, hasImage, "companion user message must preserve tool_result image")
+	})
+
+	t.Run("h2_claude_tool_type_validation_custom_fixedtools_and_builtin_reject", func(t *testing.T) {
+		validCustomAndFixed := `{
+			"model": "claude-sonnet-4-6",
+			"max_tokens": 512,
+			"tools": [
+				{
+					"type": "custom",
+					"name": "lookup_order",
+					"description": "Order lookup",
+					"strict": true,
+					"input_schema": {"type": "object", "properties": {"id": {"type": "string"}}}
+				},
+				{
+					"type": "web_search_20250305",
+					"name": "web_search"
+				}
+			],
+			"messages": [{"role": "user", "content": "search and lookup"}]
+		}`
+		converted, err := converter.ConvertClaudeRequestToOpenAI([]byte(validCustomAndFixed))
+		require.NoError(t, err)
+
+		var req chatCompletionRequest
+		require.NoError(t, json.Unmarshal(converted, &req))
+		require.Len(t, req.Tools, 2)
+		assert.Equal(t, "function", req.Tools[0].Type)
+		assert.Equal(t, "lookup_order", req.Tools[0].Function.Name)
+		require.NotNil(t, req.Tools[0].Function.Strict)
+		assert.True(t, *req.Tools[0].Function.Strict)
+		assert.Equal(t, "web_search_20250305", req.Tools[1].Type)
+
+		requested, err := fixedtools.Inspect(converted, "openai_chat", nil)
+		require.NoError(t, err)
+		assert.True(t, requested[fixedtools.WebSearch])
+
+		for _, unsupportedType := range []string{
+			"bash_20250124",
+			"text_editor_20250728",
+			"computer_20250124",
+			"tool_search_tool_regex_20251119",
+		} {
+			body := `{
+				"model": "claude-sonnet-4-6",
+				"max_tokens": 256,
+				"tools": [{"type": "` + unsupportedType + `", "name": "builtin"}],
+				"messages": [{"role": "user", "content": "run"}]
+			}`
+			_, err := converter.ConvertClaudeRequestToOpenAI([]byte(body))
+			require.Error(t, err, "expected rejection for %s", unsupportedType)
+			var rej canonical.RejectionError
+			require.True(t, errors.As(err, &rej), "expected canonical.RejectionError for %s, got %T: %v", unsupportedType, err, err)
+			assert.Equal(t, "unsupported_tool_type", rej.Code)
+			assert.Equal(t, "tools", rej.Field)
+		}
 	})
 }

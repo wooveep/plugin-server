@@ -1,0 +1,47 @@
+{
+  "baseline": "B",
+  "source_commit": "abc7a34a05f3cb9d1fc34d3e2c6a032696b48163",
+  "worktree": "/home/cloudyi/.codex/worktrees/canonical-ir-baseline-b",
+  "benchmark_file": {
+    "path": "plugins/wasm-go/extensions/ai-proxy/managed_canonical_bench_test.go",
+    "sha256": "0081f81334f4c8cef78e4aa1aa820b5fd6e2edaa0fdd9a3ab296c89b918a26e4"
+  },
+  "toolchain": {
+    "image": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+    "go_version": "go1.26.3 linux/amd64",
+    "gotoolchain": "local",
+    "benchstat": {
+      "path": "/home/cloudyi/go/bin/benchstat",
+      "module": "golang.org/x/perf@v0.0.0-20261117185222-4febdb082b2c",
+      "sha256": "8e60b080683bed0eca0bbf2a6341f56c3d7d82071bbb9f69e3af7dee8dc51222"
+    }
+  },
+  "host": {
+    "os": "Linux cloudyihome 6.12.111+deb13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.111-1 x86_64",
+    "cpu_model": "AMD Ryzen 7 9700X 8-Core Processor",
+    "cores": 8,
+    "threads": 16,
+    "memory_total": "89Gi",
+    "memory_available": "38Gi"
+  },
+  "runs": [
+    {
+      "gomaxprocs": 1,
+      "command": "GOMAXPROCS=1 go test -mod=readonly -run '^$' -bench '^BenchmarkProtocol(Request|Stream)Pipeline$' -benchmem -benchtime=1s -count=10 .",
+      "exit_code": 0,
+      "elapsed_seconds": 172.75,
+      "output_file": "docs/checks/2026-11-19-canonical-ir/B-gomax1.txt",
+      "sha256": "e076cd0d4bf38f97be15b30fe66aaf3a246f0e158813fb03e3e340ccfd7cd807",
+      "benchstat_exit_code": 0
+    },
+    {
+      "gomaxprocs": 4,
+      "command": "GOMAXPROCS=4 go test -mod=readonly -run '^$' -bench '^BenchmarkProtocol(Request|Stream)Pipeline$' -benchmem -benchtime=1s -count=10 .",
+      "exit_code": 0,
+      "elapsed_seconds": 150.70,
+      "output_file": "docs/checks/2026-11-19-canonical-ir/B-gomax4.txt",
+      "sha256": "41f485bbb992cdc2d71ec36eea9065871ae3832cd7fdc57ba2601600f68fb567",
+      "benchstat_exit_code": 0
+    }
+  ]
+}

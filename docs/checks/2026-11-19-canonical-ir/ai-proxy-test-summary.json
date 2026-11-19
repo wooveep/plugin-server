@@ -1,0 +1,31 @@
+{
+  "worktree": "/home/cloudyi/.codex/worktrees/ai-proxy-canonical-ir",
+  "toolchain": {
+    "image": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+    "go_version": "go1.26.3 linux/amd64",
+    "gotoolchain": "local"
+  },
+  "wasm_binary": {
+    "command": "GOOS=wasip1 GOARCH=wasm CGO_ENABLED=0 go build -p=2 -mod=readonly -trimpath -buildvcs=false -buildmode=c-shared -o /tmp/ai-proxy.wasm .",
+    "size_bytes": 26444506,
+    "sha256": "412f557985a8473ee01b0d2543687520b2a99427b0592fd83b82d4e30b312955"
+  },
+  "test_command": "WASM_FILE_PATH=/tmp/ai-proxy.wasm WASM_PATH=/tmp/ai-proxy.wasm go test -mod=readonly -count=1 -json ./...",
+  "raw_json_sha256": "f13f6801c9106dd1d479e4a5c552a472740fa970cd1328b2dabe19376866b398",
+  "exit_code": 0,
+  "packages": {
+    "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy": {"status": "pass", "elapsed_seconds": 51.232},
+    "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider": {"status": "pass", "elapsed_seconds": 0.035},
+    "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/config": {"status": "pass", "elapsed_seconds": 0.002},
+    "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/util": {"status": "pass", "elapsed_seconds": 0.002},
+    "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/test": {"status": "skip", "reason": "no test files"}
+  },
+  "counts": {
+    "packages_passed": 4,
+    "packages_skipped_no_test_files": 1,
+    "top_level_tests_passed": 517,
+    "total_tests_and_subtests_passed": 3289,
+    "failed": 0,
+    "skipped": 0
+  }
+}

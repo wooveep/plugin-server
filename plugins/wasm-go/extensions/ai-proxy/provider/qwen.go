@@ -147,14 +147,15 @@ func (m *qwenProvider) TransformRequestBodyHeaders(ctx wrapper.HttpContext, apiN
 			}
 			modifiedBody = newBody
 		}
+		policy := qwenCompatibleChatPolicy(mappedModel)
 		if apiName == ApiNameChatCompletion {
-			sanitized, err := sanitizeQwenCompatibleChatRequest(modifiedBody)
+			sanitized, err := sanitizeQwenCompatibleChatRequestWithPolicy(modifiedBody, policy)
 			if err != nil {
 				return modifiedBody, err
 			}
 			modifiedBody = sanitized
 		}
-		if mappedModel != "" && requestBodyHasMessageReasoningContent(modifiedBody) && qwenSupportsPreserveThinking(mappedModel) {
+		if mappedModel != "" && policy.TopLevelPreserveThinking && requestBodyHasMessageReasoningContent(modifiedBody) && !gjson.GetBytes(modifiedBody, "preserve_thinking").Exists() {
 			// Qwen OpenAI-compatible mode requires top-level preserve_thinking=true
 			// before historical reasoning_content can be reused by supported models.
 			var err error
@@ -1160,17 +1161,25 @@ func requestBodyHasMessageReasoningContent(body []byte) bool {
 }
 
 func sanitizeQwenCompatibleChatRequest(body []byte) ([]byte, error) {
+	mappedModel := gjson.GetBytes(body, "model").String()
+	return sanitizeQwenCompatibleChatRequestWithPolicy(body, qwenCompatibleChatPolicy(mappedModel))
+}
+
+func sanitizeQwenCompatibleChatRequestWithPolicy(body []byte, policy qwenChatCompatPolicy) ([]byte, error) {
 	modified := body
 	var err error
-	for _, field := range []string{
-		"store",
-		"prompt_cache_key",
-		"prompt_cache_retention",
-		"prompt_cache_options",
+	topFieldsToStrip := []string{
 		"reasoning_summary",
 		"safety_identifier",
 		"context_management",
-	} {
+	}
+	if !policy.SupportsStore {
+		topFieldsToStrip = append(topFieldsToStrip, "store")
+	}
+	if !policy.SupportsPromptCacheKey {
+		topFieldsToStrip = append(topFieldsToStrip, "prompt_cache_key", "prompt_cache_retention", "prompt_cache_options")
+	}
+	for _, field := range topFieldsToStrip {
 		if gjson.GetBytes(modified, field).Exists() {
 			if modified, err = sjson.DeleteBytes(modified, field); err != nil {
 				return nil, err
@@ -1178,19 +1187,28 @@ func sanitizeQwenCompatibleChatRequest(body []byte) ([]byte, error) {
 		}
 	}
 
-	if tools := gjson.GetBytes(modified, "tools"); tools.IsArray() {
-		for idx, toolItem := range tools.Array() {
-			if toolItem.Get("cache_control").Exists() {
-				if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("tools.%d.cache_control", idx)); err != nil {
-					return nil, err
+	if policy.StripOuterCacheControl {
+		if tools := gjson.GetBytes(modified, "tools"); tools.IsArray() {
+			for idx, toolItem := range tools.Array() {
+				if toolItem.Get("cache_control").Exists() {
+					if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("tools.%d.cache_control", idx)); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
 	}
 
 	if messages := gjson.GetBytes(modified, "messages"); messages.IsArray() {
+		msgFieldsToStrip := []string{"thinking_blocks", "reasoning_details", "extra_content"}
+		if policy.StripOuterCacheControl {
+			msgFieldsToStrip = append(msgFieldsToStrip, "cache_control")
+		}
+		if !policy.SupportsPromptCacheKey {
+			msgFieldsToStrip = append(msgFieldsToStrip, "prompt_cache_breakpoint")
+		}
 		for idx, msg := range messages.Array() {
-			for _, field := range []string{"thinking_blocks", "reasoning_details", "extra_content", "cache_control"} {
+			for _, field := range msgFieldsToStrip {
 				if msg.Get(field).Exists() {
 					if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("messages.%d.%s", idx, field)); err != nil {
 						return nil, err
@@ -1198,33 +1216,42 @@ func sanitizeQwenCompatibleChatRequest(body []byte) ([]byte, error) {
 				}
 			}
 			role := msg.Get("role").String()
-			if role == roleDeveloper {
+			if role == roleDeveloper && !policy.SupportsDeveloperRole {
 				if modified, err = sjson.SetBytes(modified, fmt.Sprintf("messages.%d.role", idx), roleSystem); err != nil {
 					return nil, err
 				}
-			} else if role == roleTool && msg.Get("name").Exists() {
+			} else if role == roleTool && policy.StripToolMessageName && msg.Get("name").Exists() {
 				if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("messages.%d.name", idx)); err != nil {
 					return nil, err
 				}
-			} else if role == roleAssistant && msg.Get("content").Type == gjson.Null {
+			} else if role == roleAssistant && policy.NormalizeEmptyAssistantContent && msg.Get("content").Type == gjson.Null {
 				if modified, err = sjson.SetBytes(modified, fmt.Sprintf("messages.%d.content", idx), ""); err != nil {
 					return nil, err
 				}
 			}
+			// H3: policy.SupportsContentCacheControl == true preserves messages[].content[].cache_control
+			// so Bailian explicit prompt caching and s.cacheMode == explicit work identically on same-wire and cross-wire paths.
 			if content := msg.Get("content"); content.IsArray() {
 				for partIdx, part := range content.Array() {
-					if part.Get("cache_control").Exists() {
+					if !policy.SupportsContentCacheControl && part.Get("cache_control").Exists() {
 						if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("messages.%d.content.%d.cache_control", idx, partIdx)); err != nil {
+							return nil, err
+						}
+					}
+					if !policy.SupportsPromptCacheKey && part.Get("prompt_cache_breakpoint").Exists() {
+						if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("messages.%d.content.%d.prompt_cache_breakpoint", idx, partIdx)); err != nil {
 							return nil, err
 						}
 					}
 				}
 			}
-			if toolCalls := msg.Get("tool_calls"); toolCalls.IsArray() {
-				for tcIdx, tc := range toolCalls.Array() {
-					if tc.Get("extra_content").Exists() {
-						if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("messages.%d.tool_calls.%d.extra_content", idx, tcIdx)); err != nil {
-							return nil, err
+			if policy.StripOuterCacheControl {
+				if toolCalls := msg.Get("tool_calls"); toolCalls.IsArray() {
+					for tcIdx, tc := range toolCalls.Array() {
+						if tc.Get("extra_content").Exists() {
+							if modified, err = sjson.DeleteBytes(modified, fmt.Sprintf("messages.%d.tool_calls.%d.extra_content", idx, tcIdx)); err != nil {
+								return nil, err
+							}
 						}
 					}
 				}

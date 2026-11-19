@@ -11,8 +11,10 @@ import (
 	supplier "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
 	"github.com/higress-group/wasm-go/pkg/ai/bodybasis"
+	"github.com/higress-group/wasm-go/pkg/ai/canonical"
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
+	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
 	"github.com/tidwall/gjson"
@@ -65,6 +67,7 @@ type managedTextCall struct {
 	// Effective input after the original processors and before protocol conversion.
 	// Only its root model is restored/mapped, using the frozen mapper below.
 	publicBody                 []byte
+	baseCanonical              *canonical.Request
 	inputByTarget              map[string][]byte
 	tried                      map[[2]string]bool
 	visited                    map[string]bool
@@ -484,9 +487,17 @@ func newManagedTextAttempt(previous *managedExecutionState, configuration *manag
 	state := &managedExecutionState{client: previous.client, config: &copied, sourceConfig: configuration, identity: previous.identity, internal: previous.internal, callID: previous.callID, businessUTC: previous.businessUTC, admissionDeadline: previous.admissionDeadline, ledger: previous.ledger, deliveries: previous.deliveries, text: previous.text, mechanism: mechanism, parentAttemptID: previous.attemptID, selectionGeneration: uint32(len(previous.text.attempts) + 1)}
 	state.streaming = previous.streaming
 	state.publicRequest = previous.publicRequest
+	state.baseCanonical = previous.baseCanonical
 	state.resourceOwner = previous.resourceOwner
 	state.routerDeadline = previous.routerDeadline
-	state.requestedTools, state.removedTools = previous.requestedTools, previous.removedTools
+	requestedTools := make(map[fixedtools.Tool]bool, len(previous.requestedTools))
+	for tool, ok := range previous.requestedTools {
+		if ok {
+			requestedTools[tool] = true
+		}
+	}
+	state.requestedTools = requestedTools
+	state.removedTools = map[fixedtools.Tool]bool{}
 	return state
 }
 

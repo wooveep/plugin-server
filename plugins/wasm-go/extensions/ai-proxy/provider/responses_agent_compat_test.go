@@ -20,7 +20,7 @@ func TestResponsesFallback_AllowsStatelessTopLevelAgentFields(t *testing.T) {
 		"max_tool_calls":8,
 		"top_logprobs":3,
 		"context_management":[{"type":"compaction","compact_threshold":100000}],
-		"prompt":{"id":"pmpt_ignored"},
+		"prompt":null,
 		"moderation":{"enabled":false},
 		"client_metadata":{"ide":"vscode"},
 		"text":{"verbosity":"low"},
@@ -58,10 +58,12 @@ func TestResponsesFallback_NullAndEmptyBoundariesVsHardLines(t *testing.T) {
 		"model":"gpt-4o-mini",
 		"input":"hello",
 		"previous_response_id":"",
-		"conversation":null
+		"conversation":null,
+		"prompt":null
 	}`))
 	require.NoError(t, err)
 	require.Equal(t, "hello", gjson.GetBytes(out2, "messages.0.content").String())
+	require.False(t, gjson.GetBytes(out2, "prompt").Exists(), string(out2))
 
 	for _, tc := range []struct {
 		name      string
@@ -71,6 +73,8 @@ func TestResponsesFallback_NullAndEmptyBoundariesVsHardLines(t *testing.T) {
 	}{
 		{"non_empty_prev_id", `{"model":"m","input":"hi","previous_response_id":"resp_1"}`, "unsupported_stateful_reference", "previous_response_id"},
 		{"non_empty_conversation", `{"model":"m","input":"hi","conversation":"conv_1"}`, "unsupported_stateful_reference", "conversation"},
+		{"hosted_prompt_object", `{"model":"m","input":"hi","prompt":{"id":"pmpt_123"}}`, "unsupported_stateful_reference", "prompt"},
+		{"hosted_prompt_string", `{"model":"m","input":"hi","prompt":"pmpt_123"}`, "unsupported_stateful_reference", "prompt"},
 		{"background_true", `{"model":"m","input":"hi","background":true}`, "unsupported_background_mode", "background"},
 		{"hosted_tool_search", `{"model":"m","input":"hi","tools":[{"type":"tool_search","execution":"client"}]}`, "unsupported_tool_type", "tool_search"},
 		{"hosted_custom_tool", `{"model":"m","input":"hi","tools":[{"type":"custom","name":"apply_patch"}]}`, "unsupported_tool_type", "custom"},

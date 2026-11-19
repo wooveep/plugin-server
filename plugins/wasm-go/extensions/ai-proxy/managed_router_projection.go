@@ -63,6 +63,9 @@ func validateManagedRouterProfile(c *managedExecutionConfig) error {
 
 func projectManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState, chunk []byte, end bool) []byte {
 	r := s.router
+	if r.canonical != nil {
+		return projectManagedCanonicalRouterChunk(ctx, s, chunk, end)
+	}
 	var output bytes.Buffer
 	r.pushStream(chunk, func(event managedProtocolEvent) {
 		if r.projectionFailed || r.projectedError || bytes.Equal(bytes.TrimSpace(event.Data), []byte("[DONE]")) {

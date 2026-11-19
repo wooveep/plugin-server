@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/higress-group/wasm-go/pkg/ai/canonical"
 	"github.com/higress-group/wasm-go/pkg/ai/executionfacts"
 	"github.com/higress-group/wasm-go/pkg/ai/fixedtools"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -54,6 +55,18 @@ func containsManagedTool(tools []fixedtools.Tool, requested fixedtools.Tool) boo
 // Only tool requests read price availability. Ordinary admission remains the
 // existing local identity/balance flow, with no synchronous Console call.
 func authorizeManagedTools(ctx wrapper.HttpContext, s *managedExecutionState, body []byte, ready func()) {
+	if managedUsesCanonicalIR(s.config) {
+		baseReq, err := ensureManagedBaseCanonicalRequest(s, body)
+		if err == nil {
+			authorizeManagedCanonicalTools(ctx, s, *baseReq, ready)
+			return
+		}
+		var rej canonical.RejectionError
+		if errors.As(err, &rej) && (rej.SafeCode() == "invalid_tool_flag" || rej.SafeCode() == "invalid_search_options") {
+			rejectManagedPreparation(ctx, s, 400, "invalid_fixed_tools")
+			return
+		}
+	}
 	p := s.config.settings.ToolPolicy
 	var defaults []fixedtools.Tool
 	if p != nil {
@@ -64,6 +77,25 @@ func authorizeManagedTools(ctx wrapper.HttpContext, s *managedExecutionState, bo
 		rejectManagedPreparation(ctx, s, 400, "invalid_fixed_tools")
 		return
 	}
+	finishManagedToolAuthorization(ctx, s, requested, ready)
+}
+
+func authorizeManagedCanonicalTools(ctx wrapper.HttpContext, s *managedExecutionState, req canonical.Request, ready func()) {
+	p := s.config.settings.ToolPolicy
+	var defaults []fixedtools.Tool
+	if p != nil {
+		defaults = p.Defaults
+	}
+	requested, err := fixedtools.InspectCanonical(req, defaults)
+	if err != nil {
+		rejectManagedPreparation(ctx, s, 400, "invalid_fixed_tools")
+		return
+	}
+	finishManagedToolAuthorization(ctx, s, requested, ready)
+}
+
+func finishManagedToolAuthorization(ctx wrapper.HttpContext, s *managedExecutionState, requested map[fixedtools.Tool]bool, ready func()) {
+	p := s.config.settings.ToolPolicy
 	s.requestedTools, s.removedTools = requested, map[fixedtools.Tool]bool{}
 	if len(requested) == 0 {
 		ready()
@@ -93,26 +125,25 @@ func authorizeManagedTools(ctx wrapper.HttpContext, s *managedExecutionState, bo
 	}
 }
 
-func prepareManagedTools(ctx wrapper.HttpContext, s *managedExecutionState, body []byte) ([]byte, error) {
+func resolveManagedAttemptRemovedTools(ctx wrapper.HttpContext, s *managedExecutionState) (map[fixedtools.Tool]bool, []fixedtools.Tool, error) {
+	s.removedTools = map[fixedtools.Tool]bool{}
 	p := s.config.settings.ToolPolicy
 	if p == nil {
-		return body, nil
+		return nil, nil, nil
 	}
-	removed := map[fixedtools.Tool]bool{}
-	for tool := range s.removedTools {
-		removed[tool] = true
-	}
+	effectiveRemoved := make(map[fixedtools.Tool]bool, len(s.requestedTools)+len(p.Defaults))
 	for tool := range s.requestedTools {
 		if !containsManagedTool(p.Allowed, tool) {
-			return nil, errors.New("fallback tool permission differs")
+			return nil, nil, errors.New("fallback tool permission differs")
 		}
 		if !containsManagedTool(p.Supported, tool) {
-			removed[tool], s.removedTools[tool] = true, true
+			effectiveRemoved[tool] = true
+			s.removedTools[tool] = true
 		}
 	}
 	for _, tool := range p.Defaults {
 		if !s.requestedTools[tool] {
-			removed[tool] = true
+			effectiveRemoved[tool] = true
 		}
 	}
 	if len(s.removedTools) > 0 {
@@ -124,7 +155,18 @@ func prepareManagedTools(ctx wrapper.HttpContext, s *managedExecutionState, body
 		}
 		ctx.SetUserAttribute("fixed_tools_removed", strings.Join(names, ","))
 	}
-	return fixedtools.Filter(body, s.config.profile.InputProtocol, p.Defaults, removed)
+	return effectiveRemoved, p.Defaults, nil
+}
+
+func prepareManagedTools(ctx wrapper.HttpContext, s *managedExecutionState, body []byte) ([]byte, error) {
+	if s.config.settings.ToolPolicy == nil {
+		return body, nil
+	}
+	effectiveRemoved, defaults, err := resolveManagedAttemptRemovedTools(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	return fixedtools.Filter(body, s.config.profile.InputProtocol, defaults, effectiveRemoved)
 }
 
 // Tool counts come from the original terminal usage, never output item counts.

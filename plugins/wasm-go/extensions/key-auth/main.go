@@ -133,7 +133,7 @@ type credentialCandidate struct {
 // @Description zh-CN 本插件实现了实现了基于 API Key 进行认证鉴权的功能.
 // @Description en-US This plugin implements an authentication function based on API Key Auth standard.
 // @IconUrl https://img.alicdn.com/imgextra/i4/O1CN01BPFGlT1pGZ2VDLgaH_!!6000000005333-2-tps-42-42.png
-// @Version 1.2.17
+// @Version 1.2.19
 //
 // @Contact.name Higress Team
 // @Contact.url http://higress.io/

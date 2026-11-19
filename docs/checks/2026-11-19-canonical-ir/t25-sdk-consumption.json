@@ -1,0 +1,163 @@
+{
+  "check_id": "T25",
+  "date": "2026-11-19",
+  "status": "PASS",
+  "source_generator": {
+    "package": "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy",
+    "test_entrypoint": "TestCanonicalSDKExport",
+    "file": "plugins/wasm-go/extensions/ai-proxy/managed_canonical_sdk_export_test.go",
+    "go_container": "golang:1.26.3-bookworm@sha256:3bf5b04541eb4a37fe62aa1bc9c98a1dec09db9d2e79c1d2eb54e3c9d08dbca9",
+    "pipeline": "Actual proxywasm managedHost sole-sender Canonical IR C pipeline (DecodeCanonicalRequest -> EncodeCanonicalRequest -> DecodeCanonicalResponse/CanonicalEventDecoder -> ProjectCanonical/CanonicalStreamProjection -> EncodeCanonicalClientResponse/CanonicalStreamWriter)"
+  },
+  "environment": {
+    "python_version": "3.12.13",
+    "python_executable": "/home/cloudyi/CodeWorkspace/UrltraKB/.venv/bin/python",
+    "installed_sdks": {
+      "openai": "2.44.0",
+      "httpx": "0.28.1",
+      "pydantic": "2.13.4",
+      "anthropic": "NOT_INSTALLED_ON_OFFLINE_HOST"
+    },
+    "anthropic_consumer_note": "Official anthropic Python package is not installed in the offline host environment; messages-json.json and messages-stream.sse are consumed through httpx.MockTransport and strict Pydantic v2 (extra='forbid') Anthropic Messages 2023-06-01 wire/SSE schemas with sequential content_block open/close state-machine reassembly.",
+    "transport": "httpx.MockTransport (in-process, max_retries=0, 0 network or external supplier calls)"
+  },
+  "summary": {
+    "total_cases": 8,
+    "passed_cases": 8,
+    "failed_cases": 0,
+    "protocols_covered": [
+      "openai_chat",
+      "openai_responses",
+      "anthropic_messages"
+    ],
+    "modes_covered": [
+      "json",
+      "sse"
+    ]
+  },
+  "cases": [
+    {
+      "case": "openai_chat_json",
+      "fixture": "chat-json.json",
+      "protocol": "openai_chat",
+      "mode": "json",
+      "consumer": "openai==2.44.0 OpenAI.chat.completions.create(stream=False)",
+      "result": "PASS",
+      "finish_reason": "tool_calls",
+      "tool_calls": 2,
+      "large_int_preserved": true,
+      "fixture_sha256": "333e9e5f57547c6476157743f985b1891b6bf4e3dceb8bf3aeabf12112d6c4a8",
+      "in_process_mock_requests": 1,
+      "network_calls": 0
+    },
+    {
+      "case": "openai_chat_sse",
+      "fixture": "chat-stream.sse",
+      "protocol": "openai_chat",
+      "mode": "sse",
+      "consumer": "openai==2.44.0 OpenAI.chat.completions.create(stream=True)",
+      "result": "PASS",
+      "sdk_chunks": 10,
+      "finish_reason": "tool_calls",
+      "tool_calls": 2,
+      "large_int_preserved": true,
+      "fixture_sha256": "bbcfbcaac8d050780de38349b7c4b2caef27ff7e0be0d6c9b08f721cc110a4f8",
+      "in_process_mock_requests": 1,
+      "network_calls": 0
+    },
+    {
+      "case": "openai_responses_json",
+      "fixture": "responses-json.json",
+      "protocol": "openai_responses",
+      "mode": "json",
+      "consumer": "openai==2.44.0 OpenAI.responses.create(stream=False)",
+      "result": "PASS",
+      "status": "completed",
+      "output_items": 4,
+      "large_int_preserved": true,
+      "fixture_sha256": "81ce2d6cf530e637b2cd486eb483df4d4d334508a73e245d0c7390b1192f4f74",
+      "in_process_mock_requests": 1,
+      "network_calls": 0
+    },
+    {
+      "case": "openai_responses_sse_completed",
+      "fixture": "responses-stream-completed.sse",
+      "protocol": "openai_responses",
+      "mode": "sse",
+      "consumer": "openai==2.44.0 OpenAI.responses.stream() + get_final_response()",
+      "result": "PASS",
+      "sdk_events": 21,
+      "wire_events": 21,
+      "status": "completed",
+      "output_items": 4,
+      "large_int_preserved": true,
+      "fixture_sha256": "b1242ef6a21c47951287e80b4ccd53e1eee586b67e3faa64c25eed5a212212f2",
+      "in_process_mock_requests": 1,
+      "network_calls": 0
+    },
+    {
+      "case": "openai_responses_sse_incomplete",
+      "fixture": "responses-stream-incomplete.sse",
+      "protocol": "openai_responses",
+      "mode": "sse",
+      "consumer": "openai==2.44.0 OpenAI.responses.create(stream=True)",
+      "result": "PASS",
+      "sdk_events": 9,
+      "wire_events": 9,
+      "status": "incomplete",
+      "incomplete_reason": "max_output_tokens",
+      "output_items": 1,
+      "fixture_sha256": "1671d66c5a2be52e31d1d57682b9e6ad3b07853b34dacac4adc4e49eb9320809",
+      "in_process_mock_requests": 1,
+      "network_calls": 0
+    },
+    {
+      "case": "openai_responses_sse_failed",
+      "fixture": "responses-stream-failed.sse",
+      "protocol": "openai_responses",
+      "mode": "sse",
+      "consumer": "openai==2.44.0 OpenAI.responses.create(stream=True)",
+      "result": "PASS",
+      "sdk_events": 10,
+      "wire_events": 10,
+      "status": "failed",
+      "output_items": 3,
+      "all_open_items_marked_incomplete": true,
+      "fixture_sha256": "69f7484f920a6244b005d2dd38f218015826d2645be67ff753798963b72bfe2b",
+      "in_process_mock_requests": 1,
+      "network_calls": 0
+    },
+    {
+      "case": "anthropic_messages_json",
+      "fixture": "messages-json.json",
+      "protocol": "anthropic_messages",
+      "mode": "json",
+      "consumer": "pydantic==2.13.4 strict extra=forbid AnthropicMessage + httpx==0.28.1 MockTransport",
+      "result": "PASS",
+      "stop_reason": "tool_use",
+      "content_blocks": 4,
+      "signature_preserved": true,
+      "large_int_preserved": true,
+      "fixture_sha256": "e274b81cdfc7065070d72455b1f358dc2a241ff3f5e44c4c819c12661bf23b47",
+      "in_process_mock_requests": 1,
+      "network_calls": 0
+    },
+    {
+      "case": "anthropic_messages_sse",
+      "fixture": "messages-stream.sse",
+      "protocol": "anthropic_messages",
+      "mode": "sse",
+      "consumer": "pydantic==2.13.4 strict extra=forbid AnthropicStreamEvent + httpx==0.28.1 stream MockTransport",
+      "result": "PASS",
+      "stream_events": 16,
+      "content_blocks": 4,
+      "signature_delta_verified": true,
+      "m04_start_usage_cropped": true,
+      "large_int_preserved": true,
+      "stop_reason": "tool_use",
+      "fixture_sha256": "14623f7f563bfa32369ff98e7e5ac699973f68ac7635dc9c710812b1b075e9ab",
+      "in_process_mock_requests": 1,
+      "network_calls": 0
+    }
+  ]
+}
