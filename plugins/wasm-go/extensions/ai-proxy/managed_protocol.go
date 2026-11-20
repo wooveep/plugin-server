@@ -105,7 +105,7 @@ func resolveManagedCanonicalTarget(c *managedExecutionConfig, streaming bool) pr
 	if c == nil {
 		return provider.CanonicalTarget{}
 	}
-	return provider.ResolveCanonicalTarget(
+	target := provider.ResolveCanonicalTarget(
 		c.vendor,
 		c.profile.UpstreamProtocol,
 		c.profile.supplier,
@@ -113,6 +113,10 @@ func resolveManagedCanonicalTarget(c *managedExecutionConfig, streaming bool) pr
 		c.release.Descriptor.UpstreamModel,
 		streaming,
 	)
+	if c.settings.MaxOutputTokens != nil {
+		target.MaxOutputTokens = int(*c.settings.MaxOutputTokens)
+	}
+	return target
 }
 
 // managedUsesCanonicalIR establishes the sole cross-wire canonical IR gate:

@@ -1945,7 +1945,7 @@ func TestCanonicalT23AttemptIsolationAndHybridFallback(t *testing.T) {
 			PriceKey:  "modelfusion:tool-prices:asset-1",
 		}
 
-		updateTargetEntry := func(entry *managedTextDirectoryEntry, upProto, upPath, authority, providerType, upModel string, qwenNative bool, toolCfg managedToolSettings) {
+		updateTargetEntry := func(entry *managedTextDirectoryEntry, upProto, upPath, authority, providerType, upModel string, qwenNative bool, maxOutputTokens int, toolCfg managedToolSettings) {
 			proxyRaw := []byte(entry.Proxy)
 			var err error
 			proxyRaw, err = sjson.SetBytes(proxyRaw, "managed_execution.input_protocol", managedProtocolResponses)
@@ -1955,6 +1955,8 @@ func TestCanonicalT23AttemptIsolationAndHybridFallback(t *testing.T) {
 			proxyRaw, err = sjson.SetBytes(proxyRaw, "managed_execution.upstream_path", upPath)
 			require.NoError(t, err)
 			proxyRaw, err = sjson.SetBytes(proxyRaw, "managed_execution.authority", authority)
+			require.NoError(t, err)
+			proxyRaw, err = sjson.SetBytes(proxyRaw, "managed_execution.max_output_tokens", maxOutputTokens)
 			require.NoError(t, err)
 			proxyRaw, err = sjson.SetBytes(proxyRaw, "managed_execution.tool_policy", toolCfg)
 			require.NoError(t, err)
@@ -1995,8 +1997,8 @@ func TestCanonicalT23AttemptIsolationAndHybridFallback(t *testing.T) {
 		if primaryUpstreamProtocol == managedProtocolChat {
 			primaryPath = "/v1/chat/completions"
 		}
-		updateTargetEntry(&directory.Targets[0], primaryUpstreamProtocol, primaryPath, "primary.deepseek.example", "deepseek", "upstream-model", false, primaryTools)
-		updateTargetEntry(&directory.Targets[1], managedProtocolDashScopeText, "/api/v1/services/aigc/text-generation/generation", "dashscope.aliyuncs.com", "qwen", "second-upstream-model", true, fallbackTools)
+		updateTargetEntry(&directory.Targets[0], primaryUpstreamProtocol, primaryPath, "primary.deepseek.example", "deepseek", "upstream-model", false, 1024, primaryTools)
+		updateTargetEntry(&directory.Targets[1], managedProtocolDashScopeText, "/api/v1/services/aigc/text-generation/generation", "dashscope.aliyuncs.com", "qwen", "second-upstream-model", true, 32768, fallbackTools)
 
 		// Rebuild top-level plugin configuration from Targets[0] + _modelfusion_execution + _modelfusion_execution_targets.
 		rootRaw := []byte(directory.Targets[0].Proxy)
@@ -2027,6 +2029,7 @@ func TestCanonicalT23AttemptIsolationAndHybridFallback(t *testing.T) {
 			original := []byte(`{
 				"model":"public-model",
 				"input":"Compute and search",
+				"max_output_tokens":393216,
 				"tools":[
 					{"type":"code_interpreter"},
 					{"type":"function","name":"calc","parameters":{"type":"object","properties":{"expr":{"type":"string"}}}}
@@ -2062,8 +2065,10 @@ func TestCanonicalT23AttemptIsolationAndHybridFallback(t *testing.T) {
 			require.False(t, gjson.GetBytes(primaryBody, "enable_code_interpreter").Bool(), string(primaryBody))
 			if mode.primaryUpstream == managedProtocolResponses {
 				require.Equal(t, "calc", gjson.GetBytes(primaryBody, "tools.0.name").String())
+				require.EqualValues(t, 393216, gjson.GetBytes(primaryBody, "max_output_tokens").Int())
 			} else {
 				require.Equal(t, "calc", gjson.GetBytes(primaryBody, "tools.0.function.name").String())
+				require.EqualValues(t, 1024, gjson.GetBytes(primaryBody, "max_completion_tokens").Int())
 			}
 			require.True(t, statePrimary.removedTools[fixedtools.WebSearch])
 			require.True(t, statePrimary.removedTools[fixedtools.CodeInterpreter])
@@ -2083,6 +2088,7 @@ func TestCanonicalT23AttemptIsolationAndHybridFallback(t *testing.T) {
 			require.Len(t, fallbackSends, 1)
 			fallbackBody := fallbackSends[0].Body
 			require.Equal(t, "second-upstream-model", gjson.GetBytes(fallbackBody, "model").String(), string(fallbackBody))
+			require.EqualValues(t, 32768, gjson.GetBytes(fallbackBody, "parameters.max_tokens").Int())
 			require.True(t, gjson.GetBytes(fallbackBody, "parameters.enable_search").Bool(), "primary removedTools leaked into fallback: %s", string(fallbackBody))
 			require.Equal(t, int64(2), gjson.GetBytes(fallbackBody, "parameters.tools.#").Int(), "fallback must retain code_interpreter + calc: %s", string(fallbackBody))
 			require.Equal(t, "code_interpreter", gjson.GetBytes(fallbackBody, "parameters.tools.0.type").String(), string(fallbackBody))
@@ -2096,6 +2102,7 @@ func TestCanonicalT23AttemptIsolationAndHybridFallback(t *testing.T) {
 				require.Equal(t, "upstream-model", sharedBase.Model)
 			}
 			require.Len(t, sharedBase.Tools, 2)
+			require.Equal(t, 393216, sharedBase.Limits.Value.Val)
 			require.Equal(t, "code_interpreter", sharedBase.Tools[0].FixedType)
 			require.Equal(t, "calc", sharedBase.Tools[1].Name)
 

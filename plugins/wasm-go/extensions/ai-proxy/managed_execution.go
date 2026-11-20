@@ -142,6 +142,7 @@ type managedSettings struct {
 	RouterOriginalDomain bool                     `json:"router_reentry_original_domain,omitempty"`
 	InputProtocol        string                   `json:"input_protocol,omitempty"`
 	UpstreamProtocol     string                   `json:"upstream_protocol,omitempty"`
+	MaxOutputTokens      *int32                   `json:"max_output_tokens,omitempty"`
 	UpstreamHealth       *managedHealthSettings   `json:"upstream_health,omitempty"`
 	InternalAuthority    *managedInternalEndpoint `json:"internal_authority,omitempty"`
 	TextExecution        *managedTextSettings     `json:"text_execution,omitempty"`
@@ -287,6 +288,9 @@ func configureManagedExecution(value gjson.Result, cfg *config.PluginConfig) err
 func (c *managedExecutionConfig) validate() error {
 	if err := validateManagedTools(c); err != nil {
 		return err
+	}
+	if c.settings.MaxOutputTokens != nil && *c.settings.MaxOutputTokens <= 0 {
+		return errors.New("managed execution max_output_tokens must be positive")
 	}
 	d := c.release.Descriptor
 	if c.settings.CallIdentitySource != executionfacts.CallIdentitySourceAdmission && c.settings.CallIdentitySource != executionfacts.CallIdentitySourceInternal {

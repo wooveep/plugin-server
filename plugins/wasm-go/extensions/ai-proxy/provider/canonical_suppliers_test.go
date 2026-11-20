@@ -210,6 +210,34 @@ func TestCanonicalSupplierOutputLimits(t *testing.T) {
 		}
 	})
 
+	t.Run("configured_model_limit_preserves_supplier_field_and_smaller_requests", func(t *testing.T) {
+		for _, tc := range []struct {
+			target CanonicalTarget
+			field  string
+		}{
+			{ResolveCanonicalTarget(nil, "dashscope_text", providerTypeQwen, "", "qwen-plus", false), "parameters.max_tokens"},
+			{ResolveCanonicalTarget(nil, "dashscope_multimodal", providerTypeQwen, "", "qwen3.6-plus", false), "parameters.max_completion_tokens"},
+			{CanonicalTarget{WireFormat: WireGeminiGenerateContent, Model: "gemini-2.5-flash"}, "generationConfig.maxOutputTokens"},
+		} {
+			tc.target.MaxOutputTokens = 512
+			wire, err := EncodeCanonicalRequest(respMaxOut, tc.target)
+			require.NoError(t, err)
+			assert.EqualValues(t, 512, gjson.GetBytes(wire, tc.field).Int())
+
+			request := respMaxOut
+			request.Limits.Value = canonical.Some(64)
+			wire, err = EncodeCanonicalRequest(request, tc.target)
+			require.NoError(t, err)
+			assert.EqualValues(t, 64, gjson.GetBytes(wire, tc.field).Int())
+
+			request.Limits = canonical.OutputLimit{}
+			wire, err = EncodeCanonicalRequest(request, tc.target)
+			require.NoError(t, err)
+			assert.False(t, gjson.GetBytes(wire, tc.field).Exists())
+		}
+		assert.Equal(t, 768, respMaxOut.Limits.Value.Val)
+	})
+
 	t.Run("zero_output_tokens_warmup_rejected_on_dashscope_and_gemini", func(t *testing.T) {
 		msgZero, err := DecodeCanonicalRequest(canonical.ProtocolAnthropicMessages, []byte(`{
 			"model":"claude-sonnet-4-6",

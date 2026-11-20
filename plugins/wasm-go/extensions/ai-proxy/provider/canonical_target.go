@@ -75,6 +75,7 @@ type CanonicalTarget struct {
 	Streaming                      bool
 	SupportsDeveloperRole          bool
 	AcceptedLimitScopes            LimitScopeMask
+	MaxOutputTokens                int
 	SupportsCompletionTokens       bool
 	SupportsThinking               bool
 	SupportsAdaptiveThinking       bool
@@ -398,6 +399,9 @@ func ValidateCanonicalTarget(req canonical.Request, target CanonicalTarget) erro
 
 // EncodeCanonicalRequest encodes req into the upstream wire format designated by target.
 func EncodeCanonicalRequest(req canonical.Request, target CanonicalTarget) ([]byte, error) {
+	if target.MaxOutputTokens > 0 && req.Limits.Value.IsPresent() {
+		req.Limits.Value.Val = min(req.Limits.Value.Val, target.MaxOutputTokens)
+	}
 	switch target.WireFormat {
 	case WireChatCompletions:
 		return encodeChatCanonicalRequest(req, target)
