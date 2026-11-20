@@ -7,6 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	supplier "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
+	"github.com/higress-group/wasm-go/pkg/ai/balanceidentity"
+	"github.com/higress-group/wasm-go/pkg/ai/canonical"
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/mfjson"
 	"github.com/higress-group/wasm-go/pkg/ai/resourceref"
@@ -65,6 +68,67 @@ func TestResourceCredentialBoundaryFiltersPoolWithoutChangingOrdinarySelection(t
 	require.Equal(t, "credential-1", eligible[0].credential.CredentialRef)
 	owner.Account = "credential:foreign"
 	require.Error(t, selectManagedResourceOwner(state, owner))
+}
+
+func TestSignedToolContinuationQualifiesTheOriginalPublishedCredential(t *testing.T) {
+	pool, err := decodeManagedPoolFixture(t, managedPoolFixture(t))
+	require.NoError(t, err)
+	pool.release.Descriptor.ProviderAccountID = ""
+	pool.profile, err = newManagedProtocolProfile(managedProtocolChat, managedProtocolChat)
+	require.NoError(t, err)
+	var provider supplier.ProviderConfig
+	provider.FromJson(gjson.Parse(`{"type":"gemini","apiVersion":"v1beta","apiTokens":["fixture"]}`))
+	pool.vendor, err = supplier.NewManagedAdapter(provider, supplier.ApiNameChatCompletion, "/v1beta/models/upstream-model:generateContent")
+	require.NoError(t, err)
+	original := *pool
+	original.release.CredentialRef = "credential-2"
+	owner := managedResourceOwner(&original)
+
+	aliases := &clientresponse.ResourceAliases{}
+	projected, err := clientresponse.ProjectCanonical(
+		clientresponse.Policy{Protocol: clientresponse.Chat, PublicModel: "public-model", Aliases: aliases},
+		canonical.Response{Choices: []canonical.Choice{{Items: []canonical.Item{{
+			Kind: canonical.ItemFunctionCall,
+			Call: &canonical.FunctionCall{
+				CallID: "provider-call", Name: "lookup_order", ThoughtSignature: "fixture-signature",
+				SignatureOrigin: canonical.OpaqueOrigin{Protocol: canonical.ProtocolGeminiGenerate, Supplier: "google"},
+			},
+		}}}}},
+		clientresponse.Usage{},
+	)
+	require.NoError(t, err)
+	id := projected.Choices[0].Items[0].PublicCallID
+	shortID, ok := clientresponse.SignedToolCallResourceID(id)
+	require.True(t, ok)
+	var stored clientresponse.ResourceAlias
+	for _, record := range aliases.Records() {
+		if record.Public == shortID {
+			stored = record
+		}
+	}
+	raw, err := json.Marshal(resourceref.NewRecord(stored, owner, false))
+	require.NoError(t, err)
+	lookup := &incidentResourceLookup{reply: resp.ArrayValue([]resp.Value{resp.StringValue(string(raw))})}
+	other := *pool
+	other.release.Descriptor.ProviderID = "other-provider"
+	other.vendor = nil
+	other.targets = map[string]*managedExecutionConfig{"original": pool, "other": &other}
+	other.referenceRedis = lookup
+	state := &managedExecutionState{
+		config:   &other,
+		identity: balanceidentity.Snapshot{TenantID: "tenant", PrincipalID: "principal"},
+	}
+	var restored []byte
+	body := []byte(`{"model":"public-model","messages":[{"role":"tool","tool_call_id":"` + id + `","content":"shipped"}]}`)
+	restoreManagedResourceReferences(nil, state, body, func(value []byte) { restored = value })
+	require.NotEmpty(t, restored)
+	require.Equal(t, 1, lookup.calls)
+	require.Equal(t, owner, *state.resourceOwner)
+	require.Equal(t, owner.Provider, state.config.release.Descriptor.ProviderID)
+	members := []managedHealthMember{{credential: pool.settings.Credentials[0]}, {credential: pool.settings.Credentials[1]}}
+	eligible := managedTextUntried(state, members)
+	require.Len(t, eligible, 1)
+	require.Equal(t, "credential-2", eligible[0].credential.CredentialRef)
 }
 
 func responseResourceDirectoryFixture(t *testing.T, initial int, recovery bool) map[string]interface{} {

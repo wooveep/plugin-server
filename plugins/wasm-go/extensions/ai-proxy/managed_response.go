@@ -82,7 +82,9 @@ func managedPublicError(ctx wrapper.HttpContext, status uint32, reason string) (
 	if !managedIsPublicTextRejection(ctx, protocol, reason) {
 		return managedErrorBody(reason), headers
 	}
-	headers = append(headers, [2]string{"x-should-retry", "false"})
+	if status >= 400 && status < 500 {
+		headers = append(headers, [2]string{"x-should-retry", "false"})
+	}
 	if reqID := managedRejectionRequestID(ctx); reqID != "" {
 		headers = append(headers, [2]string{"x-request-id", reqID})
 	}

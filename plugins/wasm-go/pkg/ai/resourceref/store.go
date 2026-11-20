@@ -81,11 +81,7 @@ func key(scope Scope, alias clientresponse.ResourceAlias) (string, error) {
 
 func valid(record Record) bool {
 	o := record.Owner
-	if record.Alias.Kind == clientresponse.SignedToolCallKind {
-		if record.Native || record.Passthrough || record.Alias.SignedToolCall == nil || record.Alias.SignedToolCall.Signature == "" {
-			return false
-		}
-	} else if record.Alias.SignedToolCall != nil {
+	if record.Alias.Kind == clientresponse.SignedToolCallKind && (record.Native || record.Passthrough || len(record.Alias.Original) != 64) {
 		return false
 	}
 	validID := IsAlias(record.Alias.Kind, record.Alias.Public)

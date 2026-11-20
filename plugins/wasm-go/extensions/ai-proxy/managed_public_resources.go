@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	supplier "github.com/alibaba/higress/plugins/wasm-go/extensions/ai-proxy/provider"
 	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/resourceref"
 	"github.com/higress-group/wasm-go/pkg/wrapper"
@@ -119,10 +120,14 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 		if !value.Exists() || value.Type == gjson.Null {
 			return true
 		}
-		if !passthrough && kind == "call" && resourceref.IsAlias(clientresponse.SignedToolCallKind, value.String()) {
+		if !passthrough && kind == "call" && strings.HasPrefix(value.String(), clientresponse.SignedToolCallPrefix) {
+			id, valid := clientresponse.SignedToolCallResourceID(value.String())
+			if !valid {
+				return false
+			}
 			inputs = append(inputs, managedResourceInput{
 				value: value,
-				alias: clientresponse.ResourceAlias{Kind: clientresponse.SignedToolCallKind, Public: value.String()},
+				alias: clientresponse.ResourceAlias{Kind: clientresponse.SignedToolCallKind, Public: id},
 			})
 			return true
 		}
@@ -151,18 +156,18 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 	case clientresponse.Chat:
 		for _, message := range gjson.GetBytes(body, "messages").Array() {
 			for _, call := range message.Get("tool_calls").Array() {
-				add("call", false, call.Get("id"))
+				valid = add("call", false, call.Get("id")) && valid
 			}
-			add("call", false, message.Get("tool_call_id"))
+			valid = add("call", false, message.Get("tool_call_id")) && valid
 		}
 	case clientresponse.Messages:
 		for _, message := range gjson.GetBytes(body, "messages").Array() {
 			for _, block := range message.Get("content").Array() {
 				switch block.Get("type").String() {
 				case "tool_use":
-					add("call", false, block.Get("id"))
+					valid = add("call", false, block.Get("id")) && valid
 				case "tool_result":
-					add("call", false, block.Get("tool_use_id"))
+					valid = add("call", false, block.Get("tool_use_id")) && valid
 				}
 			}
 		}
@@ -191,24 +196,33 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 		}
 		var owner *resourceref.Owner
 		for i, record := range records {
-			if record.Alias.Kind == clientresponse.SignedToolCallKind {
-				if s.signedToolCalls == nil {
-					s.signedToolCalls = make(map[string]resourceref.Record)
-				}
-				s.signedToolCalls[record.Alias.Public] = record
-				continue
-			}
+			signed := record.Alias.Kind == clientresponse.SignedToolCallKind
 			if inputs[i].reference && !record.Native {
 				rejectManagedPreparation(ctx, s, 400, "resource_reference_incompatible")
 				return
 			}
-			if record.Native {
+			if record.Native || signed {
 				if owner != nil && *owner != record.Owner {
 					rejectManagedPreparation(ctx, s, 400, "resource_reference_incompatible")
 					return
 				}
 				copy := record.Owner
 				owner = &copy
+			}
+			if signed {
+				id := inputs[i].value.String()
+				if _, found := s.signedToolCalls[id]; !found {
+					call, err := clientresponse.OpenSignedToolCall(record.Alias, id)
+					if err != nil {
+						rejectManagedPreparation(ctx, s, 400, "resource_reference_unavailable")
+						return
+					}
+					if s.signedToolCalls == nil {
+						s.signedToolCalls = make(map[string]clientresponse.SignedToolCall)
+					}
+					s.signedToolCalls[id] = call
+				}
+				continue
 			}
 			inputs[i].alias = record.Alias
 		}
@@ -250,22 +264,32 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 	})
 }
 
+func managedResourceContinuationMatches(s *managedExecutionState, candidate *managedExecutionConfig, owner resourceref.Owner) bool {
+	if !managedResourceConfigMatches(candidate, owner) {
+		return false
+	}
+	if len(s.signedToolCalls) != 0 {
+		return resolveManagedCanonicalTarget(candidate, false).WireFormat == supplier.WireGeminiGenerateContent
+	}
+	return managedNativeResponses(candidate)
+}
+
 // The only selectable peers are the SDK's verified original operation members.
 // This happens before any send and never consumes a retry/fallback attempt.
 func selectManagedResourceOwner(s *managedExecutionState, owner resourceref.Owner) error {
-	if managedResourceConfigMatches(s.config, owner) && managedNativeResponses(s.config) {
+	if managedResourceContinuationMatches(s, s.config, owner) {
 		return nil
 	}
 	var candidate *managedExecutionConfig
 	for _, peer := range s.config.targets {
-		if managedResourceConfigMatches(peer, owner) && managedNativeResponses(peer) {
+		if managedResourceContinuationMatches(s, peer, owner) {
 			if candidate == nil || peer.release.Descriptor.TargetID < candidate.release.Descriptor.TargetID {
 				candidate = peer
 			}
 		}
 	}
 	if candidate == nil {
-		return errors.New("original native resource owner is not published")
+		return errors.New("original resource owner is not published")
 	}
 	copy := *candidate
 	s.config = &copy

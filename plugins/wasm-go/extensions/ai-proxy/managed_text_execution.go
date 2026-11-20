@@ -546,7 +546,7 @@ func tryManagedTextFallback(ctx wrapper.HttpContext, previous *managedExecutionS
 	for _, target := range policy.Fallback.Targets {
 		if previous.resourceOwner != nil {
 			peer := previous.config.targets[target.TargetID]
-			if peer == nil || !managedNativeResponses(peer) || !managedResourceConfigMatches(peer, *previous.resourceOwner) {
+			if peer == nil || !managedResourceContinuationMatches(previous, peer, *previous.resourceOwner) {
 				continue
 			}
 		}

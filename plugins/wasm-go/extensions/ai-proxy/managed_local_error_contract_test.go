@@ -52,11 +52,11 @@ func TestManagedLocalErrorContract_ResponsesProtocolRejectionAndHeaders(t *testi
 func TestManagedLocalErrorContract_AllStatusClassesAndProtocols(t *testing.T) {
 	for _, proto := range []string{managedProtocolChat, managedProtocolResponses, managedProtocolMessages} {
 		for _, tc := range []struct {
-			name      string
-			status    uint32
-			reason    string
-			wantType  string
-			wantCode  string
+			name     string
+			status   uint32
+			reason   string
+			wantType string
+			wantCode string
 		}{
 			{"400_protocol", 400, "unsupported_or_invalid_protocol_request", "invalid_request_error", "invalid_parameter"},
 			{"400_json", 400, "invalid_json_body", "invalid_request_error", "invalid_parameter"},
@@ -87,7 +87,12 @@ func TestManagedLocalErrorContract_AllStatusClassesAndProtocols(t *testing.T) {
 				require.EqualValues(t, tc.status, reply.StatusCode)
 				require.Equal(t, tc.wantType, gjson.GetBytes(reply.Data, "error.type").String(), string(reply.Data))
 				require.Equal(t, tc.wantCode, gjson.GetBytes(reply.Data, "error.code").String(), string(reply.Data))
-				require.Equal(t, "false", managedResponseHeaderValue(reply.Headers, "x-should-retry"))
+				retry := managedResponseHeaderValue(reply.Headers, "x-should-retry")
+				if tc.status >= 500 {
+					require.Empty(t, retry, "the local error must preserve the client's transient retry policy")
+				} else {
+					require.Equal(t, "false", retry)
+				}
 				require.NotEmpty(t, managedResponseHeaderValue(reply.Headers, "x-request-id"))
 				if proto == managedProtocolMessages {
 					require.Equal(t, "error", gjson.GetBytes(reply.Data, "type").String(), string(reply.Data))

@@ -386,3 +386,26 @@ func TestNativeHistoryAsynchronousAndNonTextRequestsBypass(t *testing.T) {
 		})
 	}
 }
+
+func TestNativeHistoryLeavesSignedToolContextWithClient(t *testing.T) {
+	const id = "call_pf_s_1234567890abcdef1234567890abcdef_sealed-context"
+	for _, tc := range []struct{ client, request string }{
+		{"openai_chat", `{"model":"public-model","messages":[{"role":"user","content":"lookup"},{"role":"tool","tool_call_id":"` + id + `","content":"result"}]}`},
+		{"openai_responses", `{"model":"public-model","input":[{"role":"user","content":"lookup"},{"type":"function_call_output","call_id":"` + id + `","output":"result"}]}`},
+		{"anthropic_messages", `{"model":"public-model","messages":[{"role":"user","content":[{"type":"tool_result","tool_use_id":"` + id + `","content":"result"}]}]}`},
+	} {
+		t.Run(tc.client, func(t *testing.T) {
+			test.RunGoTest(t, func(t *testing.T) {
+				raw := strings.Replace(nativeHistoryConfig, "openai_chat", tc.client, 1)
+				host, status := test.NewTestHost([]byte(raw))
+				defer host.Reset()
+				require.Equal(t, types.OnPluginStartStatusOK, status)
+				body := []byte(tc.request)
+				host.CallOnHttpRequestHeaders(historyTestHeaders(t, body, historyTestCaller()))
+				require.Equal(t, types.ActionContinue, host.CallOnHttpRequestBody(body))
+				require.Empty(t, host.GetRedisCalloutAttributes())
+				require.Equal(t, body, host.GetRequestBody())
+			})
+		})
+	}
+}

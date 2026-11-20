@@ -505,7 +505,7 @@ type managedExecutionState struct {
 	publicPartial                                              json.RawMessage
 	publicAliases                                              *clientresponse.ResourceAliases
 	resourceOwner                                              *resourceref.Owner
-	signedToolCalls                                            map[string]resourceref.Record
+	signedToolCalls                                            map[string]clientresponse.SignedToolCall
 	resourcesSaving, resourcesSaved, resourcesRestoring        bool
 	resourcePendingOutcome                                     *executionfacts.AttemptOutcome
 	embeddingInput                                             json.RawMessage
@@ -782,20 +782,14 @@ func prepareManagedCanonicalRequest(ctx wrapper.HttpContext, state *managedExecu
 
 	target := resolveManagedCanonicalTarget(managed, attemptReq.Stream)
 	if target.WireFormat == supplier.WireGeminiGenerateContent && len(state.signedToolCalls) > 0 {
-		owner := managedResourceOwner(managed)
 		for _, item := range attemptReq.Items {
 			if item.Call == nil {
 				continue
 			}
-			record, ok := state.signedToolCalls[item.Call.CallID]
+			signed, ok := state.signedToolCalls[item.Call.CallID]
 			if !ok {
 				continue
 			}
-			if record.Owner != owner {
-				rejectManagedPreparation(ctx, state, 400, "resource_reference_incompatible")
-				return managedProtocolRequest{}, false
-			}
-			signed := record.Alias.SignedToolCall
 			item.Call.WireCallID = canonical.Some(signed.ProviderID)
 			item.Call.ThoughtSignature = signed.Signature
 			item.Call.SignatureOrigin = canonical.OpaqueOrigin{Protocol: canonical.ProtocolGeminiGenerate, Supplier: "google"}

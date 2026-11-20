@@ -187,22 +187,12 @@ func projectAnnotations(annotations []json.RawMessage) ([]json.RawMessage, error
 	return out, nil
 }
 
-const SignedToolCallKind = "signed_call"
-const SignedToolCallPrefix = "call_pf_s_"
-
-// SignedToolCall retains the private Gemini payload associated with a public
-// tool-call alias. ProviderID is empty if Gemini omitted its optional ID.
-type SignedToolCall struct {
-	ProviderID string `json:"provider_id,omitempty"`
-	Signature  string `json:"signature"`
-}
-
 func (a *ResourceAliases) HasSignedToolCalls() bool {
 	if a == nil {
 		return false
 	}
 	for _, record := range a.records {
-		if record.SignedToolCall != nil {
+		if record.Kind == SignedToolCallKind {
 			return true
 		}
 	}
@@ -259,8 +249,16 @@ func (a *ResourceAliases) recordCanonicalAlias(kind, original string, signed *Si
 			return "", errors.New("unknown resource identity kind")
 		}
 		public = prefix + hex.EncodeToString(random[:])
+		record := ResourceAlias{Kind: kind, Public: public, Original: original}
+		if signed != nil {
+			var err error
+			public, err = sealSignedToolCall(&record, *signed)
+			if err != nil {
+				return "", err
+			}
+		}
 		a.values[key] = public
-		a.records = append(a.records, ResourceAlias{Kind: kind, Public: public, Original: original, SignedToolCall: signed})
+		a.records = append(a.records, record)
 	}
 	return public, nil
 }

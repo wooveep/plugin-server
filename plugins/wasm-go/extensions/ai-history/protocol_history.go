@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/higress-group/wasm-go/pkg/ai/clientresponse"
 	"github.com/higress-group/wasm-go/pkg/ai/protocol"
+	"github.com/tidwall/gjson"
 )
 
 type historyAdapter interface {
@@ -101,6 +103,9 @@ func parseHistoryRequest(kind protocol.ProtocolKind, body []byte, model string) 
 		if err := json.Unmarshal(raw, &item); err != nil || len(raw) == 0 || raw[0] != '{' {
 			return historyRequest{}, fmt.Errorf("history conversation item must be an object")
 		}
+		if historyItemCarriesSignedCall(kind, gjson.ParseBytes(raw)) {
+			return historyRequest{}, fmt.Errorf("signed tool continuations do not use stored conversation history")
+		}
 		if item.Role == "user" {
 			request.Users++
 			lastUser = i
@@ -114,6 +119,40 @@ func parseHistoryRequest(kind protocol.ProtocolKind, body []byte, model string) 
 	}
 	request.Turn = append([]json.RawMessage(nil), request.Items[lastUser:]...)
 	return request, nil
+}
+
+func historyItemCarriesSignedCall(kind protocol.ProtocolKind, item gjson.Result) bool {
+	signed := func(value gjson.Result) bool {
+		_, ok := clientresponse.SignedToolCallResourceID(value.String())
+		return ok
+	}
+	switch kind {
+	case protocol.ProtocolChatCompletions:
+		if signed(item.Get("tool_call_id")) {
+			return true
+		}
+		for _, call := range item.Get("tool_calls").Array() {
+			if signed(call.Get("id")) {
+				return true
+			}
+		}
+	case protocol.ProtocolResponses:
+		return signed(item.Get("call_id"))
+	case protocol.ProtocolMessages:
+		for _, block := range item.Get("content").Array() {
+			switch block.Get("type").String() {
+			case "tool_use":
+				if signed(block.Get("id")) {
+					return true
+				}
+			case "tool_result":
+				if signed(block.Get("tool_use_id")) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (request historyRequest) inject(turns []historyTurn, count int, original []byte) ([]byte, error) {

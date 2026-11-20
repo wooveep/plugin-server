@@ -1070,7 +1070,10 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 						parts := command.Array()
 						count := parts[2].Integer()
 						for i := range count {
-							savedResources[parts[3+i].String()] = parts[4+count+i].String()
+							value := parts[4+count+i].String()
+							require.NotContains(t, value, "sig_google_turn1", "the registry retains only IDs and ownership")
+							require.NotContains(t, value, "native-gemini-call", "the provider ID travels with the signature")
+							savedResources[parts[3+i].String()] = value
 						}
 						h.host.CallOnRedisCallResponse(call.CalloutID, 0, []byte(":1\r\n"))
 					}
@@ -1237,6 +1240,9 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 						replayCallID = gjson.Get(resp1Str, path).String()
 					}
 					require.NotEmpty(t, replayCallID)
+					for _, value := range savedResources {
+						require.NotContains(t, value, replayCallID, "the continuation payload belongs to the client")
+					}
 					switch inProto {
 					case managedProtocolChat:
 						if !stream {
@@ -1354,6 +1360,8 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 						require.NoError(t, resp.NewWriter(&raw).WriteArray(reply))
 						h2.host.CallOnRedisCallResponse(call.CalloutID, 0, raw.Bytes())
 					}
+					state := h2.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState)
+					require.NotNil(t, state.resourceOwner, "continuation must select the original owner before credential qualification")
 					var out2 []byte
 					if stream {
 						out2 = h2.host.GetCurrentRequestBody(h2.id)
