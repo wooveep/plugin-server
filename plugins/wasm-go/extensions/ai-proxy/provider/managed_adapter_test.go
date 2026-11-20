@@ -1,15 +1,50 @@
 package provider
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
 
+	"github.com/higress-group/wasm-go/pkg/ai/canonical"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
 
 type managedAdapterContext struct{ *mapCtx }
+
+func TestManagedResponsesQwenPlusCompatibleOutputLimit(t *testing.T) {
+	var config ProviderConfig
+	config.FromJson(gjson.Parse(`{"type":"qwen","qwenEnableCompatible":true,"apiTokens":["test-key"]}`))
+	require.NoError(t, config.Validate())
+	adapter, err := NewManagedAdapter(config, ApiNameChatCompletion, "/compatible-mode/v1/chat/completions")
+	require.NoError(t, err)
+
+	for _, test := range []struct {
+		name  string
+		model string
+		limit int
+		want  int64
+	}{
+		{"above limit", "qwen-plus", 393216, 32768},
+		{"at limit", "qwen-plus", 32768, 32768},
+		{"below limit", "qwen-plus", 64, 64},
+		{"different model", "qwen3.6-plus", 65536, 65536},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			body := []byte(fmt.Sprintf(`{"model":"public-alias","input":"Reply OK.","stream":true,"max_output_tokens":%d}`, test.limit))
+			request, err := DecodeCanonicalRequest(canonical.ProtocolOpenAIResponses, body)
+			require.NoError(t, err)
+			target := adapter.ResolveCanonicalTarget("openai_chat", true, test.model)
+			outbound, err := adapter.PrepareCanonical(nil, request, target, make(http.Header), "test-key")
+			require.NoError(t, err)
+			require.Equal(t, test.model, gjson.GetBytes(outbound, "model").String())
+			require.Equal(t, test.want, gjson.GetBytes(outbound, "max_completion_tokens").Int())
+			require.False(t, gjson.GetBytes(outbound, "max_tokens").Exists())
+			require.Equal(t, test.limit, request.Limits.Value.Val)
+		})
+	}
+}
 
 func (c *managedAdapterContext) GetStringContext(key, fallback string) string {
 	if value, ok := c.GetContext(key).(string); ok {

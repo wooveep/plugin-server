@@ -1080,6 +1080,9 @@ func encodeChatPartsJSON(parts []canonical.Part, target CanonicalTarget, forceAr
 	return encoded, nil
 }
 
+// DashScope rejects output limits above this value for the qwen-plus stable model.
+const qwenPlusMaxOutputTokens = 32768
+
 func encodeChatCanonicalRequest(req canonical.Request, target CanonicalTarget) ([]byte, error) {
 	model := target.Model
 	if model == "" {
@@ -1141,6 +1144,9 @@ func encodeChatCanonicalRequest(req canonical.Request, target CanonicalTarget) (
 
 	if req.Limits.Value.IsPresent() {
 		v := req.Limits.Value.Val
+		if target.Supplier == providerTypeQwen && model == "qwen-plus" {
+			v = min(v, qwenPlusMaxOutputTokens)
+		}
 		if req.Limits.Source == canonical.LimitMaxCompletionTokens || req.Limits.Source == canonical.LimitMaxOutputTokens || target.SupportsCompletionTokens {
 			out.MaxCompletionTokens = &v
 		} else {
