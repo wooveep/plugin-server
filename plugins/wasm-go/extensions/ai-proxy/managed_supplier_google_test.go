@@ -106,8 +106,13 @@ func TestManagedGeminiRouterDistinguishesInvalidArgumentsFromInvalidCredentials(
 					original := responseModeRequest(protocol, "public-model", stream)
 					h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("gemini-3-flash-preview"), 1))
 					require.NoError(t, h.host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
+					contentType := "application/json"
+					if stream {
+						// Gemini's SSE endpoint labels its JSON HTTP error as a stream.
+						contentType = "text/event-stream"
+					}
 					h.host.CallOnResponseHeaders(h.id, [][2]string{
-						{":status", "400"}, {"content-type", "application/json"}, {"retry-after", "5"},
+						{":status", "400"}, {"content-type", contentType}, {"retry-after", "5"},
 					}, false)
 					h.host.CallOnResponseBody(h.id, []byte(tc.body), true)
 
@@ -115,6 +120,9 @@ func TestManagedGeminiRouterDistinguishesInvalidArgumentsFromInvalidCredentials(
 					status, err := managedSingleHeader(headers, ":status")
 					require.NoError(t, err)
 					require.Equal(t, tc.status, status)
+					responseType, err := managedSingleHeader(headers, "content-type")
+					require.NoError(t, err)
+					require.Equal(t, "application/json", responseType)
 					retry, err := managedSingleHeader(headers, "x-should-retry")
 					require.NoError(t, err)
 					require.Equal(t, "false", retry)

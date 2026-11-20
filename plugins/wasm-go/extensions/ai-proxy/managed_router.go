@@ -228,7 +228,9 @@ func observeManagedRouterHeaders(ctx wrapper.HttpContext, s *managedExecutionSta
 		return types.HeaderStopIteration
 	}
 	stream, err := managedProtocolContentType(headers)
-	if err == nil && stream {
+	// Gemini's SSE endpoint can label a JSON HTTP error as text/event-stream.
+	bufferGeminiFailure := code >= 400 && s.config.settings.ProtocolMode == "auto" && s.config.profile.supplier == "gemini"
+	if err == nil && stream && !bufferGeminiFailure {
 		profile := s.config.profile
 		if s.config.settings.RouterToolUsage && len(s.requestedTools) > 0 {
 			r.toolProtocol = profile.UpstreamProtocol
