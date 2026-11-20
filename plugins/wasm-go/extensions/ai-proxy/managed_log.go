@@ -190,6 +190,7 @@ func safeManagedAccessReason(reason string) string {
 		"registration_invalid",
 		"request_body_out_of_bounds",
 		"resource_owner_unavailable",
+		"resource_registry_unavailable",
 		"resource_reference_incompatible",
 		"resource_reference_unavailable",
 		"resource_reference_write_failed",

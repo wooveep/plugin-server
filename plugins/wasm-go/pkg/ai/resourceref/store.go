@@ -22,6 +22,9 @@ const schema = "modelfusion-public-resources.v1"
 const maxReferences = 4096
 const maxRecordBytes = 16384
 
+// ErrLookupUnavailable distinguishes a failed store operation from a missing reference.
+var ErrLookupUnavailable = errors.New("resource reference lookup unavailable")
+
 type Scope struct {
 	Tenant, Principal, SalesAsset string
 	Passthrough                   bool
@@ -160,7 +163,7 @@ func Lookup(client Client, scope Scope, aliases []clientresponse.ResourceAlias, 
 	}
 	if err := client.Command(command, func(value resp.Value) {
 		if value.Type() != resp.Array || len(value.Array()) != len(aliases) {
-			done(nil, errors.New("resource reference lookup unavailable"))
+			done(nil, ErrLookupUnavailable)
 			return
 		}
 		result := make([]Record, len(aliases))
@@ -172,6 +175,6 @@ func Lookup(client Client, scope Scope, aliases []clientresponse.ResourceAlias, 
 		}
 		done(result, nil)
 	}); err != nil {
-		done(nil, errors.New("resource reference lookup unavailable"))
+		done(nil, ErrLookupUnavailable)
 	}
 }

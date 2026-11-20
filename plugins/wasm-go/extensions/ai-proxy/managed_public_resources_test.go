@@ -131,6 +131,30 @@ func TestSignedToolContinuationQualifiesTheOriginalPublishedCredential(t *testin
 	require.Equal(t, "credential-2", eligible[0].credential.CredentialRef)
 }
 
+func TestSignedToolLookupSeparatesStoreFailureFromMissingReference(t *testing.T) {
+	for _, tc := range []struct {
+		name, reply, retry string
+		status             uint32
+	}{
+		{"unavailable", "-ERR fixture unavailable\r\n", "", 503},
+		{"missing", "*1\r\n$-1\r\n", "false", 400},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newManagedHost(t, nativeResourceFixture())
+			body := []byte(`{"model":"public-model","input":[{"type":"function_call_output","call_id":"call_pf_s_0123456789abcdef0123456789abcdef_sealed-context","output":"result"}]}`)
+			h.start(t, body, bytes.Replace(body, []byte("public-model"), []byte("upstream-model"), 1))
+			lookups := h.host.GetRedisCalloutAttributesFromContext(h.id)
+			require.Len(t, lookups, 1)
+			h.host.CallOnRedisCallResponse(lookups[0].CalloutID, 0, []byte(tc.reply))
+			require.Empty(t, h.host.GetCalloutAttributesFromContext(h.id))
+			local := h.host.GetSentLocalResponse(h.id)
+			require.NotNil(t, local)
+			require.EqualValues(t, tc.status, local.StatusCode)
+			require.Equal(t, tc.retry, managedResponseHeaderValue(local.Headers, "x-should-retry"))
+		})
+	}
+}
+
 func responseResourceDirectoryFixture(t *testing.T, initial int, recovery bool) map[string]interface{} {
 	t.Helper()
 	fixture := managedTextFixture(t, true)

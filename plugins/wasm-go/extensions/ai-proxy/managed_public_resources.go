@@ -191,7 +191,11 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 		}
 		s.resourcesRestoring = false
 		if err != nil {
-			rejectManagedPreparation(ctx, s, 400, "resource_reference_unavailable")
+			if errors.Is(err, resourceref.ErrLookupUnavailable) {
+				rejectManagedPreparation(ctx, s, 503, "resource_registry_unavailable")
+			} else {
+				rejectManagedPreparation(ctx, s, 400, "resource_reference_unavailable")
+			}
 			return
 		}
 		var owner *resourceref.Owner
