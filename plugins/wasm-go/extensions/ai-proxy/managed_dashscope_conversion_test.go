@@ -135,7 +135,12 @@ func TestDashScopeCrossProtocolSixCellMultiTurnMatrix(t *testing.T) {
 
 					outbound1 := h1.host.GetCurrentRequestBody(h1.id)
 					require.Equal(t, up.model, gjson.GetBytes(outbound1, "model").String())
-					require.Equal(t, int64(128), gjson.GetBytes(outbound1, "parameters.max_tokens").Int())
+					limit, absent := "parameters.max_tokens", "parameters.max_completion_tokens"
+					if up.model == "qwen3.6-plus" && in != managedProtocolMessages {
+						limit, absent = absent, limit
+					}
+					require.Equal(t, int64(128), gjson.GetBytes(outbound1, limit).Int())
+					require.False(t, gjson.GetBytes(outbound1, absent).Exists())
 					require.True(t, gjson.GetBytes(outbound1, "parameters.enable_thinking").Bool(), string(outbound1))
 					if stream {
 						require.True(t, gjson.GetBytes(outbound1, "parameters.incremental_output").Bool(), "enable_thinking + stream must set incremental_output=true: %s", string(outbound1))
