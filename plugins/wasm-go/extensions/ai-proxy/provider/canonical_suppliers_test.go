@@ -361,6 +361,46 @@ func TestCanonicalSupplierSamplingAndStop(t *testing.T) {
 }
 
 // T07: Lossless >53-bit integer precision (9007199254740993) across schemas, tool args, and responses.
+func TestGeminiStructuredOutputPreservesStrictJSONSchema(t *testing.T) {
+	const schema = `{
+		"type":"object",
+		"properties":{"value":{"type":["string","null"]}},
+		"required":["value"],
+		"additionalProperties":false
+	}`
+	for _, tc := range []struct {
+		protocol canonical.Protocol
+		body     string
+	}{
+		{
+			protocol: canonical.ProtocolOpenAIChat,
+			body: `{"model":"public-model","messages":[{"role":"user","content":"Return a value"}],
+				"response_format":{"type":"json_schema","json_schema":{"name":"reply","strict":true,"schema":` + schema + `}}}`,
+		},
+		{
+			protocol: canonical.ProtocolOpenAIResponses,
+			body: `{"model":"public-model","input":"Return a value",
+				"text":{"format":{"type":"json_schema","name":"reply","strict":true,"schema":` + schema + `}}}`,
+		},
+	} {
+		t.Run(string(tc.protocol), func(t *testing.T) {
+			req, err := DecodeCanonicalRequest(tc.protocol, []byte(tc.body))
+			require.NoError(t, err)
+			out, err := EncodeCanonicalRequest(req, CanonicalTarget{
+				WireFormat:           WireGeminiGenerateContent,
+				Model:                "gemini-3-flash-preview",
+				APIVersion:           "v1beta",
+				SupportsStrictSchema: true,
+			})
+			require.NoError(t, err)
+			config := gjson.GetBytes(out, "generationConfig")
+			require.Equal(t, "application/json", config.Get("responseMimeType").String())
+			require.JSONEq(t, schema, config.Get("responseJsonSchema").Raw)
+			require.False(t, config.Get("responseSchema").Exists())
+		})
+	}
+}
+
 func TestCanonicalSupplierBigIntPrecision_9007199254740993(t *testing.T) {
 	const bigIntLiteral = "9007199254740993"
 

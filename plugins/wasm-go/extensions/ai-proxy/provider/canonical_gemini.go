@@ -55,20 +55,20 @@ type geminiWireThinkingConfig struct {
 }
 
 type geminiWireGenerationConfig struct {
-	Temperature      *float64                  `json:"temperature,omitempty"`
-	TopP             *float64                  `json:"topP,omitempty"`
-	TopK             *int                      `json:"topK,omitempty"`
-	PresencePenalty  *float64                  `json:"presencePenalty,omitempty"`
-	FrequencyPenalty *float64                  `json:"frequencyPenalty,omitempty"`
-	Seed             *int64                    `json:"seed,omitempty"`
-	CandidateCount   *int                      `json:"candidateCount,omitempty"`
-	MaxOutputTokens  *int                      `json:"maxOutputTokens,omitempty"`
-	StopSequences    []string                  `json:"stopSequences,omitempty"`
-	ResponseLogprobs *bool                     `json:"responseLogprobs,omitempty"`
-	Logprobs         *int                      `json:"logprobs,omitempty"`
-	ResponseMimeType string                    `json:"responseMimeType,omitempty"`
-	ResponseSchema   json.RawMessage           `json:"responseSchema,omitempty"`
-	ThinkingConfig   *geminiWireThinkingConfig `json:"thinkingConfig,omitempty"`
+	Temperature        *float64                  `json:"temperature,omitempty"`
+	TopP               *float64                  `json:"topP,omitempty"`
+	TopK               *int                      `json:"topK,omitempty"`
+	PresencePenalty    *float64                  `json:"presencePenalty,omitempty"`
+	FrequencyPenalty   *float64                  `json:"frequencyPenalty,omitempty"`
+	Seed               *int64                    `json:"seed,omitempty"`
+	CandidateCount     *int                      `json:"candidateCount,omitempty"`
+	MaxOutputTokens    *int                      `json:"maxOutputTokens,omitempty"`
+	StopSequences      []string                  `json:"stopSequences,omitempty"`
+	ResponseLogprobs   *bool                     `json:"responseLogprobs,omitempty"`
+	Logprobs           *int                      `json:"logprobs,omitempty"`
+	ResponseMimeType   string                    `json:"responseMimeType,omitempty"`
+	ResponseJSONSchema json.RawMessage           `json:"responseJsonSchema,omitempty"`
+	ThinkingConfig     *geminiWireThinkingConfig `json:"thinkingConfig,omitempty"`
 }
 
 func (g geminiWireGenerationConfig) isEmpty() bool {
@@ -84,7 +84,7 @@ func (g geminiWireGenerationConfig) isEmpty() bool {
 		g.ResponseLogprobs == nil &&
 		g.Logprobs == nil &&
 		g.ResponseMimeType == "" &&
-		len(g.ResponseSchema) == 0 &&
+		len(g.ResponseJSONSchema) == 0 &&
 		g.ThinkingConfig == nil
 }
 
@@ -466,7 +466,7 @@ func encodeGeminiCanonicalRequest(req canonical.Request, target CanonicalTarget)
 		genCfg.Logprobs = &v
 	}
 
-	// DS05: Structured output via responseMimeType / responseSchema (preserving raw schema integers).
+	// Gemini's JSON Schema field preserves constraints outside its OpenAPI Schema subset.
 	switch req.ResponseFormat.Kind {
 	case canonical.ResponseFormatUnset:
 	case canonical.ResponseFormatText:
@@ -486,7 +486,7 @@ func encodeGeminiCanonicalRequest(req canonical.Request, target CanonicalTarget)
 			return nil, canonical.NewRejectionError("invalid_response_format", "response_format", "invalid json_schema")
 		}
 		genCfg.ResponseMimeType = "application/json"
-		genCfg.ResponseSchema = compactedSchema
+		genCfg.ResponseJSONSchema = compactedSchema
 	default:
 		return nil, canonical.NewRejectionError("unsupported_response_format", "response_format", "unsupported response_format")
 	}
