@@ -45,6 +45,7 @@ func (e *e2eMatrixDeterministicEntropy) Read(p []byte) (int, error) {
 }
 
 var e2ePublicPFTokenPattern = regexp.MustCompile(`\b(resp|item|call|msg|chatcmpl)_pf_[0-9a-f]{32}\b`)
+var e2eSignedToolCiphertext = regexp.MustCompile(`(call_pf_s_[0-9a-f]{32})_[A-Za-z0-9_-]+`)
 
 func canonicalizeE2EPublicPFIDs(raw []byte) string {
 	seen := make(map[string]string, 8)
@@ -416,6 +417,9 @@ func TestCanonicalSSEPartitionMatrix(t *testing.T) {
 			}
 			require.NotContains(t, string(wholeBytes), "response_incomplete")
 
+			// Keep the deterministic resource IDs and all wire fields in the
+			// comparison. Separate deliveries intentionally seal with fresh keys.
+			wholeBytes = e2eSignedToolCiphertext.ReplaceAll(wholeBytes, []byte("$1"))
 			wholeEvents, err := clientresponse.Events(wholeBytes)
 			require.NoError(t, err)
 			require.NotEmpty(t, wholeEvents)
@@ -505,6 +509,7 @@ func TestCanonicalSSEPartitionMatrix(t *testing.T) {
 			for _, part := range partitions {
 				t.Run(part.mode, func(t *testing.T) {
 					gotBytes, gotDelivery := replayRouterPartitions(t, tc, part.chunks, false)
+					gotBytes = e2eSignedToolCiphertext.ReplaceAll(gotBytes, []byte("$1"))
 					require.Equal(t, wholeBytes, gotBytes, "partition %s diverged from whole stream", part.mode)
 					require.Equal(t, wholeDelivery.DeliveryState, gotDelivery.DeliveryState)
 					require.Equal(t, wholeDelivery.Usage, gotDelivery.Usage)
@@ -522,6 +527,7 @@ func TestCanonicalSSEPartitionMatrix(t *testing.T) {
 					[]byte(": keep-alive tail\n"),
 				}
 				gotBytes, gotDelivery := replayRouterPartitions(t, tc, commentChunks, true)
+				gotBytes = e2eSignedToolCiphertext.ReplaceAll(gotBytes, []byte("$1"))
 				require.Equal(t, stripSSEKeepAliveComments(wholeBytes), stripSSEKeepAliveComments(gotBytes))
 				gotEvents, evErr := clientresponse.Events(gotBytes)
 				require.NoError(t, evErr)
