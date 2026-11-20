@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strings"
 	"time"
 
@@ -71,6 +72,28 @@ func projectManagedResponse(s *managedExecutionState, originalHeaders [][2]strin
 		}
 	}
 	return managedProtocolClientResponse{Body: body, Headers: publicHeaders}, nil
+}
+
+func projectManagedHTTPFailure(s *managedExecutionState, status uint16, headers [][2]string, body []byte) (uint16, [][2]string, []byte) {
+	policy := managedPublicPolicy(s)
+	format := s.config.profile.UpstreamProtocol
+	if s.config.vendor != nil && s.config.vendor.NativeResponseFormat() != "" {
+		format = s.config.vendor.NativeResponseFormat()
+	}
+	failure := clientresponse.ClassifyFailure(clientresponse.FailureInput{
+		Status: status, Format: format, Client: policy.Protocol, Body: body, Request: s.publicRequest,
+	})
+	if failure.Kind == clientresponse.FailureConfiguration && format == "gemini" && status == http.StatusBadRequest {
+		googleError := gjson.GetBytes(body, "error")
+		// Google also uses INVALID_ARGUMENT for invalid or expired supplier API keys.
+		if googleError.Get("status").String() == "INVALID_ARGUMENT" &&
+			!googleError.Get(`details.#(reason%"API_KEY_*")`).Exists() {
+			failure = clientresponse.Failure{Kind: clientresponse.FailureParameter}
+			return failure.Status(policy.Protocol), failure.Headers(policy, headers, false, false),
+				marshalManagedLocalError(policy.Protocol, "invalid_request_error", "invalid_parameter", "A request parameter is invalid.")
+		}
+	}
+	return failure.Status(policy.Protocol), failure.Headers(policy, headers, false, false), failure.Body(policy)
 }
 
 func managedPublicError(ctx wrapper.HttpContext, status uint32, reason string) ([]byte, [][2]string) {

@@ -89,9 +89,9 @@ func (g geminiWireGenerationConfig) isEmpty() bool {
 }
 
 type geminiWireFunctionDeclaration struct {
-	Name        string          `json:"name"`
-	Description string          `json:"description,omitempty"`
-	Parameters  json.RawMessage `json:"parameters,omitempty"`
+	Name                 string          `json:"name"`
+	Description          string          `json:"description,omitempty"`
+	ParametersJSONSchema json.RawMessage `json:"parametersJsonSchema,omitempty"`
 }
 
 type geminiWireEmptyStruct struct{}
@@ -522,9 +522,9 @@ func encodeGeminiCanonicalRequest(req canonical.Request, target CanonicalTarget)
 				paramsRaw = compacted
 			}
 			funcDecls = append(funcDecls, geminiWireFunctionDeclaration{
-				Name:        t.Name,
-				Description: t.Description,
-				Parameters:  paramsRaw,
+				Name:                 t.Name,
+				Description:          t.Description,
+				ParametersJSONSchema: paramsRaw,
 			})
 		case canonical.ToolKindFixedServer:
 			fk, ok := fixedtools.Kind(t.FixedType)

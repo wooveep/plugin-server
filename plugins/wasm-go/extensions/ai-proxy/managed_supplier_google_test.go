@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
 
@@ -76,6 +77,57 @@ func TestManagedGeminiOriginalCountersAndTerminalThroughTheSoleSender(t *testing
 					t.Fatal("wire facts were replaced by converted content")
 				}
 			})
+		}
+	}
+}
+
+func TestManagedGeminiRouterDistinguishesInvalidArgumentsFromInvalidCredentials(t *testing.T) {
+	const path = "/v1beta/models/gemini-3-flash-preview:generateContent"
+	for _, tc := range []struct {
+		name, body, status, errorType, code string
+	}{
+		{
+			name:   "client_argument",
+			body:   `{"error":{"code":400,"status":"INVALID_ARGUMENT","message":"private upstream diagnostic: candidate count is out of range"}}`,
+			status: "400", errorType: "invalid_request_error", code: "invalid_parameter",
+		},
+		{
+			name:   "provider_credential",
+			body:   `{"error":{"code":400,"status":"INVALID_ARGUMENT","message":"private upstream diagnostic: invalid supplier key","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID","domain":"googleapis.com"}]}}`,
+			status: "503", errorType: "api_error", code: "service_unavailable",
+		},
+	} {
+		for _, protocol := range []string{managedProtocolChat, managedProtocolResponses, managedProtocolMessages} {
+			for _, stream := range []bool{false, true} {
+				t.Run(fmt.Sprintf("%s/%s/stream=%t", tc.name, protocol, stream), func(t *testing.T) {
+					h := newE2EMatrixRouterHost(t,
+						`{"type":"gemini","apiTokens":["controlled-upstream-key"],"apiVersion":"v1beta"}`,
+						"generativelanguage.googleapis.com", protocol, managedProtocolChat, path, "gemini-3-flash-preview", "")
+					original := responseModeRequest(protocol, "public-model", stream)
+					h.start(t, original, bytes.Replace(original, []byte("public-model"), []byte("gemini-3-flash-preview"), 1))
+					require.NoError(t, h.host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
+					h.host.CallOnResponseHeaders(h.id, [][2]string{
+						{":status", "400"}, {"content-type", "application/json"}, {"retry-after", "5"},
+					}, false)
+					h.host.CallOnResponseBody(h.id, []byte(tc.body), true)
+
+					headers := h.host.GetCurrentResponseHeaders(h.id)
+					status, err := managedSingleHeader(headers, ":status")
+					require.NoError(t, err)
+					require.Equal(t, tc.status, status)
+					retry, err := managedSingleHeader(headers, "x-should-retry")
+					require.NoError(t, err)
+					require.Equal(t, "false", retry)
+					body := string(h.host.GetCurrentResponseBody(h.id))
+					require.Equal(t, tc.errorType, gjson.Get(body, "error.type").String())
+					require.Equal(t, tc.code, gjson.Get(body, "error.code").String())
+					require.False(t, gjson.Get(body, "error.param").Exists())
+					require.NotContains(t, body, "private upstream diagnostic")
+					if protocol == managedProtocolMessages {
+						require.Equal(t, "error", gjson.Get(body, "type").String())
+					}
+				})
+			}
 		}
 	}
 }

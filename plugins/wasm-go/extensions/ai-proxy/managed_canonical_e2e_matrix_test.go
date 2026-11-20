@@ -1021,6 +1021,7 @@ func FuzzCanonicalSSEPartition(f *testing.F) {
 //     maxOutputTokens preserving max_completion_tokens/max_output_tokens/max_tokens, Data URL -> inlineData, remote URL 400 + 0 sends)
 //   - Inbound thought:true -> reasoning, promptFeedback.blockReason non-retryable policy rejection, and GE02 exact counters.
 func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
+	const toolSchema = `{"type":"object","properties":{"order_id":{"type":"integer","maximum":9007199254740993}},"required":["order_id"],"additionalProperties":false}`
 	newGeminiHost := func(t *testing.T, inputProtocol string, router bool) *managedHost {
 		t.Helper()
 		if router {
@@ -1103,9 +1104,9 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 								{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgo="}}
 							]}
 						],
-						"tools":[{"type":"function","function":{"name":"lookup_order","description":"Lookup order","parameters":{"type":"object","properties":{"order_id":{"type":"integer"}}}}}],
+						"tools":[{"type":"function","function":{"name":"lookup_order","description":"Lookup order","parameters":%s}}],
 						"tool_choice":"auto"
-					}`, stream))
+					}`, stream, toolSchema))
 					case managedProtocolResponses:
 						turn1Pub = []byte(fmt.Sprintf(`{
 						"model":"public-model",
@@ -1119,9 +1120,9 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 								{"type":"input_image","image_url":"data:image/png;base64,iVBORw0KGgo="}
 							]}
 						],
-						"tools":[{"type":"function","name":"lookup_order","description":"Lookup order","parameters":{"type":"object","properties":{"order_id":{"type":"integer"}}}}],
+						"tools":[{"type":"function","name":"lookup_order","description":"Lookup order","parameters":%s}],
 						"tool_choice":"auto"
-					}`, stream))
+					}`, stream, toolSchema))
 					case managedProtocolMessages:
 						turn1Pub = []byte(fmt.Sprintf(`{
 						"model":"public-model",
@@ -1134,9 +1135,9 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 								{"type":"image","source":{"type":"base64","media_type":"image/png","data":"iVBORw0KGgo="}}
 							]}
 						],
-						"tools":[{"name":"lookup_order","description":"Lookup order","input_schema":{"type":"object","properties":{"order_id":{"type":"integer"}}}}],
+						"tools":[{"name":"lookup_order","description":"Lookup order","input_schema":%s}],
 						"tool_choice":{"type":"auto"}
-					}`, stream))
+					}`, stream, toolSchema))
 					}
 
 					h1.start(t, turn1Pub, bytes.Replace(turn1Pub, []byte(`"public-model"`), []byte(`"gemini-3-flash-preview"`), 1))
@@ -1173,6 +1174,8 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 					require.Equal(t, "image/png", gjson.GetBytes(out1, "contents.0.parts.1.inlineData.mimeType").String())
 					require.Equal(t, "iVBORw0KGgo=", gjson.GetBytes(out1, "contents.0.parts.1.inlineData.data").String())
 					require.Equal(t, "lookup_order", gjson.GetBytes(out1, "tools.0.functionDeclarations.0.name").String())
+					require.Equal(t, toolSchema, gjson.GetBytes(out1, "tools.0.functionDeclarations.0.parametersJsonSchema").Raw)
+					require.False(t, gjson.GetBytes(out1, "tools.0.functionDeclarations.0.parameters").Exists())
 					require.Equal(t, "AUTO", gjson.GetBytes(out1, "toolConfig.functionCallingConfig.mode").String())
 
 					var resp1Str string
@@ -1312,8 +1315,8 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 							{"role":"assistant","reasoning_content":"Validating order...","tool_calls":[{"id":"call_ord_99","type":"function","function":{"name":"lookup_order","arguments":"{\"order_id\":9007199254740993}"}}]},
 							{"role":"tool","tool_call_id":"call_ord_99","content":"{\"status\":\"shipped\",\"tracking_no\":9007199254740993}"}
 						],
-						"tools":[{"type":"function","function":{"name":"lookup_order","parameters":{"type":"object"}}}]
-					}`, stream))
+						"tools":[{"type":"function","function":{"name":"lookup_order","parameters":%s}}]
+					}`, stream, toolSchema))
 					case managedProtocolResponses:
 						turn2Pub = []byte(fmt.Sprintf(`{
 						"model":"public-model",
@@ -1324,8 +1327,8 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 							{"type":"function_call","call_id":"call_ord_99","name":"lookup_order","arguments":"{\"order_id\":9007199254740993}"},
 							{"type":"function_call_output","call_id":"call_ord_99","output":"{\"status\":\"shipped\",\"tracking_no\":9007199254740993}"}
 						],
-						"tools":[{"type":"function","name":"lookup_order","parameters":{"type":"object"}}]
-					}`, stream))
+						"tools":[{"type":"function","name":"lookup_order","parameters":%s}]
+					}`, stream, toolSchema))
 					case managedProtocolMessages:
 						// Includes foreign Anthropic signature "sig_anthropic_foreign" which MUST NOT be forged as Gemini thoughtSignature.
 						turn2Pub = []byte(fmt.Sprintf(`{
@@ -1342,8 +1345,8 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 								{"type":"tool_result","tool_use_id":"call_ord_99","content":"{\"status\":\"shipped\",\"tracking_no\":9007199254740993}"}
 							]}
 						],
-						"tools":[{"name":"lookup_order","input_schema":{"type":"object"}}]
-					}`, stream))
+						"tools":[{"name":"lookup_order","input_schema":%s}]
+					}`, stream, toolSchema))
 					}
 
 					require.NotEmpty(t, replayCallID)
@@ -1378,6 +1381,8 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 					}
 
 					// Verify Turn 2 model functionCall + user functionResponse (name recovered via call_id, 9007199254740993 preserved, foreign signature stripped).
+					require.Equal(t, toolSchema, gjson.GetBytes(out2, "tools.0.functionDeclarations.0.parametersJsonSchema").Raw)
+					require.False(t, gjson.GetBytes(out2, "tools.0.functionDeclarations.0.parameters").Exists())
 					require.Equal(t, "model", gjson.GetBytes(out2, "contents.1.role").String(), string(out2))
 					require.True(t, gjson.GetBytes(out2, "contents.1.parts.0.thought").Bool(), string(out2))
 					require.False(t, gjson.GetBytes(out2, "contents.1.parts.0.thoughtSignature").Exists(), "foreign signature must not be forwarded to Gemini: %s", string(out2))

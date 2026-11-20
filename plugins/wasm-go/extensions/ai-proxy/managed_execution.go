@@ -1238,21 +1238,15 @@ func sendManagedFinal(ctx wrapper.HttpContext, s *managedExecutionState, outcome
 		}
 	}
 	if managedPublicText(s) && s.config.settings.ProtocolMode != "passthrough" && status >= 400 {
-		policy := managedPublicPolicy(s)
-		format := s.config.profile.UpstreamProtocol
-		if s.config.vendor != nil && s.config.vendor.NativeResponseFormat() != "" {
-			format = s.config.vendor.NativeResponseFormat()
-		}
-		failure := clientresponse.ClassifyFailure(clientresponse.FailureInput{Status: uint16(status), Format: format, Client: policy.Protocol, Body: body, Request: s.publicRequest})
-		status = uint32(failure.Status(policy.Protocol))
-		body = failure.Body(policy)
+		var publicStatus uint16
+		publicStatus, headers, body = projectManagedHTTPFailure(s, uint16(status), headers, body)
+		status = uint32(publicStatus)
 		if len(s.publicPartial) != 0 {
 			var envelope map[string]json.RawMessage
 			_ = json.Unmarshal(body, &envelope)
 			envelope["partial_response"] = s.publicPartial
 			body, _ = json.Marshal(envelope)
 		}
-		headers = failure.Headers(policy, headers, false, false)
 	}
 	responseHeaders := managedResponseHeaders(headers)
 	snapshot, err := managedDeliverySnapshot(s, outcome, deliveryState)
