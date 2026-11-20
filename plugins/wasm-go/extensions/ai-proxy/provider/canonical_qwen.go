@@ -571,17 +571,11 @@ func encodeQwenCanonicalRequest(req canonical.Request, target CanonicalTarget) (
 		v := req.FixedTools.EnableCodeInterpreter.Val
 		out.Parameters.EnableCodeInterpreter = &v
 	}
-	if len(req.FixedTools.SearchOptionsRaw) > 0 {
-		out.Parameters.SearchOptions = bytes.Clone(req.FixedTools.SearchOptionsRaw)
-	} else if req.FixedTools.SearchStrategy.IsPresent() && req.FixedTools.SearchStrategy.Val != "" {
-		rawOpts, err := json.Marshal(struct {
-			Strategy string `json:"strategy"`
-		}{Strategy: req.FixedTools.SearchStrategy.Val})
-		if err != nil {
-			return nil, fmt.Errorf("marshal DashScope search_options: %w", err)
-		}
-		out.Parameters.SearchOptions = rawOpts
+	searchOptions, err := encodeFixedToolSearchOptions(req.FixedTools)
+	if err != nil {
+		return nil, fmt.Errorf("marshal DashScope search_options: %w", err)
 	}
+	out.Parameters.SearchOptions = searchOptions
 
 	// DS02: Forced tool_choice validation & conflict guard with active thinking.
 	forcedToolChoice := req.ToolChoice.Mode == canonical.ToolChoiceRequired ||

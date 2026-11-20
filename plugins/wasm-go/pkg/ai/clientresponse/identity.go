@@ -9,9 +9,10 @@ import (
 
 // ResourceAlias is internal restoration data, never part of a public body.
 type ResourceAlias struct {
-	Kind     string `json:"kind"`
-	Public   string `json:"public"`
-	Original string `json:"original"`
+	Kind           string          `json:"kind"`
+	Public         string          `json:"public"`
+	Original       string          `json:"original"`
+	SignedToolCall *SignedToolCall `json:"signed_tool_call,omitempty"`
 }
 
 // ResourceAliases belongs to one delivery, including all of its stream frames.

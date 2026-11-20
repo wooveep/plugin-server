@@ -1,8 +1,6 @@
 package fixedtools
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"slices"
 
@@ -33,21 +31,8 @@ func InspectCanonical(req canonical.Request, defaults []Tool) (map[Tool]bool, er
 		}
 	}
 
-	if requested[WebSearch] {
-		if req.FixedTools.SearchStrategy.IsPresent() && req.FixedTools.SearchStrategy.Val == "agent_max" {
-			requested[WebExtractor] = true
-		}
-		if raw := bytes.TrimSpace(req.FixedTools.SearchOptionsRaw); len(raw) > 0 {
-			var options struct {
-				Strategy string `json:"strategy"`
-			}
-			if err := json.Unmarshal(raw, &options); err != nil {
-				return nil, errors.New("invalid search options")
-			}
-			if options.Strategy == "agent_max" {
-				requested[WebExtractor] = true
-			}
-		}
+	if requested[WebSearch] && req.FixedTools.SearchStrategy.ValueOr("") == "agent_max" {
+		requested[WebExtractor] = true
 	}
 
 	for _, item := range req.Tools {
@@ -81,17 +66,8 @@ func FilterCanonical(req canonical.Request, defaults []Tool, removed map[Tool]bo
 		out.FixedTools.EnableCodeInterpreter = canonical.Some(true)
 	}
 
-	if removed[WebExtractor] {
-		if out.FixedTools.SearchStrategy.IsPresent() && out.FixedTools.SearchStrategy.Val == "agent_max" {
-			out.FixedTools.SearchStrategy = canonical.AbsentOf[string]()
-		}
-		if len(out.FixedTools.SearchOptionsRaw) > 0 {
-			var options map[string]json.RawMessage
-			if json.Unmarshal(out.FixedTools.SearchOptionsRaw, &options) == nil && string(options["strategy"]) == `"agent_max"` {
-				delete(options, "strategy")
-				out.FixedTools.SearchOptionsRaw, _ = json.Marshal(options)
-			}
-		}
+	if removed[WebExtractor] && out.FixedTools.SearchStrategy.ValueOr("") == "agent_max" {
+		out.FixedTools.SearchStrategy = canonical.AbsentOf[string]()
 	}
 
 	if len(out.Tools) > 0 {

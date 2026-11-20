@@ -40,8 +40,9 @@ func TestInspectCanonicalMatchesByteInspectAndIsolatesClientFunctions(t *testing
 			{Kind: canonical.ToolKindFixedServer, FixedType: "web_fetch_20250910", Name: "web_fetch"},
 		},
 		FixedTools: canonical.FixedToolControls{
-			EnableSearch:     canonical.Some(true),
-			SearchOptionsRaw: json.RawMessage(`{"strategy":"agent_max","forced_search":true}`),
+			EnableSearch:   canonical.Some(true),
+			SearchStrategy: canonical.Some("agent_max"),
+			SearchOptions:  map[string]json.RawMessage{"forced_search": json.RawMessage("true")},
 		},
 	}
 	got, err = InspectCanonical(reqWithFixed, nil)
@@ -58,21 +59,12 @@ func TestInspectCanonicalMatchesByteInspectAndIsolatesClientFunctions(t *testing
 	}
 	nullSearchOpts, err := InspectCanonical(canonical.Request{
 		FixedTools: canonical.FixedToolControls{
-			EnableSearch:     canonical.Some(true),
-			SearchStrategy:   canonical.NullOf[string](),
-			SearchOptionsRaw: json.RawMessage(`null`),
+			EnableSearch:   canonical.Some(true),
+			SearchStrategy: canonical.NullOf[string](),
 		},
 	}, nil)
 	if err != nil || !nullSearchOpts[WebSearch] || nullSearchOpts[WebExtractor] {
 		t.Fatalf("expected null search_options/strategy to be tolerated as WebSearch only, got %v err=%v", nullSearchOpts, err)
-	}
-	if _, err := InspectCanonical(canonical.Request{
-		FixedTools: canonical.FixedToolControls{
-			EnableSearch:     canonical.Some(true),
-			SearchOptionsRaw: json.RawMessage(`123`),
-		},
-	}, nil); err == nil {
-		t.Fatal("expected error for non-object search_options")
 	}
 }
 
@@ -91,7 +83,7 @@ func TestFilterCanonicalImmutabilityExplicitFalseAndDanglingChoices(t *testing.T
 		},
 		FixedTools: canonical.FixedToolControls{
 			SearchStrategy:      canonical.Some("agent_max"),
-			SearchOptionsRaw:    json.RawMessage(`{"strategy":"agent_max","freshness":"day"}`),
+			SearchOptions:       map[string]json.RawMessage{"freshness": json.RawMessage(`"day"`)},
 			WebSearchOptionsRaw: json.RawMessage(`{"search_context_size":"high"}`),
 		},
 	}
@@ -116,9 +108,8 @@ func TestFilterCanonicalImmutabilityExplicitFalseAndDanglingChoices(t *testing.T
 	if attempt1.FixedTools.SearchStrategy.IsPresent() {
 		t.Fatalf("expected agent_max SearchStrategy to be cleared, got %+v", attempt1.FixedTools.SearchStrategy)
 	}
-	var opts map[string]json.RawMessage
-	if err := json.Unmarshal(attempt1.FixedTools.SearchOptionsRaw, &opts); err != nil || opts["strategy"] != nil || string(opts["freshness"]) != `"day"` {
-		t.Fatalf("expected strategy removed while preserving freshness, got %s", string(attempt1.FixedTools.SearchOptionsRaw))
+	if string(attempt1.FixedTools.SearchOptions["freshness"]) != `"day"` {
+		t.Fatalf("expected freshness to survive, got %v", attempt1.FixedTools.SearchOptions)
 	}
 	if len(attempt1.Tools) != 2 || attempt1.Tools[0].Kind != canonical.ToolKindFixedServer || attempt1.Tools[1].Kind != canonical.ToolKindFunction || attempt1.Tools[1].Name != "code_interpreter" {
 		t.Fatalf("expected web_search server tool + code_interpreter client function to survive, got %+v", attempt1.Tools)

@@ -225,7 +225,7 @@ func TestCloneForAttemptDeepIsolation(t *testing.T) {
 		ToolChoice: ToolChoice{Mode: ToolChoiceAuto},
 		FixedTools: FixedToolControls{
 			EnableSearch:        Some(true),
-			SearchOptionsRaw:    json.RawMessage(`{"strategy":"agent_max"}`),
+			SearchOptions:       map[string]json.RawMessage{"freshness": json.RawMessage(`"day"`)},
 			WebSearchOptionsRaw: json.RawMessage(`{"search_context_size":"medium"}`),
 		},
 		Store:    Some(false),
@@ -255,7 +255,8 @@ func TestCloneForAttemptDeepIsolation(t *testing.T) {
 	attempt.Tools[1].RawFixed[0] = '['
 	attempt.Tools = attempt.Tools[:1]
 	attempt.FixedTools.EnableSearch = Some(false)
-	attempt.FixedTools.SearchOptionsRaw[0] = '['
+	attempt.FixedTools.SearchOptions["freshness"][0] = '['
+	delete(attempt.FixedTools.SearchOptions, "freshness")
 	attempt.FixedTools.WebSearchOptionsRaw[0] = '['
 	attempt.Metadata.Val["user_id"] = "mutated"
 	attempt.Metadata.Val["injected"] = "yes"
@@ -290,7 +291,7 @@ func TestCloneForAttemptDeepIsolation(t *testing.T) {
 	if len(base.Tools) != 2 || string(base.Tools[0].Schema) != `{"type":"object","const":9007199254740993}` || string(base.Tools[1].RawFixed) != `{"type":"web_search"}` {
 		t.Fatalf("base Tools mutated: %+v", base.Tools)
 	}
-	if !base.FixedTools.EnableSearch.Val || string(base.FixedTools.SearchOptionsRaw) != `{"strategy":"agent_max"}` || string(base.FixedTools.WebSearchOptionsRaw) != `{"search_context_size":"medium"}` {
+	if !base.FixedTools.EnableSearch.Val || string(base.FixedTools.SearchOptions["freshness"]) != `"day"` || string(base.FixedTools.WebSearchOptionsRaw) != `{"search_context_size":"medium"}` {
 		t.Fatalf("base FixedTools mutated: %+v", base.FixedTools)
 	}
 	if len(base.Metadata.Val) != 1 || base.Metadata.Val["user_id"] != "u_1" {

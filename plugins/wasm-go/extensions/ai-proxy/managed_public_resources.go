@@ -58,7 +58,11 @@ func managedNativeResponses(c *managedExecutionConfig) bool {
 }
 
 func persistManagedResourceAliases(ctx wrapper.HttpContext, s *managedExecutionState, done func(error)) bool {
-	if !managedPublicText(s) || s.config.profile.InputProtocol != clientresponse.Responses || s.publicAliases == nil || s.resourcesSaved {
+	if !managedPublicText(s) || s.publicAliases == nil || s.resourcesSaved {
+		return false
+	}
+	responses := s.config.profile.InputProtocol == clientresponse.Responses
+	if !responses && !s.publicAliases.HasSignedToolCalls() {
 		return false
 	}
 	if s.resourcesSaving {
@@ -71,6 +75,9 @@ func persistManagedResourceAliases(ctx wrapper.HttpContext, s *managedExecutionS
 	owner := managedResourceOwner(s.config)
 	records := make([]resourceref.Record, 0, len(aliases))
 	for _, alias := range aliases {
+		if !responses && alias.Kind != clientresponse.SignedToolCallKind {
+			continue
+		}
 		// A locally missing ID can be replaced for presentation, but it does not
 		// create a native resource that can legally be referenced later.
 		if alias.Original == "" || alias.Original == s.callID {
@@ -101,7 +108,9 @@ type managedResourceInput struct {
 }
 
 func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecutionState, body []byte, ready func([]byte)) {
-	if !managedPublicText(s) || s.config.profile.InputProtocol != clientresponse.Responses {
+	protocol := s.config.profile.InputProtocol
+	passthrough := s.config.settings.ProtocolMode == "passthrough"
+	if !managedPublicText(s) || (protocol != clientresponse.Responses && passthrough) {
 		ready(body)
 		return
 	}
@@ -110,21 +119,53 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 		if !value.Exists() || value.Type == gjson.Null {
 			return true
 		}
-		if s.config.settings.ProtocolMode != "passthrough" && !resourceref.IsAlias(kind, value.String()) {
+		if !passthrough && kind == "call" && resourceref.IsAlias(clientresponse.SignedToolCallKind, value.String()) {
+			inputs = append(inputs, managedResourceInput{
+				value: value,
+				alias: clientresponse.ResourceAlias{Kind: clientresponse.SignedToolCallKind, Public: value.String()},
+			})
+			return true
+		}
+		if protocol != clientresponse.Responses {
+			return true
+		}
+		if !passthrough && !resourceref.IsAlias(kind, value.String()) {
 			return !reference
 		}
 		inputs = append(inputs, managedResourceInput{value, clientresponse.ResourceAlias{Kind: kind, Public: value.String()}, reference})
 		return true
 	}
-	valid := add("response", true, gjson.GetBytes(body, "previous_response_id"))
-	if conversation := gjson.GetBytes(body, "conversation"); conversation.IsObject() {
-		valid = add("conversation", true, conversation.Get("id")) && valid
-	} else {
-		valid = add("conversation", true, conversation) && valid
-	}
-	for _, item := range gjson.GetBytes(body, "input").Array() {
-		valid = add("item", item.Get("type").String() == "item_reference", item.Get("id")) && valid
-		valid = add("call", false, item.Get("call_id")) && valid
+	valid := true
+	switch protocol {
+	case clientresponse.Responses:
+		valid = add("response", true, gjson.GetBytes(body, "previous_response_id"))
+		if conversation := gjson.GetBytes(body, "conversation"); conversation.IsObject() {
+			valid = add("conversation", true, conversation.Get("id")) && valid
+		} else {
+			valid = add("conversation", true, conversation) && valid
+		}
+		for _, item := range gjson.GetBytes(body, "input").Array() {
+			valid = add("item", item.Get("type").String() == "item_reference", item.Get("id")) && valid
+			valid = add("call", false, item.Get("call_id")) && valid
+		}
+	case clientresponse.Chat:
+		for _, message := range gjson.GetBytes(body, "messages").Array() {
+			for _, call := range message.Get("tool_calls").Array() {
+				add("call", false, call.Get("id"))
+			}
+			add("call", false, message.Get("tool_call_id"))
+		}
+	case clientresponse.Messages:
+		for _, message := range gjson.GetBytes(body, "messages").Array() {
+			for _, block := range message.Get("content").Array() {
+				switch block.Get("type").String() {
+				case "tool_use":
+					add("call", false, block.Get("id"))
+				case "tool_result":
+					add("call", false, block.Get("tool_use_id"))
+				}
+			}
+		}
 	}
 	if !valid {
 		rejectManagedPreparation(ctx, s, 400, "resource_reference_unavailable")
@@ -150,6 +191,13 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 		}
 		var owner *resourceref.Owner
 		for i, record := range records {
+			if record.Alias.Kind == clientresponse.SignedToolCallKind {
+				if s.signedToolCalls == nil {
+					s.signedToolCalls = make(map[string]resourceref.Record)
+				}
+				s.signedToolCalls[record.Alias.Public] = record
+				continue
+			}
 			if inputs[i].reference && !record.Native {
 				rejectManagedPreparation(ctx, s, 400, "resource_reference_incompatible")
 				return
@@ -173,16 +221,24 @@ func restoreManagedResourceReferences(ctx wrapper.HttpContext, s *managedExecuti
 		}
 		_ = managedPublicPolicy(s)
 		slices.SortFunc(inputs, func(a, b managedResourceInput) int { return a.value.Index - b.value.Index })
-		restored := make([]byte, 0, len(body))
+		var restored []byte
 		position := 0
 		for _, input := range inputs {
+			if input.alias.Kind == clientresponse.SignedToolCallKind {
+				continue
+			}
+			if restored == nil {
+				restored = make([]byte, 0, len(body))
+			}
 			restored = append(restored, body[position:input.value.Index]...)
 			original, _ := json.Marshal(input.alias.Original)
 			restored = append(restored, original...)
 			position = input.value.Index + len(input.value.Raw)
 			s.publicAliases.Seed(input.alias)
 		}
-		body = append(restored, body[position:]...)
+		if restored != nil {
+			body = append(restored, body[position:]...)
+		}
 		if owner != nil {
 			body, err = sjson.SetBytes(body, "model", s.config.release.Descriptor.UpstreamModel)
 			if err != nil {

@@ -258,6 +258,7 @@ func ResolveCanonicalTarget(adapter *ManagedAdapter, upstreamProtocol, supplierT
 		qwenCompatibleChatPolicy(model).applyToTarget(&target)
 	}
 	if wireFormat == WireDashScopeText || wireFormat == WireDashScopeMultimodal {
+		target.SupportsCompletionTokens = dashScopeSupportsCompletionTokens(model)
 		target.NormalizeEmptyAssistantContent = true
 		target.StripToolMessageName = true
 		target.StripOuterCacheControl = true
@@ -275,6 +276,28 @@ func ResolveCanonicalTarget(adapter *ManagedAdapter, upstreamProtocol, supplierT
 		target.GeminiThinkingBudget = adapter.config.geminiThinkingBudget
 	}
 	return target
+}
+
+// DashScope documents combined output limits for these model families, including
+// their dated snapshots. Keep this list explicit so unknown models retain the
+// existing max_tokens compatibility mapping.
+func dashScopeSupportsCompletionTokens(model string) bool {
+	model = strings.ToLower(model)
+	for _, family := range [...]string{
+		"qwen3.5-plus", "qwen3.5-flash", "qwen3.6-plus", "qwen3.6-flash",
+		"qwen3.7-max", "qwen3.7-plus", "qwen3.7-flash", "qwen3.8-max",
+		"qwen3.8-plus", "qwen3.8-flash", "qwen4-max",
+		"kimi-k2.5", "kimi-k2.6", "kimi-k2.7", "kimi-k3.1",
+		"glm-5", "glm-5.1", "glm-5.2", "glm-5.3",
+		"zhipu/glm-5", "zhipu/glm-5.1", "zhipu/glm-5.2", "zhipu/glm-5.3",
+		"minimax-m2.5", "minimax-m2.7",
+		"deepseek-v4-pro", "deepseek-v4.1",
+	} {
+		if model == family || strings.HasPrefix(model, family+"-") {
+			return true
+		}
+	}
+	return false
 }
 
 // ResolveCanonicalTarget resolves the frozen CanonicalTarget for this ManagedAdapter.

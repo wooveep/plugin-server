@@ -505,6 +505,7 @@ type managedExecutionState struct {
 	publicPartial                                              json.RawMessage
 	publicAliases                                              *clientresponse.ResourceAliases
 	resourceOwner                                              *resourceref.Owner
+	signedToolCalls                                            map[string]resourceref.Record
 	resourcesSaving, resourcesSaved, resourcesRestoring        bool
 	resourcePendingOutcome                                     *executionfacts.AttemptOutcome
 	embeddingInput                                             json.RawMessage
@@ -780,6 +781,26 @@ func prepareManagedCanonicalRequest(ctx wrapper.HttpContext, state *managedExecu
 	}
 
 	target := resolveManagedCanonicalTarget(managed, attemptReq.Stream)
+	if target.WireFormat == supplier.WireGeminiGenerateContent && len(state.signedToolCalls) > 0 {
+		owner := managedResourceOwner(managed)
+		for _, item := range attemptReq.Items {
+			if item.Call == nil {
+				continue
+			}
+			record, ok := state.signedToolCalls[item.Call.CallID]
+			if !ok {
+				continue
+			}
+			if record.Owner != owner {
+				rejectManagedPreparation(ctx, state, 400, "resource_reference_incompatible")
+				return managedProtocolRequest{}, false
+			}
+			signed := record.Alias.SignedToolCall
+			item.Call.WireCallID = canonical.Some(signed.ProviderID)
+			item.Call.ThoughtSignature = signed.Signature
+			item.Call.SignatureOrigin = canonical.OpaqueOrigin{Protocol: canonical.ProtocolGeminiGenerate, Supplier: "google"}
+		}
+	}
 	if err := supplier.ValidateCanonicalTarget(attemptReq, target); err != nil {
 		log.Warnf("ai-proxy managed protocol preparation rejected, call_id:%s input:%s upstream:%s reason:%s %s", state.callID, managed.profile.InputProtocol, managed.profile.UpstreamProtocol, "unsupported_or_invalid_protocol_request", managedSafeProtocolDetail(err))
 		rejectManagedPreparation(ctx, state, 400, "unsupported_or_invalid_protocol_request")

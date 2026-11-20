@@ -640,7 +640,11 @@ func encodeGeminiCanonicalRequest(req canonical.Request, target CanonicalTarget)
 		}
 	}
 
-	callNamesByID := make(map[string]string)
+	type toolCall struct {
+		name   string
+		wireID string
+	}
+	callsByID := make(map[string]toolCall)
 	contents := make([]geminiWireContent, 0, len(req.Items))
 
 	for i := 0; i < len(req.Items); {
@@ -724,7 +728,7 @@ func encodeGeminiCanonicalRequest(req canonical.Request, target CanonicalTarget)
 							return nil, canonical.NewRejectionError("invalid_tool_call", "function_call", "functionCall requires name")
 						}
 						if cur.Call.CallID != "" {
-							callNamesByID[cur.Call.CallID] = cur.Call.Name
+							callsByID[cur.Call.CallID] = toolCall{cur.Call.Name, cur.Call.WireCallID.ValueOr(cur.Call.CallID)}
 						}
 						var argsObj json.RawMessage
 						var err error
@@ -758,7 +762,7 @@ func encodeGeminiCanonicalRequest(req canonical.Request, target CanonicalTarget)
 
 						modelParts = append(modelParts, geminiWirePart{
 							FunctionCall: &geminiWireFunctionCall{
-								ID:   cur.Call.CallID,
+								ID:   cur.Call.WireCallID.ValueOr(cur.Call.CallID),
 								Name: cur.Call.Name,
 								Args: argsObj,
 							},
@@ -838,9 +842,12 @@ func encodeGeminiCanonicalRequest(req canonical.Request, target CanonicalTarget)
 				if res == nil {
 					continue
 				}
-				fnName := res.Name
-				if fnName == "" && res.CallID != "" {
-					fnName = callNamesByID[res.CallID]
+				fnName, wireID := res.Name, res.CallID
+				if call, ok := callsByID[res.CallID]; ok {
+					wireID = call.wireID
+					if fnName == "" {
+						fnName = call.name
+					}
 				}
 				if fnName == "" {
 					return nil, canonical.NewRejectionError("missing_tool_call_association", "tool_call_id", "cannot resolve function name for Gemini functionResponse without matching function_call")
@@ -884,7 +891,7 @@ func encodeGeminiCanonicalRequest(req canonical.Request, target CanonicalTarget)
 				}
 				userParts = append(userParts, geminiWirePart{
 					FunctionResponse: &geminiWireFunctionResponse{
-						ID:       res.CallID,
+						ID:       wireID,
 						Name:     fnName,
 						Response: respObj,
 					},

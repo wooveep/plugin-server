@@ -20,6 +20,7 @@ const schema = "modelfusion-public-resources.v1"
 // A native parallel function batch needs both item and call IDs, plus its
 // response ID. Full histories must not be truncated at the tool count itself.
 const maxReferences = 4096
+const maxRecordBytes = 16384
 
 type Scope struct {
 	Tenant, Principal, SalesAsset string
@@ -53,7 +54,7 @@ type Client interface {
 }
 
 func IsAlias(kind, value string) bool {
-	prefix := map[string]string{"response": "resp_pf_", "message": "msg_pf_", "chat": "chatcmpl_pf_", "item": "item_pf_", "call": "call_pf_", "conversation": "conv_pf_"}[kind]
+	prefix := map[string]string{"response": "resp_pf_", "message": "msg_pf_", "chat": "chatcmpl_pf_", "item": "item_pf_", "call": "call_pf_", "conversation": "conv_pf_", clientresponse.SignedToolCallKind: clientresponse.SignedToolCallPrefix}[kind]
 	if prefix == "" || !strings.HasPrefix(value, prefix) || len(value) != len(prefix)+32 {
 		return false
 	}
@@ -80,6 +81,13 @@ func key(scope Scope, alias clientresponse.ResourceAlias) (string, error) {
 
 func valid(record Record) bool {
 	o := record.Owner
+	if record.Alias.Kind == clientresponse.SignedToolCallKind {
+		if record.Native || record.Passthrough || record.Alias.SignedToolCall == nil || record.Alias.SignedToolCall.Signature == "" {
+			return false
+		}
+	} else if record.Alias.SignedToolCall != nil {
+		return false
+	}
 	validID := IsAlias(record.Alias.Kind, record.Alias.Public)
 	if record.Passthrough {
 		validID = record.Native && record.Alias.Public == record.Alias.Original && nativeID(record.Alias.Kind, record.Alias.Public)
@@ -115,6 +123,10 @@ return 1`
 			return
 		}
 		raw, _ := json.Marshal(record)
+		if len(raw) > maxRecordBytes {
+			done(errors.New("resource mapping exceeds record budget"))
+			return
+		}
 		command = append(command, k)
 		values = append(values, string(raw))
 	}
@@ -157,7 +169,7 @@ func Lookup(client Client, scope Scope, aliases []clientresponse.ResourceAlias, 
 		}
 		result := make([]Record, len(aliases))
 		for i, raw := range value.Array() {
-			if raw.IsNull() || len(raw.String()) > 16384 || json.Unmarshal([]byte(raw.String()), &result[i]) != nil || !valid(result[i]) || result[i].Passthrough != scope.Passthrough || result[i].Alias.Kind != aliases[i].Kind || result[i].Alias.Public != aliases[i].Public {
+			if raw.IsNull() || len(raw.String()) > maxRecordBytes || json.Unmarshal([]byte(raw.String()), &result[i]) != nil || !valid(result[i]) || result[i].Passthrough != scope.Passthrough || result[i].Alias.Kind != aliases[i].Kind || result[i].Alias.Public != aliases[i].Public {
 				done(nil, errors.New("resource reference unavailable"))
 				return
 			}

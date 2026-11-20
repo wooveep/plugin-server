@@ -176,11 +176,8 @@ func TestCanonicalSupplierOutputLimits(t *testing.T) {
 		assert.False(t, gjson.GetBytes(out1, "parameters.max_completion_tokens").Exists())
 
 		// Model supporting max_completion_tokens distinguishes ScopeReasoningAndVisible vs ScopeVisibleOnly.
-		out2, err := encodeQwenCanonicalRequest(respMaxOut, CanonicalTarget{
-			WireFormat:               WireDashScopeText,
-			Model:                    "qwen3-max",
-			SupportsCompletionTokens: true,
-		})
+		target := ResolveCanonicalTarget(nil, "dashscope_multimodal", providerTypeQwen, "", "qwen3.5-plus", false)
+		out2, err := EncodeCanonicalRequest(respMaxOut, target)
 		require.NoError(t, err)
 		assert.Equal(t, int64(768), gjson.GetBytes(out2, "parameters.max_completion_tokens").Int())
 		assert.False(t, gjson.GetBytes(out2, "parameters.max_tokens").Exists())
@@ -191,11 +188,7 @@ func TestCanonicalSupplierOutputLimits(t *testing.T) {
 			"messages":[{"role":"user","content":"hi"}]
 		}`))
 		require.NoError(t, err)
-		out3, err := encodeQwenCanonicalRequest(chatVis, CanonicalTarget{
-			WireFormat:               WireDashScopeText,
-			Model:                    "qwen3-max",
-			SupportsCompletionTokens: true,
-		})
+		out3, err := EncodeCanonicalRequest(chatVis, target)
 		require.NoError(t, err)
 		assert.Equal(t, int64(256), gjson.GetBytes(out3, "parameters.max_tokens").Int())
 		assert.False(t, gjson.GetBytes(out3, "parameters.max_completion_tokens").Exists())
@@ -231,6 +224,36 @@ func TestCanonicalSupplierOutputLimits(t *testing.T) {
 		_, err = encodeGeminiCanonicalRequest(msgZero, CanonicalTarget{WireFormat: WireGeminiGenerateContent, Model: "gemini-2.5-flash"})
 		requireRejectionError(t, err, "unsupported_zero_output_tokens", "max_tokens")
 	})
+}
+
+func TestCanonicalSupplierSearchOptionsFollowTypedStrategy(t *testing.T) {
+	req, err := DecodeCanonicalRequest(canonical.ProtocolOpenAIChat, []byte(`{
+		"model":"m","messages":[{"role":"user","content":"hi"}],
+		"enable_search":true,"search_options":{"strategy":"agent_max","forced_search":true}
+	}`))
+	require.NoError(t, err)
+	for _, tc := range []struct {
+		wire WireFormat
+		path string
+	}{
+		{WireDashScopeText, "parameters.search_options"},
+		{WireChatCompletions, "search_options"},
+	} {
+		t.Run(string(tc.wire), func(t *testing.T) {
+			target := CanonicalTarget{WireFormat: tc.wire, Model: req.Model}
+			encoded, err := EncodeCanonicalRequest(req, target)
+			require.NoError(t, err)
+			assert.Equal(t, "agent_max", gjson.GetBytes(encoded, tc.path+".strategy").String())
+
+			// Simulate the canonical attempt policy removing only the extractor.
+			filtered := req.CloneForAttempt()
+			filtered.FixedTools.SearchStrategy = canonical.AbsentOf[string]()
+			encoded, err = EncodeCanonicalRequest(filtered, target)
+			require.NoError(t, err)
+			assert.False(t, gjson.GetBytes(encoded, tc.path+".strategy").Exists())
+			assert.True(t, gjson.GetBytes(encoded, tc.path+".forced_search").Bool())
+		})
+	}
 }
 
 // T04: Explicit 0 scalars, DashScope top_p==1.0 clamp, float penalties on Gemini, and stop sequences.

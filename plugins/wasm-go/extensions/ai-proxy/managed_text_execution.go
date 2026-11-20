@@ -489,6 +489,7 @@ func newManagedTextAttempt(previous *managedExecutionState, configuration *manag
 	state.publicRequest = previous.publicRequest
 	state.baseCanonical = previous.baseCanonical
 	state.resourceOwner = previous.resourceOwner
+	state.signedToolCalls = previous.signedToolCalls
 	state.routerDeadline = previous.routerDeadline
 	requestedTools := make(map[fixedtools.Tool]bool, len(previous.requestedTools))
 	for tool, ok := range previous.requestedTools {

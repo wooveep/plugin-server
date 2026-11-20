@@ -371,7 +371,7 @@ func observeManagedRouterChunk(ctx wrapper.HttpContext, s *managedExecutionState
 	if len(r.heldRaw) != 0 {
 		chunk, r.heldRaw = r.heldRaw, nil
 	}
-	if tracksResources && !r.rawAliasesInvalid && !r.projectionFailed && r.streamObservation().BodyComplete {
+	if (tracksResources || s.publicAliases.HasSignedToolCalls()) && !r.rawAliasesInvalid && !r.projectionFailed && r.streamObservation().BodyComplete {
 		// Only the final delivery waits on the mapping. The upstream fact
 		// already has terminal evidence, even if the client cancels.
 		pending, err := saveManagedRouterResources(ctx, s, func(err error) {
@@ -480,7 +480,7 @@ func finishManagedRouterJSON(ctx wrapper.HttpContext, s *managedExecutionState, 
 				s.publicAliases = aliases
 			}
 		}
-		if s.config.profile.InputProtocol == clientresponse.Responses && !r.projectionFailed && *r.status >= 200 && *r.status < 300 {
+		if (s.config.profile.InputProtocol == clientresponse.Responses || s.publicAliases.HasSignedToolCalls()) && !r.projectionFailed && *r.status >= 200 && *r.status < 300 {
 			handleError := func(err error) {
 				if err != nil {
 					r.projectionFailed = true

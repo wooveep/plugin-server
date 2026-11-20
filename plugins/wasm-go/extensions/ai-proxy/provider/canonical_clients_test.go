@@ -195,7 +195,7 @@ func TestCanonicalPresenceMatrix(t *testing.T) {
 		assert.True(t, withNulls.Sampling.FrequencyPenalty.IsNull())
 		assert.True(t, withNulls.Metadata.IsNull())
 		assert.True(t, withNulls.ParallelToolCalls.IsNull())
-		assert.Nil(t, withNulls.FixedTools.SearchOptionsRaw)
+		assert.Nil(t, withNulls.FixedTools.SearchOptions)
 
 		withZeros, err := DecodeCanonicalRequest(canonical.ProtocolOpenAIChat, []byte(`{
 			"model":"gpt-4o",

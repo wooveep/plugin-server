@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -204,21 +205,43 @@ func decodeFixedToolOptions(
 		EnableCodeInterpreter: enableCodeInterpreter.toCanonical(),
 	}
 	if trimmed := bytes.TrimSpace(searchOptions); len(trimmed) > 0 && !bytes.Equal(trimmed, []byte("null")) {
-		var parsed struct {
-			Strategy wireOptional[string] `json:"strategy"`
+		if err := json.Unmarshal(trimmed, &out.SearchOptions); err != nil {
+			return canonical.FixedToolControls{}, canonical.NewRejectionError("invalid_search_options", "search_options", "search_options must be an object")
 		}
-		if err := json.Unmarshal(trimmed, &parsed); err != nil {
-			return canonical.FixedToolControls{}, canonical.NewRejectionError("invalid_search_options", "search_options", fmt.Sprintf("invalid search_options: %v", err))
+		var strategy wireOptional[string]
+		for name, raw := range out.SearchOptions {
+			if !strings.EqualFold(name, "strategy") {
+				continue
+			}
+			if strategy.state != canonical.Absent || json.Unmarshal(raw, &strategy) != nil {
+				return canonical.FixedToolControls{}, canonical.NewRejectionError("invalid_search_options", "search_options.strategy", "search_options.strategy must be a single string or null")
+			}
+			delete(out.SearchOptions, name)
 		}
-		if parsed.Strategy.state == canonical.Present && parsed.Strategy.val != "" {
-			out.SearchStrategy = canonical.Some(parsed.Strategy.val)
-		}
-		out.SearchOptionsRaw = bytes.Clone(trimmed)
+		out.SearchStrategy = strategy.toCanonical()
 	}
 	if trimmed := bytes.TrimSpace(webSearchOptions); len(trimmed) > 0 && !bytes.Equal(trimmed, []byte("null")) {
 		out.WebSearchOptionsRaw = bytes.Clone(trimmed)
 	}
 	return out, nil
+}
+
+func encodeFixedToolSearchOptions(tools canonical.FixedToolControls) (json.RawMessage, error) {
+	if tools.SearchStrategy.IsAbsent() {
+		if tools.SearchOptions == nil {
+			return nil, nil
+		}
+		return json.Marshal(tools.SearchOptions)
+	}
+	options := maps.Clone(tools.SearchOptions)
+	if options == nil {
+		options = make(map[string]json.RawMessage, 1)
+	}
+	options["strategy"] = json.RawMessage("null")
+	if tools.SearchStrategy.IsPresent() {
+		options["strategy"], _ = json.Marshal(tools.SearchStrategy.Val)
+	}
+	return json.Marshal(options)
 }
 
 func decodeChatCanonical(body []byte) (canonical.Request, error) {
@@ -1206,9 +1229,11 @@ func encodeChatCanonicalRequest(req canonical.Request, target CanonicalTarget) (
 		v := req.FixedTools.EnableCodeInterpreter.Val
 		out.EnableCodeInterpreter = &v
 	}
-	if len(req.FixedTools.SearchOptionsRaw) > 0 {
-		out.SearchOptions = bytes.Clone(req.FixedTools.SearchOptionsRaw)
+	searchOptions, err := encodeFixedToolSearchOptions(req.FixedTools)
+	if err != nil {
+		return nil, fmt.Errorf("marshal search_options: %w", err)
 	}
+	out.SearchOptions = searchOptions
 	if len(req.FixedTools.WebSearchOptionsRaw) > 0 {
 		out.WebSearchOptions = bytes.Clone(req.FixedTools.WebSearchOptionsRaw)
 	}

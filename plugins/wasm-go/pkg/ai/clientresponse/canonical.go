@@ -187,7 +187,43 @@ func projectAnnotations(annotations []json.RawMessage) ([]json.RawMessage, error
 	return out, nil
 }
 
+const SignedToolCallKind = "signed_call"
+const SignedToolCallPrefix = "call_pf_s_"
+
+// SignedToolCall retains the private Gemini payload associated with a public
+// tool-call alias. ProviderID is empty if Gemini omitted its optional ID.
+type SignedToolCall struct {
+	ProviderID string `json:"provider_id,omitempty"`
+	Signature  string `json:"signature"`
+}
+
+func (a *ResourceAliases) HasSignedToolCalls() bool {
+	if a == nil {
+		return false
+	}
+	for _, record := range a.records {
+		if record.SignedToolCall != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *ResourceAliases) aliasToolCall(original, providerID, signature string, origin canonical.OpaqueOrigin) (string, error) {
+	if a.native || signature == "" || origin.Protocol != canonical.ProtocolGeminiGenerate || origin.Supplier != "google" {
+		return a.aliasString("call", original)
+	}
+	return a.recordCanonicalAlias(SignedToolCallKind, original, &SignedToolCall{
+		ProviderID: providerID,
+		Signature:  signature,
+	})
+}
+
 func (a *ResourceAliases) aliasString(kind, original string) (string, error) {
+	return a.recordCanonicalAlias(kind, original, nil)
+}
+
+func (a *ResourceAliases) recordCanonicalAlias(kind, original string, signed *SignedToolCall) (string, error) {
 	if a.values == nil {
 		a.values = map[[2]string]string{}
 	}
@@ -211,19 +247,20 @@ func (a *ResourceAliases) aliasString(kind, original string) (string, error) {
 			return "", errors.New("public resource identity unavailable")
 		}
 		prefix := map[string]string{
-			"chat":         "chatcmpl",
-			"response":     "resp",
-			"message":      "msg",
-			"item":         "item",
-			"call":         "call",
-			"conversation": "conv",
+			"chat":             "chatcmpl_pf_",
+			"response":         "resp_pf_",
+			"message":          "msg_pf_",
+			"item":             "item_pf_",
+			"call":             "call_pf_",
+			"conversation":     "conv_pf_",
+			SignedToolCallKind: SignedToolCallPrefix,
 		}[kind]
 		if prefix == "" {
 			return "", errors.New("unknown resource identity kind")
 		}
-		public = prefix + "_pf_" + hex.EncodeToString(random[:])
+		public = prefix + hex.EncodeToString(random[:])
 		a.values[key] = public
-		a.records = append(a.records, ResourceAlias{Kind: kind, Public: public, Original: original})
+		a.records = append(a.records, ResourceAlias{Kind: kind, Public: public, Original: original, SignedToolCall: signed})
 	}
 	return public, nil
 }
@@ -333,7 +370,7 @@ func ProjectCanonical(policy Policy, resp canonical.Response, usage Usage) (Cano
 					if origCall == "" {
 						origCall = fmt.Sprintf("%s:call:%d:%d", salt, choice.Index, toolIdx)
 					}
-					pubCallID, err = normPolicy.Aliases.aliasString("call", origCall)
+					pubCallID, err = normPolicy.Aliases.aliasToolCall(origCall, item.Call.CallID, item.Call.ThoughtSignature, item.Call.SignatureOrigin)
 					if err != nil {
 						return CanonicalResponse{}, err
 					}
@@ -511,7 +548,8 @@ func (s *CanonicalStreamProjection) resolveItemSlot(choiceIdx, itemIdx int, kind
 	return pubID, nil
 }
 
-func (s *CanonicalStreamProjection) resolveToolSlot(choiceIdx, itemIdx, toolIdx int, upstreamItemID, upstreamCallID string) (projectedSlotIDs, error) {
+func (s *CanonicalStreamProjection) resolveToolSlot(ev canonical.Event) (projectedSlotIDs, error) {
+	choiceIdx, itemIdx, toolIdx := ev.ChoiceIndex, ev.ItemIndex, ev.ToolIndex
 	slot := [2]int{choiceIdx, toolIdx}
 	s.toolOpen[slot] = true
 	itemKey := [2]int{choiceIdx, itemIdx}
@@ -521,18 +559,18 @@ func (s *CanonicalStreamProjection) resolveToolSlot(choiceIdx, itemIdx, toolIdx 
 		}
 		return existing, nil
 	}
-	origCall := upstreamCallID
+	origCall := ev.CallID
 	if origCall == "" {
 		origCall = fmt.Sprintf("%s:call:%d:%d", s.salt, choiceIdx, toolIdx)
 	}
-	pubCallID, err := s.policy.Aliases.aliasString("call", origCall)
+	pubCallID, err := s.policy.Aliases.aliasToolCall(origCall, ev.CallID, ev.ThoughtSignature, ev.SignatureOrigin)
 	if err != nil {
 		return projectedSlotIDs{}, err
 	}
 	var pubItemID string
 	switch s.protocol {
 	case canonical.ProtocolOpenAIResponses:
-		origItem := upstreamItemID
+		origItem := ev.ItemID
 		if origItem == "" {
 			candidateIdx := itemIdx
 			if candidateIdx == 0 && toolIdx > 0 {
@@ -664,7 +702,7 @@ func (s *CanonicalStreamProjection) Project(ev canonical.Event, usage Usage) ([]
 			return nil, err
 		}
 	case canonical.EventToolCallStart, canonical.EventToolCallArgsDelta:
-		ids, err := s.resolveToolSlot(ev.ChoiceIndex, ev.ItemIndex, ev.ToolIndex, ev.ItemID, ev.CallID)
+		ids, err := s.resolveToolSlot(ev)
 		if err != nil {
 			return nil, err
 		}

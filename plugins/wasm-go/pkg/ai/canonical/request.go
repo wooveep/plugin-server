@@ -227,6 +227,7 @@ const (
 type FunctionCall struct {
 	ItemID           string
 	CallID           string
+	WireCallID       Optional[string] // The recorded provider ID, which can be explicitly empty.
 	Name             string
 	Args             Arguments
 	ThoughtSignature string
@@ -317,7 +318,7 @@ type FixedToolControls struct {
 	EnableSearch          Optional[bool]
 	EnableCodeInterpreter Optional[bool]
 	SearchStrategy        Optional[string]
-	SearchOptionsRaw      json.RawMessage
+	SearchOptions         map[string]json.RawMessage // Supplier options other than the normalized SearchStrategy.
 	WebSearchOptionsRaw   json.RawMessage
 }
 
@@ -379,7 +380,10 @@ func (r Request) CloneForAttempt() Request {
 			out.Tools[i] = tc
 		}
 	}
-	out.FixedTools.SearchOptionsRaw = bytes.Clone(r.FixedTools.SearchOptionsRaw)
+	out.FixedTools.SearchOptions = maps.Clone(r.FixedTools.SearchOptions)
+	for key, value := range out.FixedTools.SearchOptions {
+		out.FixedTools.SearchOptions[key] = bytes.Clone(value)
+	}
 	out.FixedTools.WebSearchOptionsRaw = bytes.Clone(r.FixedTools.WebSearchOptionsRaw)
 	if r.Metadata.IsPresent() && r.Metadata.Val != nil {
 		out.Metadata = Some(maps.Clone(r.Metadata.Val))

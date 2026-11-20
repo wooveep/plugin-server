@@ -1024,15 +1024,15 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 				"generativelanguage.googleapis.com",
 				inputProtocol,
 				managedProtocolChat,
-				"/v1beta/models/gemini-2.5-pro:streamGenerateContent",
-				"gemini-2.5-pro",
+				"/v1beta/models/gemini-3-flash-preview:streamGenerateContent",
+				"gemini-3-flash-preview",
 				"",
 			)
 		}
 		fixture := managedConfigFixture()
 		fixture["provider"] = json.RawMessage(`{"type":"gemini","apiTokens":["controlled-upstream-key"],"apiVersion":"v1beta"}`)
 		release := fixture["_modelfusion_execution"].(managedRelease)
-		release.Descriptor.UpstreamModel = "gemini-2.5-pro"
+		release.Descriptor.UpstreamModel = "gemini-3-flash-preview"
 		release.Descriptor.Transport.Host = "generativelanguage.googleapis.com"
 		release.Descriptor.Transport.SNI = "generativelanguage.googleapis.com"
 		descRaw, err := json.Marshal(release.Descriptor)
@@ -1057,6 +1057,24 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 	for _, inProto := range []string{managedProtocolChat, managedProtocolResponses, managedProtocolMessages} {
 		for _, stream := range []bool{false, true} {
 			t.Run(fmt.Sprintf("%s/stream=%t", inProto, stream), func(t *testing.T) {
+				var replayCallID string
+				savedResources := make(map[string]string)
+				saveResources := func(t *testing.T, h *managedHost) {
+					t.Helper()
+					for _, call := range h.host.GetRedisCalloutAttributesFromContext(h.id) {
+						if !bytes.Contains(call.Query, []byte("modelfusion-public-resource-write.v1")) {
+							continue
+						}
+						command, _, err := resp.NewReader(bytes.NewReader(call.Query)).ReadValue()
+						require.NoError(t, err)
+						parts := command.Array()
+						count := parts[2].Integer()
+						for i := range count {
+							savedResources[parts[3+i].String()] = parts[4+count+i].String()
+						}
+						h.host.CallOnRedisCallResponse(call.CalloutID, 0, []byte(":1\r\n"))
+					}
+				}
 				t.Run("turn1", func(t *testing.T) {
 					// --- Turn 1: Multi-system + Data URL image + token limit + tool -> Gemini ---
 					h1 := newGeminiHost(t, inProto, stream)
@@ -1112,7 +1130,7 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 					}`, stream))
 					}
 
-					h1.start(t, turn1Pub, bytes.Replace(turn1Pub, []byte(`"public-model"`), []byte(`"gemini-2.5-pro"`), 1))
+					h1.start(t, turn1Pub, bytes.Replace(turn1Pub, []byte(`"public-model"`), []byte(`"gemini-3-flash-preview"`), 1))
 
 					var out1 []byte
 					var reqHeaders1 [][2]string
@@ -1129,9 +1147,9 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 					gotPath1, err := managedSingleHeader(reqHeaders1, ":path")
 					require.NoError(t, err)
 					if stream {
-						require.Equal(t, "/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse", gotPath1)
+						require.Equal(t, "/v1beta/models/gemini-3-flash-preview:streamGenerateContent?alt=sse", gotPath1)
 					} else {
-						require.Equal(t, "/v1beta/models/gemini-2.5-pro:generateContent", gotPath1)
+						require.Equal(t, "/v1beta/models/gemini-3-flash-preview:generateContent", gotPath1)
 					}
 					apiKey1, err := managedSingleHeader(reqHeaders1, "x-goog-api-key")
 					require.NoError(t, err)
@@ -1163,16 +1181,18 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 							{":status", "200"},
 							{"content-type", "text/event-stream"},
 						}, false))
-						sse1 := "data: {\"responseId\":\"gem-c04-1\",\"modelVersion\":\"gemini-2.5-pro\",\"candidates\":[{\"index\":0,\"content\":{\"role\":\"model\",\"parts\":[{\"thought\":true,\"text\":\"Validating order 9007199254740993...\"}]}}]}\n\n" +
-							"data: {\"responseId\":\"gem-c04-1\",\"modelVersion\":\"gemini-2.5-pro\",\"candidates\":[{\"index\":0,\"content\":{\"role\":\"model\",\"parts\":[{\"functionCall\":{\"name\":\"lookup_order\",\"args\":{\"order_id\":9007199254740993}},\"thoughtSignature\":\"sig_google_turn1\"}]}}]}\n\n" +
-							"data: {\"responseId\":\"gem-c04-1\",\"modelVersion\":\"gemini-2.5-pro\",\"candidates\":[{\"index\":0,\"finishReason\":\"STOP\"}],\"usageMetadata\":" + ge02Usage + "}\n\n"
+						sse1 := "data: {\"responseId\":\"gem-c04-1\",\"modelVersion\":\"gemini-3-flash-preview\",\"candidates\":[{\"index\":0,\"content\":{\"role\":\"model\",\"parts\":[{\"thought\":true,\"text\":\"Validating order 9007199254740993...\"}]}}]}\n\n" +
+							"data: {\"responseId\":\"gem-c04-1\",\"modelVersion\":\"gemini-3-flash-preview\",\"candidates\":[{\"index\":0,\"content\":{\"role\":\"model\",\"parts\":[{\"functionCall\":{\"name\":\"lookup_order\",\"args\":{\"order_id\":9007199254740993}},\"thoughtSignature\":\"sig_google_turn1\"}]}}]}\n\n" +
+							"data: {\"responseId\":\"gem-c04-1\",\"modelVersion\":\"gemini-3-flash-preview\",\"candidates\":[{\"index\":0,\"finishReason\":\"STOP\"}],\"usageMetadata\":" + ge02Usage + "}\n\n"
 						h1.host.CallOnResponseBody(h1.id, []byte(sse1), true)
+						saveResources(t, h1)
 						drainDashScopeRedis(h1)
 						resp1Str = string(h1.host.GetCurrentResponseBody(h1.id)) + injected1.String()
 						deliv1 = h1.ctx.GetContext(managedExecutionContextKey).(*managedExecutionState).lastDelivery.Envelope()
 					} else {
-						json1 := []byte(`{"responseId":"gem-c04-1","modelVersion":"gemini-2.5-pro","candidates":[{"index":0,"content":{"role":"model","parts":[{"thought":true,"text":"Validating order 9007199254740993..."},{"functionCall":{"name":"lookup_order","args":{"order_id":9007199254740993}},"thoughtSignature":"sig_google_turn1"}]},"finishReason":"STOP"}],"usageMetadata":` + ge02Usage + `}`)
-						h1.response(t, [][2]string{{":status", "200"}, {"content-type", "application/json"}}, json1)
+						json1 := []byte(`{"responseId":"gem-c04-1","modelVersion":"gemini-3-flash-preview","candidates":[{"index":0,"content":{"role":"model","parts":[{"thought":true,"text":"Validating order 9007199254740993..."},{"functionCall":{"id":"native-gemini-call","name":"lookup_order","args":{"order_id":9007199254740993}},"thoughtSignature":"sig_google_turn1"}]},"finishReason":"STOP"}],"usageMetadata":` + ge02Usage + `}`)
+						h1.rawResponse(t, [][2]string{{":status", "200"}, {"content-type", "application/json"}}, json1)
+						saveResources(t, h1)
 						sent1 := h1.host.GetSentLocalResponse(h1.id)
 						require.NotNil(t, sent1)
 						require.EqualValues(t, 200, sent1.StatusCode)
@@ -1192,6 +1212,31 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 					// Verify thought:true routed exclusively to reasoning (never leaked to visible text) + exact 9007199254740993 + public usage.
 					require.Contains(t, resp1Str, "Validating order 9007199254740993...")
 					require.Contains(t, resp1Str, "9007199254740993")
+					require.NotContains(t, resp1Str, "sig_google_turn1")
+					require.NotContains(t, resp1Str, "native-gemini-call")
+					if stream {
+						events, err := clientresponse.Events([]byte(resp1Str))
+						require.NoError(t, err)
+						path := map[string]string{
+							managedProtocolChat:      "choices.0.delta.tool_calls.0.id",
+							managedProtocolResponses: "item.call_id",
+							managedProtocolMessages:  "content_block.id",
+						}[inProto]
+						for _, event := range events {
+							if id := gjson.GetBytes(event.Data, path).String(); id != "" {
+								replayCallID = id
+								break
+							}
+						}
+					} else {
+						path := map[string]string{
+							managedProtocolChat:      "choices.0.message.tool_calls.0.id",
+							managedProtocolResponses: "output.1.call_id",
+							managedProtocolMessages:  "content.1.id",
+						}[inProto]
+						replayCallID = gjson.Get(resp1Str, path).String()
+					}
+					require.NotEmpty(t, replayCallID)
 					switch inProto {
 					case managedProtocolChat:
 						if !stream {
@@ -1289,7 +1334,26 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 					}`, stream))
 					}
 
-					h2.start(t, turn2Pub, bytes.Replace(turn2Pub, []byte(`"public-model"`), []byte(`"gemini-2.5-pro"`), 1))
+					require.NotEmpty(t, replayCallID)
+					turn2Pub = bytes.ReplaceAll(turn2Pub, []byte("call_ord_99"), []byte(replayCallID))
+					h2.start(t, turn2Pub, bytes.Replace(turn2Pub, []byte(`"public-model"`), []byte(`"gemini-3-flash-preview"`), 1))
+					for _, call := range h2.host.GetRedisCalloutAttributesFromContext(h2.id) {
+						command, _, err := resp.NewReader(bytes.NewReader(call.Query)).ReadValue()
+						require.NoError(t, err)
+						parts := command.Array()
+						if parts[0].String() != "MGET" {
+							continue
+						}
+						var reply []resp.Value
+						for _, key := range parts[1:] {
+							record, ok := savedResources[key.String()]
+							require.True(t, ok, "continuation must use a record persisted from turn 1")
+							reply = append(reply, resp.StringValue(record))
+						}
+						var raw bytes.Buffer
+						require.NoError(t, resp.NewWriter(&raw).WriteArray(reply))
+						h2.host.CallOnRedisCallResponse(call.CalloutID, 0, raw.Bytes())
+					}
 					var out2 []byte
 					if stream {
 						out2 = h2.host.GetCurrentRequestBody(h2.id)
@@ -1305,10 +1369,19 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 					require.False(t, gjson.GetBytes(out2, "contents.1.parts.0.thoughtSignature").Exists(), "foreign signature must not be forwarded to Gemini: %s", string(out2))
 					require.Equal(t, "lookup_order", gjson.GetBytes(out2, "contents.1.parts.1.functionCall.name").String())
 					require.Equal(t, "9007199254740993", gjson.GetBytes(out2, "contents.1.parts.1.functionCall.args.order_id").Raw)
+					require.Equal(t, "sig_google_turn1", gjson.GetBytes(out2, "contents.1.parts.1.thoughtSignature").String())
+					callID := gjson.GetBytes(out2, "contents.1.parts.1.functionCall.id")
 
 					require.Equal(t, "user", gjson.GetBytes(out2, "contents.2.role").String(), string(out2))
 					require.Equal(t, "lookup_order", gjson.GetBytes(out2, "contents.2.parts.0.functionResponse.name").String(), "functionResponse must recover function name by call_id")
-					require.Equal(t, "call_ord_99", gjson.GetBytes(out2, "contents.2.parts.0.functionResponse.id").String())
+					resultID := gjson.GetBytes(out2, "contents.2.parts.0.functionResponse.id")
+					if stream {
+						require.False(t, callID.Exists())
+						require.False(t, resultID.Exists())
+					} else {
+						require.Equal(t, "native-gemini-call", callID.String())
+						require.Equal(t, callID.String(), resultID.String())
+					}
 					require.Equal(t, "shipped", gjson.GetBytes(out2, "contents.2.parts.0.functionResponse.response.status").String())
 					require.Equal(t, "9007199254740993", gjson.GetBytes(out2, "contents.2.parts.0.functionResponse.response.tracking_no").Raw)
 
@@ -1322,13 +1395,13 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 						}
 						require.NoError(t, h2.host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
 						require.Equal(t, types.ActionContinue, h2.host.CallOnResponseHeaders(h2.id, [][2]string{{":status", "200"}, {"content-type", "text/event-stream"}}, false))
-						sse2 := "data: {\"responseId\":\"gem-c04-2\",\"modelVersion\":\"gemini-2.5-pro\",\"candidates\":[{\"index\":0,\"content\":{\"role\":\"model\",\"parts\":[{\"text\":\"Order shipped.\"}]},\"finishReason\":\"STOP\"}],\"usageMetadata\":{\"promptTokenCount\":140,\"candidatesTokenCount\":6,\"totalTokenCount\":146}}\n\n"
+						sse2 := "data: {\"responseId\":\"gem-c04-2\",\"modelVersion\":\"gemini-3-flash-preview\",\"candidates\":[{\"index\":0,\"content\":{\"role\":\"model\",\"parts\":[{\"text\":\"Order shipped.\"}]},\"finishReason\":\"STOP\"}],\"usageMetadata\":{\"promptTokenCount\":140,\"candidatesTokenCount\":6,\"totalTokenCount\":146}}\n\n"
 						h2.host.CallOnResponseBody(h2.id, []byte(sse2), true)
 						drainDashScopeRedis(h2)
 						resp2Str := string(h2.host.GetCurrentResponseBody(h2.id)) + injected2.String()
 						require.Contains(t, resp2Str, "Order shipped.")
 					} else {
-						json2 := []byte(`{"responseId":"gem-c04-2","modelVersion":"gemini-2.5-pro","candidates":[{"index":0,"content":{"role":"model","parts":[{"text":"Order shipped."}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":140,"candidatesTokenCount":6,"totalTokenCount":146}}`)
+						json2 := []byte(`{"responseId":"gem-c04-2","modelVersion":"gemini-3-flash-preview","candidates":[{"index":0,"content":{"role":"model","parts":[{"text":"Order shipped."}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":140,"candidatesTokenCount":6,"totalTokenCount":146}}`)
 						h2.response(t, [][2]string{{":status", "200"}, {"content-type", "application/json"}}, json2)
 						sent2 := h2.host.GetSentLocalResponse(h2.id)
 						require.NotNil(t, sent2)
@@ -1346,13 +1419,13 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 		gemTarget := provider.CanonicalTarget{
 			WireFormat: provider.WireGeminiGenerateContent,
 			Supplier:   "gemini",
-			Model:      "gemini-2.5-pro",
+			Model:      "gemini-3-flash-preview",
 		}
 		googleOrigin := canonical.OpaqueOrigin{Protocol: canonical.ProtocolGeminiGenerate, Supplier: "google"}
 		anthropicOrigin := canonical.OpaqueOrigin{Protocol: canonical.ProtocolAnthropicMessages, Supplier: "anthropic"}
 		req := canonical.Request{
 			SourceProtocol: canonical.ProtocolOpenAIResponses,
-			Model:          "gemini-2.5-pro",
+			Model:          "gemini-3-flash-preview",
 			Items: []canonical.Item{
 				{Kind: canonical.ItemMessage, Role: canonical.RoleUser, Parts: []canonical.Part{{Kind: canonical.PartText, Text: "check"}}},
 				{Kind: canonical.ItemReasoning, Role: canonical.RoleAssistant, Reasoning: &canonical.ReasoningItem{Text: []string{"google thought"}, Signature: "sig_google_ok", Origin: googleOrigin}},
@@ -1381,7 +1454,7 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 				case managedProtocolMessages:
 					req = []byte(`{"model":"public-model","max_tokens":64,"messages":[{"role":"user","content":[{"type":"image","source":{"type":"url","url":"https://example.com/cat.png"}}]}]}`)
 				}
-				h.start(t, req, bytes.Replace(req, []byte("public-model"), []byte("gemini-2.5-pro"), 1))
+				h.start(t, req, bytes.Replace(req, []byte("public-model"), []byte("gemini-3-flash-preview"), 1))
 				require.Empty(t, h.host.GetCalloutAttributesFromContext(h.id), "remote URL must be rejected before upstream send")
 				sent := h.host.GetSentLocalResponse(h.id)
 				require.NotNil(t, sent)
@@ -1404,7 +1477,7 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 			}
 			t.Run(inProto+"/json", func(t *testing.T) {
 				hj := newGeminiHost(t, inProto, false)
-				hj.start(t, pubJ, bytes.Replace(pubJ, []byte("public-model"), []byte("gemini-2.5-pro"), 1))
+				hj.start(t, pubJ, bytes.Replace(pubJ, []byte("public-model"), []byte("gemini-3-flash-preview"), 1))
 				hj.response(t, [][2]string{{":status", "200"}, {"content-type", "application/json"}}, []byte(`{"promptFeedback":{"blockReason":"SAFETY","blockReasonMessage":"Blocked by safety policy"}}`))
 				sentJ := hj.host.GetSentLocalResponse(hj.id)
 				require.NotNil(t, sentJ)
@@ -1418,7 +1491,7 @@ func TestCanonicalC04GeminiSixCellTwoTurnHistory(t *testing.T) {
 			t.Run(inProto+"/sse", func(t *testing.T) {
 				hs := newGeminiHost(t, inProto, true)
 				pubS := bytes.Replace(pubJ, []byte(`"model":"public-model"`), []byte(`"model":"public-model","stream":true`), 1)
-				hs.start(t, pubS, bytes.Replace(pubS, []byte("public-model"), []byte("gemini-2.5-pro"), 1))
+				hs.start(t, pubS, bytes.Replace(pubS, []byte("public-model"), []byte("gemini-3-flash-preview"), 1))
 				require.NoError(t, hs.host.SetProperty([]string{"response", "code_details"}, []byte("via_upstream")))
 				require.Equal(t, types.ActionContinue, hs.host.CallOnResponseHeaders(hs.id, [][2]string{{":status", "200"}, {"content-type", "text/event-stream"}}, false))
 				hs.host.CallOnResponseBody(hs.id, []byte("data: {\"promptFeedback\":{\"blockReason\":\"SAFETY\"}}\n\n"), true)
